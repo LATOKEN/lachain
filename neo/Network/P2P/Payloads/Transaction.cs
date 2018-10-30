@@ -273,26 +273,26 @@ namespace Neo.Network.P2P.Payloads
             }
             TransactionResult[] results = GetTransactionResults()?.ToArray();
             if (results == null) return false;
-            TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
-            if (results_destroy.Length > 1) return false;
-            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.UtilityToken.Hash)
+            TransactionResult[] resultsDestroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
+            if (resultsDestroy.Length > 1) return false;
+            if (resultsDestroy.Length == 1 && resultsDestroy[0].AssetId != Blockchain.UtilityToken.Hash)
                 return false;
-            if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
+            if (SystemFee > Fixed8.Zero && (resultsDestroy.Length == 0 || resultsDestroy[0].Amount < SystemFee))
                 return false;
-            TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
+            TransactionResult[] resultsIssue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
             switch (Type)
             {
                 case TransactionType.MinerTransaction:
                 case TransactionType.ClaimTransaction:
-                    if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
+                    if (resultsIssue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
                         return false;
                     break;
                 case TransactionType.IssueTransaction:
-                    if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
+                    if (resultsIssue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
                         return false;
                     break;
                 default:
-                    if (results_issue.Length > 0)
+                    if (resultsIssue.Length > 0)
                         return false;
                     break;
             }

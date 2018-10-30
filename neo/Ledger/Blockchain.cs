@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -14,6 +15,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Numerics;
 using System.Threading;
 
@@ -38,7 +40,7 @@ namespace Neo.Ledger
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
         {
             AssetType = AssetType.GoverningToken,
-            Name = "[{\"lang\":\"ru-RU\",\"name\":\"ЛЯТОКЕН\"},{\"lang\":\"en\",\"name\":\"LATOKEN\"}]",
+            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
             Amount = Fixed8.FromDecimal(1000000000),
             Precision = 8,
             Owner = ECCurve.Secp256r1.Infinity,
@@ -52,7 +54,7 @@ namespace Neo.Ledger
         public static readonly RegisterTransaction UtilityToken = new RegisterTransaction
         {
             AssetType = AssetType.UtilityToken,
-            Name = "[{\"lang\":\"ru-RU\",\"name\":\"СОЛЯРА\"},{\"lang\":\"en\",\"name\":\"SOLAROIL\"}]",
+            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
             Amount = Fixed8.FromDecimal(GenerationAmount.Sum(p => p) * DecrementInterval),
             Precision = 8,
             Owner = ECCurve.Secp256r1.Infinity,

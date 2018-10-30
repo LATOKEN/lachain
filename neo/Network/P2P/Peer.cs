@@ -80,38 +80,29 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Start start:
-                    Console.WriteLine(start);
                     OnStart(start.Port, start.WsPort);
                     break;
                 case Timer timer:
-                    Console.WriteLine(timer);
                     OnTimer();
                     break;
                 case Peers peers:
-                    Console.WriteLine(peers);
                     AddPeers(peers.EndPoints);
                     break;
                 case Connect connect:
-                    Console.WriteLine(connect);
                     ConnectToPeer(connect.EndPoint);
                     break;
                 case WsConnected ws:
-                    Console.WriteLine(ws);
                     OnWsConnected(ws.Socket, ws.Remote, ws.Local);
                     break;
                 case Tcp.Connected connected:
-                    Console.WriteLine(connected);
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
                     break;
                 case Tcp.Bound bound:
-                    Console.WriteLine(bound);
                     tcp_listener = Sender;
                     break;
                 case Tcp.CommandFailed failed:
-                    Console.WriteLine(failed);
                     break;
                 case Terminated terminated:
-                    Console.WriteLine(terminated);
                     OnTerminated(terminated.ActorRef);
                     break;
             }

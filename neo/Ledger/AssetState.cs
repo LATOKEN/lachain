@@ -94,8 +94,8 @@ namespace Neo.Ledger
         private Dictionary<CultureInfo, string> _names;
         public string GetName(CultureInfo culture = null)
         {
-            if (AssetType == AssetType.GoverningToken) return "NEO";
-            if (AssetType == AssetType.UtilityToken) return "NeoGas";
+//            if (AssetType == AssetType.GoverningToken) return "NEO";
+//            if (AssetType == AssetType.UtilityToken) return "NeoGas";
             if (_names == null)
             {
                 JObject name_obj;
@@ -117,7 +117,7 @@ namespace Neo.Ledger
             {
                 return name;
             }
-            else if (_names.TryGetValue(en, out name))
+            else if (_names.TryGetValue(En, out name))
             {
                 return name;
             }
@@ -127,7 +127,7 @@ namespace Neo.Ledger
             }
         }
 
-        private static readonly CultureInfo en = new CultureInfo("en");
+        private static readonly CultureInfo En = new CultureInfo("en");
 
         public override void Serialize(BinaryWriter writer)
         {

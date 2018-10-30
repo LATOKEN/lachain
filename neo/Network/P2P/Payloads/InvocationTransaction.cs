@@ -20,7 +20,7 @@ namespace Neo.Network.P2P.Payloads
             : base(TransactionType.InvocationTransaction)
         {
         }
-
+        
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version > 1) throw new FormatException();
@@ -58,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
             json["gas"] = Gas.ToString();
             return json;
         }
-
+        
         public override bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Gas.GetData() % 100000000 != 0) return false;

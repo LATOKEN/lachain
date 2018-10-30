@@ -59,10 +59,10 @@ namespace Neo.SmartContract
         {
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
                 throw new ArgumentException();
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (var sb = new ScriptBuilder())
             {
                 sb.EmitPush(m);
-                foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
+                foreach (var publicKey in publicKeys.OrderBy(p => p))
                 {
                     sb.EmitPush(publicKey.EncodePoint(true));
                 }
@@ -83,7 +83,7 @@ namespace Neo.SmartContract
 
         public static byte[] CreateSignatureRedeemScript(ECPoint publicKey)
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (var sb = new ScriptBuilder())
             {
                 sb.EmitPush(publicKey.EncodePoint(true));
                 sb.Emit(OpCode.CHECKSIG);
