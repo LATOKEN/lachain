@@ -1,0 +1,6 @@
+.idea/
+*.so
+**/bin/**
+**/obj/**
+**/Chain_*/**
+**/Index_*/**
