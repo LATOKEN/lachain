@@ -12,7 +12,7 @@ namespace Neo.Network.P2P.Payloads
     public class Block : BlockBase, IInventory, IEquatable<Block>
     {
         public Transaction[] Transactions;
-
+        
         private Header _header = null;
         public Header Header
         {

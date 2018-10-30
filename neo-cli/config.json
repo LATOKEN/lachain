@@ -6,17 +6,17 @@
     },
     "P2P": {
       "Port": 20333,
-      "WsPort": 10333
+      "WsPort": 20334
     },
     "RPC": {
-      "BindAddress": "0.0.0.0",
-      "Port": 30333,
+      "BindAddress": "127.0.0.1",
+      "Port": 10332,
       "SslCert": "",
       "SslCertPassword": ""
     },
     "UnlockWallet": {
-      "Path": "wallet1.json",
-      "Password": "one",
+      "Path": "wallet2.json",
+      "Password": "two",
       "StartConsensus": true,
       "IsActive": true
     }

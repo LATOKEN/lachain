@@ -20,7 +20,7 @@ namespace Neo.Network
             s.ReceiveTimeout = (int)TimeOut.TotalMilliseconds;
             s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
             string req = "M-SEARCH * HTTP/1.1\r\n" +
-            "HOST: 192.168.88.69:1900\r\n" +
+            "HOST: 239.255.255.250:1900\r\n" +
             "ST:upnp:rootdevice\r\n" +
             "MAN:\"ssdp:discover\"\r\n" +
             "MX:3\r\n\r\n";
@@ -53,8 +53,9 @@ namespace Neo.Network
                         }
                     }
                 }
-                catch
+                catch (Exception e)
                 {
+                    Console.WriteLine(e);
                     continue;
                 }
             }

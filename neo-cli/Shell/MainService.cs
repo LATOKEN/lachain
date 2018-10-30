@@ -35,14 +35,6 @@ namespace Neo.Shell
         protected override string Prompt => "neo";
         public override string ServiceName => "NEO-CLI";
 
-        class LogPlugin : Plugin, ILogPlugin
-        {
-            public void Log(string source, LogLevel level, string message)
-            {
-                Console.WriteLine(source + " " + level + " " + message);
-            }
-        }
-
         private WalletIndexer GetIndexer()
         {
             if (indexer is null)
@@ -395,7 +387,6 @@ namespace Neo.Shell
                 "\tsign <jsonObjectToSign>\n" +
                 "Node Commands:\n" +
                 "\tshow state\n" +
-                "\tshow node\n" +
                 "\tshow pool [verbose]\n" +
                 "\trelay <jsonObjectToSign>\n" +
                 "Advanced Commands:\n" +
@@ -837,8 +828,8 @@ namespace Neo.Shell
 
         protected internal override void OnStart(string[] args)
         {
-            Plugin logPlugin = new LogPlugin();
-            bool useRPC = false;
+            LogPlugin log = new LogPlugin();
+            bool useRPC = true;
             for (int i = 0; i < args.Length; i++)
                 switch (args[i])
                 {
@@ -873,6 +864,14 @@ namespace Neo.Shell
                     wallet: Program.Wallet,
                     sslCert: Settings.Default.RPC.SslCert,
                     password: Settings.Default.RPC.SslCertPassword);
+            }
+        }
+
+        class LogPlugin : Plugin, ILogPlugin
+        {
+            public void Log(string source, LogLevel level, string message)
+            {
+                Console.WriteLine("[" + level.ToString().ToUpper() + "]" + " - (" + source + ") - " + message);
             }
         }
 
