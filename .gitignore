@@ -295,5 +295,6 @@ __pycache__/
 **/obj/**
 **/Chain_*/**
 **/Index_*/**
+neo-cli/config.json
 
 libleveldb.dll
