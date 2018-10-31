@@ -41,8 +41,8 @@ namespace Neo.Ledger
         {
             AssetType = AssetType.GoverningToken,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
-            Amount = Fixed8.FromDecimal(1000000000),
-            Precision = 8,
+            Amount = Fixed8.FromDecimal(100000000),
+            Precision = 0,
             Owner = ECCurve.Secp256r1.Infinity,
             Admin = new[] { (byte)OpCode.PUSHT }.ToScriptHash(),
             Attributes = new TransactionAttribute[0],
