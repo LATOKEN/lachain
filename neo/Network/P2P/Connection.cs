@@ -106,9 +106,8 @@ namespace Neo.Network.P2P
             {
                 OnData(data);
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine(e);
                 Disconnect(true);
             }
         }

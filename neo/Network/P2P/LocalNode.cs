@@ -20,7 +20,7 @@ namespace Neo.Network.P2P
         internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
-        protected override int ConnectedMax => 1;
+        protected override int ConnectedMax => 10;
         protected override int UnconnectedMax => 1000;
 
         private readonly NeoSystem system;
@@ -124,7 +124,7 @@ namespace Neo.Network.P2P
 
         protected override void NeedMorePeers(int count)
         {
-            count = Math.Max(count, 1);
+            count = Math.Max(count, 5);
             if (ConnectedPeers.Count > 0)
             {
                 BroadcastMessage("getaddr");

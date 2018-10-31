@@ -15,7 +15,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Numerics;
 using System.Threading;
 
@@ -41,10 +40,10 @@ namespace Neo.Ledger
         {
             AssetType = AssetType.GoverningToken,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
-            Amount = Fixed8.FromDecimal(1000000000),
-            Precision = 8,
+            Amount = Fixed8.FromDecimal(100000000),
+            Precision = 0,
             Owner = ECCurve.Secp256r1.Infinity,
-            Admin = new[] { (byte)OpCode.PUSHT }.ToScriptHash(),
+            Admin = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0],
@@ -64,38 +63,6 @@ namespace Neo.Ledger
             Outputs = new TransactionOutput[0],
             Witnesses = new Witness[0]
         };
-
-        public static IssueTransaction OneMillionTokens(ECPoint owner)
-        {
-            return new IssueTransaction
-            {
-                Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = GoverningToken.Hash,
-                        Value = Fixed8.FromDecimal(10000000),
-                        ScriptHash = Contract.CreateSignatureRedeemScript(owner).ToScriptHash()
-                    },
-                    new TransactionOutput
-                    {
-                        AssetId = UtilityToken.Hash,
-                        Value = Fixed8.FromDecimal(10000000),
-                        ScriptHash = Contract.CreateSignatureRedeemScript(owner).ToScriptHash()
-                    }
-                },
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new[] { (byte)OpCode.PUSHT }
-                    }
-                }
-            };
-        }
 #pragma warning restore CS0612
 
         public static readonly Block GenesisBlock = new Block
@@ -122,10 +89,6 @@ namespace Neo.Ledger
                 },
                 GoverningToken,
                 UtilityToken,
-                /* TODO: "be carefull with me" */
-                OneMillionTokens(StandbyValidators[0]),
-                OneMillionTokens(StandbyValidators[1]),
-                OneMillionTokens(StandbyValidators[2]),
                 new IssueTransaction
                 {
                     Attributes = new TransactionAttribute[0],
@@ -156,7 +119,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
-        private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool = new ConcurrentDictionary<UInt256, Transaction>();
+        private readonly MemoryPool mem_pool = new MemoryPool(50_000);
         private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool_unverified = new ConcurrentDictionary<UInt256, Transaction>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
@@ -256,7 +219,7 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetMemoryPool()
         {
-            return mem_pool.Values;
+            return mem_pool;
         }
 
         public Snapshot GetSnapshot()
@@ -391,30 +354,18 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
         {
-            const int MemoryPoolSize = 50000;
             if (transaction.Type == TransactionType.MinerTransaction)
                 return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            if (!transaction.Verify(currentSnapshot, mem_pool.Values))
+            if (!transaction.Verify(currentSnapshot, GetMemoryPool()))
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
                 return RelayResultReason.Unknown;
-            mem_pool.TryAdd(transaction.Hash, transaction);
-            if (mem_pool.Count > MemoryPoolSize)
-            {
-                UInt256[] delete = mem_pool.Values.AsParallel()
-                    .OrderBy(p => p.NetworkFee / p.Size)
-                    .ThenBy(p => p.NetworkFee)
-                    .ThenBy(p => new BigInteger(p.Hash.ToArray()))
-                    .Take(mem_pool.Count - MemoryPoolSize)
-                    .Select(p => p.Hash)
-                    .ToArray();
-                foreach (UInt256 hash in delete)
-                    mem_pool.TryRemove(hash, out _);
-            }
-            if (!mem_pool.ContainsKey(transaction.Hash))
+
+            if (!mem_pool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
+
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
@@ -425,7 +376,7 @@ namespace Neo.Ledger
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
             mem_pool_unverified.Clear();
-            foreach (Transaction tx in mem_pool.Values
+            foreach (Transaction tx in mem_pool
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
                 .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
@@ -641,6 +592,8 @@ namespace Neo.Ledger
                     snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
                     snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
                 }
+                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
+                    plugin.OnPersist(snapshot);
                 snapshot.Commit();
             }
             UpdateCurrentSnapshot();

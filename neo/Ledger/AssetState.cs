@@ -117,7 +117,7 @@ namespace Neo.Ledger
             {
                 return name;
             }
-            else if (_names.TryGetValue(En, out name))
+            else if (_names.TryGetValue(en, out name))
             {
                 return name;
             }
@@ -127,7 +127,7 @@ namespace Neo.Ledger
             }
         }
 
-        private static readonly CultureInfo En = new CultureInfo("en");
+        private static readonly CultureInfo en = new CultureInfo("en");
 
         public override void Serialize(BinaryWriter writer)
         {
