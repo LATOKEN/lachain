@@ -16,6 +16,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
     public class GenesisAssetsBuilder : IGenesisAssetsBuilder
     {
         #region Private fields 
+        
         private const uint DecrementInterval = 2000000;
         private readonly uint[] _gasGenerationPerBlock = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
@@ -25,20 +26,21 @@ namespace NeoSharp.Core.Blockchain.Genesis
 
         private RegisterTransaction _governingTokenRegisterTransaction;
         private RegisterTransaction _utilityTokenRegisterTransaction;
+        
         #endregion
 
         #region Constructor 
         public GenesisAssetsBuilder(ISigner<Transaction> transactionSigner) 
         {
-            this._transactionSigner = transactionSigner;
-
+            _transactionSigner = transactionSigner;
+            
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", false, true);
 
             var configuration = builder.Build();
 
-            this._networkConfig = new NetworkConfig(configuration);
+            _networkConfig = new NetworkConfig(configuration);
         }
         #endregion
 
@@ -47,7 +49,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
         public RegisterTransaction BuildGoverningTokenRegisterTransaction()
         {
             // NEO Token is represented as a RegisterTransaction of type GoverningToken
-            this._governingTokenRegisterTransaction = new RegisterTransaction
+            _governingTokenRegisterTransaction = new RegisterTransaction
             {
                 AssetType = AssetType.GoverningToken,
                 Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
@@ -61,16 +63,15 @@ namespace NeoSharp.Core.Blockchain.Genesis
                 Outputs = new TransactionOutput[0],
                 Witness = new Witness[0]
             };
-
-            this._transactionSigner.Sign(this._governingTokenRegisterTransaction);
-            return this._governingTokenRegisterTransaction;
+            _transactionSigner.Sign(_governingTokenRegisterTransaction);
+            return _governingTokenRegisterTransaction;
         }
 
         /// <inheritdoc />
         public RegisterTransaction BuildUtilityTokenRegisterTransaction()
         {
             // GAS Token is represented as a RegisterTransaction of type UtilityToken
-            this._utilityTokenRegisterTransaction = new RegisterTransaction
+            _utilityTokenRegisterTransaction = new RegisterTransaction
             {
                 AssetType = AssetType.UtilityToken,
                 Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
@@ -84,9 +85,8 @@ namespace NeoSharp.Core.Blockchain.Genesis
                 Outputs = new TransactionOutput[0],
                 Witness = new Witness[0]
             };
-
-            this._transactionSigner.Sign(this._utilityTokenRegisterTransaction);
-            return this._utilityTokenRegisterTransaction;
+            _transactionSigner.Sign(_utilityTokenRegisterTransaction);
+            return _utilityTokenRegisterTransaction;
         }
 
         /// <inheritdoc />

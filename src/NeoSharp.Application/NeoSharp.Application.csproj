@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <StartupObject>NeoSharp.Application.Program</StartupObject>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NeoSharp.Core\NeoSharp.Core.csproj" />
     <ProjectReference Include="..\NeoSharp.DI.SimpleInjector\NeoSharp.DI.SimpleInjector.csproj" />
@@ -13,7 +11,6 @@
     <ProjectReference Include="..\NeoSharp.Persistence.RedisDB\NeoSharp.Persistence.RedisDB.csproj" />
     <ProjectReference Include="..\NeoSharp.Persistence.RocksDB\NeoSharp.Persistence.RocksDB.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="appsettings.neo-privnet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -28,7 +25,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -37,12 +33,11 @@
     <PackageReference Include="Neo.HyperVM" Version="2.3.0" />
     <PackageReference Include="NeoSharp.VM.Interop" Version="0.1.0" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Exceptions\" />
   </ItemGroup>
-	<PropertyGroup>
-		<CodeAnalysisRuleSet>ca.ruleset</CodeAnalysisRuleSet>
-		<LangVersion>7.1</LangVersion>
-	</PropertyGroup>
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>ca.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
 </Project>

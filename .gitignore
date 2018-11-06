@@ -258,4 +258,8 @@ PublishProfiles
 
 **/Chain_*/
 **/Index_*/
+
+**/Chain*/
+**/Index*/
+
 neo-cli/config.json
