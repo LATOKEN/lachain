@@ -255,3 +255,7 @@ paket-files/
 *.sln.iml
 
 PublishProfiles
+
+**/Chain_*/
+**/Index_*/
+neo-cli/config.json
