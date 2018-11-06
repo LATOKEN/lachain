@@ -63,6 +63,39 @@ namespace Neo.Ledger
             Outputs = new TransactionOutput[0],
             Witnesses = new Witness[0]
         };
+        
+        
+        public static IssueTransaction OneMillionTokens(ECPoint owner)
+        {
+            return new IssueTransaction
+            {
+                Attributes = new TransactionAttribute[0],
+                Inputs = new CoinReference[0],
+                Outputs = new[]
+                {
+                    new TransactionOutput
+                    {
+                        AssetId = GoverningToken.Hash,
+                        Value = Fixed8.FromDecimal(10000000),
+                        ScriptHash = Contract.CreateSignatureRedeemScript(owner).ToScriptHash()
+                    },
+                    new TransactionOutput
+                    {
+                        AssetId = UtilityToken.Hash,
+                        Value = Fixed8.FromDecimal(10000000),
+                        ScriptHash = Contract.CreateSignatureRedeemScript(owner).ToScriptHash()
+                    }
+                },
+                Witnesses = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    }
+                }
+            };
+        }        
 #pragma warning restore CS0612
 
         public static readonly Block GenesisBlock = new Block
@@ -89,6 +122,10 @@ namespace Neo.Ledger
                 },
                 GoverningToken,
                 UtilityToken,
+                /* TODO: "be carefull with me" */
+                OneMillionTokens(StandbyValidators[0]),
+                OneMillionTokens(StandbyValidators[1]),
+                OneMillionTokens(StandbyValidators[2]),
                 new IssueTransaction
                 {
                     Attributes = new TransactionAttribute[0],
