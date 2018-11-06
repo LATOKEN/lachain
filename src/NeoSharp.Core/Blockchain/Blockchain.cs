@@ -41,9 +41,7 @@ namespace NeoSharp.Core.Blockchain
         public async Task InitializeBlockchain()
         {
             if (Interlocked.Exchange(ref _initialized, 1) != 0)
-            {
                 return;
-            }
 
             var blockHeight = await _blockRepository.GetTotalBlockHeight();
             var blockHeaderHeight = await _blockRepository.GetTotalBlockHeaderHeight();
@@ -51,11 +49,9 @@ namespace NeoSharp.Core.Blockchain
             _blockchainContext.CurrentBlock = await _blockRepository.GetBlock(blockHeight);
             _blockchainContext.LastBlockHeader = await _blockRepository.GetBlockHeader(blockHeaderHeight);
 
-            _blockProcessor.Run();
             if (_blockchainContext.CurrentBlock == null || _blockchainContext.LastBlockHeader == null)
-            {
                 await _blockProcessor.AddBlock(_genesisBuilder.Build());
-            }
+            _blockProcessor.Run();
         }
 
         /// <inheritdoc />

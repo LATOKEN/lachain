@@ -48,16 +48,22 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
 
 		public async Task<IEnumerable<BlockHeader>> Persist(params BlockHeader[] blockHeaders)
         {
-            if (blockHeaders == null) throw new ArgumentNullException(nameof(blockHeaders));
+            if (blockHeaders == null)
+                throw new ArgumentNullException(nameof(blockHeaders));
 
-            var blockHeadersToPersist = _blockchainContext.LastBlockHeader == null ?
-                blockHeaders
-                    .ToList() :         // Persisting the Genesis block
-                blockHeaders
+            List<BlockHeader> blockHeadersToPersist;
+            if (_blockchainContext.LastBlockHeader != null)
+            {
+                blockHeadersToPersist = blockHeaders
                     .Where(bh => bh != null && bh.Index > _blockchainContext.LastBlockHeader.Index)
                     .Distinct(bh => bh.Index)
                     .OrderBy(bh => bh.Index)
                     .ToList();
+            }
+            else
+            {
+                blockHeadersToPersist = blockHeaders.ToList();
+            }
 
             foreach (var blockHeader in blockHeadersToPersist)
             {

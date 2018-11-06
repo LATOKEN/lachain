@@ -1,9 +1,7 @@
-﻿using System;
-namespace NeoSharp.Core.Wallet.Wrappers
+﻿namespace NeoSharp.Core.Helpers
 {
     public interface IFileWrapper
     {
-
         /// <summary>
         /// Load the specified file into a string.
         /// </summary>

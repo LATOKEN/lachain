@@ -11,19 +11,24 @@ namespace NeoSharp.Core.Blockchain.Repositories
     public class BlockRepository : IBlockRepository
     {
         #region Private Fields
+
         private readonly IRepository _repository;
         private readonly ITransactionRepository _transactionModel;
+
         #endregion
 
         #region Constructor
+
         public BlockRepository(IRepository repository, ITransactionRepository transactionModel)
         {
             _repository = repository;
             _transactionModel = transactionModel;
         }
+
         #endregion
 
         #region IBlockRepository implementation 
+
         /// <inheritdoc />
         public async Task<uint> GetTotalBlockHeight()
         {
@@ -55,14 +60,13 @@ namespace NeoSharp.Core.Blockchain.Repositories
         {
             var header = await _repository.GetBlockHeader(hash);
 
-            if (header == null || header.Type != HeaderType.Extended) return null;
+            if (header == null || header.Type != HeaderType.Extended)
+                return null;
 
             var transactions = new Transaction[header.TransactionCount];
 
             for (int x = 0, m = header.TransactionCount; x < m; x++)
-            {
                 transactions[x] = await _transactionModel.GetTransaction(header.TransactionHashes[x]);
-            }
 
             header.Hash = hash;
 
@@ -94,7 +98,7 @@ namespace NeoSharp.Core.Blockchain.Repositories
 
         public Task<IEnumerable<UInt256>> GetBlockHashes(uint height, uint count)
         {
-            var heights = Enumerable.Range((int)height, (int)count).Select(Convert.ToUInt32);
+            var heights = Enumerable.Range((int) height, (int) count).Select(Convert.ToUInt32);
 
             return _repository.GetBlockHashesFromHeights(heights);
         }
@@ -134,6 +138,7 @@ namespace NeoSharp.Core.Blockchain.Repositories
         /// <inheritdoc />
         public long GetSysFeeAmount(UInt256 hash)
         {
+            /* TODO: "calculate system fee by block hash" */
             return 0;
         }
 
@@ -165,6 +170,7 @@ namespace NeoSharp.Core.Blockchain.Repositories
         {
             return _repository.AddBlockHeader(blockHeader);
         }
+
         #endregion
     }
 }

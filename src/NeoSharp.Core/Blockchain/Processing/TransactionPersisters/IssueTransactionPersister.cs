@@ -5,7 +5,7 @@ using NeoSharp.Core.Models;
 using NeoSharp.Core.Persistence;
 using NeoSharp.Types;
 
-namespace NeoSharp.Core.Blockchain.Processing
+namespace NeoSharp.Core.Blockchain.Processing.TransactionPersisters
 {
     public class IssueTransactionPersister : ITransactionPersister<IssueTransaction>
     {

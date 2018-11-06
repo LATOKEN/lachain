@@ -1,5 +1,8 @@
-﻿namespace NeoSharp.Core.Messaging
+﻿using System;
+
+namespace NeoSharp.Core.Messaging
 {
+    [Flags]
     public enum MessageFlags : byte
     {
         /// <summary>

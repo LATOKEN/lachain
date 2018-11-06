@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Persistence;
 
-namespace NeoSharp.Core.Blockchain.Processing
+namespace NeoSharp.Core.Blockchain.Processing.TransactionPersisters
 {
     /// <summary>
     /// Special processing for ClaimTransactions.
@@ -24,7 +24,8 @@ namespace NeoSharp.Core.Blockchain.Processing
             foreach (var prevHashClaim in transaction.Claims.GroupBy(c => c.PrevHash))
             {
                 var coinStates = await _repository.GetCoinStates(prevHashClaim.Key);
-                foreach (var reference in prevHashClaim) coinStates[reference.PrevIndex] |= CoinState.Claimed;
+                foreach (var reference in prevHashClaim)
+                    coinStates[reference.PrevIndex] |= CoinState.Claimed;
                 await _repository.AddCoinStates(prevHashClaim.Key, coinStates);
             }
         }

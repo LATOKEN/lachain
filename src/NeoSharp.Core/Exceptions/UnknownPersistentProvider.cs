@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace NeoSharp.Core.Exceptions
 {
     public class UnknownPersistentProvider : Exception

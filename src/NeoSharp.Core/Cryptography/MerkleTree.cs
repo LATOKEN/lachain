@@ -15,11 +15,11 @@ namespace NeoSharp.Core.Cryptography
         /// <summary>
         /// Constant hash length
         /// </summary>
-        const int hash_size = 32;
+        private const int HashSize = 32;
         /// <summary>
         /// Constant double hash length
         /// </summary>
-        const int hash_2size = 64;
+        private const int Hash2Size = 64;
 
         /// <summary>
         /// Tree Root
@@ -81,9 +81,9 @@ namespace NeoSharp.Core.Cryptography
                     leaves[i * 2 + 1].Parent = current;
                 }
 
-                byte[] hash = new byte[hash_2size];
-                Array.Copy(current.LeftChild.Hash.ToArray(), 0, hash, 0, hash_size);
-                Array.Copy(current.RightChild.Hash.ToArray(), 0, hash, hash_size, hash_size);
+                byte[] hash = new byte[Hash2Size];
+                Array.Copy(current.LeftChild.Hash.ToArray(), 0, hash, 0, HashSize);
+                Array.Copy(current.RightChild.Hash.ToArray(), 0, hash, HashSize, HashSize);
 
                 current.Hash = new UInt256(Crypto.Default.Hash256(hash));
             }

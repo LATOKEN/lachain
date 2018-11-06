@@ -1,4 +1,6 @@
-﻿using NeoSharp.Core.Models;
+﻿using System.Collections.Generic;
+using NeoSharp.Core.Cryptography;
+using NeoSharp.Core.Models;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Genesis
@@ -13,6 +15,10 @@ namespace NeoSharp.Core.Blockchain.Genesis
 
         IssueTransaction BuildGenesisIssueTransaction();
 
+        IssueTransaction BuildGenesisTokenIssue(UInt256 assetHash, ECPoint owner, Fixed8 value);
+
+        IEnumerable<IssueTransaction> IssueTransactionsToOwners(UInt256 assetHash, Fixed8 value);
+        
         Witness BuildGenesisWitness();
 
         UInt160 BuildGenesisNextConsensusAddress();

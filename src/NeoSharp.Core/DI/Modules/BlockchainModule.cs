@@ -3,6 +3,7 @@ using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing;
+using NeoSharp.Core.Blockchain.Processing.TransactionPersisters;
 using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Blockchain.State;
 using NeoSharp.Core.Models;

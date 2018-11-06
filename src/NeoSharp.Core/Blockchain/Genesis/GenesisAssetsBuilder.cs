@@ -1,6 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
@@ -30,18 +29,19 @@ namespace NeoSharp.Core.Blockchain.Genesis
         #endregion
 
         #region Constructor 
-        public GenesisAssetsBuilder(ISigner<Transaction> transactionSigner) 
+        
+        public GenesisAssetsBuilder(ISigner<Transaction> transactionSigner, NetworkConfig networkConfig) 
         {
             _transactionSigner = transactionSigner;
+            _networkConfig = networkConfig;
             
-            var builder = new ConfigurationBuilder()
+            /*var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", false, true);
-
             var configuration = builder.Build();
-
-            _networkConfig = new NetworkConfig(configuration);
+            _networkConfig = new NetworkConfig(configuration);*/
         }
+        
         #endregion
 
         #region IGenesisAssets implementation 
@@ -136,15 +136,51 @@ namespace NeoSharp.Core.Blockchain.Genesis
             return witness;
         }
 
+        public IssueTransaction BuildGenesisTokenIssue(UInt256 assetHash, ECPoint owner, Fixed8 value)
+        {
+            return new IssueTransaction
+            {
+                Attributes = new TransactionAttribute[0],
+                Inputs = new CoinReference[0],
+                Outputs = new[]
+                {
+                    new TransactionOutput
+                    {
+                        AssetId = assetHash,
+                        Value = value,
+                        ScriptHash = ContractFactory.CreateSinglePublicKeyRedeemContract(owner).ScriptHash
+                    }
+                },
+                Witness = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte) EVMOpCode.PUSH1 }
+                    }
+                }
+            };
+        }
+
+        public IEnumerable<IssueTransaction> IssueTransactionsToOwners(UInt256 assetHash, Fixed8 value)
+        {
+            var txs = new List<IssueTransaction>();
+            foreach (var validator in _networkConfig.StandByValidator)
+                txs.Add(BuildGenesisTokenIssue(assetHash, new ECPoint(validator.HexToBytes()), value));
+            return txs;
+        }
+
         /// <inheritdoc />
         public UInt160 BuildGenesisNextConsensusAddress()
         {
-            var genesisValidators = this.GenesisStandByValidators();
+            var genesisValidators = GenesisStandByValidators();
             return ContractFactory.CreateMultiplePublicKeyRedeemContract(genesisValidators.Length - (genesisValidators.Length - 1) / 3, genesisValidators).Code.ScriptHash;
         }
+        
         #endregion
 
         #region Private Methods
+        
         private ECPoint[] GenesisStandByValidators()
         {
             return this._networkConfig.StandByValidator.Select(u => new ECPoint(u.HexToBytes())).ToArray();

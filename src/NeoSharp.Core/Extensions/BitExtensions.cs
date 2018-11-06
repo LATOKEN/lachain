@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using NeoSharp.Core.Exceptions;
 
 namespace NeoSharp.Core.Extensions
@@ -13,7 +12,7 @@ namespace NeoSharp.Core.Extensions
         /// <returns>Length</returns>
         public static int BitLen(this int w)
         {
-            return (w < 1 << 15 ? (w < 1 << 7
+            return w < 1 << 15 ? (w < 1 << 7
                 ? (w < 1 << 3 ? (w < 1 << 1
                 ? (w < 1 << 0 ? (w < 0 ? 32 : 0) : 1)
                 : (w < 1 << 2 ? 2 : 3)) : (w < 1 << 5
@@ -25,7 +24,7 @@ namespace NeoSharp.Core.Extensions
                 ? (w < 1 << 17 ? (w < 1 << 16 ? 16 : 17) : (w < 1 << 18 ? 18 : 19))
                 : (w < 1 << 21 ? (w < 1 << 20 ? 20 : 21) : (w < 1 << 22 ? 22 : 23))) : (w < 1 << 27
                 ? (w < 1 << 25 ? (w < 1 << 24 ? 24 : 25) : (w < 1 << 26 ? 26 : 27))
-                : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
+                : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31))));
         }
 
         /// <summary>

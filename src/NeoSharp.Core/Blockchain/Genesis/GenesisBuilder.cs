@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
@@ -30,7 +31,9 @@ namespace NeoSharp.Core.Blockchain.Genesis
         #endregion
 
         #region IGenesisBuilder implementation
-
+        
+        public const ulong GenesisConsensusData = 2083236893UL;
+        
         public Block Build()
         {
             if (_genesisBlock != null) return _genesisBlock;
@@ -43,29 +46,36 @@ namespace NeoSharp.Core.Blockchain.Genesis
 
             var genesisWitness = _genesisAssetsBuilder.BuildGenesisWitness();
             var genesisTimestamp = new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc).ToTimestamp();
-            ulong genesisConsensusData = 2083236893;
-
+            
+            /* create multisig trasnaction with 1 million tokens */
             var nextConsensusAddress = _genesisAssetsBuilder.BuildGenesisNextConsensusAddress();
+            
+            /* distribute tokens (1 million for each holder) */
+            var governingDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(governingToken.Hash, Fixed8.FromDecimal(1_000_000));
+            var utilityDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(utilityToken.Hash, Fixed8.FromDecimal(1_000_000));
 
+            var txs = new Transaction[]
+            {
+                /* first transaction is always a miner transaction */
+                genesisMinerTransaction,
+                /* creates NEO */
+                governingToken,
+                /* creates GAS */
+                utilityToken,
+                /* cend all NEO to seed contract */
+                genesisIssueTransaction
+            };
+            var genesisTransactions = txs.Concat(governingDistribution).Concat(utilityDistribution).ToArray();
+            
             _genesisBlock = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
                 Timestamp = genesisTimestamp,
                 Index = 0,
-                ConsensusData = genesisConsensusData,
+                ConsensusData = GenesisConsensusData,
                 NextConsensus = nextConsensusAddress,
                 Witness = genesisWitness,
-                Transactions = new Transaction[]
-                {
-                    //First transaction is always a miner transaction
-                    genesisMinerTransaction,
-                    //Creates NEO
-                    governingToken,
-                    //Creates GAS
-                    utilityToken,
-                    //Send all NEO to seed contract
-                    genesisIssueTransaction
-                }
+                Transactions = genesisTransactions
             };
 
             _blockSigner.Sign(_genesisBlock);

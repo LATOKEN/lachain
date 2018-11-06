@@ -78,28 +78,27 @@ namespace NeoSharp.Core.Blockchain.Processing
         }
 
         /// <inheritdoc />
-        public async Task AddBlock(Block block)
+        public Task<Block> AddBlock(Block block)
         {
-            if (block == null) throw new ArgumentNullException(nameof(block));
+            if (block == null)
+                throw new ArgumentNullException(nameof(block));
 
             var currentBlockHeight = _blockchainContext.CurrentBlock?.Index ?? -1U;
             if (currentBlockHeight >= block.Index || block.Index > currentBlockHeight + _blockPool.Capacity)
-            {
-                return;
-            }
+                return null;
 
             if (block.Hash == null)
-            {
                 _blockSigner.Sign(block);
-            }
-
+            
             var blockHash = block.Hash;
-            if (blockHash == null || blockHash == UInt256.Zero) throw new ArgumentException(nameof(blockHash));
-
+            if (blockHash == null || blockHash == UInt256.Zero)
+                throw new ArgumentException(nameof(blockHash));
+            
             if (_blockPool.TryAdd(block))
-            {
                 _logger.LogWarning($"The block \"{blockHash.ToString(true)}\" was already queued to be added.");
-            }
+
+            /* TODO: "why not to persist block here?" */
+            return Task.FromResult(block);
         }
 
         /// <inheritdoc />

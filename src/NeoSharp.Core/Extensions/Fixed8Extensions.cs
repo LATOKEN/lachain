@@ -14,16 +14,7 @@ namespace NeoSharp.Core.Extensions
         /// <returns>Sum Result</returns>
         public static Fixed8 Sum(this IEnumerable<Fixed8> source)
         {
-            long sum = 0;
-
-            checked
-            {
-                foreach (var item in source)
-                {
-                    sum += item.Value;
-                }
-            }
-
+            var sum = source.Sum(item => item.Value);
             return new Fixed8(sum);
         }
 
@@ -50,11 +41,10 @@ namespace NeoSharp.Core.Extensions
 
             foreach (var other in source)
             {
-                if (first || currentFixed8.CompareTo(other) < 0)
-                {
-                    currentFixed8 = other;
-                    first = false;
-                }
+                if (!first && currentFixed8.CompareTo(other) >= 0)
+                    continue;
+                currentFixed8 = other;
+                first = false;
             }
             return currentFixed8;
         }
@@ -71,11 +61,10 @@ namespace NeoSharp.Core.Extensions
 
             foreach (var other in source)
             {
-                if (first || currentFixed8.CompareTo(other) > 0)
-                {
-                    currentFixed8 = other;
-                    first = false;
-                }
+                if (!first && currentFixed8.CompareTo(other) <= 0)
+                    continue;
+                currentFixed8 = other;
+                first = false;
             }
 
             return currentFixed8;

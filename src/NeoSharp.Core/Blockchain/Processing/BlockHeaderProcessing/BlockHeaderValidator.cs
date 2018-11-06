@@ -32,6 +32,7 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
             }
             else
             {
+                /* TODO: "we have to think about it" */
                 if (blockHeader.Index != 0 || blockHeader.Hash != _genesisBuilder.Build().Hash)
                 {
                     return false;

@@ -1,7 +1,8 @@
 ﻿using System;
+
 namespace NeoSharp.Core.Exceptions
 {
-	public class InvalidStateDescriptorException : FormatException
+    public class InvalidStateDescriptorException : FormatException
     {
         public InvalidStateDescriptorException()
         {

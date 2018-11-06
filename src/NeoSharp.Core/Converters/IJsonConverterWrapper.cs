@@ -1,5 +1,5 @@
-﻿using System;
-namespace NeoSharp.Core.Wallet.Wrappers
+﻿
+namespace NeoSharp.Core.Converters
 {
     public interface IJsonConverter
     {

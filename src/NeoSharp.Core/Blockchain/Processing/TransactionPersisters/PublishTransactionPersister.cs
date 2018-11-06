@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Persistence;
 
-namespace NeoSharp.Core.Blockchain.Processing
+namespace NeoSharp.Core.Blockchain.Processing.TransactionPersisters
 {
     public class PublishTransactionPersister : ITransactionPersister<PublishTransaction>
     {

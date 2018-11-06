@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace NeoSharp.Core.Wallet.Wrappers
+namespace NeoSharp.Core.Helpers
 {
     public class FileWrapper : IFileWrapper
     {
@@ -24,13 +24,13 @@ namespace NeoSharp.Core.Wallet.Wrappers
                 throw new ArgumentException("File not found");
             }
             
-            string textFromFile = File.ReadAllText(fileName);
+            var textFromFile = File.ReadAllText(fileName);
             return textFromFile;
         }
-
+        
         public void WriteToFile(string content, string fileName)
         {
-            FileInfo file = new FileInfo(fileName);
+            var file = new FileInfo(fileName);
             File.WriteAllText(file.FullName, content);
         }
     }

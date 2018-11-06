@@ -16,6 +16,6 @@ namespace NeoSharp.Core.Blockchain.Processing
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        Task AddBlock(Block block);
+        Task<Block> AddBlock(Block block);
     }
 }

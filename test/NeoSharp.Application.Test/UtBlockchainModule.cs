@@ -2,6 +2,7 @@
 using Moq;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
+using NeoSharp.Core.Blockchain.Processing.TransactionPersisters;
 using NeoSharp.Core.DI;
 using NeoSharp.Core.DI.Modules;
 using NeoSharp.Core.Models;

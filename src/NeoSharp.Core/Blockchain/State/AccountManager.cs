@@ -32,10 +32,13 @@ namespace NeoSharp.Core.Blockchain.State
                 account.Balances[assetId] = delta;
 
             await _repository.AddAccount(account);
-
-            if (assetId.Equals(_genesisAssets.BuildGoverningTokenRegisterTransaction().Hash) && account.Votes?.Length > 0)
+            
+            if (assetId.Equals(_genesisAssets.BuildGoverningTokenRegisterTransaction().Hash) &&
+                account.Votes?.Length > 0)
+            {
                 foreach (var pubKey in account.Votes)
                     await UpdateValidatorVote(pubKey, delta);
+            }
 
             // TODO #382: Check if we need to store validatorCount because existing implementation has it
 //                validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
@@ -48,7 +51,7 @@ namespace NeoSharp.Core.Blockchain.State
 
             foreach (var keyOfOldValidator in account.Votes)
                 await UpdateValidatorVote(keyOfOldValidator, -governingTokenBalance);
-
+            
             foreach (var keyOfNewValidator in newCandidates)
                 await UpdateValidatorVote(keyOfNewValidator, governingTokenBalance);
 
