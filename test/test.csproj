@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Copyright>2016-2018 The Neo Project</Copyright>
+    <AssemblyTitle>Test</AssemblyTitle>
+    <Version>2.9.1</Version>
+    <Authors>The Neo Project</Authors>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <AssemblyName>test</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>Test</PackageId>
+    <RootNamespace>test</RootNamespace>
+    <Company>The Neo Project</Company>
+    <Product>Test</Product>
+    <Description>Test</Description>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>False</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="config.json;config.mainnet.json;config.testnet.json;protocol.json;protocol.mainnet.json;protocol.testnet.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LevelDB.Net" Version="1.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\neo.UnitTests\neo.UnitTests.csproj" />
+    <ProjectReference Include="..\neo\neo.csproj" />
+  </ItemGroup>
+</Project>

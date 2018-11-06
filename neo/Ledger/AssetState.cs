@@ -2,7 +2,6 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
