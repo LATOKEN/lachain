@@ -56,8 +56,8 @@ namespace NeoSharp.Application.Client
         /// </summary>
         private readonly IPromptUserVariables _variables;
 
-        public delegate void delOnCommandRequested(IPrompt prompt, PromptCommandAttribute cmd, string commandLine);
-        public event delOnCommandRequested OnCommandRequested;
+        public delegate void DelOnCommandRequested(IPrompt prompt, PromptCommandAttribute cmd, string commandLine);
+        public event DelOnCommandRequested OnCommandRequested;
 
         private static readonly Dictionary<LogLevel, ConsoleOutputStyle> _logStyle = new Dictionary<LogLevel, ConsoleOutputStyle>()
         {
@@ -168,8 +168,9 @@ namespace NeoSharp.Application.Client
                     }
                 }
             }
-
+            
             _blockchain.InitializeBlockchain().Wait();
+            _networkManager.StartNetwork();
 
             while (!_exit)
             {

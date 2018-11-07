@@ -18,10 +18,12 @@ namespace NeoSharp.Core.Converters
         {
             if (Cache is null)
                 Cache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
-            
-            var tx = Cache.CreateInstance<Transaction>(reader.ReadByte());
 
-            tx.Deserialize(deserializer, reader, settings);
+            byte txType = reader.ReadByte();
+//            Console.WriteLine("TX TYPE: " + txType);
+            var tx = Cache.CreateInstance<Transaction>(txType);
+            
+            tx?.Deserialize(deserializer, reader, settings);
 
             return tx;
         }

@@ -192,7 +192,7 @@ namespace NeoSharp.Application.Client
         /// Show help
         /// </summary>
         [PromptCommand("help", Category = "Usability", Help = "Show help for commands")]
-        public void HelpCommand([PromptCommandParameterBody, CommandAutoComplete]string command)
+        public void HelpCommand([PromptCommandParameterBody, CommandAutoComplete] string command)
         {
             if (!string.IsNullOrWhiteSpace(command))
             {

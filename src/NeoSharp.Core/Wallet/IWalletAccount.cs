@@ -1,4 +1,4 @@
-﻿using NeoSharp.Core.Models;
+﻿using System.Collections.Generic;
 
 namespace NeoSharp.Core.Wallet
 {
@@ -37,12 +37,12 @@ namespace NeoSharp.Core.Wallet
         /// contract is a Contract object which describes the details of the
         /// contract. This field can be null (for watch-only address).
         /// </summary>
-        Contract Contract { get; set; }
+        IWalletContract Contract { get; set; }
 
         /// <summary>
         /// extra is an object that is defined by the implementor of the client
         /// for storing extra data. This field can be null
         /// </summary>
-        object Extra { get; set; }
+        IDictionary<string, string> Extra { get; set; }
     }
 }

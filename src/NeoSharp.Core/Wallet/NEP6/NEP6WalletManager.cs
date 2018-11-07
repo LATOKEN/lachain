@@ -49,7 +49,7 @@ namespace NeoSharp.Core.Wallet.NEP6
             }
 
             var walletName = Path.GetFileNameWithoutExtension(filename);
-            var wallet = new NEP6Wallet()
+            var wallet = new Nep6Wallet()
             {
                 Name = walletName,
                 Version = "1.0"
@@ -176,7 +176,7 @@ namespace NeoSharp.Core.Wallet.NEP6
                 Code = emptyContractCode
             };
 
-            var account = new NEP6Account(emptyContract);
+            var account = new Nep6Account(emptyContract);
 
             AddAccount(account);
             return account;
@@ -255,7 +255,7 @@ namespace NeoSharp.Core.Wallet.NEP6
         public void Load(string fileName)
         {
             var json = _fileWrapper.Load(fileName);
-            Wallet = _jsonConverter.DeserializeObject<NEP6Wallet>(json);
+            Wallet = _jsonConverter.DeserializeObject<Nep6Wallet>(json);
             _openWalletFilename = fileName;
         }
 
@@ -360,7 +360,7 @@ namespace NeoSharp.Core.Wallet.NEP6
             else
             {
                 //Account exists. Clone it.
-                var clonedAccount = new NEP6Account(account.Contract)
+                var clonedAccount = new Nep6Account(account.Contract)
                 {
                     Label = account.Label,
                     IsDefault = account.IsDefault,
@@ -398,7 +398,7 @@ namespace NeoSharp.Core.Wallet.NEP6
                 throw new ArgumentException("Account not found.");
             }
 
-            var clonedAccount = new NEP6Account(newAccountInformation.Contract)
+            var clonedAccount = new Nep6Account(newAccountInformation.Contract)
             {
                 Label = newAccountInformation.Label,
                 IsDefault = newAccountInformation.IsDefault,
@@ -435,13 +435,13 @@ namespace NeoSharp.Core.Wallet.NEP6
         /// <param name="privateKey">Private key.</param>
         /// <param name="passphrase"></param>
         /// <param name="label"></param>
-        private NEP6Account CreateAccountWithPrivateKey(byte[] privateKey, SecureString passphrase, string label = null)
+        private Nep6Account CreateAccountWithPrivateKey(byte[] privateKey, SecureString passphrase, string label = null)
         {
             var publicKeyInBytes = Crypto.Default.ComputePublicKey(privateKey, true);
             var publicKeyInEcPoint = new ECPoint(publicKeyInBytes);
             var contract = ContractFactory.CreateSinglePublicKeyRedeemContract(publicKeyInEcPoint);
 
-            var account = new NEP6Account(contract)
+            var account = new Nep6Account(contract)
             {
                 Label = label
             };

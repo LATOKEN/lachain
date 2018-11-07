@@ -51,6 +51,8 @@ namespace NeoSharp.Core.Messaging.Handlers
         public override async Task Handle(BlockMessage message, IPeer sender)
         {
             var block = message.Payload;
+            
+            Console.WriteLine("Received block " + block.Index);
 
             if (block.Hash == null)
             {

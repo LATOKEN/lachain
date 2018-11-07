@@ -27,13 +27,16 @@ namespace NeoSharp.Core.Messaging.Handlers
         public override Task Handle(AddrMessage message, IPeer sender)
         {
             var connectedEndPoints = _serverContext.ConnectedPeers.Keys.ToArray();
-
+            
             var endPointsToConnect = message.Payload.Address
                 .Select(nat => new EndPoint(Protocol.Tcp, nat.EndPoint))
                 .Where(ep => !connectedEndPoints.Contains(ep))
                 .ToArray();
-
-            _server.ConnectToPeers(endPointsToConnect);
+            
+            /*foreach (var ep in endPointsToConnect)
+                Console.WriteLine(ep.ToString());*/
+            /* TODO: "enable neighboards discover later" */
+//            _server.ConnectToPeers(endPointsToConnect);
 
             return Task.CompletedTask;
         }

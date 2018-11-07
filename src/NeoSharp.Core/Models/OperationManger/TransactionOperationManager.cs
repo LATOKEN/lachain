@@ -42,10 +42,11 @@ namespace NeoSharp.Core.Models.OperationManger
         #region ITransactionOperationsManager implementation 
         public void Sign(Transaction transaction)
         {
-            transaction.Hash = new UInt256(this._crypto.Hash256(this._binarySerializer.Serialize(transaction, new BinarySerializerSettings
+            var data = _binarySerializer.Serialize(transaction, new BinarySerializerSettings
             {
                 Filter = a => a != nameof(transaction.Witness)
-            })));
+            });
+            transaction.Hash = new UInt256(_crypto.Hash256(data));
 
             if (transaction.Witness == null) return;
             foreach (var witness in transaction.Witness)

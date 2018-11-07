@@ -60,7 +60,7 @@ namespace NeoSharp.Core.Wallet.Test
             fileWrapper.Setup(x => x.Exists(expectedFileName)).Returns(false);
 
             jsonConverter
-                .Setup(x => x.SerializeObject(It.Is<NEP6Wallet>(wallet => wallet.Name == expectedWalletName && wallet.Version == expetectedWalletVersion)))
+                .Setup(x => x.SerializeObject(It.Is<Nep6Wallet>(wallet => wallet.Name == expectedWalletName && wallet.Version == expetectedWalletVersion)))
                 .Returns(expectedNep6WalletSerialized);
 
             var testee = AutoMockContainer.Create<Nep6WalletManager>();
@@ -96,7 +96,7 @@ namespace NeoSharp.Core.Wallet.Test
             fileWrapper.Setup(x => x.Exists(expectedFileName)).Returns(false);
 
             jsonConverter
-                .Setup(x => x.SerializeObject(It.Is<NEP6Wallet>(wallet => wallet.Name == expectedWalletName && wallet.Version == expetectedWalletVersion)))
+                .Setup(x => x.SerializeObject(It.Is<Nep6Wallet>(wallet => wallet.Name == expectedWalletName && wallet.Version == expetectedWalletVersion)))
                 .Returns(String.Empty);
 
             var testee = AutoMockContainer.Create<Nep6WalletManager>();
@@ -309,9 +309,8 @@ namespace NeoSharp.Core.Wallet.Test
             var mockWalletManager = GetAWalletManagerWithAnWallet();
 
             // Act
-            NEP6Account walletAccount1 = (NEP6Account)mockWalletManager.CreateAndAddAccount(_defaultPassword);
-
-            NEP6Account walletAccount2 = (NEP6Account)mockWalletManager.ImportScriptHash(walletAccount1.ScriptHash);
+            var walletAccount1 = (Nep6Account)mockWalletManager.CreateAndAddAccount(_defaultPassword);
+            var walletAccount2 = (Nep6Account)mockWalletManager.ImportScriptHash(walletAccount1.ScriptHash);
 
             // Assert
             Assert.IsNotNull(walletAccount2);
@@ -336,7 +335,7 @@ namespace NeoSharp.Core.Wallet.Test
                     ScriptHash = UInt160.Zero
                 }
             };
-            IWalletAccount walletAccount1 = new NEP6Account(contract);
+            IWalletAccount walletAccount1 = new Nep6Account(contract);
 
             mockWalletManager.ImportScriptHash(walletAccount1.Contract.ScriptHash);
         }
@@ -347,10 +346,10 @@ namespace NeoSharp.Core.Wallet.Test
         {
             var testee = GetAWalletManagerWithoutAnWallet();
             // Act
-            NEP6Account walletAccount1 = (NEP6Account)testee.CreateAndAddAccount(_defaultPassword);
+            Nep6Account walletAccount1 = (Nep6Account)testee.CreateAndAddAccount(_defaultPassword);
 
             testee = new Nep6WalletManager(new FileWrapper(), new JsonConverterWrapper());
-            NEP6Account walletAccount2 = (NEP6Account)testee.ImportScriptHash(walletAccount1.ScriptHash);
+            Nep6Account walletAccount2 = (Nep6Account)testee.ImportScriptHash(walletAccount1.ScriptHash);
         }
 
         #endregion

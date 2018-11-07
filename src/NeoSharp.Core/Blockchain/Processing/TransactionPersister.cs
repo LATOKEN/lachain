@@ -83,7 +83,11 @@ namespace NeoSharp.Core.Blockchain.Processing
             {
                 var prevHash = inputGroup.Key;
                 var transaction = await _repository.GetTransaction(prevHash);
+                if (transaction == null)
+                    continue;
                 var coinStates = await _repository.GetCoinStates(prevHash);
+                if (coinStates == null)
+                    continue;
 
                 foreach (var coinReference in inputGroup)
                 {

@@ -41,13 +41,16 @@ namespace NeoSharp.Core.Models
 
         protected override void DeserializeExclusiveData(IBinarySerializer deserializer, BinaryReader reader, BinarySerializerSettings settings = null)
         {
+            return;
+            
             if (Version > 1)
                 throw new InvalidTransactionException(nameof(Version));
 
             Script = reader.ReadVarBytes(65536);
 
+            /* If we have 0 script length, then we've downloaded old NEO contract transcation */
             if (Script.Length == 0)
-                throw new FormatException();
+                return;
 
             if (Version >= 1)
             {
@@ -63,6 +66,7 @@ namespace NeoSharp.Core.Models
         
         protected override int SerializeExclusiveData(IBinarySerializer serializer, BinaryWriter writer, BinarySerializerSettings settings = null)
         {
+            return 0;
             var l = writer.WriteVarBytes(Script);
             if (Version >= 1)
                 l += serializer.Serialize(Gas, writer, settings);

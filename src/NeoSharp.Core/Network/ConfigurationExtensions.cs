@@ -93,7 +93,7 @@ namespace NeoSharp.Core.Network
             var host = ParseString(config, section);
             if (host == null) return null;
 
-            var split = host.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var split = host.Split(':', StringSplitOptions.RemoveEmptyEntries);
             if (split.Length != 2) return null;
 
             if (IPAddress.TryParse(split[0], out var ipAddress) && int.TryParse(split[1], out var port))

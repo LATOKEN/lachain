@@ -19,21 +19,21 @@ namespace NeoSharp.Core.Models
         /// Register new asset or token
         /// </summary>
         [ReflectionCache(typeof(RegisterTransaction))]
-        RegisterTransaction = 0x01,
+        RegisterTransaction = 0x40,
         
         /// <summary>
         /// Issue funds to asset or token
         /// </summary>
         [ReflectionCache(typeof(IssueTransaction))]
-        IssueTransaction = 0x02,
+        IssueTransaction = 0x01,
 
         /// <summary>
         /// 
         /// </summary>
         [ReflectionCache(typeof(ContractTransaction))]
-        ContractTransaction = 0x03,
+        ContractTransaction = 0x80,
         
         [ReflectionCache(typeof(PublishTransaction))]
-        PublishTransaction = 0x04
+        PublishTransaction = 0xd0
     }
 }

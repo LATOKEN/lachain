@@ -37,13 +37,7 @@ namespace NeoSharp.Core.Messaging.Messages
             {
                 Headers = headers.Select
                 (
-                    u =>
-                    {
-                        // We need to ensure that is sent without TX 
-
-                        return u.Trim();
-                    }
-                )
+                    u => u.Trim())
                 .ToArray()
             };
         }

@@ -68,7 +68,9 @@ namespace NeoSharp.Core.Network
                         await _asyncDelayer.Delay(DefaultMessagePollingInterval, cancellationToken);
                         continue;
                     }
-
+                    
+                    /*Console.WriteLine(" ~ handled message (" + message.Command + ")");*/
+                    
                     // TODO #369: Peer that sending wrong messages has to be disconnected.
                     if (peer.IsReady == message.IsHandshakeMessage()) continue;
 
@@ -121,19 +123,21 @@ namespace NeoSharp.Core.Network
             blockHashes = blockHashes
                 .Except(_blockPool.Select(b => b.Hash).ToArray())
                 .ToArray();
-
-            if (blockHashes.Any())
+            
+            if (!blockHashes.Any())
             {
-                var batchesCount = blockHashes.Count() / MaxBlocksCountToSync + (blockHashes.Count() % MaxBlocksCountToSync != 0 ? 1 : 0);
+                return;
+            }
 
-                for (var i = 0; i < batchesCount; i++)
-                {
-                    var blockHashesInBatch = blockHashes
-                        .Skip(i * MaxBlocksCountToSync)
-                        .Take(MaxBlocksCountToSync);
+            var batchesCount = blockHashes.Count() / MaxBlocksCountToSync + (blockHashes.Count() % MaxBlocksCountToSync != 0 ? 1 : 0);
 
-                    await source.Send(new GetDataMessage(InventoryType.Block, blockHashesInBatch));
-                }
+            for (var i = 0; i < batchesCount; i++)
+            {
+                var blockHashesInBatch = blockHashes
+                    .Skip(i * MaxBlocksCountToSync)
+                    .Take(MaxBlocksCountToSync);
+
+                await source.Send(new GetDataMessage(InventoryType.Block, blockHashesInBatch));
             }
         }
     }

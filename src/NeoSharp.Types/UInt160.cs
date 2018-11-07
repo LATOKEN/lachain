@@ -80,9 +80,9 @@ namespace NeoSharp.Types
             return _buffer.Reverse().ToHexString(true);
         }
 
-        public string ToString(bool append0x)
+        public string ToString(bool append0X)
         {
-            return _buffer.Reverse().ToHexString(append0x);
+            return _buffer.Reverse().ToHexString(append0X);
         }
 
         public static UInt160 Parse(string value)

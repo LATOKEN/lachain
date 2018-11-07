@@ -249,7 +249,6 @@ namespace NeoSharp.Core.Network.Tcp
             var message = await Receive() as TMessage;
             _logger.LogDebug($"Message Received: {message.Command}");
             return message;
-
         }
 
         /// <summary>

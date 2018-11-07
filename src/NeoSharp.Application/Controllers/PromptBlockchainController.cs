@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
@@ -111,7 +110,7 @@ namespace NeoSharp.Application.Controllers
             var blNodes = FormatState(_serverContext.ConnectedPeers.Count);
             var blIndex = FormatState(0); // TODO #398: Change me
 
-            var numSpaces = new int[] { memStr.Length, blockStr.Length, blIndex.Length, headStr.Length, blStr.Length, blNodes.Length }.Max() + 1;
+            var numSpaces = new[] { memStr.Length, blockStr.Length, blIndex.Length, headStr.Length, blStr.Length, blNodes.Length }.Max() + 1;
 
             _consoleHandler.WriteLine("Pools", ConsoleOutputStyle.Information);
             _consoleHandler.WriteLine("");
@@ -149,7 +148,8 @@ namespace NeoSharp.Application.Controllers
                 var count = reader.ReadUInt32();
                 var end = start + count - 1;
 
-                if (end <= _blockchainContext.CurrentBlock.Index) yield break;
+                if (end <= _blockchainContext.CurrentBlock.Index)
+                    yield break;
 
                 using (var progress = _consoleHandler.CreatePercent(count))
                 {
@@ -159,12 +159,11 @@ namespace NeoSharp.Application.Controllers
 
                         progress.Value++;
 
-                        if (height > _blockchainContext.CurrentBlock.Index)
-                        {
-                            var block = BinarySerializer.Default.Deserialize<Block>(array);
-                            _blockSigner.Sign(block);
-                            yield return block;
-                        }
+                        if (height <= _blockchainContext.CurrentBlock.Index)
+                            continue;
+                        var block = BinarySerializer.Default.Deserialize<Block>(array);
+                        _blockSigner.Sign(block);
+                        yield return block;
                     }
                 }
             }
@@ -178,9 +177,7 @@ namespace NeoSharp.Application.Controllers
         public async Task ImportBlocks(FileInfo file)
         {
             if (!file.Exists)
-            {
                 throw new ArgumentException($"file '{file.FullName}' must exist");
-            }
 
             using (var fs = file.OpenRead())
             {
@@ -230,6 +227,21 @@ namespace NeoSharp.Application.Controllers
         public async Task HeaderCommand(UInt256 blockHash, PromptOutputStyle output = PromptOutputStyle.json)
         {
             _consoleHandler.WriteObject(await _blockRepository.GetBlockHeader(blockHash), output);
+        }
+
+        [PromptCommand("block", Category = "Blockchain", Help = "Get information about blocks")]
+        public async Task BlockCommand()
+        {
+            var headerHeight = await _blockRepository.GetTotalBlockHeaderHeight();
+            var blockHeight = await _blockRepository.GetTotalBlockHeight();
+            
+            _consoleHandler.Write("Headers: ");
+            _consoleHandler.WriteLine(headerHeight.ToString(), ConsoleOutputStyle.Log);
+            
+            _consoleHandler.Write("Blocks: ");
+            _consoleHandler.WriteLine(blockHeight.ToString(), ConsoleOutputStyle.Log);
+            
+            
         }
 
         /// <summary>

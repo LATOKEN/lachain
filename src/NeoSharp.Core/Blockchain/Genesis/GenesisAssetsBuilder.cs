@@ -92,10 +92,9 @@ namespace NeoSharp.Core.Blockchain.Genesis
         /// <inheritdoc />
         public MinerTransaction BuildGenesisMinerTransaction()
         {
-            uint genesisMinerNonce = 2083236893;
             var genesisMinerTransaction = new MinerTransaction
             {
-                Nonce = genesisMinerNonce,
+                Nonce = 2083236893,
                 Attributes = new TransactionAttribute[0],
                 Inputs = new CoinReference[0],
                 Outputs = new TransactionOutput[0],
@@ -108,11 +107,11 @@ namespace NeoSharp.Core.Blockchain.Genesis
         /// <inheritdoc />
         public IssueTransaction BuildGenesisIssueTransaction()
         {
-            if (this._governingTokenRegisterTransaction == null) this.BuildGoverningTokenRegisterTransaction();
-            if (this._utilityTokenRegisterTransaction == null) this.BuildUtilityTokenRegisterTransaction();
+            if (_governingTokenRegisterTransaction == null) BuildGoverningTokenRegisterTransaction();
+            if (_utilityTokenRegisterTransaction == null) BuildUtilityTokenRegisterTransaction();
 
-            var transactionOutput = this.GenesisGoverningTokenTransactionOutput();
-            var genesisWitness = this.BuildGenesisWitness();
+            var transactionOutput = GenesisGoverningTokenTransactionOutput();
+            var genesisWitness = BuildGenesisWitness();
             var issueTransaction = new IssueTransaction
             {
                 Attributes = new TransactionAttribute[0],
@@ -136,21 +135,20 @@ namespace NeoSharp.Core.Blockchain.Genesis
             return witness;
         }
 
-        public IssueTransaction BuildGenesisTokenIssue(UInt256 assetHash, ECPoint owner, Fixed8 value)
+        public IssueTransaction BuildGenesisTokenIssue(ECPoint owner, Fixed8 value, params UInt256[] assets)
         {
+            var outputs = assets.Select(asset => new TransactionOutput
+                {
+                    AssetId = asset,
+                    Value = value,
+                    ScriptHash = ContractFactory.CreateSinglePublicKeyRedeemContract(owner).ScriptHash
+                })
+                .ToArray();
             return new IssueTransaction
             {
                 Attributes = new TransactionAttribute[0],
                 Inputs = new CoinReference[0],
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = assetHash,
-                        Value = value,
-                        ScriptHash = ContractFactory.CreateSinglePublicKeyRedeemContract(owner).ScriptHash
-                    }
-                },
+                Outputs = outputs,
                 Witness = new[]
                 {
                     new Witness
@@ -161,12 +159,12 @@ namespace NeoSharp.Core.Blockchain.Genesis
                 }
             };
         }
-
-        public IEnumerable<IssueTransaction> IssueTransactionsToOwners(UInt256 assetHash, Fixed8 value)
+        
+        public IEnumerable<IssueTransaction> IssueTransactionsToOwners(Fixed8 value, params UInt256[] assets)
         {
             var txs = new List<IssueTransaction>();
             foreach (var validator in _networkConfig.StandByValidator)
-                txs.Add(BuildGenesisTokenIssue(assetHash, new ECPoint(validator.HexToBytes()), value));
+                txs.Add(BuildGenesisTokenIssue(new ECPoint(validator.HexToBytes()), value, assets));
             return txs;
         }
 

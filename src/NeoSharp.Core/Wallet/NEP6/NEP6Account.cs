@@ -1,21 +1,31 @@
 ﻿using System;
+using System.Collections.Generic;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Wallet.Helpers;
 using NeoSharp.Types;
 using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Wallet.NEP6
 {
-    public class NEP6Account : IWalletAccount, IEquatable<NEP6Account>
+    public class Nep6AccountConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType) => true;
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
+            JsonSerializer serializer) => serializer.Deserialize<Nep6Account[]>(reader);
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) =>
+            serializer.Serialize(writer, value);
+    }
+
+    public class Nep6Account : IWalletAccount, IEquatable<Nep6Account>
     {
         /// <inheritdoc />
         [JsonProperty("address")]
         public string Address { get; set; }
         
-        /// <inheritdoc cref="Contract" />
         [JsonIgnore]
-        public UInt160 ScriptHash => Contract.ScriptHash;
-
+        public UInt160 ScriptHash => UInt160.Parse(Address);
+        
         /// <inheritdoc />
         [JsonProperty("label")]
         public string Label { get; set; }
@@ -33,39 +43,29 @@ namespace NeoSharp.Core.Wallet.NEP6
         public string Key { get; set; }
 
         /// <inheritdoc />
+        [JsonConverter(typeof(Nep6WalletContractConverter))]
         [JsonProperty("contract")]
-        public Contract Contract { get; set; }
+        public IWalletContract Contract { get; set; }
 
-        [JsonProperty("extra")]
-        public Object Extra { get; set; }
+        [JsonProperty("extra")] public IDictionary<string, string> Extra { get; set; }
 
-        public NEP6Account()
+        public Nep6Account()
         {
         }
 
-        public NEP6Account(Contract accountContract){
+        public Nep6Account(Contract contract)
+        {
+            Address = contract.ScriptHash.ToString();
+        }
+        
+        public Nep6Account(IWalletContract accountContract)
+        {
             Contract = accountContract;
-            Address = accountContract.ScriptHash.ToAddress();
         }
 
-        public override bool Equals(object obj)
+        public bool Equals(Nep6Account obj)
         {
-            if (obj is NEP6Account acc)
-            {
-                return ScriptHash.Equals(acc.ScriptHash);
-            }
-
-            return false;
-        }
-         
-        public bool Equals(NEP6Account obj)
-        {
-            return ScriptHash.Equals(obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return ScriptHash.GetHashCode();
+            return GetHashCode() == obj.GetHashCode();
         }
     }
 }

@@ -9,7 +9,7 @@ namespace NeoSharp.Core.Network
         private readonly IServer _server;
 
         #endregion
-
+        
         /// <summary>
         /// Constructor
         /// </summary>

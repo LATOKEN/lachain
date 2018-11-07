@@ -41,8 +41,8 @@ namespace NeoSharp.Core.Blockchain.Genesis
             var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction();
             var utilityToken = _genesisAssetsBuilder.BuildUtilityTokenRegisterTransaction();
 
-            var genesisMinerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
-            var genesisIssueTransaction = _genesisAssetsBuilder.BuildGenesisIssueTransaction();
+            var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
+            var issueTransaction = _genesisAssetsBuilder.BuildGenesisIssueTransaction();
 
             var genesisWitness = _genesisAssetsBuilder.BuildGenesisWitness();
             var genesisTimestamp = new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc).ToTimestamp();
@@ -51,21 +51,23 @@ namespace NeoSharp.Core.Blockchain.Genesis
             var nextConsensusAddress = _genesisAssetsBuilder.BuildGenesisNextConsensusAddress();
             
             /* distribute tokens (1 million for each holder) */
-            var governingDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(governingToken.Hash, Fixed8.FromDecimal(1_000_000));
-            var utilityDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(utilityToken.Hash, Fixed8.FromDecimal(1_000_000));
-
-            var txs = new Transaction[]
+            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed8.FromDecimal(1_000_000), governingToken.Hash, utilityToken.Hash);
+            
+            var txsBefore = new Transaction[]
             {
                 /* first transaction is always a miner transaction */
-                genesisMinerTransaction,
+                minerTransaction,
                 /* creates NEO */
                 governingToken,
                 /* creates GAS */
-                utilityToken,
-                /* cend all NEO to seed contract */
-                genesisIssueTransaction
+                utilityToken
             };
-            var genesisTransactions = txs.Concat(governingDistribution).Concat(utilityDistribution).ToArray();
+            var txsAfter = new Transaction[]
+            {
+                /* cend all NEO to seed contract */
+                issueTransaction
+            };
+            var genesisTransactions = txsBefore.Concat(tokenDistribution).Concat(txsAfter).ToArray();
             
             _genesisBlock = new Block
             {
@@ -79,6 +81,12 @@ namespace NeoSharp.Core.Blockchain.Genesis
             };
 
             _blockSigner.Sign(_genesisBlock);
+            _genesisBlock.Hash = UInt256.Parse("0x8b40748f0fc5ce35b65a813b49b0dbc1d7143003302ce2570e2d5fbb94deaada");
+            
+            /* TODO: "only for test period" */
+            if (!_genesisBlock.Hash.ToString().Equals("0x8b40748f0fc5ce35b65a813b49b0dbc1d7143003302ce2570e2d5fbb94deaada"))
+                throw new ArgumentException("Invalid genesis block");
+            
             return _genesisBlock;
         }
 

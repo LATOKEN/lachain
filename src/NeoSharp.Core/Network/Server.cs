@@ -86,7 +86,10 @@ namespace NeoSharp.Core.Network
             ConnectToPeers(_peerEndPoints);
 
             // listen for peers
+            /* TODO: "we will enable local discovery later" */
+            /*
             _peerListener.Start();
+            */
 
             _isRunning = true;
 

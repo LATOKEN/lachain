@@ -1,11 +1,10 @@
 ﻿using NeoSharp.Core.Cryptography;
-using NeoSharp.Core.Wallet.JsonConverter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace NeoSharp.Core.Wallet.NEP6
 {
-    public class NEP6Wallet : IWallet
+    public class Nep6Wallet : IWallet
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -15,9 +14,9 @@ namespace NeoSharp.Core.Wallet.NEP6
 
         [JsonProperty("scrypt")]
         public ScryptParameters Scrypt { get; set; }
-
+        
+        [JsonConverter(typeof(Nep6AccountConverter))]
         [JsonProperty("accounts")]
-        [JsonConverter(typeof(NEP6AccountConverter))]
         public IWalletAccount[] Accounts { get; set; }
 
         [JsonProperty("extra")]
@@ -26,7 +25,7 @@ namespace NeoSharp.Core.Wallet.NEP6
         /// <summary>
         /// Constructor
         /// </summary>
-        public NEP6Wallet()
+        public Nep6Wallet()
         {
             Scrypt = ScryptParameters.Default;
             Accounts = new IWalletAccount[0];

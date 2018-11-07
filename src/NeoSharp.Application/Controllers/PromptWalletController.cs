@@ -92,7 +92,7 @@ namespace NeoSharp.Application.Controllers
         {
             _walletManager.ExportWallet(file.FullName);
         }
-
+        
         [PromptCommand("account create", Category = "Account", Help = "Create a new account")]
         public void AccountCreateCommand()
         {
@@ -110,7 +110,7 @@ namespace NeoSharp.Application.Controllers
                 _consoleHandler.WriteLine("\nInvalid password.");
             }
         }
-
+        
         [PromptCommand("account delete", Category = "Account", Help = "Deletes an account")]
         public void AccountDeleteCommand(string address)
         {

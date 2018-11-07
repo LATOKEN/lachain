@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
@@ -29,45 +30,36 @@ namespace NeoSharp.Application.Controllers
             _consoleHandler = consoleHandler;
         }
 
-        /// <summary>
-        /// Nodes
-        /// </summary>
-        /// <param name="output">Output format</param>
-        [PromptCommand("nodes", Category = "Network", Help = "Get nodes information")]
-        public void NodesCommand(PromptOutputStyle output = PromptOutputStyle.json)
+        [PromptCommand("network nodes", Category = "Network")]
+        // ReSharper disable once UnusedMember.Local
+        public void NetworkStatusCommand()
         {
-            var peers = _serverContext.ConnectedPeers;
-
-            switch (output)
-            {
-                case PromptOutputStyle.json:
-                    {
-                        _consoleHandler.WriteObject(
-                            new
-                            {
-                                Count = peers.Count,
-                                Nodes = peers
-                                    .OrderBy(u => u.Value.ConnectionDate)
-                                    .Select(u => new { Address = u.Key, ConnectedTime = (DateTime.UtcNow - u.Value.ConnectionDate) })
-                                    .ToArray()
-                            }, PromptOutputStyle.json);
-                        break;
-                    }
-                default:
-                    {
-                        _consoleHandler.WriteLine("Connected: " + peers.Count);
-
-                        foreach (var peer in peers.OrderBy(u => u.Value.ConnectionDate))
-                        {
-                            _consoleHandler.WriteLine(peer.Key.ToString() + " - " +
-                                // Connected time
-                                (DateTime.UtcNow - peer.Value.ConnectionDate).ToString());
-                        }
-                        break;
-                    }
+            _consoleHandler.Write("Version: ");
+            _consoleHandler.WriteLine("" + _serverContext.Version.Version, ConsoleOutputStyle.DarkRed);
+            
+            _consoleHandler.Write("Peers: ");
+            _consoleHandler.WriteLine(_serverContext.ConnectedPeers.Count + "/" + _serverContext.MaxConnectedPeers, ConsoleOutputStyle.DarkRed);
+            foreach (var entry in _serverContext.ConnectedPeers)
+            {   
+                var peer = entry.Value;
+                
+                _consoleHandler.Write("Peer: ");
+                _consoleHandler.WriteLine(peer.EndPoint.ToString(), ConsoleOutputStyle.DarkRed);
+                
+                _consoleHandler.Write(" - Version: ");
+                _consoleHandler.WriteLine(peer.Version.Version.ToString(), ConsoleOutputStyle.DarkRed);
+                
+                _consoleHandler.Write(" - Connected: ");
+                _consoleHandler.WriteLine(peer.IsConnected.ToString(), ConsoleOutputStyle.DarkRed);
+                
+                _consoleHandler.Write(" - Ready: ");
+                _consoleHandler.WriteLine(peer.IsReady.ToString(), ConsoleOutputStyle.DarkRed);
+                
+                _consoleHandler.Write(" - Connected: ");
+                _consoleHandler.WriteLine(peer.ConnectionDate.ToString(CultureInfo.InvariantCulture), ConsoleOutputStyle.DarkRed);
             }
         }
-
+        
         /// <summary>
         /// Start network
         /// </summary>
