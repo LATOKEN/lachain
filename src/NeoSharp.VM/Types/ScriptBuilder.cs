@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Text;
 using NeoSharp.VM.Extensions;
 
-namespace NeoSharp.VM
+namespace NeoSharp.VM.Types
 {
     public class ScriptBuilder : IDisposable
     {
@@ -64,6 +64,7 @@ namespace NeoSharp.VM
 
         #endregion
 
+        /// <inheritdoc />
         /// <summary>
         /// Free resources
         /// </summary>
@@ -107,7 +108,7 @@ namespace NeoSharp.VM
 
         public ScriptBuilder Emit(params EVMOpCode[] ops)
         {
-            foreach (EVMOpCode op in ops)
+            foreach (var op in ops)
                 _writer.WriteByte((byte)op);
 
             return this;
@@ -201,7 +202,7 @@ namespace NeoSharp.VM
 
             var size = data.Length;
 
-            for (int x = size - 1; x >= 0; x--)
+            for (var x = size - 1; x >= 0; x--)
             {
                 switch (data[x])
                 {
@@ -212,8 +213,7 @@ namespace NeoSharp.VM
                     case bool v: EmitPush(v); break;
                     case byte[] v: EmitPush(v); break;
                     case object[] v: EmitPush(v); break;
-
-                    default: throw (new ArgumentException());
+                    default: throw new ArgumentException("Unsupported data type specified (" + data[x].GetType() + ")");
                 }
             }
 
@@ -225,7 +225,8 @@ namespace NeoSharp.VM
 
         public ScriptBuilder EmitMainPush(string operation, object[] pars)
         {
-            if (pars != null) EmitPush(pars);
+            if (pars != null)
+                EmitPush(pars);
 
             EmitPush(operation);
 
@@ -234,15 +235,16 @@ namespace NeoSharp.VM
 
         public ScriptBuilder EmitSysCall(string api)
         {
-            if (api == null) throw new ArgumentNullException();
+            if (api == null)
+                throw new ArgumentNullException();
 
-            var api_bytes = Encoding.ASCII.GetBytes(api);
-            if (api_bytes.Length == 0 || api_bytes.Length > 252)
+            var apiBytes = Encoding.ASCII.GetBytes(api);
+            if (apiBytes.Length == 0 || apiBytes.Length > 252)
                 throw new ArgumentException();
 
-            var arg = new byte[api_bytes.Length + 1];
-            arg[0] = (byte)api_bytes.Length;
-            Buffer.BlockCopy(api_bytes, 0, arg, 1, api_bytes.Length);
+            var arg = new byte[apiBytes.Length + 1];
+            arg[0] = (byte)apiBytes.Length;
+            Buffer.BlockCopy(apiBytes, 0, arg, 1, apiBytes.Length);
 
             return Emit(EVMOpCode.SYSCALL, arg);
         }

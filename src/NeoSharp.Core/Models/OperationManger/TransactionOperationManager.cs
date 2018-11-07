@@ -89,9 +89,9 @@ namespace NeoSharp.Core.Models.OperationManger
                 }
 
                 // TODO: Should we check for `asset.Expiration <= _blockchain.Height + 1` ??
-                if (asset.AssetType != AssetType.GoverningToken
-                    && asset.AssetType != AssetType.UtilityToken)
-                {
+                if (asset.AssetType != AssetType.GoverningToken &&
+                    asset.AssetType != AssetType.UtilityToken
+                ) {
                     return false;
                 }
 
@@ -118,26 +118,22 @@ namespace NeoSharp.Core.Models.OperationManger
             }
 
             if (resultsDestroy.Length == 1
-                && resultsDestroy[0].AssetId != this._transactionContext.UtilityTokenHash)
+                && resultsDestroy[0].AssetId != _transactionContext.UtilityTokenHash)
             {
                 return false;
             }
 
-            if (this._transactionContext.GetSystemFee(transaction) > Fixed8.Zero
+            if (_transactionContext.GetSystemFee(transaction) > Fixed8.Zero
                 && (resultsDestroy.Length == 0
-                    || resultsDestroy[0].Amount < this._transactionContext.GetSystemFee(transaction)))
+                    || resultsDestroy[0].Amount < _transactionContext.GetSystemFee(transaction)))
             {
                 return false;
             }
-
+            
             var resultsIssue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-
-            if (resultsIssue.Any(p => p.AssetId != this._transactionContext.UtilityTokenHash)
-                && (transaction.Type == TransactionType.ClaimTransaction
-                    || transaction.Type == TransactionType.IssueTransaction))
-            {
+            
+            if (resultsIssue.Any(p => p.AssetId != _transactionContext.UtilityTokenHash) && transaction.Type == TransactionType.IssueTransaction)
                 return false;
-            }
 
             if (transaction.Type != TransactionType.MinerTransaction
                 && resultsIssue.Length > 0)

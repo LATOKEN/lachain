@@ -12,12 +12,13 @@ namespace NeoSharp.Core.Converters
         /// <summary>
         /// Cache
         /// </summary>
-        private static readonly ReflectionCache<byte> Cache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
-
+        private static ReflectionCache<byte> Cache;
+        
         public object Deserialize(IBinarySerializer deserializer, BinaryReader reader, Type type, BinarySerializerSettings settings = null)
         {
-            // Read transaction Type
-
+            if (Cache is null)
+                Cache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
+            
             var tx = Cache.CreateInstance<Transaction>(reader.ReadByte());
 
             tx.Deserialize(deserializer, reader, settings);

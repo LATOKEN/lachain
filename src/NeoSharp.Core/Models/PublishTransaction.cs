@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Converters;
@@ -9,7 +8,6 @@ using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models
 {
-    [Obsolete]
     [BinaryTypeSerializer(typeof(TransactionSerializer))]
     public class PublishTransaction : Transaction
     {

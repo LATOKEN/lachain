@@ -8,14 +8,25 @@ namespace NeoSharp.Core.Models
     [JsonConverter(typeof(StringEnumConverter))]
     public enum AssetType : byte
     {
-        CreditFlag = 0x40,
-        DutyFlag = 0x80,
-
+        /// <summary>
+        /// Governing token for shares
+        /// </summary>
         GoverningToken = 0x00,
+        
+        /// <summary>
+        /// Utility token for gas (will be removed)
+        /// </summary>
+        [Obsolete]
         UtilityToken = 0x01,
-        Currency = 0x08,
-        Share = DutyFlag | 0x10,
-        Invoice = DutyFlag | 0x18,
-        Token = CreditFlag | 0x20,
+        
+        /// <summary>
+        /// Platform tokens for cross-chain integration
+        /// </summary>
+        PlatformToken = 0x03,
+        
+        /// <summary>
+        /// Customer tokens that can be published by users
+        /// </summary>
+        CustomToken = 0x04
     }
 }

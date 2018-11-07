@@ -8,63 +8,49 @@ namespace NeoSharp.Core.Types
     public class TransactionContext : ITransactionContext
     {
         public Fixed8 DefaultSystemFee => Fixed8.Zero; // Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
-        public UInt256 UtilityTokenHash => UInt256.Zero;
         public UInt256 GoverningTokenHash => UInt256.Zero;
-
-        // ---------------------------
+        public UInt256 UtilityTokenHash => UInt256.Zero;
 
         private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
 
-        private Fixed8 _systemFee = -Fixed8.Satoshi, _network_fee = -Fixed8.Satoshi;
+        private Fixed8 _systemFee = -Fixed8.Satoshi,
+            _networkFee = -Fixed8.Satoshi;
 
         /// <summary>
         /// System Fee
         /// </summary>
         public Fixed8 GetSystemFee(Transaction tx)
         {
-            if (_systemFee == -Fixed8.Satoshi)
+            if (_systemFee != -Fixed8.Satoshi)
+                return _systemFee;
+            _systemFee = DefaultSystemFee;
+            
+            switch (tx.Type)
             {
-                _systemFee = DefaultSystemFee;
-
-                switch (tx.Type)
+                case TransactionType.IssueTransaction:
                 {
-                    case TransactionType.InvocationTransaction:
-                        {
-                            InvocationTransaction itx = (InvocationTransaction)tx;
-                            _systemFee = itx.Gas;
-
-                            break;
-                        }
-                    case TransactionType.IssueTransaction:
-                        {
-                            if (tx.Version >= 1)
-                            {
-                                _systemFee = Fixed8.Zero;
-                                return _systemFee;
-                            }
-
-                            if (tx.Outputs.All(p => p.AssetId == GoverningTokenHash || p.AssetId == UtilityTokenHash))
-                                _systemFee = Fixed8.Zero;
-
-                            break;
-                        }
-                    case TransactionType.RegisterTransaction:
-                        {
-                            var rtx = tx as RegisterTransaction;
-
-                            if (rtx.AssetType == AssetType.GoverningToken || rtx.AssetType == AssetType.UtilityToken)
-                                _systemFee = Fixed8.Zero;
-
-                            break;
-                        }
-                    case TransactionType.StateTransaction:
-                        {
-                            StateTransaction stx = (StateTransaction)tx;
-                            _systemFee = new Fixed8(stx.Descriptors.Sum(p => p.SystemFee.Value));
-
-                            break;
-                        }
+                    if (tx.Version >= 1)
+                    {
+                        _systemFee = Fixed8.Zero;
+                        return _systemFee;
+                    }
+                    if (tx.Outputs.All(p => p.AssetId == GoverningTokenHash || p.AssetId == UtilityTokenHash))
+                        _systemFee = Fixed8.Zero;
+                    break;
                 }
+                case TransactionType.RegisterTransaction:
+                {
+                    if (!(tx is RegisterTransaction rtx))
+                        break;
+                    if (rtx.AssetType == AssetType.GoverningToken || rtx.AssetType == AssetType.UtilityToken)
+                        _systemFee = Fixed8.Zero;
+                    break;
+                }
+                
+                case TransactionType.MinerTransaction:
+                case TransactionType.ContractTransaction:
+                case TransactionType.PublishTransaction:
+                    break;
             }
             return _systemFee;
         }

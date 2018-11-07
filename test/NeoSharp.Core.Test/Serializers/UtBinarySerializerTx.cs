@@ -25,7 +25,8 @@ namespace NeoSharp.Core.Test.Serializers
         public void WarmUpSerializer()
         {
             _random = new Random(Environment.TickCount);
-            _serializer = new BinarySerializer(typeof(BlockHeader).Assembly, typeof(UtBinarySerializer).Assembly, typeof(Fixed8).Assembly);
+            _serializer = new BinarySerializer(typeof(BlockHeader).Assembly, typeof(UtBinarySerializer).Assembly,
+                typeof(Fixed8).Assembly);
         }
 
         [TestMethod]
@@ -44,7 +45,7 @@ namespace NeoSharp.Core.Test.Serializers
         [TestMethod]
         public void SerializeDeserialize_InvocationTransaction()
         {
-            var original = new InvocationTransaction()
+            var original = new ContractTransaction
             {
                 Version = 0x01,
                 Gas = RandomFixed8(true, 1).FirstOrDefault(),
@@ -55,11 +56,11 @@ namespace NeoSharp.Core.Test.Serializers
 
             var ret = _serializer.Serialize(original);
             var copy = _serializer.Deserialize<Transaction>(ret);
-            var copy2 = _serializer.Deserialize<InvocationTransaction>(ret);
+            var copy2 = _serializer.Deserialize<ContractTransaction>(ret);
 
             // Check exclusive data
 
-            foreach (var check in new InvocationTransaction[] { (InvocationTransaction)copy, copy2 })
+            foreach (var check in new[] {(ContractTransaction) copy, copy2})
             {
                 Assert.AreEqual(original.Gas, check.Gas);
                 CollectionAssert.AreEqual(original.Script, check.Script);
@@ -76,7 +77,7 @@ namespace NeoSharp.Core.Test.Serializers
             var original = new MinerTransaction()
             {
                 Version = 0x00,
-                Nonce = (uint)_random.Next(0, int.MaxValue)
+                Nonce = (uint) _random.Next(0, int.MaxValue)
             };
 
             FillRandomTx(original);
@@ -87,7 +88,7 @@ namespace NeoSharp.Core.Test.Serializers
 
             // Check exclusive data
 
-            foreach (var check in new MinerTransaction[] { (MinerTransaction)copy, copy2 })
+            foreach (var check in new[] {(MinerTransaction) copy, copy2})
             {
                 Assert.AreEqual(original.Nonce, check.Nonce);
             }
@@ -101,7 +102,7 @@ namespace NeoSharp.Core.Test.Serializers
 #pragma warning disable CS0612 // Type or member is obsolete
         public void SerializeDeserialize_RegisterTransaction()
         {
-            var original = new RegisterTransaction()
+            var original = new RegisterTransaction
             {
                 Version = 0x00,
                 Name = RandomString(byte.MaxValue),
@@ -109,7 +110,7 @@ namespace NeoSharp.Core.Test.Serializers
                 Amount = RandomFixed8(true, 1).FirstOrDefault(),
                 AssetType = RandomEnum<AssetType>(),
                 Owner = ECPoint.Infinity,
-                Precision = (byte)_random.Next(byte.MinValue, byte.MaxValue),
+                Precision = (byte) _random.Next(byte.MinValue, byte.MaxValue),
             };
 
             FillRandomTx(original);
@@ -120,7 +121,7 @@ namespace NeoSharp.Core.Test.Serializers
 
             // Check exclusive data
 
-            foreach (var check in new RegisterTransaction[] { (RegisterTransaction)copy, copy2 })
+            foreach (var check in new[] {(RegisterTransaction) copy, copy2})
             {
                 Assert.AreEqual(original.Name, check.Name);
                 Assert.AreEqual(original.Amount, check.Amount);
@@ -128,35 +129,6 @@ namespace NeoSharp.Core.Test.Serializers
                 Assert.AreEqual(original.Precision, check.Precision);
                 Assert.AreEqual(original.Owner, check.Owner);
                 Assert.AreEqual(original.Admin, check.Admin);
-            }
-
-            // Check base data
-
-            EqualTx(original, copy, copy2);
-        }
-#pragma warning restore CS0612 // Type or member is obsolete
-
-        [TestMethod]
-#pragma warning disable CS0612 // Type or member is obsolete
-        public void SerializeDeserialize_EnrollmentTransaction()
-        {
-            var original = new EnrollmentTransaction()
-            {
-                Version = 0x00,
-                PublicKey = ECPoint.Infinity,
-            };
-
-            FillRandomTx(original);
-
-            var ret = _serializer.Serialize(original);
-            var copy = _serializer.Deserialize<Transaction>(ret);
-            var copy2 = _serializer.Deserialize<EnrollmentTransaction>(ret);
-
-            // Check exclusive data
-
-            foreach (var check in new EnrollmentTransaction[] { (EnrollmentTransaction)copy, copy2 })
-            {
-                CollectionAssert.AreEqual(original.PublicKey.EncodedData, check.PublicKey.EncodedData);
             }
 
             // Check base data
@@ -185,46 +157,9 @@ namespace NeoSharp.Core.Test.Serializers
         }
 
         [TestMethod]
-        public void SerializeDeserialize_StateTransaction()
-        {
-            var original = new StateTransaction()
-            {
-                Version = 0x01,
-                Descriptors = RandomStateDescriptors(_random.Next(1, 16)).ToArray()
-            };
-
-            FillRandomTx(original);
-
-            var ret = _serializer.Serialize(original);
-            var copy = _serializer.Deserialize<Transaction>(ret);
-            var copy2 = _serializer.Deserialize<StateTransaction>(ret);
-
-            // Check exclusive data
-
-            foreach (var check in new StateTransaction[] { (StateTransaction)copy, copy2 })
-            {
-                Assert.AreEqual(original.Descriptors.Length, check.Descriptors.Length);
-
-                for (int x = 0; x < original.Descriptors.Length; x++)
-                {
-                    Assert.AreEqual(original.Descriptors[0].Field, check.Descriptors[0].Field);
-                    Assert.AreEqual(original.Descriptors[0].SystemFee, check.Descriptors[0].SystemFee);
-                    Assert.AreEqual(original.Descriptors[0].Type, check.Descriptors[0].Type);
-                    CollectionAssert.AreEqual(original.Descriptors[0].Key, check.Descriptors[0].Key);
-                    CollectionAssert.AreEqual(original.Descriptors[0].Value, check.Descriptors[0].Value);
-                }
-            }
-
-            // Check base data
-
-            EqualTx(original, copy, copy2);
-        }
-
-        [TestMethod]
-#pragma warning disable CS0612 // Type or member is obsolete
         public void SerializeDeserialize_PublishTransaction()
         {
-            var original = new PublishTransaction()
+            var original = new PublishTransaction
             {
                 Version = 0x01,
                 Author = RandomString(1, 250),
@@ -246,7 +181,7 @@ namespace NeoSharp.Core.Test.Serializers
 
             // Check exclusive data
 
-            foreach (var check in new PublishTransaction[] { (PublishTransaction)copy, copy2 })
+            foreach (var check in new[] {(PublishTransaction) copy, copy2})
             {
                 Assert.AreEqual(original.Author, check.Author);
                 Assert.AreEqual(original.Email, check.Email);
@@ -264,7 +199,6 @@ namespace NeoSharp.Core.Test.Serializers
 
             EqualTx(original, copy, copy2);
         }
-#pragma warning restore CS0612 // Type or member is obsolete
 
         [TestMethod]
         public void SerializeDeserialize_IssueTransaction()
@@ -285,37 +219,12 @@ namespace NeoSharp.Core.Test.Serializers
             EqualTx(original, copy, copy2);
         }
 
-        [TestMethod]
-        public void SerializeDeserialize_ClaimTransaction()
-        {
-            var original = new ClaimTransaction()
-            {
-                Claims = RandomCoinReferences(_random.Next(1, 255)).ToArray(),
-                Version = 0x00,
-            };
-
-            FillRandomTx(original);
-
-            var ret = _serializer.Serialize(original);
-            var copy = _serializer.Deserialize<Transaction>(ret);
-            var copy2 = _serializer.Deserialize<ClaimTransaction>(ret);
-
-            // Check exclusive data
-
-            foreach (var check in new ClaimTransaction[] { (ClaimTransaction)copy, copy2 })
-            {
-                CollectionAssert.AreEqual(original.Claims, check.Claims);
-            }
-
-            // Check base data
-
-            EqualTx(original, copy, copy2);
-        }
-
         private void FillRandomTx(Transaction tx)
         {
             var witnessOperationsManager = new WitnessOperationsManager(Crypto.Default);
-            var transactionOperationsManager = new TransactionOperationManager(Crypto.Default, this._serializer, witnessOperationsManager, new Mock<ITransactionRepository>().Object, new Mock<IAssetRepository>().Object, new TransactionContext());
+            var transactionOperationsManager = new TransactionOperationManager(Crypto.Default, this._serializer,
+                witnessOperationsManager, new Mock<ITransactionRepository>().Object,
+                new Mock<IAssetRepository>().Object, new TransactionContext());
 
             tx.Attributes = RandomTransactionAtrributes().ToArray();
             tx.Inputs = RandomCoinReferences(_random.Next(1, 255)).ToArray();
@@ -328,7 +237,9 @@ namespace NeoSharp.Core.Test.Serializers
         void EqualTx(Transaction original, params Transaction[] copies)
         {
             var witnessOperationsManager = new WitnessOperationsManager(Crypto.Default);
-            var transactionOperationsManager = new TransactionOperationManager(Crypto.Default, this._serializer, witnessOperationsManager, new Mock<ITransactionRepository>().Object, new Mock<IAssetRepository>().Object, new TransactionContext());
+            var transactionOperationsManager = new TransactionOperationManager(Crypto.Default, this._serializer,
+                witnessOperationsManager, new Mock<ITransactionRepository>().Object,
+                new Mock<IAssetRepository>().Object, new TransactionContext());
 
             foreach (var copy in copies)
             {
@@ -445,9 +356,13 @@ namespace NeoSharp.Core.Test.Serializers
                 switch (ori.Usage)
                 {
                     case TransactionAttributeUsage.DescriptionUrl:
-                    case TransactionAttributeUsage.Description: ori.Data[0] = (byte)(ori.Data.Length - 1); break;
+                    case TransactionAttributeUsage.Description:
+                        ori.Data[0] = (byte) (ori.Data.Length - 1);
+                        break;
                     case TransactionAttributeUsage.ECDH02:
-                    case TransactionAttributeUsage.ECDH03: ori.Data[0] = (byte)ori.Usage; break;
+                    case TransactionAttributeUsage.ECDH03:
+                        ori.Data[0] = (byte) ori.Usage;
+                        break;
                 }
 
                 if (count <= 0) yield break;
@@ -502,17 +417,17 @@ namespace NeoSharp.Core.Test.Serializers
                 switch (ret.Type)
                 {
                     case StateType.Account:
-                        {
-                            ret.Key = RandomBytes(20);
-                            ret.Field = "Votes";
-                            break;
-                        }
+                    {
+                        ret.Key = RandomBytes(20);
+                        ret.Field = "Votes";
+                        break;
+                    }
                     case StateType.Validator:
-                        {
-                            ret.Key = RandomBytes(33);
-                            ret.Field = "Registered";
-                            break;
-                        }
+                    {
+                        ret.Key = RandomBytes(33);
+                        ret.Field = "Registered";
+                        break;
+                    }
                 }
 
                 yield return ret;
@@ -560,7 +475,7 @@ namespace NeoSharp.Core.Test.Serializers
         {
             var values = Enum.GetValues(typeof(T));
 
-            return (T)values.GetValue(_random.Next(0, values.Length));
+            return (T) values.GetValue(_random.Next(0, values.Length));
         }
 
         private IEnumerable<UInt160> RandomUInt60(int count = 1)
@@ -589,9 +504,8 @@ namespace NeoSharp.Core.Test.Serializers
                 yield return new CoinReference()
                 {
                     PrevHash = RandomUInt256(1).FirstOrDefault(),
-                    PrevIndex = (ushort)_random.Next(ushort.MinValue, ushort.MaxValue),
+                    PrevIndex = (ushort) _random.Next(ushort.MinValue, ushort.MaxValue),
                 };
         }
-
     }
 }

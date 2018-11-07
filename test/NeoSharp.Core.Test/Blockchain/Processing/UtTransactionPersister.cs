@@ -16,28 +16,6 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
     public class UtTransactionPersister : TestBase
     {
         [TestMethod]
-        public async Task Persist_ClaimTx_CallsClaimTxPersister()
-        {
-            var input = new ClaimTransaction();
-            var claimTxPersisterMock = AutoMockContainer.GetMock<ITransactionPersister<ClaimTransaction>>();
-            var testee = AutoMockContainer.Create<TransactionPersister>();
-
-            await testee.Persist(input);
-            claimTxPersisterMock.Verify(m => m.Persist(input));
-        }
-
-        [TestMethod]
-        public async Task Persist_InvocationTx_CallsInvocationTxPersister()
-        {
-            var input = new InvocationTransaction();
-            var invocationTxPersisterMock = AutoMockContainer.GetMock<ITransactionPersister<InvocationTransaction>>();
-            var testee = AutoMockContainer.Create<TransactionPersister>();
-
-            await testee.Persist(input);
-            invocationTxPersisterMock.Verify(m => m.Persist(input));
-        }
-
-        [TestMethod]
         public async Task Persist_IssueTx_CallsIssueTxPersister()
         {
             var input = new IssueTransaction();
@@ -46,17 +24,6 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
 
             await testee.Persist(input);
             issueTxPersisterMock.Verify(m => m.Persist(input));
-        }
-
-        [TestMethod]
-        public async Task Persist_EnrollmentTx_CallsEnrollmentTxPersister()
-        {
-            var input = new EnrollmentTransaction();
-            var enrollmentTxPersisterMock = AutoMockContainer.GetMock<ITransactionPersister<EnrollmentTransaction>>();
-            var testee = AutoMockContainer.Create<TransactionPersister>();
-
-            await testee.Persist(input);
-            enrollmentTxPersisterMock.Verify(m => m.Persist(input));
         }
 
         [TestMethod]
@@ -79,17 +46,6 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
 
             await testee.Persist(input);
             publishTxPersisterMock.Verify(m => m.Persist(input));
-        }
-
-        [TestMethod]
-        public async Task Persist_StateTx_CallsStateTxPersister()
-        {
-            var input = new StateTransaction();
-            var stateTxPersisterMock = AutoMockContainer.GetMock<ITransactionPersister<StateTransaction>>();
-            var testee = AutoMockContainer.Create<TransactionPersister>();
-
-            await testee.Persist(input);
-            stateTxPersisterMock.Verify(m => m.Persist(input));
         }
 
         [TestMethod]

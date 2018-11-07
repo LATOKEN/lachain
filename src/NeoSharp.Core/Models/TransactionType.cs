@@ -9,37 +9,31 @@ namespace NeoSharp.Core.Models
     [JsonConverter(typeof(StringEnumConverter))]
     public enum TransactionType : byte
     {
+        /// <summary>
+        /// Transaction with miner's fee
+        /// </summary>
         [ReflectionCache(typeof(MinerTransaction))]
         MinerTransaction = 0x00,
 
-        [ReflectionCache(typeof(IssueTransaction))]
-        IssueTransaction = 0x01,
-
-        [ReflectionCache(typeof(ClaimTransaction))]
-        ClaimTransaction = 0x02,
-
-#pragma warning disable CS0612 // Type or member is obsolete
-        [ReflectionCache(typeof(EnrollmentTransaction))]
-#pragma warning restore CS0612 // Type or member is obsolete
-        EnrollmentTransaction = 0x20,
-
-#pragma warning disable CS0612 // Type or member is obsolete
+        /// <summary>
+        /// Register new asset or token
+        /// </summary>
         [ReflectionCache(typeof(RegisterTransaction))]
-#pragma warning restore CS0612 // Type or member is obsolete
-        RegisterTransaction = 0x40,
+        RegisterTransaction = 0x01,
+        
+        /// <summary>
+        /// Issue funds to asset or token
+        /// </summary>
+        [ReflectionCache(typeof(IssueTransaction))]
+        IssueTransaction = 0x02,
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ReflectionCache(typeof(ContractTransaction))]
-        ContractTransaction = 0x80,
-
-        [ReflectionCache(typeof(StateTransaction))]
-        StateTransaction = 0x90,
-
-#pragma warning disable CS0612 // Type or member is obsolete
+        ContractTransaction = 0x03,
+        
         [ReflectionCache(typeof(PublishTransaction))]
-#pragma warning restore CS0612 // Type or member is obsolete
-        PublishTransaction = 0xd0,
-
-        [ReflectionCache(typeof(InvocationTransaction))]
-        InvocationTransaction = 0xd1
+        PublishTransaction = 0x04
     }
 }

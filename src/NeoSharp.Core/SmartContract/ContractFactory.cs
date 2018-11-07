@@ -5,6 +5,7 @@ using NeoSharp.VM;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Types.ExtensionMethods;
+using NeoSharp.VM.Types;
 
 namespace NeoSharp.Core.SmartContract
 {
@@ -18,28 +19,29 @@ namespace NeoSharp.Core.SmartContract
         public static Contract CreateSinglePublicKeyRedeemContract(ECPoint publicKey)
         {
             string contractHexCode;
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (var sb = new ScriptBuilder())
             {
                 sb.EmitPush(publicKey.EncodedData);
                 sb.Emit(EVMOpCode.CHECKSIG);
                 contractHexCode = sb.ToArray().ToHexString();
             }
-
-            ContractParameterType returnType = ContractParameterType.Void; 
-            ContractParameterType[] parameters = { ContractParameterType.Signature };
-
-            Code contractCode = new Code {
+            
+            ContractParameterType[] parameters =
+            {
+                ContractParameterType.Signature
+            };
+            
+            var contractCode = new Code {
                 Script = contractHexCode.HexToBytes(),
                 ScriptHash = contractHexCode.HexToBytes().ToScriptHash(),
-                ReturnType = returnType,
+                ReturnType = ContractParameterType.Void,
                 Parameters = parameters
             };
 
-            Contract contract = new Contract
+            var contract = new Contract
             {
                 Code = contractCode
             };
-
             return contract;
         }
 
@@ -51,17 +53,15 @@ namespace NeoSharp.Core.SmartContract
         /// <param name="publicKeys">Public keys.</param>
         public static Contract CreateMultiplePublicKeyRedeemContract(int numberOfRequiredPublicKeys, ECPoint[] publicKeys)
         {
-            if (!((1 <= numberOfRequiredPublicKeys) 
-                  && (numberOfRequiredPublicKeys <= publicKeys.Length) 
-                  && (publicKeys.Length <= 1024)))
+            if (!(1 <= numberOfRequiredPublicKeys && numberOfRequiredPublicKeys <= publicKeys.Length && publicKeys.Length <= 1024))
                 throw new ArgumentException("Invalid public keys. ");
-
+            
             byte[] contractHexCode;
-
-            using (ScriptBuilder sb = new ScriptBuilder())
+            
+            using (var sb = new ScriptBuilder())
             {
                 sb.EmitPush(numberOfRequiredPublicKeys);
-                foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
+                foreach (var publicKey in publicKeys.OrderBy(p => p))
                 {
                     sb.EmitPush(publicKey.EncodedData);
                 }
@@ -69,23 +69,21 @@ namespace NeoSharp.Core.SmartContract
                 sb.Emit(EVMOpCode.CHECKMULTISIG);
                 contractHexCode = sb.ToArray();
             }
+            
+            var parameters = Enumerable.Repeat(ContractParameterType.Signature, numberOfRequiredPublicKeys).ToArray();
 
-            ContractParameterType returnType = ContractParameterType.Void; 
-            ContractParameterType[] parameters = Enumerable.Repeat(ContractParameterType.Signature, numberOfRequiredPublicKeys).ToArray();
-
-            Code contractCode = new Code
+            var contractCode = new Code
             {
                 Script = contractHexCode,
                 ScriptHash = contractHexCode.ToScriptHash(),
-                ReturnType = returnType,
+                ReturnType = ContractParameterType.Void,
                 Parameters = parameters
             };
-
-            Contract contract = new Contract
+            
+            var contract = new Contract
             {
                 Code = contractCode
             };
-
             return contract;
         }
     }

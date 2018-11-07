@@ -1,5 +1,4 @@
-﻿using System;
-using NeoSharp.Core.Models;
+﻿using NeoSharp.Core.Models;
 
 namespace NeoSharp.Core.Wallet
 {

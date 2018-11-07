@@ -18,7 +18,7 @@ namespace NeoSharp.Core.Test.Models
         {
             var testee = AutoMockContainer.Create<TransactionOperationManager>();
 
-            var transaction = new EnrollmentTransaction
+            var transaction = new ContractTransaction
             {
                 Attributes = new []
                 {
@@ -201,10 +201,7 @@ namespace NeoSharp.Core.Test.Models
             this.AutoMockContainer
                 .GetMock<IAssetRepository>()
                 .Setup(b => b.GetAsset(It.IsAny<UInt256>()))
-                .ReturnsAsync(() => new Asset
-                {
-                    AssetType = AssetType.DutyFlag
-                });
+                .ReturnsAsync(() => new Asset());
 
             var result = testee.Verify(transaction);
             
@@ -648,92 +645,13 @@ namespace NeoSharp.Core.Test.Models
             
             result.Should().BeFalse();
         }
-
-        [TestMethod]
-        public void Verify_ClaimTransacWithNegativeResultOfUtilityToken()
-        {
-            var testee = AutoMockContainer.Create<TransactionOperationManager>();
-
-            var transaction = new ClaimTransaction
-            {
-                Attributes = new []
-                {
-                    new TransactionAttribute
-                    {
-                        Usage = TransactionAttributeUsage.ContractHash
-                    }
-                },
-                Inputs = new[]
-                {
-                    new CoinReference
-                    {
-                        PrevHash = UInt256.Zero,
-                        PrevIndex = 1
-                    },
-                    new CoinReference
-                    {
-                        PrevHash = UInt256.Zero,
-                        PrevIndex = 2
-                    }
-                },
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = UInt256.Zero,
-                        Value = Fixed8.One
-                    }
-                }
-            };
-
-            var transactionOfPreviousHash = new Transaction
-            {
-                Outputs = new []
-                {
-                    new TransactionOutput(), // it's not using the first because PrevIndex is 1
-                    new TransactionOutput
-                    {
-                        AssetId = UInt256.Parse("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"),
-                        Value = new Fixed8(-5)
-                    }
-                }
-            };
-
-            var transactionModelMock = this.AutoMockContainer.GetMock<ITransactionRepository>();
-            transactionModelMock
-                .Setup(b => b.IsDoubleSpend(transaction))
-                .Returns(false);
-            transactionModelMock
-                .Setup(x => x.GetTransaction(It.IsAny<UInt256>()))
-                .ReturnsAsync(() => transactionOfPreviousHash);
-
-            this.AutoMockContainer
-                .GetMock<IAssetRepository>()
-                .Setup(b => b.GetAsset(It.IsAny<UInt256>()))
-                .ReturnsAsync(() => new Asset
-                {
-                    AssetType = AssetType.GoverningToken
-                });
-
-            var transactionContextMock = this.AutoMockContainer.GetMock<ITransactionContext>();
-            transactionContextMock
-                .SetupGet(x => x.UtilityTokenHash)
-                .Returns(UInt256.Parse("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"));
-            transactionContextMock
-                .Setup(x => x.GetSystemFee(It.IsAny<Transaction>()))
-                .Returns(Fixed8.Zero);
-
-            var result = testee.Verify(transaction);
-            
-            result.Should().BeFalse();
-        }
-
+        
         [TestMethod]
         public void Verify_NotMinerTransacWithNegativeResults()
         {
             var testee = AutoMockContainer.Create<TransactionOperationManager>();
 
-            var transaction = new EnrollmentTransaction
+            var transaction = new Transaction
             {
                 Attributes = new []
                 {
@@ -817,7 +735,7 @@ namespace NeoSharp.Core.Test.Models
         {
             var testee = AutoMockContainer.Create<TransactionOperationManager>();
 
-            var transaction = new EnrollmentTransaction
+            var transaction = new Transaction
             {
                 Attributes = new []
                 {
@@ -910,7 +828,7 @@ namespace NeoSharp.Core.Test.Models
         {
             var testee = AutoMockContainer.Create<TransactionOperationManager>();
 
-            var transaction = new EnrollmentTransaction
+            var transaction = new Transaction
             {
                 Attributes = new []
                 {

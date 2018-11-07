@@ -25,22 +25,20 @@ namespace NeoSharp.Core.Test.Serializers
         public void WarmUpSerializer()
         {
             BinarySerializer.RegisterTypes(typeof(SetTest));
-            _serializer = new BinarySerializer(typeof(BlockHeader).Assembly, typeof(UtBinarySerializer).Assembly, typeof(Fixed8).Assembly);
+            _serializer = new BinarySerializer(typeof(BlockHeader).Assembly, typeof(UtBinarySerializer).Assembly,
+                typeof(Fixed8).Assembly);
         }
 
         public class SetTest
         {
-            [BinaryProperty(0)]
-            public HashSet<int> Set = new HashSet<int>();
+            [BinaryProperty(0)] public HashSet<int> Set = new HashSet<int>();
 
-            [BinaryProperty(1)]
-            public Dictionary<int, string> Dictionary = new Dictionary<int, string>();
+            [BinaryProperty(1)] public Dictionary<int, string> Dictionary = new Dictionary<int, string>();
         }
 
         public class ReadOnlyDummyClass
         {
-            [BinaryProperty(0)]
-            public SetTest Test { get; private set; }
+            [BinaryProperty(0)] public SetTest Test { get; private set; }
 
             public ReadOnlyDummyClass(SetTest test)
             {
@@ -50,8 +48,7 @@ namespace NeoSharp.Core.Test.Serializers
 
         public class ReadOnlyListDummyClass
         {
-            [BinaryProperty(0)]
-            public IReadOnlyList<int> List { get; private set; }
+            [BinaryProperty(0)] public IReadOnlyList<int> List { get; private set; }
 
             public ReadOnlyListDummyClass(IReadOnlyList<int> list)
             {
@@ -62,10 +59,12 @@ namespace NeoSharp.Core.Test.Serializers
         [TestMethod]
         public void ReadOnlyList()
         {
-            var list = new ReadOnlyListDummyClass(new List<int>(new int[] {
+            var list = new ReadOnlyListDummyClass(new List<int>(new int[]
+            {
                 RandomInt(),
                 RandomInt(),
-                RandomInt() }));
+                RandomInt()
+            }));
 
             var ret = _serializer.Serialize(list);
             var clone = _serializer.Deserialize<ReadOnlyListDummyClass>(ret);
@@ -132,29 +131,29 @@ namespace NeoSharp.Core.Test.Serializers
         {
             var data = new byte[]
             {
-                0x01,0x00,
+                0x01, 0x00,
                 0x01,
                 0x02,
-                0x03,0x00,
-                0x04,0x00,
-                0x05,0x00,0x00,0x00,
-                0x06,0x00,0x00,0x00,
-                0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x05,0x01,0x02,0x03,0x04,0x05,
-                0xcd,0xcc,0xcc,0xcc,0xcc,0xcc,0x25,0x40,
+                0x03, 0x00,
+                0x04, 0x00,
+                0x05, 0x00, 0x00, 0x00,
+                0x06, 0x00, 0x00, 0x00,
+                0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x05, 0x01, 0x02, 0x03, 0x04, 0x05,
+                0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x25, 0x40,
                 0x00,
             };
 
             List<DummyParent> ls = new List<DummyParent>
             {
                 _serializer.Deserialize<DummyParent>(data),
-                (DummyParent)_serializer.Deserialize(data, typeof(DummyParent))
+                (DummyParent) _serializer.Deserialize(data, typeof(DummyParent))
             };
 
             using (var ms = new MemoryStream(data))
             {
-                ls.Add((DummyParent)_serializer.Deserialize(ms, typeof(DummyParent)));
+                ls.Add((DummyParent) _serializer.Deserialize(ms, typeof(DummyParent)));
                 ms.Seek(0, SeekOrigin.Begin);
                 ls.Add(_serializer.Deserialize<DummyParent>(ms));
             }
@@ -162,7 +161,7 @@ namespace NeoSharp.Core.Test.Serializers
             using (var ms = new MemoryStream(data))
             using (var mr = new BinaryReader(ms))
             {
-                ls.Add((DummyParent)_serializer.Deserialize(mr, typeof(DummyParent)));
+                ls.Add((DummyParent) _serializer.Deserialize(mr, typeof(DummyParent)));
                 ms.Seek(0, SeekOrigin.Begin);
                 ls.Add(_serializer.Deserialize<DummyParent>(mr));
             }
@@ -181,7 +180,7 @@ namespace NeoSharp.Core.Test.Serializers
                 (child.F == 6).Should().BeTrue();
                 (child.G == 7).Should().BeTrue();
                 (child.H == 8).Should().BeTrue();
-                child.I.SequenceEqual(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }).Should().BeTrue();
+                child.I.SequenceEqual(new byte[] {0x01, 0x02, 0x03, 0x04, 0x05}).Should().BeTrue();
                 (child.J == 10.9).Should().BeTrue();
                 child.K.Should().BeFalse();
             }
@@ -194,14 +193,14 @@ namespace NeoSharp.Core.Test.Serializers
             {
                 0x01,
                 0x02,
-                0x03,0x00,
-                0x04,0x00,
-                0x05,0x00,0x00,0x00,
-                0x06,0x00,0x00,0x00,
-                0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x05,0x01,0x02,0x03,0x04,0x05,
-                0xcd,0xcc,0xcc,0xcc,0xcc,0xcc,0x25,0x40,
+                0x03, 0x00,
+                0x04, 0x00,
+                0x05, 0x00, 0x00, 0x00,
+                0x06, 0x00, 0x00, 0x00,
+                0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x05, 0x01, 0x02, 0x03, 0x04, 0x05,
+                0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x25, 0x40,
                 0x01,
             });
 
@@ -213,7 +212,7 @@ namespace NeoSharp.Core.Test.Serializers
             (actual.F == 6).Should().BeTrue();
             (actual.G == 7).Should().BeTrue();
             (actual.H == 8).Should().BeTrue();
-            actual.I.SequenceEqual(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }).Should().BeTrue();
+            actual.I.SequenceEqual(new byte[] {0x01, 0x02, 0x03, 0x04, 0x05}).Should().BeTrue();
             (actual.J == 10.9).Should().BeTrue();
             actual.K.Should().BeTrue();
         }
@@ -234,27 +233,27 @@ namespace NeoSharp.Core.Test.Serializers
                     F = 6,
                     G = 7,
                     H = 8,
-                    I = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 },
+                    I = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05},
                     J = 10.9,
                     K = true
                 }
             };
 
             var ret = new byte[]
-             {
-                0x01,0x00,
+            {
+                0x01, 0x00,
                 0x01,
                 0x02,
-                0x03,0x00,
-                0x04,0x00,
-                0x05,0x00,0x00,0x00,
-                0x06,0x00,0x00,0x00,
-                0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                0x03, 0x00,
+                0x04, 0x00,
+                0x05, 0x00, 0x00, 0x00,
+                0x06, 0x00, 0x00, 0x00,
+                0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x05, 0x01, 0x02, 0x03, 0x04, 0x05,
-                0xcd,0xcc,0xcc,0xcc,0xcc,0xcc,0x25,0x40,
+                0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x25, 0x40,
                 0x01,
-             };
+            };
 
             _serializer.Serialize(parent).SequenceEqual(ret).Should().BeTrue();
 
@@ -286,7 +285,7 @@ namespace NeoSharp.Core.Test.Serializers
                 F = 6,
                 G = 7,
                 H = 8,
-                I = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 },
+                I = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05},
                 J = 10.9,
                 K = false
             };
@@ -295,14 +294,14 @@ namespace NeoSharp.Core.Test.Serializers
                 {
                     0x01,
                     0x02,
-                    0x03,0x00,
-                    0x04,0x00,
-                    0x05,0x00,0x00,0x00,
-                    0x06,0x00,0x00,0x00,
-                    0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                    0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                    0x03, 0x00,
+                    0x04, 0x00,
+                    0x05, 0x00, 0x00, 0x00,
+                    0x06, 0x00, 0x00, 0x00,
+                    0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                     0x05, 0x01, 0x02, 0x03, 0x04, 0x05,
-                    0xcd,0xcc,0xcc,0xcc,0xcc,0xcc,0x25,0x40,
+                    0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x25, 0x40,
                     0x00
                 }
             ).Should().BeTrue();
@@ -311,7 +310,7 @@ namespace NeoSharp.Core.Test.Serializers
         [TestMethod]
         public void Serialize_EnumArray()
         {
-            var test = new CoinState[] { CoinState.Confirmed, CoinState.Locked };
+            var test = new CoinState[] {CoinState.Confirmed, CoinState.Locked};
             var copy = BinarySerializer.Default.Deserialize<CoinState[]>(BinarySerializer.Default.Serialize(test));
 
             CollectionAssert.AreEqual(test, copy);
@@ -335,13 +334,13 @@ namespace NeoSharp.Core.Test.Serializers
                 {
                     new NetworkAddressWithTime
                     {
-                        EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1").MapToIPv6(), ushort.MaxValue ),
+                        EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1").MapToIPv6(), ushort.MaxValue),
                         Services = ulong.MaxValue,
                         Timestamp = uint.MaxValue,
                     },
                     new NetworkAddressWithTime
                     {
-                        EndPoint = new IPEndPoint(IPAddress.Parse("::01").MapToIPv6(), ushort.MinValue ),
+                        EndPoint = new IPEndPoint(IPAddress.Parse("::01").MapToIPv6(), ushort.MinValue),
                         Services = ulong.MinValue,
                         Timestamp = uint.MinValue,
                     }
@@ -416,7 +415,8 @@ namespace NeoSharp.Core.Test.Serializers
         public void BlockSerialize()
         {
             var witnessOperationsManager = new WitnessOperationsManager(Crypto.Default);
-            var blockHeaderOperationsManager = new BlockHeaderOperationsManager(Crypto.Default, BinarySerializer.Default, witnessOperationsManager);
+            var blockHeaderOperationsManager =
+                new BlockHeaderOperationsManager(Crypto.Default, BinarySerializer.Default, witnessOperationsManager);
 
             var blockHeader = new Block
             {
@@ -431,16 +431,18 @@ namespace NeoSharp.Core.Test.Serializers
                 Witness = new Witness
                 {
                     InvocationScript = new byte[0],
-                    VerificationScript = new byte[0],
+                    VerificationScript = new byte[0]
                 },
-                Transactions = new Transaction[] { new InvocationTransaction()
+                Transactions = new Transaction[]
+                {
+                    new ContractTransaction
                     {
-                    Attributes=new TransactionAttribute[]{ },
-                    Inputs=new CoinReference[]{ },
-                    Outputs=new TransactionOutput[]{},
-                    Witness=new Witness[]{ },
-                    Script=new byte[]{ 0x01 },
-                    Version=0
+                        Attributes = new TransactionAttribute[] { },
+                        Inputs = new CoinReference[] { },
+                        Outputs = new TransactionOutput[] { },
+                        Witness = new Witness[] { },
+                        Script = new byte[] {0x01},
+                        Version = 0
                     }
                 }
             };
@@ -460,7 +462,8 @@ namespace NeoSharp.Core.Test.Serializers
             Assert.AreEqual(blockHeader.Version, blockHeaderCopy.Version);
 
             Assert.IsTrue(blockHeader.Witness.InvocationScript.SequenceEqual(blockHeaderCopy.Witness.InvocationScript));
-            Assert.IsTrue(blockHeader.Witness.VerificationScript.SequenceEqual(blockHeaderCopy.Witness.VerificationScript));
+            Assert.IsTrue(
+                blockHeader.Witness.VerificationScript.SequenceEqual(blockHeaderCopy.Witness.VerificationScript));
         }
     }
 }

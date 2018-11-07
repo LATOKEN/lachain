@@ -18,36 +18,24 @@ namespace NeoSharp.Core.Blockchain.Processing
     {
         private readonly IRepository _repository;
         private readonly IAccountManager _accountManager;
-        private readonly ITransactionPersister<ClaimTransaction> _claimTransactionPersister;
-        private readonly ITransactionPersister<InvocationTransaction> _invocationTransactionPersister;
         private readonly ITransactionPersister<IssueTransaction> _issueTransactionPersister;
-        private readonly ITransactionPersister<EnrollmentTransaction> _enrollmentTransactionPersister;
         private readonly ITransactionPersister<RegisterTransaction> _registerTransactionPersister;
-        private readonly ITransactionPersister<StateTransaction> _stateTransactionPersister;
         private readonly ITransactionPersister<PublishTransaction> _publishTransactionPersister;
         private readonly ITransactionPool _transactionPool;
 
         public TransactionPersister(
             IRepository repository,
             IAccountManager accountManager,
-            ITransactionPersister<ClaimTransaction> claimTransactionPersister,
-            ITransactionPersister<InvocationTransaction> invocationTransactionPersister,
             ITransactionPersister<IssueTransaction> issueTransactionPersister,
-            ITransactionPersister<EnrollmentTransaction> enrollmentTransactionPersister,
             ITransactionPersister<RegisterTransaction> registerTransactionPersister,
-            ITransactionPersister<StateTransaction> stateTransactionPersister,
             ITransactionPersister<PublishTransaction> publishTransactionPersister,
             ITransactionPool transactionPool
         )
         {
             _repository = repository;
             _accountManager = accountManager;
-            _claimTransactionPersister = claimTransactionPersister;
-            _invocationTransactionPersister = invocationTransactionPersister;
             _issueTransactionPersister = issueTransactionPersister;
-            _enrollmentTransactionPersister = enrollmentTransactionPersister;
             _registerTransactionPersister = registerTransactionPersister;
-            _stateTransactionPersister = stateTransactionPersister;
             _publishTransactionPersister = publishTransactionPersister;
             _transactionPool = transactionPool;
         }
@@ -62,15 +50,6 @@ namespace NeoSharp.Core.Blockchain.Processing
                 case ContractTransaction _:
                 case MinerTransaction _:
                     break;
-                case ClaimTransaction claim:
-                    await _claimTransactionPersister.Persist(claim);
-                    break;
-                case InvocationTransaction invocation:
-                    await _invocationTransactionPersister.Persist(invocation);
-                    break;
-                case StateTransaction state:
-                    await _stateTransactionPersister.Persist(state);
-                    break;
                 case IssueTransaction issue:
                     await _issueTransactionPersister.Persist(issue);
                     break;
@@ -79,9 +58,6 @@ namespace NeoSharp.Core.Blockchain.Processing
                     break;
                 case RegisterTransaction register:
                     await _registerTransactionPersister.Persist(register);
-                    break;
-                case EnrollmentTransaction enrollment:
-                    await _enrollmentTransactionPersister.Persist(enrollment);
                     break;
                 default:
                     throw new ArgumentException("Unknown Transaction Type");

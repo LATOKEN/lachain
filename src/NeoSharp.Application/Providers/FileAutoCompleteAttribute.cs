@@ -23,34 +23,31 @@ namespace NeoSharp.Application.Providers
                 {
                     return DriveValues();
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
+                return new string[] { };
             }
-            else
+            // Files and folders
+
+            if (IsWindows && currentValue.Length < 2)
             {
-                // Files and folders
-
-                if (IsWindows && currentValue.Length < 2)
-                {
-                    // Windows autocomplete when you write (c) or (c:)
-
-                    currentValue = DriveValues()
-                        .Where(u => u.StartsWith(currentValue, StringComparison.InvariantCultureIgnoreCase))
-                        .FirstOrDefault();
-                }
-
-                var ret = new List<string>();
-
-                try { ret.AddRange(DirValues(currentValue)); } catch { }
-
-                if (_withFiles)
-                {
-                    try { ret.AddRange(FileValues(currentValue)); } catch { }
-                }
-
-                return ret.ToArray();
+                // Windows autocomplete when you write (c) or (c:)
+                currentValue = DriveValues()
+                    .FirstOrDefault(u => u.StartsWith(currentValue, StringComparison.InvariantCultureIgnoreCase));
             }
 
-            return new string[] { };
+            var ret = new List<string>();
+
+            try { ret.AddRange(DirValues(currentValue)); } catch { }
+
+            if (_withFiles)
+            {
+                try { ret.AddRange(FileValues(currentValue)); } catch { }
+            }
+
+            return ret.ToArray();
         }
 
         private IEnumerable<string> DirValues(string currentValue)

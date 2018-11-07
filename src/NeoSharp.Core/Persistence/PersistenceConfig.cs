@@ -3,12 +3,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace NeoSharp.Core.Persistence
 {
-    public class PersistenceConfig
+    public class PersistenceConfig : IPersistenceConfig
     {
         private static PersistenceConfig _persistenceConfig;
-
+        
         public string Provider { get; internal set; }
-
+        
         public static PersistenceConfig Instance()
         {
             return _persistenceConfig ?? (_persistenceConfig = new PersistenceConfig());

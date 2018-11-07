@@ -11,12 +11,12 @@ namespace NeoSharp.Core.Wallet.NEP6
         /// <inheritdoc />
         [JsonProperty("address")]
         public string Address { get; set; }
-
-        /// <inheritdoc />
+        
+        /// <inheritdoc cref="Contract" />
         [JsonIgnore]
         public UInt160 ScriptHash => Contract.ScriptHash;
 
-        /// <inheritdoc />>
+        /// <inheritdoc />
         [JsonProperty("label")]
         public string Label { get; set; }
 

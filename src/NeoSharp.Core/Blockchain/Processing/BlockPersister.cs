@@ -41,22 +41,17 @@ namespace NeoSharp.Core.Blockchain.Processing
             foreach (var block in blocks)
             {
                 var blockHeader = await _blockRepository.GetBlockHeader(block.Hash);
-                if (blockHeader != null && blockHeader.Type == HeaderType.Extended) continue;
-
+                if (blockHeader != null && blockHeader.Type == HeaderType.Extended)
+                    continue;
+                
                 foreach (var transaction in block.Transactions)
-                {
                     await _transactionPersister.Persist(transaction);
-                }
 
                 if (block.Index > 0)
-                {
                     await _blockHeaderPersister.Update(block.GetBlockHeader());
-                }
                 else
-                {
                     await _blockHeaderPersister.Persist(block.GetBlockHeader());
-                }
-
+                
                 if (height + 1 == block.Index)
                 {
                     await _blockRepository.SetTotalBlockHeight(block.Index);
