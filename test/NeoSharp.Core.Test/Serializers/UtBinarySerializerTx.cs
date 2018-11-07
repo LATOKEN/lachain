@@ -136,8 +136,9 @@ namespace NeoSharp.Core.Test.Serializers
             EqualTx(original, copy, copy2);
         }
 #pragma warning restore CS0612 // Type or member is obsolete
-
+        
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_ContractTransaction()
         {
             var original = new ContractTransaction()

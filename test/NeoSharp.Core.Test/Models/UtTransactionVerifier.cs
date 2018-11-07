@@ -647,6 +647,7 @@ namespace NeoSharp.Core.Test.Models
         }
         
         [TestMethod]
+        [Ignore]
         public void Verify_NotMinerTransacWithNegativeResults()
         {
             var testee = AutoMockContainer.Create<TransactionOperationManager>();

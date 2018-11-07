@@ -127,6 +127,7 @@ namespace NeoSharp.Core.Test.Serializers
         }
 
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_ContractTransaction()
         {
             var witnessOperationsManager = new WitnessOperationsManager(Crypto.Default);
@@ -174,6 +175,7 @@ namespace NeoSharp.Core.Test.Serializers
         }
 
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_IssueTransaction()
         {
             // Mainnet Block=12285 / Tx=3
@@ -241,6 +243,7 @@ namespace NeoSharp.Core.Test.Serializers
         }
         
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_ContractTransactionInvocation()
         {
             var witnessOperationsManager = new WitnessOperationsManager(Crypto.Default);
@@ -278,6 +281,7 @@ namespace NeoSharp.Core.Test.Serializers
         }
 
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_RegisterTransaction()
         {
             var witnessOperationsManager = new WitnessOperationsManager(Crypto.Default);
@@ -319,6 +323,7 @@ namespace NeoSharp.Core.Test.Serializers
         }
 
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_PublishTransaction()
         {
             // Mainnet Block=917083 / Tx=1
