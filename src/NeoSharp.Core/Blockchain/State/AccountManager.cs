@@ -44,7 +44,7 @@ namespace NeoSharp.Core.Blockchain.State
 //                validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
         }
 
-        public async Task UpdateVotes(UInt160 hash, ECPoint[] newCandidates)
+        public async Task UpdateVotes(UInt160 hash, PublicKey[] newCandidates)
         {
             var account = await Get(hash) ?? new Account(hash);
             var governingTokenBalance = account.Balances[_genesisAssets.BuildGoverningTokenRegisterTransaction().Hash];
@@ -58,7 +58,7 @@ namespace NeoSharp.Core.Blockchain.State
             await _repository.AddAccount(account);
         }
 
-        private async Task UpdateValidatorVote(ECPoint pubKey, Fixed8 delta)
+        private async Task UpdateValidatorVote(PublicKey pubKey, Fixed8 delta)
         {
             var validator = await _repository.GetValidator(pubKey);
             validator.Votes += delta;

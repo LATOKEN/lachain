@@ -159,7 +159,7 @@ namespace NeoSharp.Core.Wallet.Helpers
         /// </summary>
         /// <returns>The script hash.</returns>
         /// <param name="publicKey">Public key.</param>
-        public UInt160 ScriptHashFromPublicKey(ECPoint publicKey)
+        public UInt160 ScriptHashFromPublicKey(PublicKey publicKey)
         {
             return ContractFactory.CreateSinglePublicKeyRedeemContract(publicKey).ScriptHash;
         }
@@ -212,7 +212,7 @@ namespace NeoSharp.Core.Wallet.Helpers
         private string privateKeyToAddress(byte[] privateKey)
         {
             var pubKeyInBytes = Crypto.Default.ComputePublicKey(privateKey, true);
-            var pubkey = new ECPoint(pubKeyInBytes);
+            var pubkey = new PublicKey(pubKeyInBytes);
             var accountContract = ContractFactory.CreateSinglePublicKeyRedeemContract(pubkey);
             return accountContract.ScriptHash.ToAddress();
         }

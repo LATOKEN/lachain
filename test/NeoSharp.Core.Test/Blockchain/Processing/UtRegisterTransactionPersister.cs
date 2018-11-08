@@ -26,7 +26,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
                 Name = RandomString(10),
                 Amount = new Fixed8(RandomInt()),
                 Precision = (byte) RandomInt(8),
-                Owner = new ECPoint(pubKey),
+                Owner = new PublicKey(pubKey),
                 Admin = UInt160.Parse(RandomInt().ToString("X40"))
             };
             var repositoryMock = AutoMockContainer.GetMock<IRepository>();

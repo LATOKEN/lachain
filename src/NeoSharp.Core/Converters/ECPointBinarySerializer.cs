@@ -17,7 +17,7 @@ namespace NeoSharp.Core.Converters
 
             switch (prefix)
             {
-                case 0x00: return ECPoint.Infinity;
+                case 0x00: return PublicKey.Infinity;
                 case 0x02:
                 case 0x03:
                     {
@@ -25,7 +25,7 @@ namespace NeoSharp.Core.Converters
                         buffer[0] = prefix;
 
                         reader.Read(buffer, 1, expectedLength);
-                        return new ECPoint(buffer);
+                        return new PublicKey(buffer);
                     }
                 case 0x04:
                 case 0x06:
@@ -35,7 +35,7 @@ namespace NeoSharp.Core.Converters
                         buffer[0] = prefix;
 
                         reader.Read(buffer, 1, expectedLength * 2);
-                        return new ECPoint(buffer);
+                        return new PublicKey(buffer);
                     }
                 default: throw new InvalidECPointException("Invalid point encoding " + prefix);
             }
@@ -43,7 +43,7 @@ namespace NeoSharp.Core.Converters
 
         public int Serialize(IBinarySerializer binarySerializer, BinaryWriter writer, object value, BinarySerializerSettings settings = null)
         {
-            var ec = (ECPoint)value;
+            var ec = (PublicKey)value;
 
             writer.Write(ec.EncodedData, 0, ec.EncodedData.Length);
             return ec.EncodedData.Length;

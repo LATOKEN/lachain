@@ -30,7 +30,7 @@ namespace NeoSharp.Core.Models
         /// <summary>
         /// Publisher's public key
         /// </summary>
-        public ECPoint Owner;
+        public PublicKey Owner;
         /// <summary>
         /// Asset Manager Contract Hash Value
         /// </summary>
@@ -47,7 +47,7 @@ namespace NeoSharp.Core.Models
             Name = reader.ReadVarString(1024);
             Amount = deserializer.Deserialize<Fixed8>(reader, settings);
             Precision = reader.ReadByte();
-            Owner = deserializer.Deserialize<ECPoint>(reader, settings);
+            Owner = deserializer.Deserialize<PublicKey>(reader, settings);
             Admin = deserializer.Deserialize<UInt160>(reader, settings);
         }
 

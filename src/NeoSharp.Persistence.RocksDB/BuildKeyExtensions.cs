@@ -29,7 +29,7 @@ namespace NeoSharp.Persistence.RocksDB
             return DataEntryPrefix.StCoin.BuildKey(hash.ToArray());
         }
 
-        public static byte[] BuildStateValidatorKey(this ECPoint point)
+        public static byte[] BuildStateValidatorKey(this PublicKey point)
         {
             return DataEntryPrefix.StValidator.BuildKey(point.EncodedData);
         }

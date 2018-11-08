@@ -152,7 +152,7 @@ namespace NeoSharp.Persistence.RocksDB
             await _rocksDbContext.Delete(txHash.BuildStateCoinKey());
         }
 
-        public async Task<Validator> GetValidator(ECPoint publicKey)
+        public async Task<Validator> GetValidator(PublicKey publicKey)
         {
             var raw = await _rocksDbContext.Get(publicKey.BuildStateValidatorKey());
             return raw == null
@@ -165,7 +165,7 @@ namespace NeoSharp.Persistence.RocksDB
             await _rocksDbContext.Save(validator.PublicKey.BuildStateValidatorKey(), _binarySerializer.Serialize(validator));
         }
 
-        public async Task DeleteValidator(ECPoint point)
+        public async Task DeleteValidator(PublicKey point)
         {
             await _rocksDbContext.Delete(point.BuildStateValidatorKey());
         }

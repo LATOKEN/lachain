@@ -143,7 +143,7 @@ namespace NeoSharp.Core.Persistence
         /// </summary>
         /// <param name="publicKey"></param>
         /// <returns></returns>
-        Task<Validator> GetValidator(ECPoint publicKey);
+        Task<Validator> GetValidator(PublicKey publicKey);
 
         /// <summary>
         /// Adds a validator
@@ -157,7 +157,7 @@ namespace NeoSharp.Core.Persistence
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        Task DeleteValidator(ECPoint point);
+        Task DeleteValidator(PublicKey point);
 
         /// <summary>
         /// Retrieves an assetId by its assetId

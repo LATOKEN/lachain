@@ -11,7 +11,7 @@ namespace NeoSharp.Core.Models
     {
         [BinaryProperty(1)]
         [JsonProperty("publickey")]
-        public ECPoint PublicKey;
+        public PublicKey PublicKey;
 
         [BinaryProperty(2)]
         [JsonProperty("registered")]
@@ -25,7 +25,7 @@ namespace NeoSharp.Core.Models
         {
         }
 
-        public Validator(ECPoint publicKey)
+        public Validator(PublicKey publicKey)
         {
             PublicKey = publicKey;
             Registered = false;

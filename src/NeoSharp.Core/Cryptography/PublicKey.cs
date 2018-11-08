@@ -9,12 +9,12 @@ using NeoSharp.Types.ExtensionMethods;
 namespace NeoSharp.Core.Cryptography
 {
     [BinaryTypeSerializer(typeof(ECPointBinarySerializer))]
-    public class ECPoint : IComparable<ECPoint>
+    public class PublicKey : IComparable<PublicKey>
     {
         /// <summary>
         /// Infinity
         /// </summary>
-        public static readonly ECPoint Infinity = new ECPoint();
+        public static readonly PublicKey Infinity = new PublicKey();
 
         /// <summary>
         /// Encoded data
@@ -37,7 +37,7 @@ namespace NeoSharp.Core.Cryptography
         /// <summary>
         /// Infinite constructor
         /// </summary>
-        private ECPoint()
+        private PublicKey()
         {
             IsInfinity = true;
 
@@ -51,7 +51,7 @@ namespace NeoSharp.Core.Cryptography
         /// Constructor
         /// </summary>
         /// <param name="point">Point</param>
-        public ECPoint(byte[] point)
+        public PublicKey(byte[] point)
         {
             if (point == null || !point.Any(u => u != 0x00))
             {
@@ -76,7 +76,7 @@ namespace NeoSharp.Core.Cryptography
         /// </summary>
         /// <param name="other">ECPoint to compare</param>
         /// <returns>Return compare value</returns>
-        public int CompareTo(ECPoint other)
+        public int CompareTo(PublicKey other)
         {
             if (other == this) return 0;
 

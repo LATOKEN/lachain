@@ -154,7 +154,7 @@ namespace NeoSharp.Persistence.RedisDB
             await _redisDbJsonContext.Delete(txHash.BuildStateCoinKey());
         }
 
-        public async Task<Validator> GetValidator(ECPoint publicKey)
+        public async Task<Validator> GetValidator(PublicKey publicKey)
         {
             var raw = await _redisDbJsonContext.Get(publicKey.BuildStateValidatorKey());
             return raw.IsNull ? null : _jsonConverter.DeserializeObject<Validator>(raw);
@@ -165,7 +165,7 @@ namespace NeoSharp.Persistence.RedisDB
             await _redisDbJsonContext.Set(validator.PublicKey.BuildStateValidatorKey(), _jsonConverter.SerializeObject(validator));
         }
 
-        public async Task DeleteValidator(ECPoint point)
+        public async Task DeleteValidator(PublicKey point)
         {
             await _redisDbJsonContext.Delete(point.BuildStateValidatorKey());
         }

@@ -55,7 +55,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
                 Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
                 Amount = Fixed8.FromDecimal(100000000),
                 Precision = 0,
-                Owner = ECPoint.Infinity,
+                Owner = PublicKey.Infinity,
                 //Why this? Check with people
                 Admin = (new[] { (byte)EVMOpCode.PUSH1 }).ToScriptHash(),
                 Attributes = new TransactionAttribute[0],
@@ -77,7 +77,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
                 Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
                 Amount = Fixed8.FromDecimal(_gasGenerationPerBlock.Sum(p => p) * DecrementInterval),
                 Precision = 8,
-                Owner = ECPoint.Infinity,
+                Owner = PublicKey.Infinity,
                 //Why this? Check with people
                 Admin = (new[] { (byte)EVMOpCode.PUSH0 }).ToScriptHash(),
                 Attributes = new TransactionAttribute[0],
@@ -135,7 +135,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
             return witness;
         }
 
-        public IssueTransaction BuildGenesisTokenIssue(ECPoint owner, Fixed8 value, params UInt256[] assets)
+        public IssueTransaction BuildGenesisTokenIssue(PublicKey owner, Fixed8 value, params UInt256[] assets)
         {
             var outputs = assets.Select(asset => new TransactionOutput
                 {
@@ -164,7 +164,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
         {
             var txs = new List<IssueTransaction>();
             foreach (var validator in _networkConfig.StandByValidator)
-                txs.Add(BuildGenesisTokenIssue(new ECPoint(validator.HexToBytes()), value, assets));
+                txs.Add(BuildGenesisTokenIssue(new PublicKey(validator.HexToBytes()), value, assets));
             return txs;
         }
 
@@ -179,9 +179,9 @@ namespace NeoSharp.Core.Blockchain.Genesis
 
         #region Private Methods
         
-        private ECPoint[] GenesisStandByValidators()
+        private PublicKey[] GenesisStandByValidators()
         {
-            return this._networkConfig.StandByValidator.Select(u => new ECPoint(u.HexToBytes())).ToArray();
+            return this._networkConfig.StandByValidator.Select(u => new PublicKey(u.HexToBytes())).ToArray();
         }
 
         private TransactionOutput GenesisGoverningTokenTransactionOutput()

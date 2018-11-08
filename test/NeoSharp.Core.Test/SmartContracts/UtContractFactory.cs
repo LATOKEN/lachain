@@ -20,7 +20,7 @@ namespace NeoSharp.Core.Test.SmartContracts
             };
 
             var publicKey = Crypto.Default.ComputePublicKey(privateKey, true);
-            var publicKeyInEcPoint = new ECPoint(publicKey);
+            var publicKeyInEcPoint = new PublicKey(publicKey);
 
             var result = ContractFactory.CreateSinglePublicKeyRedeemContract(publicKeyInEcPoint);
             Assert.IsNotNull(result);

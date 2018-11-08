@@ -41,7 +41,7 @@ namespace NeoSharp.Core.Wallet.Test
 
             var privateKey = Crypto.Default.GenerateRandomBytes(32);
             var publicKey = Crypto.Default.ComputePublicKey(privateKey, true);
-            var publicKeyInEcPoint = new ECPoint(publicKey);
+            var publicKeyInEcPoint = new PublicKey(publicKey);
             _testContract = ContractFactory.CreateSinglePublicKeyRedeemContract(publicKeyInEcPoint);
         }
 
@@ -217,7 +217,7 @@ namespace NeoSharp.Core.Wallet.Test
             // Act
             IWalletAccount walletAccount = testee.ImportWif("KxLNhtdXXqaYUW1DKBc1XYQLxhouxXPLgQhR8kk7SYG3ajjR8M8a", _defaultPassword);
             byte[] privateKey = GetPrivateKeyFromWIF("KxLNhtdXXqaYUW1DKBc1XYQLxhouxXPLgQhR8kk7SYG3ajjR8M8a");
-            ECPoint publicKey = new ECPoint(Crypto.Default.ComputePublicKey(privateKey, true));
+            PublicKey publicKey = new PublicKey(Crypto.Default.ComputePublicKey(privateKey, true));
 
             testee = new Nep6WalletManager(new FileWrapper(), new JsonConverterWrapper());
             IWalletAccount walletAccount2 = testee.GetAccount(publicKey);
@@ -231,7 +231,7 @@ namespace NeoSharp.Core.Wallet.Test
             // Act
             IWalletAccount walletAccount = mockWalletManager.ImportWif("KxLNhtdXXqaYUW1DKBc1XYQLxhouxXPLgQhR8kk7SYG3ajjR8M8a", _defaultPassword);
             byte[] privateKey = GetPrivateKeyFromWIF("KxLNhtdXXqaYUW1DKBc1XYQLxhouxXPLgQhR8kk7SYG3ajjR8M8a");
-            ECPoint publicKey = new ECPoint(Crypto.Default.ComputePublicKey(privateKey, true));
+            PublicKey publicKey = new PublicKey(Crypto.Default.ComputePublicKey(privateKey, true));
 
             IWalletAccount walletAccount2 = mockWalletManager.GetAccount(publicKey);
 

@@ -110,7 +110,7 @@ namespace NeoSharp.Core.Test.Serializers
                 Admin = RandomUInt60(1).FirstOrDefault(),
                 Amount = RandomFixed8(true, 1).FirstOrDefault(),
                 AssetType = RandomEnum<AssetType>(),
-                Owner = ECPoint.Infinity,
+                Owner = PublicKey.Infinity,
                 Precision = (byte) _random.Next(byte.MinValue, byte.MaxValue),
             };
 

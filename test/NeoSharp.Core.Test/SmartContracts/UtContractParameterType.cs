@@ -563,7 +563,7 @@ namespace NeoSharp.Core.Test.SmartContracts
         {
             var privateKey = Crypto.Default.GenerateRandomBytes(32);
             var publicKey = Crypto.Default.ComputePublicKey(privateKey, true);
-            var expectedPk = new ECPoint(publicKey);
+            var expectedPk = new PublicKey(publicKey);
 
             var mockBuilder = new Mock<ScriptBuilder>();
             var item = mockBuilder.Object;
@@ -580,9 +580,9 @@ namespace NeoSharp.Core.Test.SmartContracts
         {
             var privateKey = Crypto.Default.GenerateRandomBytes(32);
             var publicKey = Crypto.Default.ComputePublicKey(privateKey, true);
-            var expectedPk = new ECPoint(publicKey);
+            var expectedPk = new PublicKey(publicKey);
 
-            var notExpectedPk = ECPoint.Infinity;
+            var notExpectedPk = PublicKey.Infinity;
 
             var mockBuilder = new Mock<ScriptBuilder>();
             var item = mockBuilder.Object;

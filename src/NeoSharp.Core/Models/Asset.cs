@@ -33,7 +33,7 @@ namespace NeoSharp.Core.Models
 
         [BinaryProperty(7)]
         [JsonProperty("owner")]
-        public ECPoint Owner;
+        public PublicKey Owner;
 
         [BinaryProperty(8)]
         [JsonProperty("admin")]

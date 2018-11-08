@@ -13,7 +13,7 @@ namespace NeoSharp.Core.Test.Cryptography
         public void Infinity_ECPoint()
         {
             // Arrange
-            var value = ECPoint.Infinity;
+            var value = PublicKey.Infinity;
 
             // Assert
             Assert.IsNotNull(value);
@@ -32,7 +32,7 @@ namespace NeoSharp.Core.Test.Cryptography
             var pubkey_B = "0438356c74a1ab4d40df857b790e4232180e2f99f5c78468c150d0903a3e5d2b6fc88c3095b1b688d3d027477dfad0deb1ab94cb08db2de5abb79c1482aa1ea2fc".HexToBytes();
 
             // Act
-            var value = new ECPoint(pubkey_A);
+            var value = new PublicKey(pubkey_A);
 
             // Assert
             Assert.AreEqual(value.X.ToString(), "25423910948081187308645163652542039167507182320027680753707589392465049496431");
@@ -48,8 +48,8 @@ namespace NeoSharp.Core.Test.Cryptography
             // Arrange
             var pubkey_A = "0238356c74a1ab4d40df857b790e4232180e2f99f5c78468c150d0903a3e5d2b6f".HexToBytes();
             var pubkey_B = "0438356c74a1ab4d40df857b790e4232180e2f99f5c78468c150d0903a3e5d2b6fc88c3095b1b688d3d027477dfad0deb1ab94cb08db2de5abb79c1482aa1ea2fc".HexToBytes();
-            var pointA = new ECPoint(pubkey_A);
-            var pointB = new ECPoint(pubkey_B);
+            var pointA = new PublicKey(pubkey_A);
+            var pointB = new PublicKey(pubkey_B);
 
             // Act
             var result = pointA.CompareTo(pointB);
@@ -64,8 +64,8 @@ namespace NeoSharp.Core.Test.Cryptography
             // Arrange
             var pubkey_A = "0238356c74a1ab4d40df857b790e4232180e2f99f5c78468c150d0903a3e5d2b6f".HexToBytes();
             var pubkey_B = "0324de2cc4fe4b20963a5bae8cdcd52f431cd08ab331197e70e1d66d94ff35dda2".HexToBytes();
-            var point_A = new ECPoint(pubkey_A);
-            var point_B = new ECPoint(pubkey_B);
+            var point_A = new PublicKey(pubkey_A);
+            var point_B = new PublicKey(pubkey_B);
 
             // Act
             var result_A = point_A.CompareTo(point_B);
@@ -81,7 +81,7 @@ namespace NeoSharp.Core.Test.Cryptography
         {
             // Arrange
             var pubkey_A = "0238356c74a1ab4d40df857b790e4232180e2f99f5c78468c150d0903a3e5d2b6f".HexToBytes();
-            var point_A = new ECPoint(pubkey_A);
+            var point_A = new PublicKey(pubkey_A);
 
             // Act
             var result = point_A.ToString();

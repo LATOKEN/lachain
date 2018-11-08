@@ -405,7 +405,7 @@ namespace NeoSharp.Persistence.RocksDB.Tests
         {
             var pubkey = new byte[33];
             pubkey[0] = 0x02;
-            var input = new ECPoint(pubkey);
+            var input = new PublicKey(pubkey);
             var rocksDbContextMock = AutoMockContainer.GetMock<IRocksDbContext>();
             rocksDbContextMock
                 .Setup(m => m.Get(It.Is<byte[]>(b => b.SequenceEqual(input.BuildStateValidatorKey()))))
@@ -422,7 +422,7 @@ namespace NeoSharp.Persistence.RocksDB.Tests
         {
             var pubkey = new byte[33];
             pubkey[0] = 0x02;
-            var input = new ECPoint(pubkey);
+            var input = new PublicKey(pubkey);
             var expectedBytes = new byte[1];
             var expectedResult = new Validator();
             var rocksDbContextMock = AutoMockContainer.GetMock<IRocksDbContext>();
@@ -442,7 +442,7 @@ namespace NeoSharp.Persistence.RocksDB.Tests
         {
             var pubkey = new byte[33];
             pubkey[0] = 0x02;
-            var point = new ECPoint(pubkey);
+            var point = new PublicKey(pubkey);
             var input = new Validator {PublicKey = point};
             var expectedBytes = new byte[1];
             _serializerMock.Setup(m => m.Serialize(input, null)).Returns(expectedBytes);
@@ -459,7 +459,7 @@ namespace NeoSharp.Persistence.RocksDB.Tests
         {
             var pubkey = new byte[33];
             pubkey[0] = 0x02;
-            var input = new ECPoint(pubkey);
+            var input = new PublicKey(pubkey);
             var rocksDbContextMock = AutoMockContainer.GetMock<IRocksDbContext>();
             var testee = AutoMockContainer.Create<RocksDbRepository>();
 

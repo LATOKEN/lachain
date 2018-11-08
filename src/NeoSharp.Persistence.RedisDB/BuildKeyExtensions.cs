@@ -43,7 +43,7 @@ namespace NeoSharp.Persistence.RedisDB
             return DataEntryPrefix.StStorage.BuildKey(key.ScriptHash.ToArray().Concat(key.Key).ToString());
         }
 
-        public static string BuildStateValidatorKey(this ECPoint point)
+        public static string BuildStateValidatorKey(this PublicKey point)
         {
             return DataEntryPrefix.StValidator.BuildKey(point.EncodedData.ToString());
         }

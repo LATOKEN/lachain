@@ -92,12 +92,12 @@ namespace NeoSharp.Core.Test.Messaging.Handlers
             throw new NotImplementedException();
         }
 
-        public ECPoint[] GetValidators()
+        public PublicKey[] GetValidators()
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
+        public IEnumerable<PublicKey> GetValidators(IEnumerable<Transaction> others)
         {
             throw new NotImplementedException();
         }

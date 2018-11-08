@@ -16,7 +16,7 @@ namespace NeoSharp.Core.SmartContract
         /// </summary>
         /// <returns>The single public key redeem contract.</returns>
         /// <param name="publicKey">Public key.</param>
-        public static Contract CreateSinglePublicKeyRedeemContract(ECPoint publicKey)
+        public static Contract CreateSinglePublicKeyRedeemContract(PublicKey publicKey)
         {
             string contractHexCode;
             using (var sb = new ScriptBuilder())
@@ -51,7 +51,7 @@ namespace NeoSharp.Core.SmartContract
         /// <returns>The multiple public key redeem contract.</returns>
         /// <param name="numberOfRequiredPublicKeys">Number of required public keys.</param>
         /// <param name="publicKeys">Public keys.</param>
-        public static Contract CreateMultiplePublicKeyRedeemContract(int numberOfRequiredPublicKeys, ECPoint[] publicKeys)
+        public static Contract CreateMultiplePublicKeyRedeemContract(int numberOfRequiredPublicKeys, PublicKey[] publicKeys)
         {
             if (!(1 <= numberOfRequiredPublicKeys && numberOfRequiredPublicKeys <= publicKeys.Length && publicKeys.Length <= 1024))
                 throw new ArgumentException("Invalid public keys. ");

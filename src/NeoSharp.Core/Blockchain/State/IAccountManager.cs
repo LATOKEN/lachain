@@ -9,6 +9,6 @@ namespace NeoSharp.Core.Blockchain.State
     {
         Task<Account> Get(UInt160 hash);
         Task UpdateBalance(UInt160 hash, UInt256 assetId, Fixed8 delta);
-        Task UpdateVotes(UInt160 hash, ECPoint[] newCandidates);
+        Task UpdateVotes(UInt160 hash, PublicKey[] newCandidates);
     }
 }

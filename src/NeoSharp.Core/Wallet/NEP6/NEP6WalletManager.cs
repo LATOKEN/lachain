@@ -25,8 +25,8 @@ namespace NeoSharp.Core.Wallet.NEP6
         /// <summary>
         /// Nep2Key to (publicKey, privateKey)
         /// </summary>
-        private readonly IDictionary<string, Tuple<ECPoint, byte[]>> _unlockedAccounts =
-            new Dictionary<String, Tuple<ECPoint, byte[]>>();
+        private readonly IDictionary<string, Tuple<PublicKey, byte[]>> _unlockedAccounts =
+            new Dictionary<String, Tuple<PublicKey, byte[]>>();
 
         private byte[] _accountPasswordHashCache;
         private string _openWalletFilename;
@@ -131,7 +131,7 @@ namespace NeoSharp.Core.Wallet.NEP6
         }
 
         /// <inheritdoc />
-        public IWalletAccount GetAccount(ECPoint pubkey)
+        public IWalletAccount GetAccount(PublicKey pubkey)
         {
             if (pubkey == null)
             {
@@ -274,16 +274,16 @@ namespace NeoSharp.Core.Wallet.NEP6
             var privateKey = _walletHelper.DecryptWif(nep2Key, password);
             _accountPasswordHashCache = GetPasswordHash(password);
             var publicKeyInBytes = Crypto.Default.ComputePublicKey(privateKey, true);
-            var publicKeyEcPoint = new ECPoint(publicKeyInBytes);
+            var publicKeyEcPoint = new PublicKey(publicKeyInBytes);
             UnlockAccount(nep2Key, publicKeyEcPoint, privateKey);
         }
 
         /// <inheritdoc />
-        public ECPoint GetPublicKeyFromNep2(string nep2Key, SecureString password)
+        public PublicKey GetPublicKeyFromNep2(string nep2Key, SecureString password)
         {
             var privateKey = _walletHelper.DecryptWif(nep2Key, password);
             var publicKeyInBytes = Crypto.Default.ComputePublicKey(privateKey, true);
-            return new ECPoint(publicKeyInBytes);
+            return new PublicKey(publicKeyInBytes);
         }
 
         /// <inheritdoc />
@@ -438,7 +438,7 @@ namespace NeoSharp.Core.Wallet.NEP6
         private Nep6Account CreateAccountWithPrivateKey(byte[] privateKey, SecureString passphrase, string label = null)
         {
             var publicKeyInBytes = Crypto.Default.ComputePublicKey(privateKey, true);
-            var publicKeyInEcPoint = new ECPoint(publicKeyInBytes);
+            var publicKeyInEcPoint = new PublicKey(publicKeyInBytes);
             var contract = ContractFactory.CreateSinglePublicKeyRedeemContract(publicKeyInEcPoint);
 
             var account = new Nep6Account(contract)
@@ -478,11 +478,11 @@ namespace NeoSharp.Core.Wallet.NEP6
         /// <param name="nep2Key">Nep2 key.</param>
         /// <param name="publicKey">Public key.</param>
         /// <param name="privateKey">Private key.</param>
-        private void UnlockAccount(string nep2Key, ECPoint publicKey, byte[] privateKey)
+        private void UnlockAccount(string nep2Key, PublicKey publicKey, byte[] privateKey)
         {
             var internalNep2Key = nep2Key ?? throw new ArgumentException(nameof(nep2Key));
             
-            var entry = new Tuple<ECPoint, byte[]>(publicKey, privateKey);
+            var entry = new Tuple<PublicKey, byte[]>(publicKey, privateKey);
 
             if (_unlockedAccounts.ContainsKey(nep2Key))
                 _unlockedAccounts[nep2Key] = entry;

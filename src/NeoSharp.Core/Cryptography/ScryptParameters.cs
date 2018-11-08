@@ -8,25 +8,25 @@ namespace NeoSharp.Core.Cryptography
         /// n is a parameter that defines the CPU/memory cost.
         /// Must be a value 2^N.
         /// </summary>
-        public int N { get; private set; }
+        public int N { get; }
 
         /// <summary>
         /// r is a tuning parameter.
         /// </summary>
-        public int R { get; private set; }
+        public int R { get; }
 
         /// <summary>
         /// p is a tuning parameter (parallelization parameter). A large value
         /// of p can increase computational cost of SCrypt without increasing
         /// the memory usage.
         /// </summary>
-        public int P { get; private set; }
+        public int P { get; }
 
         public ScryptParameters(int n, int r, int p)
         {
-            this.N = n;
-            this.R = r;
-            this.P = p;
+            N = n;
+            R = r;
+            P = p;
         }
     }
 }

@@ -392,7 +392,7 @@ namespace NeoSharp.Persistence.Redis.Tests
         {
             var pubkey = new byte[33];
             pubkey[0] = 0x02;
-            var input = new ECPoint(pubkey);
+            var input = new PublicKey(pubkey);
             var redisDbContextMock = AutoMockContainer.GetMock<IRedisDbJsonContext>();
             redisDbContextMock
                 .Setup(m => m.Get(It.Is<RedisKey>(b => b == input.BuildStateValidatorKey())))
@@ -448,7 +448,7 @@ namespace NeoSharp.Persistence.Redis.Tests
         {
             var pubkey = new byte[33];
             pubkey[0] = 0x02;
-            var input = new ECPoint(pubkey);
+            var input = new PublicKey(pubkey);
             var redisDbContextMock = AutoMockContainer.GetMock<IRedisDbJsonContext>();
             var testee = AutoMockContainer.Create<RedisDbJsonRepository>();
 

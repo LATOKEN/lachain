@@ -20,7 +20,7 @@ namespace NeoSharp.Core.Models
 
         [BinaryProperty(2)]
         [JsonProperty("votes")]
-        public ECPoint[] Votes;
+        public PublicKey[] Votes;
 
         [BinaryProperty(3)]
         [JsonProperty("balances")]
@@ -29,7 +29,7 @@ namespace NeoSharp.Core.Models
         public Account()
         {
             Balances = new Dictionary<UInt256, Fixed8>();
-            Votes = Array.Empty<ECPoint>();
+            Votes = Array.Empty<PublicKey>();
         }
 
         public Account(UInt160 scriptHash) : this()

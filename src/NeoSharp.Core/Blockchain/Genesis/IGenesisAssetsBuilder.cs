@@ -15,7 +15,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
 
         IssueTransaction BuildGenesisIssueTransaction();
 
-        IssueTransaction BuildGenesisTokenIssue(ECPoint owner, Fixed8 value, params UInt256[] assets);
+        IssueTransaction BuildGenesisTokenIssue(PublicKey owner, Fixed8 value, params UInt256[] assets);
 
         IEnumerable<IssueTransaction> IssueTransactionsToOwners(Fixed8 value, params UInt256[] assets);
         
