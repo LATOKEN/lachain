@@ -53,7 +53,7 @@ namespace NeoSharp.Core.Cryptography
         /// <param name="point">Point</param>
         public PublicKey(byte[] point)
         {
-            if (point == null || !point.Any(u => u != 0x00))
+            if (point == null || point.All(u => u == 0x00))
             {
                 IsInfinity = true;
 

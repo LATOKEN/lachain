@@ -3,6 +3,7 @@ using System.Collections;
 using System.ComponentModel;
 using System.Linq;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Cryptography;
 using NeoSharp.Types.Converters;
 using NeoSharp.Types.ExtensionMethods;
 
@@ -85,6 +86,12 @@ namespace NeoSharp.Types
             return _buffer.Reverse().ToHexString(append0X);
         }
 
+        public static UInt160 ParseBase58(string value)
+        {
+            var buffer = Crypto.Default.Base58Decode(value);
+            return new UInt160(buffer);
+        }
+        
         public static UInt160 Parse(string value)
         {
             if (value.IsHexString()) 

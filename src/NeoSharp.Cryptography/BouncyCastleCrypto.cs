@@ -13,15 +13,15 @@ namespace NeoSharp.Cryptography
 {
     public class BouncyCastleCrypto : Crypto
     {
-        static readonly X9ECParameters _curve = SecNamedCurves.GetByName("secp256r1");
-        static readonly ECDomainParameters _domain = new ECDomainParameters(_curve.Curve, _curve.G, _curve.N, _curve.H, _curve.GetSeed());
-
+        private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256r1");
+        private static readonly ECDomainParameters Domain = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
+        
         /// <inheritdoc />
         public override byte[] Sha256(byte[] message, int offset, int count)
         {
             var hash = new Sha256Digest();
             hash.BlockUpdate(message, offset, count);
-
+            
             byte[] result = new byte[32];
             hash.DoFinal(result, 0);
 
@@ -54,8 +54,8 @@ namespace NeoSharp.Cryptography
         {
             var fullpubkey = DecodePublicKey(pubkey, false, out _, out _);
 
-            var point = _curve.Curve.DecodePoint(fullpubkey);
-            var keyParameters = new ECPublicKeyParameters(point, _domain);
+            var point = Curve.Curve.DecodePoint(fullpubkey);
+            var keyParameters = new ECPublicKeyParameters(point, Domain);
 
             var signer = SignerUtilities.GetSigner("SHA256withECDSA");
             signer.Init(false, keyParameters);
@@ -75,7 +75,7 @@ namespace NeoSharp.Cryptography
         /// <inheritdoc />
         public override byte[] Sign(byte[] message, byte[] prikey)
         {
-            ECPrivateKeyParameters priv = new ECPrivateKeyParameters("ECDSA", (new BigInteger(1, prikey)), _domain);
+            ECPrivateKeyParameters priv = new ECPrivateKeyParameters("ECDSA", (new BigInteger(1, prikey)), Domain);
             var signer = new ECDsaSigner();
             var fullsign = new byte[64];
 
@@ -113,8 +113,8 @@ namespace NeoSharp.Cryptography
         {
             if (privateKey == null) throw new ArgumentException(nameof(privateKey));
 
-            var q = _domain.G.Multiply(new BigInteger(1, privateKey));
-            var publicParams = new ECPublicKeyParameters(q, _domain);
+            var q = Domain.G.Multiply(new BigInteger(1, privateKey));
+            var publicParams = new ECPublicKeyParameters(q, Domain);
 
             return publicParams.Q.GetEncoded(compress);
         }
@@ -143,7 +143,7 @@ namespace NeoSharp.Cryptography
                 fullpubkey = pubkey;
             }
 
-            var ret = new ECPublicKeyParameters("ECDSA", _curve.Curve.DecodePoint(fullpubkey), _domain).Q;
+            var ret = new ECPublicKeyParameters("ECDSA", Curve.Curve.DecodePoint(fullpubkey), Domain).Q;
             var x0 = ret.XCoord.ToBigInteger();
             var y0 = ret.YCoord.ToBigInteger();
 
@@ -228,6 +228,14 @@ namespace NeoSharp.Cryptography
             } 
  
             return privateKey; 
+        }
+
+        public override byte[] PublicKeyFromPrivateKey(byte[] privateKey)
+        {
+            if (privateKey.Length != 32)
+                throw new ArgumentException();
+            var bigK = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
+            return Curve.G.Multiply(bigK).GetEncoded();
         }
     }
 }

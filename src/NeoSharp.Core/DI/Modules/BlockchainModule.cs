@@ -59,6 +59,7 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
             containerBuilder.RegisterSingleton<IAssetRepository, AssetRepository>();
             containerBuilder.RegisterSingleton<IBlockRepository, BlockRepository>();
+            containerBuilder.RegisterSingleton<IStateRepository, StateRepository>();
         }
     }
 }

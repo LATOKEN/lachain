@@ -294,5 +294,7 @@ namespace NeoSharp.Cryptography
         /// <param name="length">Length</param>
         /// <returns>Random bytearray</returns>
         public abstract byte[] GenerateRandomBytes(int length);
+        
+        public abstract byte[] PublicKeyFromPrivateKey(byte[] privateKey);
     }
 }
