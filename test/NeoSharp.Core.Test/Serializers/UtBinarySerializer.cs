@@ -435,7 +435,7 @@ namespace NeoSharp.Core.Test.Serializers
                 },
                 Transactions = new Transaction[]
                 {
-                    new ContractTransaction
+                    new InvocationTransaction()
                     {
                         Attributes = new TransactionAttribute[] { },
                         Inputs = new CoinReference[] { },

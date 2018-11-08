@@ -17,5 +17,5 @@
         /// If match allow
         /// </summary>
         Blacklist
-    };
+    }
 }

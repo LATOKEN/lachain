@@ -28,12 +28,19 @@ namespace NeoSharp.Core.Models
         IssueTransaction = 0x01,
 
         /// <summary>
-        /// 
+        /// Send funds and invoke contract method
         /// </summary>
         [ReflectionCache(typeof(ContractTransaction))]
         ContractTransaction = 0x80,
         
+        /// <summary>
+        /// Publish new contract
+        /// </summary>
         [ReflectionCache(typeof(PublishTransaction))]
-        PublishTransaction = 0xd0
+        PublishTransaction = 0xd0,
+        
+        [ReflectionCache(typeof(InvocationTransaction))]
+        [Obsolete]
+        InvocationTransaction = 0xd1
     }
 }

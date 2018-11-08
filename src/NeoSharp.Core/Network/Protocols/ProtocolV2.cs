@@ -43,26 +43,25 @@ namespace NeoSharp.Core.Network.Protocols
             return m.Flags.HasFlag(MessageFlags.Urgent) || base.IsHighPriorityMessage(m);
         }
 
-        public override async Task SendMessageAsync(Stream stream, Message message,
-            CancellationToken cancellationToken)
+        public override async Task SendMessageAsync(Stream stream, Message message, CancellationToken cancellationToken)
         {
             using (var memory = new MemoryStream())
             using (var writer = new BinaryWriter(memory, Encoding.UTF8))
             {
                 // TODO #366: Remove this magic in V2, only for handshake
                 writer.Write(_magic);
-                writer.Write((byte)message.Command);
+                writer.Write((byte) message.Command);
 
                 if (message is ICarryPayload messageWithPayload)
                 {
                     message.Flags |= MessageFlags.WithPayload;
-                    byte[] payloadBuffer = BinarySerializer.Default.Serialize(messageWithPayload.Payload);
+                    var payloadBuffer = BinarySerializer.Default.Serialize(messageWithPayload.Payload);
 
                     if (payloadBuffer.Length > 100)
                     {
-                        using (MemoryStream ms = new MemoryStream())
+                        using (var ms = new MemoryStream())
                         {
-                            using (GZipStream gzip = new GZipStream(ms, CompressionLevel.Fastest, true))
+                            using (var gzip = new GZipStream(ms, CompressionLevel.Fastest, true))
                                 gzip.Write(payloadBuffer, 0, payloadBuffer.Length);
 
                             if (payloadBuffer.Length > ms.Length)
@@ -73,14 +72,14 @@ namespace NeoSharp.Core.Network.Protocols
                         }
                     }
 
-                    writer.Write((byte)message.Flags);
-                    writer.Write((uint)payloadBuffer.Length);
+                    writer.Write((byte) message.Flags);
+                    writer.Write((uint) payloadBuffer.Length);
                     writer.Write(payloadBuffer);
                 }
                 else
                 {
                     message.Flags &= ~MessageFlags.WithPayload;
-                    writer.Write((byte)message.Flags);
+                    writer.Write((byte) message.Flags);
                 }
 
                 writer.Flush();
@@ -100,15 +99,13 @@ namespace NeoSharp.Core.Network.Protocols
                 throw new InvalidMessageException();
             }
 
-            var command = (MessageCommand)buffer[4];
+            var command = (MessageCommand) buffer[4];
 
             if (!Cache.TryGetValue(command, out var type))
-            {
-                throw (new InvalidMessageException("Message command not found"));
-            }
+                throw new InvalidMessageException("Message command not found");
 
             Message message;
-            var flags = (MessageFlags)buffer[5];
+            var flags = (MessageFlags) buffer[5];
 
             if (flags.HasFlag(MessageFlags.WithPayload) && typeof(ICarryPayload).IsAssignableFrom(type))
             {
@@ -121,13 +118,11 @@ namespace NeoSharp.Core.Network.Protocols
                 }
 
                 var payloadBuffer = payloadLength > 0
-                    ? await FillBufferAsync(stream, (int)payloadLength, cancellationToken)
+                    ? await FillBufferAsync(stream, payloadLength, cancellationToken)
                     : new byte[0];
 
                 if (payloadLength == 0)
-                {
                     throw new InvalidMessageException();
-                }
 
                 var payloadType = type.BaseType.GenericTypeArguments[0];
 
@@ -137,18 +132,18 @@ namespace NeoSharp.Core.Network.Protocols
                     using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
                     {
                         var payload = BinarySerializer.Default.Deserialize(gzip, payloadType);
-                        message = (Message)Activator.CreateInstance(type, payload);
+                        message = (Message) Activator.CreateInstance(type, payload);
                     }
                 }
                 else
                 {
                     var payload = BinarySerializer.Default.Deserialize(payloadBuffer, payloadType);
-                    message = (Message)Activator.CreateInstance(type, payload);
+                    message = (Message) Activator.CreateInstance(type, payload);
                 }
             }
             else
             {
-                message = (Message)Activator.CreateInstance(type);
+                message = (Message) Activator.CreateInstance(type);
             }
 
             message.Flags = flags;

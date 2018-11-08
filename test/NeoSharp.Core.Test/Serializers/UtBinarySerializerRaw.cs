@@ -250,7 +250,7 @@ namespace NeoSharp.Core.Test.Serializers
             var transactionOperationsManager = new TransactionOperationManager(Crypto.Default, this._serializer, witnessOperationsManager, new Mock<ITransactionRepository>().Object, new Mock<IAssetRepository>().Object, new TransactionContext());
 
             var data = "d1015e0800e1f50500000000209b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc5141e542e30389997d4c076ed65d0a7438719969cd653c1076465706f73697467bd097b2fcf70e1fd30a5c3ef51e662feeafeba0100000000000000000001a50be4db475e02e665229d22e82d8820e5bf8b4022c60a5806d9f1c801672cb10100019b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc500e1f50500000000bd097b2fcf70e1fd30a5c3ef51e662feeafeba010141409d689aa663e04da2b74d1eba6608e4a3bacdd416a68b0102df7072e25263b63a7bfd1de1d2d3c951efa3c10c456ab41f6e3a6edaa021a309c6e31e12604132922321021958d772f0cb49220752c74c8ff6e873b8b3f69905d32c2d688cfae570fb98e0ac".HexToBytes();
-            var tx = (ContractTransaction)_serializer.Deserialize<Transaction>(data);
+            var tx = (InvocationTransaction)_serializer.Deserialize<Transaction>(data);
 
             transactionOperationsManager.Sign(tx);
 

@@ -46,7 +46,7 @@ namespace NeoSharp.Core.Test.Serializers
         [Ignore]
         public void SerializeDeserialize_InvocationTransaction()
         {
-            var original = new ContractTransaction
+            var original = new InvocationTransaction
             {
                 Version = 0x01,
                 Gas = RandomFixed8(true, 1).FirstOrDefault(),
@@ -57,11 +57,11 @@ namespace NeoSharp.Core.Test.Serializers
 
             var ret = _serializer.Serialize(original);
             var copy = _serializer.Deserialize<Transaction>(ret);
-            var copy2 = _serializer.Deserialize<ContractTransaction>(ret);
+            var copy2 = _serializer.Deserialize<InvocationTransaction>(ret);
 
             // Check exclusive data
 
-            foreach (var check in new[] {(ContractTransaction) copy, copy2})
+            foreach (var check in new[] {(InvocationTransaction) copy, copy2})
             {
                 Assert.AreEqual(original.Gas, check.Gas);
                 CollectionAssert.AreEqual(original.Script, check.Script);
