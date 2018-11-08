@@ -5,6 +5,7 @@ using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models.OperationManger;
 using NeoSharp.Core.Network;
+using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Messaging.Handlers
 {
@@ -51,18 +52,20 @@ namespace NeoSharp.Core.Messaging.Handlers
         public override async Task Handle(BlockMessage message, IPeer sender)
         {
             var block = message.Payload;
-            
-            Console.WriteLine("Received block " + block.Index);
-
             if (block.Hash == null)
-            {
                 _blockOperationsManager.Sign(block);
-            }
-            else if (!_blockOperationsManager.Verify(block))
+            
+            if (!_blockOperationsManager.Verify(block))
             {
                 _logger.LogWarning($"Block {block.Hash} with Index {block.Index} verification fail.");
                 return;
             }
+            
+//            var json = JsonConvert.SerializeObject(block, Formatting.Indented);
+            Console.WriteLine("new block (height: " + block.Index + ", txs: " + block.Transactions.Length + "): " + block.Hash);
+//            Console.WriteLine("--------------------------------");
+//            Console.WriteLine(json);
+//            Console.WriteLine("--------------------------------");
 
             //_logger.LogInformation($"Broadcasting block {block.Hash} with Index {block.Index}.");
             //_broadcaster.Broadcast(message, sender);

@@ -91,11 +91,12 @@ namespace NeoSharp.Core.Network
                     }
 
                     var currentBlockIndex = _blockchainContext.CurrentBlock.Index;
-                    var peerCurrentBlockIndex = peer.Version.CurrentBlockIndex;
-                    if (currentBlockIndex >= peerCurrentBlockIndex)
+                    
+                    /*var peerCurrentBlockIndex = peer.Version.CurrentBlockIndex;
+                    if (currentBlockIndex > peerCurrentBlockIndex)
                     {
-                        break;
-                    }
+                        continue;
+                    }*/
 
                     var lastBlockHeaderIndex = _blockchainContext.LastBlockHeader.Index;
                     if (currentBlockIndex >= lastBlockHeaderIndex)
@@ -103,11 +104,8 @@ namespace NeoSharp.Core.Network
                         await _asyncDelayer.Delay(DefaultBlockHeaderWaitingInterval, cancellationToken);
                         continue;
                     }
-
-                    var fromBlockIndex = currentBlockIndex + 1;
-                    var toBlockIndex = Math.Min(peerCurrentBlockIndex, lastBlockHeaderIndex);
-
-                    await SynchronizeBlocks(peer, fromBlockIndex, toBlockIndex);
+                    
+                    await SynchronizeBlocks(peer, currentBlockIndex + 1);
                     await _asyncDelayer.Delay(DefaultBlockSynchronizingInterval, cancellationToken);
                 }
             }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -115,9 +113,9 @@ namespace NeoSharp.Core.Network
 
         #endregion
 
-        private async Task SynchronizeBlocks(IPeer source, uint fromHeight, uint toHeight)
+        private async Task SynchronizeBlocks(IPeer source, uint fromHeight)
         {
-            toHeight = fromHeight + MaxBlocksCountToSync * MaxParallelBlockRequestsForSync - 1;
+            var toHeight = fromHeight + MaxBlocksCountToSync * MaxParallelBlockRequestsForSync - 1;
 
             var blockHashes = await _blockRepository.GetBlockHashes(fromHeight, toHeight - fromHeight + 1);
 

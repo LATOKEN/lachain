@@ -185,22 +185,24 @@ namespace NeoSharp.Application.Controllers
         /// Make rpc call for `sendfrom` 
         /// </summary> 
         [PromptCommand("rpc sendfrom", Category = "Rpc", Help = "Make rpc calls for sendfrom")]
-        public Task RpcSendfromCommand(IPEndPoint endPoint, UInt256 asset, UInt160 from, UInt160 to, BigInteger value, ulong fee = 0, UInt160 changeAddress = null)
+        public Task RpcSendfromCommand(UInt256 asset, string from, string to, decimal value, ulong fee = 0, UInt160 changeAddress = null)
         {
             // Serialize acording to (https://github.com/neo-project/neo-cli/blob/master/neo-cli/Network/RPC/RpcServerWithWallet.cs#L69)
 
+            var endpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 10332);
+            
             var ls = new List<object>
                 {
                     asset.ToString(false),
-                    from.ToString(false),
-                    to.ToString(false),
-                    value,
+                    from,
+                    to,
+                    Fixed8.FromDecimal(value),
                     fee
                 };
 
             if (changeAddress != null) ls.Add(changeAddress.ToString(false));
 
-            return RpcCallCommand(endPoint, "sendfrom", ls.ToArray().ToJson(false));
+            return RpcCallCommand(endpoint, "sendfrom", ls.ToArray().ToJson(false));
         }
 
         /// <summary> 

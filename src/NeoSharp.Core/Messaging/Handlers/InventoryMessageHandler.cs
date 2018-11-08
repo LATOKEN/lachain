@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Network;
@@ -10,6 +11,8 @@ namespace NeoSharp.Core.Messaging.Handlers
     public class InventoryMessageHandler : MessageHandler<InventoryMessage>
     {
         #region Private Fields
+
+        private readonly IBlockchainContext _blockchainContext;
         private readonly ILogger<InventoryMessageHandler> _logger;
         #endregion
 
@@ -18,8 +21,9 @@ namespace NeoSharp.Core.Messaging.Handlers
         /// Constructor
         /// </summary>
         /// <param name="logger">Logger</param>
-        public InventoryMessageHandler(ILogger<InventoryMessageHandler> logger)
+        public InventoryMessageHandler(ILogger<InventoryMessageHandler> logger, IBlockchainContext blockchainContext)
         {
+            _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
         #endregion
@@ -54,10 +58,11 @@ namespace NeoSharp.Core.Messaging.Handlers
 
                 return Task.CompletedTask;
             }
-
-
-            return Task.CompletedTask;
-            //return sender.Send(new GetDataMessage(inventoryType, hashes));
+            /* TODO: "this code should be checked for vulnabilities" */
+//            if (inventoryType == InventoryType.Block)
+            return sender.Send(new GetBlockHeadersMessage(_blockchainContext.LastBlockHeader.Hash));
+//            return sender.Send(new GetDataMessage(inventoryType, hashes));
+//            return Task.CompletedTask;
         }
         #endregion
     }
