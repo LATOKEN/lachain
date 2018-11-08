@@ -37,7 +37,10 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("tx sign", Category = "Tx", Help = "Sign transaction")]
         public async void signTx(string asset, string from, string to, decimal value, string privateKey = null)
         {
+            _consoleHandler.Write("Looking for unspent ouputs... ");
             var inputs = await _stateRepository.GetUnspent(from.ToScriptHash());
+            var coinReferences = inputs as CoinReference[] ?? inputs.ToArray();
+            _consoleHandler.WriteLine(coinReferences.Length + "unspect outputs");
             
             var output = new TransactionOutput
             {
@@ -48,15 +51,19 @@ namespace NeoSharp.Application.Controllers
             var tx = new ContractTransaction
             {
                 Attributes = new TransactionAttribute[0],
-                Inputs = inputs.ToArray(),
+                Inputs = coinReferences.ToArray(),
                 Outputs = new[]
                 {
                     output
                 }
             };
+            _consoleHandler.Write("Calculating transaction hash... ");
             _transactionSigner.Sign(tx);
+            _consoleHandler.WriteLine(tx.Hash.ToString(true));
             
+            _consoleHandler.Write("Signing transaction with private key... ");
             var signature = Crypto.Default.Sign(txToSign(tx), privateKey.HexToBytes());
+            _consoleHandler.WriteLine(signature.ToHexString());
             
 //            tx.Witness;
         }
