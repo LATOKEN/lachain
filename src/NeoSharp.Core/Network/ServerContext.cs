@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Cryptography;

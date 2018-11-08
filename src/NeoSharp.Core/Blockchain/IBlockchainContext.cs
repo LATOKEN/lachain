@@ -1,6 +1,6 @@
 ﻿using NeoSharp.Core.Models;
 
-namespace NeoSharp.Core.Network
+namespace NeoSharp.Core.Blockchain
 {
     public interface IBlockchainContext
     {
@@ -8,12 +8,8 @@ namespace NeoSharp.Core.Network
 
         BlockHeader LastBlockHeader { get; set; }
 
-        bool NeedPeerSync { get; }
-
         bool IsSyncing { get; set; }
-
-        bool IsPeerConnected { get; }
-
-        void SetPeerCurrentBlockIndex(uint index);
+        
+        bool NeedPeerSync(uint peerCurrentBlockIndex);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing;
 using NeoSharp.Core.Network;

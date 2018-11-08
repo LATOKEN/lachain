@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging;
 using NeoSharp.Core.Models;

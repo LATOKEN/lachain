@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Messaging;
 using NeoSharp.Core.Network;

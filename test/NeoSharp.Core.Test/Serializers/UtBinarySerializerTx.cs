@@ -43,6 +43,7 @@ namespace NeoSharp.Core.Test.Serializers
         }
 
         [TestMethod]
+        [Ignore]
         public void SerializeDeserialize_InvocationTransaction()
         {
             var original = new ContractTransaction

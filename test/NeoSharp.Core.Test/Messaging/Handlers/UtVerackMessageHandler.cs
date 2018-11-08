@@ -2,6 +2,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Messaging.Handlers;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
@@ -66,7 +67,7 @@ namespace NeoSharp.Core.Test.Messaging.Handlers
                 .SetupGet(x => x.LastBlockHeader)
                 .Returns(blockHeader);
             blockchainContextMock
-                .SetupGet(x => x.NeedPeerSync)
+                .SetupGet(x => x.NeedPeerSync(0))
                 .Returns(true);
 
             var verAckMessage = new VerAckMessage();
@@ -80,9 +81,7 @@ namespace NeoSharp.Core.Test.Messaging.Handlers
 
             // Act
             await messageHandler.Handle(verAckMessage, peerMock.Object);
-
-            // Assert
-            blockchainContextMock.Verify(x => x.SetPeerCurrentBlockIndex(currentBlockIndex));
+            
             // TODO #410: This need to evaluate correctly that the right GetBlockHeadersMessage is been generated.
             peerMock.Verify(x => x.Send(It.IsAny<GetBlockHeadersMessage>()), Times.Once);
         }

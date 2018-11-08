@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Logging;

@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Helpers;
