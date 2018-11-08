@@ -397,6 +397,7 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
+            // vvvvvvv WTF is this?? vvvvvvvv
             ContractParametersContext sc;
             try
             {
@@ -408,6 +409,8 @@ namespace Neo.Consensus
                 return;
             }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
+            // ^^^^^^^ Never used?? ^^^^^^^^^
+            
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }

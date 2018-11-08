@@ -13,23 +13,23 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IDisposable
     {
-        public const uint Version = 0;
-        public ConsensusState State;
-        public UInt256 PrevHash;
-        public uint BlockIndex;
-        public byte ViewNumber;
-        public Snapshot Snapshot;
-        public ECPoint[] Validators;
-        public int MyIndex;
-        public uint PrimaryIndex;
-        public uint Timestamp;
-        public ulong Nonce;
-        public UInt160 NextConsensus;
-        public UInt256[] TransactionHashes;
-        public Dictionary<UInt256, Transaction> Transactions;
-        public byte[][] Signatures;
-        public byte[] ExpectedView;
-        public KeyPair KeyPair;
+        public const uint Version = 0;  // +
+        public ConsensusState State;    // +
+        public UInt256 PrevHash;        // +
+        public uint BlockIndex;         // +
+        public byte ViewNumber;         // +
+        public Snapshot Snapshot;       // ??
+        public ECPoint[] Validators;    // +
+        public int MyIndex;             // +
+        public uint PrimaryIndex;       // +
+        public uint Timestamp;          // +
+        public ulong Nonce;             // +
+        public UInt160 NextConsensus;   // -
+        public UInt256[] TransactionHashes; // +
+        public Dictionary<UInt256, Transaction> Transactions; // +
+        public byte[][] Signatures;     // +
+        public byte[] ExpectedView;     // +
+        public KeyPair KeyPair;         // +
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 

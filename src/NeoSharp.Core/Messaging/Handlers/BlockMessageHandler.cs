@@ -70,6 +70,7 @@ namespace NeoSharp.Core.Messaging.Handlers
             //_logger.LogInformation($"Broadcasting block {block.Hash} with Index {block.Index}.");
             //_broadcaster.Broadcast(message, sender);
             
+            // TODO: if we are consensus node, ignore this
             await _blockProcessor.AddBlock(block);
         }
 

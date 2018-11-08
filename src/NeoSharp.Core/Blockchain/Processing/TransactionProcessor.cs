@@ -12,7 +12,7 @@ using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing
 {
-    public class TransactionProcessor
+    public class TransactionProcessor : ITransactionProcessor
     {
         private static readonly TimeSpan DefaultTransactionPollingInterval = TimeSpan.FromMilliseconds(100);
 

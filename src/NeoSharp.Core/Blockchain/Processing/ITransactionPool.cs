@@ -15,5 +15,7 @@ namespace NeoSharp.Core.Blockchain.Processing
         void Remove(UInt256 hash);
 
         bool Contains(UInt256 hash);
+
+        Transaction FindByHash(UInt256 hash);
     }
 }

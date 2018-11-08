@@ -74,6 +74,12 @@ namespace NeoSharp.Core.Blockchain.Processing
             return _transactionPool.ContainsKey(hash);
         }
 
+        public Transaction FindByHash(UInt256 hash)
+        {
+            if (hash == null) throw new ArgumentNullException(nameof(hash));
+            return _transactionPool.GetValueOrDefault(hash)?.Transaction;
+        }
+
         public IEnumerator<Transaction> GetEnumerator()
         {
             return GetTransactions().GetEnumerator();

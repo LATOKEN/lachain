@@ -25,6 +25,13 @@ namespace NeoSharp.Core.Blockchain.Processing
         private readonly ILogger<BlockProcessor> _logger;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
+        private class CurrentBlockIndex
+        {
+            public uint Index { get; set; }
+        }
+
+        private CurrentBlockIndex _currentBlockIndex;
+
         #endregion
 
         #region Constructor 
@@ -50,12 +57,14 @@ namespace NeoSharp.Core.Blockchain.Processing
         #endregion
 
         #region IBlockProcessor implementation
+
         // TODO #384: We will read the current block from Blockchain
         // because the logic to get that too complicated 
         /// <inheritdoc />
         public void Run()
         {
             var cancellationToken = _cancellationTokenSource.Token;
+            _currentBlockIndex = new CurrentBlockIndex {Index = _blockchainContext.CurrentBlock.Index};
 
             Task.Factory.StartNew(async () =>
             {
@@ -73,6 +82,11 @@ namespace NeoSharp.Core.Blockchain.Processing
                     await _blockPersister.Persist(block);
 
                     _blockPool.TryRemove(nextBlockHeight);
+                    lock (_currentBlockIndex)
+                    {
+                        _currentBlockIndex.Index = _blockchainContext.CurrentBlock.Index;
+                        Monitor.PulseAll(_currentBlockIndex);
+                    }
                 }
             }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
@@ -89,16 +103,29 @@ namespace NeoSharp.Core.Blockchain.Processing
 
             if (block.Hash == null)
                 _blockSigner.Sign(block);
-            
+
             var blockHash = block.Hash;
             if (blockHash == null || blockHash == UInt256.Zero)
                 throw new ArgumentException(nameof(blockHash));
-            
+
             if (_blockPool.TryAdd(block))
                 _logger.LogWarning($"The block \"{blockHash.ToString(true)}\" was already queued to be added.");
 
             /* TODO: "why not to persist block here?" */
             return Task.FromResult(block);
+        }
+
+        public void WaitUntilBlockProcessed(uint index)
+        {
+            // TODO: customize timeouts
+            while (true)
+            {
+                lock (_currentBlockIndex)
+                {
+                    Monitor.Wait(_currentBlockIndex, TimeSpan.FromSeconds(30)); 
+                    if (_currentBlockIndex.Index >= index) break;
+                }
+            }
         }
 
         /// <inheritdoc />

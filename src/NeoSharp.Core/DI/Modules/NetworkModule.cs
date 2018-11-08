@@ -17,6 +17,7 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<IServerContext, ServerContext>();
             containerBuilder.RegisterSingleton<IBlockchainContext, BlockchainContext>();
             containerBuilder.RegisterSingleton<IPeerMessageListener, PeerMessageListener>();
+            containerBuilder.RegisterSingleton<ITransactionCrawler, TransactionCrawler>();
 
             containerBuilder.RegisterSingleton<NetworkConfig>();
             containerBuilder.RegisterSingleton<RpcConfig>();
