@@ -3,7 +3,7 @@
 namespace NeoSharp.Core.Consensus
 {
     [Flags]
-    public enum ConsensusState : byte
+    public enum ConsensusState
     {
         Initial = 0x00,
         Primary = 0x01,

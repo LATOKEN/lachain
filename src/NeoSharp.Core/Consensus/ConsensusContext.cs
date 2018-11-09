@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Cryptography;
+using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Types;
 
@@ -18,20 +22,34 @@ namespace NeoSharp.Core.Consensus
         public ulong Nonce; // TODO: fix very weak nonce generation mechanism
         public DateTime LastBlockRecieved;
         public int MyIndex;
-        public uint PrimaryIndex;
-        public byte[] PrivateKey;
+        private KeyPair PrivateKey;
+        public uint SignaturesAcquired;
 
         public ConsensusProposal CurrentProposal;
-        public ObservedValidatorState[] Validators;
+        public readonly ObservedValidatorState[] Validators;
 
-        public int ValidatorCount => Validators.Length;
-        public int Quorum => ValidatorCount - (ValidatorCount - 1) / 3;
+        public uint ValidatorCount => (uint) Validators.Length;
+        public uint Quorum => ValidatorCount - (ValidatorCount - 1) / 3;
+        public uint PrimaryIndex => (BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount;
+        public ConsensusState Role => MyIndex == PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup;
 
-        private BlockHeader _memoizedHeader = null;
-
-        public BlockHeader GetProposedHeader()
+        public ConsensusContext(KeyPair keyPair, IReadOnlyList<PublicKey> validators)
         {
-            if (CurrentProposal.TransactionHashes == null) return null;
+            PrivateKey = keyPair;
+            Validators = new ObservedValidatorState[validators.Count];
+            for (int i = 0; i < Validators.Length; ++i)
+            {
+                Validators[i].PublicKey = validators[i];
+            }
+
+            CurrentProposal = null;
+        }
+
+        private BlockHeader _memoizedHeader;
+
+        private BlockHeader GetProposedHeader()
+        {
+            if (CurrentProposal?.TransactionHashes == null) return null;
             if (_memoizedHeader != null) return _memoizedHeader;
             return _memoizedHeader = new BlockHeader
             {
@@ -42,6 +60,40 @@ namespace NeoSharp.Core.Consensus
                 Index = BlockIndex,
                 ConsensusData = Nonce
             };
+        }
+
+        public Block GetProposedBlock()
+        {
+            return GetProposedHeader()?.GetBlock(CurrentProposal.Transactions.Values.ToArray());
+        }
+
+        public void ResetState(UInt256 lastBlockHash, uint lastBlockIndex)
+        {
+            State = ConsensusState.Initial;
+            PreviousBlockHash = lastBlockHash;
+            BlockIndex = lastBlockIndex + 1;
+            ViewNumber = 0;
+            MyIndex = -1;
+            CurrentProposal = null;
+            for (var i = 0; i < Validators.Length; ++i)
+            {
+                Validators[i].Reset();
+                if (Validators[i].PublicKey == PrivateKey.PublicKey)
+                {
+                    MyIndex = i;
+                }
+            }
+
+            _memoizedHeader = null;
+        }
+
+        public void ChangeView(byte view)
+        {
+            State &= ConsensusState.SignatureSent;
+            ViewNumber = view;
+            CurrentProposal = null;
+            if (MyIndex >= 0) Validators[MyIndex].ExpectedViewNumber = view;
+            _memoizedHeader = null;
         }
     }
 }

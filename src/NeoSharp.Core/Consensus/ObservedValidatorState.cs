@@ -7,5 +7,10 @@ namespace NeoSharp.Core.Consensus
         public byte ExpectedViewNumber;
         public byte[] BlockSignature;
         public PublicKey PublicKey;
+
+        public void Reset()
+        {
+            BlockSignature = null;
+        }
     }
 }
