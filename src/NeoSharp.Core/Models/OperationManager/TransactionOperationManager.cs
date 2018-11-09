@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Blockchain.Repositories;
+using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Cryptography;
 using NeoSharp.Types;
 
@@ -11,24 +11,29 @@ namespace NeoSharp.Core.Models.OperationManager
     public class TransactionOperationManager : ITransactionOperationsManager
     {
         #region Private Fields 
+
         private readonly IBinarySerializer _binarySerializer;
-        private readonly ITransactionRepository _transactionModel;
+        private readonly ITransactionRepository _transactionRepository;
         private readonly IAssetRepository _assetRepository;
+
         #endregion
 
         #region Constructor 
+
         public TransactionOperationManager(
             IBinarySerializer binarySerializer,
-            ITransactionRepository transactionModel,
+            ITransactionRepository transactionRepository,
             IAssetRepository assetRepository)
         {
             _binarySerializer = binarySerializer;
-            _transactionModel = transactionModel;
+            _transactionRepository = transactionRepository;
             _assetRepository = assetRepository;
         }
+
         #endregion
 
         #region ITransactionOperationsManager implementation 
+
         public void Sign(Transaction transaction)
         {
             var data = _binarySerializer.Serialize(transaction);
@@ -55,10 +60,10 @@ namespace NeoSharp.Core.Models.OperationManager
                 }
             }*/
 
-            if (_transactionModel.IsDoubleSpend(transaction))
+            /*if (_transactionRepository.IsDoubleSpend(transaction))
             {
                 return false;
-            }
+            }*/
 
             /*foreach (var group in transaction.Outputs.GroupBy(p => p.AssetId))
             {
@@ -108,9 +113,9 @@ namespace NeoSharp.Core.Models.OperationManager
             {
                 return false;
             }*/
-            
+
             var resultsIssue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-            
+
             /*if (resultsIssue.Any(p => p.AssetId != _transactionContext.UtilityTokenHash) && transaction.Type == TransactionType.IssueTransaction)
                 return false;*/
 
@@ -130,6 +135,7 @@ namespace NeoSharp.Core.Models.OperationManager
 
             return true;
         }
+
         #endregion
 
         private IEnumerable<TransactionResult> GetTransactionResults(Transaction transaction)

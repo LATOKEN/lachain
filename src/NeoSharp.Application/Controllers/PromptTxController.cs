@@ -2,9 +2,9 @@
 using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Application.Controllers
 {

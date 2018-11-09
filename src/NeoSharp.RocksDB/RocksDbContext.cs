@@ -8,13 +8,7 @@ namespace NeoSharp.RocksDB
 {
     public class RocksDbContext : IRocksDbContext
     {
-        #region Private Fields
-
         private readonly RocksDb _rocksDb;
-
-        #endregion
-
-        #region Constructor
 
         public RocksDbContext(RocksDbConfig config)
         {
@@ -25,10 +19,6 @@ namespace NeoSharp.RocksDB
             // TODO #358: please avoid sync IO in constructor -> Open connection with the first operation for now
             _rocksDb = RocksDb.Open(options, config.FilePath);
         }
-
-        #endregion
-
-        #region IRocksDbContext implementation
 
         public Task<byte[]> Get(byte[] key)
         {
@@ -59,7 +49,5 @@ namespace NeoSharp.RocksDB
         {
             _rocksDb?.Dispose();
         }
-
-        #endregion
     }
 }

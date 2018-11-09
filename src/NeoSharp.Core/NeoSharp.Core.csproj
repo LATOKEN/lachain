@@ -26,7 +26,7 @@
     <ProjectReference Include="..\NeoSharp.VM\NeoSharp.VM.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Blockchain\Model" />
+    <Folder Include="Config" />
     <Folder Include="Wallet\Helpers\" />
     <Folder Include="SmartContract\ContractParameters\" />
     <Folder Include="Wallet\Invocation\" />

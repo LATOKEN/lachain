@@ -2,7 +2,7 @@
 using System.Linq;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Persistence;
+using NeoSharp.Core.Storage;
 using NeoSharp.Types;
 
 namespace NeoSharp.RocksDB
@@ -32,6 +32,11 @@ namespace NeoSharp.RocksDB
         public static byte[] BuildStateValidatorKey(this PublicKey point)
         {
             return DataEntryPrefix.StValidator.BuildKey(point.EncodedData);
+        }
+
+        public static byte[] BuildStateAssetKey(this UInt160 hash)
+        {
+            return DataEntryPrefix.StAsset.BuildKey(hash.ToArray());
         }
 
         public static byte[] BuildStateAssetKey(this UInt256 hash)

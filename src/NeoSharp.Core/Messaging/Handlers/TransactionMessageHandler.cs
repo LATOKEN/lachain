@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NeoSharp.Core.Blockchain.Processing;
-using NeoSharp.Core.Blockchain.Repositories;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Network;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Messaging.Handlers
 {
@@ -60,7 +60,7 @@ namespace NeoSharp.Core.Messaging.Handlers
                 _transactionSigner.Sign(transaction);
             }
 
-            if (await _transactionRepository.ContainsTransaction(transaction.Hash))
+            if (await _transactionRepository.ContainsTransactionByHash(transaction.Hash))
             {
                 _logger.LogInformation($"The transaction \"{transaction.Hash?.ToString(true)}\" exists already on the blockchain.");
                 return;

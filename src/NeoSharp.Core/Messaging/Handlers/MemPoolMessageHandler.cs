@@ -29,7 +29,7 @@ namespace NeoSharp.Core.Messaging.Handlers
         /// <inheritdoc />
         public override async Task Handle(MemPoolMessage message, IPeer sender)
         {
-            var hashes = _transactionPool
+            var hashes = _transactionPool.GetTransactions()
                 .Take(InventoryPayload.MaxHashes)
                 .Select(tx => tx.Hash)
                 .ToArray();

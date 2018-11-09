@@ -1,0 +1,112 @@
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using NeoSharp.Core.Helpers;
+using NeoSharp.Core.Logging;
+using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Network;
+using NeoSharp.Types;
+
+namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
+{
+    public class BlockProcessor : IBlockProcessor
+    {
+        #region Private Fields 
+
+        private static readonly TimeSpan DefaultBlockPollingInterval = TimeSpan.FromMilliseconds(1_000);
+
+        private readonly IBlockPool _blockPool;
+        private readonly IAsyncDelayer _asyncDelayer;
+        private readonly ISigner<Block> _blockSigner;
+        private readonly IBlockPersister _blockPersister;
+        private readonly IBlockchainContext _blockchainContext;
+        private readonly IBroadcaster _broadcaster;
+        private readonly ILogger<BlockProcessor> _logger;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
+        #endregion
+
+        #region Constructor 
+
+        public BlockProcessor(
+            IBlockPool blockPool,
+            IAsyncDelayer asyncDelayer,
+            ISigner<Block> blockSigner,
+            IBlockPersister blockPersister,
+            IBlockchainContext blockchainContext,
+            IBroadcaster broadcaster,
+            ILogger<BlockProcessor> logger)
+        {
+            _blockPool = blockPool ?? throw new ArgumentNullException(nameof(blockPool));
+            _asyncDelayer = asyncDelayer ?? throw new ArgumentNullException(nameof(asyncDelayer));
+            _blockSigner = blockSigner ?? throw new ArgumentNullException(nameof(blockSigner));
+            _blockPersister = blockPersister ?? throw new ArgumentNullException(nameof(blockPersister));
+            _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
+            _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        #endregion
+
+        #region IBlockProcessor implementation
+        // TODO #384: We will read the current block from Blockchain
+        // because the logic to get that too complicated 
+        /// <inheritdoc />
+        public void Run()
+        {
+            var cancellationToken = _cancellationTokenSource.Token;
+
+            Task.Factory.StartNew(async () =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    var nextBlockHeight = _blockchainContext.CurrentBlock?.Index + 1U ?? 0U;
+
+                    if (!_blockPool.TryGet(nextBlockHeight, out var block))
+                    {
+                        await _asyncDelayer.Delay(DefaultBlockPollingInterval, cancellationToken);
+                        continue;
+                    }
+
+                    await _blockPersister.Persist(block);
+
+                    _blockPool.TryRemove(nextBlockHeight);
+                }
+            }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        /// <inheritdoc />
+        public Task<Block> AddBlock(Block block)
+        {
+            if (block == null)
+                throw new ArgumentNullException(nameof(block));
+
+            var currentBlockHeight = _blockchainContext.CurrentBlock?.Index ?? -1U;
+            if (currentBlockHeight >= block.Index || block.Index > currentBlockHeight + _blockPool.Capacity)
+                return null;
+
+            if (block.Hash == null)
+                _blockSigner.Sign(block);
+            
+            var blockHash = block.Hash;
+            if (blockHash == null || blockHash == UInt256.Zero)
+                throw new ArgumentException(nameof(blockHash));
+            
+            if (_blockPool.TryAdd(block))
+                _logger.LogWarning($"The block \"{blockHash.ToString(true)}\" was already queued to be added.");
+
+            /* TODO: "why not to persist block here?" */
+            return Task.FromResult(block);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
+        }
+
+        #endregion
+    }
+}

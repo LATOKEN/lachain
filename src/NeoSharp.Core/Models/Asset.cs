@@ -6,6 +6,10 @@ namespace NeoSharp.Core.Models
 {
     public class Asset
     {
+        [BinaryProperty(0)]
+        [JsonProperty("version")]
+        public byte Version;
+        
         [BinaryProperty(1)]
         [JsonProperty("hash")]
         public UInt256 Hash;
@@ -29,6 +33,5 @@ namespace NeoSharp.Core.Models
         [BinaryProperty(6)]
         [JsonProperty("admin")]
         public UInt160 Owner;
-
     }
 }

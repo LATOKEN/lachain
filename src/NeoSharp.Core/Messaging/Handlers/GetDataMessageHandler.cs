@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
+using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Handlers
@@ -17,7 +16,7 @@ namespace NeoSharp.Core.Messaging.Handlers
     {
         #region Private fields 
         private readonly IBlockRepository _blockRepository;
-        private readonly ITransactionRepository _transactionModel;
+        private readonly ITransactionRepository _transactionRepository;
         private readonly ILogger<GetDataMessageHandler> _logger;
         #endregion
 
@@ -36,7 +35,7 @@ namespace NeoSharp.Core.Messaging.Handlers
             // TODO #434: Title not aligned but the context is the same.
 
             _blockRepository = blockRepository;
-            _transactionModel = transactionModel ?? throw new ArgumentNullException(nameof(transactionModel));
+            _transactionRepository = transactionModel ?? throw new ArgumentNullException(nameof(transactionModel));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
         #endregion
@@ -91,7 +90,7 @@ namespace NeoSharp.Core.Messaging.Handlers
         #region Private Methods 
         private async Task SendTransactions(IReadOnlyCollection<UInt256> transactionHashes, IPeer peer)
         {
-            var transactions = await _transactionModel.GetTransactions(transactionHashes);
+            var transactions = await _transactionRepository.GetTransactionsByHashes(transactionHashes);
 
             // TODO #378: The more efficient operation would be to send many transactions per one message
             // but it breaks backward compatibility
@@ -100,7 +99,7 @@ namespace NeoSharp.Core.Messaging.Handlers
 
         private async Task SendBlocks(IReadOnlyCollection<UInt256> blockHashes, IPeer peer)
         {
-            var blocks = (await this._blockRepository.GetBlocks(blockHashes)).ToList();
+            var blocks = (await _blockRepository.GetBlockHeaderByHashes(blockHashes)).ToList();
 
             if (!blocks.Any()) return;
 
@@ -110,18 +109,19 @@ namespace NeoSharp.Core.Messaging.Handlers
             {
                 // TODO #378: The more efficient operation would be to send many blocks per one message
                 // but it breaks backward compatibility
-                await Task.WhenAll(blocks.Select(b => peer.Send(new BlockMessage(b))));
+                /* TODO: "kill me" */
+//                await Task.WhenAll(blocks.Select(b => peer.Send(new BlockMessage(b))));
             }
             else
             {
-                var merkleBlocks = blocks
-                    .ToDictionary(
-                        b => b,
-                        b => new BitArray(b.Transactions
-                            .Select(tx => TestFilter(filter, tx))
-                            .ToArray()
-                        )
-                    );
+//                var merkleBlocks = blocks
+//                    .ToDictionary(
+//                        b => b,
+//                        b => new BitArray(b.Transactions
+//                            .Select(tx => TestFilter(filter, tx))
+//                            .ToArray()
+//                        )
+//                    );
 
                 // TODO #379: Why don't we have this message?
                 // await peer.Send(new MerkleBlockMessage(merkleBlocks));

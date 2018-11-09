@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Cryptography;
 using NeoSharp.Types;
 using Newtonsoft.Json;
 
@@ -11,30 +10,24 @@ namespace NeoSharp.Core.Models
     public class Account
     {
         [BinaryProperty(1)]
-        [JsonProperty("scripthash")]
-        public UInt160 ScriptHash;
+        [JsonProperty("address")]
+        public UInt160 Address { get; set; }
 
         [BinaryProperty(2)]
-        [JsonProperty("isfrozen")]
-        public bool IsFrozen;
-
-        [BinaryProperty(2)]
-        [JsonProperty("votes")]
-        public PublicKey[] Votes;
+        [JsonProperty("state")]
+        public AccountState State { get; set; } = AccountState.Active;
 
         [BinaryProperty(3)]
         [JsonProperty("balances")]
-        public Dictionary<UInt256, Fixed8> Balances;
+        public Dictionary<UInt160, UInt256> Balances { get; set; } = new Dictionary<UInt160, UInt256>();
 
         public Account()
         {
-            Balances = new Dictionary<UInt256, Fixed8>();
-            Votes = Array.Empty<PublicKey>();
         }
-
-        public Account(UInt160 scriptHash) : this()
+        
+        public Account(UInt160 address) : this()
         {
-            ScriptHash = scriptHash;
+            Address = address;
         }
     }
 }

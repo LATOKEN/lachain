@@ -3,12 +3,11 @@ using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing;
-using NeoSharp.Core.Blockchain.Repositories;
-using NeoSharp.Core.Blockchain.State;
+using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
+using NeoSharp.Core.Blockchain.Processing.TranscationProcessing;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transcations;
-using NeoSharp.Core.Types;
 
 namespace NeoSharp.Core.DI.Modules
 {
@@ -47,12 +46,6 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<IVerifier<Transaction>, TransactionOperationManager>();
             containerBuilder.RegisterSingleton<ITransactionOperationsManager, TransactionOperationManager>();
             #endregion
-
-            containerBuilder.RegisterSingleton<IAccountManager, AccountManager>();
-
-            containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
-            containerBuilder.RegisterSingleton<IAssetRepository, AssetRepository>();
-            containerBuilder.RegisterSingleton<IBlockRepository, BlockRepository>();
         }
     }
 }

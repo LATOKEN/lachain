@@ -8,12 +8,12 @@ using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Blockchain;
-using NeoSharp.Core.Blockchain.Processing;
-using NeoSharp.Core.Blockchain.Repositories;
+using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Network;
+using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Types;
 
 namespace NeoSharp.Application.Controllers
@@ -25,9 +25,9 @@ namespace NeoSharp.Application.Controllers
         private readonly IServerContext _serverContext;
         private readonly IBlockPool _blockPool;
         private readonly ITransactionPool _transactionPool;
-        private readonly IBlockchain _blockchain;
         private readonly IBlockRepository _blockRepository;
         private readonly IBlockPersister _blockPersister;
+        private readonly IGlobalRepository _globalRepository;
         private readonly ITransactionRepository _transactionModel;
         private readonly IAssetRepository _assetModel;
         private readonly IBlockchainContext _blockchainContext;
@@ -40,8 +40,8 @@ namespace NeoSharp.Application.Controllers
         /// Constructor
         /// </summary>
         /// <param name="serverContext">Server context</param>
-        /// <param name="blockchain">Blockchain</param>
         /// <param name="blockRepository">The Block Model.</param>
+        /// <param name="globalRepository"></param>
         /// <param name="transactionModel"></param>
         /// <param name="assetModel"></param>
         /// <param name="blockchainContext">The block chain context class.</param>
@@ -52,8 +52,8 @@ namespace NeoSharp.Application.Controllers
         /// <param name="consoleHandler">Console handler</param>
         public PromptBlockchainController(
             IServerContext serverContext,
-            IBlockchain blockchain,
             IBlockRepository blockRepository,
+            IGlobalRepository globalRepository,
             ITransactionRepository transactionModel,
             IAssetRepository assetModel,
             IBlockchainContext blockchainContext,
@@ -64,8 +64,8 @@ namespace NeoSharp.Application.Controllers
             IConsoleHandler consoleHandler)
         {
             _serverContext = serverContext;
-            _blockchain = blockchain;
             _blockRepository = blockRepository;
+            _globalRepository = globalRepository;
             _blockSigner = blockSigner;
             _blockPersister = blockPersister;
             _transactionModel = transactionModel;
@@ -215,7 +215,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("header", Category = "Blockchain", Help = "Get header by index or by hash")]
         public async Task HeaderCommand(uint blockIndex, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _blockRepository.GetBlockHeader(blockIndex), output);
+            _consoleHandler.WriteObject(await _blockRepository.GetBlockHeaderByHeight(blockIndex), output);
         }
 
         /// <summary>
@@ -226,14 +226,14 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("header", Category = "Blockchain", Help = "Get header by index or by hash")]
         public async Task HeaderCommand(UInt256 blockHash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _blockRepository.GetBlockHeader(blockHash), output);
+            _consoleHandler.WriteObject(await _blockRepository.GetBlockHeaderByHash(blockHash), output);
         }
 
         [PromptCommand("block", Category = "Blockchain", Help = "Get information about blocks")]
         public async Task BlockCommand()
         {
-            var headerHeight = await _blockRepository.GetTotalBlockHeaderHeight();
-            var blockHeight = await _blockRepository.GetTotalBlockHeight();
+            var headerHeight = await _globalRepository.GetTotalBlockHeaderHeight();
+            var blockHeight = await _globalRepository.GetTotalBlockHeight();
             
             _consoleHandler.Write("Headers: ");
             _consoleHandler.WriteLine(headerHeight.ToString(), ConsoleOutputStyle.Log);
@@ -252,7 +252,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("block", Category = "Blockchain", Help = "Get block by index or by hash")]
         public async Task BlockCommand(uint blockIndex, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _blockRepository.GetBlock(blockIndex), output);
+//            _consoleHandler.WriteObject(await _blockRepository.GetBlock(blockIndex), output);
         }
 
         /// <summary>
@@ -263,7 +263,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("block", Category = "Blockchain", Help = "Get block by index or by hash")]
         public async Task BlockCommand(UInt256 blockHash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _blockRepository.GetBlock(blockHash), output);
+//            _consoleHandler.WriteObject(await _blockRepository.GetBlock(blockHash), output);
         }
 
         /// <summary>
@@ -274,7 +274,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("tx", Category = "Blockchain", Help = "Get tx")]
         public async Task TxCommand(UInt256 hash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _transactionModel.GetTransaction(hash), output);
+            _consoleHandler.WriteObject(await _transactionModel.GetTransactionByHash(hash), output);
         }
 
         /// <summary>
@@ -286,8 +286,8 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("tx", Category = "Blockchain", Help = "Get tx by block num/tx number")]
         public async Task TxCommand(uint blockIndex, ushort txNumber, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            var block = await _blockRepository.GetBlock(blockIndex);
-            _consoleHandler.WriteObject(block.Transactions?[txNumber], output);
+//            var block = await _blockRepository.GetBlock(blockIndex);
+//            _consoleHandler.WriteObject(block.Transactions?[txNumber], output);
         }
 
         /// <summary>
@@ -296,9 +296,9 @@ namespace NeoSharp.Application.Controllers
         /// <param name="hash">Hash</param>
         /// <param name="output">Output</param>
         [PromptCommand("asset", Category = "Blockchain", Help = "Get asset", Order = 0)]
-        public async Task AssetCommand(UInt256 hash, PromptOutputStyle output = PromptOutputStyle.json)
+        public async Task AssetCommand(UInt160 hash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _assetModel.GetAsset(hash), output);
+            _consoleHandler.WriteObject(await _assetModel.GetAssetByHash(hash), output);
         }
 
         /// <summary>
@@ -310,10 +310,9 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("asset", Category = "Blockchain", Help = "Get asset", Order = 1)]
         public async Task AssetCommand(string query, EnumerableExtensions.QueryMode mode = EnumerableExtensions.QueryMode.Contains, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            var assets = await _assetModel.GetAssets();
-            var result = assets.QueryResult(query, mode).ToArray();
-
-            _consoleHandler.WriteObject(result, output);
+//            var assets = await _assetModel.GetAssets();
+//            var result = assets.QueryResult(query, mode).ToArray();
+//            _consoleHandler.WriteObject(result, output);
         }
 
         /// <summary>

@@ -3,18 +3,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NeoSharp.Core.Blockchain;
-using NeoSharp.Core.Blockchain.Processing;
-using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Messaging;
 using NeoSharp.Core.Messaging.Messages;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Network
 {
     public class PeerMessageListener : IPeerMessageListener
     {
         #region Private Fields
+
         private static readonly TimeSpan DefaultMessagePollingInterval = TimeSpan.FromMilliseconds(10);
         private const int MaxBlocksCountToSync = 500;
         private const int MaxParallelBlockRequestsForSync = 4;
@@ -69,9 +69,9 @@ namespace NeoSharp.Core.Network
                         await _asyncDelayer.Delay(DefaultMessagePollingInterval, cancellationToken);
                         continue;
                     }
-                    
+
                     /*Console.WriteLine(" ~ handled message (" + message.Command + ")");*/
-                    
+
                     // TODO #369: Peer that sending wrong messages has to be disconnected.
                     if (peer.IsReady == message.IsHandshakeMessage()) continue;
 
@@ -91,7 +91,7 @@ namespace NeoSharp.Core.Network
                     }
 
                     var currentBlockIndex = _blockchainContext.CurrentBlock.Index;
-                    
+
                     /*var peerCurrentBlockIndex = peer.Version.CurrentBlockIndex;
                     if (currentBlockIndex > peerCurrentBlockIndex)
                     {
@@ -104,7 +104,7 @@ namespace NeoSharp.Core.Network
                         await _asyncDelayer.Delay(DefaultBlockHeaderWaitingInterval, cancellationToken);
                         continue;
                     }
-                    
+
                     await SynchronizeBlocks(peer, currentBlockIndex + 1);
                     await _asyncDelayer.Delay(DefaultBlockSynchronizingInterval, cancellationToken);
                 }
@@ -117,18 +117,18 @@ namespace NeoSharp.Core.Network
         {
             var toHeight = fromHeight + MaxBlocksCountToSync * MaxParallelBlockRequestsForSync - 1;
 
-            var blockHashes = await _blockRepository.GetBlockHashes(fromHeight, toHeight - fromHeight + 1);
+            var blockHeaders = await _blockRepository.GetBlockHeadersFromHeight(fromHeight, toHeight - fromHeight + 1);
 
-            blockHashes = blockHashes
+            var blockHashes = blockHeaders
+                .Select(b => b.Hash)
                 .Except(_blockPool.Select(b => b.Hash).ToArray())
                 .ToArray();
-            
-            if (!blockHashes.Any())
-            {
-                return;
-            }
 
-            var batchesCount = blockHashes.Count() / MaxBlocksCountToSync + (blockHashes.Count() % MaxBlocksCountToSync != 0 ? 1 : 0);
+            if (!blockHashes.Any())
+                return;
+
+            var batchesCount = blockHashes.Length / MaxBlocksCountToSync +
+                               (blockHashes.Length % MaxBlocksCountToSync != 0 ? 1 : 0);
 
             for (var i = 0; i < batchesCount; i++)
             {

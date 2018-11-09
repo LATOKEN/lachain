@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 namespace NeoSharp.Core.Models
 {
     [Serializable]
+    [Obsolete]
     public class Validator
     {
         [BinaryProperty(1)]

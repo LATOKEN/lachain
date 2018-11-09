@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Cryptography;
+using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Cryptography;
 using NeoSharp.Types;
 
@@ -10,6 +10,7 @@ namespace NeoSharp.Core.Models.OperationManager
     public class BlockOperationManager : IBlockOperationsManager
     {
         #region Private Fields
+
         private readonly Crypto _crypto;
         private readonly IBinarySerializer _binarySerializer;
         private readonly ISigner<Transaction> _transactionSigner;
@@ -19,13 +20,11 @@ namespace NeoSharp.Core.Models.OperationManager
 
         #region Constructor 
 
-        public BlockOperationManager
-            (
+        public BlockOperationManager(
             Crypto crypto,
             IBinarySerializer binarySerializer,
             ISigner<Transaction> transactionSigner,
-            IBlockRepository blockRepository
-            )
+            IBlockRepository blockRepository)
         {
             _crypto = crypto;
             _binarySerializer = binarySerializer;
@@ -67,7 +66,7 @@ namespace NeoSharp.Core.Models.OperationManager
 
         public bool Verify(Block block)
         {
-            var task = _blockRepository.GetBlockHeader(block.PreviousBlockHash);
+            var task = _blockRepository.GetBlockHeaderByHash(block.PreviousBlockHash);
             task.Wait();
 
             var prevHeader = task.Result;
