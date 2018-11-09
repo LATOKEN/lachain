@@ -34,11 +34,11 @@ namespace NeoSharp.BinarySerialization.Cache
 
         // Cache
 
-        private static Type _iListType = typeof(IList);
-        private static Type[] _iReadonlyListType = new Type[] { typeof(IReadOnlyList<>), typeof(IReadOnlyCollection<>) };
-        private static Type[] _iHashSetType = new Type[] { typeof(HashSet<>)/*, typeof(ISet<>)*/ };
-        private static Type[] _iDictionaryTypes = new Type[] { typeof(Dictionary<,>)/*, typeof(IDictionary<,>)*/ };
-
+        private static readonly Type ListType = typeof(IList);
+        private static readonly Type[] ReadonlyListType = { typeof(IReadOnlyList<>), typeof(IReadOnlyCollection<>) };
+        private static readonly Type[] HashSetType = { typeof(HashSet<>)/*, typeof(ISet<>)*/ };
+        private static readonly Type[] DictionaryTypes = { typeof(Dictionary<,>)/*, typeof(IDictionary<,>)*/ };
+        
         /// <summary>
         /// Constructor
         /// </summary>
@@ -71,10 +71,10 @@ namespace NeoSharp.BinarySerialization.Cache
             Name = member.Name ?? null;
 
             var isArray = type.IsArray;
-            var isList = _iListType.IsAssignableFrom(type);
-            var isReadOnlyList = type.IsGenericType && _iReadonlyListType.Contains(type.GetGenericTypeDefinition());
-            var isHashSet = type.IsGenericType && _iHashSetType.Contains(type.GetGenericTypeDefinition());
-            var isDic = type.IsGenericType && _iDictionaryTypes.Contains(type.GetGenericTypeDefinition());
+            var isList = ListType.IsAssignableFrom(type);
+            var isReadOnlyList = type.IsGenericType && ReadonlyListType.Contains(type.GetGenericTypeDefinition());
+            var isHashSet = type.IsGenericType && HashSetType.Contains(type.GetGenericTypeDefinition());
+            var isDic = type.IsGenericType && DictionaryTypes.Contains(type.GetGenericTypeDefinition());
 
             if (atr == null)
             {
@@ -94,7 +94,7 @@ namespace NeoSharp.BinarySerialization.Cache
 
             if (type == typeof(byte[]))
             {
-                Serializer = new BinaryByteArraySerializer(MaxLength);
+                Serializer = new BinaryByteArraySerializer((uint) MaxLength);
             }
             else
             {
@@ -180,20 +180,16 @@ namespace NeoSharp.BinarySerialization.Cache
         {
             // Default types
 
-            var serializerAttr = member?.GetCustomAttribute<BinaryTypeSerializerAttribute>();
-
-            if (serializerAttr == null)
-            {
-                serializerAttr = type.GetCustomAttribute<BinaryTypeSerializerAttribute>();
-            }
+            var serializerAttr = member?.GetCustomAttribute<BinaryTypeSerializerAttribute>() ?? type.GetCustomAttribute<BinaryTypeSerializerAttribute>();
 
             if (serializerAttr != null)
             {
                 serializer = serializerAttr.Create(); return true;
             }
-            else if (type == typeof(string))
+
+            if (type == typeof(string))
             {
-                serializer = new BinaryStringSerializer(maxLength);
+                serializer = new BinaryStringSerializer((uint) maxLength);
                 return true;
             }
             else if (type == typeof(long))

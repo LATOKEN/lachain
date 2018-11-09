@@ -1,5 +1,4 @@
 ﻿using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Models;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Messages
@@ -70,7 +69,7 @@ namespace NeoSharp.Core.Messaging.Messages
 
 #pragma warning restore CS0414
 
-        [BinaryProperty(2)]
-        public Witness Script;
+        /*[BinaryProperty(2)]
+        public Witness Script;*/
     }
 }

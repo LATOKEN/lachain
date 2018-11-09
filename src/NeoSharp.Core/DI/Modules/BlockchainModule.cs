@@ -3,11 +3,11 @@ using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing;
-using NeoSharp.Core.Blockchain.Processing.TransactionPersisters;
 using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Blockchain.State;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Types;
 
 namespace NeoSharp.Core.DI.Modules
@@ -20,7 +20,6 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<IGenesisAssetsBuilder, GenesisAssetsBuilder>();
 
             containerBuilder.RegisterSingleton<IBlockchain, Blockchain.Blockchain>();
-            containerBuilder.RegisterSingleton<ICoinIndex, CoinIndex>();
 
             #region Processing
             containerBuilder.RegisterSingleton<IBlockPersister, BlockPersister>();
@@ -29,7 +28,6 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockPool, BlockPool>();
             containerBuilder.RegisterSingleton<IComparer<Transaction>, TransactionComparer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
-            containerBuilder.RegisterSingleton<ITransactionContext, TransactionContext>();
             containerBuilder.RegisterSingleton<ITransactionPersister<Transaction>, TransactionPersister>();
             containerBuilder.RegisterSingleton<IBlockHeaderValidator, BlockHeaderValidator>();
 
@@ -48,10 +46,6 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<ISigner<Transaction>, TransactionOperationManager>();
             containerBuilder.RegisterSingleton<IVerifier<Transaction>, TransactionOperationManager>();
             containerBuilder.RegisterSingleton<ITransactionOperationsManager, TransactionOperationManager>();
-
-            containerBuilder.RegisterSingleton<ISigner<Witness>, WitnessOperationsManager>();
-            containerBuilder.RegisterSingleton<IVerifier<Witness>, WitnessOperationsManager>();
-            containerBuilder.RegisterSingleton<IWitnessOperationsManager, WitnessOperationsManager>();
             #endregion
 
             containerBuilder.RegisterSingleton<IAccountManager, AccountManager>();
@@ -59,7 +53,6 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
             containerBuilder.RegisterSingleton<IAssetRepository, AssetRepository>();
             containerBuilder.RegisterSingleton<IBlockRepository, BlockRepository>();
-            containerBuilder.RegisterSingleton<IStateRepository, StateRepository>();
         }
     }
 }

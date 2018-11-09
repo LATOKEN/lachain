@@ -40,7 +40,7 @@ namespace NeoSharp.Core.Persistence
         /// </summary>
         /// <returns></returns>
         Task<string> GetVersion();
-
+        
         /// <summary>
         /// Sets the version of the blockchain DB
         /// </summary>
@@ -222,43 +222,6 @@ namespace NeoSharp.Core.Persistence
         /// <param name="key"></param>
         /// <returns></returns>
         Task DeleteStorage(StorageKey key);
-
-        #endregion
-
-        #region Index
-
-        /// <summary>
-        /// Retrieves the height of the index
-        /// </summary>
-        /// <returns>Height of the index</returns>
-        Task<uint> GetIndexHeight();
-        /// <summary>
-        /// Sets the height of the index
-        /// </summary>
-        /// <param name="height">New height of the index</param>
-        Task SetIndexHeight(uint height);
-        /// <summary>
-        /// Gets all confirmed CoinReferences of an address. These are spendable coins.
-        /// </summary>
-        /// <param name="scriptHash">Address</param>
-        Task<HashSet<CoinReference>> GetIndexConfirmed(UInt160 scriptHash);
-        /// <summary>
-        /// Sets the confirmed CoinReferences of an address. These are spendable coins.
-        /// </summary>
-        /// <param name="scriptHash">Address</param>
-        /// <param name="coinReferences">List of CoinReferences to write</param>
-        Task SetIndexConfirmed(UInt160 scriptHash, HashSet<CoinReference> coinReferences);
-        /// <summary>
-        /// Gets all claimable CoinReferences of an address. These are spent coins with unclaimed GAS.
-        /// </summary>
-        /// <param name="scriptHash">Address</param>
-        Task<HashSet<CoinReference>> GetIndexClaimable(UInt160 scriptHash);
-        /// <summary>
-        /// Sets the claimable CoinReferences of an address. These are spent coins with unclaimed GAS.
-        /// </summary>
-        /// <param name="scriptHash">Address</param>
-        /// <param name="coinReferences">List of CoinReferences to write</param>
-        Task SetIndexClaimable(UInt160 scriptHash, HashSet<CoinReference> coinReferences);
 
         #endregion
     }

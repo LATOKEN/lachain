@@ -12,7 +12,7 @@ using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Network;
 using NeoSharp.Types;
 

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Network;
 using Newtonsoft.Json;
 

@@ -8,7 +8,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Test.Types;
 using NeoSharp.Cryptography;
 using NeoSharp.TestHelpers;
@@ -420,15 +421,15 @@ namespace NeoSharp.Core.Test.Serializers
 
             var blockHeader = new Block
             {
-                ConsensusData = 100_000_000,
+                Nonce = 100_000_000,
                 Hash = UInt256.Zero,
                 Index = 0,
                 MerkleRoot = UInt256.Zero,
-                NextConsensus = UInt160.Zero,
+                Consunsus = UInt160.Zero,
                 PreviousBlockHash = UInt256.Zero,
                 Timestamp = 3,
                 Version = 4,
-                Witness = new Witness
+                MultiSig = new Witness
                 {
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
@@ -452,18 +453,18 @@ namespace NeoSharp.Core.Test.Serializers
             var blockHeaderCopy = _serializer.Deserialize<Block>(_serializer.Serialize(blockHeader));
             blockHeaderOperationsManager.Sign(blockHeaderCopy);
 
-            Assert.AreEqual(blockHeader.ConsensusData, blockHeaderCopy.ConsensusData);
+            Assert.AreEqual(blockHeader.Nonce, blockHeaderCopy.Nonce);
             Assert.AreEqual(blockHeader.Hash, blockHeaderCopy.Hash);
             Assert.AreEqual(blockHeader.Index, blockHeaderCopy.Index);
             Assert.AreEqual(blockHeader.MerkleRoot, blockHeaderCopy.MerkleRoot);
-            Assert.AreEqual(blockHeader.NextConsensus, blockHeaderCopy.NextConsensus);
+            Assert.AreEqual(blockHeader.Consunsus, blockHeaderCopy.Consunsus);
             Assert.AreEqual(blockHeader.PreviousBlockHash, blockHeaderCopy.PreviousBlockHash);
             Assert.AreEqual(blockHeader.Timestamp, blockHeaderCopy.Timestamp);
             Assert.AreEqual(blockHeader.Version, blockHeaderCopy.Version);
 
-            Assert.IsTrue(blockHeader.Witness.InvocationScript.SequenceEqual(blockHeaderCopy.Witness.InvocationScript));
+            Assert.IsTrue(blockHeader.MultiSig.InvocationScript.SequenceEqual(blockHeaderCopy.MultiSig.InvocationScript));
             Assert.IsTrue(
-                blockHeader.Witness.VerificationScript.SequenceEqual(blockHeaderCopy.Witness.VerificationScript));
+                blockHeader.MultiSig.VerificationScript.SequenceEqual(blockHeaderCopy.MultiSig.VerificationScript));
         }
     }
 }

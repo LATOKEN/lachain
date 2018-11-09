@@ -19,6 +19,16 @@ namespace Neo.SmartContract
         public NeoService(TriggerType trigger, Snapshot snapshot)
             : base(trigger, snapshot)
         {
+            // mov rax, 0x7b
+            // int 0x80
+            
+            // push sha3(Neo.Runtime.GetTrigger)[:10]
+            // kernelinvoke
+            
+            // mapping ((to + sha3(method)) => offset)
+            
+            // 0x6b -> sha256(<TokenCreated>)
+            
             Register("Neo.Runtime.GetTrigger", Runtime_GetTrigger);
             Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("Neo.Runtime.Notify", Runtime_Notify);

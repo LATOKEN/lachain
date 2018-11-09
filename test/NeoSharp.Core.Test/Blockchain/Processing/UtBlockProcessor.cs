@@ -10,7 +10,8 @@ using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.Persistence;
 using NeoSharp.TestHelpers;
@@ -88,13 +89,13 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var block = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
-                NextConsensus = UInt160.Zero,
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
+                Consunsus = UInt160.Zero,
                 Transactions = new Transaction[]
                 {
                     new ContractTransaction
                     {
-                        Hash = UInt256.Parse("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
+                        Hash = UInt256.FromHex("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
                     }
                 }
             };
@@ -116,13 +117,13 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var block = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
-                NextConsensus = UInt160.Zero,
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
+                Consunsus = UInt160.Zero,
                 Transactions = new Transaction[]
                 {
                     new ContractTransaction
                     {
-                        Hash = UInt256.Parse("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
+                        Hash = UInt256.FromHex("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
                     }
                 }
             };
@@ -154,13 +155,13 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var block = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
-                NextConsensus = UInt160.Zero,
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
+                Consunsus = UInt160.Zero,
                 Transactions = new Transaction[]
                 {
                     new ContractTransaction
                     {
-                        Hash = UInt256.Parse("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
+                        Hash = UInt256.FromHex("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
                     }
                 }
             };

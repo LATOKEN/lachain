@@ -1,5 +1,6 @@
 ﻿using System;
 using NeoSharp.Core.Caching;
+using NeoSharp.Core.Models.Transcations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -39,8 +40,7 @@ namespace NeoSharp.Core.Models
         [ReflectionCache(typeof(PublishTransaction))]
         PublishTransaction = 0xd0,
         
-        [ReflectionCache(typeof(InvocationTransaction))]
-        [Obsolete]
-        InvocationTransaction = 0xd1
+        DepositTransaction = 0xf0,
+        WithdrawTransaction = 0xf0
     }
 }

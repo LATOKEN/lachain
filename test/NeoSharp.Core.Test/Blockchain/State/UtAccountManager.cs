@@ -32,7 +32,7 @@ namespace NeoSharp.Core.Test.Blockchain.State
         public async Task UpdateBalance_NullAccount_InitializesNewAccount()
         {
             var acctHash = UInt160.Parse(RandomInt().ToString("X40"));
-            var assetId = UInt256.Parse(RandomInt().ToString("X64"));
+            var assetId = UInt256.FromHex(RandomInt().ToString("X64"));
             var change = RandomInt();
 
             var repositoryMock = AutoMockContainer.GetMock<IRepository>();
@@ -50,7 +50,7 @@ namespace NeoSharp.Core.Test.Blockchain.State
         public async Task UpdateBalance_ChangesBalanceByDelta()
         {
             var acctHash = UInt160.Parse(RandomInt().ToString("X40"));
-            var assetId = UInt256.Parse(RandomInt().ToString("X64"));
+            var assetId = UInt256.FromHex(RandomInt().ToString("X64"));
             var change = RandomInt(1) == 0 ? RandomInt() : -RandomInt();
             var originalBalance = RandomInt();
             var expectedBalance = originalBalance + change;

@@ -1,16 +1,21 @@
-﻿using System.Text;
+﻿using System;
+using System.IO;
+using System.Text;
 
-namespace System.IO
+namespace NeoSharp.BinarySerialization.Extensions
 {
     public static class BinaryReaderExtensions
     {
-        public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0X7fffffc7)
+        public static byte[] ReadVarBytes(this BinaryReader reader, uint max = 0X7fffffc7)
         {
-            return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
+            return reader.ReadBytes((int)reader.ReadVarInt(max));
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
         {
+            if (max <= 0)
+                throw new ArgumentOutOfRangeException(nameof(max));
+            
             var fb = reader.ReadByte();
             ulong value;
             if (fb == 0xFD)
@@ -28,7 +33,7 @@ namespace System.IO
             return value;
         }
 
-        public static string ReadVarString(this BinaryReader reader, int max = 0X7fffffc7)
+        public static string ReadVarString(this BinaryReader reader, uint max = 0X7fffffc7)
         {
             return Encoding.UTF8.GetString(reader.ReadVarBytes(max));
         }

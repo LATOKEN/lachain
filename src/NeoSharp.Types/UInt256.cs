@@ -2,6 +2,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Cryptography;
 using NeoSharp.Types.Converters;
@@ -34,6 +35,13 @@ namespace NeoSharp.Types
 
         public int Size => BufferLength;
 
+        public static UInt256 FromDecimal(decimal value)
+        {
+            var val = new BigInteger(value) * BigInteger.Pow(10, 18);
+            /* TODO: "align byte array to 32 bytes" */
+            return new UInt256(val.ToByteArray());
+        }
+        
         public bool Equals(UInt256 other)
         {
             if (other == null)
@@ -63,7 +71,7 @@ namespace NeoSharp.Types
 
         public override int GetHashCode()
         {
-            return _buffer.ToInt32(0);
+            return _buffer.ToInt32();
         }
 
         public int CompareTo(UInt256 other)
@@ -86,14 +94,20 @@ namespace NeoSharp.Types
             return _buffer.Reverse().ToHexString(append0X);
         }
 
-        public static UInt256 ParseBase58(string value)
+        public static UInt256 FromBase58(string value)
         {
             var buffer = Crypto.Default.Base58CheckDecode(value);
             return new UInt256(buffer);
         }
         
-        public static UInt256 Parse(string value)
+        public static UInt256 FromHex(string value)
         {
+            return new UInt256(value.HexToBytes(BufferLength * 2).Reverse().ToArray());
+        }
+
+        public static UInt256 FromDec(string value)
+        {
+            /* TODO: "implement dec parsing here" */
             return new UInt256(value.HexToBytes(BufferLength * 2).Reverse().ToArray());
         }
 
@@ -101,7 +115,7 @@ namespace NeoSharp.Types
         {
             try
             {
-                result = Parse(s);
+                result = FromHex(s);
                 return true;
             }
             catch
@@ -113,12 +127,12 @@ namespace NeoSharp.Types
 
         public static bool operator ==(UInt256 left, UInt256 right)
         {
-            return left is null ? right is null : left.Equals(right);
+            return left?.Equals(right) ?? right is null;
         }
 
         public static bool operator !=(UInt256 left, UInt256 right)
         {
-            return !(left is null ? right is null : left.Equals(right));
+            return !(left?.Equals(right) ?? right is null);
         }
 
         public static bool operator >(UInt256 left, UInt256 right)

@@ -12,6 +12,7 @@ namespace NeoSharp.Types
     /// </summary>
     [TypeConverter(typeof(Fixed8TypeConverter))]
     [BinaryTypeSerializer(typeof(Fixed8TypeConverter))]
+    [Obsolete]
     public struct Fixed8 : IComparable<Fixed8>, IEquatable<Fixed8>, IFormattable
     {
         #region Private Fields 

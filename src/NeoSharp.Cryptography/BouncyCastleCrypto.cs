@@ -7,6 +7,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
 
 namespace NeoSharp.Cryptography
@@ -56,7 +57,7 @@ namespace NeoSharp.Cryptography
 
             var point = Curve.Curve.DecodePoint(fullpubkey);
             var keyParameters = new ECPublicKeyParameters(point, Domain);
-
+            
             var signer = SignerUtilities.GetSigner("SHA256withECDSA");
             signer.Init(false, keyParameters);
             signer.BlockUpdate(message, 0, message.Length);
@@ -106,6 +107,56 @@ namespace NeoSharp.Cryptography
             }
 
             return fullsign;
+        }
+        
+        public override byte[] RecoverSignature(byte[] signature, byte[] message, bool check)
+        {
+            var r = new BigInteger(signature, 00, 32);
+            var s = new BigInteger(signature, 32, 32);
+
+            var hash = Sha256(message);
+            
+            var curve = Curve.Curve as FpCurve ?? throw new ArgumentException("Unable to cast Curve to FpCurve");
+            var order = Curve.N;
+
+            var x = r;
+            /*if ((recid & 2) != 0)
+                x = x.Add(order);*/
+            
+            if (x.CompareTo(curve.Q) >= 0)
+                throw new ArgumentException("X too large");
+
+            var xEnc = X9IntegerConverter.IntegerToBytes(x, X9IntegerConverter.GetByteLength(curve));
+            var compEncoding = new byte[xEnc.Length + 1];
+            
+            compEncoding[0] = (byte)(0x02 /*+ (recid & 1)*/);
+            xEnc.CopyTo(compEncoding, 1);
+            var R = curve.DecodePoint(compEncoding);
+            
+            if (check)
+            {
+                var O = R.Multiply(order);
+                if (!O.IsInfinity)
+                    throw new ArgumentException("Check failed");
+            }
+
+            var e = CalculateE(order, hash);
+
+            var rInv = r.ModInverse(order);
+            var srInv = s.Multiply(rInv).Mod(order);
+            var erInv = e.Multiply(rInv).Mod(order);
+
+            var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
+            return point.GetEncoded(true);
+        }
+        
+        private static BigInteger CalculateE(BigInteger n, byte[] message)
+        {
+            var messageBitLength = message.Length * 8;
+            var trunc = new BigInteger(1, message);
+            if (n.BitLength < messageBitLength)
+                trunc = trunc.ShiftRight(messageBitLength - n.BitLength);
+            return trunc;
         }
 
         /// <inheritdoc />
@@ -228,14 +279,6 @@ namespace NeoSharp.Cryptography
             } 
  
             return privateKey; 
-        }
-
-        public override byte[] PublicKeyFromPrivateKey(byte[] privateKey)
-        {
-            if (privateKey.Length != 32)
-                throw new ArgumentException();
-            var bigK = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
-            return Curve.G.Multiply(bigK).GetEncoded();
         }
     }
 }

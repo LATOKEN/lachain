@@ -2,9 +2,9 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using NeoSharp.Core.Blockchain.Processing;
-using NeoSharp.Core.Blockchain.Processing.TransactionPersisters;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Persistence;
 using NeoSharp.TestHelpers;
 using NeoSharp.Types;
@@ -21,26 +21,26 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             pubKey[0] = 0x02;
             var input = new RegisterTransaction
             {
-                Hash = UInt256.Parse(RandomInt().ToString("X64")),
+                Hash = UInt256.FromHex(RandomInt().ToString("X64")),
                 AssetType = (AssetType) RandomInt(16),
                 Name = RandomString(10),
-                Amount = new Fixed8(RandomInt()),
+                Supply = new Fixed8(RandomInt()),
                 Precision = (byte) RandomInt(8),
                 Owner = new PublicKey(pubKey),
-                Admin = UInt160.Parse(RandomInt().ToString("X40"))
+                Owner = UInt160.Parse(RandomInt().ToString("X40"))
             };
             var repositoryMock = AutoMockContainer.GetMock<IRepository>();
             var testee = AutoMockContainer.Create<RegisterTransactionPersister>();
 
             await testee.Persist(input);
             repositoryMock.Verify(m => m.AddAsset(It.Is<Asset>(a =>
-                a.Id.Equals(input.Hash) &&
+                a.Hash.Equals(input.Hash) &&
                 a.AssetType.Equals(input.AssetType) &&
                 a.Name == input.Name &&
-                a.Amount.Equals(input.Amount) &&
+                a.Amount.Equals(input.Supply) &&
                 a.Precision == input.Precision &&
                 a.Owner.CompareTo(input.Owner) == 0 &&
-                a.Admin.Equals(input.Admin))));
+                a.Owner.Equals(input.Owner))));
         }
     }
 }

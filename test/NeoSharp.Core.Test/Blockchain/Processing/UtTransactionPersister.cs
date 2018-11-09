@@ -6,6 +6,7 @@ using Moq;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.State;
 using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Persistence;
 using NeoSharp.TestHelpers;
 using NeoSharp.Types;
@@ -81,13 +82,13 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
         {
             var input = new ContractTransaction
             {
-                Hash = UInt256.Parse(RandomInt().ToString("X64")),
+                Hash = UInt256.FromHex(RandomInt().ToString("X64")),
                 Outputs = new TransactionOutput[3]
             };
             for (var i = 0; i < input.Outputs.Length; i++)
                 input.Outputs[i] = new TransactionOutput
                 {
-                    AssetId = UInt256.Parse(RandomInt().ToString("X64")),
+                    AssetId = UInt256.FromHex(RandomInt().ToString("X64")),
                     ScriptHash = UInt160.Parse(RandomInt().ToString("X40")),
                     Value = new Fixed8(RandomInt())
                 };
@@ -110,7 +111,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var repositoryMock = AutoMockContainer.GetMock<IRepository>();
             var input = new ContractTransaction
             {
-                Hash = UInt256.Parse(RandomInt().ToString("X64")),
+                Hash = UInt256.FromHex(RandomInt().ToString("X64")),
                 Inputs = new CoinReference[3]
             };
             var txs = new Transaction[3];
@@ -118,7 +119,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             {
                 var reference = new CoinReference
                 {
-                    PrevHash = UInt256.Parse(RandomInt().ToString("X64")),
+                    PrevHash = UInt256.FromHex(RandomInt().ToString("X64")),
                     PrevIndex = 0
                 };
                 input.Inputs[i] = reference;
@@ -129,7 +130,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
                     {
                         new TransactionOutput
                         {
-                            AssetId = UInt256.Parse(RandomInt().ToString("X64")),
+                            AssetId = UInt256.FromHex(RandomInt().ToString("X64")),
                             ScriptHash = UInt160.Parse(RandomInt().ToString("X40")),
                             Value = new Fixed8(RandomInt())
                         }

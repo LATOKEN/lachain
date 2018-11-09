@@ -29,15 +29,5 @@ namespace NeoSharp.Core.Blockchain.Repositories
         /// <param name="transaction">The transaction.</param>
         /// <returns>Boolean value indicating if is a double spend or not.</returns>
         bool IsDoubleSpend(Transaction transaction);
-
-        /// <summary>
-        /// Get the corresponding unspent assets based on the specified hash value and index
-        /// </summary>
-        /// <param name="hash">The hash of the asset.</param>
-        /// <param name="index">The index of the output.</param>
-        /// <returns>The transaction output.</returns>
-        TransactionOutput GetUnspent(UInt256 hash, ushort index);
-
-        IEnumerable<TransactionOutput> GetUnspent(UInt256 hash);
     }
 }

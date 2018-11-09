@@ -7,7 +7,8 @@ using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Core.Types;
 using NeoSharp.Cryptography;
@@ -107,8 +108,8 @@ namespace NeoSharp.Core.Test.Serializers
             {
                 Version = 0x00,
                 Name = RandomString(byte.MaxValue),
-                Admin = RandomUInt60(1).FirstOrDefault(),
-                Amount = RandomFixed8(true, 1).FirstOrDefault(),
+                Owner = RandomUInt60(1).FirstOrDefault(),
+                Supply = RandomFixed8(true, 1).FirstOrDefault(),
                 AssetType = RandomEnum<AssetType>(),
                 Owner = PublicKey.Infinity,
                 Precision = (byte) _random.Next(byte.MinValue, byte.MaxValue),
@@ -125,11 +126,11 @@ namespace NeoSharp.Core.Test.Serializers
             foreach (var check in new[] {(RegisterTransaction) copy, copy2})
             {
                 Assert.AreEqual(original.Name, check.Name);
-                Assert.AreEqual(original.Amount, check.Amount);
+                Assert.AreEqual(original.Supply, check.Supply);
                 Assert.AreEqual(original.AssetType, check.AssetType);
                 Assert.AreEqual(original.Precision, check.Precision);
                 Assert.AreEqual(original.Owner, check.Owner);
-                Assert.AreEqual(original.Admin, check.Admin);
+                Assert.AreEqual(original.Owner, check.Owner);
             }
 
             // Check base data

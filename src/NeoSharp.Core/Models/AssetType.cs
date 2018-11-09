@@ -14,19 +14,13 @@ namespace NeoSharp.Core.Models
         GoverningToken = 0x00,
         
         /// <summary>
-        /// Utility token for gas (will be removed)
-        /// </summary>
-        [Obsolete]
-        UtilityToken = 0x01,
-        
-        /// <summary>
         /// Platform tokens for cross-chain integration
         /// </summary>
-        PlatformToken = 0x03,
+        PlatformToken = 0x02,
         
         /// <summary>
         /// Customer tokens that can be published by users
         /// </summary>
-        CustomToken = 0x04
+        CustomToken = 0x03
     }
 }

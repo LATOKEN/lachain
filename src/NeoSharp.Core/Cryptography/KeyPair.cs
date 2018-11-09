@@ -15,7 +15,7 @@ namespace NeoSharp.Core.Cryptography
         public KeyPair(byte[] privateKey)
         {
             PrivateKey = privateKey;
-            PublicKey = new PublicKey(Crypto.Default.PublicKeyFromPrivateKey(privateKey));
+            PublicKey = new PublicKey(Crypto.Default.ComputePublicKey(privateKey, true));
         }
 
         public bool Equals(KeyPair other)

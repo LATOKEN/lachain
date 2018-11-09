@@ -12,7 +12,7 @@ namespace NeoSharp.Core.Models
         public UInt160 ScriptHash => Code?.ScriptHash;
         public byte[] Script => Code?.Script;
         public ContractParameterType[] Parameters => Code?.Parameters;
-        public ContractParameterType ReturnType => (ContractParameterType)Code?.ReturnType;
+        public ContractParameterType ReturnType => (ContractParameterType) Code?.ReturnType;
 
         [BinaryProperty(1)]
         [JsonProperty("code")]

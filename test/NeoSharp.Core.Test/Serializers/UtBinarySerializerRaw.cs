@@ -5,7 +5,8 @@ using Moq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Core.Types;
 using NeoSharp.Cryptography;
@@ -91,14 +92,14 @@ namespace NeoSharp.Core.Test.Serializers
             Assert.AreEqual(block.MerkleRoot.ToString(true), "0xd6ba8b0f381897a59396394e9ce266a3d1d0857b5e3827941c2d2cedc38ef918");
             Assert.AreEqual(block.Timestamp, 1476647382U);
             Assert.AreEqual(block.Index, 1U);
-            Assert.AreEqual(block.ConsensusData, 7814431937225855044UL);
-            Assert.AreEqual(block.NextConsensus.ToString(true), "0x55bfa4cc95efe9bb65c104bf27385d2b655de759");
+            Assert.AreEqual(block.Nonce, 7814431937225855044UL);
+            Assert.AreEqual(block.Consunsus.ToString(true), "0x55bfa4cc95efe9bb65c104bf27385d2b655de759");
 
             blockSigner.Sign(block);
 
-            Assert.AreEqual(block.Witness.InvocationScript.ToHexString(true), "0x404edf5005771de04619235d5a4c7a9a11bb78e008541f1da7725f654c33380a3c87e2959a025da706d7255cb3a3fa07ebe9c6559d0d9e6213c68049168eb1056f4038a338f879930c8adc168983f60aae6f8542365d844f004976346b70fb0dd31aa1dbd4abd81e4a4aeef9941ecd4e2dd2c1a5b05e1cc74454d0403edaee6d7a4d4099d33c0b889bf6f3e6d87ab1b11140282e9a3265b0b9b918d6020b2c62d5a040c7e0c2c7c1dae3af9b19b178c71552ebd0b596e401c175067c70ea75717c8c00404e0ebd369e81093866fe29406dbf6b402c003774541799d08bf9bb0fc6070ec0f6bad908ab95f05fa64e682b485800b3c12102a8596e6c715ec76f4564d5eff34070e0521979fcd2cbbfa1456d97cc18d9b4a6ad87a97a2a0bcdedbf71b6c9676c645886056821b6f3fec8694894c66f41b762bc4e29e46ad15aee47f05d27d822");
-            Assert.AreEqual(block.Witness.VerificationScript.ToHexString(true), "0x552102486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a7021024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d2102aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e2103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c2103b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a2102ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba5542102df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e89509357ae");
-            Assert.AreEqual(block.Witness.Hash.ToString(true), "0x55bfa4cc95efe9bb65c104bf27385d2b655de759");
+            Assert.AreEqual(block.MultiSig.InvocationScript.ToHexString(true), "0x404edf5005771de04619235d5a4c7a9a11bb78e008541f1da7725f654c33380a3c87e2959a025da706d7255cb3a3fa07ebe9c6559d0d9e6213c68049168eb1056f4038a338f879930c8adc168983f60aae6f8542365d844f004976346b70fb0dd31aa1dbd4abd81e4a4aeef9941ecd4e2dd2c1a5b05e1cc74454d0403edaee6d7a4d4099d33c0b889bf6f3e6d87ab1b11140282e9a3265b0b9b918d6020b2c62d5a040c7e0c2c7c1dae3af9b19b178c71552ebd0b596e401c175067c70ea75717c8c00404e0ebd369e81093866fe29406dbf6b402c003774541799d08bf9bb0fc6070ec0f6bad908ab95f05fa64e682b485800b3c12102a8596e6c715ec76f4564d5eff34070e0521979fcd2cbbfa1456d97cc18d9b4a6ad87a97a2a0bcdedbf71b6c9676c645886056821b6f3fec8694894c66f41b762bc4e29e46ad15aee47f05d27d822");
+            Assert.AreEqual(block.MultiSig.VerificationScript.ToHexString(true), "0x552102486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a7021024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d2102aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e2103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c2103b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a2102ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba5542102df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e89509357ae");
+            Assert.AreEqual(block.MultiSig.Hash.ToString(true), "0x55bfa4cc95efe9bb65c104bf27385d2b655de759");
 
             Assert.AreEqual(block.Hash.ToString(true), "0xd782db8a38b0eea0d7394e0f007c61c71798867578c77c387c08113903946cc9");
 
@@ -295,8 +296,8 @@ namespace NeoSharp.Core.Test.Serializers
             Assert.AreEqual(tx.Hash.ToString(true), "0x439af8273fbe25fec2f5f2066679e82314fe0776d52a8c1c87e863bd831ced7d");
             Assert.AreEqual(tx.Attributes.Length, 0);
 
-            Assert.AreEqual(tx.Admin.ToString(true), "0xbcce7e9d00e0ddf86ba33f444718c47e4bdd1cf4");
-            Assert.AreEqual(tx.Amount.ToString(), "1024");
+            Assert.AreEqual(tx.Owner.ToString(true), "0xbcce7e9d00e0ddf86ba33f444718c47e4bdd1cf4");
+            Assert.AreEqual(tx.Supply.ToString(), "1024");
             Assert.AreEqual(tx.AssetType, AssetType.CustomToken);
             Assert.AreEqual(tx.Name, "[{\"lang\":\"zh-CN\",\"name\":\"Hello AntShares Mainnet\"}]");
             Assert.AreEqual(tx.Precision, 8);

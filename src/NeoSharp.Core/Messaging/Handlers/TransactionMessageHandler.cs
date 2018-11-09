@@ -5,7 +5,8 @@ using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Network;
 
 namespace NeoSharp.Core.Messaging.Handlers

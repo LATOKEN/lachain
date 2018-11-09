@@ -9,6 +9,6 @@
         /// <summary>
         /// Block available, with TX hashes
         /// </summary>
-        Extended = 1,
+        Extended = 1
     }
 }

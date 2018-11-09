@@ -2,10 +2,11 @@
 using NeoSharp.Core.Logging;
 using NLog;
 using NLog.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace NeoSharp.Logging.NLog
 {
+    using ILogger = Microsoft.Extensions.Logging.ILogger;
+    
     public class NLogLoggerFactory : ILoggerFactoryExtended
     {
         #region Public event

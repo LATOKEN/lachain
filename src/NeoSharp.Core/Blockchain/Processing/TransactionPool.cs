@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing
@@ -37,20 +37,20 @@ namespace NeoSharp.Core.Blockchain.Processing
         {
             if (transaction == null) throw new ArgumentNullException(nameof(transaction));
 
-            this._transactionOperationsManager.Sign(transaction);
+            _transactionOperationsManager.Sign(transaction);
 
-            if (!this._transactionOperationsManager.Verify(transaction))
+            if (!_transactionOperationsManager.Verify(transaction))
             {
                 throw new InvalidTransactionException($"The transaction with hash \"{transaction.Hash}\" was not passed verification.");
             }
             
-            if (this.Where(p => p != transaction)
+            /*if (this.Where(p => p != transaction)
                 .SelectMany(p => p.Inputs)
                 .Intersect(transaction.Inputs)
                 .Any())
             {
                 throw new InvalidTransactionException($"The transaction with hash \"{transaction.Hash}\" was already queued to be added.");
-            }
+            }*/
 
             if (!_transactionPool.TryAdd(transaction.Hash, new TimeStampedTransaction(transaction)))
             {

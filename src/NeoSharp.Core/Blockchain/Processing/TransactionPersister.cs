@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NeoSharp.Core.Blockchain.State;
 using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Persistence;
 using NeoSharp.Types;
 
@@ -42,8 +43,8 @@ namespace NeoSharp.Core.Blockchain.Processing
 
         public async Task Persist(Transaction transaction)
         {
-            await SpendOutputs(transaction.Inputs);
-            await GainOutputs(transaction.Hash, transaction.Outputs);
+            /*await SpendOutputs(transaction.Inputs);
+            await GainOutputs(transaction.Hash, transaction.Outputs);*/
 
             switch (transaction)
             {
@@ -67,7 +68,7 @@ namespace NeoSharp.Core.Blockchain.Processing
             _transactionPool.Remove(transaction.Hash);
         }
 
-        private async Task GainOutputs(UInt256 hash, TransactionOutput[] outputs)
+        /*private async Task GainOutputs(UInt256 hash, TransactionOutput[] outputs)
         {
             foreach (var output in outputs)
                 await _accountManager.UpdateBalance(output.ScriptHash, output.AssetId, output.Value);
@@ -99,6 +100,6 @@ namespace NeoSharp.Core.Blockchain.Processing
 
                 await _repository.AddCoinStates(prevHash, coinStates);
             }
-        }
+        }*/
     }
 }

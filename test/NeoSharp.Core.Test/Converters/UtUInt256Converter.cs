@@ -9,7 +9,7 @@ namespace NeoSharp.Core.Test.Converters
     public class UtUInt256Converter
     {
         // Arrange
-        private readonly UInt256 _value = UInt256.Parse("0x4520462a8c80056291f871da523bff0eb17e29d44ab4317e69ff7a42083cb39d");
+        private readonly UInt256 _value = UInt256.FromHex("0x4520462a8c80056291f871da523bff0eb17e29d44ab4317e69ff7a42083cb39d");
         private readonly TypeConverter _converter = TypeDescriptor.GetConverter(typeof(UInt256));
 
 
