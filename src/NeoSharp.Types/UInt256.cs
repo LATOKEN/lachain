@@ -107,8 +107,11 @@ namespace NeoSharp.Types
 
         public static UInt256 FromDec(string value)
         {
-            /* TODO: "implement dec parsing here" */
-            return new UInt256(value.HexToBytes(BufferLength * 2).Reverse().ToArray());
+            var bytes = BigInteger.Parse(value).ToByteArray();
+            if (bytes.Length >= 32)
+                throw new ArgumentException(nameof(value));
+            bytes = Enumerable.Repeat<byte>(0, BufferLength - bytes.Length).Concat(bytes).ToArray();
+            return new UInt256(bytes);
         }
 
         public static bool TryParse(string s, out UInt256 result)

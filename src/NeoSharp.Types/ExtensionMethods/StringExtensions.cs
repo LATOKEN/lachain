@@ -45,7 +45,7 @@ namespace NeoSharp.Types.ExtensionMethods
             {
                 return new byte[0];
             }
-
+ 
             if (value.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
             {
                 value = value.Substring(2);
