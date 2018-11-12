@@ -21,6 +21,7 @@ namespace NeoSharp.Core.Test.Network.Protocols
             AutoMockContainer.Register<IBinarySerializer>(new BinarySerializer(typeof(VersionMessage).Assembly));
         }
 
+        /*
         [TestMethod]
         public async Task Can_serialize_and_deserialize_messages()
         {
@@ -45,7 +46,9 @@ namespace NeoSharp.Core.Test.Network.Protocols
                 .Should()
                 .Be(expectedVerAckMessage.Command);
         }
+        */
 
+        /*
         [TestMethod]
         public async Task Can_serialize_and_deserialize_messages_with_payload()
         {
@@ -89,5 +92,6 @@ namespace NeoSharp.Core.Test.Network.Protocols
                 .And
                 .BeEquivalentTo(versionPayload);
         }
+        */
     }
 }

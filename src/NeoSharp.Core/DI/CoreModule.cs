@@ -7,6 +7,7 @@ namespace NeoSharp.Core.DI
         public void Register(IContainerBuilder containerBuilder)
         {
             containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<HelpersModule>();
         }

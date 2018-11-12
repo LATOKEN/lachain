@@ -45,6 +45,8 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<ISigner<Transaction>, TransactionOperationManager>();
             containerBuilder.RegisterSingleton<IVerifier<Transaction>, TransactionOperationManager>();
             containerBuilder.RegisterSingleton<ITransactionOperationsManager, TransactionOperationManager>();
+            
+            containerBuilder.RegisterSingleton<ITransactionProcessor, TransactionProcessor>();
             #endregion
         }
     }

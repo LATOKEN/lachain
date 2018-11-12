@@ -15,6 +15,7 @@ namespace NeoSharp.Core.Test.Network.Protocols
     [TestClass]
     public class UtProtocolV2 : TestBase
     {
+        /*
         [TestMethod]
         public async Task SendReceiveMessage_VerAckMessageSent_VerAckMessageReveivedIsEquivalent()
         {
@@ -39,7 +40,9 @@ namespace NeoSharp.Core.Test.Network.Protocols
                 .And
                 .BeEquivalentTo(sendedVerAckMessage);
         }
+        */
 
+        /*
         [TestMethod]
         public async Task SendReceiveMessage_ValidVersionMessageWithZeroLengthSent_ReceiveMessageUncompressedAndIsEquivalent()
         {
@@ -101,5 +104,6 @@ namespace NeoSharp.Core.Test.Network.Protocols
                 .And
                 .BeEquivalentTo(sendedVersionMessage);
         }
+        */
     }
 }

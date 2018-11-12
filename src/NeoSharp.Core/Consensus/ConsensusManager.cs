@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Timers;
-using Microsoft.Extensions.Logging;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Consensus.Messages;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Extensions;
+using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
@@ -37,19 +37,20 @@ namespace NeoSharp.Core.Consensus
         public ConsensusManager(
             IBlockProcessor blockProcessor, IBlockchainContext blockchainContext,
             ITransactionCrawler transactionCrawler, ITransactionProcessor transactionProcessor,
-            ITransactionPool transactionPool, ILogger<ConsensusManager> logger,
-            KeyPair keyPair, IReadOnlyList<PublicKey> validators
+            ITransactionPool transactionPool, ILogger<ConsensusManager> logger
+            /*KeyPair keyPair, IReadOnlyList<PublicKey> validators*/
         )
         {
             _blockProcessor = blockProcessor ?? throw new ArgumentNullException(nameof(blockProcessor));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockProcessor));
             _transactionCrawler = transactionCrawler ?? throw new ArgumentNullException(nameof(transactionCrawler));
-            var transactionProcessor1 = transactionProcessor ?? throw new ArgumentNullException(nameof(transactionProcessor));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _logger = logger ?? throw new ArgumentNullException(nameof(blockProcessor));
-            _context = new ConsensusContext(keyPair, validators);
+            //_context = new ConsensusContext(keyPair, validators);
+            _context = new ConsensusContext(null, Array.Empty<PublicKey>());
 
-            transactionProcessor1.OnTransactionProcessed += OnTransactionVerified;
+            (transactionProcessor ?? throw new ArgumentNullException(nameof(transactionProcessor)))
+                .OnTransactionProcessed += OnTransactionVerified;
         }
 
         public void Stop()
