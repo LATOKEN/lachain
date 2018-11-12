@@ -24,7 +24,11 @@ namespace NeoSharp.RocksDB.Repositories
 
         public async Task<BlockHeader> GetBlockHeaderByHeight(uint blockHeight)
         {
-            var rawHeader = await _rocksDbContext.Get(blockHeight.BuildIxHeightToHashKey());
+            var rawBlockHash = await _rocksDbContext.Get(blockHeight.BuildIxHeightToHashKey());
+            if (rawBlockHash == null)
+                return null;
+            var blockHash = _binarySerializer.Deserialize<UInt256>(rawBlockHash);
+            var rawHeader = await _rocksDbContext.Get(blockHash.BuildDataBlockKey());
             return rawHeader == null ? null : _binarySerializer.Deserialize<BlockHeader>(rawHeader);
         }
 

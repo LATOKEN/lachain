@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
-using Microsoft.Extensions.Configuration;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Consensus.Config;
 using NeoSharp.Core.Consensus.Messages;
-using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
@@ -61,11 +60,8 @@ namespace NeoSharp.Core.Consensus
             _stopped = true;
         }
 
-        public void Start()
+        private void _TaskWorker()
         {
-            _logger.LogInformation("Starting consensus");
-            InitializeConsensus(0);
-
             while (!_stopped)
             {
                 // If were are waiting for view change, just wait
@@ -163,6 +159,13 @@ namespace NeoSharp.Core.Consensus
                 _context.LastBlockRecieved = DateTime.UtcNow;
                 InitializeConsensus(0);
             }
+        }
+        
+        public void Start()
+        {
+            _logger.LogInformation("Starting consensus");
+            InitializeConsensus(0);
+            Task.Factory.StartNew(_TaskWorker);
         }
 
         private void OnTimeToProduceBlock(object sender, ElapsedEventArgs e)
