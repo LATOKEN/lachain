@@ -18,7 +18,7 @@ namespace NeoSharp.Core.Storage.State
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
-        Task<Account> GetOrCreateAccountByAddress(UInt160 address);
+        Task<Account> GetAccountByAddressOrDefault(UInt160 address);
 
         /// <summary>
         /// Deletes accounts from database
@@ -26,5 +26,12 @@ namespace NeoSharp.Core.Storage.State
         /// <param name="address"></param>
         /// <returns></returns>
         Task DeleteAccountByAddress(UInt160 address);
+        
+        /// <summary>
+        /// Adds or updates account in storage
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        Task<Account> AddAccount(Account account);
     }
 }

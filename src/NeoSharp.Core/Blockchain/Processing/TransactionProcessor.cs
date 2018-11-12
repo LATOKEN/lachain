@@ -12,7 +12,6 @@ using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing
 {
-    [Obsolete]
     public class TransactionProcessor : ITransactionProcessor
     {
         private static readonly TimeSpan DefaultTransactionPollingInterval = TimeSpan.FromMilliseconds(100);
@@ -95,8 +94,9 @@ namespace NeoSharp.Core.Blockchain.Processing
 
         public async Task AddTransaction(Transaction transaction)
         {
-            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
-
+            if (transaction == null)
+                throw new ArgumentNullException(nameof(transaction));
+            
             if (_unverifiedTransactionPool.ContainsKey(transaction.Hash))
             {
                 throw new InvalidTransactionException(

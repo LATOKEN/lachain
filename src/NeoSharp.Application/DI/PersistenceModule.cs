@@ -2,6 +2,7 @@
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Storage;
 using NeoSharp.Core.Storage.Blockchain;
+using NeoSharp.Core.Storage.State;
 using NeoSharp.RocksDB;
 using NeoSharp.RocksDB.Repositories;
 
@@ -44,6 +45,7 @@ namespace NeoSharp.Application.DI
                         containerBuilder.RegisterSingleton<IGlobalRepository, GlobalRepository>();
                         containerBuilder.RegisterSingleton<IStorageRepository, StorageRepository>();
                         containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
+                        containerBuilder.RegisterSingleton<IAccountRepository, AccountRepository>();
                         break;
                     }
 

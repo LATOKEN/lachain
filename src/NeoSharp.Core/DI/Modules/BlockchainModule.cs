@@ -31,6 +31,7 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockHeaderValidator, BlockHeaderValidator>();
 
             containerBuilder.RegisterSingleton<ITransactionPersister<IssueTransaction>, IssueTransactionPersister>();
+            containerBuilder.RegisterSingleton<ITransactionPersister<ContractTransaction>, ContractTransactionPersister>();
             containerBuilder.RegisterSingleton<ITransactionPersister<PublishTransaction>, PublishTransactionPersister>();
             containerBuilder.RegisterSingleton<ITransactionPersister<RegisterTransaction>, RegisterTransactionPersister>();
 

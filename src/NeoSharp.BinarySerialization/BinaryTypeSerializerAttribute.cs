@@ -7,6 +7,7 @@ namespace NeoSharp.BinarySerialization
     {
         public readonly Type Type;
 
+        /// <inheritdoc />
         /// <summary>
         /// Constructor
         /// </summary>

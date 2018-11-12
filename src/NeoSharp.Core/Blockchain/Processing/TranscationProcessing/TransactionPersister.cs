@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
 {
@@ -13,20 +14,26 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
     /// </summary>
     public class TransactionPersister : ITransactionPersister<Transaction>
     {
+        private readonly ITransactionPersister<ContractTransaction> _contractTransactionPersister;
         private readonly ITransactionPersister<IssueTransaction> _issueTransactionPersister;
         private readonly ITransactionPersister<RegisterTransaction> _registerTransactionPersister;
         private readonly ITransactionPersister<PublishTransaction> _publishTransactionPersister;
+        private readonly ITransactionRepository _transactionRepository;
         private readonly ITransactionPool _transactionPool;
 
         public TransactionPersister(
+            ITransactionPersister<ContractTransaction> contractTransactionPersister,
             ITransactionPersister<IssueTransaction> issueTransactionPersister,
             ITransactionPersister<RegisterTransaction> registerTransactionPersister,
             ITransactionPersister<PublishTransaction> publishTransactionPersister,
+            ITransactionRepository transactionRepository,
             ITransactionPool transactionPool)
         {
+            _contractTransactionPersister = contractTransactionPersister;
             _issueTransactionPersister = issueTransactionPersister;
             _registerTransactionPersister = registerTransactionPersister;
             _publishTransactionPersister = publishTransactionPersister;
+            _transactionRepository = transactionRepository;
             _transactionPool = transactionPool;
         }
 
@@ -37,8 +44,10 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
 
             switch (transaction)
             {
-                case ContractTransaction _:
                 case MinerTransaction _:
+                    break;
+                case ContractTransaction contract:
+                    await _contractTransactionPersister.Persist(contract);
                     break;
                 case IssueTransaction issue:
                     await _issueTransactionPersister.Persist(issue);
@@ -53,7 +62,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
                     throw new ArgumentException("Unknown Transaction Type");
             }
 
-//            await _repository.AddTransaction(transaction);
+            await _transactionRepository.AddTransaction(transaction);
             _transactionPool.Remove(transaction.Hash);
         }
 

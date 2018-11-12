@@ -159,5 +159,17 @@ namespace NeoSharp.Types
         {
             return left.CompareTo(right) <= 0;
         }
+
+        public static UInt256 operator +(UInt256 left, UInt256 right)
+        {
+            /* TODO: "this should be optimized" */
+            return new UInt256((new BigInteger(left._buffer) + new BigInteger(right._buffer)).ToByteArray());
+        }
+
+        public static UInt256 operator -(UInt256 left, UInt256 right)
+        {
+            /* TODO: "this should be optimized" */
+            return new UInt256((new BigInteger(left._buffer) - new BigInteger(right._buffer)).ToByteArray());
+        }
     }
 }

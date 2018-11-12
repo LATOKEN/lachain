@@ -57,13 +57,11 @@ namespace NeoSharp.Types.Converters
 
         public int Serialize(IBinarySerializer binarySerializer, BinaryWriter writer, object value, BinarySerializerSettings settings = null)
         {
-            if (value is UInt256 hash)
-            {
-                writer.Write(hash.ToArray(), 0, FixedLength);
-                return FixedLength;
-            }
+            if (!(value is UInt256 hash))
+                throw new ArgumentException(nameof(value));
+            writer.Write(hash.ToArray(), 0, FixedLength);
+            return FixedLength;
 
-            throw new ArgumentException(nameof(value));
         }
     }
 }
