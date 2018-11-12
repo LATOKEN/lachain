@@ -8,6 +8,11 @@ namespace NeoSharp.Core.Consensus
         public byte[] BlockSignature;
         public PublicKey PublicKey;
 
+        public ObservedValidatorState(PublicKey publicKey)
+        {
+            PublicKey = publicKey;
+        }
+
         public void Reset()
         {
             BlockSignature = null;
