@@ -66,7 +66,7 @@ namespace NeoSharp.Core.Network.Tcp
 
         private int _disposed;
         private bool _isReady;
-        private ProtocolBase _protocol;
+        private AbstractProtocol _abstractProtocol;
 
         private readonly Socket _socket;
         private readonly ProtocolSelector _protocolSelector;
@@ -91,7 +91,7 @@ namespace NeoSharp.Core.Network.Tcp
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _stream = new NetworkStream(socket, true);
-            _protocol = protocolSelector.DefaultProtocol;
+            _abstractProtocol = protocolSelector.DefaultAbstractProtocol;
             ConnectionDate = DateTime.UtcNow;
 
             // Extract address
@@ -117,9 +117,9 @@ namespace NeoSharp.Core.Network.Tcp
                 return false;
 
             var protocol = _protocolSelector.GetProtocol(version);
-            if (protocol == _protocol) return false;
+            if (protocol == _abstractProtocol) return false;
 
-            _protocol = protocol ?? throw new ArgumentException($"The protocol version \"{version}\" is not supported.", nameof(version));
+            _abstractProtocol = protocol ?? throw new ArgumentException($"The protocol version \"{version}\" is not supported.", nameof(version));
             return true;
         }
 
@@ -187,7 +187,7 @@ namespace NeoSharp.Core.Network.Tcp
         /// <returns>Task</returns>
         public Task Send(Message message)
         {
-            if (_protocol.IsHighPriorityMessage(message))
+            if (_abstractProtocol.IsHighPriorityMessage(message))
             {
                 _highPrioritySendMessageQueue.Enqueue(message);
             }
@@ -224,7 +224,7 @@ namespace NeoSharp.Core.Network.Tcp
 
                 try
                 {
-                    var msg = await _protocol.ReceiveMessageAsync(_stream, tokenSource.Token);
+                    var msg = await _abstractProtocol.ReceiveMessageAsync(_stream, tokenSource.Token);
                     _logger.LogDebug($"Message Received: {msg.Command}");
                     return msg;
                 }
@@ -267,7 +267,7 @@ namespace NeoSharp.Core.Network.Tcp
                 try
                 {
                     _logger.LogDebug($"Message sent: {message.Command} to {EndPoint.Host}.");
-                    await _protocol.SendMessageAsync(_stream, message, tokenSource.Token);
+                    await _abstractProtocol.SendMessageAsync(_stream, message, tokenSource.Token);
                 }
                 catch (Exception err)
                 {

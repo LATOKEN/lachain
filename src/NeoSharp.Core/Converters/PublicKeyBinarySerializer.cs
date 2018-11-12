@@ -7,10 +7,10 @@ using NeoSharp.Core.Exceptions;
 
 namespace NeoSharp.Core.Converters
 {
-    class ECPointBinarySerializer : IBinaryCustomSerializable
+    public class PublicKeyBinarySerializer : IBinaryCustomSerializable
     {
-        const int expectedLength = 32;// (curve.Q.GetBitLength() + 7) / 8;
-
+        private const int ExpectedLength = 32; /* (curve.Q.GetBitLength() + 7) / 8; */
+        
         public object Deserialize(IBinarySerializer binaryDeserializer, BinaryReader reader, Type type, BinarySerializerSettings settings = null)
         {
             var prefix = reader.ReadByte();
@@ -21,20 +21,20 @@ namespace NeoSharp.Core.Converters
                 case 0x02:
                 case 0x03:
                     {
-                        byte[] buffer = new byte[1 + expectedLength];
+                        byte[] buffer = new byte[1 + ExpectedLength];
                         buffer[0] = prefix;
 
-                        reader.Read(buffer, 1, expectedLength);
+                        reader.Read(buffer, 1, ExpectedLength);
                         return new PublicKey(buffer);
                     }
                 case 0x04:
                 case 0x06:
                 case 0x07:
                     {
-                        byte[] buffer = new byte[1 + expectedLength * 2];
+                        byte[] buffer = new byte[1 + ExpectedLength * 2];
                         buffer[0] = prefix;
 
-                        reader.Read(buffer, 1, expectedLength * 2);
+                        reader.Read(buffer, 1, ExpectedLength * 2);
                         return new PublicKey(buffer);
                     }
                 default: throw new InvalidECPointException("Invalid point encoding " + prefix);

@@ -12,7 +12,8 @@ namespace NeoSharp.Core.Blockchain
         private readonly IBlockProcessor _blockProcessor;
         private readonly IBlockchainContext _blockchainContext;
         private readonly IGenesisBuilder _genesisBuilder;
-        private readonly IBlockchainRepository _blockchainRepository;
+        private readonly IBlockRepository _blockRepository;
+        private readonly IGlobalRepository _globalRepository;
 
         private int _initialized;
 
@@ -22,17 +23,19 @@ namespace NeoSharp.Core.Blockchain
         /// <param name="blockProcessor">Block Processor</param>
         /// <param name="blockchainContext">Block chain context class.</param>
         /// <param name="genesisBuilder">Genesis block generator.</param>
-        /// <param name="blockchainRepository">Repository to working with blockchain.</param>
+        /// <param name="blockRepository">Repository to working with blockchain.</param>
         public Blockchain(
             IBlockProcessor blockProcessor,
             IBlockchainContext blockchainContext,
             IGenesisBuilder genesisBuilder, 
-            IBlockchainRepository blockchainRepository)
+            IBlockRepository blockRepository,
+            IGlobalRepository globalRepository)
         {
             _blockProcessor = blockProcessor ?? throw new ArgumentNullException(nameof(blockProcessor));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
             _genesisBuilder = genesisBuilder ?? throw new ArgumentNullException(nameof(genesisBuilder));
-            _blockchainRepository = blockchainRepository ?? throw new ArgumentNullException(nameof(genesisBuilder));
+            _blockRepository = blockRepository ?? throw new ArgumentNullException(nameof(blockRepository));
+            _globalRepository = globalRepository ?? throw new ArgumentNullException(nameof(globalRepository));
         }
 
         public async Task InitializeBlockchain()
@@ -40,11 +43,11 @@ namespace NeoSharp.Core.Blockchain
             if (Interlocked.Exchange(ref _initialized, 1) != 0)
                 return;
 
-            var blockHeight = await _blockchainRepository.GetTotalBlockHeight();
-            var blockHeaderHeight = await _blockchainRepository.GetTotalBlockHeaderHeight();
+            var blockHeight = await _globalRepository.GetTotalBlockHeight();
+            var blockHeaderHeight = await _globalRepository.GetTotalBlockHeaderHeight();
             
-            _blockchainContext.LastBlockHeader = await _blockchainRepository.GetBlockHeaderByHeight(blockHeaderHeight);
-            _blockchainContext.CurrentBlock = await _blockchainRepository.GetBlockHeaderByHeight(blockHeight);
+            _blockchainContext.LastBlockHeader = await _blockRepository.GetBlockHeaderByHeight(blockHeaderHeight);
+            _blockchainContext.CurrentBlock = await _blockRepository.GetBlockHeaderByHeight(blockHeight);
 
             if (_blockchainContext.CurrentBlock == null || _blockchainContext.LastBlockHeader == null)
                 await _blockProcessor.AddBlock(_genesisBuilder.Build());

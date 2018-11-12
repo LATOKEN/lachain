@@ -8,7 +8,7 @@ using NeoSharp.Types.ExtensionMethods;
 
 namespace NeoSharp.Core.Cryptography
 {
-    [BinaryTypeSerializer(typeof(ECPointBinarySerializer))]
+    [BinaryTypeSerializer(typeof(PublicKeyBinarySerializer))]
     public class PublicKey : IComparable<PublicKey>
     {
         /// <summary>

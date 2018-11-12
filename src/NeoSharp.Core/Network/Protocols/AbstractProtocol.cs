@@ -9,7 +9,7 @@ using NeoSharp.Core.Messaging.Messages;
 
 namespace NeoSharp.Core.Network.Protocols
 {
-    public abstract class ProtocolBase
+    public abstract class AbstractProtocol
     {
         private const int MaxBufferSize = 4096;
 

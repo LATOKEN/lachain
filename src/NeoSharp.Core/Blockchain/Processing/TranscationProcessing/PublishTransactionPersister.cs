@@ -1,17 +1,21 @@
 using System.Threading.Tasks;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.Transcations;
-using NeoSharp.Core.Storage;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
 {
     public class PublishTransactionPersister : ITransactionPersister<PublishTransaction>
     {
-        private readonly IRepository _repository;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IContractRepository _contractRepository;
 
-        public PublishTransactionPersister(IRepository repository)
+        public PublishTransactionPersister(
+            ITransactionRepository transactionRepository,
+            IContractRepository contractRepository)
         {
-            _repository = repository;
+            _transactionRepository = transactionRepository;
+            _contractRepository = contractRepository;
         }
 
         public async Task Persist(PublishTransaction transaction)
@@ -32,7 +36,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
                 Description = transaction.Description
             };
 
-            await _repository.AddContract(contract);
+            await _contractRepository.AddContract(contract);
         }
     }
 }
