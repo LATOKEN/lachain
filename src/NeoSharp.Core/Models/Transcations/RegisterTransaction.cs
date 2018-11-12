@@ -21,11 +21,6 @@ namespace NeoSharp.Core.Models.Transcations
         /// Name
         /// </summary>
         public string Name;
-        
-        /// <summary>
-        /// Name
-        /// </summary>
-        public string Tag;
 
         /// <summary>
         /// The total number of issues, a total of two modes:
@@ -56,7 +51,6 @@ namespace NeoSharp.Core.Models.Transcations
         {
             AssetType = (AssetType) reader.ReadByte();
             Name = reader.ReadVarString(NameMaxSize);
-            Tag = reader.ReadVarString(TagMaxSize);
             Supply = deserializer.Deserialize<UInt256>(reader, settings);
             Precision = reader.ReadByte();
             Owner = deserializer.Deserialize<UInt160>(reader, settings);
@@ -68,9 +62,7 @@ namespace NeoSharp.Core.Models.Transcations
             var result = 1;
             writer.Write((byte) AssetType);
             result += writer.WriteVarString(Name, NameMaxSize);
-            result += writer.WriteVarString(Tag, TagMaxSize);
-            writer.Write(Supply.ToArray());
-            result += Fixed8.Size;
+            result += serializer.Serialize(Supply, writer, settings);
             writer.Write(Precision);
             result++;
             result += serializer.Serialize(Owner, writer, settings);

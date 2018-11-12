@@ -66,7 +66,7 @@ namespace NeoSharp.Core.Models
             /* transcation type already readed */
             Version = reader.ReadByte(); /* 1 bytes */
             Flags = (TransactionFlags) reader.ReadUInt32(); /* 4 bytes */
-            Nonce = reader.ReadUInt32(); /* 4 bytes */
+            Nonce = reader.ReadUInt64(); /* 8 bytes */
             From = new UInt160(reader.ReadBytes(20)); /* 20 bytes (160 bits) */
             
             DeserializeExclusiveData(deserializer, reader, settings);
@@ -90,8 +90,8 @@ namespace NeoSharp.Core.Models
             result += 1;
             writer.Write((uint) Flags); /* 4 bytes */
             result += 4;
-            writer.Write(Nonce); /* 4 bytes */
-            result += 4;
+            writer.Write(Nonce); /* 8 bytes */
+            result += 8;
             writer.Write(From.ToArray()); /* 20 bytes (160 bits) */
             result += 20;
             

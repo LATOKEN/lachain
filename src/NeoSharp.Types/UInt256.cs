@@ -34,13 +34,6 @@ namespace NeoSharp.Types
         }
 
         public int Size => BufferLength;
-
-        public static UInt256 FromDecimal(decimal value)
-        {
-            var val = new BigInteger(value) * BigInteger.Pow(10, 18);
-            /* TODO: "align byte array to 32 bytes" */
-            return new UInt256(val.ToByteArray());
-        }
         
         public bool Equals(UInt256 other)
         {
@@ -105,6 +98,15 @@ namespace NeoSharp.Types
             return new UInt256(value.HexToBytes(BufferLength * 2).Reverse().ToArray());
         }
 
+        public static UInt256 FromDecimal(decimal value)
+        {
+            var bytes = (new BigInteger(value) * BigInteger.Pow(10, 18)).ToByteArray();
+            if (bytes.Length >= 32)
+                throw new ArgumentException(nameof(value));
+            bytes = Enumerable.Repeat<byte>(0, BufferLength - bytes.Length).Concat(bytes).ToArray();
+            return new UInt256(bytes);
+        }
+        
         public static UInt256 FromDec(string value)
         {
             var bytes = BigInteger.Parse(value).ToByteArray();

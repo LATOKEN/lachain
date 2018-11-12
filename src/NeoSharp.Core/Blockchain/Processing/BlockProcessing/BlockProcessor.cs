@@ -64,7 +64,10 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
         public void Run()
         {
             var cancellationToken = _cancellationTokenSource.Token;
-            _currentBlockIndex = new CurrentBlockIndex {Index = _blockchainContext.CurrentBlock.Index};
+            _currentBlockIndex = new CurrentBlockIndex
+            {
+                Index = _blockchainContext.CurrentBlock.Index
+            };
 
             Task.Factory.StartNew(async () =>
             {
