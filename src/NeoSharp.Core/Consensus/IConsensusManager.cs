@@ -4,7 +4,7 @@ namespace NeoSharp.Core.Consensus
 {
     public interface IConsensusManager
     {
+        void Start();
         void HandleConsensusMessage(ConsensusMessage message);
-        void InitializeConsensus(byte viewNumber);
     }
 }

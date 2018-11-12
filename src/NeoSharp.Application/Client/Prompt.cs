@@ -8,6 +8,7 @@ using NeoSharp.Application.Exceptions;
 using NeoSharp.Application.Extensions;
 using NeoSharp.Application.Providers;
 using NeoSharp.Core.Blockchain;
+using NeoSharp.Core.Consensus;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Network;
@@ -39,6 +40,9 @@ namespace NeoSharp.Application.Client
         /// Blockchain
         /// </summary>
         private readonly IBlockchain _blockchain;
+
+        private readonly IConsensusManager _consensusManager;
+
         /// <summary>
         /// Command cache
         /// </summary>
@@ -91,13 +95,15 @@ namespace NeoSharp.Application.Client
             INetworkManager networkManager,
             IConsoleHandler consoleHandler,
             Core.Logging.ILogger<Prompt> logger,
-            IBlockchain blockchain
+            IBlockchain blockchain,
+            IConsensusManager consensusManager
             )
         {
             _networkManager = networkManager;
             _consoleHandler = consoleHandler;
             _logger = logger;
             _blockchain = blockchain;
+            _consensusManager = consensusManager;
             _logs = logs;
             _variables = variables;
 
@@ -171,6 +177,7 @@ namespace NeoSharp.Application.Client
             
             _blockchain.InitializeBlockchain().Wait();
             _networkManager.StartNetwork();
+            _consensusManager.Start();
 
             while (!_exit)
             {

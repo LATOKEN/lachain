@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Timers;
+using Microsoft.Extensions.Configuration;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
+using NeoSharp.Core.Consensus.Config;
 using NeoSharp.Core.Consensus.Messages;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Extensions;
@@ -37,7 +39,8 @@ namespace NeoSharp.Core.Consensus
         public ConsensusManager(
             IBlockProcessor blockProcessor, IBlockchainContext blockchainContext,
             ITransactionCrawler transactionCrawler, ITransactionProcessor transactionProcessor,
-            ITransactionPool transactionPool, ILogger<ConsensusManager> logger
+            ITransactionPool transactionPool, ILogger<ConsensusManager> logger,
+            ConsensusConfig configuration
             /*KeyPair keyPair, IReadOnlyList<PublicKey> validators*/
         )
         {
@@ -47,8 +50,8 @@ namespace NeoSharp.Core.Consensus
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _logger = logger ?? throw new ArgumentNullException(nameof(blockProcessor));
             //_context = new ConsensusContext(keyPair, validators);
-            _context = new ConsensusContext(null, Array.Empty<PublicKey>());
-
+            _context = new ConsensusContext(null, configuration.ValidatorsKeys);
+            
             (transactionProcessor ?? throw new ArgumentNullException(nameof(transactionProcessor)))
                 .OnTransactionProcessed += OnTransactionVerified;
         }
@@ -58,7 +61,7 @@ namespace NeoSharp.Core.Consensus
             _stopped = true;
         }
 
-        public void Start(byte initialView)
+        public void Start()
         {
             _logger.LogInformation("Starting consensus");
             InitializeConsensus(0);

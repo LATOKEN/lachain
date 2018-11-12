@@ -22,7 +22,7 @@ namespace NeoSharp.Core.Consensus
         public ulong Nonce; // TODO: fix very weak nonce generation mechanism
         public DateTime LastBlockRecieved;
         public int MyIndex;
-        private KeyPair PrivateKey;
+        private readonly KeyPair PrivateKey;
         public uint SignaturesAcquired;
 
         public ConsensusProposal CurrentProposal;
@@ -37,9 +37,9 @@ namespace NeoSharp.Core.Consensus
         {
             PrivateKey = keyPair;
             Validators = new ObservedValidatorState[validators.Count];
-            for (int i = 0; i < Validators.Length; ++i)
+            for (var i = 0; i < Validators.Length; ++i)
             {
-                Validators[i].PublicKey = validators[i];
+                Validators[i] = new ObservedValidatorState(validators[i]);
             }
 
             CurrentProposal = null;
@@ -78,7 +78,7 @@ namespace NeoSharp.Core.Consensus
             for (var i = 0; i < Validators.Length; ++i)
             {
                 Validators[i].Reset();
-                if (Validators[i].PublicKey == PrivateKey.PublicKey)
+                if (Validators[i].PublicKey == PrivateKey?.PublicKey)
                 {
                     MyIndex = i;
                 }
