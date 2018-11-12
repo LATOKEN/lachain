@@ -142,6 +142,8 @@ namespace NeoSharp.Cryptography
         /// <returns>Siganture bytearray</returns>
         public abstract byte[] Sign(byte[] message, byte[] prikey);
 
+        public abstract byte[] RecoverSignature(byte[] signature, byte[] message, bool check);
+        
         /// <summary>
         /// Derive Public Key from private
         /// </summary>
@@ -210,7 +212,7 @@ namespace NeoSharp.Cryptography
         /// </summary>
         /// <param name="input">String to be decoded</param>
         /// <returns>Decoded Byte Array</returns>
-        public virtual byte[] Base58Decode(string input)
+        public byte[] Base58Decode(string input)
         {
             BigInteger bi = BigInteger.Zero;
             for (int i = input.Length - 1; i >= 0; i--)
@@ -238,7 +240,7 @@ namespace NeoSharp.Cryptography
         /// </summary>
         /// <param name="input">Byte Array to encode</param>
         /// <returns>Encoded string</returns>
-        public virtual string Base58Encode(byte[] input)
+        public string Base58Encode(byte[] input)
         {
             BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
             StringBuilder sb = new StringBuilder();
@@ -264,7 +266,7 @@ namespace NeoSharp.Cryptography
         /// </summary>
         /// <param name="data">Bytearray</param>
         /// <returns>Base58Check string</returns>
-        public virtual string Base58CheckEncode(byte[] data)
+        public string Base58CheckEncode(byte[] data)
         {
             byte[] checksum = Sha256(Sha256(data));
             byte[] buffer = new byte[data.Length + 4];
@@ -278,7 +280,7 @@ namespace NeoSharp.Cryptography
         /// </summary>
         /// <param name="input">Base58Check string</param>
         /// <returns>Bytearray</returns>
-        public virtual byte[] Base58CheckDecode(string input)
+        public byte[] Base58CheckDecode(string input)
         {
             byte[] buffer = Base58Decode(input);
             if (buffer.Length < 4) throw new FormatException();
@@ -294,7 +296,5 @@ namespace NeoSharp.Cryptography
         /// <param name="length">Length</param>
         /// <returns>Random bytearray</returns>
         public abstract byte[] GenerateRandomBytes(int length);
-        
-        public abstract byte[] PublicKeyFromPrivateKey(byte[] privateKey);
     }
 }

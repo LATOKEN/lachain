@@ -7,6 +7,7 @@ namespace NeoSharp.Core.Models
     [Flags]
     [Serializable]
     [JsonConverter(typeof(StringEnumConverter))]
+    [Obsolete]
     public enum CoinState : byte
     {
         New = 0x00,

@@ -2,11 +2,12 @@
 using Moq;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
-using NeoSharp.Core.Blockchain.Processing.TransactionPersisters;
+using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
+using NeoSharp.Core.Blockchain.Processing.TranscationProcessing;
 using NeoSharp.Core.DI;
 using NeoSharp.Core.DI.Modules;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.TestHelpers;
 
 namespace NeoSharp.Application.Test
@@ -30,7 +31,6 @@ namespace NeoSharp.Application.Test
             containerBuilderMock.Verify(x => x.RegisterSingleton<IBlockPool, BlockPool>(), Times.Once);
             containerBuilderMock.Verify(x => x.RegisterSingleton<ITransactionPersister<Transaction>, TransactionPersister>(), Times.Once);
 
-            containerBuilderMock.Verify(x => x.RegisterSingleton<IWitnessOperationsManager, WitnessOperationsManager>(), Times.Once);
             containerBuilderMock.Verify(x => x.RegisterSingleton<ITransactionOperationsManager, TransactionOperationManager>(), Times.Once);
             containerBuilderMock.Verify(x => x.RegisterSingleton<IBlockHeaderOperationsManager, BlockHeaderOperationsManager>(), Times.Once);
             containerBuilderMock.Verify(x => x.RegisterSingleton<IBlockOperationsManager, BlockOperationManager>(), Times.Once);

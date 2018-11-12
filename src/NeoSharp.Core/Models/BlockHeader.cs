@@ -1,5 +1,6 @@
 ﻿using System;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core.Cryptography;
 using NeoSharp.Types;
 using Newtonsoft.Json;
 
@@ -11,8 +12,6 @@ namespace NeoSharp.Core.Models
     [Serializable]
     public class BlockHeader
     {
-        #region Serializable data
-
         [BinaryProperty(0)]
         [JsonProperty("version")]
         public uint Version;
@@ -35,37 +34,27 @@ namespace NeoSharp.Core.Models
 
         [BinaryProperty(5)]
         [JsonProperty("nonce")]
-        public ulong ConsensusData;
-
-        [BinaryProperty(6)]
-        [JsonProperty("nextconsensus")]
-        public UInt160 NextConsensus;
+        public ulong Nonce;
 
         /// <summary>
         /// Set the kind of the header
         /// </summary>
-        [BinaryProperty(7)]
+        [BinaryProperty(6)]
         public HeaderType Type { get; set; }
-
-        [BinaryProperty(8)]
-        [JsonProperty("script")]
-        public Witness Witness;
-
+        
+        [BinaryProperty(7)]
+        [JsonProperty("multisig")]
+        public MultiSig MultiSig;
+        
         [BinaryProperty(100)]
         [JsonProperty("txhashes")]
         public UInt256[] TransactionHashes { get; set; }
 
-        #endregion
-
-        #region Non serializable data
-
         [JsonProperty("txcount")]
-        public virtual int TransactionCount => TransactionHashes?.Length ?? 0;
+        public int TransactionCount => TransactionHashes?.Length ?? 0;
 
         [JsonProperty("hash")]
         public UInt256 Hash { get; set; }
-
-        #endregion
 
         /// <summary>
         /// Constructor
@@ -91,22 +80,19 @@ namespace NeoSharp.Core.Models
         public BlockHeader Trim()
         {
             if (Type == HeaderType.Header && TransactionHashes.Length == 0)
-            {
                 return this;
-            }
-
+            
             return new BlockHeader(HeaderType.Header)
             {
-                ConsensusData = ConsensusData,
+                Nonce = Nonce,
                 Index = Index,
                 Hash = Hash,
                 MerkleRoot = MerkleRoot,
-                NextConsensus = NextConsensus,
                 TransactionHashes = new UInt256[0],
                 PreviousBlockHash = PreviousBlockHash,
-                Witness = Witness,
+                MultiSig = MultiSig,
                 Timestamp = Timestamp,
-                Version = Version,
+                Version = Version
             };
         }
 
@@ -117,19 +103,18 @@ namespace NeoSharp.Core.Models
         /// <returns>Return block</returns>
         public Block GetBlock(Transaction[] txs)
         {
-            return new Block()
+            return new Block
             {
-                ConsensusData = ConsensusData,
+                Nonce = Nonce,
                 Index = Index,
                 Hash = Hash,
                 MerkleRoot = MerkleRoot,
-                NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 PreviousBlockHash = PreviousBlockHash,
-                Witness = Witness,
+                MultiSig = MultiSig,
                 Timestamp = Timestamp,
                 Version = Version,
-                Transactions = txs,
+                Transactions = txs
             };
         }
     }

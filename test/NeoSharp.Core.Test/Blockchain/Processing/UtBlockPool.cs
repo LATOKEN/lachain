@@ -2,6 +2,7 @@
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Exceptions;
@@ -21,7 +22,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             // Arrange
             var addedBlock = new Block
             {
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622")
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622")
             };
 
             var testee = this.AutoMockContainer.Create<BlockPool>();
@@ -59,7 +60,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             // Arrange
             var addedBlock = new Block
             {
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622")
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622")
             };
 
             var testee = this.AutoMockContainer.Create<BlockPool>();

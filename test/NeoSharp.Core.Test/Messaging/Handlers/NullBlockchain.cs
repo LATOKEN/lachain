@@ -32,10 +32,12 @@ namespace NeoSharp.Core.Test.Messaging.Handlers
             throw new NotImplementedException();
         }
 
+        /*
         public bool ContainsUnspent(CoinReference input)
         {
             throw new NotImplementedException();
         }
+        */
 
         public bool ContainsUnspent(UInt256 hash, ushort index)
         {
@@ -137,6 +139,7 @@ namespace NeoSharp.Core.Test.Messaging.Handlers
             throw new NotImplementedException();
         }
 
+        /*
         public TransactionOutput GetUnspent(UInt256 hash, ushort index)
         {
             throw new NotImplementedException();
@@ -146,6 +149,7 @@ namespace NeoSharp.Core.Test.Messaging.Handlers
         {
             throw new NotImplementedException();
         }
+        */
 
         public bool IsDoubleSpend(Transaction tx)
         {

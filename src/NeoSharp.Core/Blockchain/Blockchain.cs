@@ -2,22 +2,19 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NeoSharp.Core.Blockchain.Genesis;
-using NeoSharp.Core.Blockchain.Processing;
-using NeoSharp.Core.Blockchain.Repositories;
-using NeoSharp.Core.Network;
+using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain
 {
     public class Blockchain : IBlockchain, IDisposable
     {
-        #region Private fields
         private readonly IBlockProcessor _blockProcessor;
         private readonly IBlockchainContext _blockchainContext;
         private readonly IGenesisBuilder _genesisBuilder;
-        private readonly IBlockRepository _blockRepository;
+        private readonly IBlockchainRepository _blockchainRepository;
 
         private int _initialized;
-        #endregion
 
         /// <summary>
         /// Constructor
@@ -25,17 +22,17 @@ namespace NeoSharp.Core.Blockchain
         /// <param name="blockProcessor">Block Processor</param>
         /// <param name="blockchainContext">Block chain context class.</param>
         /// <param name="genesisBuilder">Genesis block generator.</param>
-        /// <param name="blockRepository">The block model.</param>
+        /// <param name="blockchainRepository">Repository to working with blockchain.</param>
         public Blockchain(
             IBlockProcessor blockProcessor,
             IBlockchainContext blockchainContext,
             IGenesisBuilder genesisBuilder, 
-            IBlockRepository blockRepository)
+            IBlockchainRepository blockchainRepository)
         {
             _blockProcessor = blockProcessor ?? throw new ArgumentNullException(nameof(blockProcessor));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
             _genesisBuilder = genesisBuilder ?? throw new ArgumentNullException(nameof(genesisBuilder));
-            _blockRepository = blockRepository;
+            _blockchainRepository = blockchainRepository ?? throw new ArgumentNullException(nameof(genesisBuilder));
         }
 
         public async Task InitializeBlockchain()
@@ -43,11 +40,11 @@ namespace NeoSharp.Core.Blockchain
             if (Interlocked.Exchange(ref _initialized, 1) != 0)
                 return;
 
-            var blockHeight = await _blockRepository.GetTotalBlockHeight();
-            var blockHeaderHeight = await _blockRepository.GetTotalBlockHeaderHeight();
-
-            _blockchainContext.CurrentBlock = await _blockRepository.GetBlock(blockHeight);
-            _blockchainContext.LastBlockHeader = await _blockRepository.GetBlockHeader(blockHeaderHeight);
+            var blockHeight = await _blockchainRepository.GetTotalBlockHeight();
+            var blockHeaderHeight = await _blockchainRepository.GetTotalBlockHeaderHeight();
+            
+            _blockchainContext.LastBlockHeader = await _blockchainRepository.GetBlockHeaderByHeight(blockHeaderHeight);
+            _blockchainContext.CurrentBlock = await _blockchainRepository.GetBlockHeaderByHeight(blockHeight);
 
             if (_blockchainContext.CurrentBlock == null || _blockchainContext.LastBlockHeader == null)
                 await _blockProcessor.AddBlock(_genesisBuilder.Build());

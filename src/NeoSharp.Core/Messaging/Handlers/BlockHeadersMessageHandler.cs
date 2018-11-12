@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
+using NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;

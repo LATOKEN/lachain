@@ -6,6 +6,7 @@ using System.Timers;
 using Microsoft.Extensions.Logging;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
+using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Consensus.Messages;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Extensions;

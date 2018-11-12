@@ -7,12 +7,13 @@ using Moq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
+using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
-using NeoSharp.Core.Network;
-using NeoSharp.Core.Persistence;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Storage;
 using NeoSharp.TestHelpers;
 using NeoSharp.Types;
 using NeoSharp.Types.ExtensionMethods;
@@ -88,13 +89,12 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var block = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
-                NextConsensus = UInt160.Zero,
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
                 Transactions = new Transaction[]
                 {
                     new ContractTransaction
                     {
-                        Hash = UInt256.Parse("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
+                        Hash = UInt256.FromHex("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
                     }
                 }
             };
@@ -109,6 +109,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             await testee.AddBlock(block);
         }
 
+        /*
         [TestMethod]
         [Ignore]
         public async Task AddBlock_ValidBlockNotInBlockPoolInBlockChainWithTheRightBlockHeaderType_BlockAddedToBlockPool()
@@ -116,13 +117,12 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var block = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
-                NextConsensus = UInt160.Zero,
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
                 Transactions = new Transaction[]
                 {
                     new ContractTransaction
                     {
-                        Hash = UInt256.Parse("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
+                        Hash = UInt256.FromHex("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
                     }
                 }
             };
@@ -146,7 +146,9 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             blockPoolMock
                 .Verify(x => x.TryAdd(block));
         }
+        */
 
+        /*
         [TestMethod]
         [Ignore]
         public async Task AddBlock_ValidBlockNotInBlockPoolNotInBlockChain_BlockAddedToBlockPool()
@@ -154,13 +156,12 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             var block = new Block
             {
                 PreviousBlockHash = UInt256.Zero,
-                Hash = UInt256.Parse("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
-                NextConsensus = UInt160.Zero,
+                Hash = UInt256.FromHex("d4dab99ed65c3655a9619b215ab1988561b706b6e5196b6e0ada916aa6601622"),
                 Transactions = new Transaction[]
                 {
                     new ContractTransaction
                     {
-                        Hash = UInt256.Parse("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
+                        Hash = UInt256.FromHex("1a259dba256600620c6c91094f3a300b30f0cbaecee19c6114deffd3288957d7")
                     }
                 }
             };
@@ -182,6 +183,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             blockPoolMock
                 .Verify(x => x.TryAdd(block));
         }
+        */
 
         [TestMethod]
         public void Run_WhenAddBlockThisIsProcessed_OnBlockProcessedEventRaised()

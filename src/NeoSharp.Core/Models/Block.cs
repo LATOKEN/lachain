@@ -4,6 +4,7 @@ using NeoSharp.BinarySerialization;
 
 namespace NeoSharp.Core.Models
 {
+    /// <inheritdoc />
     /// <summary>
     /// Header and complete TX data
     /// </summary>
@@ -32,13 +33,12 @@ namespace NeoSharp.Core.Models
         {
             return new BlockHeader(HeaderType.Extended)
             {
-                ConsensusData = ConsensusData,
+                Nonce = Nonce,
                 Hash = Hash,
                 Index = Index,
                 MerkleRoot = MerkleRoot,
-                NextConsensus = NextConsensus,
                 PreviousBlockHash = PreviousBlockHash,
-                Witness = Witness,
+                MultiSig = MultiSig,
                 Timestamp = Timestamp,
                 TransactionHashes = Transactions?.Select(u => u.Hash).ToArray(),
                 Version = Version

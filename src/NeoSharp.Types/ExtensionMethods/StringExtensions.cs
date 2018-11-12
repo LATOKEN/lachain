@@ -18,13 +18,9 @@ namespace NeoSharp.Types.ExtensionMethods
             var buffer = Crypto.Default.Base58CheckDecode(address);
 
             if (buffer.Length != 21 || buffer[0] != 0x017)
-            {
-                throw (new ArgumentException(nameof(address)));
-            }
-            else
-            {
-                return new UInt160(buffer.Skip(1).ToArray());
-            }
+                throw new ArgumentException(nameof(address));
+
+            return new UInt160(buffer.Skip(1).ToArray());
         }
 
         /// <summary>

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Logging;

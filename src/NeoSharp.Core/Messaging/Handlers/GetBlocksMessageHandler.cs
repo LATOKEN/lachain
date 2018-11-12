@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NeoSharp.Core.Blockchain.Repositories;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
+using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Handlers
@@ -16,13 +16,13 @@ namespace NeoSharp.Core.Messaging.Handlers
         private const int MaxBlocksCountToReturn = 500;
         private readonly IBlockRepository _blockRepository;
 
-        private Task<BlockHeader> GetBlockHeader(UInt256 hash) => this._blockRepository.GetBlockHeader(hash);
+        private Task<BlockHeader> GetBlockHeader(UInt256 hash) => _blockRepository.GetBlockHeaderByHash(hash);
         #endregion
 
         #region Constructor 
         public GetBlocksMessageHandler(IBlockRepository blockModel)
         {
-            this._blockRepository = blockModel ?? throw new ArgumentNullException(nameof(blockModel));
+            _blockRepository = blockModel ?? throw new ArgumentNullException(nameof(blockModel));
         }
         #endregion
 
@@ -51,16 +51,15 @@ namespace NeoSharp.Core.Messaging.Handlers
                 .Select(bh => bh.Hash)
                 .FirstOrDefault();
 
-            if (blockHash == null || blockHash == hashStop) return;
-
+            if (blockHash == null || blockHash == hashStop)
+                return;
             var blockHashes = new List<UInt256>();
 
             do
             {
-                blockHash = await this._blockRepository.GetNextBlockHash(blockHash);
-
-                if (blockHash == null || blockHash == hashStop) break;
-
+                var nextBlock = await _blockRepository.GetNextBlockHeaderByHash(blockHash);
+                if (nextBlock == null || nextBlock.Hash == hashStop)
+                    break;
                 blockHashes.Add(blockHash);
             } while (blockHashes.Count < MaxBlocksCountToReturn);
 

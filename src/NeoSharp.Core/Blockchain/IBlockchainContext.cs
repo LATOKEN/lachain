@@ -4,7 +4,7 @@ namespace NeoSharp.Core.Blockchain
 {
     public interface IBlockchainContext
     {
-        Block CurrentBlock { get; set; }
+        BlockHeader CurrentBlock { get; set; }
 
         BlockHeader LastBlockHeader { get; set; }
 

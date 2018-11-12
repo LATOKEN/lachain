@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using NeoSharp.BinarySerialization.Extensions;
 using NeoSharp.BinarySerialization.SerializationHooks;
 
 namespace NeoSharp.BinarySerialization.Serializers
@@ -10,13 +11,13 @@ namespace NeoSharp.BinarySerialization.Serializers
         /// <summary>
         /// Max length
         /// </summary>
-        public readonly int MaxLength;
+        public readonly uint MaxLength;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="maxLength">Max length</param>
-        public BinaryStringSerializer(int maxLength)
+        public BinaryStringSerializer(uint maxLength)
         {
             MaxLength = maxLength;
         }

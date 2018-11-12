@@ -1,12 +1,13 @@
 ﻿using System.IO;
 using NeoSharp.BinarySerialization;
+using NeoSharp.BinarySerialization.Extensions;
 
 namespace NeoSharp.Core.Consensus.Messages
 {
     /*
      * TODO: refactor this to use BinarySerializer.Default
      */
-    public class SerializationHelper
+    public static class SerializationHelper
     {
         public static T[] ReadSerializableArray<T>(BinaryReader reader, int max = 0x1000000)
         {

@@ -52,8 +52,8 @@ namespace NeoSharp.Core.Test.Cryptography
         {
             // Act
             var tree = MerkleTree.ComputeTree(_hashes);
-            var node = tree.Search(UInt256.Parse("d7578928d3ffde14619ce1ceaecbf0300b303a4f09916c0c62006625ba9d251a"));
-            var nodeNone = tree.Search(UInt256.Parse("f6049de2a1ce95dc4fbff3c66af5900ff2733d78c0eaab7c723c92f0a1e62f23"));
+            var node = tree.Search(UInt256.FromHex("d7578928d3ffde14619ce1ceaecbf0300b303a4f09916c0c62006625ba9d251a"));
+            var nodeNone = tree.Search(UInt256.FromHex("f6049de2a1ce95dc4fbff3c66af5900ff2733d78c0eaab7c723c92f0a1e62f23"));
 
             // Assert
             Assert.AreEqual("0xd7578928d3ffde14619ce1ceaecbf0300b303a4f09916c0c62006625ba9d251a", node.Hash.ToString());

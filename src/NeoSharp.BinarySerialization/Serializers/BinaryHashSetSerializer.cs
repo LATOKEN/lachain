@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using NeoSharp.BinarySerialization.Extensions;
 using NeoSharp.BinarySerialization.SerializationHooks;
 
 namespace NeoSharp.BinarySerialization.Serializers

@@ -1,8 +1,9 @@
 ﻿using NeoSharp.Core.DI;
 using NeoSharp.Core.Exceptions;
-using NeoSharp.Core.Persistence;
-using NeoSharp.Persistence.RedisDB;
-using NeoSharp.Persistence.RocksDB;
+using NeoSharp.Core.Storage;
+using NeoSharp.Core.Storage.Blockchain;
+using NeoSharp.RocksDB;
+using NeoSharp.RocksDB.Repositories;
 
 namespace NeoSharp.Application.DI
 {
@@ -16,7 +17,7 @@ namespace NeoSharp.Application.DI
 
             switch (cfg.Provider)
             {
-                case RedisDbJsonConfig.Provider:
+                /*case RedisDbJsonConfig.Provider:
                     {
                         containerBuilder.RegisterSingleton<RedisDbJsonConfig>();
                         containerBuilder.RegisterSingleton<IRepository, RedisDbJsonRepository>();
@@ -30,13 +31,19 @@ namespace NeoSharp.Application.DI
                         containerBuilder.RegisterSingleton<IRepository, RedisDbBinaryRepository>();
                         containerBuilder.RegisterSingleton<IRedisDbContext, RedisDbContext>();
                         break;
-                    }
+                    }*/
 
                 case RocksDbConfig.Provider:
                     {
                         containerBuilder.RegisterSingleton<RocksDbConfig>();
-                        containerBuilder.RegisterSingleton<IRepository, RocksDbRepository>();
                         containerBuilder.RegisterSingleton<IRocksDbContext, RocksDbContext>();
+                        /* register repositories */
+                        containerBuilder.RegisterSingleton<IAssetRepository, AssetRepository>();
+                        containerBuilder.RegisterSingleton<IBlockRepository, BlockRepository>();
+                        containerBuilder.RegisterSingleton<IContractRepository, ContractRepository>();
+                        containerBuilder.RegisterSingleton<IGlobalRepository, GlobalRepository>();
+                        containerBuilder.RegisterSingleton<IStorageRepository, StorageRepository>();
+                        containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
                         break;
                     }
 

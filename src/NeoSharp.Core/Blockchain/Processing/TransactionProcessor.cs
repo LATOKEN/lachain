@@ -6,19 +6,22 @@ using System.Threading.Tasks;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManger;
-using NeoSharp.Core.Persistence;
+using NeoSharp.Core.Models.OperationManager;
+using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing
 {
+    [Obsolete]
     public class TransactionProcessor : ITransactionProcessor
     {
         private static readonly TimeSpan DefaultTransactionPollingInterval = TimeSpan.FromMilliseconds(100);
 
-        private readonly ConcurrentDictionary<UInt256, Transaction> _unverifiedTransactionPool = new ConcurrentDictionary<UInt256, Transaction>();
+        private readonly ConcurrentDictionary<UInt256, Transaction> _unverifiedTransactionPool =
+            new ConcurrentDictionary<UInt256, Transaction>();
+
         private readonly ITransactionPool _verifiedTransactionPool;
-        private readonly IRepository _repository;
+        private readonly IBlockchainRepository _blockchainRepository;
         private readonly IAsyncDelayer _asyncDelayer;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly IVerifier<Transaction> _transactionVerifier;
@@ -28,12 +31,12 @@ namespace NeoSharp.Core.Blockchain.Processing
         public TransactionProcessor(
             ITransactionPool transactionPool,
             IVerifier<Transaction> transactionVerifier,
-            IRepository repository,
+            IBlockchainRepository blockchainRepository,
             IAsyncDelayer asyncDelayer)
         {
             _verifiedTransactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _blockchainRepository = blockchainRepository ?? throw new ArgumentNullException(nameof(blockchainRepository));
             _asyncDelayer = asyncDelayer ?? throw new ArgumentNullException(nameof(asyncDelayer));
         }
 
@@ -41,19 +44,20 @@ namespace NeoSharp.Core.Blockchain.Processing
         {
             var cancellationToken = _cancellationTokenSource.Token;
 
-            Task.Factory.StartNew(async () =>
+            Task.Factory.StartNew(() =>
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     if (!_unverifiedTransactionPool.Any())
                     {
-                        await _asyncDelayer.Delay(DefaultTransactionPollingInterval, cancellationToken);
+                        _asyncDelayer.Delay(DefaultTransactionPollingInterval, cancellationToken);
                         continue;
                     }
 
                     var unverifiedTransactionHashes = _unverifiedTransactionPool.Keys;
-                    var transactionPool = _verifiedTransactionPool.Concat(
-                        _unverifiedTransactionPool.Values.Where(t => unverifiedTransactionHashes.Contains(t.Hash)))
+                    var transactionPool = _verifiedTransactionPool.GetTransactions()
+                        .Concat(_unverifiedTransactionPool.Values.Where(t =>
+                            unverifiedTransactionHashes.Contains(t.Hash)))
                         .ToArray();
 
                     foreach (var transactionHash in unverifiedTransactionHashes)
@@ -63,9 +67,9 @@ namespace NeoSharp.Core.Blockchain.Processing
                             continue;
                         }
 
-                        var valid = this._transactionVerifier.Verify(transaction);
-                        
-                        if (transactionPool
+                        var valid = _transactionVerifier.Verify(transaction);
+
+                        /*if (transactionPool
                             .Where(t => t.Hash != transactionHash)
                             .Where(p => p != transaction)
                             .SelectMany(p => p.Inputs)
@@ -73,7 +77,7 @@ namespace NeoSharp.Core.Blockchain.Processing
                             .Any())
                         {
                             valid = false;
-                        }
+                        }*/
 
                         if (valid)
                         {
@@ -94,22 +98,26 @@ namespace NeoSharp.Core.Blockchain.Processing
 
             if (_unverifiedTransactionPool.ContainsKey(transaction.Hash))
             {
-                throw new InvalidTransactionException($"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued and still not verified to be added.");
+                throw new InvalidTransactionException(
+                    $"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued and still not verified to be added.");
             }
 
             if (_verifiedTransactionPool.Contains(transaction.Hash))
             {
-                throw new InvalidTransactionException($"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued and verified to be added.");
+                throw new InvalidTransactionException(
+                    $"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued and verified to be added.");
             }
-
-            if (await _repository.GetTransaction(transaction.Hash) != null)
+            
+            if (await _blockchainRepository.GetTransactionByHash(transaction.Hash) != null)
             {
-                throw new InvalidTransactionException($"The transaction \"{transaction.Hash.ToString(true)}\" exists already on the blockchain.");
+                throw new InvalidTransactionException(
+                    $"The transaction \"{transaction.Hash.ToString(true)}\" exists already on the blockchain.");
             }
 
             if (!_unverifiedTransactionPool.TryAdd(transaction.Hash, transaction))
             {
-                throw new InvalidTransactionException($"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued to be added.");
+                throw new InvalidTransactionException(
+                    $"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued to be added.");
             }
         }
 

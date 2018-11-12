@@ -58,7 +58,7 @@ namespace NeoSharp.Core.Consensus
                 MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes),
                 Timestamp = Timestamp,
                 Index = BlockIndex,
-                ConsensusData = Nonce
+                Nonce = Nonce
             };
         }
 

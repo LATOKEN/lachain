@@ -25,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\NeoSharp.Core\NeoSharp.Core.csproj" />
+    <ProjectReference Include="..\..\src\NeoSharp.RocksDB\NeoSharp.RocksDB.csproj" />
     <ProjectReference Include="..\NeoSharp.TestHelpers\NeoSharp.TestHelpers.csproj" />
   </ItemGroup>
   <ItemGroup>

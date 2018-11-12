@@ -9,50 +9,34 @@ namespace NeoSharp.Core.Models
 {
     [Serializable]
     [BinaryTypeSerializer(typeof(TransactionSerializer))]
-    public class Transaction 
+    public class Transaction
     {
-        #region Header
-
+        /* TODO: "don't serialize hash" */
         [BinaryProperty(0)]
         [JsonProperty("hash")]
         public UInt256 Hash { get; set; }
-
+        
         [BinaryProperty(1)]
         [JsonProperty("type")]
-        public readonly TransactionType Type;
-
+        public TransactionType Type { get; }
+        
         [BinaryProperty(2)]
         [JsonProperty("version")]
-        public byte Version;
-
-        #endregion
-
-        // In this point should be serialized the content of the Transaction
-
-        #region TxData
-
-        [BinaryProperty(100)]
-        [JsonProperty("attributes")]
-        public TransactionAttribute[] Attributes = new TransactionAttribute[0];
-
-        [BinaryProperty(101)]
-        [JsonProperty("vin")]
-        public CoinReference[] Inputs = new CoinReference[0];
-
-        [BinaryProperty(102)]
-        [JsonProperty("vout")]
-        public TransactionOutput[] Outputs = new TransactionOutput[0];
-
-        #endregion
-
-        #region Signature
-
-        [BinaryProperty(255)]
-        [JsonProperty("witness")]
-        public Witness[] Witness;
-
-        #endregion
-
+        public byte Version { get; set; }
+        
+        [BinaryProperty(3)]
+        [JsonProperty("flags")]
+        public TransactionFlags Flags { get; set; } = TransactionFlags.None;
+        
+        [BinaryProperty(4)]
+        [JsonProperty("nonce")]
+        public ulong Nonce { get; set; }
+        
+        /* TODO: "rethink it" */
+        [BinaryProperty(5)]
+        [JsonProperty("from")]
+        public UInt160 From { get; set; }
+        
         /// <summary>
         /// Constructor
         /// </summary>
@@ -70,49 +54,22 @@ namespace NeoSharp.Core.Models
             Type = type;
         }
 
-        #region Serialization
-
         /// <summary>
         /// Deserialize logic
         /// </summary>
         /// <param name="deserializer">Deserializer</param>
         /// <param name="reader">Reader</param>
         /// <param name="settings">Settings</param>
-        public void Deserialize(IBinarySerializer deserializer, BinaryReader reader, BinarySerializerSettings settings = null)
+        public void Deserialize(IBinarySerializer deserializer, BinaryReader reader,
+            BinarySerializerSettings settings = null)
         {
-            // Check type
-
-            // Byte already readed
-
-            // if ((byte)Type != reader.ReadByte())
-            //    throw new FormatException();
-
-            // Read version
-
-            Version = reader.ReadByte();
-
-            // Deserialize exclusive data
-
+            /* transcation type already readed */
+            Version = reader.ReadByte(); /* 1 bytes */
+            Flags = (TransactionFlags) reader.ReadUInt32(); /* 4 bytes */
+            Nonce = reader.ReadUInt32(); /* 4 bytes */
+            From = new UInt160(reader.ReadBytes(20)); /* 20 bytes (160 bits) */
+            
             DeserializeExclusiveData(deserializer, reader, settings);
-
-            // Deserialize shared content
-
-            Attributes = deserializer.Deserialize<TransactionAttribute[]>(reader, settings);
-            if (Attributes.Length > ushort.MaxValue) throw new FormatException(nameof(Attributes));
-
-            Inputs = deserializer.Deserialize<CoinReference[]>(reader, settings);
-            if (Inputs.Length > ushort.MaxValue) throw new FormatException(nameof(Inputs));
-
-            Outputs = deserializer.Deserialize<TransactionOutput[]>(reader, settings);
-            if (Outputs.Length > ushort.MaxValue) throw new FormatException(nameof(Outputs));
-
-            // Deserialize signature
-
-            if (settings?.Filter?.Invoke(nameof(Witness)) != false)
-            {
-                Witness = deserializer.Deserialize<Witness[]>(reader, settings);
-                if (Witness.Length > ushort.MaxValue) throw new FormatException(nameof(Witness));
-            }
         }
 
         /// <summary>
@@ -122,33 +79,24 @@ namespace NeoSharp.Core.Models
         /// <param name="writer">Writer</param>
         /// <param name="settings">Settings</param>
         /// <returns>How many bytes have been written</returns>
-        public int Serialize(IBinarySerializer serializer, BinaryWriter writer, BinarySerializerSettings settings = null)
+        public int Serialize(IBinarySerializer serializer, BinaryWriter writer,
+            BinarySerializerSettings settings = null)
         {
-            // Write type and version
-
-            var ret = 2;
-
-            writer.Write((byte)Type);
-            writer.Write(Version);
-
-            // Serialize exclusive data
-
-            ret += SerializeExclusiveData(serializer, writer, settings);
-
-            // Serialize shared content
-
-            ret += serializer.Serialize(Attributes, writer, settings);
-            ret += serializer.Serialize(Inputs, writer, settings);
-            ret += serializer.Serialize(Outputs, writer, settings);
-
-            // Serialize sign
-
-            if (settings?.Filter?.Invoke(nameof(Witness)) != false)
-            {
-                ret += serializer.Serialize(Witness, writer, settings);
-            }
-
-            return ret;
+            var result = 0;
+            
+            writer.Write((byte) Type); /* 1 byte */
+            result += 1;
+            writer.Write(Version); /* 1 byte */
+            result += 1;
+            writer.Write((uint) Flags); /* 4 bytes */
+            result += 4;
+            writer.Write(Nonce); /* 4 bytes */
+            result += 4;
+            writer.Write(From.ToArray()); /* 20 bytes (160 bits) */
+            result += 20;
+            
+            result += SerializeExclusiveData(serializer, writer, settings);
+            return result;
         }
 
         /// <summary>
@@ -158,9 +106,9 @@ namespace NeoSharp.Core.Models
         /// <param name="reader">Reader</param>
         /// <param name="settings">Settings</param>
         /// <returns>How many bytes have been written</returns>
-        protected virtual void DeserializeExclusiveData(IBinarySerializer deserializer, BinaryReader reader, BinarySerializerSettings settings = null)
+        protected virtual void DeserializeExclusiveData(IBinarySerializer deserializer, BinaryReader reader,
+            BinarySerializerSettings settings = null)
         {
-
         }
 
         /// <summary>
@@ -170,11 +118,10 @@ namespace NeoSharp.Core.Models
         /// <param name="writer">Writer</param>
         /// <param name="settings">Settings</param>
         /// <returns>How many bytes have been written</returns>
-        protected virtual int SerializeExclusiveData(IBinarySerializer serializer, BinaryWriter writer, BinarySerializerSettings settings = null)
+        protected virtual int SerializeExclusiveData(IBinarySerializer serializer, BinaryWriter writer,
+            BinarySerializerSettings settings = null)
         {
             return 0;
         }
-
-        #endregion
     }
 }

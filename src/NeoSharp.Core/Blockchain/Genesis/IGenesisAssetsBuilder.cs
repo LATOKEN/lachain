@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using NeoSharp.Core.Cryptography;
-using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Genesis
@@ -9,17 +9,11 @@ namespace NeoSharp.Core.Blockchain.Genesis
     {
         RegisterTransaction BuildGoverningTokenRegisterTransaction();
 
-        RegisterTransaction BuildUtilityTokenRegisterTransaction();
-
         MinerTransaction BuildGenesisMinerTransaction();
 
-        IssueTransaction BuildGenesisIssueTransaction();
+        IssueTransaction BuildGenesisTokenIssue(PublicKey owner, UInt256 value, UInt160 asset);
 
-        IssueTransaction BuildGenesisTokenIssue(PublicKey owner, Fixed8 value, params UInt256[] assets);
-
-        IEnumerable<IssueTransaction> IssueTransactionsToOwners(Fixed8 value, params UInt256[] assets);
-        
-        Witness BuildGenesisWitness();
+        IEnumerable<IssueTransaction> IssueTransactionsToOwners(UInt256 value, params UInt160[] assets);
 
         UInt160 BuildGenesisNextConsensusAddress();
     }

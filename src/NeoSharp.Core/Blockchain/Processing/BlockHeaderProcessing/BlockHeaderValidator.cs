@@ -1,25 +1,19 @@
 ﻿using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Network;
 
 namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
 {
     public class BlockHeaderValidator : IBlockHeaderValidator
     {
-        #region Private Fields 
         private readonly IBlockchainContext _blockchainContext;
         private readonly IGenesisBuilder _genesisBuilder;
-        #endregion
-
-        #region Constructor 
+        
         public BlockHeaderValidator(IBlockchainContext blockchainContext, IGenesisBuilder genesisBuilder)
         {
-            this._blockchainContext = blockchainContext;
-            this._genesisBuilder = genesisBuilder;
+            _blockchainContext = blockchainContext;
+            _genesisBuilder = genesisBuilder;
         }
-        #endregion
 
-        #region IBlockHeaderValidator Implementation
         public bool IsValid(BlockHeader blockHeader)
         {
             if (_blockchainContext.LastBlockHeader != null)
@@ -41,6 +35,5 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
 
             return true;
         }
-        #endregion
     }
 }

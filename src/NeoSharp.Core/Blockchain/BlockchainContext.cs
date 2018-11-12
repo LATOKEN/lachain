@@ -4,7 +4,7 @@ namespace NeoSharp.Core.Blockchain
 {
     public class BlockchainContext : IBlockchainContext
     {
-        public Block CurrentBlock { get; set; }
+        public BlockHeader CurrentBlock { get; set; }
 
         public BlockHeader LastBlockHeader { get; set; }
 

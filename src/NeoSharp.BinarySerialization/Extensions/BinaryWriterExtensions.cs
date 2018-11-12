@@ -14,7 +14,7 @@ namespace System.IO
         public static int WriteVarInt(this BinaryWriter writer, long value)
         {
             if (value < 0)
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(value));
 
             if (value < 0xFD)
             {
@@ -41,6 +41,14 @@ namespace System.IO
             }
         }
 
+        public static int WriteVarString(this BinaryWriter writer, string value, uint max)
+        {
+            var bytes = Encoding.UTF8.GetBytes(value);
+            if (bytes.Length > max)
+                throw new ArgumentOutOfRangeException(nameof(value));
+            return writer.WriteVarBytes(bytes);
+        }
+        
         public static int WriteVarString(this BinaryWriter writer, string value)
         {
             return writer.WriteVarBytes(Encoding.UTF8.GetBytes(value));

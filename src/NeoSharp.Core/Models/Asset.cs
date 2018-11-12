@@ -1,5 +1,4 @@
 ﻿using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Cryptography;
 using NeoSharp.Types;
 using Newtonsoft.Json;
 
@@ -7,10 +6,14 @@ namespace NeoSharp.Core.Models
 {
     public class Asset
     {
+        [BinaryProperty(0)]
+        [JsonProperty("version")]
+        public byte Version;
+        
         [BinaryProperty(1)]
         [JsonProperty("hash")]
-        public UInt256 Id;
-
+        public UInt256 Hash;
+        
         [BinaryProperty(2)]
         [JsonProperty("type")]
         public AssetType AssetType;
@@ -21,23 +24,14 @@ namespace NeoSharp.Core.Models
 
         [BinaryProperty(4)]
         [JsonProperty("amount")]
-        public Fixed8 Amount;
+        public UInt256 Amount;
 
         [BinaryProperty(5)]
-        [JsonProperty("available")]
-        public Fixed8 Available;
-
-        [BinaryProperty(6)]
         [JsonProperty("precision")]
         public byte Precision;
-
-        [BinaryProperty(7)]
-        [JsonProperty("owner")]
-        public PublicKey Owner;
-
-        [BinaryProperty(8)]
+        
+        [BinaryProperty(6)]
         [JsonProperty("admin")]
-        public UInt160 Admin;
-
+        public UInt160 Owner;
     }
 }
