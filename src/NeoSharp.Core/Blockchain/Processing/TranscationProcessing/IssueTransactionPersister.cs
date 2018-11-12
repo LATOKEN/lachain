@@ -1,16 +1,17 @@
 using System.Threading.Tasks;
 using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Core.Storage;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
 {
     public class IssueTransactionPersister : ITransactionPersister<IssueTransaction>
     {
-        private readonly IRepository _repository;
+        private readonly ITransactionRepository _transactionRepository;
 
-        public IssueTransactionPersister(IRepository repository)
+        public IssueTransactionPersister(ITransactionRepository transactionRepository)
         {
-            _repository = repository;
+            _transactionRepository = transactionRepository;
         }
 
         public async Task Persist(IssueTransaction transaction)

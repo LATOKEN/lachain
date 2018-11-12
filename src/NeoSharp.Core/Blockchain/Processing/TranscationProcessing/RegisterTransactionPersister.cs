@@ -1,22 +1,26 @@
 using System.Threading.Tasks;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.Transcations;
-using NeoSharp.Core.Storage;
+using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
 {
     public class RegisterTransactionPersister : ITransactionPersister<RegisterTransaction>
     {
-        private readonly IRepository _repository;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IAssetRepository _assetRepository;
 
-        public RegisterTransactionPersister(IRepository repository)
+        public RegisterTransactionPersister(
+            ITransactionRepository transactionRepository,
+            IAssetRepository assetRepository)
         {
-            _repository = repository;
+            _transactionRepository = transactionRepository;
+            _assetRepository = assetRepository;
         }
 
         public async Task Persist(RegisterTransaction transaction)
         {
-            await _repository.AddAsset(new Asset
+            await _assetRepository.AddAsset(new Asset
             {
                 Hash = transaction.Hash,
                 AssetType = transaction.AssetType,

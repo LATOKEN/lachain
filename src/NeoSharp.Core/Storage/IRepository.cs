@@ -4,8 +4,14 @@ using NeoSharp.Core.Storage.State;
 namespace NeoSharp.Core.Storage
 {
     public interface IRepository :
-        IBlockchainRepository,
-        IStateRepository
+        IGlobalRepository,
+        IBlockRepository,
+        ITransactionRepository,
+        IAssetRepository,
+        IContractRepository,
+        IStorageRepository,
+        IAccountRepository,
+        IValidatorRepository
     {
     }
 }

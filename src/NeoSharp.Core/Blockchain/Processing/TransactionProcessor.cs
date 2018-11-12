@@ -21,7 +21,7 @@ namespace NeoSharp.Core.Blockchain.Processing
             new ConcurrentDictionary<UInt256, Transaction>();
 
         private readonly ITransactionPool _verifiedTransactionPool;
-        private readonly IBlockchainRepository _blockchainRepository;
+        private readonly ITransactionRepository _transactionRepository;
         private readonly IAsyncDelayer _asyncDelayer;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly IVerifier<Transaction> _transactionVerifier;
@@ -31,12 +31,13 @@ namespace NeoSharp.Core.Blockchain.Processing
         public TransactionProcessor(
             ITransactionPool transactionPool,
             IVerifier<Transaction> transactionVerifier,
-            IBlockchainRepository blockchainRepository,
+            ITransactionRepository transactionRepository,
             IAsyncDelayer asyncDelayer)
         {
             _verifiedTransactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            _blockchainRepository = blockchainRepository ?? throw new ArgumentNullException(nameof(blockchainRepository));
+            _transactionRepository =
+                transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
             _asyncDelayer = asyncDelayer ?? throw new ArgumentNullException(nameof(asyncDelayer));
         }
 
@@ -107,8 +108,8 @@ namespace NeoSharp.Core.Blockchain.Processing
                 throw new InvalidTransactionException(
                     $"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued and verified to be added.");
             }
-            
-            if (await _blockchainRepository.GetTransactionByHash(transaction.Hash) != null)
+
+            if (await _transactionRepository.GetTransactionByHash(transaction.Hash) != null)
             {
                 throw new InvalidTransactionException(
                     $"The transaction \"{transaction.Hash.ToString(true)}\" exists already on the blockchain.");

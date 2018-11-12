@@ -21,19 +21,16 @@ namespace NeoSharp.Core.Converters
 
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (value is EndPoint ep)
+            if (!(value is EndPoint ep))
+                return value != null ? base.ConvertTo(context, culture, value, destinationType) : null;
+            if (destinationType == typeof(EndPoint)) return ep;
+
+            if (destinationType == typeof(byte[]))
             {
-                if (destinationType == typeof(EndPoint)) return ep;
-
-                if (destinationType == typeof(byte[]))
-                {
-                    return Encoding.UTF8.GetBytes(ep.ToString());
-                }
-
-                if (destinationType == typeof(string)) return ep.ToString();
+                return Encoding.UTF8.GetBytes(ep.ToString());
             }
 
-            return value != null ? base.ConvertTo(context, culture, value, destinationType) : null;
+            return destinationType == typeof(string) ? ep.ToString() : base.ConvertTo(context, culture, value, destinationType);
         }
 
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
@@ -45,15 +42,14 @@ namespace NeoSharp.Core.Converters
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
-            if (value is EndPoint) return value;
-            if (value is byte[] bytes)
+            switch (value)
             {
-                return EndPoint.Parse(Encoding.UTF8.GetString(bytes));
-            }
-
-            if (value is string str)
-            {
-                return EndPoint.Parse(str);
+                case EndPoint _:
+                    return value;
+                case byte[] bytes:
+                    return EndPoint.Parse(Encoding.UTF8.GetString(bytes));
+                case string str:
+                    return EndPoint.Parse(str);
             }
 
             return base.ConvertFrom(context, culture, value);

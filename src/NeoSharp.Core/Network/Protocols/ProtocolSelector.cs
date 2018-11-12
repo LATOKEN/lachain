@@ -8,11 +8,11 @@ namespace NeoSharp.Core.Network.Protocols
         /// <summary>
         /// Contains the default protocol
         /// </summary>
-        public readonly ProtocolBase DefaultProtocol;
+        public readonly AbstractProtocol DefaultAbstractProtocol;
         /// <summary>
         /// Contains the list of the protocols
         /// </summary>
-        private readonly Func<VersionPayload, ProtocolBase>[] _protocols;
+        private readonly Func<VersionPayload, AbstractProtocol>[] _protocols;
 
         /// <summary>
         /// Constructor
@@ -21,12 +21,12 @@ namespace NeoSharp.Core.Network.Protocols
         {
             // Set different protocols
 
-            var v1 = new ProtocolV1(config);
-            var v2 = new ProtocolV2(config);
+            var v1 = new AbstractProtocolV1(config);
+            var v2 = new AbstractProtocolV2(config);
 
-            _protocols = new Func<VersionPayload, ProtocolBase>[]
+            _protocols = new Func<VersionPayload, AbstractProtocol>[]
             {
-                new Func<VersionPayload,ProtocolBase>
+                new Func<VersionPayload,AbstractProtocol>
                 (
                     // TODO #368: I don't know if we will use Version or Services
                     (v) => v.Version == 2 ? v2 : null
@@ -35,7 +35,7 @@ namespace NeoSharp.Core.Network.Protocols
 
             // Default protocol, oficial protocol
 
-            DefaultProtocol = v1;
+            DefaultAbstractProtocol = v1;
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace NeoSharp.Core.Network.Protocols
         /// </summary>
         /// <param name="version">Version</param>
         /// <returns>Return protocol or NULL</returns>
-        public ProtocolBase GetProtocol(VersionPayload version)
+        public AbstractProtocol GetProtocol(VersionPayload version)
         {
             // Search for protocol or return default
 
@@ -53,7 +53,7 @@ namespace NeoSharp.Core.Network.Protocols
                 if (proto != null) return proto;
             }
 
-            return DefaultProtocol;
+            return DefaultAbstractProtocol;
         }
     }
 }

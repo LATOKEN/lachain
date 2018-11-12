@@ -11,7 +11,7 @@ using NeoSharp.Types.ExtensionMethods;
 
 namespace NeoSharp.Core.Network.Protocols
 {
-    public class ProtocolV2 : ProtocolBase
+    public class AbstractProtocolV2 : AbstractProtocol
     {
         #region Properties
 
@@ -32,7 +32,7 @@ namespace NeoSharp.Core.Network.Protocols
         /// Constructor
         /// </summary>
         /// <param name="config">Configuration</param>
-        public ProtocolV2(NetworkConfig config)
+        public AbstractProtocolV2(NetworkConfig config)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             _magic = config.Magic;
