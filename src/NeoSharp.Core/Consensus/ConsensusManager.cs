@@ -28,6 +28,7 @@ namespace NeoSharp.Core.Consensus
         private readonly IBlockchainContext _blockchainContext;
         private readonly ITransactionCrawler _transactionCrawler;
         private readonly ITransactionPool _transactionPool;
+        private readonly IBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
         private readonly ConsensusContext _context;
         private readonly object _allTransactionVerified = new object();
@@ -41,14 +42,15 @@ namespace NeoSharp.Core.Consensus
         public ConsensusManager(
             IBlockProcessor blockProcessor, IBlockchainContext blockchainContext,
             ITransactionCrawler transactionCrawler, ITransactionProcessor transactionProcessor,
-            ITransactionPool transactionPool, ILogger<ConsensusManager> logger,
-            ConsensusConfig configuration
+            ITransactionPool transactionPool, IBroadcaster broadcaster,
+            ILogger<ConsensusManager> logger, ConsensusConfig configuration
         )
         {
             _blockProcessor = blockProcessor ?? throw new ArgumentNullException(nameof(blockProcessor));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockProcessor));
             _transactionCrawler = transactionCrawler ?? throw new ArgumentNullException(nameof(transactionCrawler));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
+            _broadcaster = broadcaster;
             _logger = logger ?? throw new ArgumentNullException(nameof(blockProcessor));
             _context = new ConsensusContext(configuration.KeyPair, configuration.ValidatorsKeys);
 
@@ -123,9 +125,8 @@ namespace NeoSharp.Core.Consensus
                 _logger.LogInformation("Send prepare response");
                 _context.State |= ConsensusState.SignatureSent;
                 //_context.Validators[_context.MyIndex].BlockSignature = _context.GetProposedHeader().Sign(context.KeyPair);
+                SignAndBroadcast(_context.MakePrepareResponse(_context.MyState.BlockSignature));
                 OnSignatureAcquired(_context.MyIndex, "0xbadcab1le".HexToBytes());
-                //SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                //CheckSignatures();
                 lock (_quorumSignaturesAcquired)
                 {
                     if (!Monitor.Wait(_quorumSignaturesAcquired, TimeSpan.FromSeconds(15))) // TODO: manager timeouts
@@ -372,15 +373,13 @@ namespace NeoSharp.Core.Consensus
         private void RequestChangeView()
         {
             _context.State |= ConsensusState.ViewChanging;
-            _context.Validators[_context.MyIndex].ExpectedViewNumber++;
+            _context.MyState.ExpectedViewNumber++;
             _logger.LogInformation(
                 $"request change view: height={_context.BlockIndex} view={_context.ViewNumber} " +
-                $"nv={_context.Validators[_context.MyIndex].ExpectedViewNumber} state={_context.State}"
+                $"nv={_context.MyState.ExpectedViewNumber} state={_context.State}"
             );
-            // TODO: we should send change view and resend it until view is changed
-            //ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
-            //SignAndRelay(context.MakeChangeView());
-            //CheckExpectedView(context.ExpectedView[context.MyIndex]);
+            SignAndBroadcast(_context.MakeChangeView());
+            CheckExpectedView(_context.MyState.ExpectedViewNumber);
         }
 
         private void OnChangeViewReceived(ConsensusPayloadUnsigned messageBody, ChangeView changeView)
@@ -406,6 +405,12 @@ namespace NeoSharp.Core.Consensus
                     Monitor.PulseAll(_changeViewApproved);
                 }
             }
+        }
+
+        private void SignAndBroadcast(ConsensusPayload payload)
+        {
+            // TODO: sign
+            _broadcaster.Broadcast(new ConsensusMessage(payload));
         }
     }
 }

@@ -34,7 +34,7 @@ namespace NeoSharp.Application.Client
         /// <summary>
         /// Prompt
         /// </summary>
-        [ConsoleOutputStyle(Foreground = ConsoleColor.DarkGreen)]
+        [ConsoleOutputStyle(Foreground = ConsoleColor.White)]
         Prompt,
         /// <summary>
         /// Input

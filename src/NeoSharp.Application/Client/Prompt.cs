@@ -143,7 +143,7 @@ namespace NeoSharp.Application.Client
 
             // Black background
 
-            _consoleHandler.ApplyStyle(ConsoleOutputStyle.Prompt);
+            //_consoleHandler.ApplyStyle(ConsoleOutputStyle.Prompt);
             _consoleHandler.Clear();
 
             // Start prompt

@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NeoSharp.Core.Consensus.Messages;
 using NeoSharp.Core.Cryptography;
+using NeoSharp.Core.Extensions;
+using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Consensus
@@ -30,6 +34,7 @@ namespace NeoSharp.Core.Consensus
         public uint Quorum => ValidatorCount - (ValidatorCount - 1) / 3;
         public uint PrimaryIndex => (BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount;
         public ConsensusState Role => MyIndex == PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup;
+        public ObservedValidatorState MyState => MyIndex == -1 ? null : Validators[MyIndex];
 
         public ConsensusContext(KeyPair keyPair, IReadOnlyList<PublicKey> validators)
         {
@@ -94,6 +99,51 @@ namespace NeoSharp.Core.Consensus
             SignaturesAcquired = 0;
             if (MyIndex >= 0) Validators[MyIndex].ExpectedViewNumber = view;
             _memoizedHeader = null;
+        }
+
+        public ConsensusPayload MakeChangeView()
+        {
+            return MakePayload(new ChangeView
+            {
+                NewViewNumber = Validators[MyIndex].ExpectedViewNumber
+            });
+        }
+
+        private ConsensusPayload MakePayload(ConsensusPayloadCustomData message)
+        {
+            message.ViewNumber = ViewNumber;
+            return new ConsensusPayload
+            {
+                Unsigned = new ConsensusPayloadUnsigned
+                {
+                    Version = Version,
+                    PrevHash = PreviousBlockHash,
+                    BlockIndex = BlockIndex,
+                    ValidatorIndex = (ushort) MyIndex,
+                    Timestamp = Timestamp,
+                    Data = message.ToArray()
+                }
+            };
+        }
+
+        public ConsensusPayload MakePrepareRequest()
+        {
+            return MakePayload(new PrepareRequest
+            {
+                Nonce = Nonce,
+                TransactionHashes = CurrentProposal.TransactionHashes,
+                MinerTransaction =
+                    (MinerTransaction) CurrentProposal.Transactions[CurrentProposal.TransactionHashes[0]],
+                Signature = Validators[MyIndex].BlockSignature
+            });
+        }
+
+        public ConsensusPayload MakePrepareResponse(byte[] signature)
+        {
+            return MakePayload(new PrepareResponse
+            {
+                Signature = signature
+            });
         }
     }
 }
