@@ -120,7 +120,7 @@ namespace NeoSharp.Core.Consensus
                     PrevHash = PreviousBlockHash,
                     BlockIndex = BlockIndex,
                     ValidatorIndex = (ushort) MyIndex,
-                    Timestamp = Timestamp,
+                    Timestamp = DateTime.UtcNow.ToTimestamp(),
                     Data = message.ToArray()
                 }
             };
