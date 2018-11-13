@@ -271,7 +271,7 @@ namespace NeoSharp.Core.Consensus
                 return;
             }
 
-            if (_context.Timestamp <= _blockchainContext.LastBlockHeader.Timestamp ||
+            if (message.Timestamp <= _blockchainContext.LastBlockHeader.Timestamp ||
                 message.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 _logger.LogDebug(
