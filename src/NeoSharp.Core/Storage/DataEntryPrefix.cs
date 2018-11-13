@@ -16,6 +16,7 @@
         IxConfirmed = 0x82,
         IxClaimable = 0x83,
         IxValidatorsCount = 0x90,
+        IxTxHeight = 0x91,
         SysCurrentBlock = 0xc0,
         SysCurrentHeader = 0xc1,
         SysVersion = 0xf0

@@ -19,7 +19,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
         public async Task Persist(ContractTransaction transaction)
         {
             await _transferFunds(transaction.Asset, transaction.From, transaction.Value, true);
-            await _transferFunds(transaction.Asset, transaction.Recipient, transaction.Value, false);
+            await _transferFunds(transaction.Asset, transaction.To, transaction.Value, false);
         }
         
         private async Task _transferFunds(UInt160 asset, UInt160 address, UInt256 value, bool negate)

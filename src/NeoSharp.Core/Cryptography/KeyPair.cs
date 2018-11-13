@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using NeoSharp.Core.Extensions;
+﻿using NeoSharp.Core.Extensions;
 using NeoSharp.Cryptography;
 using NeoSharp.Types;
 
@@ -7,10 +6,10 @@ namespace NeoSharp.Core.Cryptography
 {
     public class KeyPair
     {
-        public readonly IEnumerable<byte> PrivateKey;
+        public readonly byte[] PrivateKey;
         public readonly PublicKey PublicKey;
         
-        public UInt160 PublicKeyHash => PublicKey.EncodedData.ToScriptHash();
+        public UInt160 Address => PublicKey.EncodedData.ToScriptHash();
         
         public KeyPair(byte[] privateKey)
         {

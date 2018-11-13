@@ -19,7 +19,7 @@ namespace NeoSharp.Core.Models
         [BinaryProperty(1)]
         [JsonProperty("type")]
         public TransactionType Type { get; }
-        
+
         [BinaryProperty(2)]
         [JsonProperty("version")]
         public byte Version { get; set; }

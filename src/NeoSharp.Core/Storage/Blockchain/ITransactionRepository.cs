@@ -23,5 +23,7 @@ namespace NeoSharp.Core.Storage.Blockchain
         Task<IEnumerable<Transaction>> GetTransactionsByHashes(IReadOnlyCollection<UInt256> hashes);
 
         Task<bool> ContainsTransactionByHash(UInt256 txHash);
+
+        Task<uint> GetTotalTransactionCount(UInt160 address);
     }
 }

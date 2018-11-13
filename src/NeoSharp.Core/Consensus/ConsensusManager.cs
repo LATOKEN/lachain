@@ -19,6 +19,9 @@ using NeoSharp.Types.ExtensionMethods;
 
 namespace NeoSharp.Core.Consensus
 {
+    // ReSharper disable once RedundantNameQualifier
+    using Timer = System.Timers.Timer;
+    
     public class ConsensusManager : IConsensusManager
     {
         private readonly IBlockProcessor _blockProcessor;
@@ -31,7 +34,7 @@ namespace NeoSharp.Core.Consensus
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestRecieved = new object();
         private readonly object _changeViewApproved = new object();
-        private System.Timers.Timer _timeToProduceBlock;
+        private Timer _timeToProduceBlock;
         private bool _stopped;
         private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
 
@@ -184,16 +187,14 @@ namespace NeoSharp.Core.Consensus
             _logger.LogInformation(
                 $"Initialized consensus: height={_context.BlockIndex} view={viewNumber} my_index={_context.MyIndex} role={_context.Role}");
 
-            if (_context.Role.HasFlag(ConsensusState.Primary))
+            if (!_context.Role.HasFlag(ConsensusState.Primary)) return;
+            _context.State |= ConsensusState.Primary;
+            var span = DateTime.UtcNow - _context.LastBlockRecieved;
+            if (span >= _timePerBlock) OnTimeToProduceBlock(null, null);
+            else
             {
-                _context.State |= ConsensusState.Primary;
-                var span = DateTime.UtcNow - _context.LastBlockRecieved;
-                if (span >= _timePerBlock) OnTimeToProduceBlock(null, null);
-                else
-                {
-                    _timeToProduceBlock = new System.Timers.Timer((_timePerBlock - span).TotalMilliseconds);
-                    _timeToProduceBlock.Elapsed += OnTimeToProduceBlock;
-                }
+                _timeToProduceBlock = new Timer((_timePerBlock - span).TotalMilliseconds);
+                _timeToProduceBlock.Elapsed += OnTimeToProduceBlock;
             }
         }
 
@@ -206,7 +207,7 @@ namespace NeoSharp.Core.Consensus
                 );
                 return;
             }
-
+            
             if (message.ValidatorIndex != _context.PrimaryIndex)
             {
                 _logger.LogDebug(
@@ -246,8 +247,7 @@ namespace NeoSharp.Core.Consensus
                 TransactionHashes = request.TransactionHashes,
                 Transactions = new Dictionary<UInt256, Transaction>()
             };
-
-
+            
             /* TODO: check signature
             byte[] hashData = BinarySerializer.Default.Serialize(_context.GetProposedHeader().Hash);
              if (!Crypto.Default.VerifySignature(hashData, request.Signature,
@@ -269,7 +269,7 @@ namespace NeoSharp.Core.Consensus
 
         public void HandleConsensusMessage(ConsensusMessage message)
         {
-            ConsensusPayloadUnsigned body = message.Payload.Unsigned;
+            var body = message.Payload.Unsigned;
             if (_context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (body.ValidatorIndex == _context.MyIndex) return;
             if (body.Version != ConsensusContext.Version) return;

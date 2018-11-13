@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Cryptography;
-using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Types;
 

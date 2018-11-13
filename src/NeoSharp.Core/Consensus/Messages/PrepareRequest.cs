@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.Transcations;
 using NeoSharp.Types;
 

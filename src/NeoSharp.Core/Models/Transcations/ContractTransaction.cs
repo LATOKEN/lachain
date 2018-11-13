@@ -9,14 +9,14 @@ namespace NeoSharp.Core.Models.Transcations
 {
     [BinaryTypeSerializer(typeof(TransactionSerializer))]
     public class ContractTransaction : Transaction
-    {        
+    {   
         [BinaryProperty(5)]
-        [JsonProperty("recipient")]
-        public UInt160 Recipient { get; set; }
-        
-        [BinaryProperty(6)]
         [JsonProperty("asset")]
         public UInt160 Asset { get; set; }
+        
+        [BinaryProperty(6)]
+        [JsonProperty("to")]
+        public UInt160 To { get; set; }
         
         [BinaryProperty(7)]
         [JsonProperty("value")]
@@ -35,7 +35,7 @@ namespace NeoSharp.Core.Models.Transcations
             BinarySerializerSettings settings = null)
         {
             /* byte already readed by (1 bytes) */
-            Recipient = new UInt160(reader.ReadBytes(20)); /* 20 bytes (160 bits) */
+            To = new UInt160(reader.ReadBytes(20)); /* 20 bytes (160 bits) */
             Asset = new UInt160(reader.ReadBytes(20)); /* 20 bytes (160 bits) */
             Value = new UInt256(reader.ReadBytes(32)); /* 32 bytes (256 bits) */
             Nonce = reader.ReadUInt32(); /* 4 bytes */
@@ -51,7 +51,7 @@ namespace NeoSharp.Core.Models.Transcations
         {
             var result = 0;
             
-            writer.Write(Recipient.ToArray()); /* 20 bytes (160 bits) */
+            writer.Write(To.ToArray()); /* 20 bytes (160 bits) */
             result += 20;
             writer.Write(Asset.ToArray()); /* 20 bytes (160 bits) */
             result += 20;

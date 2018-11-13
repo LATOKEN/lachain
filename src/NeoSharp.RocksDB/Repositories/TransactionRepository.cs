@@ -42,5 +42,10 @@ namespace NeoSharp.RocksDB.Repositories
         {
             throw new NotImplementedException();
         }
+
+        public async Task<uint> GetTotalTransactionCount(UInt160 address)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
