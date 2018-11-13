@@ -74,7 +74,7 @@ namespace NeoSharp.Core.Consensus
         private void _TaskWorker()
         {
             InitializeConsensus(0);
-            _context.LastBlockRecieved = _blockchainContext.CurrentBlock.Timestamp.ToDateTime();
+            _context.Timestamp = _blockchainContext.CurrentBlock.Timestamp;
             Thread.Sleep(1000);
             while (!_stopped)
             {
