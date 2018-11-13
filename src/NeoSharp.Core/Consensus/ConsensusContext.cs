@@ -79,7 +79,7 @@ namespace NeoSharp.Core.Consensus
             for (var i = 0; i < Validators.Length; ++i)
             {
                 Validators[i].Reset();
-                if (Validators[i].PublicKey == PrivateKey?.PublicKey)
+                if (Validators[i].PublicKey.CompareTo(PrivateKey?.PublicKey) == 0)
                 {
                     MyIndex = i;
                 }

@@ -64,7 +64,7 @@ namespace NeoSharp.Core.Consensus
             while (!_stopped)
             {
                 // If were are waiting for view change, just wait
-                if (_context.Role.HasFlag(ConsensusState.ViewChanging))
+                if (_context.State.HasFlag(ConsensusState.ViewChanging))
                 {
                     lock (_changeViewApproved)
                     {
