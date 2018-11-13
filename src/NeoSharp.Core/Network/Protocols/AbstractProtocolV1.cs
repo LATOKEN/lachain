@@ -69,9 +69,10 @@ namespace NeoSharp.Core.Network.Protocols
             using (var memory = new MemoryStream(buffer, false))
             using (var reader = new BinaryReader(memory, Encoding.UTF8))
             {
-                if (reader.ReadUInt32() != _magic)
+                var magic = reader.ReadUInt32();
+                if (magic != _magic)
                     throw new InvalidMessageException();
-
+                
                 var command = Enum.Parse<MessageCommand>(Encoding.UTF8.GetString(reader.ReadBytes(12)).TrimEnd('\0'));
 
                 if (!Cache.TryGetValue(command, out var type))

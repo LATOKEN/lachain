@@ -1,4 +1,4 @@
-﻿namespace NeoSharp.BinarySerialization.SerializationHooks
+﻿namespace NeoSharp.BinarySerialization
 {
     public interface IBinaryVerifiable
     {

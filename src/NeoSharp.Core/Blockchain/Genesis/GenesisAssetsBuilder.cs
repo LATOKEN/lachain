@@ -3,7 +3,7 @@ using System.Linq;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Types;

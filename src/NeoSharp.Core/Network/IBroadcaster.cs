@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using NeoSharp.Core.Messaging;
+﻿using NeoSharp.Core.Messaging;
 
 namespace NeoSharp.Core.Network
 {

@@ -4,12 +4,11 @@ using NeoSharp.BinarySerialization.Extensions;
 using NeoSharp.Core.Converters;
 using NeoSharp.Types;
 
-namespace NeoSharp.Core.Models.Transcations
+namespace NeoSharp.Core.Models.Transactions
 {
     [BinaryTypeSerializer(typeof(TransactionSerializer))]
     public class RegisterTransaction : Transaction
     {
-        public const uint TagMaxSize = 10;
         public const uint NameMaxSize = 50;
         
         /// <summary>

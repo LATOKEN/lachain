@@ -12,7 +12,7 @@ namespace NeoSharp.BinarySerialization
         /// <summary>
         /// Override one property that use the same Order number
         /// </summary>
-        public bool Override { get; set; } = false;
+        public bool Override { get; set; }
 
         /// <summary>
         /// Max length (used for strings and arrays)

@@ -7,7 +7,7 @@ using NeoSharp.Core.Extensions;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Types;
 
-namespace NeoSharp.Core.Models.Transcations
+namespace NeoSharp.Core.Models.Transactions
 {
     [BinaryTypeSerializer(typeof(TransactionSerializer))]
     public class PublishTransaction : Transaction

@@ -5,7 +5,6 @@ using System.IO;
 using System.Text;
 using NeoSharp.BinarySerialization;
 using NeoSharp.BinarySerialization.Extensions;
-using NeoSharp.BinarySerialization.SerializationHooks;
 using NeoSharp.Core.Network;
 
 namespace NeoSharp.Core.Converters
