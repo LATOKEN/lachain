@@ -80,7 +80,8 @@ namespace NeoSharp.Core.Consensus
                 {
                     lock (_changeViewApproved)
                     {
-                        var timeToWait = _timePerBlock * (1 + _context.ViewNumber); // TODO: manage timeouts
+                        // TODO: manage timeouts
+                        var timeToWait = _timePerBlock * (1 + _context.MyState.ExpectedViewNumber);
                         if (!Monitor.Wait(_changeViewApproved, timeToWait))
                         {
                             RequestChangeView();
