@@ -70,6 +70,7 @@ namespace NeoSharp.Core.Consensus
         public void ResetState(UInt256 lastBlockHash, uint lastBlockIndex)
         {
             State = ConsensusState.Initial;
+            SignaturesAcquired = 0;
             PreviousBlockHash = lastBlockHash;
             BlockIndex = lastBlockIndex + 1;
             ViewNumber = 0;
@@ -92,6 +93,7 @@ namespace NeoSharp.Core.Consensus
             State &= ConsensusState.SignatureSent;
             ViewNumber = view;
             CurrentProposal = null;
+            SignaturesAcquired = 0;
             if (MyIndex >= 0) Validators[MyIndex].ExpectedViewNumber = view;
             _memoizedHeader = null;
         }

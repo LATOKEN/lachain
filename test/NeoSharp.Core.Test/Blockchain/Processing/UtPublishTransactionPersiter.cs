@@ -14,6 +14,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
     [TestClass]
     public class UtPublishTransactionPersiter : TestBase
     {
+        /*
         [TestMethod]
         public async Task Persist_AddContract()
         {
@@ -44,5 +45,6 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
                 c.Email == input.Email &&
                 c.Description == input.Description)));
         }
+        */
     }
 }

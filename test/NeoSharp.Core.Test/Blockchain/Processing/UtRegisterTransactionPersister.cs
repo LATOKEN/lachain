@@ -14,6 +14,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
     [TestClass]
     public class UtRegisterTransactionPersister : TestBase
     {
+        /*
         [TestMethod]
         public async Task Persist_AddsContract()
         {
@@ -42,5 +43,6 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
                 a.Owner.CompareTo(input.Owner) == 0 &&
                 a.Owner.Equals(input.Owner))));
         }
+        */
     }
 }

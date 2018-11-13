@@ -40,7 +40,6 @@ namespace NeoSharp.Core.Consensus
             ITransactionCrawler transactionCrawler, ITransactionProcessor transactionProcessor,
             ITransactionPool transactionPool, ILogger<ConsensusManager> logger,
             ConsensusConfig configuration
-            /*KeyPair keyPair, IReadOnlyList<PublicKey> validators*/
         )
         {
             _blockProcessor = blockProcessor ?? throw new ArgumentNullException(nameof(blockProcessor));
@@ -48,9 +47,8 @@ namespace NeoSharp.Core.Consensus
             _transactionCrawler = transactionCrawler ?? throw new ArgumentNullException(nameof(transactionCrawler));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _logger = logger ?? throw new ArgumentNullException(nameof(blockProcessor));
-            //_context = new ConsensusContext(keyPair, validators);
-            _context = new ConsensusContext(null, configuration.ValidatorsKeys);
-            
+            _context = new ConsensusContext(configuration.KeyPair, configuration.ValidatorsKeys);
+
             (transactionProcessor ?? throw new ArgumentNullException(nameof(transactionProcessor)))
                 .OnTransactionProcessed += OnTransactionVerified;
         }
@@ -62,6 +60,7 @@ namespace NeoSharp.Core.Consensus
 
         private void _TaskWorker()
         {
+            InitializeConsensus(0);
             while (!_stopped)
             {
                 // If were are waiting for view change, just wait
@@ -160,11 +159,10 @@ namespace NeoSharp.Core.Consensus
                 InitializeConsensus(0);
             }
         }
-        
+
         public void Start()
         {
             _logger.LogInformation("Starting consensus");
-            InitializeConsensus(0);
             Task.Factory.StartNew(_TaskWorker);
         }
 

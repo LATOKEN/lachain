@@ -161,6 +161,7 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
         }
         */
 
+        /*
         [TestMethod]
         public async Task Persist_Transaction_SaveTx()
         {
@@ -172,5 +173,6 @@ namespace NeoSharp.Core.Test.Blockchain.Processing
             repositoryMock.Verify(m => m.AddTransaction(input));
 
         }
+        */
     }
 }
