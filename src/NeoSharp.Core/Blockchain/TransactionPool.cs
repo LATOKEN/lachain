@@ -67,7 +67,7 @@ namespace NeoSharp.Core.Blockchain
 
         IEnumerable<Transaction> ITransactionPool.GetTransactions()
         {
-            throw new NotImplementedException();
+            return _transactions.Values.Select(t => t.Transaction);
         }
 
         public bool Contains(UInt256 hash)
