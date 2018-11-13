@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing

@@ -1,6 +1,6 @@
 ﻿using System;
 using NeoSharp.Core.Caching;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 

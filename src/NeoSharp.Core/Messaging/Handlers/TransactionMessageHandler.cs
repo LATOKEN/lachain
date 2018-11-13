@@ -5,7 +5,7 @@ using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.Storage.Blockchain;
 

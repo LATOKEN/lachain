@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using NeoSharp.Core.Cryptography;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Genesis

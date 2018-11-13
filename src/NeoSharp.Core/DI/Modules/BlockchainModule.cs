@@ -7,7 +7,7 @@ using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Blockchain.Processing.TranscationProcessing;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 
 namespace NeoSharp.Core.DI.Modules
 {

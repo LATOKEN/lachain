@@ -5,7 +5,7 @@ using NeoSharp.Core.Converters;
 using NeoSharp.Types;
 using Newtonsoft.Json;
 
-namespace NeoSharp.Core.Models.Transcations
+namespace NeoSharp.Core.Models.Transactions
 {
     [BinaryTypeSerializer(typeof(TransactionSerializer))]
     public class ContractTransaction : Transaction
