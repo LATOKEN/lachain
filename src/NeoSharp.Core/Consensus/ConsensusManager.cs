@@ -74,6 +74,7 @@ namespace NeoSharp.Core.Consensus
         private void _TaskWorker()
         {
             InitializeConsensus(0);
+            Thread.Sleep(1000);
             while (!_stopped)
             {
                 // If were are waiting for view change, just wait
@@ -117,6 +118,7 @@ namespace NeoSharp.Core.Consensus
                     }
 
                     SignAndBroadcast(_context.MakePrepareRequest(newBlock));
+                    _logger.LogInformation("Sent prepare request");
                 }
                 else
                 {

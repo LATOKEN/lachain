@@ -14,15 +14,18 @@ namespace NeoSharp.Core.Blockchain
         private readonly IBlockchainContext _blockchainContext;
         private readonly ITransactionPool _transactionPool;
         private readonly ISigner<Transaction> _transactionSigner;
+        private readonly ISigner<BlockHeader> _blockSigner;
 
         public BlockProducer(
             IBlockchainContext blockchainContext,
             ITransactionPool transactionPool,
-            ISigner<Transaction> transactionSigner)
+            ISigner<Transaction> transactionSigner,
+            ISigner<BlockHeader> blockSigner)
         {
             _blockchainContext = blockchainContext;
             _transactionPool = transactionPool;
             _transactionSigner = transactionSigner;
+            _blockSigner = blockSigner;
             Version = 0;
         }
 
@@ -41,7 +44,7 @@ namespace NeoSharp.Core.Blockchain
             var transactions = new[] {minerTransaction}.Concat(_transactionPool.GetTransactions()).Take(maxSize)
                 .ToArray();
             var transactionHashes = transactions.Select(tx => tx.Hash).ToArray();
-            return new Block
+            var block = new Block
             {
                 Version = Version,
                 PreviousBlockHash = currentBlock.Hash,
@@ -52,6 +55,8 @@ namespace NeoSharp.Core.Blockchain
                 TransactionHashes = transactionHashes,
                 Transactions = transactions
             };
+            _blockSigner.Sign(block);
+            return block;
         }
     }
 }

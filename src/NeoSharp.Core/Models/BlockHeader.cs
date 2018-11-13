@@ -44,7 +44,7 @@ namespace NeoSharp.Core.Models
         
         [BinaryProperty(7)]
         [JsonProperty("multisig")]
-        public MultiSig MultiSig;
+        public MultiSig MultiSig = new MultiSig();
         
         [BinaryProperty(100)]
         [JsonProperty("txhashes")]

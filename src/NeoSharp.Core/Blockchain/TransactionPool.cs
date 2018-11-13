@@ -79,7 +79,7 @@ namespace NeoSharp.Core.Blockchain
 
         public Transaction FindByHash(UInt256 hash)
         {
-            return _transactions[hash].Transaction;
+            return _transactions.TryGetValue(hash, out var t) ? t.Transaction : null;
         }
 
         public void Add(Transaction transaction)
