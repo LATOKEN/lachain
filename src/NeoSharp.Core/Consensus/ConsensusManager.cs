@@ -74,6 +74,7 @@ namespace NeoSharp.Core.Consensus
         private void _TaskWorker()
         {
             InitializeConsensus(0);
+            _context.LastBlockRecieved = _blockchainContext.CurrentBlock.Timestamp.ToDateTime();
             Thread.Sleep(1000);
             while (!_stopped)
             {
@@ -208,7 +209,7 @@ namespace NeoSharp.Core.Consensus
             }
         }
 
-        public void InitializeConsensus(byte viewNumber)
+        private void InitializeConsensus(byte viewNumber)
         {
             if (viewNumber == 0)
                 _context.ResetState(_blockchainContext.CurrentBlock.Hash, _blockchainContext.CurrentBlock.Index);
