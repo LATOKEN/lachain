@@ -2,7 +2,10 @@
 using System.IO;
 using System.Linq;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transactions;
+using NeoSharp.Cryptography;
 using NeoSharp.Types;
 
 namespace NeoSharp.Core.Consensus.Messages
@@ -26,6 +29,9 @@ namespace NeoSharp.Core.Consensus.Messages
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException("Cannot deserialize PrepareRequest: duplicate transactions");
             MinerTransaction = BinarySerializer.Default.Deserialize<MinerTransaction>(reader);
+            // TODO: hackity-hack!
+            var data = BinarySerializer.Default.Serialize(MinerTransaction);
+            MinerTransaction.Hash = new UInt256(Crypto.Default.Hash256(data)); 
             if (MinerTransaction.Hash != TransactionHashes[0])
                 throw new FormatException("Cannot deserialize PrepareRequest: miner transaction must be first");
             Signature = reader.ReadBytes(64);

@@ -229,6 +229,13 @@ namespace NeoSharp.Core.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayloadUnsigned message, PrepareRequest request)
         {
+            if (_context.State.HasFlag(ConsensusState.ViewChanging))
+            {
+                _logger.LogDebug(
+                    $"Ignoring prepare request from validator={message.ValidatorIndex}: we are changing view"
+                );
+                return;
+            }
             if (_context.State.HasFlag(ConsensusState.RequestReceived))
             {
                 _logger.LogDebug(
