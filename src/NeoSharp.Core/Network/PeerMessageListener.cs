@@ -70,13 +70,12 @@ namespace NeoSharp.Core.Network
                         continue;
                     }
 
-                    /*Console.WriteLine(" ~ handled message (" + message.Command + ")");*/
-
                     // TODO #369: Peer that sending wrong messages has to be disconnected.
                     if (peer.IsReady == message.IsHandshakeMessage()) continue;
-
+                    
                     await _messageHandlerProxy.Handle(message, peer);
                 }
+                
             }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
             // run block synchronization loop

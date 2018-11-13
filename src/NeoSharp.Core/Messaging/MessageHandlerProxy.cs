@@ -40,7 +40,7 @@ namespace NeoSharp.Core.Messaging
             }
 
             var startedAt = DateTime.UtcNow;
-            _logger.LogDebug($"The message handler \"{messageHandler.GetType().Name}\" started message handling at {startedAt:yyyy-MM-dd HH:mm:ss}.");
+//            _logger.LogDebug($"The message handler \"{messageHandler.GetType().Name}\" started message handling at {startedAt:yyyy-MM-dd HH:mm:ss}.");
 
             dynamic specificMessageHandler = Convert.ChangeType(messageHandler, messageHandler.GetType());
             dynamic specificMessage = Convert.ChangeType(message, message.GetType());
@@ -49,8 +49,8 @@ namespace NeoSharp.Core.Messaging
 
             var handledWithin = (completedAt - startedAt).TotalSeconds;
 
-            _logger.LogDebug(
-                $"The message handler \"{messageHandler.GetType().Name}\" completed message handling at {completedAt:yyyy-MM-dd HH:mm:ss} ({handledWithin} s).");
+//            _logger.LogDebug(
+//                $"The message handler \"{messageHandler.GetType().Name}\" completed message handling at {completedAt:yyyy-MM-dd HH:mm:ss} ({handledWithin} s).");
         }
         #endregion
     }

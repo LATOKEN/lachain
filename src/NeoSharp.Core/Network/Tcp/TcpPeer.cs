@@ -225,7 +225,7 @@ namespace NeoSharp.Core.Network.Tcp
                 try
                 {
                     var msg = await _abstractProtocol.ReceiveMessageAsync(_stream, tokenSource.Token);
-                    _logger.LogDebug($"Message Received: {msg.Command}");
+//                    _logger.LogDebug($"Message Received: {msg.Command}");
                     return msg;
                 }
                 catch (Exception err)
@@ -247,7 +247,7 @@ namespace NeoSharp.Core.Network.Tcp
         {
             if (!IsConnected) return null;
             var message = await Receive() as TMessage;
-            _logger.LogDebug($"Message Received: {message.Command}");
+//            _logger.LogDebug($"Message Received: {message.Command}");
             return message;
         }
 
@@ -266,7 +266,7 @@ namespace NeoSharp.Core.Network.Tcp
 
                 try
                 {
-                    _logger.LogDebug($"Message sent: {message.Command} to {EndPoint.Host}.");
+//                    _logger.LogDebug($"Message sent: {message.Command} to {EndPoint.Host}.");
                     await _abstractProtocol.SendMessageAsync(_stream, message, tokenSource.Token);
                 }
                 catch (Exception err)

@@ -37,7 +37,8 @@ namespace NeoSharp.Core.Consensus
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
         private readonly object _changeViewApproved = new object();
-        private Timer _timeToProduceBlock;
+        private readonly object _timeToProduceBlock = new object();
+        private Timer _timer;
         private bool _stopped;
         private SecureRandom _random;
 
@@ -100,9 +101,9 @@ namespace NeoSharp.Core.Consensus
                         if (DateTime.UtcNow - _context.LastBlockRecieved < _timePerBlock)
                             Monitor.Wait(_timeToProduceBlock);
                     }
-
+                    
                     // TODO: produce block
-                    Block newBlock = _blockProducer.ProduceBlock(
+                    var newBlock = _blockProducer.ProduceBlock(
                         MaxTransactionsInBlock, DateTime.UtcNow, (ulong) _random.Next()
                     );
                     _logger.LogInformation($"Produced block with hash {newBlock.Hash}");
@@ -195,7 +196,7 @@ namespace NeoSharp.Core.Consensus
             Task.Factory.StartNew(_TaskWorker);
         }
 
-        private void OnTimeToProduceBlock(object sender, ElapsedEventArgs e)
+        private void OnTimer(object sender, ElapsedEventArgs e)
         {
             lock (_timeToProduceBlock)
             {
@@ -216,11 +217,11 @@ namespace NeoSharp.Core.Consensus
             if (!_context.Role.HasFlag(ConsensusState.Primary)) return;
             _context.State |= ConsensusState.Primary;
             var span = DateTime.UtcNow - _context.LastBlockRecieved;
-            if (span >= _timePerBlock) OnTimeToProduceBlock(null, null);
+            if (span >= _timePerBlock) OnTimer(null, null);
             else
             {
-                _timeToProduceBlock = new Timer((_timePerBlock - span).TotalMilliseconds);
-                _timeToProduceBlock.Elapsed += OnTimeToProduceBlock;
+                _timer = new Timer((_timePerBlock - span).TotalMilliseconds);
+                _timer.Elapsed += OnTimer;
             }
         }
 
@@ -441,7 +442,7 @@ namespace NeoSharp.Core.Consensus
 
         public void Dispose()
         {
-            _timeToProduceBlock?.Dispose();
+            _timer?.Dispose();
         }
     }
 }

@@ -41,11 +41,11 @@ namespace NeoSharp.Core.Messaging.Handlers
                 }
                 )
                 .ToArray();
-
-            await sender.Send
-            (
-                new AddrMessage(networkAddressWithTimes)
-            );
+            
+//            await sender.Send
+//            (
+//                new AddrMessage(networkAddressWithTimes)
+//            );
         }
 
         /// <inheritdoc />

@@ -36,7 +36,7 @@ namespace NeoSharp.Core.Messaging.Handlers
             /*foreach (var ep in endPointsToConnect)
                 Console.WriteLine(ep.ToString());*/
             /* TODO: "enable neighboards discover later" */
-//            _server.ConnectToPeers(endPointsToConnect);
+            /*_server.ConnectToPeers(endPointsToConnect);*/
 
             return Task.CompletedTask;
         }
