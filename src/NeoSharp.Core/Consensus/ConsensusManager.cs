@@ -101,10 +101,11 @@ namespace NeoSharp.Core.Consensus
                         if (DateTime.UtcNow - _context.LastBlockRecieved < _timePerBlock)
                             Monitor.Wait(_timeToProduceBlock);
                     }
-                    
+
                     // TODO: produce block
                     var newBlock = _blockProducer.ProduceBlock(
-                        MaxTransactionsInBlock, DateTime.UtcNow, (ulong) _random.Next()
+                        MaxTransactionsInBlock, DateTime.UtcNow, (ulong) _random.Next(),
+                        _context.MyState.PublicKey.EncodedData.ToScriptHash()
                     );
                     _logger.LogInformation($"Produced block with hash {newBlock.Hash}");
                     _context.UpdateCurrentProposal(newBlock);
@@ -114,6 +115,7 @@ namespace NeoSharp.Core.Consensus
                         _context.MyState.BlockSignature = "0xbadcab1e".HexToBytes();
                         //_context.MyState.BlockSignature = newBlock.GetBlockHeader().Sign(_context.);
                     }
+
                     SignAndBroadcast(_context.MakePrepareRequest(newBlock));
                 }
                 else

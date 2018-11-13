@@ -263,3 +263,4 @@ PublishProfiles
 **/Index*/
 
 neo-cli/config.json
+src/NeoSharp.Application/appsettings.json

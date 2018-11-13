@@ -1,5 +1,6 @@
 ﻿using System;
 using NeoSharp.Core.Models;
+using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {
@@ -7,6 +8,6 @@ namespace NeoSharp.Core.Blockchain
     {
         uint Version { get; }
         
-        Block ProduceBlock(int maxSize, DateTime generationTime, ulong nonce);
+        Block ProduceBlock(int maxSize, DateTime generationTime, ulong nonce, UInt160 producerAddress);
     }
 }

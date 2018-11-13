@@ -5,6 +5,7 @@ using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transactions;
+using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {
@@ -27,7 +28,7 @@ namespace NeoSharp.Core.Blockchain
 
         public uint Version { get; }
 
-        public Block ProduceBlock(int maxSize, DateTime generationTime, ulong nonce)
+        public Block ProduceBlock(int maxSize, DateTime generationTime, ulong nonce, UInt160 producerAddress)
         {
             var currentBlock = _blockchainContext.CurrentBlock;
             var generationTimestamp = Math.Max(generationTime.ToTimestamp(), currentBlock.Timestamp + 1);
@@ -35,6 +36,7 @@ namespace NeoSharp.Core.Blockchain
             {
                 Nonce = (uint) (nonce % (uint.MaxValue + 1ul))
             };
+            minerTransaction.From = producerAddress;
             _transactionSigner.Sign(minerTransaction);
             var transactions = new[] {minerTransaction}.Concat(_transactionPool.GetTransactions()).Take(maxSize)
                 .ToArray();
