@@ -218,7 +218,11 @@ namespace NeoSharp.Core.Consensus
             _logger.LogInformation(
                 $"Initialized consensus: height={_context.BlockIndex} view={viewNumber} my_index={_context.MyIndex} role={_context.Role}");
 
-            if (!_context.Role.HasFlag(ConsensusState.Primary)) return;
+            if (!_context.Role.HasFlag(ConsensusState.Primary))
+            {
+                _context.State |= ConsensusState.Backup;
+                return;
+            }
             _context.State |= ConsensusState.Primary;
             var span = DateTime.UtcNow - _context.LastBlockRecieved;
             if (span >= _timePerBlock) OnTimer(null, null);
