@@ -18,7 +18,7 @@ namespace NeoSharp.Core.Cryptography
         public HashSet<PublicKey> Validators => _validators;
         
         private readonly Dictionary<PublicKey, Signature> _signatures = new Dictionary<PublicKey, Signature>();
-        private readonly HashSet<PublicKey> _validators;
+        private readonly HashSet<PublicKey> _validators = new HashSet<PublicKey>();
 
         public MultiSig()
         {

@@ -2,6 +2,7 @@
 using NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing;
 using NeoSharp.Core.Blockchain.Processing.TranscationProcessing;
 using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
@@ -13,19 +14,22 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
         private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockHeaderPersister _blockHeaderPersister;
         private readonly ITransactionPersister<Transaction> _transactionPersister;
+        private readonly ISigner<BlockHeader> _blockSigner;
 
         public BlockPersister(
             IGlobalRepository globalRepository,
             IBlockRepository blockRepository,
             IBlockchainContext blockchainContext,
             IBlockHeaderPersister blockHeaderPersister,
-            ITransactionPersister<Transaction> transactionPersister)
+            ITransactionPersister<Transaction> transactionPersister,
+            ISigner<BlockHeader> blockSigner)
         {
             _globalRepository = globalRepository;
             _blockRepository = blockRepository;
             _blockHeaderPersister = blockHeaderPersister;
             _blockchainContext = blockchainContext;
             _transactionPersister = transactionPersister;
+            _blockSigner = blockSigner;
         }
         
         public async Task Persist(params Block[] blocks)
@@ -52,6 +56,7 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
                     height = block.Index;
                 }
 
+                _blockSigner.Sign(block);
                 _blockchainContext.CurrentBlock = block;
             }
         }

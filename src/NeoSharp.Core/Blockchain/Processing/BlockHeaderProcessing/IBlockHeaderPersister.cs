@@ -8,6 +8,6 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
     {
         Task<IEnumerable<BlockHeader>> Persist(params BlockHeader[] blockHeaders);
 
-		Task Update(BlockHeader blockHeader);
-	}
+        Task Update(BlockHeader blockHeader);
+    }
 }

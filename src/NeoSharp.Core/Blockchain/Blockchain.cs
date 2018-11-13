@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using NeoSharp.Core.Blockchain.Genesis;
 using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
+using NeoSharp.Core.Models;
+using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Storage.Blockchain;
 
 namespace NeoSharp.Core.Blockchain
@@ -14,6 +16,7 @@ namespace NeoSharp.Core.Blockchain
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IBlockRepository _blockRepository;
         private readonly IGlobalRepository _globalRepository;
+        private readonly ISigner<BlockHeader> _blockSigner;
 
         private int _initialized;
 
@@ -29,13 +32,15 @@ namespace NeoSharp.Core.Blockchain
             IBlockchainContext blockchainContext,
             IGenesisBuilder genesisBuilder, 
             IBlockRepository blockRepository,
-            IGlobalRepository globalRepository)
+            IGlobalRepository globalRepository,
+            ISigner<BlockHeader> blockSigner)
         {
             _blockProcessor = blockProcessor ?? throw new ArgumentNullException(nameof(blockProcessor));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
             _genesisBuilder = genesisBuilder ?? throw new ArgumentNullException(nameof(genesisBuilder));
             _blockRepository = blockRepository ?? throw new ArgumentNullException(nameof(blockRepository));
             _globalRepository = globalRepository ?? throw new ArgumentNullException(nameof(globalRepository));
+            _blockSigner = blockSigner;
         }
 
         public async Task InitializeBlockchain()
@@ -48,6 +53,8 @@ namespace NeoSharp.Core.Blockchain
             
             _blockchainContext.LastBlockHeader = await _blockRepository.GetBlockHeaderByHeight(blockHeaderHeight);
             _blockchainContext.CurrentBlock = await _blockRepository.GetBlockHeaderByHeight(blockHeight);
+            _blockSigner.Sign(_blockchainContext.CurrentBlock);
+            _blockSigner.Sign(_blockchainContext.LastBlockHeader);
 
             if (_blockchainContext.CurrentBlock == null || _blockchainContext.LastBlockHeader == null)
                 await _blockProcessor.AddBlock(_genesisBuilder.Build());

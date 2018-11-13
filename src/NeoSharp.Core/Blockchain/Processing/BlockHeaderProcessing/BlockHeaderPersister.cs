@@ -17,19 +17,22 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
         private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockHeaderValidator _blockHeaderValidator;
         private readonly ILogger<BlockHeaderPersister> _logger;
+        private readonly ISigner<BlockHeader> _blockSigner;
 
         public BlockHeaderPersister(
             IBlockRepository blockRepository,
             ISigner<BlockHeader> blockHeaderSigner,
             IBlockchainContext blockchainContext,
             IBlockHeaderValidator blockHeaderValidator,
-            ILogger<BlockHeaderPersister> logger)
+            ILogger<BlockHeaderPersister> logger,
+            ISigner<BlockHeader> blockSigner)
         {
             _blockRepository = blockRepository;
             _blockHeaderSigner = blockHeaderSigner;
             _blockchainContext = blockchainContext;
             _blockHeaderValidator = blockHeaderValidator;
             _logger = logger;
+            _blockSigner = blockSigner;
         }
 
         public async Task Update(BlockHeader blockHeader)
@@ -72,6 +75,7 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
                 }
 
                 await _blockRepository.AddBlockHeader(blockHeader);
+                _blockHeaderSigner.Sign(blockHeader);
                 _blockchainContext.LastBlockHeader = blockHeader;
             }
 
