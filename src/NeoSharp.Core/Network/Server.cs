@@ -86,11 +86,7 @@ namespace NeoSharp.Core.Network
             ConnectToPeers(_peerEndPoints);
 
             // listen for peers
-            /* TODO: "we will enable local discovery later" */
-            /*
             _peerListener.Start();
-            */
-
             _isRunning = true;
 
             Parallel.ForEach(_serverProcesses, sp => sp.Start());
@@ -128,10 +124,7 @@ namespace NeoSharp.Core.Network
                 try
                 {
                     if (_serverContext.ConnectedPeers.ContainsKey(ep))
-                    {
                         return;
-                    }
-
                     var peer = await _peerFactory.ConnectTo(ep);
                     PeerConnected(this, peer);
                 }
