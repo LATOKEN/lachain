@@ -126,15 +126,14 @@ namespace NeoSharp.Core.Consensus
             };
         }
 
-        public ConsensusPayload MakePrepareRequest()
+        public ConsensusPayload MakePrepareRequest(Block block)
         {
             return MakePayload(new PrepareRequest
             {
                 Nonce = Nonce,
-                TransactionHashes = CurrentProposal.TransactionHashes,
-                MinerTransaction =
-                    (MinerTransaction) CurrentProposal.Transactions[CurrentProposal.TransactionHashes[0]],
-                Signature = Validators[MyIndex].BlockSignature
+                TransactionHashes = block.TransactionHashes,
+                MinerTransaction = (MinerTransaction) block.Transactions[0],
+                Signature = MyState.BlockSignature
             });
         }
 
@@ -144,6 +143,15 @@ namespace NeoSharp.Core.Consensus
             {
                 Signature = signature
             });
+        }
+
+        public void UpdateCurrentProposal(Block block)
+        {
+            CurrentProposal = new ConsensusProposal
+            {
+                TransactionHashes = block.TransactionHashes,
+                Transactions = block.Transactions.ToDictionary(transaction => transaction.Hash)
+            };
         }
     }
 }
