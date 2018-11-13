@@ -137,7 +137,7 @@ namespace NeoSharp.Core.Network
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning($"Something went wrong with {ep}. Exception: {ex}");
+                    _logger.LogWarning($"Something went wrong with {ep}, caused by: {ex.Message}");
                 }
             });
         }

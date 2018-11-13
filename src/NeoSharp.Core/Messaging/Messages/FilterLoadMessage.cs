@@ -1,6 +1,5 @@
 ﻿using System;
 using NeoSharp.BinarySerialization;
-using NeoSharp.BinarySerialization.SerializationHooks;
 
 namespace NeoSharp.Core.Messaging.Messages
 {

@@ -1,5 +1,4 @@
 ﻿using System;
-using NeoSharp.BinarySerialization.SerializationHooks;
 
 namespace NeoSharp.BinarySerialization
 {

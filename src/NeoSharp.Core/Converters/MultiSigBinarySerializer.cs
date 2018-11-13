@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using NeoSharp.BinarySerialization;
-using NeoSharp.BinarySerialization.SerializationHooks;
 using NeoSharp.Core.Cryptography;
 
 namespace NeoSharp.Core.Converters

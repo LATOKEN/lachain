@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using NeoSharp.BinarySerialization;
-using NeoSharp.BinarySerialization.SerializationHooks;
 using NeoSharp.Core.Extensions;
 
 namespace NeoSharp.Core.Converters

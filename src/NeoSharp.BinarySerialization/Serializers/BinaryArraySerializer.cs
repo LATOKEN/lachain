@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using NeoSharp.BinarySerialization.Extensions;
-using NeoSharp.BinarySerialization.SerializationHooks;
 
 namespace NeoSharp.BinarySerialization.Serializers
 {

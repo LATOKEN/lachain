@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using NeoSharp.BinarySerialization.SerializationHooks;
 using NeoSharp.BinarySerialization.Serializers;
 
 namespace NeoSharp.BinarySerialization.Cache

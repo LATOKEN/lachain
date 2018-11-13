@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace NeoSharp.BinarySerialization.SerializationHooks
+namespace NeoSharp.BinarySerialization
 {
     public interface IBinaryCustomSerializable
     {
