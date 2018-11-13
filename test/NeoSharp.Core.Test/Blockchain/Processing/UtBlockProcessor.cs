@@ -9,11 +9,11 @@ using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing;
 using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Exceptions;
+
 using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Core.Models.Transcations;
-using NeoSharp.Core.Storage;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.TestHelpers;
 using NeoSharp.Types;
 using NeoSharp.Types.ExtensionMethods;

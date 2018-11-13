@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using NeoSharp.Core.Blockchain.Processing.TranscationProcessing;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Storage;
 using NeoSharp.TestHelpers;
 using NeoSharp.Types;

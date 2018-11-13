@@ -5,7 +5,7 @@ using Moq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Cryptography;

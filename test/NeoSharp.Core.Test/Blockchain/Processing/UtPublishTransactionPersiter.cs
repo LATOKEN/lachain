@@ -4,7 +4,7 @@ using Moq;
 using NeoSharp.Core.Blockchain.Processing.TranscationProcessing;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.Transcations;
+using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Core.Storage;
 using NeoSharp.TestHelpers;
