@@ -16,33 +16,38 @@ using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
 using NeoSharp.Types;
 using NeoSharp.Types.ExtensionMethods;
+using Org.BouncyCastle.Security;
 
 namespace NeoSharp.Core.Consensus
 {
     // ReSharper disable once RedundantNameQualifier
     using Timer = System.Timers.Timer;
-    
-    public class ConsensusManager : IConsensusManager
+
+    public class ConsensusManager : IConsensusManager, IDisposable
     {
         private readonly IBlockProcessor _blockProcessor;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ITransactionCrawler _transactionCrawler;
         private readonly ITransactionPool _transactionPool;
+        private readonly IBlockProducer _blockProducer;
         private readonly IBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
         private readonly ConsensusContext _context;
         private readonly object _allTransactionVerified = new object();
         private readonly object _quorumSignaturesAcquired = new object();
-        private readonly object _prepareRequestRecieved = new object();
+        private readonly object _prepareRequestReceived = new object();
         private readonly object _changeViewApproved = new object();
         private Timer _timeToProduceBlock;
         private bool _stopped;
+        private SecureRandom _random;
+
         private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
+        private const int MaxTransactionsInBlock = 1000;
 
         public ConsensusManager(
             IBlockProcessor blockProcessor, IBlockchainContext blockchainContext,
             ITransactionCrawler transactionCrawler, ITransactionProcessor transactionProcessor,
-            ITransactionPool transactionPool, IBroadcaster broadcaster,
+            ITransactionPool transactionPool, IBlockProducer blockProducer, IBroadcaster broadcaster,
             ILogger<ConsensusManager> logger, ConsensusConfig configuration
         )
         {
@@ -50,9 +55,11 @@ namespace NeoSharp.Core.Consensus
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockProcessor));
             _transactionCrawler = transactionCrawler ?? throw new ArgumentNullException(nameof(transactionCrawler));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
+            _blockProducer = blockProducer;
             _broadcaster = broadcaster;
             _logger = logger ?? throw new ArgumentNullException(nameof(blockProcessor));
             _context = new ConsensusContext(configuration.KeyPair, configuration.ValidatorsKeys);
+            _random = new SecureRandom();
 
             (transactionProcessor ?? throw new ArgumentNullException(nameof(transactionProcessor)))
                 .OnTransactionProcessed += OnTransactionVerified;
@@ -87,24 +94,39 @@ namespace NeoSharp.Core.Consensus
                 if (_context.Role.HasFlag(ConsensusState.Primary))
                 {
                     // if we are primary, wait until block must be produced
-                    lock (_timeToProduceBlock) Monitor.Wait(_timeToProduceBlock);
+                    lock (_timeToProduceBlock)
+                    {
+                        if (DateTime.UtcNow - _context.LastBlockRecieved < _timePerBlock)
+                            Monitor.Wait(_timeToProduceBlock);
+                    }
 
                     // TODO: produce block
+                    Block newBlock = _blockProducer.ProduceBlock(
+                        MaxTransactionsInBlock, DateTime.UtcNow, (ulong) _random.Next()
+                    );
+                    _logger.LogInformation($"Produced block with hash {newBlock.Hash}");
+                    _context.UpdateCurrentProposal(newBlock);
+                    _context.State |= ConsensusState.RequestSent;
+                    if (!_context.State.HasFlag(ConsensusState.SignatureSent))
+                    {
+                        _context.MyState.BlockSignature = "0xbadcab1e".HexToBytes();
+                        //_context.MyState.BlockSignature = newBlock.GetBlockHeader().Sign(_context.);
+                    }
+                    SignAndBroadcast(_context.MakePrepareRequest(newBlock));
                 }
                 else
                 {
                     // if we are backup, wait unitl someone sends prepare, or change view
-                    lock (_prepareRequestRecieved)
+                    lock (_prepareRequestReceived)
                     {
                         var timeToWait = _timePerBlock * (1 + _context.ViewNumber); // TODO: manage timeouts
-                        if (!Monitor.Wait(_prepareRequestRecieved, timeToWait))
+                        if (!Monitor.Wait(_prepareRequestReceived, timeToWait))
                         {
                             RequestChangeView();
                             continue;
                         }
                     }
                 }
-
 
                 _context.CurrentProposal.TransactionHashes.ForEach(hash =>
                 {
@@ -124,12 +146,14 @@ namespace NeoSharp.Core.Consensus
 
                 _logger.LogInformation("Send prepare response");
                 _context.State |= ConsensusState.SignatureSent;
+                _context.MyState.BlockSignature = "0xbadcab1e".HexToBytes();
                 //_context.Validators[_context.MyIndex].BlockSignature = _context.GetProposedHeader().Sign(context.KeyPair);
                 SignAndBroadcast(_context.MakePrepareResponse(_context.MyState.BlockSignature));
-                OnSignatureAcquired(_context.MyIndex, "0xbadcab1le".HexToBytes());
+                OnSignatureAcquired(_context.MyIndex, "0xbadcab1e".HexToBytes());
                 lock (_quorumSignaturesAcquired)
                 {
-                    if (!Monitor.Wait(_quorumSignaturesAcquired, TimeSpan.FromSeconds(15))) // TODO: manager timeouts
+                    var timeToWait = _timePerBlock * (1 + _context.ViewNumber); // TODO: manage timeouts
+                    if (!Monitor.Wait(_quorumSignaturesAcquired, timeToWait))
                     {
                         _logger.LogWarning("Cannot retrieve all signatures in time, aborting");
                         RequestChangeView();
@@ -142,7 +166,7 @@ namespace NeoSharp.Core.Consensus
                 );
 
                 var block = _context.GetProposedBlock();
-                /*
+                /* TODO: multisig
                 ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
                     if (context.Signatures[i] != null)
@@ -208,7 +232,7 @@ namespace NeoSharp.Core.Consensus
                 );
                 return;
             }
-            
+
             if (message.ValidatorIndex != _context.PrimaryIndex)
             {
                 _logger.LogDebug(
@@ -248,7 +272,7 @@ namespace NeoSharp.Core.Consensus
                 TransactionHashes = request.TransactionHashes,
                 Transactions = new Dictionary<UInt256, Transaction>()
             };
-            
+
             /* TODO: check signature
             byte[] hashData = BinarySerializer.Default.Serialize(_context.GetProposedHeader().Hash);
              if (!Crypto.Default.VerifySignature(hashData, request.Signature,
@@ -313,6 +337,7 @@ namespace NeoSharp.Core.Consensus
                 return;
             }
 
+            _logger.LogInformation($"Received consensus payload of type {data.Type}");
             switch (data.Type)
             {
                 case ConsensusMessageType.ChangeView:
@@ -411,6 +436,11 @@ namespace NeoSharp.Core.Consensus
         {
             // TODO: sign
             _broadcaster.Broadcast(new ConsensusMessage(payload));
+        }
+
+        public void Dispose()
+        {
+            _timeToProduceBlock?.Dispose();
         }
     }
 }

@@ -27,6 +27,7 @@ namespace NeoSharp.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockPool, BlockPool>();
             containerBuilder.RegisterSingleton<IComparer<Transaction>, TransactionComparer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
+            containerBuilder.RegisterSingleton<IBlockProducer, BlockProducer>();
             containerBuilder.RegisterSingleton<ITransactionPersister<Transaction>, TransactionPersister>();
             containerBuilder.RegisterSingleton<IBlockHeaderValidator, BlockHeaderValidator>();
 
