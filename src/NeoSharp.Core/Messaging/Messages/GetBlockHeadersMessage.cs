@@ -1,6 +1,4 @@
-﻿using NeoSharp.Types;
-
-namespace NeoSharp.Core.Messaging.Messages
+﻿namespace NeoSharp.Core.Messaging.Messages
 {
     public class GetBlockHeadersMessage : Message<GetBlocksPayload>
     {

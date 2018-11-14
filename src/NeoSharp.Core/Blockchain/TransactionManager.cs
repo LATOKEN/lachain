@@ -8,7 +8,6 @@ using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {
@@ -30,7 +29,7 @@ namespace NeoSharp.Core.Blockchain
         
         public async Task<Transaction> CreateContractTransaction(UInt160 asset, UInt160 from, UInt160 to, UInt256 value)
         {
-            var nonce = await _transactionRepository.GetTotalTransactionCount(from);
+            var nonce = _transactionRepository.GetTotalTransactionCount(from);
             var tx = new ContractTransaction
             {
                 Nonce = nonce,

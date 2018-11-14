@@ -2,7 +2,6 @@
 using NeoSharp.BinarySerialization;
 using NeoSharp.BinarySerialization.Extensions;
 using NeoSharp.Core.Converters;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models.Transactions
 {
@@ -50,9 +49,9 @@ namespace NeoSharp.Core.Models.Transactions
         {
             AssetType = (AssetType) reader.ReadByte();
             Name = reader.ReadVarString(NameMaxSize);
-            Supply = deserializer.Deserialize<UInt256>(reader, settings);
+            Supply = new UInt256(reader.ReadBytes(UInt256.BufferLength));
             Precision = reader.ReadByte();
-            Owner = deserializer.Deserialize<UInt160>(reader, settings);
+            Owner = new UInt160(reader.ReadBytes(UInt160.BufferLength));
         }
 
         protected override int SerializeExclusiveData(IBinarySerializer serializer, BinaryWriter writer,
@@ -61,10 +60,10 @@ namespace NeoSharp.Core.Models.Transactions
             var result = 1;
             writer.Write((byte) AssetType);
             result += writer.WriteVarString(Name, NameMaxSize);
-            result += serializer.Serialize(Supply, writer, settings);
+            result += writer.WriteArray(Supply.ToArray());
             writer.Write(Precision);
             result++;
-            result += serializer.Serialize(Owner, writer, settings);
+            result += writer.WriteArray(Owner.ToArray());
 
             return result;
         }

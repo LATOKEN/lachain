@@ -5,15 +5,11 @@ using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Core.Network;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
 {
     public class BlockProcessor : IBlockProcessor
     {
-        #region Private Fields 
-
         private static readonly TimeSpan DefaultBlockPollingInterval = TimeSpan.FromMilliseconds(1_000);
 
         private readonly IBlockPool _blockPool;
@@ -21,28 +17,22 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
         private readonly ISigner<Block> _blockSigner;
         private readonly IBlockPersister _blockPersister;
         private readonly IBlockchainContext _blockchainContext;
-        private readonly IBroadcaster _broadcaster;
         private readonly ILogger<BlockProcessor> _logger;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         private class CurrentBlockIndex
         {
-            public uint Index { get; set; }
+            public int Index { get; set; } = -1;
         }
 
-        private CurrentBlockIndex _currentBlockIndex;
-
-        #endregion
-
-        #region Constructor 
-
+        private readonly CurrentBlockIndex _currentBlockIndex = new CurrentBlockIndex();
+        
         public BlockProcessor(
             IBlockPool blockPool,
             IAsyncDelayer asyncDelayer,
             ISigner<Block> blockSigner,
             IBlockPersister blockPersister,
             IBlockchainContext blockchainContext,
-            IBroadcaster broadcaster,
             ILogger<BlockProcessor> logger)
         {
             _blockPool = blockPool ?? throw new ArgumentNullException(nameof(blockPool));
@@ -50,24 +40,14 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
             _blockSigner = blockSigner ?? throw new ArgumentNullException(nameof(blockSigner));
             _blockPersister = blockPersister ?? throw new ArgumentNullException(nameof(blockPersister));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
-            _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-        #endregion
-
-        #region IBlockProcessor implementation
-
-        // TODO #384: We will read the current block from Blockchain
-        // because the logic to get that too complicated 
-        /// <inheritdoc />
+        
         public void Run()
         {
             var cancellationToken = _cancellationTokenSource.Token;
-            _currentBlockIndex = new CurrentBlockIndex
-            {
-                Index = _blockchainContext.CurrentBlock?.Index ?? 0 
-            };
+            if (_blockchainContext.CurrentBlock != null)
+                _currentBlockIndex.Index = (int) _blockchainContext.CurrentBlock.Index;
 
             Task.Factory.StartNew(async () =>
             {
@@ -75,18 +55,18 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
                 {
                     var nextBlockHeight = _blockchainContext.CurrentBlock?.Index + 1U ?? 0U;
 
-                    if (!_blockPool.TryGet(nextBlockHeight, out var block))
+                    if (!_blockPool.TryRemove(nextBlockHeight, out var block))
                     {
                         await _asyncDelayer.Delay(DefaultBlockPollingInterval, cancellationToken);
                         continue;
                     }
-
+                    
                     await _blockPersister.Persist(block);
-
-                    _blockPool.TryRemove(nextBlockHeight);
+                    
                     lock (_currentBlockIndex)
                     {
-                        _currentBlockIndex.Index = _blockchainContext.CurrentBlock.Index;
+                        if (_blockchainContext.CurrentBlock != null)
+                            _currentBlockIndex.Index = (int) _blockchainContext.CurrentBlock.Index;
                         Monitor.PulseAll(_currentBlockIndex);
                     }
                 }
@@ -116,17 +96,13 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
             /* TODO: "why not to persist block here?" */
             return Task.FromResult(block);
         }
-
+        
         public void WaitUntilBlockProcessed(uint index)
         {
-            // TODO: customize timeouts
-            while (true)
+            lock (_currentBlockIndex)
             {
-                lock (_currentBlockIndex)
-                {
-                    Monitor.Wait(_currentBlockIndex, TimeSpan.FromSeconds(30)); 
-                    if (_currentBlockIndex.Index >= index) break;
-                }
+                while (_currentBlockIndex.Index < index)
+                    Monitor.Wait(_currentBlockIndex, TimeSpan.FromSeconds(1));
             }
         }
 
@@ -136,7 +112,5 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
         }
-
-        #endregion
     }
 }

@@ -2,7 +2,6 @@
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.SmartContract;
 using NeoSharp.Core.SmartContract.ContractParameters;
-using NeoSharp.Types;
 using NeoSharp.VM;
 using NeoSharp.VM.Types;
 

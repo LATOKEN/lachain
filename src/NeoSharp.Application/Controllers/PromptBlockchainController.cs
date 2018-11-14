@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core;
 using NeoSharp.Core.Blockchain;
 using NeoSharp.Core.Blockchain.Processing.BlockProcessing;
 using NeoSharp.Core.Extensions;
@@ -14,7 +15,6 @@ using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.Storage.Blockchain;
-using NeoSharp.Types;
 
 namespace NeoSharp.Application.Controllers
 {
@@ -215,7 +215,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("header", Category = "Blockchain", Help = "Get header by index or by hash")]
         public async Task HeaderCommand(uint blockIndex, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _blockRepository.GetBlockHeaderByHeight(blockIndex), output);
+            _consoleHandler.WriteObject(_blockRepository.GetBlockHeaderByHeight(blockIndex), output);
         }
 
         /// <summary>
@@ -226,14 +226,14 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("header", Category = "Blockchain", Help = "Get header by index or by hash")]
         public async Task HeaderCommand(UInt256 blockHash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _blockRepository.GetBlockHeaderByHash(blockHash), output);
+            _consoleHandler.WriteObject(_blockRepository.GetBlockHeaderByHash(blockHash), output);
         }
 
         [PromptCommand("block", Category = "Blockchain", Help = "Get information about blocks")]
         public async Task BlockCommand()
         {
-            var headerHeight = await _globalRepository.GetTotalBlockHeaderHeight();
-            var blockHeight = await _globalRepository.GetTotalBlockHeight();
+            var headerHeight = _globalRepository.GetTotalBlockHeaderHeight();
+            var blockHeight = _globalRepository.GetTotalBlockHeight();
             
             _consoleHandler.Write("Headers: ");
             _consoleHandler.WriteLine(headerHeight.ToString(), ConsoleOutputStyle.Log);
@@ -274,7 +274,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("tx", Category = "Blockchain", Help = "Get tx")]
         public async Task TxCommand(UInt256 hash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _transactionModel.GetTransactionByHash(hash), output);
+            _consoleHandler.WriteObject(_transactionModel.GetTransactionByHash(hash), output);
         }
 
         /// <summary>
@@ -298,7 +298,7 @@ namespace NeoSharp.Application.Controllers
         [PromptCommand("asset", Category = "Blockchain", Help = "Get asset", Order = 0)]
         public async Task AssetCommand(UInt160 hash, PromptOutputStyle output = PromptOutputStyle.json)
         {
-            _consoleHandler.WriteObject(await _assetModel.GetAssetByHash(hash), output);
+            _consoleHandler.WriteObject(_assetModel.GetAssetByHash(hash), output);
         }
 
         /// <summary>

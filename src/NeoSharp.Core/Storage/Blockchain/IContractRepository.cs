@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-using NeoSharp.Core.Models;
-using NeoSharp.Types;
+﻿using NeoSharp.Core.Models;
 
 namespace NeoSharp.Core.Storage.Blockchain
 {
@@ -11,20 +9,20 @@ namespace NeoSharp.Core.Storage.Blockchain
         /// </summary>
         /// <param name="contractHash"></param>
         /// <returns></returns>
-        Task<Contract> GetContractByHash(UInt160 contractHash);
+        Contract GetContractByHash(UInt160 contractHash);
         
         /// <summary>
         /// Adds a smart contract
         /// </summary>
         /// <param name="contract"></param>
         /// <returns></returns>
-        Task AddContract(Contract contract);
+        void AddContract(Contract contract);
 
         /// <summary>
         /// Delete a smart contract by its hash
         /// </summary>
         /// <param name="contractHash"></param>
         /// <returns></returns>
-        Task DeleteContractByHash(UInt160 contractHash);
+        void DeleteContractByHash(UInt160 contractHash);
     }
 }

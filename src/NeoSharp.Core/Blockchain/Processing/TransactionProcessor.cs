@@ -8,7 +8,6 @@ using NeoSharp.Core.Helpers;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Storage.Blockchain;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing
 {
@@ -109,7 +108,7 @@ namespace NeoSharp.Core.Blockchain.Processing
                     $"The transaction  \"{transaction.Hash.ToString(true)}\" was already queued and verified to be added.");
             }
 
-            if (await _transactionRepository.GetTransactionByHash(transaction.Hash) != null)
+            if (_transactionRepository.GetTransactionByHash(transaction.Hash) != null)
             {
                 throw new InvalidTransactionException(
                     $"The transaction \"{transaction.Hash.ToString(true)}\" exists already on the blockchain.");

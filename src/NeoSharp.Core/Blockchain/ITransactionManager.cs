@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Models;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {

@@ -1,6 +1,8 @@
-﻿using System.Text;
+﻿using System;
+using System.IO;
+using System.Text;
 
-namespace System.IO
+namespace NeoSharp.BinarySerialization.Extensions
 {
     public static class BinaryWriterExtensions
     {
@@ -21,26 +23,32 @@ namespace System.IO
                 writer.Write((byte)value);
                 return 1;
             }
-            else if (value <= 0xFFFF)
+
+            if (value <= 0xFFFF)
             {
                 writer.Write((byte)0xFD);
                 writer.Write((ushort)value);
                 return 3;
             }
-            else if (value <= 0xFFFFFFFF)
+
+            if (value <= 0xFFFFFFFF)
             {
                 writer.Write((byte)0xFE);
                 writer.Write((uint)value);
                 return 5;
             }
-            else
-            {
-                writer.Write((byte)0xFF);
-                writer.Write(value);
-                return 9;
-            }
+
+            writer.Write((byte)0xFF);
+            writer.Write(value);
+            return 9;
         }
 
+        public static int WriteArray(this BinaryWriter writer, byte[] array)
+        {
+            writer.Write(array);
+            return array.Length;
+        }
+        
         public static int WriteVarString(this BinaryWriter writer, string value, uint max)
         {
             var bytes = Encoding.UTF8.GetBytes(value);

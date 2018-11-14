@@ -1,6 +1,5 @@
 ﻿using System;
 using NeoSharp.Core.Models;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {

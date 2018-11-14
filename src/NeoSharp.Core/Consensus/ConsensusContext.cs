@@ -7,7 +7,6 @@ using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.Transactions;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Consensus
 {

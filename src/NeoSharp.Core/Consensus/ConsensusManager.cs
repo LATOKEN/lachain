@@ -14,8 +14,6 @@ using NeoSharp.Core.Logging;
 using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
-using NeoSharp.Types;
-using NeoSharp.Types.ExtensionMethods;
 using Org.BouncyCastle.Security;
 
 namespace NeoSharp.Core.Consensus

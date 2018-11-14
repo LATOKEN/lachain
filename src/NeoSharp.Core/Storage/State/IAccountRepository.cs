@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-using NeoSharp.Core.Models;
-using NeoSharp.Types;
+﻿using NeoSharp.Core.Models;
 
 namespace NeoSharp.Core.Storage.State
 {
@@ -11,27 +9,29 @@ namespace NeoSharp.Core.Storage.State
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
-        Task<Account> GetAccountByAddress(UInt160 address);
+        Account GetAccountByAddress(UInt160 address);
 
         /// <summary>
         /// Finds or created account by address
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
-        Task<Account> GetAccountByAddressOrDefault(UInt160 address);
+        Account GetAccountByAddressOrDefault(UInt160 address);
 
+        void ChangeBalance(UInt160 address, UInt160 asset, UInt256 delta);
+        
         /// <summary>
         /// Deletes accounts from database
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
-        Task DeleteAccountByAddress(UInt160 address);
+        void DeleteAccountByAddress(UInt160 address);
         
         /// <summary>
         /// Adds or updates account in storage
         /// </summary>
         /// <param name="account"></param>
         /// <returns></returns>
-        Task<Account> AddAccount(Account account);
+        Account AddAccount(Account account);
     }
 }

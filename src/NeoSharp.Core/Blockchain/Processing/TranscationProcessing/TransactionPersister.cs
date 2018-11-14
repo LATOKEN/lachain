@@ -62,7 +62,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
                     throw new ArgumentException("Unknown Transaction Type");
             }
 
-            await _transactionRepository.AddTransaction(transaction);
+            _transactionRepository.AddTransaction(transaction);
             _transactionPool.Remove(transaction.Hash);
         }
 

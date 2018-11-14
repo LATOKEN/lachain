@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Storage.Blockchain;
-using NeoSharp.Types;
 
 namespace NeoSharp.RocksDB.Repositories
 {
@@ -21,31 +20,30 @@ namespace NeoSharp.RocksDB.Repositories
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
         
-        public async Task<Transaction> GetTransactionByHash(UInt256 hash)
+        public Transaction GetTransactionByHash(UInt256 hash)
         {
-            var rawTransaction = await _rocksDbContext.Get(hash.BuildDataTransactionKey());
+            var rawTransaction = _rocksDbContext.Get(hash.BuildDataTransactionKey());
             return rawTransaction == null ? null : _binarySerializer.Deserialize<Transaction>(rawTransaction);
         }
 
-        public async Task AddTransaction(Transaction transaction)
+        public void AddTransaction(Transaction transaction)
         {
-            await _rocksDbContext.Save(transaction.Hash.BuildDataTransactionKey(),
-                _binarySerializer.Serialize(transaction));
+            _rocksDbContext.Save(transaction.Hash.BuildDataTransactionKey(), _binarySerializer.Serialize(transaction));
         }
 
-        public async Task<IEnumerable<Transaction>> GetTransactionsByHashes(IReadOnlyCollection<UInt256> hashes)
+        public IEnumerable<Transaction> GetTransactionsByHashes(IReadOnlyCollection<UInt256> hashes)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<bool> ContainsTransactionByHash(UInt256 txHash)
+        public bool ContainsTransactionByHash(UInt256 txHash)
         {
             throw new NotImplementedException();
         }
-
-        public async Task<uint> GetTotalTransactionCount(UInt160 address)
+        
+        public uint GetTotalTransactionCount(UInt160 address)
         {
-            throw new NotImplementedException();
+            return 0;
         }
     }
 }

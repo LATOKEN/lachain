@@ -5,7 +5,6 @@ using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transactions;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {

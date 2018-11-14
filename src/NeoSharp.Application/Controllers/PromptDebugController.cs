@@ -6,11 +6,11 @@ using Microsoft.Extensions.Logging;
 using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
 using NeoSharp.Application.Exceptions;
+using NeoSharp.Core;
+using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Logging;
 using NeoSharp.Core.Models;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
-using NeoSharp.Types.ExtensionMethods;
 using NeoSharp.VM;
 using NeoSharp.VM.Types;
 

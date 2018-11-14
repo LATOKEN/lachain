@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace NeoSharp.Core.Blockchain
+﻿namespace NeoSharp.Core.Blockchain
 {
     public interface IBlockchain
     {
@@ -8,6 +6,6 @@ namespace NeoSharp.Core.Blockchain
         /// Initialize the blockchain access.
         /// </summary>
         /// <returns>Task</returns>
-        Task InitializeBlockchain();
+        void InitializeBlockchain();
     }
 }

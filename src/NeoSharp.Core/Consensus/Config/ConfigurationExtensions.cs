@@ -2,8 +2,8 @@
 using System.Security;
 using Microsoft.Extensions.Configuration;
 using NeoSharp.Core.Cryptography;
+using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Wallet;
-using NeoSharp.Types.ExtensionMethods;
 
 namespace NeoSharp.Core.Consensus.Config
 {

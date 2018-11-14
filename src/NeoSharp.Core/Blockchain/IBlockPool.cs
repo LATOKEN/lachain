@@ -13,6 +13,6 @@ namespace NeoSharp.Core.Blockchain
 
         bool TryAdd(Block block);
 
-        bool TryRemove(uint height);
+        bool TryRemove(uint height, out Block block);
     }
 }

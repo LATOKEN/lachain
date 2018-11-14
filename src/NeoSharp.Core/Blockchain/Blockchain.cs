@@ -43,24 +43,39 @@ namespace NeoSharp.Core.Blockchain
             _blockSigner = blockSigner;
         }
 
-        public async Task InitializeBlockchain()
+        public void InitializeBlockchain()
         {
             if (Interlocked.Exchange(ref _initialized, 1) != 0)
                 return;
-
-            var blockHeight = await _globalRepository.GetTotalBlockHeight();
-            var blockHeaderHeight = await _globalRepository.GetTotalBlockHeaderHeight();
             
-            _blockchainContext.LastBlockHeader = await _blockRepository.GetBlockHeaderByHeight(blockHeaderHeight);
-            _blockchainContext.CurrentBlock = await _blockRepository.GetBlockHeaderByHeight(blockHeight);
-            _blockSigner.Sign(_blockchainContext.CurrentBlock);
-            _blockSigner.Sign(_blockchainContext.LastBlockHeader);
+            var blockHeight = _globalRepository.GetTotalBlockHeight();
+            var blockHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
+            
+            _RefreshContext(blockHeight, blockHeaderHeight);
 
-            if (_blockchainContext.CurrentBlock == null || _blockchainContext.LastBlockHeader == null)
-                await _blockProcessor.AddBlock(_genesisBuilder.Build());
             _blockProcessor.Run();
+            
+            if (_blockchainContext.CurrentBlock == null || _blockchainContext.LastBlockHeader == null)
+            {
+                var genesisBlock = _genesisBuilder.Build();
+                if (genesisBlock.Index != 0)
+                    throw new Exception("Invalid genesis block height specified, must be 0");
+                _blockProcessor.AddBlock(genesisBlock);
+                _blockProcessor.WaitUntilBlockProcessed(genesisBlock.Index);
+                _RefreshContext(blockHeight, blockHeaderHeight);
+            }
         }
 
+        private void _RefreshContext(uint blockHeight, uint blockHeaderHeight)
+        {
+            _blockchainContext.LastBlockHeader = _blockRepository.GetBlockHeaderByHeight(blockHeaderHeight);
+            if (_blockchainContext.LastBlockHeader != null)
+                _blockSigner.Sign(_blockchainContext.LastBlockHeader);
+            _blockchainContext.CurrentBlock = _blockRepository.GetBlockHeaderByHeight(blockHeight);
+            if (_blockchainContext.CurrentBlock != null)
+                _blockSigner.Sign(_blockchainContext.CurrentBlock);
+        }
+        
         /// <inheritdoc />
         public void Dispose()
         {

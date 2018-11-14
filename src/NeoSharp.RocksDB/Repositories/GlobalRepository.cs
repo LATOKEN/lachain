@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Storage;
 using NeoSharp.Core.Storage.Blockchain;
@@ -23,37 +22,37 @@ namespace NeoSharp.RocksDB.Repositories
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
 
-        public async Task<uint> GetTotalBlockHeight()
+        public uint GetTotalBlockHeight()
         {
-            var raw = await _rocksDbContext.Get(_sysCurrentBlockKey);
+            var raw = _rocksDbContext.Get(_sysCurrentBlockKey);
             return raw == null ? uint.MinValue : BitConverter.ToUInt32(raw, 0);
         }
 
-        public async Task SetTotalBlockHeight(uint height)
+        public void SetTotalBlockHeight(uint height)
         {
-            await _rocksDbContext.Save(_sysCurrentBlockKey, BitConverter.GetBytes(height));
+            _rocksDbContext.Save(_sysCurrentBlockKey, BitConverter.GetBytes(height));
         }
 
-        public async Task<uint> GetTotalBlockHeaderHeight()
+        public uint GetTotalBlockHeaderHeight()
         {
-            var raw = await _rocksDbContext.Get(_sysCurrentBlockHeaderKey);
+            var raw = _rocksDbContext.Get(_sysCurrentBlockHeaderKey);
             return raw == null ? uint.MinValue : BitConverter.ToUInt32(raw, 0);
         }
 
-        public async Task SetTotalBlockHeaderHeight(uint height)
+        public void SetTotalBlockHeaderHeight(uint height)
         {
-            await _rocksDbContext.Save(_sysCurrentBlockHeaderKey, BitConverter.GetBytes(height));
+            _rocksDbContext.Save(_sysCurrentBlockHeaderKey, BitConverter.GetBytes(height));
         }
 
-        public async Task<string> GetVersion()
+        public string GetVersion()
         {
-            var raw = await _rocksDbContext.Get(_sysVersionKey);
+            var raw = _rocksDbContext.Get(_sysVersionKey);
             return raw == null ? null : _binarySerializer.Deserialize<string>(raw);
         }
 
-        public async Task SetVersion(string version)
+        public void SetVersion(string version)
         {
-            await _rocksDbContext.Save(_sysVersionKey, _binarySerializer.Serialize(version));
+            _rocksDbContext.Save(_sysVersionKey, _binarySerializer.Serialize(version));
         }
     }
 }

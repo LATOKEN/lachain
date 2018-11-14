@@ -2,7 +2,6 @@
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models.OperationManager
 {

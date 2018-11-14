@@ -6,7 +6,6 @@ using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.Storage.Blockchain;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Handlers
 {
@@ -16,7 +15,7 @@ namespace NeoSharp.Core.Messaging.Handlers
         private const int MaxBlocksCountToReturn = 500;
         private readonly IBlockRepository _blockRepository;
 
-        private Task<BlockHeader> GetBlockHeader(UInt256 hash) => _blockRepository.GetBlockHeaderByHash(hash);
+        private Task<BlockHeader> GetBlockHeader(UInt256 hash) => Task.FromResult(_blockRepository.GetBlockHeaderByHash(hash));
         #endregion
 
         #region Constructor 
@@ -57,7 +56,7 @@ namespace NeoSharp.Core.Messaging.Handlers
 
             do
             {
-                var nextBlock = await _blockRepository.GetNextBlockHeaderByHash(blockHash);
+                var nextBlock = _blockRepository.GetNextBlockHeaderByHash(blockHash);
                 if (nextBlock == null || nextBlock.Hash == hashStop)
                     break;
                 blockHashes.Add(blockHash);

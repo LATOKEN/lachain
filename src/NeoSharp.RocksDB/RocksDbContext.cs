@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using RocksDbSharp;
 
 namespace NeoSharp.RocksDB
@@ -20,31 +19,26 @@ namespace NeoSharp.RocksDB
             _rocksDb = RocksDb.Open(options, config.FilePath);
         }
 
-        public Task<byte[]> Get(byte[] key)
+        public byte[] Get(byte[] key)
         {
-            return Task.FromResult(_rocksDb.Get(key));
+            return _rocksDb.Get(key);
         }
 
-        public Task<IDictionary<byte[], byte[]>> GetMany(IEnumerable<byte[]> keys)
+        public IDictionary<byte[], byte[]> GetMany(IEnumerable<byte[]> keys)
         {
-            return Task.FromResult<IDictionary<byte[], byte[]>>(_rocksDb.MultiGet(keys.ToArray())
-                .ToDictionary(kv => kv.Key, k => k.Value));
+            return _rocksDb.MultiGet(keys.ToArray()).ToDictionary(kv => kv.Key, k => k.Value);
         }
 
-        public Task Save(byte[] key, byte[] content)
+        public void Save(byte[] key, byte[] content)
         {
             _rocksDb.Put(key, content);
-
-            return Task.CompletedTask;
         }
 
-        public Task Delete(byte[] key)
+        public void Delete(byte[] key)
         {
             _rocksDb.Remove(key);
-
-            return Task.CompletedTask;
         }
-
+        
         public void Dispose()
         {
             _rocksDb?.Dispose();

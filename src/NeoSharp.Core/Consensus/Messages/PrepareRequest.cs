@@ -2,11 +2,8 @@
 using System.IO;
 using System.Linq;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Core.Models;
-using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Consensus.Messages
 {

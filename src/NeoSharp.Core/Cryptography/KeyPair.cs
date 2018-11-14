@@ -1,6 +1,5 @@
 ﻿using NeoSharp.Core.Extensions;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Cryptography
 {

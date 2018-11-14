@@ -1,6 +1,6 @@
 ﻿using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Converters;
-using NeoSharp.Types.ExtensionMethods;
+using NeoSharp.Core.Extensions;
 
 namespace NeoSharp.Core.Cryptography
 {

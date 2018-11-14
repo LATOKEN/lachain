@@ -2,7 +2,6 @@
 using System.Linq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Network;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Messages
 {

@@ -116,7 +116,7 @@ namespace NeoSharp.Core.Network
         {
             var toHeight = fromHeight + MaxBlocksCountToSync * MaxParallelBlockRequestsForSync - 1;
 
-            var blockHeaders = await _blockRepository.GetBlockHeadersFromHeight(fromHeight, toHeight - fromHeight + 1);
+            var blockHeaders = _blockRepository.GetBlockHeadersByHeightRange(fromHeight, toHeight - fromHeight + 1);
 
             var blockHashes = blockHeaders
                 .Select(b => b.Hash)

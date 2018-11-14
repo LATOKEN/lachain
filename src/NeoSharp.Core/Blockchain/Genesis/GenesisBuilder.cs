@@ -6,22 +6,16 @@ using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Genesis
 {
     public class GenesisBuilder : IGenesisBuilder
     {
-        #region Private Fields 
-
-        private Block _genesisBlock;
         private readonly IGenesisAssetsBuilder _genesisAssetsBuilder;
         private readonly ISigner<Block> _blockSigner;
 
-        #endregion
-
-        #region Constructor
-
+        private Block _genesisBlock;
+        
         public GenesisBuilder(IGenesisAssetsBuilder genesisAssetsBuilder, ISigner<Block> blockSigner)
         {
             _genesisAssetsBuilder = genesisAssetsBuilder;
@@ -29,10 +23,6 @@ namespace NeoSharp.Core.Blockchain.Genesis
 
             BinarySerializer.RegisterTypes(typeof(Transaction).Assembly, typeof(BlockHeader).Assembly);
         }
-
-        #endregion
-
-        #region IGenesisBuilder implementation
         
         public const ulong GenesisConsensusData = 2083236893UL;
         
@@ -74,7 +64,5 @@ namespace NeoSharp.Core.Blockchain.Genesis
             _blockSigner.Sign(_genesisBlock);
             return _genesisBlock;
         }
-
-        #endregion
     }
 }

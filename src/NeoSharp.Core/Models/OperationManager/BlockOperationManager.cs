@@ -3,7 +3,6 @@ using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Cryptography;
 using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models.OperationManager
 {
@@ -66,15 +65,9 @@ namespace NeoSharp.Core.Models.OperationManager
 
         public bool Verify(Block block)
         {
-            var task = _blockRepository.GetBlockHeaderByHash(block.PreviousBlockHash);
-            task.Wait();
-
-            var prevHeader = task.Result;
-
+            var prevHeader = _blockRepository.GetBlockHeaderByHash(block.PreviousBlockHash);
             if (prevHeader == null)
-            {
                 return false;
-            }
 
             if (prevHeader.Index + 1 != block.Index)
             {

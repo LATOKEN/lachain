@@ -40,7 +40,7 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
             if (blockHeader == null)
                 throw new ArgumentNullException(nameof(blockHeader));
 
-            await _blockRepository.AddBlockHeader(blockHeader);
+            _blockRepository.AddBlockHeader(blockHeader);
         }
 
         public async Task<IEnumerable<BlockHeader>> Persist(params BlockHeader[] blockHeaders)
@@ -74,7 +74,7 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockHeaderProcessing
                     break;
                 }
 
-                await _blockRepository.AddBlockHeader(blockHeader);
+                _blockRepository.AddBlockHeader(blockHeader);
                 _blockHeaderSigner.Sign(blockHeader);
                 _blockchainContext.LastBlockHeader = blockHeader;
             }

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Threading.Tasks;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Storage.State;
-using NeoSharp.Types;
 
 namespace NeoSharp.RocksDB.Repositories
 {
@@ -20,28 +19,33 @@ namespace NeoSharp.RocksDB.Repositories
             _binarySerializer = binarySerializer;
         }
         
-        public async Task<Account> GetAccountByAddress(UInt160 address)
+        public Account GetAccountByAddress(UInt160 address)
         {
-            var raw = await _rocksDbContext.Get(address.BuildStateAccountKey());
+            var raw = _rocksDbContext.Get(address.BuildStateAccountKey());
             return raw == null ? null : _binarySerializer.Deserialize<Account>(raw);
         }
 
-        public async Task<Account> GetAccountByAddressOrDefault(UInt160 address)
+        public Account GetAccountByAddressOrDefault(UInt160 address)
         {
-            var raw = await _rocksDbContext.Get(address.BuildStateAccountKey());
+            var raw = _rocksDbContext.Get(address.BuildStateAccountKey());
             return raw != null ? _binarySerializer.Deserialize<Account>(raw) : new Account(address);
         }
 
-        public async Task DeleteAccountByAddress(UInt160 address)
+        public void ChangeBalance(UInt160 address, UInt160 asset, UInt256 delta)
         {
-            await _rocksDbContext.Delete(address.BuildStateAccountKey());
+            throw new NotImplementedException();
         }
 
-        public async Task<Account> AddAccount(Account account)
+        public void DeleteAccountByAddress(UInt160 address)
+        {
+            _rocksDbContext.Delete(address.BuildStateAccountKey());
+        }
+
+        public Account AddAccount(Account account)
         {
             if (account.Address is null)
                 throw new ArgumentException(nameof(account.Address));
-            await _rocksDbContext.Save(account.Address.BuildStateAccountKey(), _binarySerializer.Serialize(account));
+            _rocksDbContext.Save(account.Address.BuildStateAccountKey(), _binarySerializer.Serialize(account));
             return account;
         }
     }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using NeoSharp.Types;
 using Transaction = NeoSharp.Core.Models.Transaction;
 
 namespace NeoSharp.Core.Consensus

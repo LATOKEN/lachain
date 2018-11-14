@@ -1,7 +1,6 @@
 ﻿using System;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.SmartContract;
-using NeoSharp.Types;
 using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Models

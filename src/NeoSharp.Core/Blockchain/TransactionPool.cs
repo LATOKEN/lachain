@@ -5,7 +5,6 @@ using System.Linq;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {

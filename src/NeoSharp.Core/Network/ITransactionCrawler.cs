@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Network
 {

@@ -6,25 +6,21 @@ using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.Storage.Blockchain;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Handlers
 {
     public class GetBlockHeadersMessageHandler : MessageHandler<GetBlockHeadersMessage>
     {
-        #region Private Fields 
         private const int MaxBlockHeadersCountToReturn = 2000;
+        
         private readonly IBlockRepository _blockRepository;
 
-        private Task<BlockHeader> GetBlockHeader(UInt256 hash) => _blockRepository.GetBlockHeaderByHash(hash);
-        #endregion
+        private Task<BlockHeader> GetBlockHeader(UInt256 hash) => Task.FromResult(_blockRepository.GetBlockHeaderByHash(hash));
 
-        #region Constructor 
         public GetBlockHeadersMessageHandler(IBlockRepository blockModel)
         {
             _blockRepository = blockModel ?? throw new ArgumentNullException(nameof(blockModel));
         }
-        #endregion
 
         #region MessageHandler override methods
         /// <inheritdoc />
@@ -51,10 +47,10 @@ namespace NeoSharp.Core.Messaging.Handlers
 
             do
             {
-                var nextBlock = await _blockRepository.GetNextBlockHeaderByHash(blockHash);
+                var nextBlock = _blockRepository.GetNextBlockHeaderByHash(blockHash);
                 if (nextBlock == null || nextBlock.Hash == hashStop)
                     break;
-                blockHeaders.Add(await _blockRepository.GetBlockHeaderByHash(blockHash));
+                blockHeaders.Add(_blockRepository.GetBlockHeaderByHash(blockHash));
             } while (blockHeaders.Count < MaxBlockHeadersCountToReturn);
 
             if (blockHeaders.Count == 0) return;

@@ -6,12 +6,12 @@ namespace NeoSharp.RocksDB
 {
     public interface IRocksDbContext : IDisposable
     {
-        Task<byte[]> Get(byte[] key);
+        byte[] Get(byte[] key);
 
-        Task<IDictionary<byte[], byte[]>> GetMany(IEnumerable<byte[]> keys);
+        IDictionary<byte[], byte[]> GetMany(IEnumerable<byte[]> keys);
 
-        Task Save(byte[] key, byte[] content);
+        void Save(byte[] key, byte[] content);
 
-        Task Delete(byte[] key);
+        void Delete(byte[] key);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace NeoSharp.Types
+namespace NeoSharp.Core
 {
     public struct BigDecimal
     {
@@ -63,11 +63,11 @@ namespace NeoSharp.Types
         /// Convert to Fixed8 type
         /// </summary>
         /// <returns>Returns a new Fixed8</returns>
-        public Fixed8 ToFixed8()
+        public Money ToFixed8()
         {
             try
             {
-                return new Fixed8((long)ChangeDecimals(8)._value);
+                return new Money((long)ChangeDecimals(8)._value);
             }
             catch (Exception ex)
             {

@@ -4,14 +4,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core.Converters;
+using NeoSharp.Core.Extensions;
 using NeoSharp.Cryptography;
-using NeoSharp.Types.Converters;
-using NeoSharp.Types.ExtensionMethods;
 
-namespace NeoSharp.Types
+namespace NeoSharp.Core
 {
-    [TypeConverter(typeof(UInt256Converter))]
     [BinaryTypeSerializer(typeof(UInt256Converter))]
+    [TypeConverter(typeof(UInt256Converter))]
     public class UInt256 : IEquatable<UInt256>, IComparable<UInt256>
     {
         public static readonly int BufferLength = 32;

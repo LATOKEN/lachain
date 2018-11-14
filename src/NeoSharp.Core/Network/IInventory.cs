@@ -1,6 +1,4 @@
-﻿using NeoSharp.Types;
-
-namespace NeoSharp.Core.Network
+﻿namespace NeoSharp.Core.Network
 {
     //Gubanotorious 4.11.18 - removed IVerifiable for now, tons of coupling / dependencies that needs to be
     //Handled in restructuring. 

@@ -1,6 +1,4 @@
-﻿using NeoSharp.Types;
-
-namespace NeoSharp.Core.Wallet
+﻿namespace NeoSharp.Core.Wallet
 {
     public interface IWalletContract
     {

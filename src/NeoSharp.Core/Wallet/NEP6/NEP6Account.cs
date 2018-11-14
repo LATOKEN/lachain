@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using NeoSharp.Core.Models;
-using NeoSharp.Types;
 using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Wallet.NEP6

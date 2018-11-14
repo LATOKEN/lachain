@@ -1,7 +1,6 @@
 using System;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Cryptography;
-using NeoSharp.Types;
 using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Models
@@ -20,7 +19,7 @@ namespace NeoSharp.Core.Models
 
         [BinaryProperty(3)]
         [JsonProperty("votes")]
-        public Fixed8 Votes;
+        public Money Votes;
 
         public Validator()
         {
@@ -30,7 +29,7 @@ namespace NeoSharp.Core.Models
         {
             PublicKey = publicKey;
             Registered = false;
-            Votes = Fixed8.Zero;
+            Votes = Money.Zero;
         }
     }
 }

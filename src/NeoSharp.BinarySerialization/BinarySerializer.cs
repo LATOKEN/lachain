@@ -28,10 +28,10 @@ namespace NeoSharp.BinarySerialization
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="asms">Assemblies</param>
-        public BinarySerializer(params Assembly[] asms)
+        /// <param name="assemblies">Assemblies</param>
+        public BinarySerializer(Assembly[] assemblies)
         {
-            BinarySerializerCache.RegisterTypes(asms);
+            BinarySerializerCache.RegisterTypes(assemblies);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace NeoSharp.BinarySerialization
             // Search in cache
 
             if (!BinarySerializerCache.Cache.TryGetValue(obj.GetType(), out var cache))
-                throw new NotImplementedException();
+                throw new KeyNotFoundException("The type is not registered");
 
             // Serialize
 

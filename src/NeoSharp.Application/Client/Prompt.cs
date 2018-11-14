@@ -175,7 +175,7 @@ namespace NeoSharp.Application.Client
                 }
             }
             
-            _blockchain.InitializeBlockchain().Wait();
+            _blockchain.InitializeBlockchain();
             _networkManager.StartNetwork();
             _consensusManager.Start();
 

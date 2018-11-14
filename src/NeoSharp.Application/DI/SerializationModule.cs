@@ -13,9 +13,9 @@ namespace NeoSharp.Application.DI
                 .GetAssemblies()
                 .Where(asm => asm.FullName.StartsWith("Neo"))
                 .ToArray();
-
+            
             containerBuilder.RegisterSingleton<IBinarySerializer>(() => new BinarySerializer(assemblies));
-
+            
             containerBuilder.OnBuild += c =>
             {
                 InitializeBinarySerializer(c.Resolve<IBinarySerializer>());
@@ -25,6 +25,7 @@ namespace NeoSharp.Application.DI
         private static void InitializeBinarySerializer(IBinarySerializer binarySerializer)
         {
             BinarySerializer.Initialize(binarySerializer);
+            
         }
     }
 }

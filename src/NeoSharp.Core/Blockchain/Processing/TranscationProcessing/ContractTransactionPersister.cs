@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Storage.State;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
 {
@@ -24,7 +23,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
         
         private async Task _transferFunds(UInt160 asset, UInt160 address, UInt256 value, bool negate)
         {
-            var account = await _accountRepository.GetAccountByAddressOrDefault(address);
+            var account = _accountRepository.GetAccountByAddressOrDefault(address);
             var balance = account.Balances.GetValueOrDefault(asset, UInt256.Zero);
             if (balance < value)
                 throw new ArgumentException(nameof(value));
@@ -33,7 +32,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
             else
                 balance += value;
             account.Balances.Add(asset, balance);
-            await _accountRepository.AddAccount(account);
+            _accountRepository.AddAccount(account);
         }
     }
 }

@@ -4,21 +4,14 @@ using System.Linq;
 using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Storage.Blockchain;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models.OperationManager
 {
     public class TransactionOperationManager : ITransactionOperationsManager
     {
-        #region Private Fields 
-
         private readonly IBinarySerializer _binarySerializer;
         private readonly ITransactionRepository _transactionRepository;
         private readonly IAssetRepository _assetRepository;
-
-        #endregion
-
-        #region Constructor 
 
         public TransactionOperationManager(
             IBinarySerializer binarySerializer,
@@ -29,11 +22,7 @@ namespace NeoSharp.Core.Models.OperationManager
             _transactionRepository = transactionRepository;
             _assetRepository = assetRepository;
         }
-
-        #endregion
-
-        #region ITransactionOperationsManager implementation 
-
+        
         public void Sign(Transaction transaction)
         {
             var data = _binarySerializer.Serialize(transaction);
@@ -94,7 +83,7 @@ namespace NeoSharp.Core.Models.OperationManager
                 return false;
             }
 
-            var resultsDestroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
+            var resultsDestroy = results.Where(p => p.Amount > UInt256.Zero).ToArray();
 
             if (resultsDestroy.Length > 1)
             {
@@ -114,7 +103,7 @@ namespace NeoSharp.Core.Models.OperationManager
                 return false;
             }*/
 
-            var resultsIssue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
+            var resultsIssue = results.Where(p => p.Amount < UInt256.Zero).ToArray();
 
             /*if (resultsIssue.Any(p => p.AssetId != _transactionContext.UtilityTokenHash) && transaction.Type == TransactionType.IssueTransaction)
                 return false;*/
@@ -135,8 +124,6 @@ namespace NeoSharp.Core.Models.OperationManager
 
             return true;
         }
-
-        #endregion
 
         private IEnumerable<TransactionResult> GetTransactionResults(Transaction transaction)
         {

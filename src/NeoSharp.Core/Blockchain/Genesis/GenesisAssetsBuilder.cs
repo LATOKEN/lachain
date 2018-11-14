@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NeoSharp.Core.Cryptography;
+using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Models.OperationManager;
 using NeoSharp.Core.Models.Transactions;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.SmartContract;
-using NeoSharp.Types;
-using NeoSharp.Types.ExtensionMethods;
 
 namespace NeoSharp.Core.Blockchain.Genesis
 {
@@ -38,7 +37,7 @@ namespace NeoSharp.Core.Blockchain.Genesis
                 Nonce = 0,
                 AssetType = AssetType.GoverningToken,
                 Name = "LA",
-                Supply = UInt256.FromDec("100000000000000000000000000"),
+                Supply = UInt256.FromDecimal(100_000_000),
                 Precision = 18,
                 Owner = UInt160.Zero
             };

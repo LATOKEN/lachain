@@ -1,8 +1,8 @@
 ﻿using System;
 using NeoSharp.Application.Attributes;
 using NeoSharp.Application.Client;
+using NeoSharp.Core;
 using NeoSharp.Core.Models;
-using NeoSharp.Types;
 
 namespace NeoSharp.Application.Controllers
 {

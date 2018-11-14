@@ -7,7 +7,6 @@ using NeoSharp.BinarySerialization;
 using NeoSharp.Core.Exceptions;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Messaging;
-using NeoSharp.Types.ExtensionMethods;
 
 namespace NeoSharp.Core.Network.Protocols
 {

@@ -60,7 +60,7 @@ namespace NeoSharp.Core.Messaging.Handlers
                 _transactionSigner.Sign(transaction);
             }
 
-            if (await _transactionRepository.ContainsTransactionByHash(transaction.Hash))
+            if (_transactionRepository.ContainsTransactionByHash(transaction.Hash))
             {
                 _logger.LogInformation($"The transaction \"{transaction.Hash?.ToString(true)}\" exists already on the blockchain.");
                 return;

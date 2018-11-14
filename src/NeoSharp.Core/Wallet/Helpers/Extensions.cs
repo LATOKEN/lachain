@@ -1,6 +1,5 @@
 ﻿using System;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Wallet.Helpers
 {

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.Models;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Blockchain
 {
@@ -39,9 +38,9 @@ namespace NeoSharp.Core.Blockchain
             return _blockPool.ContainsKey(block.Index);
         }
 
-        public bool TryRemove(uint height)
+        public bool TryRemove(uint height, out Block block)
         {
-            return _blockPool.TryRemove(height, out _);
+            return _blockPool.TryRemove(height, out block);
         }
 
         private void PrioritizeBlocks()
@@ -53,7 +52,7 @@ namespace NeoSharp.Core.Blockchain
                 .OrderByDescending(_ => _)
                 .Take(Math.Max(Size - Capacity, 0))
                 .ToArray()
-                .ForEach(h => TryRemove(h));
+                .ForEach(h => TryRemove(h, out _));
         }
 
         public IEnumerator<Block> GetEnumerator()

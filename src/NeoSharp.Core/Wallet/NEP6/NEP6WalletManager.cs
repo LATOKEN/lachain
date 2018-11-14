@@ -12,7 +12,6 @@ using NeoSharp.Core.SmartContract;
 using NeoSharp.Core.Wallet.Exceptions;
 using NeoSharp.Core.Wallet.Helpers;
 using NeoSharp.Cryptography;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Wallet.NEP6
 {

@@ -1,5 +1,4 @@
 ﻿using NeoSharp.BinarySerialization;
-using NeoSharp.Types;
 using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Models
@@ -12,7 +11,7 @@ namespace NeoSharp.Core.Models
         
         [BinaryProperty(1)]
         [JsonProperty("hash")]
-        public UInt256 Hash;
+        public UInt160 Hash;
         
         [BinaryProperty(2)]
         [JsonProperty("type")]

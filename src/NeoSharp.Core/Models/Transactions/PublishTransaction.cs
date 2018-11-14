@@ -5,7 +5,6 @@ using NeoSharp.BinarySerialization.Extensions;
 using NeoSharp.Core.Converters;
 using NeoSharp.Core.Extensions;
 using NeoSharp.Core.SmartContract;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models.Transactions
 {

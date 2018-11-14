@@ -36,7 +36,7 @@ namespace NeoSharp.Core.Blockchain.Processing.TranscationProcessing
                 Description = transaction.Description
             };
 
-            await _contractRepository.AddContract(contract);
+            _contractRepository.AddContract(contract);
         }
     }
 }

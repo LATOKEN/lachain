@@ -1,3 +1,4 @@
+using System;
 using NeoSharp.Application.DI;
 using NeoSharp.Core;
 using NeoSharp.Core.DI;
@@ -9,6 +10,15 @@ namespace NeoSharp.Application
     {
         public static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (sender, exception) =>
+            {
+                Console.Error.WriteLine(" ~ Unhandled exception ~");
+                Console.Error.WriteLine("-------------------------------");
+                Console.Error.WriteLine(exception);
+                Console.Error.WriteLine("-------------------------------");
+                Environment.Exit(1);
+            };
+            
             var containerBuilder = new SimpleInjectorContainerBuilder();
 
             containerBuilder.RegisterModule<CoreModule>();

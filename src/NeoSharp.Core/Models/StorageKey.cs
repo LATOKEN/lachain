@@ -1,6 +1,5 @@
 using System;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Types;
 using Newtonsoft.Json;
 
 namespace NeoSharp.Core.Models

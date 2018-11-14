@@ -4,22 +4,22 @@ using System.Globalization;
 using System.IO;
 using NeoSharp.BinarySerialization;
 
-namespace NeoSharp.Types.Converters
+namespace NeoSharp.Core.Converters
 {
-    public class Fixed8TypeConverter : TypeConverter, IBinaryCustomSerializable
+    public class MoneyTypeConverter : TypeConverter, IBinaryCustomSerializable
     {
         public static readonly int FixedLength = 8;
 
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
-            return destinationType == typeof(Fixed8) || destinationType == typeof(long) || destinationType == typeof(byte[]) || destinationType == typeof(string);
+            return destinationType == typeof(Money) || destinationType == typeof(long) || destinationType == typeof(byte[]) || destinationType == typeof(string);
         }
 
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (value is Fixed8 val)
+            if (value is Money val)
             {
-                if (destinationType == typeof(Fixed8)) return value;
+                if (destinationType == typeof(Money)) return value;
                 if (destinationType == typeof(long)) return val.Value;
                 if (destinationType == typeof(byte[])) return BitConverter.GetBytes(val.Value);
                 if (destinationType == typeof(string)) return val.ToString();
@@ -35,24 +35,24 @@ namespace NeoSharp.Types.Converters
 
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
-            return sourceType == typeof(Fixed8) || sourceType == typeof(long) || sourceType == typeof(byte[]) || sourceType == typeof(string);
+            return sourceType == typeof(Money) || sourceType == typeof(long) || sourceType == typeof(byte[]) || sourceType == typeof(string);
         }
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
-            if (value is Fixed8)
+            if (value is Money)
             {
                 return value;
             }
             if (value is byte[] bytes && bytes.Length == FixedLength)
             {
-                return new Fixed8(BitConverter.ToInt64(bytes, 0));
+                return new Money(BitConverter.ToInt64(bytes, 0));
             }
             if (value is long l)
             {
-                return new Fixed8(l);
+                return new Money(l);
             }
-            if (value is string str && Fixed8.TryParse(str, out var res))
+            if (value is string str && Money.TryParse(str, out var res))
             {
                 return res;
             }
@@ -64,12 +64,12 @@ namespace NeoSharp.Types.Converters
         {
             var val = reader.ReadInt64();
 
-            return new Fixed8(val);
+            return new Money(val);
         }
 
         public int Serialize(IBinarySerializer binarySerializer, BinaryWriter writer, object value, BinarySerializerSettings settings = null)
         {
-            if (value is Fixed8 f8)
+            if (value is Money f8)
             {
                 writer.Write(f8.Value);
                 return FixedLength;

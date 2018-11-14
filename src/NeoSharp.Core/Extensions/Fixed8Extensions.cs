@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Extensions
 {
@@ -12,10 +11,10 @@ namespace NeoSharp.Core.Extensions
         /// </summary>
         /// <param name="source">Source</param>
         /// <returns>Sum Result</returns>
-        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
+        public static Money Sum(this IEnumerable<Money> source)
         {
             var sum = source.Sum(item => item.Value);
-            return new Fixed8(sum);
+            return new Money(sum);
         }
 
         /// <summary>
@@ -24,7 +23,7 @@ namespace NeoSharp.Core.Extensions
         /// <param name="source">Source</param>
         /// <param name="selector">Selector</param>
         /// <returns>Sum Result</returns>
-        public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
+        public static Money Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Money> selector)
         {
             return source.Select(selector).Sum();
         }
@@ -34,10 +33,10 @@ namespace NeoSharp.Core.Extensions
         /// </summary>
         /// <param name="source">Source</param>
         /// <returns>Max value</returns>
-        public static Fixed8 Max(this IEnumerable<Fixed8> source)
+        public static Money Max(this IEnumerable<Money> source)
         {
             var first = true;
-            var currentFixed8 = new Fixed8();
+            var currentFixed8 = Money.Zero;
 
             foreach (var other in source)
             {
@@ -54,10 +53,10 @@ namespace NeoSharp.Core.Extensions
         /// </summary>
         /// <param name="source">Source</param>
         /// <returns>Min value</returns>
-        public static Fixed8 Min(this IEnumerable<Fixed8> source)
+        public static Money Min(this IEnumerable<Money> source)
         {
             var first = true;
-            var currentFixed8 = new Fixed8();
+            var currentFixed8 = Money.Zero;
 
             foreach (var other in source)
             {

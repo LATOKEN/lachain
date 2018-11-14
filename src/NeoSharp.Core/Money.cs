@@ -2,94 +2,66 @@
 using System.ComponentModel;
 using System.Globalization;
 using NeoSharp.BinarySerialization;
-using NeoSharp.Types.Converters;
+using NeoSharp.Core.Converters;
 
-namespace NeoSharp.Types
+namespace NeoSharp.Core
 {
     /// <summary>
     /// Accurate to 10^-8 64-bit fixed-point numbers minimize rounding errors.
     /// By controlling the accuracy of the multiplier, rounding errors can be completely eliminated.
     /// </summary>
-    [TypeConverter(typeof(Fixed8TypeConverter))]
-    [BinaryTypeSerializer(typeof(Fixed8TypeConverter))]
-    [Obsolete]
-    public struct Fixed8 : IComparable<Fixed8>, IEquatable<Fixed8>, IFormattable
+    [BinaryTypeSerializer(typeof(MoneyTypeConverter))]
+    [TypeConverter(typeof(MoneyTypeConverter))]
+    public class Money : IComparable<Money>, IEquatable<Money>, IFormattable
     {
-        #region Private Fields 
-
         private const long D = 100_000_000;
         private const ulong QUO = (1ul << 63) / (D >> 1);
         private const ulong REM = ((1ul << 63) % (D >> 1)) << 1;
 
-        #endregion
-
-        #region Public Constants
-
         public const int Size = sizeof(long);
 
-        public static readonly Fixed8 MaxValue = new Fixed8(long.MaxValue);
-
-        public static readonly Fixed8 MinValue = new Fixed8(long.MinValue);
-
-        public static readonly Fixed8 One = new Fixed8(D);
-
-        public static readonly Fixed8 Satoshi = new Fixed8(1);
-
-        public static readonly Fixed8 Zero = default(Fixed8);
-
-        #endregion
-
-        #region Public Properties
+        public static readonly Money MaxValue = new Money(long.MaxValue);
+        public static readonly Money MinValue = new Money(long.MinValue);
+        public static readonly Money One = new Money(D);
+        public static readonly Money Satoshi = new Money(1);
+        public static readonly Money Zero = default(Money);
 
         public readonly long Value;
 
-        #endregion
-
-        #region Constructor 
-
+        public Money(byte[] bytes)
+        {
+            if (bytes.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(bytes));
+            throw new NotImplementedException();            
+        }
+        
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="value">Value</param>
-        public Fixed8(long value)
+        public Money(long value)
         {
             Value = value;
         }
-
-        #endregion
-
-        #region IComparable Implementation 
-
-        public int CompareTo(Fixed8 other)
+        
+        public int CompareTo(Money other)
         {
             return Value.CompareTo(other.Value);
         }
 
-        #endregion
-
-        #region IEquatable Implementation 
-
-        public bool Equals(Fixed8 other)
+        public bool Equals(Money other)
         {
             return Value.Equals(other.Value);
         }
-
-        #endregion
-
-        #region IFormatable Implementation 
 
         public string ToString(string format, IFormatProvider formatProvider)
         {
             return ((decimal)this).ToString(format, formatProvider);
         }
 
-        #endregion
-
-        #region Override Methods
-
         public override bool Equals(object obj)
         {
-            if (!(obj is Fixed8 value)) return false;
+            if (!(obj is Money value)) return false;
 
             return Equals(value);
         }
@@ -104,25 +76,26 @@ namespace NeoSharp.Types
             return ((decimal)this).ToString(CultureInfo.InvariantCulture);
         }
 
-        #endregion
-
-        #region Public Methods
-
         public string ToString(string format)
         {
             return ((decimal)this).ToString(format);
         }
 
-        public static Fixed8 Parse(string s)
+        public byte[] ToArray()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Money Parse(string s)
         {
             return FromDecimal(decimal.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
-        public static bool TryParse(string s, out Fixed8 result)
+        public static bool TryParse(string s, out Money result)
         {
             if (!decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal d))
             {
-                result = default(Fixed8);
+                result = default(Money);
                 return false;
             }
 
@@ -130,31 +103,31 @@ namespace NeoSharp.Types
 
             if (d < long.MinValue || d > long.MaxValue)
             {
-                result = default(Fixed8);
+                result = default(Money);
                 return false;
             }
 
-            result = new Fixed8((long)d);
+            result = new Money((long)d);
             return true;
         }
 
-        public Fixed8 Abs()
+        public Money Abs()
         {
             if (Value >= 0) return this;
-            return new Fixed8(-Value);
+            return new Money(-Value);
         }
 
-        public Fixed8 Ceiling()
+        public Money Ceiling()
         {
             var remainder = Value % D;
 
             if (remainder == 0) return this;
-            if (remainder > 0) return new Fixed8(Value - remainder + D);
+            if (remainder > 0) return new Money(Value - remainder + D);
 
-            return new Fixed8(Value - remainder);
+            return new Money(Value - remainder);
         }
 
-        public static Fixed8 FromDecimal(decimal value)
+        public static Money FromDecimal(decimal value)
         {
             value *= D;
 
@@ -163,50 +136,50 @@ namespace NeoSharp.Types
                 throw new OverflowException();
             }
 
-            return new Fixed8((long)value);
+            return new Money((long)value);
         }
 
-        public static explicit operator decimal(Fixed8 value)
+        public static explicit operator decimal(Money value)
         {
             return value.Value / (decimal)D;
         }
 
-        public static explicit operator long(Fixed8 value)
+        public static explicit operator long(Money value)
         {
             return value.Value / D;
         }
 
-        public static bool operator ==(Fixed8 x, Fixed8 y)
+        public static bool operator ==(Money x, Money y)
         {
             return x.Equals(y);
         }
 
-        public static bool operator !=(Fixed8 x, Fixed8 y)
+        public static bool operator !=(Money x, Money y)
         {
             return !x.Equals(y);
         }
 
-        public static bool operator >(Fixed8 x, Fixed8 y)
+        public static bool operator >(Money x, Money y)
         {
             return x.CompareTo(y) > 0;
         }
 
-        public static bool operator <(Fixed8 x, Fixed8 y)
+        public static bool operator <(Money x, Money y)
         {
             return x.CompareTo(y) < 0;
         }
 
-        public static bool operator >=(Fixed8 x, Fixed8 y)
+        public static bool operator >=(Money x, Money y)
         {
             return x.CompareTo(y) >= 0;
         }
 
-        public static bool operator <=(Fixed8 x, Fixed8 y)
+        public static bool operator <=(Money x, Money y)
         {
             return x.CompareTo(y) <= 0;
         }
 
-        public static Fixed8 operator *(Fixed8 x, Fixed8 y)
+        public static Money operator *(Money x, Money y)
         {
             var sign = Math.Sign(x.Value) * Math.Sign(y.Value);
             var ux = (ulong)Math.Abs(x.Value);
@@ -233,34 +206,32 @@ namespace NeoSharp.Types
 
             var r = rh * QUO + rd / D;
 
-            return new Fixed8((long)r * sign);
+            return new Money((long)r * sign);
         }
 
-        public static Fixed8 operator *(Fixed8 x, long y)
+        public static Money operator *(Money x, long y)
         {
-            return new Fixed8(checked(x.Value * y));
+            return new Money(checked(x.Value * y));
         }
 
-        public static Fixed8 operator /(Fixed8 x, long y)
+        public static Money operator /(Money x, long y)
         {
-            return new Fixed8(x.Value / y);
+            return new Money(x.Value / y);
         }
 
-        public static Fixed8 operator +(Fixed8 x, Fixed8 y)
+        public static Money operator +(Money x, Money y)
         {
-            return new Fixed8(checked(x.Value + y.Value));
+            return new Money(checked(x.Value + y.Value));
         }
 
-        public static Fixed8 operator -(Fixed8 x, Fixed8 y)
+        public static Money operator -(Money x, Money y)
         {
-            return new Fixed8(checked(x.Value - y.Value));
+            return new Money(checked(x.Value - y.Value));
         }
 
-        public static Fixed8 operator -(Fixed8 value)
+        public static Money operator -(Money value)
         {
-            return new Fixed8(-value.Value);
+            return new Money(-value.Value);
         }
-
-        #endregion
     }
 }

@@ -34,11 +34,11 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
         
         public async Task Persist(params Block[] blocks)
         {
-            var height = await _globalRepository.GetTotalBlockHeight();
+            var height = _globalRepository.GetTotalBlockHeight();
 
             foreach (var block in blocks)
             {
-                var blockHeader = await _blockRepository.GetBlockHeaderByHash(block.Hash);
+                var blockHeader = _blockRepository.GetBlockHeaderByHash(block.Hash);
                 if (blockHeader != null && blockHeader.Type == HeaderType.Extended)
                     continue;
 
@@ -52,7 +52,7 @@ namespace NeoSharp.Core.Blockchain.Processing.BlockProcessing
 
                 if (height + 1 == block.Index)
                 {
-                    await _globalRepository.SetTotalBlockHeight(block.Index);
+                    _globalRepository.SetTotalBlockHeight(block.Index);
                     height = block.Index;
                 }
 

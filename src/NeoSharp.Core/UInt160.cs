@@ -3,11 +3,11 @@ using System.Collections;
 using System.ComponentModel;
 using System.Linq;
 using NeoSharp.BinarySerialization;
+using NeoSharp.Core.Converters;
+using NeoSharp.Core.Extensions;
 using NeoSharp.Cryptography;
-using NeoSharp.Types.Converters;
-using NeoSharp.Types.ExtensionMethods;
 
-namespace NeoSharp.Types
+namespace NeoSharp.Core
 {
     [TypeConverter(typeof(UInt160Converter))]
     [BinaryTypeSerializer(typeof(UInt160Converter))]

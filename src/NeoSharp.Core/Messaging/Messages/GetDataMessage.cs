@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NeoSharp.Core.Network;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Messages
 {

@@ -8,7 +8,6 @@ using NeoSharp.Core.Messaging.Messages;
 using NeoSharp.Core.Models;
 using NeoSharp.Core.Network;
 using NeoSharp.Core.Storage.Blockchain;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Messaging.Handlers
 {
@@ -90,7 +89,7 @@ namespace NeoSharp.Core.Messaging.Handlers
         #region Private Methods 
         private async Task SendTransactions(IReadOnlyCollection<UInt256> transactionHashes, IPeer peer)
         {
-            var transactions = await _transactionRepository.GetTransactionsByHashes(transactionHashes);
+            var transactions = _transactionRepository.GetTransactionsByHashes(transactionHashes);
 
             // TODO #378: The more efficient operation would be to send many transactions per one message
             // but it breaks backward compatibility
@@ -99,7 +98,7 @@ namespace NeoSharp.Core.Messaging.Handlers
 
         private async Task SendBlocks(IReadOnlyCollection<UInt256> blockHashes, IPeer peer)
         {
-            var blocks = (await _blockRepository.GetBlockHeaderByHashes(blockHashes)).ToList();
+            var blocks = _blockRepository.GetBlockHeaderByHashes(blockHashes).ToList();
 
             if (!blocks.Any()) return;
 

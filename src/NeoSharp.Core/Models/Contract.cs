@@ -2,7 +2,6 @@
 using NeoSharp.Core.SmartContract;
 using Newtonsoft.Json;
 using System;
-using NeoSharp.Types;
 
 namespace NeoSharp.Core.Models
 {
