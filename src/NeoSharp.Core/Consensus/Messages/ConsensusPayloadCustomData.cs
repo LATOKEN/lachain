@@ -7,7 +7,8 @@ namespace NeoSharp.Core.Consensus.Messages
 {
     public enum ConsensusMessageType : byte
     {
-        [ReflectionCache(typeof(ChangeView))] ChangeView = 0x00,
+        [ReflectionCache(typeof(ChangeView))]
+        ChangeView = 0x00,
 
         [ReflectionCache(typeof(PrepareRequest))]
         PrepareRequest = 0x20,

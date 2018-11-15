@@ -1,0 +1,9 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+import "default.proto";
+
+message Balance {
+    UInt160 address = 1;
+    UInt160 asset = 2;
+    Fixed256 amount = 3;
+}

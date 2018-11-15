@@ -1,0 +1,13 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+import "default.proto";
+
+enum AccountState {
+    ACCOUNT_STATE_ACTIVE = 0;
+    ACCOUNT_STATE_FROZEN = 1;
+}
+
+message Account {
+    UInt160 address = 1;
+    AccountState state = 2;
+}

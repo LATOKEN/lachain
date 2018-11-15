@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using RocksDbSharp;
 
-namespace NeoSharp.RocksDB
+namespace Phorkus.RocksDB
 {
     public class RocksDbContext : IRocksDbContext
     {
@@ -33,9 +32,10 @@ namespace NeoSharp.RocksDB
         {
             _rocksDb.Put(key, content);
         }
-
+        
         public void Save(IEnumerable<byte> key, IEnumerable<byte> content)
         {
+            /* TODO: "this conversion might be optimized via unsafe mode I think" */
             _rocksDb.Put(key.ToArray(), content.ToArray());
         }
 

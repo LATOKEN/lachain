@@ -1,0 +1,14 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+import "default.proto";
+
+enum ValidatorState {
+    VALIDATOR_STATE_WAITING = 0;
+    VALIDATOR_STATE_ACTIVE = 1;
+}
+
+message Validator {
+    PublicKey public_key = 1;
+    ValidatorState state = 2;
+    Fixed256 votes = 3;
+}

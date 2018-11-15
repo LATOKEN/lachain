@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Core", "Phorkus.Core\Phorkus.Core.csproj", "{46618B2B-BB6B-40F8-9879-E64200B7089C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Console", "Phorkus.Console\Phorkus.Console.csproj", "{595506B0-14BF-4568-9BEF-E83E8C8FE2F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.RocksDB", "Phorkus.RocksDB\Phorkus.RocksDB.csproj", "{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{46618B2B-BB6B-40F8-9879-E64200B7089C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46618B2B-BB6B-40F8-9879-E64200B7089C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46618B2B-BB6B-40F8-9879-E64200B7089C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46618B2B-BB6B-40F8-9879-E64200B7089C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{595506B0-14BF-4568-9BEF-E83E8C8FE2F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{595506B0-14BF-4568-9BEF-E83E8C8FE2F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{595506B0-14BF-4568-9BEF-E83E8C8FE2F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{595506B0-14BF-4568-9BEF-E83E8C8FE2F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

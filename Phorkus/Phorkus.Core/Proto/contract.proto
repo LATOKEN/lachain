@@ -1,0 +1,22 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+import "default.proto";
+
+enum ParamType {
+    PARAM_TYPE_SIGNATURE = 0;
+    PARAM_TYPE_BOOLEAN = 1;
+    PARAM_TYPE_INTEGER = 2;
+    PARAM_TYPE_HASH160 = 3;
+    PARAM_TYPE_HASH256 = 4;
+    PARAM_TYPE_BYTE_ARRAY = 5;
+    PARAM_TYPE_PUBLIC_KEY = 6;
+    PARAM_TYPE_STRING = 7;
+    PARAM_TYPE_ARRAY = 8;
+    PARAM_TYPE_INTEROP_INTERFACE = 9;
+    PARAM_TYPE_VOID = 10;
+}
+
+message Contract {
+    UInt160 hash = 1;
+    bytes script = 2;
+}

@@ -1,0 +1,28 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+
+import "transaction.proto";
+import "default.proto";
+import "multisig.proto";
+
+enum HeaderType {
+    HEADER_TYPE_HEADER = 0;
+    HEADER_TYPE_EXTENDED = 1;
+}
+
+message BlockHeader {
+    uint32 version = 1;
+    UInt256 prev_block_hash = 2;
+    UInt256 merkle_root = 3;
+    uint64 timestamp = 4;
+    uint64 index = 5;
+    HeaderType type = 6;
+    uint64 nonce = 7;
+    repeated UInt256 transaction_hashes = 8;
+    MultiSig multisig = 9;
+}
+
+message Block {
+    BlockHeader header = 1;
+    repeated Transaction transactions = 2;
+}

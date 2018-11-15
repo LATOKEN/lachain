@@ -19,6 +19,7 @@ namespace NeoSharp.Cryptography
         /// base58 Alphabet
         /// </summary>
         private const string Alphabet58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
         /// <summary>
         /// Base
         /// </summary>

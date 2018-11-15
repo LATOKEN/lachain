@@ -1,0 +1,35 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+
+import "default.proto";
+import "transaction.proto";
+
+message ConsensusChangeView {
+    uint32 new_view_number = 1;
+}
+
+message ConsensusPrepareRequest {
+    uint64 nonce = 1;
+    repeated UInt256 transaction_hashes = 2;
+    Transaction miner_transaction = 3;
+    Signature signature = 4;
+}
+
+message ConsensusPrepareResponse {
+    Signature signature = 1;
+}
+
+message ConsensusPayloadCustomData {
+    enum ConsensusMessageType {
+        CONSENSUS_MESSAGE_TYPE_CHANGE_VIEW = 0x00;
+        CONSENSUS_MESSAGE_TYPE_PREPARE_REQUEST = 0x20;
+        CONSENSUS_MESSAGE_TYPE_PREPARE_RESPONSE = 0x21;
+    }
+    ConsensusMessageType type = 1;
+    uint32 view_number = 2;
+    oneof message {
+        ConsensusChangeView change_view = 3;
+        ConsensusPrepareRequest prepare_request = 4;
+        ConsensusPrepareResponse prepare_response = 5;
+    }
+}

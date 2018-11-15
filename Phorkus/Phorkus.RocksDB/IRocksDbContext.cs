@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace NeoSharp.RocksDB
+namespace Phorkus.RocksDB
 {
     public interface IRocksDbContext : IDisposable
     {
@@ -11,7 +10,7 @@ namespace NeoSharp.RocksDB
         IDictionary<byte[], byte[]> GetMany(IEnumerable<byte[]> keys);
 
         void Save(byte[] key, byte[] content);
-        
+
         void Save(IEnumerable<byte> key, IEnumerable<byte> content);
         
         void Delete(byte[] key);

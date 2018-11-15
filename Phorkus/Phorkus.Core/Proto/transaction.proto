@@ -1,0 +1,63 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+import "asset.proto";
+import "default.proto";
+
+enum TransactionType {
+    TRANSACTION_TYPE_MINER = 0;
+    TRANSACTION_TYPE_REGISTER = 1;
+    TRANSACTION_TYPE_ISSUE = 2;
+    TRANSACTION_TYPE_CONTRACT = 3;
+    TRANSACTION_TYPE_PUBLISH = 4;
+    TRANSACTION_TYPE_DEPOSIT = 5;
+    TRANSACTION_TYPE_WITHDRAW = 6;
+}
+
+enum TransactionFlag {
+    TRANSACTION_FLAG_NONE = 0x0000;
+}
+
+message ContractTransaction {
+    UInt160 asset = 1;
+    UInt160 to = 2;
+    Fixed256 value = 3;
+    bytes data = 4;
+}
+
+message IssueTransaction {
+    UInt160 asset = 1;
+    bytes supply = 2;
+}
+
+message PublishTransaction {
+    UInt160 hash = 1;
+    bytes script = 2;
+}
+
+message RegisterTransaction {
+    AssetType type = 1;
+    string name = 2;
+    Fixed256 supply = 3;
+    uint32 decimals = 4;
+    UInt160 owner = 5;
+}
+
+message MinerTransaction {
+    UInt160 miner = 1;
+}
+
+message Transaction {
+    UInt160 hash = 1;
+    TransactionType type = 2;
+    uint32 version = 3;
+    uint64 flags = 5;
+    UInt160 from = 6;
+    uint64 nonce = 7;
+    oneof data {
+        ContractTransaction contract = 8;
+        IssueTransaction issue = 9;
+        PublishTransaction publish = 10;
+        RegisterTransaction register = 11;
+        MinerTransaction miner = 12;
+    }
+}

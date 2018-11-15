@@ -3,61 +3,28 @@ using System.Linq;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
 
-namespace NeoSharp.Cryptography
+namespace Phorkus.Core.Cryptography
 {
-    public class BouncyCastleCrypto : Crypto
+    public class BouncyCastle : ICrypto
     {
         private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256r1");
-        private static readonly ECDomainParameters Domain = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
-        
-        /// <inheritdoc />
-        public override byte[] Sha256(byte[] message, int offset, int count)
-        {
-            var hash = new Sha256Digest();
-            hash.BlockUpdate(message, offset, count);
-            
-            var result = new byte[32];
-            hash.DoFinal(result, 0);
 
-            return result;
-        }
+        private static readonly ECDomainParameters Domain
+            = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
 
-        /// <inheritdoc />
-        public override byte[] RIPEMD160(byte[] message, int offset, int count)
-        {
-            var hash = new RipeMD160Digest();
-            hash.BlockUpdate(message, offset, count);
-
-            var result = new byte[20];
-            hash.DoFinal(result, 0);
-
-            return result;
-        }
-
-        /// <inheritdoc />
-        public override byte[] Murmur3(byte[] message, uint seed)
-        {
-            using (var murmur = new Murmur3(seed))
-            {
-                return murmur.ComputeHash(message);
-            }
-        }
-
-        /// <inheritdoc />
-        public override bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
+        public bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
         {
             var fullpubkey = DecodePublicKey(pubkey, false, out _, out _);
 
             var point = Curve.Curve.DecodePoint(fullpubkey);
             var keyParameters = new ECPublicKeyParameters(point, Domain);
-            
+
             var signer = SignerUtilities.GetSigner("SHA256withECDSA");
             signer.Init(false, keyParameters);
             signer.BlockUpdate(message, 0, message.Length);
@@ -65,22 +32,21 @@ namespace NeoSharp.Cryptography
             if (signature.Length == 64)
             {
                 signature = new DerSequence(
-                new DerInteger(new BigInteger(1, signature.Take(32).ToArray())),
-                new DerInteger(new BigInteger(1, signature.Skip(32).ToArray())))
-                .GetDerEncoded();
+                        new DerInteger(new BigInteger(1, signature.Take(32).ToArray())),
+                        new DerInteger(new BigInteger(1, signature.Skip(32).ToArray())))
+                    .GetDerEncoded();
             }
 
             return signer.VerifySignature(signature);
         }
 
-        /// <inheritdoc />
-        public override byte[] Sign(byte[] message, byte[] prikey)
+        public byte[] Sign(byte[] message, byte[] prikey)
         {
             var priv = new ECPrivateKeyParameters("ECDSA", (new BigInteger(1, prikey)), Domain);
             var signer = new ECDsaSigner();
             var fullsign = new byte[64];
 
-            message = Sha256(message);
+            message = message.Sha256();
             signer.Init(true, priv);
             var signature = signer.GenerateSignature(message);
             var r = signature[0].ToByteArray();
@@ -90,49 +56,41 @@ namespace NeoSharp.Cryptography
 
             // Buid Signature ensuring Neo expected format. 32byte r + 32byte s.
             if (rLen < 32)
-            {
                 Array.Copy(r, 0, fullsign, 32 - rLen, rLen);
-            }
             else
-            {
                 Array.Copy(r, rLen - 32, fullsign, 0, 32);
-            }
             if (sLen < 32)
-            {
                 Array.Copy(s, 0, fullsign, 64 - sLen, sLen);
-            }
             else
-            {
                 Array.Copy(s, sLen - 32, fullsign, 32, 32);
-            }
 
             return fullsign;
         }
-        
-        public override byte[] RecoverSignature(byte[] signature, byte[] message, bool check)
+
+        public byte[] RecoverSignature(byte[] signature, byte[] message, bool check)
         {
             var r = new BigInteger(signature, 00, 32);
             var s = new BigInteger(signature, 32, 32);
 
-            var hash = Sha256(message);
-            
+            var hash = message.Sha256();
+
             var curve = Curve.Curve as FpCurve ?? throw new ArgumentException("Unable to cast Curve to FpCurve");
             var order = Curve.N;
 
             var x = r;
             /*if ((recid & 2) != 0)
                 x = x.Add(order);*/
-            
+
             if (x.CompareTo(curve.Q) >= 0)
                 throw new ArgumentException("X too large");
 
             var xEnc = X9IntegerConverter.IntegerToBytes(x, X9IntegerConverter.GetByteLength(curve));
             var compEncoding = new byte[xEnc.Length + 1];
-            
-            compEncoding[0] = (byte)(0x02 /*+ (recid & 1)*/);
+
+            compEncoding[0] = (byte) (0x02 /*+ (recid & 1)*/);
             xEnc.CopyTo(compEncoding, 1);
             var R = curve.DecodePoint(compEncoding);
-            
+
             if (check)
             {
                 var O = R.Multiply(order);
@@ -149,7 +107,7 @@ namespace NeoSharp.Cryptography
             var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
             return point.GetEncoded(true);
         }
-        
+
         private static BigInteger CalculateE(BigInteger n, byte[] message)
         {
             var messageBitLength = message.Length * 8;
@@ -159,10 +117,10 @@ namespace NeoSharp.Cryptography
             return trunc;
         }
 
-        /// <inheritdoc />
-        public override byte[] ComputePublicKey(byte[] privateKey, bool compress = false)
+        public byte[] ComputePublicKey(byte[] privateKey, bool compress = false)
         {
-            if (privateKey == null) throw new ArgumentException(nameof(privateKey));
+            if (privateKey == null)
+                throw new ArgumentException(nameof(privateKey));
 
             var q = Domain.G.Multiply(new BigInteger(1, privateKey));
             var publicParams = new ECPublicKeyParameters(q, Domain);
@@ -170,15 +128,14 @@ namespace NeoSharp.Cryptography
             return publicParams.Q.GetEncoded(compress);
         }
 
-        /// <inheritdoc />
-        public override byte[] DecodePublicKey(byte[] pubkey, bool compress, out System.Numerics.BigInteger x, out System.Numerics.BigInteger y)
+        public byte[] DecodePublicKey(byte[] pubkey, bool compress, out System.Numerics.BigInteger x,
+            out System.Numerics.BigInteger y)
         {
             if (pubkey == null || pubkey.Length != 33 && pubkey.Length != 64 && pubkey.Length != 65)
-            {
                 throw new ArgumentException(nameof(pubkey));
-            }
 
-            if (pubkey.Length == 33 && pubkey[0] != 0x02 && pubkey[0] != 0x03) throw new ArgumentException(nameof(pubkey));
+            if (pubkey.Length == 33 && pubkey[0] != 0x02 && pubkey[0] != 0x03)
+                throw new ArgumentException(nameof(pubkey));
             if (pubkey.Length == 65 && pubkey[0] != 0x04) throw new ArgumentException(nameof(pubkey));
 
             byte[] fullpubkey;
@@ -204,8 +161,7 @@ namespace NeoSharp.Cryptography
             return ret.GetEncoded(compress);
         }
 
-        /// <inheritdoc />
-        public override byte[] AesEncrypt(byte[] data, byte[] key)
+        public byte[] AesEncrypt(byte[] data, byte[] key)
         {
             if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
             if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
@@ -216,8 +172,7 @@ namespace NeoSharp.Cryptography
             return cipher.DoFinal(data);
         }
 
-        /// <inheritdoc />
-        public override byte[] AesDecrypt(byte[] data, byte[] key)
+        public byte[] AesDecrypt(byte[] data, byte[] key)
         {
             if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
             if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
@@ -228,8 +183,7 @@ namespace NeoSharp.Cryptography
             return cipher.DoFinal(data);
         }
 
-        /// <inheritdoc />
-        public override byte[] AesEncrypt(byte[] data, byte[] key, byte[] iv)
+        public byte[] AesEncrypt(byte[] data, byte[] key, byte[] iv)
         {
             if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
             if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
@@ -241,8 +195,7 @@ namespace NeoSharp.Cryptography
             return cipher.DoFinal(data);
         }
 
-        /// <inheritdoc />
-        public override byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv)
+        public byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv)
         {
             if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
             if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
@@ -254,8 +207,7 @@ namespace NeoSharp.Cryptography
             return cipher.DoFinal(data);
         }
 
-        /// <inheritdoc />
-        public override byte[] SCrypt(byte[] P, byte[] S, int N, int r, int p, int dkLen)
+        public byte[] SCrypt(byte[] P, byte[] S, int N, int r, int p, int dkLen)
         {
             if (P == null) throw new ArgumentException(nameof(P));
             if (S == null) throw new ArgumentException(nameof(S));
@@ -267,18 +219,16 @@ namespace NeoSharp.Cryptography
             return Org.BouncyCastle.Crypto.Generators.SCrypt.Generate(P, S, N, r, p, dkLen);
         }
 
-        /// <inheritdoc />
-        public override byte[] GenerateRandomBytes(int length)
+        public byte[] GenerateRandomBytes(int length)
         {
-            if (length < 1) throw new ArgumentException(nameof(length));
+            if (length < 1)
+                throw new ArgumentException(nameof(length));
 
-            var privateKey = new byte[length]; 
-            using (System.Security.Cryptography.RandomNumberGenerator rng = System.Security.Cryptography.RandomNumberGenerator.Create()) 
-            { 
-                rng.GetBytes(privateKey); 
-            } 
- 
-            return privateKey; 
+            var privateKey = new byte[length];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+                rng.GetBytes(privateKey);
+
+            return privateKey;
         }
     }
 }

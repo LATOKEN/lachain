@@ -1,0 +1,22 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+
+message UInt160 {
+    bytes buffer = 1;
+}
+
+message UInt256 {
+    bytes buffer = 1;
+}
+
+message PublicKey {
+    bytes buffer = 1;
+}
+
+message Fixed256 {
+    bytes buffer = 1;
+}
+
+message Signature {
+    bytes buffer = 1;
+}

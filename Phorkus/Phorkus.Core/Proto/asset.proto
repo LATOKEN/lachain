@@ -1,0 +1,19 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+import "default.proto";
+
+enum AssetType {
+    ASSET_TYPE_GOVERNING = 0;
+    ASSET_TYPE_CUSTOM = 1;
+    ASSET_TYPE_PLATFORM = 2;
+}
+
+message Asset {
+    UInt160 hash = 1;
+    uint32 version = 2;
+    AssetType type = 3;
+    string name = 4;
+    Fixed256 amount = 5;
+    uint32 decimals = 6;
+    UInt160 owner = 7;
+}
