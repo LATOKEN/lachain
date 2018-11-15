@@ -1,0 +1,10 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Network.Proto";
+
+enum MessageType {
+    MESSAGE_TYPE_UNKNOWN = 0;
+}
+
+message Message {
+    MessageType type = 1;
+}

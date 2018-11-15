@@ -88,7 +88,7 @@ namespace NeoSharp.Core.Network.Protocols
                 await stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
             }
         }
-
+        
         public override async Task<Message> ReceiveMessageAsync(Stream stream, CancellationToken cancellationToken)
         {
             var buffer = await FillBufferAsync(stream, 6, cancellationToken);

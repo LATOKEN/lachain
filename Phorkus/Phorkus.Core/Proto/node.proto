@@ -1,0 +1,13 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Core.Proto";
+
+message Node {
+    uint32 version = 1;
+    uint64 timestamp = 2;
+    uint64 services = 3;
+    uint32 port = 4;
+    string address = 5;
+    uint32 nonce = 6;
+    uint64 block_height = 7;
+    string agent = 8;
+}

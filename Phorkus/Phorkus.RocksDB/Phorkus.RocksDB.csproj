@@ -7,5 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="RocksDbNative" Version="5.4.6.10" />
+    <PackageReference Include="RocksDbSharp" Version="5.4.6.10" />
   </ItemGroup>
 </Project>
