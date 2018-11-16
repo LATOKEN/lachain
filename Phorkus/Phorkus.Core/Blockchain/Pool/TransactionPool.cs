@@ -10,19 +10,19 @@ namespace Phorkus.Core.Blockchain.Pool
     {
         public const uint PeekLimit = 1000;
         
-        private readonly ConcurrentDictionary<UInt256, HashedTransaction> _transactions
-            = new ConcurrentDictionary<UInt256, HashedTransaction>();
+        private readonly ConcurrentDictionary<UInt256, SignedTransaction> _transactions
+            = new ConcurrentDictionary<UInt256, SignedTransaction>();
         
-        public IReadOnlyDictionary<UInt256, HashedTransaction> Transactions => _transactions;
+        public IReadOnlyDictionary<UInt256, SignedTransaction> Transactions => _transactions;
 
-        public void Add(HashedTransaction transaction)
+        public void Add(SignedTransaction transaction)
         {
             _transactions[transaction.Hash] = transaction;
         }
 
-        public IReadOnlyCollection<HashedTransaction> Peek()
+        public IReadOnlyCollection<SignedTransaction> Peek()
         {
-            var result = new List<HashedTransaction>();
+            var result = new List<SignedTransaction>();
             var keys = _transactions.Keys.ToArray();
             for (var i = 0; i < Math.Min(keys.Length, PeekLimit); i++)
             {

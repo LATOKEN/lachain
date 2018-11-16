@@ -21,7 +21,9 @@ namespace Phorkus.Core.Storage
         IEnumerable<Transaction> GetTransactionsByHashes(IReadOnlyCollection<UInt256> hashes);
 
         bool ContainsTransactionByHash(UInt256 txHash);
-
+        
+        Transaction GetLatestTransaction();
+        
         uint GetTotalTransactionCount(UInt160 address);
     }
 }

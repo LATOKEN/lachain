@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Proto;
@@ -9,33 +8,32 @@ namespace Phorkus.Core.Blockchain.Pool
 {
     public class BlockBuilder
     {
-        private readonly IReadOnlyCollection<HashedTransaction> _hashedTransactions;
-        private readonly HashedBlockHeader _prevBlockHeader;
+        private readonly IReadOnlyCollection<SignedTransaction> _hashedTransactions;
+        private readonly Block _prevBlock;
 
-        public BlockBuilder(ITransactionPool transactionPool, IBlockchainContext blockchainContext)
+        public BlockBuilder(ITransactionPool transactionPool, Block prevBlock)
         {
-            _prevBlockHeader = blockchainContext.CurrentBlockHeader ?? throw new ArgumentNullException(nameof(blockchainContext.CurrentBlockHeader));
             _hashedTransactions = transactionPool.Peek();
+            _prevBlock = prevBlock;
         }
         
-        public BlockBuilder(IReadOnlyCollection<HashedTransaction> hashedTransactions, HashedBlockHeader prevBlockHeader)
+        public BlockBuilder(IReadOnlyCollection<SignedTransaction> hashedTransactions, Block prevBlock)
         {
             _hashedTransactions = hashedTransactions;
-            _prevBlockHeader = prevBlockHeader;
+            _prevBlock = prevBlock;
         }
         
-        public Block Build(ulong nonce)
+        public BlockWithTransactions Build(ulong nonce)
         {
             var header = new BlockHeader
             {
                 Version = 1,
-                PrevBlockHash = _prevBlockHeader.Hash,
+                PrevBlockHash = _prevBlock.Hash,
                 MerkleRoot = null,
                 Timestamp = TimeUtils.CurrentTimeMillis(),
-                Index = _prevBlockHeader.BlockHeader.Index + 1,
+                Index = _prevBlock.Header.Index + 1,
                 Type = HeaderType.Extended,
-                Nonce = nonce,
-                Multisig = new MultiSig()
+                Nonce = nonce
             };
             header.TransactionHashes.AddRange(_hashedTransactions.Select(tx => tx.Hash));
             var block = new Block
@@ -43,9 +41,7 @@ namespace Phorkus.Core.Blockchain.Pool
                 Hash = header.ToByteArray().ToHash256(),
                 Header = header
             };
-            block.Transactions.AddRange(_hashedTransactions.Select(tx => tx.Transaction));
-            return block;
-            
+            return new BlockWithTransactions(block, _hashedTransactions);
         }
     }
 }

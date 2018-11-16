@@ -19,11 +19,10 @@ message BlockHeader {
     HeaderType type = 6;
     uint64 nonce = 7;
     repeated UInt256 transaction_hashes = 8;
-    MultiSig multisig = 9;
 }
 
 message Block {
-    UInt256 hash = 1;
-    BlockHeader header = 2;
-    repeated Transaction transactions = 3;
+    BlockHeader header = 1;
+    UInt256 hash = 2;
+    MultiSig multisig = 3;
 }

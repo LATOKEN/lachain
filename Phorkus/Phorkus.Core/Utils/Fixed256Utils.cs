@@ -7,7 +7,8 @@ namespace Phorkus.Core.Utils
     {
         public static Fixed256 FromDecimal(decimal value)
         {
-            throw new NotImplementedException();
+            return new Fixed256();
+//            throw new NotImplementedException();
         }
         
         public static Fixed256 Add(this Fixed256 value, Fixed256 another)

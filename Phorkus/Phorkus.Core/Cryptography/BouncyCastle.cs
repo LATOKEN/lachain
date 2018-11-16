@@ -42,7 +42,7 @@ namespace Phorkus.Core.Cryptography
 
         public byte[] Sign(byte[] message, byte[] prikey)
         {
-            var priv = new ECPrivateKeyParameters("ECDSA", (new BigInteger(1, prikey)), Domain);
+            var priv = new ECPrivateKeyParameters("ECDSA", new BigInteger(1, prikey), Domain);
             var signer = new ECDsaSigner();
             var fullsign = new byte[64];
 

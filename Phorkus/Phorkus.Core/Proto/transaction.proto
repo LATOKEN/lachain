@@ -60,3 +60,10 @@ message Transaction {
         MinerTransaction miner = 10;
     }
 }
+
+/* check this link: https://en.bitcoin.it/wiki/Transaction_malleability */
+message SignedTransaction {
+    Transaction transaction = 1;
+    UInt256 hash = 2;
+    Signature signature = 3;
+}

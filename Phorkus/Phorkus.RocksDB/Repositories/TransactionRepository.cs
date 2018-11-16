@@ -36,7 +36,12 @@ namespace Phorkus.RocksDB.Repositories
         {
             throw new NotImplementedException();
         }
-        
+
+        public Transaction GetLatestTransaction()
+        {
+            throw new NotImplementedException();
+        }
+
         public uint GetTotalTransactionCount(UInt160 address)
         {
             throw new NotImplementedException();

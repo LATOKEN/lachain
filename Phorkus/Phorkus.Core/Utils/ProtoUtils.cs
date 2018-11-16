@@ -38,7 +38,7 @@ namespace Phorkus.Core.Utils
                 return array;
             }
         }
-
+        
         public static UInt256 ToHash256<T>(this T t)
             where T : IMessage<T>
         {

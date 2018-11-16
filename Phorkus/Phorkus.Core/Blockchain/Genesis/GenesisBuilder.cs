@@ -17,9 +17,9 @@ namespace Phorkus.Core.Blockchain.Genesis
             _genesisAssetsBuilder = genesisAssetsBuilder;
         }
         
-        private Block _genesisBlock;
+        private BlockWithTransactions _genesisBlock;
         
-        public Block Build()
+        public BlockWithTransactions Build()
         {
             if (_genesisBlock != null)
                 return _genesisBlock;
@@ -27,7 +27,8 @@ namespace Phorkus.Core.Blockchain.Genesis
             var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction();
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
             
-            var genesisTimestamp = new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc).ToTimestamp();
+            var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
+                year: 2019, month: 1, day: 1, hour: 00, minute: 00, second: 00).ToTimestamp();
             
             /* distribute tokens (1 million for each holder) */
             var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed256Utils.FromDecimal(1_000_000), governingToken.Transaction.ToHash160());
@@ -49,8 +50,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Timestamp = (ulong) genesisTimestamp.Seconds,
                 Index = 0,
                 Type = HeaderType.Extended,
-                Nonce = GenesisConsensusData,
-                Multisig = new MultiSig()
+                Nonce = GenesisConsensusData
             };
             var result = new Block
             {
@@ -58,9 +58,15 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Header = header
             };
             result.Header.TransactionHashes.AddRange(genesisTransactions.Select(tx => tx.Hash).ToArray());
-            result.Transactions.AddRange(genesisTransactions.Select(tx => tx.Transaction).ToArray());
             
-            _genesisBlock = result;
+            /* genesis block transactions don't have signatures */
+            var signed = genesisTransactions.Select(tx => new SignedTransaction
+            {
+                Transaction = tx.Transaction,
+                Hash = tx.Hash,
+                Signature = SignatureUtils.Zero
+            });
+            _genesisBlock = new BlockWithTransactions(result, signed.ToArray());
             return _genesisBlock;
         }
     }

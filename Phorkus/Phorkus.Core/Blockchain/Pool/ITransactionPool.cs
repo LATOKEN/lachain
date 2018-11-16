@@ -5,11 +5,11 @@ namespace Phorkus.Core.Blockchain.Pool
 {
     public interface ITransactionPool
     {
-        IReadOnlyDictionary<UInt256, HashedTransaction> Transactions { get; }
+        IReadOnlyDictionary<UInt256, SignedTransaction> Transactions { get; }
 
-        void Add(HashedTransaction transaction);
+        void Add(SignedTransaction transaction);
 
-        IReadOnlyCollection<HashedTransaction> Peek();
+        IReadOnlyCollection<SignedTransaction> Peek();
 
         void Delete(UInt256 transactionHash);
 

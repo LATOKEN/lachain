@@ -16,12 +16,17 @@ namespace Phorkus.Core.Blockchain
                 return _hash;
             }
         }
-
+        
         public HashedTransaction(Transaction transaction)
         {
             Transaction = transaction;
         }
-
+        
+        public void InvalidateHash()
+        {
+            _hash = null;
+        }
+        
         private UInt256 _hash;
     }
 }

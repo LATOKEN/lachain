@@ -10,14 +10,14 @@ namespace Phorkus.Core.Storage
         /// </summary>
         /// <param name="blockHeight">The block height / index to retrieve</param>
         /// <returns>Block hash at specified height / index</returns>
-        BlockHeader GetBlockHeaderByHeight(uint blockHeight);
+        Block GetBlockByHeight(uint blockHeight);
         
         /// <summary>
-        /// Retrieves a block header by hash
+        /// Retrieves a block by hash
         /// </summary>
         /// <param name="blockHash">Block id / hash</param>
         /// <returns>Block header with specified id</returns>
-        BlockHeader GetBlockHeaderByHash(UInt256 blockHash);
+        Block GetBlockByHash(UInt256 blockHash);
         
         /// <summary>
         /// Returns block hashes by heights specified
@@ -29,13 +29,13 @@ namespace Phorkus.Core.Storage
         /// <summary>
         /// Adds a block header to the repository storage
         /// </summary>
-        /// <param name="blockHeader">Block header</param>
-        bool AddBlockHeader(BlockHeader blockHeader);
+        /// <param name="block">Block header</param>
+        bool AddBlock(Block block);
 
-        BlockHeader GetNextBlockHeaderByHash(UInt256 blockHash);
+        Block GetNextBlockByHash(UInt256 blockHash);
         
-        IEnumerable<BlockHeader> GetBlockHeaderByHashes(IEnumerable<UInt256> hashes);
-        
-        IEnumerable<BlockHeader> GetBlockHeadersByHeightRange(uint height, uint count);
+        IEnumerable<Block> GetBlocksByHeightRange(uint height, uint count);
+
+        IEnumerable<Block> GetBlocksByHashes(IEnumerable<UInt256> hashes);
     }
 }

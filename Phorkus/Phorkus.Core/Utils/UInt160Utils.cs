@@ -29,5 +29,10 @@ namespace Phorkus.Core.Utils
                 Buffer = ByteString.CopyFrom(buffer)
             };
         }
+
+        public static bool IsValid(this UInt160 value)
+        {
+            return value.Buffer != null && value.Buffer.Length == 20;
+        }
     }
 }

@@ -1,9 +1,7 @@
-﻿using Phorkus.Core.Proto;
-
-namespace Phorkus.Core.Blockchain.Genesis
+﻿namespace Phorkus.Core.Blockchain.Genesis
 {
     public interface IGenesisBuilder
     {
-        Block Build();
+        BlockWithTransactions Build();
     }
 }
