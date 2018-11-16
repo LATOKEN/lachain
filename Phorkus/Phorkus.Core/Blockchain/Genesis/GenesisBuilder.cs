@@ -2,7 +2,7 @@
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using Phorkus.Core.Proto;
-using Phorkus.Core.Uilts;
+using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain.Genesis
 {
@@ -30,7 +30,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             var genesisTimestamp = new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc).ToTimestamp();
             
             /* distribute tokens (1 million for each holder) */
-            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed256Utils.FromDecimal(1_000_000), governingToken.ToHash160());
+            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed256Utils.FromDecimal(1_000_000), governingToken.Transaction.ToHash160());
             
             var txsBefore = new[]
             {
@@ -57,8 +57,8 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Hash = header.ToHash256(),
                 Header = header
             };
-            result.Header.TransactionHashes.CopyTo(genesisTransactions.Select(tx => tx.Hash).ToArray(), 0);
-            result.Transactions.CopyTo(genesisTransactions, 0);
+            result.Header.TransactionHashes.AddRange(genesisTransactions.Select(tx => tx.Hash).ToArray());
+            result.Transactions.AddRange(genesisTransactions.Select(tx => tx.Transaction).ToArray());
             
             _genesisBlock = result;
             return _genesisBlock;

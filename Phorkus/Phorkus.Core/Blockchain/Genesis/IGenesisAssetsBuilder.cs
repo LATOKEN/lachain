@@ -5,12 +5,12 @@ namespace Phorkus.Core.Blockchain.Genesis
 {
     public interface IGenesisAssetsBuilder
     {
-        Transaction BuildGoverningTokenRegisterTransaction();
+        HashedTransaction BuildGoverningTokenRegisterTransaction();
 
-        Transaction BuildGenesisMinerTransaction();
+        HashedTransaction BuildGenesisMinerTransaction();
         
-        Transaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset);
+        HashedTransaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset);
 
-        IEnumerable<Transaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets);
+        IEnumerable<HashedTransaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets);
     }
 }

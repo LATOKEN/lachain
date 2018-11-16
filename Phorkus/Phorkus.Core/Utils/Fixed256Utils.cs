@@ -1,7 +1,7 @@
 ﻿using System;
 using Phorkus.Core.Proto;
 
-namespace Phorkus.Core.Uilts
+namespace Phorkus.Core.Utils
 {
     public static class Fixed256Utils
     {

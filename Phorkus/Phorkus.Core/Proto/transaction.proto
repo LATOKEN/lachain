@@ -47,17 +47,16 @@ message MinerTransaction {
 }
 
 message Transaction {
-    UInt256 hash = 1;
-    TransactionType type = 2;
-    uint32 version = 3;
-    uint64 flags = 5;
-    UInt160 from = 6;
+    TransactionType type = 1;
+    uint32 version = 2;
+    uint64 flags = 3;
+    UInt160 from = 4;
+    uint64 nonce = 5;
     oneof data {
-        ContractTransaction contract = 7;
-        IssueTransaction issue = 8;
-        PublishTransaction publish = 9;
-        RegisterTransaction register = 10;
-        MinerTransaction miner = 11;
+        ContractTransaction contract = 6;
+        IssueTransaction issue = 7;
+        PublishTransaction publish = 8;
+        RegisterTransaction register = 9;
+        MinerTransaction miner = 10;
     }
-    uint64 nonce = 12;
 }

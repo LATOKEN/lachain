@@ -1,4 +1,4 @@
-﻿namespace Phorkus.Core
+﻿namespace Phorkus.Core.DI
 {
     public interface IBootstrapper
     {

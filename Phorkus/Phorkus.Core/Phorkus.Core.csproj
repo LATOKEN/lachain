@@ -6,8 +6,7 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="Blockchain\OperationManager" />
-    <Folder Include="Exceptions" />
+    <Folder Include="Blockchain\Workers" />
     <Folder Include="Rpc" />
   </ItemGroup>
   <ItemGroup>

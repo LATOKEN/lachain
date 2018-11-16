@@ -3,7 +3,7 @@ using Google.Protobuf;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 
-namespace Phorkus.Core.Uilts
+namespace Phorkus.Core.Utils
 {
     public static class UInt160Utils
     {

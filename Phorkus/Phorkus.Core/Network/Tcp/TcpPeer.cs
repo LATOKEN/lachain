@@ -11,8 +11,6 @@ namespace Phorkus.Core.Network.Tcp
 {
     public class TcpPeer : IPeer
     {
-        private const int SocketOperationTimeout = 300_000;
-        
         private readonly NetworkStream _stream;
         private readonly Socket _socket;
         private readonly Queue<Message> _messages;
@@ -44,7 +42,7 @@ namespace Phorkus.Core.Network.Tcp
                 endPoint = (IPEndPoint) socket.RemoteEndPoint;
             else
                 endPoint = (IPEndPoint) socket.LocalEndPoint;
-            
+
             EndPoint = new IpEndPoint
             {
                 Protocol = Protocol.Tcp,
@@ -77,31 +75,24 @@ namespace Phorkus.Core.Network.Tcp
                     messages = Interlocked.Exchange(ref messages, _messages);
                 }
 
-                using (var cancellationTokenSource = new CancellationTokenSource(SocketOperationTimeout))
-                    _transport.WriteMessages(messages, _stream);
+                _transport.WriteMessages(messages, _stream);
             }
         }
-        
+
         public IEnumerable<Message> Receive()
         {
             if (!IsConnected)
                 return null;
-            
-            using (var tokenSource = new CancellationTokenSource(SocketOperationTimeout))
+            try
             {
-                tokenSource.Token.Register(Disconnect);
-                try
-                {
-                    return _transport.ReadMessages(_stream);
-                }
-                catch (Exception error)
-                {
-                    Console.Error.WriteLine(error);
-                }
-
-                Disconnect();
+                return _transport.ReadMessages(_stream);
+            }
+            catch (Exception error)
+            {
+                Console.Error.WriteLine(error);
             }
 
+            Disconnect();
             return null;
         }
 

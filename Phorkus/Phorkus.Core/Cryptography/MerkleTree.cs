@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Proto;
-using Phorkus.Core.Uilts;
+using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Cryptography
 {

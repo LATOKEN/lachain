@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Google.Protobuf;
 using Phorkus.Core.Proto;
-using Phorkus.Core.Uilts;
+using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain.Genesis
 {
@@ -13,20 +13,12 @@ namespace Phorkus.Core.Blockchain.Genesis
         public GenesisAssetsBuilder(IEnumerable<string> validators)
         {
             _validators = validators ?? throw new ArgumentException(nameof(validators));
-
-            /*var builder = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", false, true);
-            var configuration = builder.Build();
-            _networkConfig = new NetworkConfig(configuration);*/
         }
 
-        /// <inheritdoc />
-        public Transaction BuildGoverningTokenRegisterTransaction()
+        public HashedTransaction BuildGoverningTokenRegisterTransaction()
         {
             var tx = new Transaction
             {
-                Hash = UInt256Utils.Zero,
                 Type = TransactionType.Register,
                 Version = 0,
                 Flags = (ulong) TransactionFlag.None,
@@ -41,18 +33,13 @@ namespace Phorkus.Core.Blockchain.Genesis
                 },
                 Nonce = 0
             };
-            tx.Hash = new UInt256
-            {
-                Buffer = ByteString.CopyFrom(tx.ToHash256().ToByteArray())
-            };
-            return tx;
+            return new HashedTransaction(tx);
         }
 
-        public Transaction BuildGenesisMinerTransaction()
+        public HashedTransaction BuildGenesisMinerTransaction()
         {
             var tx = new Transaction
             {
-                Hash = UInt256Utils.Zero,
                 Type = TransactionType.Register,
                 Version = 0,
                 Flags = (ulong) TransactionFlag.None,
@@ -63,18 +50,13 @@ namespace Phorkus.Core.Blockchain.Genesis
                 },
                 Nonce = 0
             };
-            tx.Hash = new UInt256
-            {
-                Buffer = ByteString.CopyFrom(tx.ToHash256().ToByteArray())
-            };
-            return tx;
+            return new HashedTransaction(tx);
         }
 
-        public Transaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset)
+        public HashedTransaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset)
         {
             var tx = new Transaction
             {
-                Hash = UInt256Utils.Zero,
                 Type = TransactionType.Register,
                 Version = 0,
                 Flags = (ulong) TransactionFlag.None,
@@ -86,16 +68,12 @@ namespace Phorkus.Core.Blockchain.Genesis
                 },
                 Nonce = 0
             };
-            tx.Hash = new UInt256
-            {
-                Buffer = ByteString.CopyFrom(tx.ToHash256().ToByteArray())
-            };
-            return tx;
+            return new HashedTransaction(tx);
         }
 
-        public IEnumerable<Transaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets)
+        public IEnumerable<HashedTransaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets)
         {
-            var txs = new List<Transaction>();
+            var txs = new List<HashedTransaction>();
             foreach (var validator in _validators)
             foreach (var asset in assets)
             {

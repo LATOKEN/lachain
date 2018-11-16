@@ -2,7 +2,7 @@
 using System.IO;
 using Crc32;
 using Phorkus.Core.Network.Proto;
-using Phorkus.Core.Uilts;
+using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Network
 {

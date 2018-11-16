@@ -1,4 +1,4 @@
-﻿namespace Phorkus.Core.Consensus
+﻿namespace Phorkus.Core.Blockchain.Consensus
 {
     public interface IConsensusManager
     {
