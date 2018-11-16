@@ -6,12 +6,13 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="Blockchain\Genesis" />
     <Folder Include="Blockchain\OperationManager" />
+    <Folder Include="Exceptions" />
     <Folder Include="Rpc" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BouncyCastle" Version="1.8.4" />
+    <PackageReference Include="Crc32" Version="1.1.0" />
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0-preview3-35497" />
   </ItemGroup>

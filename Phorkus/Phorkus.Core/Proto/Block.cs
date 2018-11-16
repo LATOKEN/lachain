@@ -30,16 +30,17 @@ namespace Phorkus.Core.Proto {
             "bWVya2xlX3Jvb3QYAyABKAsyCC5VSW50MjU2EhEKCXRpbWVzdGFtcBgEIAEo",
             "BBINCgVpbmRleBgFIAEoBBIZCgR0eXBlGAYgASgOMgsuSGVhZGVyVHlwZRIN",
             "CgVub25jZRgHIAEoBBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMYCCADKAsyCC5V",
-            "SW50MjU2EhsKCG11bHRpc2lnGAkgASgLMgkuTXVsdGlTaWciSQoFQmxvY2sS",
-            "HAoGaGVhZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISIgoMdHJhbnNhY3Rpb25z",
-            "GAIgAygLMgwuVHJhbnNhY3Rpb24qPgoKSGVhZGVyVHlwZRIWChJIRUFERVJf",
-            "VFlQRV9IRUFERVIQABIYChRIRUFERVJfVFlQRV9FWFRFTkRFRBABQhWqAhJQ",
-            "aG9ya3VzLkNvcmUuUHJvdG9iBnByb3RvMw=="));
+            "SW50MjU2EhsKCG11bHRpc2lnGAkgASgLMgkuTXVsdGlTaWciYQoFQmxvY2sS",
+            "FgoEaGFzaBgBIAEoCzIILlVJbnQyNTYSHAoGaGVhZGVyGAIgASgLMgwuQmxv",
+            "Y2tIZWFkZXISIgoMdHJhbnNhY3Rpb25zGAMgAygLMgwuVHJhbnNhY3Rpb24q",
+            "PgoKSGVhZGVyVHlwZRIWChJIRUFERVJfVFlQRV9IRUFERVIQABIYChRIRUFE",
+            "RVJfVFlQRV9FWFRFTkRFRBABQhWqAhJQaG9ya3VzLkNvcmUuUHJvdG9iBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.TransactionReflection.Descriptor, global::Phorkus.Core.Proto.DefaultReflection.Descriptor, global::Phorkus.Core.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.HeaderType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.BlockHeader), global::Phorkus.Core.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Type", "Nonce", "TransactionHashes", "Multisig" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Block), global::Phorkus.Core.Proto.Block.Parser, new[]{ "Header", "Transactions" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Block), global::Phorkus.Core.Proto.Block.Parser, new[]{ "Hash", "Header", "Transactions" }, null, null, null)
           }));
     }
     #endregion
@@ -442,6 +443,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Block(Block other) : this() {
+      hash_ = other.hash_ != null ? other.hash_.Clone() : null;
       header_ = other.header_ != null ? other.header_.Clone() : null;
       transactions_ = other.transactions_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -452,8 +454,19 @@ namespace Phorkus.Core.Proto {
       return new Block(this);
     }
 
+    /// <summary>Field number for the "hash" field.</summary>
+    public const int HashFieldNumber = 1;
+    private global::Phorkus.Core.Proto.UInt256 hash_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Core.Proto.UInt256 Hash {
+      get { return hash_; }
+      set {
+        hash_ = value;
+      }
+    }
+
     /// <summary>Field number for the "header" field.</summary>
-    public const int HeaderFieldNumber = 1;
+    public const int HeaderFieldNumber = 2;
     private global::Phorkus.Core.Proto.BlockHeader header_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Core.Proto.BlockHeader Header {
@@ -464,9 +477,9 @@ namespace Phorkus.Core.Proto {
     }
 
     /// <summary>Field number for the "transactions" field.</summary>
-    public const int TransactionsFieldNumber = 2;
+    public const int TransactionsFieldNumber = 3;
     private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.Transaction> _repeated_transactions_codec
-        = pb::FieldCodec.ForMessage(18, global::Phorkus.Core.Proto.Transaction.Parser);
+        = pb::FieldCodec.ForMessage(26, global::Phorkus.Core.Proto.Transaction.Parser);
     private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.Transaction> transactions_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.Transaction>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Phorkus.Core.Proto.Transaction> Transactions {
@@ -486,6 +499,7 @@ namespace Phorkus.Core.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (!object.Equals(Hash, other.Hash)) return false;
       if (!object.Equals(Header, other.Header)) return false;
       if(!transactions_.Equals(other.transactions_)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -494,6 +508,7 @@ namespace Phorkus.Core.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
+      if (hash_ != null) hash ^= Hash.GetHashCode();
       if (header_ != null) hash ^= Header.GetHashCode();
       hash ^= transactions_.GetHashCode();
       if (_unknownFields != null) {
@@ -509,8 +524,12 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (header_ != null) {
+      if (hash_ != null) {
         output.WriteRawTag(10);
+        output.WriteMessage(Hash);
+      }
+      if (header_ != null) {
+        output.WriteRawTag(18);
         output.WriteMessage(Header);
       }
       transactions_.WriteTo(output, _repeated_transactions_codec);
@@ -522,6 +541,9 @@ namespace Phorkus.Core.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
+      if (hash_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Hash);
+      }
       if (header_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Header);
       }
@@ -536,6 +558,12 @@ namespace Phorkus.Core.Proto {
     public void MergeFrom(Block other) {
       if (other == null) {
         return;
+      }
+      if (other.hash_ != null) {
+        if (hash_ == null) {
+          hash_ = new global::Phorkus.Core.Proto.UInt256();
+        }
+        Hash.MergeFrom(other.Hash);
       }
       if (other.header_ != null) {
         if (header_ == null) {
@@ -556,13 +584,20 @@ namespace Phorkus.Core.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
+            if (hash_ == null) {
+              hash_ = new global::Phorkus.Core.Proto.UInt256();
+            }
+            input.ReadMessage(hash_);
+            break;
+          }
+          case 18: {
             if (header_ == null) {
               header_ = new global::Phorkus.Core.Proto.BlockHeader();
             }
             input.ReadMessage(header_);
             break;
           }
-          case 18: {
+          case 26: {
             transactions_.AddEntriesFrom(input, _repeated_transactions_codec);
             break;
           }

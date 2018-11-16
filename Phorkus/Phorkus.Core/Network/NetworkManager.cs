@@ -71,9 +71,10 @@ namespace Phorkus.Core.Network
         {
             Parallel.ForEach(ActivePeers.Values, peer => peer.Disconnect());
         }
-
+        
         public void Broadcast(Message message)
         {
+            Parallel.ForEach(ActivePeers.Values, peer => peer.Send(message));
         }
     }
 }

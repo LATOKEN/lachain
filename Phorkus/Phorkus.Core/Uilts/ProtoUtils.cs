@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Cryptography;
+using Phorkus.Core.Proto;
 
 namespace Phorkus.Core.Uilts
 {
@@ -38,16 +39,22 @@ namespace Phorkus.Core.Uilts
             }
         }
 
-        public static Hash256 ToHash256<T>(this T t)
+        public static UInt256 ToHash256<T>(this T t)
             where T : IMessage<T>
         {
-            return new Hash256(t.ToByteArray().Sha256());
+            return new UInt256
+            {
+                Buffer = ByteString.CopyFrom(t.ToByteArray().Sha256())
+            };
         }
         
-        public static Hash160 ToHash160<T>(this T t)
+        public static UInt160 ToHash160<T>(this T t)
             where T : IMessage<T>
         {
-            return new Hash160(t.ToByteArray().Ripemd160());
+            return new UInt160
+            {
+                Buffer = ByteString.CopyFrom(t.ToByteArray().Ripemd160())
+            };
         }
     }
 }

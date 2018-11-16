@@ -51,16 +51,6 @@ namespace Phorkus.RocksDB
             return BuildPrefix(prefix, key.ToByteArray());
         }
         
-        public static byte[] BuildPrefix(this EntryPrefix prefix, Hash160 key)
-        {
-            return BuildPrefix(prefix, key.ToByteArray());
-        }
-        
-        public static byte[] BuildPrefix(this EntryPrefix prefix, Hash256 key)
-        {
-            return BuildPrefix(prefix, key.ToByteArray());
-        }
-        
         public static byte[] BuildPrefix(this EntryPrefix prefix)
         {
             var bytes = new byte[1];

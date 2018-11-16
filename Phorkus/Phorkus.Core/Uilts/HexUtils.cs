@@ -14,5 +14,25 @@ namespace Phorkus.Core.Uilts
         {
             throw new NotImplementedException();
         }
+
+        public static UInt160 HexToUInt160(this string buffer)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public static UInt160 HexToUInt160(this byte[] buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static byte[] HexToBytes(this string buffer)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public static string ToHex(this byte[] buffer)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

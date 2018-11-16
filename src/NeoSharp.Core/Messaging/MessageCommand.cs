@@ -15,6 +15,7 @@ namespace NeoSharp.Core.Messaging
         [ReflectionCache(typeof(ConsensusMessage))]
         consensus = 0x04,
 
+        /* TODO: "what is it?" */
         [ReflectionCache(typeof(FilterAddMessage))]
         filteradd = 0x05,
         [ReflectionCache(typeof(FilterClearMessage))]

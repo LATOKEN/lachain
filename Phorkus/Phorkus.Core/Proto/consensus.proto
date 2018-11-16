@@ -4,6 +4,8 @@ option csharp_namespace = "Phorkus.Core.Proto";
 import "default.proto";
 import "transaction.proto";
 
+/* TODO: "this code should be refactored" */
+
 message ConsensusChangeView {
     uint32 new_view_number = 1;
 }

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Uilts;
 
@@ -12,7 +13,7 @@ namespace Phorkus.Core.Cryptography
         /// <summary>
         /// Node hash
         /// </summary>
-        public Hash256 Hash;
+        public UInt256 Hash;
 
         /// <summary>
         /// Parent node
@@ -50,7 +51,7 @@ namespace Phorkus.Core.Cryptography
         /// Constructor
         /// </summary>
         /// <param name="hash">Hash</param>
-        public MerkleTreeNode(Hash256 hash)
+        public MerkleTreeNode(UInt256 hash)
         {
             Hash = hash;
         }
@@ -117,7 +118,7 @@ namespace Phorkus.Core.Cryptography
         /// Constructor
         /// </summary>
         /// <param name="hashes">Hash Array</param>
-        private MerkleTree(IReadOnlyCollection<Hash256> hashes)
+        private MerkleTree(IReadOnlyCollection<UInt256> hashes)
         {
             if (hashes.Count == 0)
                 throw new ArgumentException();
@@ -135,17 +136,18 @@ namespace Phorkus.Core.Cryptography
         /// </summary>
         /// <param name="leaves">Leaves nodes</param>
         /// <returns>Node</returns>
-        private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
+        private static MerkleTreeNode Build(IReadOnlyList<MerkleTreeNode> leaves)
         {
-            if (leaves.Length == 0) throw new ArgumentException();
-            if (leaves.Length == 1) return leaves[0];
+            if (leaves.Count == 0)
+                throw new ArgumentException(nameof(leaves.Count));
+            if (leaves.Count == 1)
+                return leaves[0];
+            
+            var parents = new MerkleTreeNode[(leaves.Count + 1) / 2];
 
-            MerkleTreeNode current;
-            MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
-
-            for (int i = 0; i < parents.Length; i++)
+            for (var i = 0; i < parents.Length; i++)
             {
-                current = new MerkleTreeNode
+                var current = new MerkleTreeNode
                 {
                     LeftChild = leaves[i * 2]
                 };
@@ -154,7 +156,7 @@ namespace Phorkus.Core.Cryptography
 
                 leaves[i * 2].Parent = current;
 
-                if (i * 2 + 1 == leaves.Length)
+                if (i * 2 + 1 == leaves.Count)
                 {
                     current.RightChild = current.LeftChild;
                 }
@@ -178,7 +180,7 @@ namespace Phorkus.Core.Cryptography
         /// </summary>
         /// <param name="hashes">Hash list</param>
         /// <returns>Result of the calculation</returns>
-        public static Hash256 ComputeRoot(Hash256[] hashes)
+        public static UInt256 ComputeRoot(UInt256[] hashes)
         {
             if (hashes == null || hashes.Length == 0)
                 throw new ArgumentException(nameof(hashes));
@@ -193,7 +195,7 @@ namespace Phorkus.Core.Cryptography
         /// </summary>
         /// <param name="hashes">Hash list</param>
         /// <returns>Result of the calculation</returns>
-        public static MerkleTree ComputeTree(Hash256[] hashes)
+        public static MerkleTree ComputeTree(UInt256[] hashes)
         {
             if (hashes == null || hashes.Length == 0)
                 throw new ArgumentException(nameof(hashes));
@@ -206,7 +208,7 @@ namespace Phorkus.Core.Cryptography
         /// </summary>
         /// <param name="node">Node</param>
         /// <param name="hashes">List to return hashes</param>
-        private static void DepthFirstSearch(MerkleTreeNode node, ICollection<Hash256> hashes)
+        private static void DepthFirstSearch(MerkleTreeNode node, ICollection<UInt256> hashes)
         {
             if (node.LeftChild == null)
             {
@@ -223,9 +225,9 @@ namespace Phorkus.Core.Cryptography
         /// List tree node hashes
         /// </summary>
         /// <returns>Byte array with node hashes</returns>
-        public Hash256[] ToHashArray()
+        public UInt256[] ToHashArray()
         {
-            var hashes = new List<Hash256>();
+            var hashes = new List<UInt256>();
             DepthFirstSearch(Root, hashes);
             return hashes.ToArray();
         }
@@ -277,7 +279,7 @@ namespace Phorkus.Core.Cryptography
         /// <param name="hash">Hash</param>
         /// <param name="node">Start node</param>
         /// <returns>Node</returns>
-        public MerkleTreeNode Search(Hash256 hash, MerkleTreeNode node = null)
+        public MerkleTreeNode Search(UInt256 hash, MerkleTreeNode node = null)
         {
             if (node == null) node = Root;
             if (node.Hash.Equals(hash)) return node;

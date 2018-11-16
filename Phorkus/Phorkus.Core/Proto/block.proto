@@ -23,6 +23,7 @@ message BlockHeader {
 }
 
 message Block {
-    BlockHeader header = 1;
-    repeated Transaction transactions = 2;
+    UInt256 hash = 1;
+    BlockHeader header = 2;
+    repeated Transaction transactions = 3;
 }

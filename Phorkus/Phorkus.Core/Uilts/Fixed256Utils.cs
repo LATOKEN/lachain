@@ -5,6 +5,11 @@ namespace Phorkus.Core.Uilts
 {
     public static class Fixed256Utils
     {
+        public static Fixed256 FromDecimal(decimal value)
+        {
+            throw new NotImplementedException();
+        }
+        
         public static Fixed256 Add(this Fixed256 value, Fixed256 another)
         {
             throw new NotImplementedException();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Network.Proto;
 using Phorkus.Core.Proto;
@@ -7,7 +8,7 @@ namespace Phorkus.Core.Network
 {
     public interface IPeer
     {
-        event EventHandler OnDisconnect;
+        event EventHandler<IPeer> OnDisconnect;
         
         bool IsConnected { get; }
 
@@ -17,13 +18,15 @@ namespace Phorkus.Core.Network
 
         Node Node { get; set; }
 
-        bool IsReady { get; set; }
-
-        DateTime Connected { get; }
+        bool IsKnown { get; set; }
         
+        DateTime Connected { get; }
+
+        uint RateLimit { get; }
+
         void Send(Message message);
 
-        Message Receive();
+        IEnumerable<Message> Receive();
 
         void Disconnect();
 

@@ -20,15 +20,16 @@ namespace Phorkus.Core.Network.Tcp
 
         private readonly object _queueNotEmpty = new object();
 
-        public event EventHandler OnDisconnect;
+        public event EventHandler<IPeer> OnDisconnect;
 
         public bool IsConnected => _socket.Connected;
 
         public BloomFilter BloomFilter { get; set; }
         public IpEndPoint EndPoint { get; }
         public Node Node { get; set; }
-        public bool IsReady { get; set; }
+        public bool IsKnown { get; set; }
         public DateTime Connected { get; } = DateTime.Now;
+        public uint RateLimit { get; }
 
         internal TcpPeer(Socket socket, ITransport transport)
         {
@@ -50,6 +51,7 @@ namespace Phorkus.Core.Network.Tcp
                 Host = endPoint.Address.ToString(),
                 Port = endPoint.Port
             };
+            RateLimit = 1000;
         }
 
         public void Send(Message message)
@@ -76,11 +78,11 @@ namespace Phorkus.Core.Network.Tcp
                 }
 
                 using (var cancellationTokenSource = new CancellationTokenSource(SocketOperationTimeout))
-                    _transport.WriteMessages(messages, _stream, cancellationTokenSource.Token);
+                    _transport.WriteMessages(messages, _stream);
             }
         }
-
-        public Message Receive()
+        
+        public IEnumerable<Message> Receive()
         {
             if (!IsConnected)
                 return null;
@@ -90,7 +92,7 @@ namespace Phorkus.Core.Network.Tcp
                 tokenSource.Token.Register(Disconnect);
                 try
                 {
-                    return _transport.ReadMessage(_stream, tokenSource.Token);
+                    return _transport.ReadMessages(_stream);
                 }
                 catch (Exception error)
                 {

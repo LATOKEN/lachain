@@ -26,7 +26,7 @@ message ContractTransaction {
 
 message IssueTransaction {
     UInt160 asset = 1;
-    bytes supply = 2;
+    Fixed256 supply = 2;
 }
 
 message PublishTransaction {
@@ -47,17 +47,17 @@ message MinerTransaction {
 }
 
 message Transaction {
-    UInt160 hash = 1;
+    UInt256 hash = 1;
     TransactionType type = 2;
     uint32 version = 3;
     uint64 flags = 5;
     UInt160 from = 6;
-    uint64 nonce = 7;
     oneof data {
-        ContractTransaction contract = 8;
-        IssueTransaction issue = 9;
-        PublishTransaction publish = 10;
-        RegisterTransaction register = 11;
-        MinerTransaction miner = 12;
+        ContractTransaction contract = 7;
+        IssueTransaction issue = 8;
+        PublishTransaction publish = 9;
+        RegisterTransaction register = 10;
+        MinerTransaction miner = 11;
     }
+    uint64 nonce = 12;
 }
