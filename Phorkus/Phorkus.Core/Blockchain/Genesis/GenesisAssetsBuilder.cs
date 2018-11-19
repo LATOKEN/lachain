@@ -15,7 +15,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             _validators = validators ?? throw new ArgumentException(nameof(validators));
         }
 
-        public HashedTransaction BuildGoverningTokenRegisterTransaction()
+        public Transaction BuildGoverningTokenRegisterTransaction()
         {
             var tx = new Transaction
             {
@@ -33,10 +33,10 @@ namespace Phorkus.Core.Blockchain.Genesis
                 },
                 Nonce = 0
             };
-            return new HashedTransaction(tx);
+            return tx;
         }
 
-        public HashedTransaction BuildGenesisMinerTransaction()
+        public Transaction BuildGenesisMinerTransaction()
         {
             var tx = new Transaction
             {
@@ -50,10 +50,10 @@ namespace Phorkus.Core.Blockchain.Genesis
                 },
                 Nonce = 0
             };
-            return new HashedTransaction(tx);
+            return tx;
         }
 
-        public HashedTransaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset)
+        public Transaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset)
         {
             var tx = new Transaction
             {
@@ -68,12 +68,12 @@ namespace Phorkus.Core.Blockchain.Genesis
                 },
                 Nonce = 0
             };
-            return new HashedTransaction(tx);
+            return tx;
         }
 
-        public IEnumerable<HashedTransaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets)
+        public IEnumerable<Transaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets)
         {
-            var txs = new List<HashedTransaction>();
+            var txs = new List<Transaction>();
             foreach (var validator in _validators)
             foreach (var asset in assets)
             {

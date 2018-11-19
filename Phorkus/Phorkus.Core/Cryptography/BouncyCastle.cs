@@ -8,6 +8,7 @@ using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
+using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Cryptography
 {
@@ -67,10 +68,10 @@ namespace Phorkus.Core.Cryptography
             return fullsign;
         }
 
-        public byte[] RecoverSignature(byte[] signature, byte[] message, bool check)
+        public byte[] RecoverSignature(byte[] message, byte[] signature, bool check, int recId)
         {
-            var r = new BigInteger(signature, 00, 32);
-            var s = new BigInteger(signature, 32, 32);
+            var r = new BigInteger(new byte[] { 0 }.Concat(signature.Take(32)).ToArray(), 0, 33);
+            var s = new BigInteger(new byte[] { 0 }.Concat(signature.Skip(32)).ToArray(), 0, 33);
 
             var hash = message.Sha256();
 
@@ -78,8 +79,8 @@ namespace Phorkus.Core.Cryptography
             var order = Curve.N;
 
             var x = r;
-            /*if ((recid & 2) != 0)
-                x = x.Add(order);*/
+            if ((recId & 2) != 0)
+                x = x.Add(order);
 
             if (x.CompareTo(curve.Q) >= 0)
                 throw new ArgumentException("X too large");
@@ -87,7 +88,7 @@ namespace Phorkus.Core.Cryptography
             var xEnc = X9IntegerConverter.IntegerToBytes(x, X9IntegerConverter.GetByteLength(curve));
             var compEncoding = new byte[xEnc.Length + 1];
 
-            compEncoding[0] = (byte) (0x02 /*+ (recid & 1)*/);
+            compEncoding[0] = (byte) (0x02 + (recId & 1));
             xEnc.CopyTo(compEncoding, 1);
             var R = curve.DecodePoint(compEncoding);
 
@@ -105,7 +106,28 @@ namespace Phorkus.Core.Cryptography
             var erInv = e.Multiply(rInv).Mod(order);
 
             var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
-            return point.GetEncoded(true);
+            return point.GetEncoded(false);
+        }
+
+        public byte[] RecoverSignature(byte[] message, byte[] signature, byte[] address)
+        {
+            for (var i = 0; i < 4; i++)
+            {
+                var publicKey = RecoverSignature(message, signature, true, i);
+                if (publicKey is null)
+                    continue;
+                var check = ComputeAddress(publicKey);
+                if (!check.SequenceEqual(address))
+                    continue;
+                return publicKey;
+            }
+
+            return null;
+        }
+
+        public byte[] ComputeAddress(byte[] publicKey)
+        {
+            return publicKey.Ripemd160();
         }
 
         private static BigInteger CalculateE(BigInteger n, byte[] message)

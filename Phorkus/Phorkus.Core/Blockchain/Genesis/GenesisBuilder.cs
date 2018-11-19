@@ -31,7 +31,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 year: 2019, month: 1, day: 1, hour: 00, minute: 00, second: 00).ToTimestamp();
             
             /* distribute tokens (1 million for each holder) */
-            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed256Utils.FromDecimal(1_000_000), governingToken.Transaction.ToHash160());
+            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed256Utils.FromDecimal(1_000_000), governingToken.Register.ToHash160());
             
             var txsBefore = new[]
             {
@@ -57,13 +57,13 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Hash = header.ToHash256(),
                 Header = header
             };
-            result.Header.TransactionHashes.AddRange(genesisTransactions.Select(tx => tx.Hash).ToArray());
+            result.Header.TransactionHashes.AddRange(genesisTransactions.Select(tx => tx.ToHash256()).ToArray());
             
             /* genesis block transactions don't have signatures */
             var signed = genesisTransactions.Select(tx => new SignedTransaction
             {
-                Transaction = tx.Transaction,
-                Hash = tx.Hash,
+                Transaction = tx,
+                Hash = tx.ToHash256(),
                 Signature = SignatureUtils.Zero
             });
             _genesisBlock = new BlockWithTransactions(result, signed.ToArray());

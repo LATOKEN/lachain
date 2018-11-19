@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 
 namespace Phorkus.Core.Network
 {
@@ -12,5 +13,10 @@ namespace Phorkus.Core.Network
         public string Host { get; set; }
 
         public int Port { get; set; }
+
+        public static IpEndPoint Parse(string value)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

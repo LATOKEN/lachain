@@ -24,12 +24,16 @@ namespace Phorkus.Core.Cryptography
         /// <summary>
         /// Recovers public key from signature
         /// </summary>
-        /// <param name="signature"></param>
         /// <param name="message"></param>
+        /// <param name="signature"></param>
         /// <param name="check"></param>
         /// <returns></returns>
-        byte[] RecoverSignature(byte[] signature, byte[] message, bool check);
+        byte[] RecoverSignature(byte[] message, byte[] signature, bool check, int recId = 0);
+        
+        byte[] RecoverSignature(byte[] message, byte[] signature, byte[] address);
 
+        byte[] ComputeAddress(byte[] publicKey);
+        
         /// <summary>
         /// Derive Public Key from private
         /// </summary>

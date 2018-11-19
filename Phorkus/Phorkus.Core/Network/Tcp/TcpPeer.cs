@@ -89,7 +89,7 @@ namespace Phorkus.Core.Network.Tcp
             }
             catch (Exception error)
             {
-                Console.Error.WriteLine(error);
+                System.Console.Error.WriteLine(error);
             }
 
             Disconnect();

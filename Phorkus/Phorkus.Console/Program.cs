@@ -1,10 +1,11 @@
 ﻿using System.Threading;
 using Google.Protobuf;
-using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
+using Phorkus.Core.Network;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
 
@@ -12,12 +13,35 @@ namespace Phorkus.Console
 {
     class Program
     {
-        static void Main(string[] args)
+        internal static void Main(string[] args)
+        {    
+            IConfigManager configManager = new ConfigManager("config.json");
+
+            var networkConfig = configManager.GetConfig<NetworkConfig>("network");
+        }
+
+        internal static void TestRecover(string[] args)
         {
-            ZeroAttack(args);
+            var crypto = new BouncyCastle();
+
+            var privateKey = "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48".HexToBytes();
+            var publicKey ="0x04affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5529db79354bbace25f4f378d6a1320ae69994841ff6fb547f1b3a0c21cf73f68".HexToBytes();
+            var address = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToBytes();
+
+            var message = "0xbadcab1e".HexToBytes();
+            var sig = crypto.Sign(message, privateKey);
+            
+            System.Console.WriteLine("Signature: " + sig.ToHex());
+
+            var isValid = crypto.VerifySignature(message, sig, publicKey);
+            System.Console.WriteLine("Is signature valid: " + isValid);
+            
+            var publicKey2 = crypto.RecoverSignature(message, sig, address);
+            System.Console.WriteLine("Restored public key: " + publicKey2.ToHex());
+            System.Console.WriteLine("Restored address: " + crypto.ComputeAddress(publicKey2).ToHex());
         }
         
-        static void ZeroAttack(string[] args)
+        internal static void ZeroAttack(string[] args)
         {
             /* be very careful with this vulnerable shit: https://developers.google.com/protocol-buffers/docs/proto3#default */
             var test1 = new Test1
@@ -41,7 +65,7 @@ namespace Phorkus.Console
             
         }
         
-        static void SignTest(string[] args)
+        internal static void SignTest(string[] args)
         {
             var privateKey = "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48".HexToBytes();
             var address = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToBytes();
@@ -64,7 +88,7 @@ namespace Phorkus.Console
             var txManager = new TransactionManager(null, null, null, null, crypto);
             
             System.Console.Write("Signing transaction... ");
-            var signed = txManager.Sign(new HashedTransaction(registerTx.Transaction), new KeyPair(privateKey, publicKey));
+            var signed = txManager.Sign(registerTx, new KeyPair(privateKey, publicKey));
             System.Console.WriteLine(signed.Signature.Buffer.ToHex());
             var publicKey2 = new PublicKey
             {
@@ -88,7 +112,7 @@ namespace Phorkus.Console
             System.Console.WriteLine(result2);
         }
         
-        static void Benchmark(string[] args)
+        internal static void Benchmark(string[] args)
         {
             var validators = new[]
             {
@@ -106,11 +130,11 @@ namespace Phorkus.Console
             var txs = new SignedTransaction[maxTx];
             for (var i = 0; i < maxTx; i++)
             {
-                var hashed = assetBuilder.BuildGenesisMinerTransaction();
+                var transaction = assetBuilder.BuildGenesisMinerTransaction();
                 txs[i] = new SignedTransaction
                 {
-                    Transaction = hashed.Transaction,
-                    Hash = hashed.Hash,
+                    Transaction = transaction,
+                    Hash = transaction.ToHash256(),
                     Signature = SignatureUtils.Zero
                 };
             }

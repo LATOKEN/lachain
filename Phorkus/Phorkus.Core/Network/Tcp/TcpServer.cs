@@ -94,7 +94,7 @@ namespace Phorkus.Core.Network.Tcp
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                System.Console.Error.WriteLine(e);
                 return null;
             }
             

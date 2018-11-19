@@ -56,8 +56,8 @@ namespace Phorkus.Core.Network
             
             _server.Start();
 
-            foreach (var ipEndPoint in _networkConfig.PeerEndPoints)
-                _server.ConnectTo(ipEndPoint);
+            foreach (var peer in _networkConfig.Peers)
+                _server.ConnectTo(IpEndPoint.Parse(peer));
         }
 
         public void Stop()

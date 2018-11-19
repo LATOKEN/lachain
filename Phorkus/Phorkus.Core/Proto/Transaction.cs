@@ -34,28 +34,28 @@ namespace Phorkus.Core.Proto {
             "EhgKBHR5cGUYASABKA4yCi5Bc3NldFR5cGUSDAoEbmFtZRgCIAEoCRIZCgZz",
             "dXBwbHkYAyABKAsyCS5GaXhlZDI1NhIQCghkZWNpbWFscxgEIAEoDRIXCgVv",
             "d25lchgFIAEoCzIILlVJbnQxNjAiKwoQTWluZXJUcmFuc2FjdGlvbhIXCgVt",
-            "aW5lchgBIAEoCzIILlVJbnQxNjAiwAIKC1RyYW5zYWN0aW9uEh4KBHR5cGUY",
-            "ASABKA4yEC5UcmFuc2FjdGlvblR5cGUSDwoHdmVyc2lvbhgCIAEoDRINCgVm",
-            "bGFncxgDIAEoBBIWCgRmcm9tGAQgASgLMgguVUludDE2MBINCgVub25jZRgF",
-            "IAEoBBIoCghjb250cmFjdBgGIAEoCzIULkNvbnRyYWN0VHJhbnNhY3Rpb25I",
-            "ABIiCgVpc3N1ZRgHIAEoCzIRLklzc3VlVHJhbnNhY3Rpb25IABImCgdwdWJs",
-            "aXNoGAggASgLMhMuUHVibGlzaFRyYW5zYWN0aW9uSAASKAoIcmVnaXN0ZXIY",
-            "CSABKAsyFC5SZWdpc3RlclRyYW5zYWN0aW9uSAASIgoFbWluZXIYCiABKAsy",
-            "ES5NaW5lclRyYW5zYWN0aW9uSABCBgoEZGF0YSK7AQoQVHJhbnNhY3Rpb25T",
-            "dGF0ZRIzCgZzdGF0dXMYASABKA4yIy5UcmFuc2FjdGlvblN0YXRlLlRyYW5z",
-            "YWN0aW9uU3RhdHVzInIKEVRyYW5zYWN0aW9uU3RhdHVzEhwKGFRSQU5TQUNU",
-            "SU9OX1NUQVRVU19UQUtFThAAEiAKHFRSQU5TQUNUSU9OX1NUQVRVU19DT05G",
-            "SVJNRUQQARIdChlUUkFOU0FDVElPTl9TVEFUVVNfRkFJTEVEEAIibQoRU2ln",
-            "bmVkVHJhbnNhY3Rpb24SIQoLdHJhbnNhY3Rpb24YASABKAsyDC5UcmFuc2Fj",
-            "dGlvbhIWCgRoYXNoGAIgASgLMgguVUludDI1NhIdCglzaWduYXR1cmUYAyAB",
-            "KAsyCi5TaWduYXR1cmUq4gEKD1RyYW5zYWN0aW9uVHlwZRIaChZUUkFOU0FD",
-            "VElPTl9UWVBFX01JTkVSEAASHQoZVFJBTlNBQ1RJT05fVFlQRV9SRUdJU1RF",
-            "UhABEhoKFlRSQU5TQUNUSU9OX1RZUEVfSVNTVUUQAhIdChlUUkFOU0FDVElP",
-            "Tl9UWVBFX0NPTlRSQUNUEAMSHAoYVFJBTlNBQ1RJT05fVFlQRV9QVUJMSVNI",
-            "EAQSHAoYVFJBTlNBQ1RJT05fVFlQRV9ERVBPU0lUEAUSHQoZVFJBTlNBQ1RJ",
-            "T05fVFlQRV9XSVRIRFJBVxAGKiwKD1RyYW5zYWN0aW9uRmxhZxIZChVUUkFO",
-            "U0FDVElPTl9GTEFHX05PTkUQAEIVqgISUGhvcmt1cy5Db3JlLlByb3RvYgZw",
-            "cm90bzM="));
+            "aW5lchgBIAEoCzIILlVJbnQxNjAiuwEKEFRyYW5zYWN0aW9uU3RhdGUSMwoG",
+            "c3RhdHVzGAEgASgOMiMuVHJhbnNhY3Rpb25TdGF0ZS5UcmFuc2FjdGlvblN0",
+            "YXR1cyJyChFUcmFuc2FjdGlvblN0YXR1cxIcChhUUkFOU0FDVElPTl9TVEFU",
+            "VVNfVEFLRU4QABIgChxUUkFOU0FDVElPTl9TVEFUVVNfQ09ORklSTUVEEAES",
+            "HQoZVFJBTlNBQ1RJT05fU1RBVFVTX0ZBSUxFRBACIt8CCgtUcmFuc2FjdGlv",
+            "bhIeCgR0eXBlGAEgASgOMhAuVHJhbnNhY3Rpb25UeXBlEg8KB3ZlcnNpb24Y",
+            "AiABKA0SDQoFZmxhZ3MYAyABKAQSFgoEZnJvbRgEIAEoCzIILlVJbnQxNjAS",
+            "DQoFbm9uY2UYBSABKAQSKAoIY29udHJhY3QYBiABKAsyFC5Db250cmFjdFRy",
+            "YW5zYWN0aW9uSAASIgoFaXNzdWUYByABKAsyES5Jc3N1ZVRyYW5zYWN0aW9u",
+            "SAASJgoHcHVibGlzaBgIIAEoCzITLlB1Ymxpc2hUcmFuc2FjdGlvbkgAEigK",
+            "CHJlZ2lzdGVyGAkgASgLMhQuUmVnaXN0ZXJUcmFuc2FjdGlvbkgAEiIKBW1p",
+            "bmVyGAogASgLMhEuTWluZXJUcmFuc2FjdGlvbkgAEh0KCXNpZ25hdHVyZRgL",
+            "IAEoCzIKLlNpZ25hdHVyZUIGCgRkYXRhIm0KEVNpZ25lZFRyYW5zYWN0aW9u",
+            "EiEKC3RyYW5zYWN0aW9uGAEgASgLMgwuVHJhbnNhY3Rpb24SFgoEaGFzaBgC",
+            "IAEoCzIILlVJbnQyNTYSHQoJc2lnbmF0dXJlGAMgASgLMgouU2lnbmF0dXJl",
+            "KuIBCg9UcmFuc2FjdGlvblR5cGUSGgoWVFJBTlNBQ1RJT05fVFlQRV9NSU5F",
+            "UhAAEh0KGVRSQU5TQUNUSU9OX1RZUEVfUkVHSVNURVIQARIaChZUUkFOU0FD",
+            "VElPTl9UWVBFX0lTU1VFEAISHQoZVFJBTlNBQ1RJT05fVFlQRV9DT05UUkFD",
+            "VBADEhwKGFRSQU5TQUNUSU9OX1RZUEVfUFVCTElTSBAEEhwKGFRSQU5TQUNU",
+            "SU9OX1RZUEVfREVQT1NJVBAFEh0KGVRSQU5TQUNUSU9OX1RZUEVfV0lUSERS",
+            "QVcQBiosCg9UcmFuc2FjdGlvbkZsYWcSGQoVVFJBTlNBQ1RJT05fRkxBR19O",
+            "T05FEABCFaoCElBob3JrdXMuQ29yZS5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.AssetReflection.Descriptor, global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.TransactionType), typeof(global::Phorkus.Core.Proto.TransactionFlag), }, new pbr::GeneratedClrTypeInfo[] {
@@ -64,8 +64,8 @@ namespace Phorkus.Core.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.PublishTransaction), global::Phorkus.Core.Proto.PublishTransaction.Parser, new[]{ "Hash", "Script" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.RegisterTransaction), global::Phorkus.Core.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.MinerTransaction), global::Phorkus.Core.Proto.MinerTransaction.Parser, new[]{ "Miner" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Transaction), global::Phorkus.Core.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner" }, new[]{ "Data" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.TransactionState), global::Phorkus.Core.Proto.TransactionState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus) }, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Transaction), global::Phorkus.Core.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner", "Signature" }, new[]{ "Data" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.SignedTransaction), global::Phorkus.Core.Proto.SignedTransaction.Parser, new[]{ "Transaction", "Hash", "Signature" }, null, null, null)
           }));
     }
@@ -1041,6 +1041,148 @@ namespace Phorkus.Core.Proto {
 
   }
 
+  public sealed partial class TransactionState : pb::IMessage<TransactionState> {
+    private static readonly pb::MessageParser<TransactionState> _parser = new pb::MessageParser<TransactionState>(() => new TransactionState());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<TransactionState> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public TransactionState() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public TransactionState(TransactionState other) : this() {
+      status_ = other.status_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public TransactionState Clone() {
+      return new TransactionState(this);
+    }
+
+    /// <summary>Field number for the "status" field.</summary>
+    public const int StatusFieldNumber = 1;
+    private global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus status_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus Status {
+      get { return status_; }
+      set {
+        status_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as TransactionState);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(TransactionState other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Status != other.Status) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Status != 0) hash ^= Status.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Status != 0) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Status);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Status != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(TransactionState other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Status != 0) {
+        Status = other.Status;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            status_ = (global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+
+    #region Nested types
+    /// <summary>Container for nested types declared in the TransactionState message type.</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static partial class Types {
+      public enum TransactionStatus {
+        [pbr::OriginalName("TRANSACTION_STATUS_TAKEN")] Taken = 0,
+        [pbr::OriginalName("TRANSACTION_STATUS_CONFIRMED")] Confirmed = 1,
+        [pbr::OriginalName("TRANSACTION_STATUS_FAILED")] Failed = 2,
+      }
+
+    }
+    #endregion
+
+  }
+
   public sealed partial class Transaction : pb::IMessage<Transaction> {
     private static readonly pb::MessageParser<Transaction> _parser = new pb::MessageParser<Transaction>(() => new Transaction());
     private pb::UnknownFieldSet _unknownFields;
@@ -1049,7 +1191,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1071,6 +1213,7 @@ namespace Phorkus.Core.Proto {
       flags_ = other.flags_;
       from_ = other.from_ != null ? other.from_.Clone() : null;
       nonce_ = other.nonce_;
+      signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       switch (other.DataCase) {
         case DataOneofCase.Contract:
           Contract = other.Contract.Clone();
@@ -1207,6 +1350,17 @@ namespace Phorkus.Core.Proto {
       }
     }
 
+    /// <summary>Field number for the "signature" field.</summary>
+    public const int SignatureFieldNumber = 11;
+    private global::Phorkus.Core.Proto.Signature signature_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Core.Proto.Signature Signature {
+      get { return signature_; }
+      set {
+        signature_ = value;
+      }
+    }
+
     private object data_;
     /// <summary>Enum of possible cases for the "data" oneof.</summary>
     public enum DataOneofCase {
@@ -1252,6 +1406,7 @@ namespace Phorkus.Core.Proto {
       if (!object.Equals(Publish, other.Publish)) return false;
       if (!object.Equals(Register, other.Register)) return false;
       if (!object.Equals(Miner, other.Miner)) return false;
+      if (!object.Equals(Signature, other.Signature)) return false;
       if (DataCase != other.DataCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1269,6 +1424,7 @@ namespace Phorkus.Core.Proto {
       if (dataCase_ == DataOneofCase.Publish) hash ^= Publish.GetHashCode();
       if (dataCase_ == DataOneofCase.Register) hash ^= Register.GetHashCode();
       if (dataCase_ == DataOneofCase.Miner) hash ^= Miner.GetHashCode();
+      if (signature_ != null) hash ^= Signature.GetHashCode();
       hash ^= (int) dataCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1323,6 +1479,10 @@ namespace Phorkus.Core.Proto {
         output.WriteRawTag(82);
         output.WriteMessage(Miner);
       }
+      if (signature_ != null) {
+        output.WriteRawTag(90);
+        output.WriteMessage(Signature);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1361,6 +1521,9 @@ namespace Phorkus.Core.Proto {
       if (dataCase_ == DataOneofCase.Miner) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Miner);
       }
+      if (signature_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Signature);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1389,6 +1552,12 @@ namespace Phorkus.Core.Proto {
       }
       if (other.Nonce != 0UL) {
         Nonce = other.Nonce;
+      }
+      if (other.signature_ != null) {
+        if (signature_ == null) {
+          signature_ = new global::Phorkus.Core.Proto.Signature();
+        }
+        Signature.MergeFrom(other.Signature);
       }
       switch (other.DataCase) {
         case DataOneofCase.Contract:
@@ -1502,156 +1671,24 @@ namespace Phorkus.Core.Proto {
             Miner = subBuilder;
             break;
           }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class TransactionState : pb::IMessage<TransactionState> {
-    private static readonly pb::MessageParser<TransactionState> _parser = new pb::MessageParser<TransactionState>(() => new TransactionState());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<TransactionState> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[6]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public TransactionState() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public TransactionState(TransactionState other) : this() {
-      status_ = other.status_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public TransactionState Clone() {
-      return new TransactionState(this);
-    }
-
-    /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 1;
-    private global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus status_ = 0;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus Status {
-      get { return status_; }
-      set {
-        status_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as TransactionState);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(TransactionState other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Status != other.Status) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Status != 0) hash ^= Status.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Status != 0) {
-        output.WriteRawTag(8);
-        output.WriteEnum((int) Status);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Status != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(TransactionState other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Status != 0) {
-        Status = other.Status;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 8: {
-            status_ = (global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus) input.ReadEnum();
+          case 90: {
+            if (signature_ == null) {
+              signature_ = new global::Phorkus.Core.Proto.Signature();
+            }
+            input.ReadMessage(signature_);
             break;
           }
         }
       }
     }
 
-    #region Nested types
-    /// <summary>Container for nested types declared in the TransactionState message type.</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static partial class Types {
-      public enum TransactionStatus {
-        [pbr::OriginalName("TRANSACTION_STATUS_TAKEN")] Taken = 0,
-        [pbr::OriginalName("TRANSACTION_STATUS_CONFIRMED")] Confirmed = 1,
-        [pbr::OriginalName("TRANSACTION_STATUS_FAILED")] Failed = 2,
-      }
-
-    }
-    #endregion
-
   }
 
   /// <summary>
-  /// check this link: https://en.bitcoin.it/wiki/Transaction_malleability 
+  ///
+  ///tx_hash = hash( raw_tx + sign(hash(raw_tx)) )
+  ///
+  ///check this link: https://en.bitcoin.it/wiki/Transaction_malleability
   /// </summary>
   public sealed partial class SignedTransaction : pb::IMessage<SignedTransaction> {
     private static readonly pb::MessageParser<SignedTransaction> _parser = new pb::MessageParser<SignedTransaction>(() => new SignedTransaction());
