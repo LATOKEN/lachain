@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
+using Phorkus.Core.Handling;
 using Phorkus.Core.Network.Proto;
 using Phorkus.Core.Proto;
 
@@ -8,7 +10,8 @@ namespace Phorkus.Core.Network
 {
     public class NetworkManager : INetworkManager, INetworkContext
     {
-        private readonly ITransport _transport;
+        private readonly IMessageListener _messageListener;
+        private readonly IHandlingManager _handlingManager;
         private readonly IServer _server;
         private readonly NetworkConfig _networkConfig;
 
@@ -16,13 +19,15 @@ namespace Phorkus.Core.Network
 
         public ConcurrentDictionary<IpEndPoint, IPeer> ActivePeers { get; }
             = new ConcurrentDictionary<IpEndPoint, IPeer>();
-
+        
         public NetworkManager(
-            ITransport transport,
+            IMessageListener messageListener,
+            IHandlingManager handlingManager,
             IServer server,
             NetworkConfig networkConfig)
         {
-            _transport = transport;
+            _messageListener = messageListener;
+            _handlingManager = handlingManager;
             _server = server;
             _networkConfig = networkConfig;
         }
@@ -46,25 +51,13 @@ namespace Phorkus.Core.Network
             
             _server.OnPeerConnected += _PeerConnected;
             _server.OnPeerClosed += _PeerClosed;
-
+            _messageListener.OnMessageHandled += _MessageHandled;
+            _messageListener.OnRateLimited += _RateLimited;
+            
             _server.Start();
 
             foreach (var ipEndPoint in _networkConfig.PeerEndPoints)
                 _server.ConnectTo(ipEndPoint);
-        }
-        
-        private void _PeerConnected(object sender, IPeer peer)
-        {
-            /* TODO: "also check ACL here" */
-            var result = ActivePeers.TryAdd(peer.EndPoint, peer);
-            if (!result)
-                return;
-            peer.OnDisconnect += (s, e) => ActivePeers.TryRemove(peer.EndPoint, out _);
-            /* TODO: "start message listener here" */
-        }
-        
-        private void _PeerClosed(object sender, IPeer peer)
-        {
         }
 
         public void Stop()
@@ -75,6 +68,33 @@ namespace Phorkus.Core.Network
         public void Broadcast(Message message)
         {
             Parallel.ForEach(ActivePeers.Values, peer => peer.Send(message));
+        }
+        
+        private void _PeerConnected(object sender, IPeer peer)
+        {
+            /* TODO: "also check ACL here" */
+            var result = ActivePeers.TryAdd(peer.EndPoint, peer);
+            if (!result)
+                return;
+            peer.OnDisconnect += (s, e) => ActivePeers.TryRemove(peer.EndPoint, out _);
+            _messageListener.StartFor(peer, CancellationToken.None);
+        }
+        
+        private void _MessageHandled(object sender, Message message)
+        {
+            if (!(sender is IPeer peer))
+                throw new ArgumentNullException(nameof(peer));
+            _handlingManager.HandleMessage(peer, message);
+        }
+        
+        private void _RateLimited(object sender, IPeer peer)
+        {
+            /* TODO: "disconnect peer here" */
+        }
+        
+        private void _PeerClosed(object sender, IPeer peer)
+        {
+            ActivePeers.TryRemove(peer.EndPoint, out _);
         }
     }
 }
