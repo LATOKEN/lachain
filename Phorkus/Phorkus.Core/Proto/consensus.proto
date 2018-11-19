@@ -21,17 +21,27 @@ message ConsensusPrepareResponse {
     Signature signature = 1;
 }
 
-message ConsensusPayloadCustomData {
-    enum ConsensusMessageType {
-        CONSENSUS_MESSAGE_TYPE_CHANGE_VIEW = 0x00;
-        CONSENSUS_MESSAGE_TYPE_PREPARE_REQUEST = 0x20;
-        CONSENSUS_MESSAGE_TYPE_PREPARE_RESPONSE = 0x21;
+message ConsensusPayload {
+    enum ConsensusPayloadType {
+        CONSENSUS_PAYLOAD_TYPE_CHANGE_VIEW = 0x00;
+        CONSENSUS_PAYLOAD_TYPE_PREPARE_REQUEST = 0x20;
+        CONSENSUS_PAYLOAD_TYPE_PREPARE_RESPONSE = 0x21;
     }
-    ConsensusMessageType type = 1;
-    uint32 view_number = 2;
+    uint32 version = 1;
+    UInt256 prev_hash = 2;
+    uint64 block_index = 3;
+    uint32 validator_index = 4;
+    uint64 timestamp = 5;
+    uint32 view_number = 6;
+    ConsensusPayloadType type = 7;
     oneof message {
-        ConsensusChangeView change_view = 3;
-        ConsensusPrepareRequest prepare_request = 4;
-        ConsensusPrepareResponse prepare_response = 5;
+        ConsensusChangeView change_view = 8;
+        ConsensusPrepareRequest prepare_request = 9;
+        ConsensusPrepareResponse prepare_response = 10;
     }
+}
+
+message ConsensusMessage {   
+    ConsensusPayload payload = 1;
+    Signature signature = 2;
 }

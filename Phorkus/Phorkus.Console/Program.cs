@@ -149,10 +149,10 @@ namespace Phorkus.Console
                 {
                     while (true)
                     {
-                        var blockBuilder = new BlockBuilder(txs, genesisBlock.Block);
-                        var block = blockBuilder.Build(0);
-                        Interlocked.Add(ref size, block.Block.ToByteArray().Length);
-                        Interlocked.Add(ref tps, 1);
+//                        var blockBuilder = new BlockBuilder(txs, genesisBlock.Block);
+//                        var block = blockBuilder.Build(0);
+//                        Interlocked.Add(ref size, block.Block.ToByteArray().Length);
+//                        Interlocked.Add(ref tps, 1);
                     }
                 });
                 threads[i].Start();

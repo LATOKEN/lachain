@@ -8,19 +8,22 @@ namespace Phorkus.Core.Blockchain.Pool
 {
     public class BlockBuilder
     {
+        private readonly UInt256 _prevBlockHash;
+        private readonly ulong _prevBlockIndex;
         private readonly IReadOnlyCollection<SignedTransaction> _hashedTransactions;
-        private readonly Block _prevBlock;
 
-        public BlockBuilder(ITransactionPool transactionPool, Block prevBlock)
+        public BlockBuilder(ITransactionPool transactionPool, UInt256 prevBlockHash, ulong prevBlockIndex)
         {
+            _prevBlockHash = prevBlockHash;
+            _prevBlockIndex = prevBlockIndex;
             _hashedTransactions = transactionPool.Peek();
-            _prevBlock = prevBlock;
         }
         
-        public BlockBuilder(IReadOnlyCollection<SignedTransaction> hashedTransactions, Block prevBlock)
+        public BlockBuilder(IReadOnlyCollection<SignedTransaction> hashedTransactions, UInt256 prevBlockHash, ulong prevBlockIndex)
         {
+            _prevBlockHash = prevBlockHash;
+            _prevBlockIndex = prevBlockIndex;
             _hashedTransactions = hashedTransactions;
-            _prevBlock = prevBlock;
         }
         
         public BlockWithTransactions Build(ulong nonce)
@@ -28,10 +31,10 @@ namespace Phorkus.Core.Blockchain.Pool
             var header = new BlockHeader
             {
                 Version = 1,
-                PrevBlockHash = _prevBlock.Hash,
+                PrevBlockHash = _prevBlockHash,
                 MerkleRoot = null,
                 Timestamp = TimeUtils.CurrentTimeMillis(),
-                Index = _prevBlock.Header.Index + 1,
+                Index = _prevBlockIndex + 1,
                 Type = HeaderType.Extended,
                 Nonce = nonce
             };

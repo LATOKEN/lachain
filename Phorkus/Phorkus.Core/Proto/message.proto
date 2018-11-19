@@ -28,6 +28,8 @@ enum MessageType {
     /* request peer neighbours */
     MESSAGE_TYPE_GET_NEIGHBOURS = 11;
     MESSAGE_TYPE_NEIGHBOURS_GOT = 12;
+    /* consensus message */
+    MESSAGE_TYPE_CONSENSUS_MESSAGE = 13;
 }
 
 message HandshakeRequestMessage {
@@ -88,5 +90,6 @@ message Message {
         TransactionsGotMessage transactions_got = 17;
         GetNeighboursMessage get_neighbours = 18;
         NeighboursGotMessage neighbours_got = 19;
+        ConsensusMessage consensus_message = 20;
     }
 }

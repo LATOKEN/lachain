@@ -38,7 +38,7 @@ namespace Phorkus.Core.Network.Proto {
             "IhMKEUdldE1lbXBvb2xNZXNzYWdlIjkKEU1lbXBvb2xHb3RNZXNzYWdlEiQK",
             "EnRyYW5zYWN0aW9uX2hhc2hlcxgBIAMoCzIILlVJbnQyNTYiFgoUR2V0TmVp",
             "Z2hib3Vyc01lc3NhZ2UiMQoUTmVpZ2hib3Vyc0dvdE1lc3NhZ2USGQoKbmVp",
-            "Z2hib3VycxgBIAMoCzIFLk5vZGUiqwQKB01lc3NhZ2USGgoEdHlwZRgBIAEo",
+            "Z2hib3VycxgBIAMoCzIFLk5vZGUi2wQKB01lc3NhZ2USGgoEdHlwZRgBIAEo",
             "DjIMLk1lc3NhZ2VUeXBlEjUKEWhhbmRzaGFrZV9yZXF1ZXN0GAogASgLMhgu",
             "SGFuZHNoYWtlUmVxdWVzdE1lc3NhZ2VIABI3ChJoYW5kc2hha2VfcmVzcG9u",
             "c2UYCyABKAsyGS5IYW5kc2hha2VSZXNwb25zZU1lc3NhZ2VIABI0ChFnZXRf",
@@ -50,18 +50,20 @@ namespace Phorkus.Core.Network.Proto {
             "dGlvbnNNZXNzYWdlSAASMwoQdHJhbnNhY3Rpb25zX2dvdBgRIAEoCzIXLlRy",
             "YW5zYWN0aW9uc0dvdE1lc3NhZ2VIABIvCg5nZXRfbmVpZ2hib3VycxgSIAEo",
             "CzIVLkdldE5laWdoYm91cnNNZXNzYWdlSAASLwoObmVpZ2hib3Vyc19nb3QY",
-            "EyABKAsyFS5OZWlnaGJvdXJzR290TWVzc2FnZUgAQgYKBGJvZHkqtgMKC01l",
-            "c3NhZ2VUeXBlEhgKFE1FU1NBR0VfVFlQRV9VTktOT1dOEAASIgoeTUVTU0FH",
-            "RV9UWVBFX0hBTkRTSEFLRV9SRVFVRVNUEAESIwofTUVTU0FHRV9UWVBFX0hB",
-            "TkRTSEFLRV9SRVNQT05TRRACEiIKHk1FU1NBR0VfVFlQRV9HRVRfQkxPQ0tf",
-            "SEVBREVSUxADEiIKHk1FU1NBR0VfVFlQRV9CTE9DS19IRUFERVJTX0dPVBAE",
-            "EhsKF01FU1NBR0VfVFlQRV9HRVRfQkxPQ0tTEAUSGwoXTUVTU0FHRV9UWVBF",
-            "X0JMT0NLU19HT1QQBhIhCh1NRVNTQUdFX1RZUEVfR0VUX1RSQU5TQUNUSU9O",
-            "UxAHEiEKHU1FU1NBR0VfVFlQRV9UUkFOU0FDVElPTlNfR09UEAgSHAoYTUVT",
-            "U0FHRV9UWVBFX0dFVF9NRU1QT09MEAkSHAoYTUVTU0FHRV9UWVBFX01FTVBP",
-            "T0xfR09UEAoSHwobTUVTU0FHRV9UWVBFX0dFVF9ORUlHSEJPVVJTEAsSHwob",
-            "TUVTU0FHRV9UWVBFX05FSUdIQk9VUlNfR09UEAxCHaoCGlBob3JrdXMuQ29y",
-            "ZS5OZXR3b3JrLlByb3RvYgZwcm90bzM="));
+            "EyABKAsyFS5OZWlnaGJvdXJzR290TWVzc2FnZUgAEi4KEWNvbnNlbnN1c19t",
+            "ZXNzYWdlGBQgASgLMhEuQ29uc2Vuc3VzTWVzc2FnZUgAQgYKBGJvZHkq2gMK",
+            "C01lc3NhZ2VUeXBlEhgKFE1FU1NBR0VfVFlQRV9VTktOT1dOEAASIgoeTUVT",
+            "U0FHRV9UWVBFX0hBTkRTSEFLRV9SRVFVRVNUEAESIwofTUVTU0FHRV9UWVBF",
+            "X0hBTkRTSEFLRV9SRVNQT05TRRACEiIKHk1FU1NBR0VfVFlQRV9HRVRfQkxP",
+            "Q0tfSEVBREVSUxADEiIKHk1FU1NBR0VfVFlQRV9CTE9DS19IRUFERVJTX0dP",
+            "VBAEEhsKF01FU1NBR0VfVFlQRV9HRVRfQkxPQ0tTEAUSGwoXTUVTU0FHRV9U",
+            "WVBFX0JMT0NLU19HT1QQBhIhCh1NRVNTQUdFX1RZUEVfR0VUX1RSQU5TQUNU",
+            "SU9OUxAHEiEKHU1FU1NBR0VfVFlQRV9UUkFOU0FDVElPTlNfR09UEAgSHAoY",
+            "TUVTU0FHRV9UWVBFX0dFVF9NRU1QT09MEAkSHAoYTUVTU0FHRV9UWVBFX01F",
+            "TVBPT0xfR09UEAoSHwobTUVTU0FHRV9UWVBFX0dFVF9ORUlHSEJPVVJTEAsS",
+            "HwobTUVTU0FHRV9UWVBFX05FSUdIQk9VUlNfR09UEAwSIgoeTUVTU0FHRV9U",
+            "WVBFX0NPTlNFTlNVU19NRVNTQUdFEA1CHaoCGlBob3JrdXMuQ29yZS5OZXR3",
+            "b3JrLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, global::Phorkus.Core.Proto.TransactionReflection.Descriptor, global::Phorkus.Core.Proto.BlockReflection.Descriptor, global::Phorkus.Core.Proto.ConsensusReflection.Descriptor, global::Phorkus.Core.Proto.NodeReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Network.Proto.MessageType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -77,7 +79,7 @@ namespace Phorkus.Core.Network.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.MempoolGotMessage), global::Phorkus.Core.Network.Proto.MempoolGotMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.GetNeighboursMessage), global::Phorkus.Core.Network.Proto.GetNeighboursMessage.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.NeighboursGotMessage), global::Phorkus.Core.Network.Proto.NeighboursGotMessage.Parser, new[]{ "Neighbours" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.Message), global::Phorkus.Core.Network.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlockHeaders", "BlockHeadersGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot" }, new[]{ "Body" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.Message), global::Phorkus.Core.Network.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlockHeaders", "BlockHeadersGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot", "ConsensusMessage" }, new[]{ "Body" }, null, null)
           }));
     }
     #endregion
@@ -119,6 +121,10 @@ namespace Phorkus.Core.Network.Proto {
     /// </summary>
     [pbr::OriginalName("MESSAGE_TYPE_GET_NEIGHBOURS")] GetNeighbours = 11,
     [pbr::OriginalName("MESSAGE_TYPE_NEIGHBOURS_GOT")] NeighboursGot = 12,
+    /// <summary>
+    /// consensus message 
+    /// </summary>
+    [pbr::OriginalName("MESSAGE_TYPE_CONSENSUS_MESSAGE")] ConsensusMessage = 13,
   }
 
   #endregion
@@ -1601,6 +1607,9 @@ namespace Phorkus.Core.Network.Proto {
         case BodyOneofCase.NeighboursGot:
           NeighboursGot = other.NeighboursGot.Clone();
           break;
+        case BodyOneofCase.ConsensusMessage:
+          ConsensusMessage = other.ConsensusMessage.Clone();
+          break;
       }
 
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -1732,6 +1741,17 @@ namespace Phorkus.Core.Network.Proto {
       }
     }
 
+    /// <summary>Field number for the "consensus_message" field.</summary>
+    public const int ConsensusMessageFieldNumber = 20;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Core.Proto.ConsensusMessage ConsensusMessage {
+      get { return bodyCase_ == BodyOneofCase.ConsensusMessage ? (global::Phorkus.Core.Proto.ConsensusMessage) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.ConsensusMessage;
+      }
+    }
+
     private object body_;
     /// <summary>Enum of possible cases for the "body" oneof.</summary>
     public enum BodyOneofCase {
@@ -1746,6 +1766,7 @@ namespace Phorkus.Core.Network.Proto {
       TransactionsGot = 17,
       GetNeighbours = 18,
       NeighboursGot = 19,
+      ConsensusMessage = 20,
     }
     private BodyOneofCase bodyCase_ = BodyOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1783,6 +1804,7 @@ namespace Phorkus.Core.Network.Proto {
       if (!object.Equals(TransactionsGot, other.TransactionsGot)) return false;
       if (!object.Equals(GetNeighbours, other.GetNeighbours)) return false;
       if (!object.Equals(NeighboursGot, other.NeighboursGot)) return false;
+      if (!object.Equals(ConsensusMessage, other.ConsensusMessage)) return false;
       if (BodyCase != other.BodyCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1801,6 +1823,7 @@ namespace Phorkus.Core.Network.Proto {
       if (bodyCase_ == BodyOneofCase.TransactionsGot) hash ^= TransactionsGot.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GetNeighbours) hash ^= GetNeighbours.GetHashCode();
       if (bodyCase_ == BodyOneofCase.NeighboursGot) hash ^= NeighboursGot.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.ConsensusMessage) hash ^= ConsensusMessage.GetHashCode();
       hash ^= (int) bodyCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1859,6 +1882,10 @@ namespace Phorkus.Core.Network.Proto {
         output.WriteRawTag(154, 1);
         output.WriteMessage(NeighboursGot);
       }
+      if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
+        output.WriteRawTag(162, 1);
+        output.WriteMessage(ConsensusMessage);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1899,6 +1926,9 @@ namespace Phorkus.Core.Network.Proto {
       }
       if (bodyCase_ == BodyOneofCase.NeighboursGot) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(NeighboursGot);
+      }
+      if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(ConsensusMessage);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1974,6 +2004,12 @@ namespace Phorkus.Core.Network.Proto {
             NeighboursGot = new global::Phorkus.Core.Network.Proto.NeighboursGotMessage();
           }
           NeighboursGot.MergeFrom(other.NeighboursGot);
+          break;
+        case BodyOneofCase.ConsensusMessage:
+          if (ConsensusMessage == null) {
+            ConsensusMessage = new global::Phorkus.Core.Proto.ConsensusMessage();
+          }
+          ConsensusMessage.MergeFrom(other.ConsensusMessage);
           break;
       }
 
@@ -2080,6 +2116,15 @@ namespace Phorkus.Core.Network.Proto {
             }
             input.ReadMessage(subBuilder);
             NeighboursGot = subBuilder;
+            break;
+          }
+          case 162: {
+            global::Phorkus.Core.Proto.ConsensusMessage subBuilder = new global::Phorkus.Core.Proto.ConsensusMessage();
+            if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
+              subBuilder.MergeFrom(ConsensusMessage);
+            }
+            input.ReadMessage(subBuilder);
+            ConsensusMessage = subBuilder;
             break;
           }
         }
