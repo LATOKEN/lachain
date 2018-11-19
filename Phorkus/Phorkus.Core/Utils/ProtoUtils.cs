@@ -23,7 +23,7 @@ namespace Phorkus.Core.Utils
                 return stream.ToArray();
             }
         }
-        
+
         public static ICollection<T> ToMessageArray<T>(this byte[] buffer, ulong limit = ulong.MaxValue)
             where T : IMessage<T>, new()
         {
@@ -38,7 +38,7 @@ namespace Phorkus.Core.Utils
                 return array;
             }
         }
-        
+
         public static UInt256 ToHash256<T>(this T t)
             where T : IMessage<T>
         {
@@ -47,7 +47,7 @@ namespace Phorkus.Core.Utils
                 Buffer = ByteString.CopyFrom(t.ToByteArray().Sha256())
             };
         }
-        
+
         public static UInt160 ToHash160<T>(this T t)
             where T : IMessage<T>
         {

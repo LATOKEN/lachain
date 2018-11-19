@@ -10,20 +10,24 @@ namespace Phorkus.Core.Storage
         /// </summary>
         /// <param name="txHash">Identifier / hash of the transaction</param>
         /// <returns>Transaction with the specified id / hash</returns>
-        Transaction GetTransactionByHash(UInt256 txHash);
+        SignedTransaction GetTransactionByHash(UInt256 txHash);
         
         /// <summary>
         /// Adds a transaction to the repository
         /// </summary>
         /// <param name="transaction">Transaction to add</param>
-        void AddTransaction(Transaction transaction);
+        void AddTransaction(SignedTransaction transaction);
 
-        IEnumerable<Transaction> GetTransactionsByHashes(IReadOnlyCollection<UInt256> hashes);
+        TransactionState ChangeTransactionState(UInt256 txHash, TransactionState txState);
+
+        TransactionState GetTransactionState(UInt256 txHash);
+        
+        IEnumerable<SignedTransaction> GetTransactionsByHashes(IEnumerable<UInt256> txHashes);
 
         bool ContainsTransactionByHash(UInt256 txHash);
         
-        Transaction GetLatestTransaction();
+        SignedTransaction GetLatestTransactionByFrom(UInt160 from);
         
-        uint GetTotalTransactionCount(UInt160 address);
+        uint GetTotalTransactionCount(UInt160 from);
     }
 }

@@ -61,6 +61,18 @@ message Transaction {
     }
 }
 
+// raw_hash = hash(RPL (w/o sig))
+// final_hash = (sign(raw_hash) -> RPL)
+
+message TransactionState {
+    enum TransactionStatus {
+        TRANSACTION_STATUS_TAKEN = 0;
+        TRANSACTION_STATUS_CONFIRMED = 1;
+        TRANSACTION_STATUS_FAILED = 2;
+    }
+    TransactionStatus status = 1;
+}
+
 /* check this link: https://en.bitcoin.it/wiki/Transaction_malleability */
 message SignedTransaction {
     Transaction transaction = 1;

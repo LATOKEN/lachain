@@ -11,14 +11,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICrypto _crypto;
-        
         private readonly IReadOnlyDictionary<TransactionType, ITransactionPersister> _transactionPersisters;
 
         public TransactionManager(
             ITransactionRepository transactionRepository,
             IAssetRepository assetRepository,
             IBalanceRepository balanceRepository,
-            IContractRepository contractRepository, ICrypto crypto)
+            IContractRepository contractRepository,
+            ICrypto crypto)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionPersister>
             {
@@ -30,35 +30,48 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 {TransactionType.Deposit, new DepositTransactionPersister()},
                 {TransactionType.Withdraw, new WithdrawTransactionPersister()}
             };
-            _transactionRepository = transactionRepository;
-            _crypto = crypto;
+            _transactionRepository =
+                transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
+            _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
         }
         
         public event EventHandler<SignedTransaction> OnTransactionPersisted;
+        public event EventHandler<SignedTransaction> OnTransactionFailed;
         public event EventHandler<SignedTransaction> OnTransactionSigned;
 
         public HashedTransaction GetByHash(UInt256 transactionHash)
         {
             var tx = _transactionRepository.GetTransactionByHash(transactionHash);
-            return tx != null ? new HashedTransaction(tx) : null;
+            return tx != null ? new HashedTransaction(tx.Transaction) : null;
         }
-        
-        public void Persist(SignedTransaction transaction)
+
+        public OperatingError Persist(SignedTransaction transaction)
         {
+            /* verify transaction */
             var hashed = new HashedTransaction(transaction.Transaction);
-            if (Verify(hashed) != OperatingError.Ok)
-                throw new InvalidTransactionException();
+            var verifyError = Verify(hashed);
+            if (verifyError != OperatingError.Ok)
+                return verifyError;
             var persister = _transactionPersisters[transaction.Transaction.Type];
             if (persister == null)
-                throw new InvalidTransactionTypeException();
-            _transactionRepository.AddTransaction(transaction.Transaction);
-            /* TODO: "prepare persistence here" */
-            if (!persister.Persist(transaction.Transaction, transaction.Hash))
-                return;
-            /* TODO: "finalize persistence here" */
+                return OperatingError.UnsupportedTransaction;
+            /* change transaction state to taken */
+            _transactionRepository.AddTransaction(transaction);
+            var result = persister.Persist(transaction.Transaction, transaction.Hash);
+            if (result != OperatingError.Ok)
+            {
+                _transactionRepository.ChangeTransactionState(hashed.Hash,
+                    new TransactionState {Status = TransactionState.Types.TransactionStatus.Failed});
+                OnTransactionFailed?.Invoke(this, transaction);
+                return result;
+            }
+            /* finalize transaction state */
+            _transactionRepository.ChangeTransactionState(hashed.Hash,
+                new TransactionState {Status = TransactionState.Types.TransactionStatus.Confirmed});
             OnTransactionPersisted?.Invoke(this, transaction);
+            return OperatingError.Ok;
         }
-        
+
         public SignedTransaction Sign(HashedTransaction transaction, KeyPair keyPair)
         {
             if (Verify(transaction) != OperatingError.Ok)
@@ -76,7 +89,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError VerifySignature(SignedTransaction transaction, PublicKey publicKey)
         {
-            var result = _crypto.VerifySignature(transaction.Hash.Buffer.ToByteArray(), transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+            var result = _crypto.VerifySignature(transaction.Hash.Buffer.ToByteArray(),
+                transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
@@ -89,10 +103,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             /* validate default transaction attributes */
             if (tx.Version != 0)
                 return OperatingError.UnsupportedVersion;
-            if (tx.From == null || !tx.From.IsValid())
-                return OperatingError.SizeMismatched;
-            var lastTx = _transactionRepository.GetLatestTransaction();
-            if (lastTx != null && tx.Nonce != lastTx.Nonce + 1)
+            var latestTx = _transactionRepository.GetLatestTransactionByFrom(tx.From);
+            if (latestTx != null && tx.Nonce != latestTx.Transaction.Nonce + 1)
                 return OperatingError.InvalidNonce;
             /* verify transaction via persister */
             var persister = _transactionPersisters[tx.Type];

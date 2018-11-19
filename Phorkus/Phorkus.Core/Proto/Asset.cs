@@ -26,7 +26,7 @@ namespace Phorkus.Core.Proto {
           string.Concat(
             "Cgthc3NldC5wcm90bxoNZGVmYXVsdC5wcm90byKeAQoFQXNzZXQSFgoEaGFz",
             "aBgBIAEoCzIILlVJbnQxNjASDwoHdmVyc2lvbhgCIAEoDRIYCgR0eXBlGAMg",
-            "ASgOMgouQXNzZXRUeXBlEgwKBG5hbWUYBCABKAkSGQoGYW1vdW50GAUgASgL",
+            "ASgOMgouQXNzZXRUeXBlEgwKBG5hbWUYBCABKAkSGQoGc3VwcGx5GAUgASgL",
             "MgkuRml4ZWQyNTYSEAoIZGVjaW1hbHMYBiABKA0SFwoFb3duZXIYByABKAsy",
             "CC5VSW50MTYwKlUKCUFzc2V0VHlwZRIYChRBU1NFVF9UWVBFX0dPVkVSTklO",
             "RxAAEhUKEUFTU0VUX1RZUEVfQ1VTVE9NEAESFwoTQVNTRVRfVFlQRV9QTEFU",
@@ -34,7 +34,7 @@ namespace Phorkus.Core.Proto {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.AssetType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Asset), global::Phorkus.Core.Proto.Asset.Parser, new[]{ "Hash", "Version", "Type", "Name", "Amount", "Decimals", "Owner" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Asset), global::Phorkus.Core.Proto.Asset.Parser, new[]{ "Hash", "Version", "Type", "Name", "Supply", "Decimals", "Owner" }, null, null, null)
           }));
     }
     #endregion
@@ -79,7 +79,7 @@ namespace Phorkus.Core.Proto {
       version_ = other.version_;
       type_ = other.type_;
       name_ = other.name_;
-      amount_ = other.amount_ != null ? other.amount_.Clone() : null;
+      supply_ = other.supply_ != null ? other.supply_.Clone() : null;
       decimals_ = other.decimals_;
       owner_ = other.owner_ != null ? other.owner_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -134,14 +134,14 @@ namespace Phorkus.Core.Proto {
       }
     }
 
-    /// <summary>Field number for the "amount" field.</summary>
-    public const int AmountFieldNumber = 5;
-    private global::Phorkus.Core.Proto.Fixed256 amount_;
+    /// <summary>Field number for the "supply" field.</summary>
+    public const int SupplyFieldNumber = 5;
+    private global::Phorkus.Core.Proto.Fixed256 supply_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Fixed256 Amount {
-      get { return amount_; }
+    public global::Phorkus.Core.Proto.Fixed256 Supply {
+      get { return supply_; }
       set {
-        amount_ = value;
+        supply_ = value;
       }
     }
 
@@ -184,7 +184,7 @@ namespace Phorkus.Core.Proto {
       if (Version != other.Version) return false;
       if (Type != other.Type) return false;
       if (Name != other.Name) return false;
-      if (!object.Equals(Amount, other.Amount)) return false;
+      if (!object.Equals(Supply, other.Supply)) return false;
       if (Decimals != other.Decimals) return false;
       if (!object.Equals(Owner, other.Owner)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -197,7 +197,7 @@ namespace Phorkus.Core.Proto {
       if (Version != 0) hash ^= Version.GetHashCode();
       if (Type != 0) hash ^= Type.GetHashCode();
       if (Name.Length != 0) hash ^= Name.GetHashCode();
-      if (amount_ != null) hash ^= Amount.GetHashCode();
+      if (supply_ != null) hash ^= Supply.GetHashCode();
       if (Decimals != 0) hash ^= Decimals.GetHashCode();
       if (owner_ != null) hash ^= Owner.GetHashCode();
       if (_unknownFields != null) {
@@ -229,9 +229,9 @@ namespace Phorkus.Core.Proto {
         output.WriteRawTag(34);
         output.WriteString(Name);
       }
-      if (amount_ != null) {
+      if (supply_ != null) {
         output.WriteRawTag(42);
-        output.WriteMessage(Amount);
+        output.WriteMessage(Supply);
       }
       if (Decimals != 0) {
         output.WriteRawTag(48);
@@ -261,8 +261,8 @@ namespace Phorkus.Core.Proto {
       if (Name.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
-      if (amount_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Amount);
+      if (supply_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Supply);
       }
       if (Decimals != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Decimals);
@@ -296,11 +296,11 @@ namespace Phorkus.Core.Proto {
       if (other.Name.Length != 0) {
         Name = other.Name;
       }
-      if (other.amount_ != null) {
-        if (amount_ == null) {
-          amount_ = new global::Phorkus.Core.Proto.Fixed256();
+      if (other.supply_ != null) {
+        if (supply_ == null) {
+          supply_ = new global::Phorkus.Core.Proto.Fixed256();
         }
-        Amount.MergeFrom(other.Amount);
+        Supply.MergeFrom(other.Supply);
       }
       if (other.Decimals != 0) {
         Decimals = other.Decimals;
@@ -342,10 +342,10 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 42: {
-            if (amount_ == null) {
-              amount_ = new global::Phorkus.Core.Proto.Fixed256();
+            if (supply_ == null) {
+              supply_ = new global::Phorkus.Core.Proto.Fixed256();
             }
-            input.ReadMessage(amount_);
+            input.ReadMessage(supply_);
             break;
           }
           case 48: {

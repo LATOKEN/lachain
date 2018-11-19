@@ -4,7 +4,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class MinerTranscationPersister : ITransactionPersister
     {
-        public bool Persist(Transaction transaction, UInt256 hash)
+        public OperatingError Persist(Transaction transaction, UInt256 hash)
         {
             throw new System.NotImplementedException();
         }

@@ -8,6 +8,10 @@
         SizeMismatched,
         InvalidNonce,
         UnsupportedTransaction,
-        InvalidSignature
+        InvalidSignature,
+        DoubleSpend,
+        InvalidTransaction,
+        AlreadyExists,
+        
     }
 }

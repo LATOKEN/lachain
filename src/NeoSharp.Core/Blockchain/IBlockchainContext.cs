@@ -7,7 +7,7 @@ namespace NeoSharp.Core.Blockchain
         BlockHeader CurrentBlock { get; set; }
 
         BlockHeader LastBlockHeader { get; set; }
-
+        
         bool IsSyncing { get; set; }
         
         bool NeedPeerSync(uint peerCurrentBlockIndex);

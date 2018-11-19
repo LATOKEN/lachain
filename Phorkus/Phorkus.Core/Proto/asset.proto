@@ -13,7 +13,7 @@ message Asset {
     uint32 version = 2;
     AssetType type = 3;
     string name = 4;
-    Fixed256 amount = 5;
+    Fixed256 supply = 5;
     uint32 decimals = 6;
     UInt160 owner = 7;
 }

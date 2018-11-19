@@ -44,6 +44,16 @@ namespace Phorkus.Core.Utils
             return result;
         }
         
+        public static string ToHex(this UInt160 value)
+        {
+            return value.Buffer.ToHex();
+        }
+        
+        public static string ToHex(this UInt256 value)
+        {
+            return value.Buffer.ToHex();
+        }
+        
         public static string ToHex(this IEnumerable<byte> buffer)
         {
             var sb = new StringBuilder();

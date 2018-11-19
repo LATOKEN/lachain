@@ -10,5 +10,8 @@
         BlockByHash = 0x0301,
         BlockHashByHeight = 0x0302,
         
+        TransactionByHash = 0x0401,
+        TransactionLatestByFrom = 0x0402,
+        TransactionStateByHash = 0x0403,
     }
 }

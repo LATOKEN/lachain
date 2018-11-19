@@ -14,6 +14,35 @@ namespace Phorkus.Console
     {
         static void Main(string[] args)
         {
+            ZeroAttack(args);
+        }
+        
+        static void ZeroAttack(string[] args)
+        {
+            /* be very careful with this vulnerable shit: https://developers.google.com/protocol-buffers/docs/proto3#default */
+            var test1 = new Test1
+            {
+                Value = 0x7b
+            };
+            var hex1 = test1.ToHash256().ToHex();
+            /* !!! DON'T USE DEFAULT VALUES FOR MODIFIED STRUCTURE FIELDS AND CHECK STRUCTURE VERSION !!! */
+            var test2 = new Test2
+            {
+                Value = 0x7b,
+                Hello = 0x00
+            };
+            var hex2 = test2.ToHash256().ToHex();
+            System.Console.WriteLine("HEX 1: " + hex1);
+            System.Console.WriteLine("HEX 2: " + hex2);
+
+            if (test2.Hello != 0)
+            {
+            }
+            
+        }
+        
+        static void SignTest(string[] args)
+        {
             var privateKey = "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48".HexToBytes();
             var address = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToBytes();
             var publicKey ="0x04affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5529db79354bbace25f4f378d6a1320ae69994841ff6fb547f1b3a0c21cf73f68".HexToBytes();

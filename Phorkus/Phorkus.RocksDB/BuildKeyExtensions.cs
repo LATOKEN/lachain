@@ -11,7 +11,7 @@ namespace Phorkus.RocksDB
     {
         public static byte[] BuildPrefix(this EntryPrefix prefix, string key)
         {
-            return BuildPrefix(prefix, key.Ripemd160());
+            return BuildPrefix(prefix, key.ToLower().Ripemd160());
         }
 
         public static byte[] BuildPrefix(this EntryPrefix prefix, ulong key)
