@@ -9,16 +9,16 @@ namespace Phorkus.Core.Blockchain.Genesis
     public class GenesisBuilder : IGenesisBuilder
     {
         public const ulong GenesisConsensusData = 2083236893UL;
-        
+
         private readonly IGenesisAssetsBuilder _genesisAssetsBuilder;
-        
+
         public GenesisBuilder(IGenesisAssetsBuilder genesisAssetsBuilder)
         {
             _genesisAssetsBuilder = genesisAssetsBuilder;
         }
-        
+
         private BlockWithTransactions _genesisBlock;
-        
+
         public BlockWithTransactions Build()
         {
             if (_genesisBlock != null)
@@ -26,13 +26,15 @@ namespace Phorkus.Core.Blockchain.Genesis
 
             var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction();
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
-            
+
             var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
                 year: 2019, month: 1, day: 1, hour: 00, minute: 00, second: 00).ToTimestamp();
-            
+
             /* distribute tokens (1 million for each holder) */
-            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(Fixed256Utils.FromDecimal(1_000_000), governingToken.Register.ToHash160());
-            
+            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(
+                Money.FromDecimal(1_000_000m), governingToken.Register.ToHash160()
+            );
+
             var txsBefore = new[]
             {
                 /* first transaction is always a miner transaction */
@@ -58,7 +60,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Header = header
             };
             result.Header.TransactionHashes.AddRange(genesisTransactions.Select(tx => tx.ToHash256()).ToArray());
-            
+
             /* genesis block transactions don't have signatures */
             var signed = genesisTransactions.Select(tx => new SignedTransaction
             {

@@ -13,10 +13,6 @@ message PublicKey {
     bytes buffer = 1;
 }
 
-message Fixed256 {
-    bytes buffer = 1;
-}
-
 message Signature {
     bytes buffer = 1;
 }

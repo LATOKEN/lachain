@@ -27,7 +27,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 {
                     Type = AssetType.Governing,
                     Name = "LA",
-                    Supply = Fixed256Utils.FromDecimal(100_000_000),
+                    Supply = Money.FromDecimal(100_000_000m).ToUInt256(),
                     Decimals = 18,
                     Owner = UInt160Utils.Zero
                 },
@@ -53,7 +53,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             return tx;
         }
 
-        public Transaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset)
+        public Transaction BuildGenesisTokenIssue(PublicKey owner, Money supply, UInt160 asset)
         {
             var tx = new Transaction
             {
@@ -64,14 +64,14 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Issue = new IssueTransaction
                 {
                     Asset = asset,
-                    Supply = supply
+                    Supply = supply.ToUInt256()
                 },
                 Nonce = 0
             };
             return tx;
         }
 
-        public IEnumerable<Transaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets)
+        public IEnumerable<Transaction> IssueTransactionsToOwners(Money value, params UInt160[] assets)
         {
             var txs = new List<Transaction>();
             foreach (var validator in _validators)

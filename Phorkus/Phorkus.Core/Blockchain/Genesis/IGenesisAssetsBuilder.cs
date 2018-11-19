@@ -9,8 +9,8 @@ namespace Phorkus.Core.Blockchain.Genesis
 
         Transaction BuildGenesisMinerTransaction();
         
-        Transaction BuildGenesisTokenIssue(PublicKey owner, Fixed256 supply, UInt160 asset);
+        Transaction BuildGenesisTokenIssue(PublicKey owner, Money supply, UInt160 asset);
 
-        IEnumerable<Transaction> IssueTransactionsToOwners(Fixed256 value, params UInt160[] assets);
+        IEnumerable<Transaction> IssueTransactionsToOwners(Money value, params UInt160[] assets);
     }
 }

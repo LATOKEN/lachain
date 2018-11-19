@@ -10,5 +10,5 @@ enum ValidatorState {
 message Validator {
     PublicKey public_key = 1;
     ValidatorState state = 2;
-    Fixed256 votes = 3;
+    UInt256 votes = 3;
 }

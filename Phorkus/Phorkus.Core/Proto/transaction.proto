@@ -20,13 +20,13 @@ enum TransactionFlag {
 message ContractTransaction {
     UInt160 asset = 1;
     UInt160 to = 2;
-    Fixed256 value = 3;
+    UInt256 value = 3;
     bytes data = 4;
 }
 
 message IssueTransaction {
     UInt160 asset = 1;
-    Fixed256 supply = 2;
+    UInt256 supply = 2;
 }
 
 message PublishTransaction {
@@ -37,7 +37,7 @@ message PublishTransaction {
 message RegisterTransaction {
     AssetType type = 1;
     string name = 2;
-    Fixed256 supply = 3;
+    UInt256 supply = 3;
     uint32 decimals = 4;
     UInt160 owner = 5;
 }

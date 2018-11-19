@@ -1,7 +1,6 @@
 syntax = "proto3";
 option csharp_namespace = "Phorkus.Core.Proto";
 
-import "transaction.proto";
 import "default.proto";
 import "multisig.proto";
 
