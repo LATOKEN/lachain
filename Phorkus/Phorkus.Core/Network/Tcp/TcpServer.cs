@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Phorkus.Core.Logging;
 
 namespace Phorkus.Core.Network.Tcp
 {
@@ -10,20 +11,24 @@ namespace Phorkus.Core.Network.Tcp
     {
         public event EventHandler<IPeer> OnPeerConnected;
         public event EventHandler<IPeer> OnPeerClosed;
+        public event EventHandler<IPeer> OnPeerAccepted;
 
         private readonly TcpListener _tcpListener;
+        private readonly ILogger<TcpServer> _logger;
         private readonly ITransport _transport;
         private readonly NetworkConfig _networkConfig;
 
         public TcpServer(
             NetworkConfig networkConfig,
-            ITransport transport)
+            ITransport transport,
+            ILogger<TcpServer> logger)
         {
             if (networkConfig is null)
                 throw new ArgumentException(nameof(networkConfig));
             _tcpListener = new TcpListener(IPAddress.Any, networkConfig.Port);
             _transport = transport ?? throw new ArgumentException(nameof(transport));
             _networkConfig = networkConfig;
+            _logger = logger;
         }
         
         public bool IsWorking { get; private set; }
@@ -32,6 +37,8 @@ namespace Phorkus.Core.Network.Tcp
         {
             if (IsWorking)
                 return;
+            
+            _logger.LogWarning("Starting TCP server");
             IsWorking = true;
 
             _tcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
@@ -54,15 +61,16 @@ namespace Phorkus.Core.Network.Tcp
                 }
                 catch (ObjectDisposedException)
                 {
-                    /* TODO: "log exception" */
+                    _logger.LogWarning("TCP listener already disposed, exiting");
                     break;
                 }
                 catch (SocketException)
                 {
                     continue;
                 }
+                
                 var peer = new TcpPeer(socket, _transport);
-                OnPeerConnected?.Invoke(this, peer);
+                OnPeerAccepted?.Invoke(this, peer);
             }
         }
         
@@ -84,7 +92,7 @@ namespace Phorkus.Core.Network.Tcp
                 ipAddress = ipAddress.MapToIPv4();
 
             var ipEp = new IPEndPoint(ipAddress, ipEndPoint.Port);
-//            _logger.LogInformation($"Connecting to {ipEp}...");
+            _logger.LogInformation($"Connecting to {ipEp}...");
             
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -94,11 +102,11 @@ namespace Phorkus.Core.Network.Tcp
             }
             catch (Exception e)
             {
-                System.Console.Error.WriteLine(e);
+                _logger.LogWarning($"Unable to establish connection with client {ipEp}", e);
                 return null;
             }
             
-//            _logger.LogInformation($"Connected to {ipEp}");
+            _logger.LogInformation($"Connected to {ipEp}");
             var peer = new TcpPeer(socket, _transport);
             OnPeerConnected?.Invoke(this, peer);
             return peer;

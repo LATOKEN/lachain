@@ -8,7 +8,7 @@ namespace Phorkus.Core.Utils
     {
         public static int WriteLength(this BinaryWriter writer, long value)
         {
-            if (value <= 0)
+            if (value < 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
             if (value < 0xFD)
             {

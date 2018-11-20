@@ -8,6 +8,6 @@ namespace Phorkus.Core.Network
     {
         void WriteMessages(IEnumerable<Message> messages, Stream stream);
 
-        IEnumerable<Message> ReadMessages(Stream strem);
+        IEnumerable<Message> ReadMessages(Stream stream);
     }
 }

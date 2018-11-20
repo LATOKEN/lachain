@@ -1,8 +1,10 @@
-﻿using Phorkus.Core;
+﻿using System.Threading;
+using Phorkus.Core;
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
+using Phorkus.Core.Network.Proto;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
 
@@ -31,7 +33,26 @@ namespace Phorkus.Console
         public void Start(string[] args)
         {
             var networkManager = _container.Resolve<INetworkManager>();
+            var networkContext = _container.Resolve<INetworkContext>();
+
+            networkManager.Start();
+
+            Thread.Sleep(1000);
             
+            networkManager.Broadcast(new Message
+            {
+                Type = MessageType.HandshakeRequest,
+                HandshakeRequest = new HandshakeRequestMessage
+                {
+                    Node = networkContext.LocalNode
+               }
+            });
+            
+            System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
+            while (!_interrupt)
+                Thread.Sleep(1000);
         }
+        
+        private bool _interrupt;
     }
 }

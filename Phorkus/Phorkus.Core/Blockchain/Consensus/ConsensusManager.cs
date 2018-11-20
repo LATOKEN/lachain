@@ -63,9 +63,10 @@ namespace Phorkus.Core.Blockchain.Consensus
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto;
             var keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            _context = new ConsensusContext(keyPair, config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
+            _context = new ConsensusContext(keyPair,
+                config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _random = new SecureRandom();
-            
+
             (transactionManager ?? throw new ArgumentNullException(nameof(transactionManager)))
                 .OnTransactionPersisted += OnTransactionVerified;
         }
@@ -490,13 +491,11 @@ namespace Phorkus.Core.Blockchain.Consensus
                     payload.ToByteArray(), _context.KeyPair.PrivateKey.Buffer.ToByteArray()
                 ).ToSignature()
             };
-            _broadcaster.Broadcast(
-                new Message
-                {
-                    Type = MessageType.ConsensusMessage,
-                    ConsensusMessage = message
-                }
-            );
+            _broadcaster.Broadcast(new Message
+            {
+                Type = MessageType.ConsensusMessage,
+                ConsensusMessage = message
+            });
         }
 
         public void Dispose()

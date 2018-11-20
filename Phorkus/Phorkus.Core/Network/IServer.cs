@@ -8,6 +8,7 @@ namespace Phorkus.Core.Network
 
         event EventHandler<IPeer> OnPeerConnected;
         event EventHandler<IPeer> OnPeerClosed;
+        event EventHandler<IPeer> OnPeerAccepted;
         
         void Start();
         void Stop();

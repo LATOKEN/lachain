@@ -67,14 +67,14 @@ namespace Phorkus.Core.Network.Tcp
         {
             while (IsConnected)
             {
-                var messages = new Queue<Message>();
+                Queue<Message> messages;
                 lock (_queueNotEmpty)
                 {
                     while (_messages.Count == 0)
                         Monitor.Wait(_queueNotEmpty, TimeSpan.FromSeconds(1));
-                    messages = Interlocked.Exchange(ref messages, _messages);
+                    messages = new Queue<Message>(_messages);
+                    _messages.Clear();
                 }
-
                 _transport.WriteMessages(messages, _stream);
             }
         }
@@ -85,11 +85,13 @@ namespace Phorkus.Core.Network.Tcp
                 return null;
             try
             {
+                while (!_stream.DataAvailable)
+                    Thread.Sleep(100);
                 return _transport.ReadMessages(_stream);
             }
             catch (Exception error)
             {
-                System.Console.Error.WriteLine(error);
+                Console.Error.WriteLine(error);
             }
 
             Disconnect();
@@ -98,6 +100,7 @@ namespace Phorkus.Core.Network.Tcp
 
         public void Disconnect()
         {
+            Console.Error.WriteLine("Peer disconnected");
             try
             {
                 _socket.Shutdown(SocketShutdown.Both);

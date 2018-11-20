@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Crc32;
 using Phorkus.Core.Network.Proto;
 using Phorkus.Core.Utils;
@@ -18,7 +19,7 @@ namespace Phorkus.Core.Network
         public void WriteMessages(IEnumerable<Message> messages, Stream stream)
         {
             /* TODO: "possible attack on message size (be careful with limitations)" */
-            using (var writer = new BinaryWriter(stream))
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
                 writer.Write(_networkConfig.Magic);
                 var bytes = messages.ToByteArray();
@@ -29,10 +30,10 @@ namespace Phorkus.Core.Network
                 writer.Flush();
             }
         }
-
-        public IEnumerable<Message> ReadMessages(Stream strem)
+        
+        public IEnumerable<Message> ReadMessages(Stream stream)
         {
-            using (var reader = new BinaryReader(strem))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8, true))
             {
                 var magic = reader.ReadUInt32();
                 if (magic != _networkConfig.Magic)
