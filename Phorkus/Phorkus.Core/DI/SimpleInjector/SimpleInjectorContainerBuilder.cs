@@ -33,7 +33,14 @@ namespace Phorkus.Core.DI.SimpleInjector
             where TService : class
             where TImplementation : class, TService
         {
-            _container.Register<TService, TImplementation>(Lifestyle.Singleton);
+            var registration = Lifestyle.Singleton.CreateRegistration<TImplementation>(_container);
+            foreach (var type in typeof(TService).GetInterfaces())
+            {
+                if (type.Assembly.FullName.StartsWith("System"))
+                    continue;
+                _container.AddRegistration(type, registration);
+            }
+            _container.AddRegistration(typeof(TService), registration);
         }
 
         public void RegisterSingleton<TService>(Func<TService> instanceCreator)
