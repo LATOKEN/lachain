@@ -2,6 +2,7 @@
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.SimpleInjector;
+using Phorkus.Core.Network;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
 
@@ -29,6 +30,7 @@ namespace Phorkus.Console
 
         public void Start(string[] args)
         {
+            var networkManager = _container.Resolve<INetworkManager>();
             
         }
     }
