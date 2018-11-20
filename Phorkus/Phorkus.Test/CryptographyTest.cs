@@ -26,7 +26,7 @@ namespace Phorkus.Test
             {
                 "0x02103a7f7dd016558597f7960d27c516a4394fd968b9e65155eb4b013e4040406e"
             };
-            var genesisAssetsBuilder = new GenesisAssetsBuilder(validators);
+            var genesisAssetsBuilder = new GenesisAssetsBuilder(null);
             var genesisBuilder = new GenesisBuilder(genesisAssetsBuilder);
             
             var crypto = new BouncyCastle();

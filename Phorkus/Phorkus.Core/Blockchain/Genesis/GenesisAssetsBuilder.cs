@@ -19,10 +19,6 @@ namespace Phorkus.Core.Blockchain.Genesis
                 throw new ArgumentNullException(nameof(configManager), "Unable to resolve consensus configuration");
             _validators = config.ValidatorsKeys;
         }
-        
-        public GenesisAssetsBuilder(IEnumerable<string> validators)
-        {
-        }
 
         public Transaction BuildGoverningTokenRegisterTransaction()
         {
