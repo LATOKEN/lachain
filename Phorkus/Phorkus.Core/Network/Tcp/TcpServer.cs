@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Crypto.Modes;
 using Phorkus.Core.Logging;
 
 namespace Phorkus.Core.Network.Tcp
@@ -81,14 +83,38 @@ namespace Phorkus.Core.Network.Tcp
             _tcpListener.Stop();
         }
 
+        private bool _IsSelfConnect(IPAddress ipAddress)
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            if (host.AddressList.Contains(ipAddress))
+                return true;            
+            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (var ni in networkInterfaces)
+            {
+                if (ni.NetworkInterfaceType != NetworkInterfaceType.Wireless80211 &&
+                    ni.NetworkInterfaceType != NetworkInterfaceType.Ethernet)
+                {
+                    continue;
+                }
+                foreach (var ip in ni.GetIPProperties().UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+                    if (!ip.Address.Equals(ipAddress))
+                        continue;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         public IPeer ConnectTo(IpEndPoint ipEndPoint)
         {
             var ipAddress = _GetIpAddress(ipEndPoint.Host);
             if (ipAddress == null)
                 throw new InvalidOperationException($"\"{ipEndPoint.Host}\" cannot be resolved to an ip address.");
 
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            if (host.AddressList.Contains(ipAddress))
+            if (_IsSelfConnect(ipAddress))
                 return null;
             
             if (_networkConfig.ForceIPv6)
