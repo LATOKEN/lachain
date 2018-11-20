@@ -22,7 +22,7 @@ namespace Phorkus.Core.Blockchain.Consensus
         public ulong Nonce; // TODO: fix very weak nonce generation mechanism
         public DateTime LastBlockRecieved;
         public long MyIndex;
-        public readonly KeyPair PrivateKey;
+        public readonly KeyPair KeyPair;
         public uint SignaturesAcquired;
 
         public ConsensusProposal CurrentProposal;
@@ -36,7 +36,7 @@ namespace Phorkus.Core.Blockchain.Consensus
 
         public ConsensusContext(KeyPair keyPair, IReadOnlyList<PublicKey> validators)
         {
-            PrivateKey = keyPair;
+            KeyPair = keyPair;
             Validators = new ObservedValidatorState[validators.Count];
             for (var i = 0; i < Validators.Length; ++i)
             {
@@ -48,7 +48,7 @@ namespace Phorkus.Core.Blockchain.Consensus
 
         private BlockHeader _memoizedHeader;
 
-        private BlockHeader GetProposedHeader()
+        public BlockHeader GetProposedHeader()
         {
             if (CurrentProposal?.TransactionHashes == null) return null;
             if (_memoizedHeader != null) return _memoizedHeader;
@@ -65,11 +65,18 @@ namespace Phorkus.Core.Blockchain.Consensus
 
         public Block GetProposedBlock()
         {
-            return new Block
+            var block = new Block
             {
                 Header = GetProposedHeader(),
                 Hash = GetProposedHeader().ToHash256()
             };
+            block.Multisig.Quorum = Quorum;
+            block.Multisig.Signatures.AddRange(Validators.Select(v => new MultiSig.Types.SignatureByValidator
+            {
+                Key = v.PublicKey,
+                Value = v.BlockSignature
+            }));
+            return block;
         }
 
         public void ResetState(UInt256 lastBlockHash, ulong lastBlockIndex)
@@ -84,7 +91,7 @@ namespace Phorkus.Core.Blockchain.Consensus
             for (var i = 0; i < Validators.Length; ++i)
             {
                 Validators[i].Reset();
-                if (Validators[i].PublicKey.Equals(PrivateKey?.PublicKey))
+                if (Validators[i].PublicKey.Equals(KeyPair?.PublicKey))
                 {
                     MyIndex = i;
                 }

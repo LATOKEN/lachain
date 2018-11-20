@@ -83,7 +83,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (result != OperatingError.Ok)
                 throw new InvalidTransactionException(result);
             /* use raw byte arrays to sign transaction hash */
-            var signature = _crypto.Sign(hash.Buffer.ToByteArray(), keyPair.PrivateKey).ToSignature();
+            var signature = _crypto.Sign(
+                hash.Buffer.ToByteArray(),
+                keyPair.PrivateKey.Buffer.ToByteArray()).ToSignature();
             var signed = new SignedTransaction
             {
                 Transaction = transaction,

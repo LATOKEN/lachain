@@ -27,7 +27,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             throw new NotImplementedException();
         }
 
-        public Signature Sign(Block blockHeader, KeyPair keyPair)
+        public Signature Sign(BlockHeader blockHeader, KeyPair keyPair)
         {
             throw new NotImplementedException();
         }

@@ -13,7 +13,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         void Persist(Block transaction);
         
-        Signature Sign(Block blockHeader, KeyPair keyPair);
+        Signature Sign(BlockHeader blockHeader, KeyPair keyPair);
         
         OperatingError Verify(Block blockHeader);
     }

@@ -1,21 +1,31 @@
-﻿namespace Phorkus.Core.Cryptography
+﻿using System;
+using Phorkus.Core.Proto;
+using Phorkus.Core.Utils;
+
+namespace Phorkus.Core.Cryptography
 {
-    public class KeyPair
+    public class KeyPair : IEquatable<KeyPair>
     {
-        public readonly byte[] PrivateKey;
-        public readonly byte[] PublicKey;
-        
-        public KeyPair(byte[] privateKey, byte[] publicKey)
+        public readonly PrivateKey PrivateKey;
+        public readonly PublicKey PublicKey;
+
+        public KeyPair(PrivateKey privateKey, PublicKey publicKey)
         {
             PrivateKey = privateKey;
             PublicKey = publicKey;
+        }
+
+        public KeyPair(PrivateKey privateKey, ICrypto crypto)
+        {
+            PrivateKey = privateKey;
+            PublicKey = crypto.ComputePublicKey(privateKey.Buffer.ToByteArray(), true).ToPublicKey();
         }
 
         public bool Equals(KeyPair other)
         {
             if (ReferenceEquals(this, other))
                 return true;
-            return !(other is null) && PublicKey.Equals(other.PublicKey);
+            return !(other is null) && PrivateKey.Equals(other.PrivateKey);
         }
 
         public override bool Equals(object obj)

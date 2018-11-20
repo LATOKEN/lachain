@@ -88,7 +88,7 @@ namespace Phorkus.Console
             var txManager = new TransactionManager(null, null, null, null, crypto);
             
             System.Console.Write("Signing transaction... ");
-            var signed = txManager.Sign(registerTx, new KeyPair(privateKey, publicKey));
+            var signed = txManager.Sign(registerTx, new KeyPair(privateKey.ToPrivateKey(), publicKey.ToPublicKey()));
             System.Console.WriteLine(signed.Signature.Buffer.ToHex());
             var publicKey2 = new PublicKey
             {
