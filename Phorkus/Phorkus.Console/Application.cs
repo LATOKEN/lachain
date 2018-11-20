@@ -36,12 +36,13 @@ namespace Phorkus.Console
         {            
             var networkManager = _container.Resolve<INetworkManager>();
             var networkContext = _container.Resolve<INetworkContext>();
+            var broadcaster = _container.Resolve<IBroadcaster>();
 
             networkManager.Start();
 
             Thread.Sleep(1000);
             
-            networkManager.Broadcast(new Message
+            broadcaster.Broadcast(new Message
             {
                 Type = MessageType.HandshakeRequest,
                 HandshakeRequest = new HandshakeRequestMessage

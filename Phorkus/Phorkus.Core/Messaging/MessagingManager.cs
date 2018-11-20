@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Phorkus.Core.Blockchain.Consensus;
 using Phorkus.Core.Messaging.Handlers;
 using Phorkus.Core.Network;
 using Phorkus.Core.Network.Proto;
@@ -9,7 +10,7 @@ namespace Phorkus.Core.Messaging
     {
         private readonly IReadOnlyDictionary<MessageType, IMessageHandler> _messageHandlers;
         
-        public MessagingManager()
+        public MessagingManager(IConsensusManager consensusManager)
         {
             _messageHandlers = new Dictionary<MessageType, IMessageHandler>
             {
@@ -18,7 +19,8 @@ namespace Phorkus.Core.Messaging
                 { MessageType.HandshakeResponse, new HandshakeResponseMessageHandler() },
                 { MessageType.MempoolGot, new MempoolGotMessageHandler() },
                 { MessageType.TransactionsGot, new TransactionsGotMessageHandler() },
-                { MessageType.NeighboursGot, new NeighboursGotMessageHandler() }
+                { MessageType.NeighboursGot, new NeighboursGotMessageHandler() },
+                { MessageType.ConsensusMessage, new ConsensusMessageHandler(consensusManager) }
             };
         }
         

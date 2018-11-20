@@ -1,6 +1,6 @@
 ﻿namespace Phorkus.Core.Network
 {
-    public interface INetworkManager : IBroadcaster
+    public interface INetworkManager
     {
         void Start();
 
