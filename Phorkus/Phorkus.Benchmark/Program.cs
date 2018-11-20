@@ -18,8 +18,8 @@ namespace Phorkus.Benchmark
             };
             
             var genesisBuilder = new GenesisBuilder(
-                new GenesisAssetsBuilder(validators));
-            var assetBuilder = new GenesisAssetsBuilder(validators);
+                new GenesisAssetsBuilder(null));
+            var assetBuilder = new GenesisAssetsBuilder(null);
             var genesisBlock = genesisBuilder.Build();
 
             var lastTime = TimeUtils.CurrentTimeMillis();
