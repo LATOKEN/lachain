@@ -58,6 +58,7 @@ namespace Phorkus.Core.Network
             };
             
             _server.OnPeerConnected += _PeerConnected;
+            _server.OnPeerAccepted += _PeerConnected;
             _server.OnPeerClosed += _PeerClosed;
             _messageListener.OnMessageHandled += _MessageHandled;
             _messageListener.OnRateLimited += _RateLimited;
