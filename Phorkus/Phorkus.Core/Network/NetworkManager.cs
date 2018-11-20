@@ -2,8 +2,10 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Phorkus.Core.Handling;
+using Phorkus.Core.Config;
+using Phorkus.Core.Messaging;
 using Phorkus.Core.Network.Proto;
+using Phorkus.Core.Network.Tcp;
 using Phorkus.Core.Proto;
 
 namespace Phorkus.Core.Network
@@ -11,7 +13,7 @@ namespace Phorkus.Core.Network
     public class NetworkManager : INetworkManager, INetworkContext
     {
         private readonly IMessageListener _messageListener;
-        private readonly IHandlingManager _handlingManager;
+        private readonly IMessagingManager _messagingManager;
         private readonly IServer _server;
         private readonly NetworkConfig _networkConfig;
 
@@ -21,14 +23,13 @@ namespace Phorkus.Core.Network
             = new ConcurrentDictionary<IpEndPoint, IPeer>();
         
         public NetworkManager(
-            IMessageListener messageListener,
-            IHandlingManager handlingManager,
-            IServer server,
-            NetworkConfig networkConfig)
+            IMessagingManager messagingManager,
+            IConfigManager configManager)
         {
-            _messageListener = messageListener;
-            _handlingManager = handlingManager;
-            _server = server;
+            var networkConfig = configManager.GetConfig<NetworkConfig>("network");
+            _messageListener = new MessageListener();
+            _messagingManager = messagingManager;
+            _server = new TcpServer(networkConfig, new DefaultTransport(networkConfig));
             _networkConfig = networkConfig;
         }
 
@@ -84,7 +85,7 @@ namespace Phorkus.Core.Network
         {
             if (!(sender is IPeer peer))
                 throw new ArgumentNullException(nameof(peer));
-            _handlingManager.HandleMessage(peer, message);
+            _messagingManager.HandleMessage(peer, message);
         }
         
         private void _RateLimited(object sender, IPeer peer)

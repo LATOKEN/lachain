@@ -2,7 +2,6 @@
 using NeoSharp.Application.Client;
 using NeoSharp.Core;
 using NeoSharp.Core.DI;
-using NeoSharp.Core.Extensions;
 
 namespace NeoSharp.Application.DI
 {

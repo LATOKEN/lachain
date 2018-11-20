@@ -147,7 +147,8 @@ namespace Phorkus.Core.Cryptography
             var q = Domain.G.Multiply(new BigInteger(1, privateKey));
             var publicParams = new ECPublicKeyParameters(q, Domain);
 
-            return publicParams.Q.GetEncoded(compress);
+            var result = publicParams.Q.GetEncoded(compress);
+            return result;
         }
 
         public byte[] DecodePublicKey(byte[] pubkey, bool compress, out System.Numerics.BigInteger x,

@@ -39,10 +39,7 @@ namespace Phorkus.Core.Blockchain.Consensus
             KeyPair = keyPair;
             Validators = new ObservedValidatorState[validators.Count];
             for (var i = 0; i < Validators.Length; ++i)
-            {
                 Validators[i] = new ObservedValidatorState(validators[i]);
-            }
-
             CurrentProposal = null;
         }
 

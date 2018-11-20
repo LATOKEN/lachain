@@ -12,5 +12,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0-preview3-35497" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0-preview3-35497" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1-beta1" />
+    <PackageReference Include="SimpleInjector" Version="4.4.0" />
   </ItemGroup>
 </Project>

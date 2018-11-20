@@ -6,6 +6,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Console", "Phorkus.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.RocksDB", "Phorkus.RocksDB\Phorkus.RocksDB.csproj", "{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Test", "Phorkus.Test\Phorkus.Test.csproj", "{98F05B26-D58C-4FD5-BCBA-B863EB625870}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Benchmark", "Phorkus.Benchmark\Phorkus.Benchmark.csproj", "{DCAE8F1E-025A-4725-B123-A4E7B4FB314E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Logger", "Phorkus.Logger\Phorkus.Logger.csproj", "{BD4CD166-5D57-481F-81D1-EA34ACDB53A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +30,17 @@ Global
 		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AD9BB14-D2B6-4D61-A92C-CC0AA906C711}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98F05B26-D58C-4FD5-BCBA-B863EB625870}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98F05B26-D58C-4FD5-BCBA-B863EB625870}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98F05B26-D58C-4FD5-BCBA-B863EB625870}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98F05B26-D58C-4FD5-BCBA-B863EB625870}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCAE8F1E-025A-4725-B123-A4E7B4FB314E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCAE8F1E-025A-4725-B123-A4E7B4FB314E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCAE8F1E-025A-4725-B123-A4E7B4FB314E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCAE8F1E-025A-4725-B123-A4E7B4FB314E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD4CD166-5D57-481F-81D1-EA34ACDB53A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD4CD166-5D57-481F-81D1-EA34ACDB53A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD4CD166-5D57-481F-81D1-EA34ACDB53A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD4CD166-5D57-481F-81D1-EA34ACDB53A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

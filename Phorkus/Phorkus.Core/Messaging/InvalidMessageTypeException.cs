@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phorkus.Core.Handling
+namespace Phorkus.Core.Messaging
 {
     public class InvalidMessageTypeException : Exception 
     {

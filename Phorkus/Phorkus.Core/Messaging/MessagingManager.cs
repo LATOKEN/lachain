@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
-using Phorkus.Core.Handling.Handlers;
+using Phorkus.Core.Messaging.Handlers;
 using Phorkus.Core.Network;
 using Phorkus.Core.Network.Proto;
 
-namespace Phorkus.Core.Handling
+namespace Phorkus.Core.Messaging
 {
-    public class HandlingManager : IHandlingManager
+    public class MessagingManager : IMessagingManager
     {
         private readonly IReadOnlyDictionary<MessageType, IMessageHandler> _messageHandlers;
-
-        internal HandlingManager()
+        
+        public MessagingManager()
         {
             _messageHandlers = new Dictionary<MessageType, IMessageHandler>
             {

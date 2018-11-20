@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Google.Protobuf;
+using Phorkus.Core.Blockchain.Consensus;
+using Phorkus.Core.Config;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
 
@@ -10,9 +12,16 @@ namespace Phorkus.Core.Blockchain.Genesis
     {
         private readonly IEnumerable<string> _validators;
         
+        public GenesisAssetsBuilder(IConfigManager configManager)
+        {
+            var config = configManager.GetConfig<ConsensusConfig>("consensus");
+            if (config is null)
+                throw new ArgumentNullException(nameof(configManager), "Unable to resolve consensus configuration");
+            _validators = config.ValidatorsKeys;
+        }
+        
         public GenesisAssetsBuilder(IEnumerable<string> validators)
         {
-            _validators = validators ?? throw new ArgumentException(nameof(validators));
         }
 
         public Transaction BuildGoverningTokenRegisterTransaction()

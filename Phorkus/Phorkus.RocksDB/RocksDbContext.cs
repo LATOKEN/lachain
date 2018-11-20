@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Core.Config;
 using RocksDbSharp;
 
 namespace Phorkus.RocksDB
@@ -8,15 +8,14 @@ namespace Phorkus.RocksDB
     public class RocksDbContext : IRocksDbContext
     {
         private readonly RocksDb _rocksDb;
-
-        public RocksDbContext(RocksDbConfig config)
+        
+        public RocksDbContext(IConfigManager configManager)
         {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-
+            var config = configManager.GetConfig<StorageConfig>("storage");
             // Initialize RocksDB (Connection String is the path to use)
             var options = new DbOptions().SetCreateIfMissing();
             // TODO #358: please avoid sync IO in constructor -> Open connection with the first operation for now
-            _rocksDb = RocksDb.Open(options, config.FilePath);
+            _rocksDb = RocksDb.Open(options, config.Path);
         }
 
         public byte[] Get(byte[] key)

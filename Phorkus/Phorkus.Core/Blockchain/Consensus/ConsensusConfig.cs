@@ -7,7 +7,7 @@ namespace Phorkus.Core.Blockchain.Consensus
     public class ConsensusConfig
     {
         [JsonProperty("validators")]
-        public List<PublicKey> ValidatorsKeys { get; set; }
+        public List<string> ValidatorsKeys { get; set; }
 
         [JsonProperty("privateKey")]
         public string PrivateKey { get; set; }

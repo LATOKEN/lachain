@@ -9,6 +9,7 @@ using Google.Protobuf.WellKnownTypes;
 using Org.BouncyCastle.Security;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
 using Phorkus.Core.Network;
@@ -44,14 +45,16 @@ namespace Phorkus.Core.Blockchain.Consensus
         private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
 
         public ConsensusManager(
-            IBlockManager blockManager, ITransactionManager transactionManager,
+            IBlockManager blockManager,
+            ITransactionManager transactionManager,
             IBlockchainContext blockchainContext,
-            ITransactionPool transactionPool, IBroadcaster broadcaster,
-            ILogger<ConsensusManager> logger, ICrypto crypto,
-            ConsensusConfig configuration
-        )
+            ITransactionPool transactionPool,
+            IBroadcaster broadcaster,
+            ILogger<ConsensusManager> logger,
+            IConfigManager configManager,
+            ICrypto crypto)
         {
-            //_transactionCrawler = transactionCrawler ?? throw new ArgumentNullException(nameof(transactionCrawler));
+            var config = configManager.GetConfig<ConsensusConfig>("consensus");
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
             _transactionManager = transactionManager;
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
@@ -59,10 +62,10 @@ namespace Phorkus.Core.Blockchain.Consensus
             _broadcaster = broadcaster;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto;
-            var pair = new KeyPair(configuration.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            _context = new ConsensusContext(pair, configuration.ValidatorsKeys);
+            var keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            _context = new ConsensusContext(keyPair, config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _random = new SecureRandom();
-
+            
             (transactionManager ?? throw new ArgumentNullException(nameof(transactionManager)))
                 .OnTransactionPersisted += OnTransactionVerified;
         }
