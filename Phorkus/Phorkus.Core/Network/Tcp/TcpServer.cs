@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Phorkus.Core.Logging;
 
@@ -86,6 +87,10 @@ namespace Phorkus.Core.Network.Tcp
             if (ipAddress == null)
                 throw new InvalidOperationException($"\"{ipEndPoint.Host}\" cannot be resolved to an ip address.");
 
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            if (host.AddressList.Contains(ipAddress))
+                return null;
+            
             if (_networkConfig.ForceIPv6)
                 ipAddress = ipAddress.MapToIPv6();
             else if (ipAddress.IsIPv4MappedToIPv6)
@@ -102,7 +107,7 @@ namespace Phorkus.Core.Network.Tcp
             }
             catch (Exception e)
             {
-                _logger.LogWarning($"Unable to establish connection with client {ipEp}", e);
+                /*_logger.LogWarning($"Unable to establish connection with client {ipEp}", e);*/
                 return null;
             }
             
