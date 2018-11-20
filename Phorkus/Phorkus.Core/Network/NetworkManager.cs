@@ -28,10 +28,11 @@ namespace Phorkus.Core.Network
             IMessagingManager messagingManager,
             IConfigManager configManager,
             ILogger<NetworkManager> networkLogger,
-            ILogger<TcpServer> tcpLogger)
+            ILogger<TcpServer> tcpLogger,
+            ILogger<MessageListener> listenerLogger)
         {
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            _messageListener = new MessageListener(this);
+            _messageListener = new MessageListener(this, listenerLogger);
             _networkLogger = networkLogger;
             _messagingManager = messagingManager;
             _server = new TcpServer(networkConfig, new DefaultTransport(networkConfig), tcpLogger);
@@ -57,7 +58,6 @@ namespace Phorkus.Core.Network
             };
             
             _server.OnPeerAccepted += _PeerConnected;
-            _server.OnPeerConnected += _PeerConnected;
             _server.OnPeerClosed += _PeerClosed;
             _messageListener.OnMessageHandled += _MessageHandled;
             _messageListener.OnRateLimited += _RateLimited;

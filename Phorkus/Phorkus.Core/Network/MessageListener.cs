@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Phorkus.Core.Logging;
 using Phorkus.Core.Network.Proto;
 using Phorkus.Core.Utils;
 using MessageType = Phorkus.Core.Network.Proto.MessageType;
@@ -17,15 +18,18 @@ namespace Phorkus.Core.Network
         public event EventHandler<Message> OnMessageHandled;
         public event EventHandler<IPeer> OnRateLimited;
 
+        private readonly ILogger<MessageListener> _logger;
         private readonly INetworkContext _networkContext;
 
-        public MessageListener(INetworkContext networkContext)
+        public MessageListener(INetworkContext networkContext, ILogger<MessageListener> logger)
         {
             _networkContext = networkContext ?? throw new ArgumentNullException(nameof(networkContext));
+            _logger = logger;
         }
         
         private void _Worker(IPeer peer, CancellationToken cancellationToken)
         {
+            _logger.LogInformation($"Starting message listener for peer {peer.EndPoint}");
             while (peer.IsConnected && !cancellationToken.IsCancellationRequested)
             {
                 /* read array with messages from peer */
@@ -52,7 +56,7 @@ namespace Phorkus.Core.Network
                 /* refresh message counts (for rate limitations in future) */
                 _CheckRatePolicy(peer, (uint) array.Length);
             }
-            
+            _logger.LogInformation($"Terminating message listener for peer {peer.EndPoint}");
             peer.Disconnect();
         }
         
@@ -89,6 +93,7 @@ namespace Phorkus.Core.Network
                     Type = MessageType.HandshakeResponse,
                     HandshakeResponse = new HandshakeResponseMessage { Node = _networkContext.LocalNode }
                 };
+                _logger.LogInformation($"Handshaked client {peer.Node}");
                 peer.Send(answer);
                 return true;
             }
@@ -99,6 +104,7 @@ namespace Phorkus.Core.Network
                     return false;
                 peer.Node = handshake.Node;
                 peer.IsKnown = true;
+                _logger.LogInformation($"Handshaked client {peer.Node}");
                 return true;
             }
             return false;
