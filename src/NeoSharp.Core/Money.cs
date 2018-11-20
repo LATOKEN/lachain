@@ -179,36 +179,6 @@ namespace NeoSharp.Core
             return x.CompareTo(y) <= 0;
         }
 
-        public static Money operator *(Money x, Money y)
-        {
-            var sign = Math.Sign(x.Value) * Math.Sign(y.Value);
-            var ux = (ulong)Math.Abs(x.Value);
-            var uy = (ulong)Math.Abs(y.Value);
-            var xh = ux >> 32;
-            var xl = ux & 0x00000000fffffffful;
-            var yh = uy >> 32;
-            var yl = uy & 0x00000000fffffffful;
-            var rh = xh * yh;
-            var rm = xh * yl + xl * yh;
-            var rl = xl * yl;
-            var rmh = rm >> 32;
-            var rml = rm << 32;
-
-            rh += rmh;
-            rl += rml;
-
-            if (rl < rml) ++rh;
-            if (rh >= D) throw new OverflowException();
-
-            var rd = rh * REM + rl;
-
-            if (rd < rl) ++rh;
-
-            var r = rh * QUO + rd / D;
-
-            return new Money((long)r * sign);
-        }
-
         public static Money operator *(Money x, long y)
         {
             return new Money(checked(x.Value * y));

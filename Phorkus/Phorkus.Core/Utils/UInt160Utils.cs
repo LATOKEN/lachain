@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Numerics;
 using Google.Protobuf;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
@@ -28,6 +30,20 @@ namespace Phorkus.Core.Utils
             {
                 Buffer = ByteString.CopyFrom(buffer)
             };
+        }
+
+        public static BigInteger ToBigInteger(this UInt160 value)
+        {
+            return new BigInteger(value.Buffer.ToByteArray().Reverse().Concat(new byte[] {0}).ToArray());
+        }
+        
+        public static UInt160 ToUInt160(this BigInteger value)
+        {
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            var bytes = value.ToByteArray();
+            if (bytes.Length > 21 || bytes.Length == 20 && bytes[20] != 0)
+                throw new ArgumentOutOfRangeException(nameof(value));
+            return bytes.Take(20).Concat(new byte[20 - bytes.Length]).ToArray().ToUInt160();
         }
 
         public static bool IsValid(this UInt160 value)
