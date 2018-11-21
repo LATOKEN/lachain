@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Globalization;
 using System.Numerics;
-using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain
 {
-    public class Money : IComparable<Money>, IEquatable<Money>, IFormattable
+    public class Money : IComparable<Money>, IEquatable<Money>
     {
         private const int DecimalDigits = 18;
         
@@ -48,7 +47,8 @@ namespace Phorkus.Core.Blockchain
 
         public override string ToString()
         {
-            return _value.ToString();
+            var str = _value.ToString();
+            return str.Substring(0, str.Length - DecimalDigits) + "." + str.Substring(str.Length - DecimalDigits);
         }
 
         public int CompareTo(Money other)
@@ -71,11 +71,6 @@ namespace Phorkus.Core.Blockchain
         public bool Equals(Money other)
         {
             return other != null && _value == other._value;
-        }
-
-        public string ToString(string format, IFormatProvider formatProvider)
-        {
-            throw new NotImplementedException();
         }
 
         public static Money Parse(string s)

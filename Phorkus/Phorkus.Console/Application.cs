@@ -60,11 +60,11 @@ namespace Phorkus.Console
             
             if (blockchainManager.TryBuildGenesisBlock(keyPair))
                 System.Console.WriteLine("Generated genesis block");
-
+            
             var balance = balanceRepository.GetBalance(
                 "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160(), assetRepository.GetAssetByName("LA").Hash);
             System.Console.WriteLine("Balance of LA: " + balance);
-            
+
             var genesisBlock = blockRepository.GetBlockByHeight(0);
             System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
