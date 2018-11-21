@@ -133,7 +133,7 @@ namespace Phorkus.Core.Network.Tcp
             }
             catch (Exception e)
             {
-                /*_logger.LogWarning($"Unable to establish connection with client {ipEp}", e);*/
+                _logger.LogTrace($"Unable to establish connection with client {ipEp}", e);
                 return null;
             }
 
