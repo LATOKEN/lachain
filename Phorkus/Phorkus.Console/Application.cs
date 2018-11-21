@@ -54,6 +54,7 @@ namespace Phorkus.Console
             var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
+            var consensusManager = _container.Resolve<IConsensusManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -89,12 +90,7 @@ namespace Phorkus.Console
             System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
 
-            var transferTx = transactionFactory.TransferMoney(
-                address1,
-                address2,
-                asset.Hash,
-                Money.FromDecimal(1.2m)
-            );
+            var transferTx = transactionFactory.TransferMoney(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
             var signed = transactionManager.Sign(transferTx, keyPair);
 
             var latestBlock = blockchainContext.CurrentBlock;
@@ -104,16 +100,16 @@ namespace Phorkus.Console
             block.Multisig = new MultiSig
             {
                 Quorum = 1,
-                Validators =
+                Signatures =
                 {
-                    keyPair.PublicKey
-                }
+                    new MultiSig.Types.SignatureByValidator
+                    {
+                        Key = keyPair.PublicKey,
+                        Value = blockManager.Sign(block.Header, keyPair)
+                    }
+                },
+                Validators = {keyPair.PublicKey}
             };
-            block.Multisig.Signatures.Add(new MultiSig.Types.SignatureByValidator
-            {
-                Key = keyPair.PublicKey,
-                Value = blockManager.Sign(block.Header, keyPair)
-            });
             blockchainManager.PersistBlockManually(block, blockWithTxs.Transactions);
             
             System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
@@ -121,11 +117,8 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
 
             networkManager.Start();
-            
             Thread.Sleep(1000);
-            var consensusManager = _container.Resolve<IConsensusManager>();
             consensusManager.Start();
-            
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)
