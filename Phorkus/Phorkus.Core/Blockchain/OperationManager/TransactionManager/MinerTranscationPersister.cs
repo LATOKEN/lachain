@@ -4,7 +4,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class MinerTranscationPersister : ITransactionPersister
     {
-        public OperatingError Confirm(Transaction transaction, UInt256 hash)
+        public OperatingError Confirm(Transaction transaction)
         {
             return OperatingError.Ok;
         }

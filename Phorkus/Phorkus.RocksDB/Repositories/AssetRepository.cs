@@ -41,17 +41,18 @@ namespace Phorkus.RocksDB.Repositories
         {
             if (!_IsAssetValid(asset) || _IsAssetAlreadyExists(asset))
                 return false;
+            var hash = asset.Hash;
             /* write asset by hash */
-            var prefixByHash = EntryPrefix.AssetByHash.BuildPrefix(asset.Hash);
+            var prefixByHash = EntryPrefix.AssetByHash.BuildPrefix(hash);
             _rocksDbContext.Save(prefixByHash, asset.ToByteArray());
             /* write asset hash by name */
             var prefixByName = EntryPrefix.AssetHashByName.BuildPrefix(asset.Name);
-            _rocksDbContext.Save(prefixByName, asset.Hash.Buffer);
+            _rocksDbContext.Save(prefixByName, hash.ToByteArray());
             /* update asset hashes */
             lock (_rocksDbContext)
             {
                 var hashes = _GetAssetHashes(() => new List<UInt160>());
-                hashes.Add(asset.Hash);
+                hashes.Add(hash);
                 _SetAssetHashes(hashes);
             }
             /* update asset hashes */
@@ -70,7 +71,7 @@ namespace Phorkus.RocksDB.Repositories
             if (asset == null)
                 return false;
             /* write asset by hash */
-            var prefixByHash = EntryPrefix.AssetByHash.BuildPrefix(asset.Hash);
+            var prefixByHash = EntryPrefix.AssetByHash.BuildPrefix(assetHash);
             _rocksDbContext.Delete(prefixByHash);
             /* write asset hash by name */
             var prefixByName = EntryPrefix.AssetHashByName.BuildPrefix(asset.Name);
@@ -79,7 +80,7 @@ namespace Phorkus.RocksDB.Repositories
             lock (_rocksDbContext)
             {
                 var hashes = _GetAssetHashes(() => new List<UInt160>());
-                hashes.Remove(asset.Hash);
+                hashes.Remove(assetHash);
                 _SetAssetHashes(hashes);
             }
             /* update asset hashes */
@@ -135,7 +136,6 @@ namespace Phorkus.RocksDB.Repositories
             if (raw == null)
                 return null;
             var result = Asset.Parser.ParseFrom(raw);
-            result.Hash = assetHash;
             return result;
         }
 

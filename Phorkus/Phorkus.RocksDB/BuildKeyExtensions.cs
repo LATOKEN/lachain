@@ -39,12 +39,28 @@ namespace Phorkus.RocksDB
             bytes[4] = (byte) ((key >> 24) & 0xff);
             return bytes;
         }
+        
+        public static byte[] BuildPrefix(this EntryPrefix prefix, params UInt160[] keys)
+        {
+            if (keys.Length == 0)
+                throw new ArgumentOutOfRangeException(nameof(keys));
+            var buffer = keys.Select(k => k.Buffer as IEnumerable<byte>).Aggregate((k1, k2) => k1.Concat(k2));
+            return BuildPrefix(prefix, buffer);
+        }
 
         public static byte[] BuildPrefix(this EntryPrefix prefix, UInt160 key)
         {
             return BuildPrefix(prefix, key.ToByteArray());
         }
 
+        public static byte[] BuildPrefix(this EntryPrefix prefix, params UInt256[] keys)
+        {
+            if (keys.Length == 0)
+                throw new ArgumentOutOfRangeException(nameof(keys));
+            var buffer = keys.Select(k => k.Buffer as IEnumerable<byte>).Aggregate((k1, k2) => k1.Concat(k2));
+            return BuildPrefix(prefix, buffer);
+        }
+        
         public static byte[] BuildPrefix(this EntryPrefix prefix, UInt256 key)
         {
             return BuildPrefix(prefix, key.ToByteArray());

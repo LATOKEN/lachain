@@ -27,6 +27,7 @@ message ContractTransaction {
 message IssueTransaction {
     UInt160 asset = 1;
     UInt256 supply = 2;
+    UInt160 to = 3;
 }
 
 message PublishTransaction {
@@ -40,6 +41,7 @@ message RegisterTransaction {
     UInt256 supply = 3;
     uint32 decimals = 4;
     UInt160 owner = 5;
+    UInt160 minter = 6;
 }
 
 message MinerTransaction {

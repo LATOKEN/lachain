@@ -37,7 +37,7 @@ namespace Phorkus.Test
             
             var crypto = new BouncyCastle();
             
-            var registerTx = genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction();
+            var registerTx = genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(null);
             var txManager = new TransactionManager(null, null, null, null, crypto);
             
             System.Console.Write("Signing transaction... ");

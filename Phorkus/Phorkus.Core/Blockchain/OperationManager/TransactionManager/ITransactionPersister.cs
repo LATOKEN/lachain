@@ -4,7 +4,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public interface ITransactionPersister
     {
-        OperatingError Confirm(Transaction transaction, UInt256 hash);
+        OperatingError Confirm(Transaction transaction);
         
         OperatingError Verify(Transaction transaction);
     }

@@ -36,10 +36,10 @@ namespace Phorkus.Core.Blockchain
             _globalRepository = globalRepository;
         }
         
-        public void TryBuildGenesisBlock(KeyPair keyPair)
+        public bool TryBuildGenesisBlock(KeyPair keyPair)
         {
             if (CurrentBlockHeader != null)
-                return;
+                return false;
             var genesisBlock = _genesisBuilder.Build(keyPair);
             foreach (var tx in genesisBlock.Transactions)
             {
@@ -51,6 +51,7 @@ namespace Phorkus.Core.Blockchain
             var error = _blockManager.Persist(genesisBlock.Block);
             if (error != OperatingError.Ok)
                 throw new InvalidBlockException(error);
+            return true;
         }
     }
 }

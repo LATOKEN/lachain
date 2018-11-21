@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using Newtonsoft.Json;
 using Phorkus.Core;
@@ -44,7 +45,9 @@ namespace Phorkus.Console
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var configManager = _container.Resolve<IConfigManager>();
             var blockRepository = _container.Resolve<IBlockRepository>();
+            var assetRepository = _container.Resolve<IAssetRepository>();
             var crypto = _container.Resolve<ICrypto>();
+            var balanceRepository = _container.Resolve<IBalanceRepository>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -55,8 +58,13 @@ namespace Phorkus.Console
             System.Console.WriteLine("Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToHex());
             System.Console.WriteLine("-------------------------------");
             
-            blockchainManager.TryBuildGenesisBlock(keyPair);
+            if (blockchainManager.TryBuildGenesisBlock(keyPair))
+                System.Console.WriteLine("Generated genesis block");
 
+            var balance = balanceRepository.GetBalance(
+                "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160(), assetRepository.GetAssetByName("LA").Hash);
+            System.Console.WriteLine("Balance of LA: " + balance);
+            
             var genesisBlock = blockRepository.GetBlockByHeight(0);
             System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");

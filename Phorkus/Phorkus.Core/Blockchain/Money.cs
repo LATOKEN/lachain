@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Numerics;
+using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
 
@@ -18,35 +19,41 @@ namespace Phorkus.Core.Blockchain
         public static readonly Money MaxValue = new Money(D * MaxIntegralPart);
         public static readonly Money MinValue = new Money(-D * MaxIntegralPart);
         public static readonly Money One = new Money(D);
-        public static readonly Money Wei = new Money(1);
         public static readonly Money Zero = new Money(0);
+        public static readonly Money Wei = new Money(1);
 
-        private readonly BigInteger Value;
+        private readonly BigInteger _value;
 
         public Money(BigInteger value)
         {
-            if (value > MaxRawValue || value < MinRawValue) throw new ArgumentOutOfRangeException(nameof(value));
-            Value = value;
+            if (value < MinRawValue || value > MaxRawValue)
+                throw new ArgumentOutOfRangeException(nameof(value));
+            _value = value;
         }
 
         public Money(UInt256 value)
         {
-            Value = value.ToBigInteger();
+            _value = value.ToBigInteger();
         }
 
         public BigInteger ToWei()
         {
-            return Value;
+            return _value;
         }
         
         public UInt256 ToUInt256()
         {
-            return Value.ToUInt256();
+            return _value.ToUInt256();
+        }
+
+        public override string ToString()
+        {
+            return _value.ToString();
         }
 
         public int CompareTo(Money other)
         {
-            return Value.CompareTo(other.Value);
+            return _value.CompareTo(other._value);
         }
         
         public override bool Equals(object obj)
@@ -58,12 +65,12 @@ namespace Phorkus.Core.Blockchain
 
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return _value.GetHashCode();
         }
 
         public bool Equals(Money other)
         {
-            return other != null && Value == other.Value;
+            return other != null && _value == other._value;
         }
 
         public string ToString(string format, IFormatProvider formatProvider)
@@ -123,15 +130,15 @@ namespace Phorkus.Core.Blockchain
 
         public Money Abs()
         {
-            return Value >= 0 ? this : new Money(-Value);
+            return _value >= 0 ? this : new Money(-_value);
         }
 
         public Money Ceiling()
         {
-            var remainder = Value % D;
+            var remainder = _value % D;
 
             if (remainder == 0) return this;
-            return remainder > 0 ? new Money(Value - remainder + D) : new Money(Value - remainder);
+            return remainder > 0 ? new Money(_value - remainder + D) : new Money(_value - remainder);
         }
 
         public static Money FromDecimal(decimal value)
@@ -142,12 +149,12 @@ namespace Phorkus.Core.Blockchain
 
         public static explicit operator decimal(Money value)
         {
-            return (decimal) value.Value / (decimal) D;
+            return (decimal) value._value / (decimal) D;
         }
 
         public static explicit operator long(Money value)
         {
-            return (long) BigInteger.Divide(value.Value, D);
+            return (long) BigInteger.Divide(value._value, D);
         }
 
         public static bool operator ==(Money x, Money y)
@@ -184,27 +191,27 @@ namespace Phorkus.Core.Blockchain
 
         public static Money operator *(Money x, long y)
         {
-            return new Money(x.Value * y);
+            return new Money(x._value * y);
         }
 
         public static Money operator /(Money x, long y)
         {
-            return new Money(x.Value / y);
+            return new Money(x._value / y);
         }
 
         public static Money operator +(Money x, Money y)
         {
-            return new Money(x.Value + y.Value);
+            return new Money(x._value + y._value);
         }
 
         public static Money operator -(Money x, Money y)
         {
-            return new Money(x.Value - y.Value);
+            return new Money(x._value - y._value);
         }
 
         public static Money operator -(Money value)
         {
-            return new Money(-value.Value);
+            return new Money(-value._value);
         }
     }
 }

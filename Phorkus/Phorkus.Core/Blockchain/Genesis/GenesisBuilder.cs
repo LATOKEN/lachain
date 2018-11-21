@@ -33,7 +33,9 @@ namespace Phorkus.Core.Blockchain.Genesis
             if (_genesisBlock != null)
                 return _genesisBlock;
 
-            var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction();
+            var address = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            
+            var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
 
             var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
@@ -57,7 +59,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             foreach (var tx in genesisTransactions)
             {
                 tx.Signature = SignatureUtils.Zero;
-                tx.From = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+                tx.From = address;
                 tx.Nonce = nonce++;
             }
             

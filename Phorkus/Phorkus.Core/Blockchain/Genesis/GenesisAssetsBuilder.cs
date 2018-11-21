@@ -20,7 +20,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             _validators = config.ValidatorsKeys;
         }
 
-        public Transaction BuildGoverningTokenRegisterTransaction()
+        public Transaction BuildGoverningTokenRegisterTransaction(UInt160 owner)
         {
             var tx = new Transaction
             {
@@ -34,7 +34,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                     Name = "LA",
                     Supply = Money.FromDecimal(100_000_000m).ToUInt256(),
                     Decimals = 18,
-                    Owner = UInt160Utils.Zero
+                    Owner = owner
                 },
                 Nonce = 0
             };

@@ -15,5 +15,7 @@
         TransactionByHash = 0x0401,
         TransactionLatestByFrom = 0x0402,
         TransactionStateByHash = 0x0403,
+        
+        BalanceByOwnerAndAsset = 0x0501,
     }
 }

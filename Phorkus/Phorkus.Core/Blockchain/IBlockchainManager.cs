@@ -4,6 +4,6 @@ namespace Phorkus.Core.Blockchain
 {
     public interface IBlockchainManager
     {
-        void TryBuildGenesisBlock(KeyPair keyPair);
+        bool TryBuildGenesisBlock(KeyPair keyPair);
     }
 }

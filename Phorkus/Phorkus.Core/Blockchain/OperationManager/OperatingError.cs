@@ -18,5 +18,8 @@
         InvalidState,
         TransactionLost,
         InvalidMultisig,
+        AssetCannotBeIssued,
+        AssetNotFound,
+        InvalidOwner,
     }
 }

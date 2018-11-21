@@ -10,22 +10,12 @@ namespace Phorkus.Core.Utils
     {
         public static UInt256 HexToUInt256(this string buffer)
         {
-            throw new NotImplementedException();
-        }
-
-        public static UInt256 HexToUInt256(this byte[] buffer)
-        {
-            throw new NotImplementedException();
+            return buffer.HexToBytes().ToUInt256();
         }
 
         public static UInt160 HexToUInt160(this string buffer)
         {
-            throw new NotImplementedException();
-        }
-
-        public static UInt160 HexToUInt160(this byte[] buffer)
-        {
-            throw new NotImplementedException();
+            return buffer.HexToBytes().ToUInt160();
         }
 
         public static byte[] HexToBytes(this string buffer, int limit = 0)

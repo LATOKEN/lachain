@@ -10,10 +10,11 @@ enum AssetType {
 
 message Asset {
     UInt160 hash = 1;
-    uint32 version = 2;
-    AssetType type = 3;
-    string name = 4;
-    UInt256 supply = 5;
+    AssetType type = 2;
+    string name = 3;
+    UInt256 supply = 4;
+    UInt256 limit = 5;
     uint32 decimals = 6;
     UInt160 owner = 7;
+    UInt160 minter = 8;
 }

@@ -13,21 +13,24 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _assetRepository = assetRepository;
         }
 
-        public OperatingError Confirm(Transaction transaction, UInt256 hash)
+        public OperatingError Confirm(Transaction transaction)
         {
             var result = Verify(transaction);
             if (result != OperatingError.Ok)
                 return result;
             var registerTx = transaction.Register;
+            var minter = registerTx.Minter;
+            if (minter is null)
+                minter = registerTx.Owner;
             var asset = new Asset
             {
-                Hash = registerTx.ToHash160(),
-                Version = 0,
+                Hash = transaction.Register.ToHash160(),
                 Type = registerTx.Type,
                 Name = registerTx.Name,
                 Supply = registerTx.Supply,
                 Decimals = registerTx.Decimals,
-                Owner = registerTx.Owner
+                Owner = registerTx.Owner,
+                Minter = minter
             };
             return !_assetRepository.AddAsset(asset) ? OperatingError.AlreadyExists : OperatingError.Ok;
         }

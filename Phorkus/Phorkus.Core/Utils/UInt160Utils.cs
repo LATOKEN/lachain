@@ -9,10 +9,12 @@ namespace Phorkus.Core.Utils
 {
     public static class UInt160Utils
     {
-        public static readonly UInt160 Zero = new UInt160
+        public static readonly UInt160 Zero = new byte[20].ToUInt160();
+       
+        public static bool IsZero(this UInt160 value)
         {
-            Buffer = ByteString.CopyFrom(new byte[20])
-        };
+            return Zero.Equals(value);
+        }
         
         public static UInt160 ToHash160(this byte[] buffer)
         {

@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Phorkus.Core.Proto;
 
 namespace Phorkus.Core.Blockchain.Genesis
 {
     public interface IGenesisAssetsBuilder
     {
-        Transaction BuildGoverningTokenRegisterTransaction();
+        Transaction BuildGoverningTokenRegisterTransaction(UInt160 owner);
 
         Transaction BuildGenesisMinerTransaction();
         

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Google.Protobuf;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Storage;
@@ -25,7 +24,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             {
                 {TransactionType.Miner, new MinerTranscationPersister()},
                 {TransactionType.Register, new RegisterTransactionPersister(assetRepository)},
-                {TransactionType.Issue, new IssueTransactionPersister(assetRepository)},
+                {TransactionType.Issue, new IssueTransactionPersister(assetRepository, balanceRepository)},
                 {TransactionType.Contract, new ContractTransactionPersister(balanceRepository)},
                 {TransactionType.Publish, new PublishTransactionPersister(contractRepository)},
                 {TransactionType.Deposit, new DepositTransactionPersister()},
@@ -89,7 +88,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var persister = _transactionPersisters[signed.Transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
-            var result = persister.Confirm(signed.Transaction, txHash);
+            var result = persister.Confirm(signed.Transaction);
             if (result != OperatingError.Ok)
             {
                 _transactionRepository.ChangeTransactionState(txHash,
