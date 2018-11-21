@@ -8,11 +8,14 @@ namespace Phorkus.Core.Blockchain.OperationManager
     {
         event EventHandler<SignedTransaction> OnTransactionPersisted;
         event EventHandler<SignedTransaction> OnTransactionFailed;
+        event EventHandler<SignedTransaction> OnTransactionConfirmed;
         event EventHandler<SignedTransaction> OnTransactionSigned;
         
         Transaction GetByHash(UInt256 transactionHash);
         
         OperatingError Persist(SignedTransaction transaction);
+
+        OperatingError Confirm(UInt256 txHash);
         
         SignedTransaction Sign(Transaction transaction, KeyPair keyPair);
         

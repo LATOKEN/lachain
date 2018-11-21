@@ -113,7 +113,15 @@ namespace Phorkus.Core.Cryptography
         {
             for (var i = 0; i < 4; i++)
             {
-                var publicKey = RecoverSignature(message, signature, true, i);
+                byte[] publicKey;
+                try
+                {
+                    publicKey = RecoverSignature(message, signature, true, i);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
                 if (publicKey is null)
                     continue;
                 var check = ComputeAddress(publicKey);
@@ -127,7 +135,8 @@ namespace Phorkus.Core.Cryptography
 
         public byte[] ComputeAddress(byte[] publicKey)
         {
-            return publicKey.Ripemd160();
+            var decodedKey = DecodePublicKey(publicKey, false, out _, out _);
+            return decodedKey.Ripemd160();
         }
 
         private static BigInteger CalculateE(BigInteger n, byte[] message)

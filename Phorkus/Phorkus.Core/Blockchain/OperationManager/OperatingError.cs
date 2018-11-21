@@ -12,6 +12,11 @@
         DoubleSpend,
         InvalidTransaction,
         AlreadyExists,
-        
+        SequenceMismatched,
+        InvalidBlock,
+        QuorumNotReached,
+        InvalidState,
+        TransactionLost,
+        InvalidMultisig,
     }
 }

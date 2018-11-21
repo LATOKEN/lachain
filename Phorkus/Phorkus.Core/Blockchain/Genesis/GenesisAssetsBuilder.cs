@@ -45,7 +45,7 @@ namespace Phorkus.Core.Blockchain.Genesis
         {
             var tx = new Transaction
             {
-                Type = TransactionType.Register,
+                Type = TransactionType.Miner,
                 Version = 0,
                 Flags = (ulong) TransactionFlag.None,
                 From = UInt160Utils.Zero,
@@ -62,7 +62,7 @@ namespace Phorkus.Core.Blockchain.Genesis
         {
             var tx = new Transaction
             {
-                Type = TransactionType.Register,
+                Type = TransactionType.Issue,
                 Version = 0,
                 Flags = (ulong) TransactionFlag.None,
                 From = UInt160Utils.Zero,

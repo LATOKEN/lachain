@@ -13,7 +13,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _assetRepository = assetRepository;
         }
 
-        public OperatingError Persist(Transaction transaction, UInt256 hash)
+        public OperatingError Confirm(Transaction transaction, UInt256 hash)
         {
             var result = Verify(transaction);
             if (result != OperatingError.Ok)

@@ -8,7 +8,8 @@ namespace Phorkus.Core.Blockchain
 {
     public class Money : IComparable<Money>, IEquatable<Money>, IFormattable
     {
-        private static readonly int DecimalDigits = 18;
+        private const int DecimalDigits = 18;
+        
         private static readonly BigInteger D = BigInteger.Pow(10, DecimalDigits);
         private static readonly BigInteger MaxIntegralPart = D - 1;
         private static readonly BigInteger MaxRawValue = MaxIntegralPart * D + D - 1;
@@ -38,7 +39,6 @@ namespace Phorkus.Core.Blockchain
             return Value;
         }
         
-
         public UInt256 ToUInt256()
         {
             return Value.ToUInt256();
@@ -48,7 +48,6 @@ namespace Phorkus.Core.Blockchain
         {
             return Value.CompareTo(other.Value);
         }
-
         
         public override bool Equals(object obj)
         {

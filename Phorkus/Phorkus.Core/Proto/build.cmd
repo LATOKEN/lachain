@@ -5,6 +5,7 @@ protoc --csharp_out . block.proto
 protoc --csharp_out . consensus.proto
 protoc --csharp_out . contract.proto
 protoc --csharp_out . default.proto
+protoc --csharp_out . global.proto
 protoc --csharp_out . message.proto
 protoc --csharp_out . multisig.proto
 protoc --csharp_out . node.proto

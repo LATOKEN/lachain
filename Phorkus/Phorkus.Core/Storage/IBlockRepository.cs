@@ -10,7 +10,7 @@ namespace Phorkus.Core.Storage
         /// </summary>
         /// <param name="blockHeight">The block height / index to retrieve</param>
         /// <returns>Block hash at specified height / index</returns>
-        Block GetBlockByHeight(uint blockHeight);
+        Block GetBlockByHeight(ulong blockHeight);
         
         /// <summary>
         /// Retrieves a block by hash

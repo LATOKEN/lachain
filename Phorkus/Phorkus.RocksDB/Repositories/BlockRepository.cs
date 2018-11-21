@@ -17,7 +17,7 @@ namespace Phorkus.RocksDB.Repositories
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
         
-        public Block GetBlockByHeight(uint blockHeight)
+        public Block GetBlockByHeight(ulong blockHeight)
         {
             return _GetBlockByHeight(blockHeight);
         }

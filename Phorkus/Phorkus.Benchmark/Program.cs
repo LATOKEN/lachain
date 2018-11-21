@@ -1,8 +1,9 @@
-using System;
 using System.Threading;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain.Genesis;
+using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
 
@@ -18,9 +19,9 @@ namespace Phorkus.Benchmark
             };
             
             var genesisBuilder = new GenesisBuilder(
-                new GenesisAssetsBuilder(null));
+                new GenesisAssetsBuilder(null), new BouncyCastle(), new TransactionManager(null, null, null, null, new BouncyCastle()));
             var assetBuilder = new GenesisAssetsBuilder(null);
-            var genesisBlock = genesisBuilder.Build();
+            var genesisBlock = genesisBuilder.Build(null);
 
             var lastTime = TimeUtils.CurrentTimeMillis();
 
@@ -32,8 +33,7 @@ namespace Phorkus.Benchmark
                 txs[i] = new SignedTransaction
                 {
                     Transaction = transaction,
-                    Hash = transaction.ToHash256(),
-                    Signature = SignatureUtils.Zero
+                    Hash = transaction.ToHash256()
                 };
             }
 

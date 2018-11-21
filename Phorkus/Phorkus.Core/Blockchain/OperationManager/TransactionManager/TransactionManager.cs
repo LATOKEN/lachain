@@ -38,6 +38,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public event EventHandler<SignedTransaction> OnTransactionPersisted;
         public event EventHandler<SignedTransaction> OnTransactionFailed;
+        public event EventHandler<SignedTransaction> OnTransactionConfirmed;
         public event EventHandler<SignedTransaction> OnTransactionSigned;
 
         public Transaction GetByHash(UInt256 transactionHash)
@@ -48,49 +49,72 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Persist(SignedTransaction transaction)
         {
+            /* check transaction with this hash in database */
+            if (_transactionRepository.ContainsTransactionByHash(transaction.Hash))
+                return OperatingError.Ok;
+            /* verify transaction signature */
+            var sigVerifyError = VerifySignature(transaction);
+            if (sigVerifyError != OperatingError.Ok)
+                return sigVerifyError;
             /* verify transaction */
             var verifyError = Verify(transaction.Transaction);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
-            var persister = _transactionPersisters[transaction.Transaction.Type];
-            if (persister == null)
+            if (!_transactionPersisters.ContainsKey(transaction.Transaction.Type))
                 return OperatingError.UnsupportedTransaction;
             /* maybe we don't need this check, but I'm afraid */
             if (!transaction.Transaction.ToHash256().Equals(transaction.Hash))
                 return OperatingError.HashMismatched;
+            var persister = _transactionPersisters[transaction.Transaction.Type];
+            if (persister == null)
+                return OperatingError.UnsupportedTransaction;
+            var result = persister.Verify(transaction.Transaction);
+            if (result != OperatingError.Ok)
+                return result;
             /* change transaction state to taken */
             _transactionRepository.AddTransaction(transaction);
-            var result = persister.Persist(transaction.Transaction, transaction.Hash);
+            OnTransactionPersisted?.Invoke(this, transaction);
+            return OperatingError.Ok;
+        }
+
+        public OperatingError Confirm(UInt256 txHash)
+        {
+            var signed = _transactionRepository.GetTransactionByHash(txHash);
+            if (signed is null)
+                return OperatingError.TransactionLost;
+            var state = _transactionRepository.GetTransactionState(txHash);
+            if (state != null && state.Status == TransactionState.Types.TransactionStatus.Confirmed)
+                return OperatingError.InvalidState;
+            /* try to persist transaction */
+            var persister = _transactionPersisters[signed.Transaction.Type];
+            if (persister == null)
+                return OperatingError.UnsupportedTransaction;
+            var result = persister.Confirm(signed.Transaction, txHash);
             if (result != OperatingError.Ok)
             {
-                _transactionRepository.ChangeTransactionState(transaction.Hash,
+                _transactionRepository.ChangeTransactionState(txHash,
                     new TransactionState {Status = TransactionState.Types.TransactionStatus.Failed});
-                OnTransactionFailed?.Invoke(this, transaction);
+                OnTransactionFailed?.Invoke(this, signed);
                 return result;
             }
 
             /* finalize transaction state */
-            _transactionRepository.ChangeTransactionState(transaction.Hash,
+            _transactionRepository.ChangeTransactionState(txHash,
                 new TransactionState {Status = TransactionState.Types.TransactionStatus.Confirmed});
-            OnTransactionPersisted?.Invoke(this, transaction);
+            OnTransactionConfirmed?.Invoke(this, signed);
             return OperatingError.Ok;
         }
 
         public SignedTransaction Sign(Transaction transaction, KeyPair keyPair)
         {
             var hash = transaction.ToHash256();
-            var result = Verify(transaction);
-            if (result != OperatingError.Ok)
-                throw new InvalidTransactionException(result);
             /* use raw byte arrays to sign transaction hash */
-            var signature = _crypto.Sign(
-                hash.Buffer.ToByteArray(),
-                keyPair.PrivateKey.Buffer.ToByteArray()).ToSignature();
+            transaction.Signature = _crypto.Sign(hash.Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
+                .ToSignature();
             var signed = new SignedTransaction
             {
                 Transaction = transaction,
-                Hash = hash,
-                Signature = signature
+                Hash = transaction.ToHash256()
             };
             OnTransactionSigned?.Invoke(this, signed);
             return signed;
@@ -98,21 +122,49 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError VerifySignature(SignedTransaction transaction, PublicKey publicKey)
         {
-            var result = _crypto.VerifySignature(transaction.Hash.Buffer.ToByteArray(),
-                transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
-            return result ? OperatingError.Ok : OperatingError.InvalidSignature;
+            var tx = transaction.Transaction;
+            var sig = tx.Signature;
+            tx.Signature = SignatureUtils.Zero;
+            var hash = tx.ToHash256();
+            tx.Signature = sig;
+            try
+            {
+                var result = _crypto.VerifySignature(hash.Buffer.ToByteArray(),
+                    transaction.Transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+                if (!result)
+                    return OperatingError.InvalidSignature;
+            }
+            catch (Exception)
+            {
+                return OperatingError.InvalidSignature;
+            }
+
+            return OperatingError.Ok;
         }
 
         public OperatingError VerifySignature(SignedTransaction transaction)
         {
-            var hash = transaction.Transaction.ToHash256();
-            if (!hash.Equals(transaction.Hash))
-                return OperatingError.HashMismatched;
-            var rawKey = _crypto.RecoverSignature(hash.Buffer.ToByteArray(), transaction.Signature.Buffer.ToByteArray(),
-                true);
-            return rawKey is null
-                ? OperatingError.InvalidSignature
-                : VerifySignature(transaction, rawKey.ToPublicKey());
+            var tx = transaction.Transaction;
+            var sig = tx.Signature;
+            tx.Signature = SignatureUtils.Zero;
+            var hash = tx.ToHash256();
+            tx.Signature = sig;
+            byte[] rawKey;
+            try
+            {
+                rawKey = _crypto.RecoverSignature(hash.Buffer.ToByteArray(),
+                    transaction.Transaction.Signature.Buffer.ToByteArray(),
+                    transaction.Transaction.From.Buffer.ToByteArray());
+                if (rawKey is null)
+                    return OperatingError.InvalidSignature;
+                rawKey = _crypto.DecodePublicKey(rawKey, true, out _, out _);
+            }
+            catch (Exception)
+            {
+                return OperatingError.InvalidSignature;
+            }
+            /* TODO: "i don't think that we need recover here again, cuz signature already verified" */
+            return VerifySignature(transaction, rawKey.ToPublicKey());
         }
 
         public OperatingError Verify(Transaction transaction)

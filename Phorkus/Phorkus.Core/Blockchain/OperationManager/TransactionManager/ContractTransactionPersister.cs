@@ -12,7 +12,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _balanceRepository = balanceRepository;
         }
 
-        public OperatingError Persist(Transaction transaction, UInt256 hash)
+        public OperatingError Confirm(Transaction transaction, UInt256 hash)
         {
             throw new System.NotImplementedException();
         }

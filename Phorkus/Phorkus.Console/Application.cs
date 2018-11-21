@@ -1,12 +1,13 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Threading;
+﻿using System.Threading;
 using Phorkus.Core;
+using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Consensus;
 using Phorkus.Core.Config;
+using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Core.Utils;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
 
@@ -35,20 +36,22 @@ namespace Phorkus.Console
         public void Start(string[] args)
         {            
             var networkManager = _container.Resolve<INetworkManager>();
-            var networkContext = _container.Resolve<INetworkContext>();
-
-            networkManager.Start();
-
-            Thread.Sleep(1000);
+            var blockchainManager = _container.Resolve<IBlockchainManager>();
+            var configManager = _container.Resolve<IConfigManager>();
+            var crypto = _container.Resolve<ICrypto>();
             
-            networkManager.Broadcast(new Message
-            {
-                Type = MessageType.HandshakeRequest,
-                HandshakeRequest = new HandshakeRequestMessage
-                {
-                    Node = networkContext.LocalNode
-               }
-            });
+            var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
+            var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            
+            System.Console.WriteLine("-------------------------------");
+            System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToByteArray().ToHex());
+            System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToByteArray().ToHex());
+            System.Console.WriteLine("Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToHex());
+            System.Console.WriteLine("-------------------------------");
+            
+            blockchainManager.TryBuildGenesisBlock(keyPair);
+            
+            networkManager.Start();
             
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

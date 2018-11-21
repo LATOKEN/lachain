@@ -79,7 +79,7 @@ namespace Phorkus.Core.Blockchain.Consensus
         private void _TaskWorker()
         {
             InitializeConsensus(0);
-            _context.Timestamp = _blockchainContext.CurrentBlock.BlockHeader.Timestamp;
+            _context.Timestamp = _blockchainContext.CurrentBlock.Header.Timestamp;
             Thread.Sleep(1000);
             while (!_stopped)
             {
@@ -112,7 +112,7 @@ namespace Phorkus.Core.Blockchain.Consensus
                     // TODO: produce block
                     var blockBuilder = new BlockBuilder(
                         _transactionPool, _blockchainContext.CurrentBlockHeader.Hash,
-                        _blockchainContext.CurrentBlockHeader.BlockHeader.Index
+                        _blockchainContext.CurrentBlockHeader.Header.Index
                     );
                     var blockWithTransactions = blockBuilder.Build((ulong) _random.Next());
                     _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
@@ -232,7 +232,7 @@ namespace Phorkus.Core.Blockchain.Consensus
         {
             if (viewNumber == 0)
                 _context.ResetState(_blockchainContext.CurrentBlock.Hash,
-                    _blockchainContext.CurrentBlock.BlockHeader.Index);
+                    _blockchainContext.CurrentBlock.Header.Index);
             else
                 _context.ChangeView(viewNumber);
             if (_context.MyIndex < 0) return;
@@ -304,13 +304,13 @@ namespace Phorkus.Core.Blockchain.Consensus
                 return;
             }
 
-            if (payload.Timestamp <= _blockchainContext.CurrentBlockHeader.BlockHeader.Timestamp ||
+            if (payload.Timestamp <= _blockchainContext.CurrentBlockHeader.Header.Timestamp ||
                 payload.Timestamp > (ulong) DateTime.UtcNow.AddMinutes(10).ToTimestamp().Seconds)
             {
                 _logger.LogDebug(
                     $"Ignoring prepare request from validator={payload.ValidatorIndex}: " +
                     $"timestamp incorrect: theirs={payload.Timestamp} ours={_context.Timestamp} " +
-                    $"last_block={_blockchainContext.CurrentBlockHeader.BlockHeader.Timestamp}"
+                    $"last_block={_blockchainContext.CurrentBlockHeader.Header.Timestamp}"
                 );
                 return;
             }
@@ -324,11 +324,9 @@ namespace Phorkus.Core.Blockchain.Consensus
             };
 
             var header = _context.GetProposedHeader();
-            if (!_crypto.VerifySignature(
-                header.ToByteArray(),
-                prepareRequest.Signature.Buffer.ToByteArray(),
-                _context.Validators[payload.ValidatorIndex].PublicKey.Buffer.ToByteArray()
-            ))
+            var sigVerified = _blockManager.VerifySignature(header, prepareRequest.Signature,
+                _context.Validators[payload.ValidatorIndex].PublicKey);
+            if (sigVerified != OperatingError.Ok)
             {
                 _logger.LogWarning(
                     $"Ignoring prepare request from validator={payload.ValidatorIndex}: " +
@@ -352,11 +350,13 @@ namespace Phorkus.Core.Blockchain.Consensus
             if (_context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (body.ValidatorIndex == _context.MyIndex) return;
             if (body.Version != ConsensusContext.Version) return;
-            if (!_crypto.VerifySignature(
-                message.Payload.ToByteArray(),
+
+            var sigVerified = _crypto.VerifySignature(
+                message.Payload.ToHash256().ToByteArray(),
                 message.Signature.Buffer.ToByteArray(),
                 _context.Validators[message.Payload.ValidatorIndex].PublicKey.Buffer.ToByteArray()
-            ))
+            );
+            if (!sigVerified)
             {
                 _logger.LogWarning(
                     $"Cannot handle consensus payload from validator={message.Payload.ValidatorIndex}: " +
@@ -370,9 +370,9 @@ namespace Phorkus.Core.Blockchain.Consensus
                 _logger.LogWarning(
                     $"Cannot handle consensus payload from validator={message.Payload.ValidatorIndex} " +
                     $"at height={body.BlockIndex}, since " +
-                    $"local height={_blockchainContext.CurrentBlockHeader.BlockHeader.Index}"
+                    $"local height={_blockchainContext.CurrentBlockHeader.Header.Index}"
                 );
-                if (_blockchainContext.CurrentBlockHeader.BlockHeader.Index + 1 < body.BlockIndex)
+                if (_blockchainContext.CurrentBlockHeader.Header.Index + 1 < body.BlockIndex)
                 {
                     return;
                 }
@@ -436,7 +436,8 @@ namespace Phorkus.Core.Blockchain.Consensus
 
         private void OnTransactionVerified(object sender, SignedTransaction e)
         {
-            if (_context.CurrentProposal.Transactions.ContainsKey(e.Hash)) return;
+            if (_context.CurrentProposal is null || _context.CurrentProposal.Transactions.ContainsKey(e.Hash))
+                return;
             _context.CurrentProposal.Transactions[e.Hash] = e;
             if (!_context.CurrentProposal.IsComplete) return;
             lock (_allTransactionVerified)
@@ -487,9 +488,9 @@ namespace Phorkus.Core.Blockchain.Consensus
             var message = new ConsensusMessage
             {
                 Payload = payload,
-                Signature = _crypto.Sign(
-                    payload.ToByteArray(), _context.KeyPair.PrivateKey.Buffer.ToByteArray()
-                ).ToSignature()
+                Signature = _crypto
+                    .Sign(payload.ToHash256().ToByteArray(), _context.KeyPair.PrivateKey.Buffer.ToByteArray())
+                    .ToSignature()
             };
             _broadcaster.Broadcast(new Message
             {

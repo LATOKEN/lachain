@@ -73,11 +73,9 @@ message Transaction {
 
 /*
 tx_hash = hash( raw_tx + sign(hash(raw_tx)) )
-
 check this link: https://en.bitcoin.it/wiki/Transaction_malleability
 */
 message SignedTransaction {
     Transaction transaction = 1;
     UInt256 hash = 2;
-    Signature signature = 3;
 }

@@ -99,7 +99,16 @@ namespace Phorkus.Core.Network
                 return;
             peer.OnDisconnect += (s, e) => ActivePeers.TryRemove(peer.EndPoint, out _);
             _messageListener.StartFor(peer, CancellationToken.None);
-            Task.Factory.StartNew(peer.Run, TaskCreationOptions.LongRunning); 
+            Task.Factory.StartNew(peer.Run, TaskCreationOptions.LongRunning);
+            var message = new Message
+            {
+                Type = MessageType.HandshakeRequest,
+                HandshakeRequest = new HandshakeRequestMessage
+                {
+                    Node = LocalNode
+                }
+            };
+            peer.Send(message);
         }
         
         private void _MessageHandled(object sender, Message message)

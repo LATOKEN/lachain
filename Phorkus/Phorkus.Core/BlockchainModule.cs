@@ -15,7 +15,7 @@ namespace Phorkus.Core
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             /* global */
-            containerBuilder.RegisterSingleton<IBlockchainContext, BlockchainContext>();
+            containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
             /* consensus */
             containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
             /* gensis */

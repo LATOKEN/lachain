@@ -11,10 +11,14 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         Block GetByHash(UInt256 blockHash);
         
-        void Persist(Block transaction);
+        OperatingError Persist(Block block);
         
-        Signature Sign(BlockHeader blockHeader, KeyPair keyPair);
+        Signature Sign(BlockHeader block, KeyPair keyPair);
         
-        OperatingError Verify(Block blockHeader);
+        OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, PublicKey publicKey);
+        
+        OperatingError VerifySignatures(Block block);
+        
+        OperatingError Verify(Block block);
     }
 }

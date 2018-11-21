@@ -16,10 +16,9 @@ namespace Phorkus.Core.Utils
 
         public static bool IsZero(this UInt256 value)
         {
-            /* TODO: "not implemented" */
-            return false;
+            return Zero.Equals(value);
         }
-
+        
         public static UInt256 ToHash256(this byte[] buffer)
         {
             return new UInt256

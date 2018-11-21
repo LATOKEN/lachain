@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading;
+using Google.Protobuf;
+using Phorkus.Core.Proto;
 using Phorkus.Core.Storage;
 
 namespace Phorkus.RocksDB.Repositories
@@ -14,41 +16,81 @@ namespace Phorkus.RocksDB.Repositories
             _readerWriterLock = new ReaderWriterLock();
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
-
-        public uint GetTotalBlockHeight()
+        
+        public ulong GetTotalBlockHeight()
         {
-            throw new NotImplementedException();
-            
-            /*byte[] raw;
+            return _GetGlobal()?.BlockHeight ?? 0;
+        }
+        
+        public void SetTotalBlockHeight(uint height)
+        {
+            _ChangeGlobal(global => { global.BlockHeight = height;
+                return global;
+            });
+        }
+
+        public ulong GetTotalBlockHeaderHeight()
+        {
+            return _GetGlobal()?.BlockHeaderHeight ?? 0;
+        }
+        
+        public void SetTotalBlockHeaderHeight(uint height)
+        {
+            _ChangeGlobal(global => { global.BlockHeaderHeight = height;
+                return global;
+            });
+        }
+
+        public bool IsGenesisBlockExists()
+        {
+            return _GetGlobal() != null;
+        }
+
+        private Global _GetGlobal()
+        {
             _readerWriterLock.AcquireReaderLock(-1);
             try
             {
-                raw = _rocksDbContext.Get(_sysCurrentBlockKey);
+                return _GetGlobalUnsafe();
             }
             finally
             {
                 _readerWriterLock.ReleaseReaderLock();
             }
-            return raw == null ? uint.MinValue : BitConverter.ToUInt32(raw, 0);*/
         }
 
-        public void SetTotalBlockHeight(uint height)
+        private Global _GetGlobalUnsafe()
         {
-            throw new NotImplementedException();
-            /*_rocksDbContext.Save(_sysCurrentBlockKey, BitConverter.GetBytes(height)); */
-        }
-
-        public uint GetTotalBlockHeaderHeight()
-        {
-            throw new NotImplementedException();
-            /*var raw = _rocksDbContext.Get(_sysCurrentBlockHeaderKey);
-            return raw == null ? uint.MinValue : BitConverter.ToUInt32(raw, 0);*/
+            if (_cachedGlobal != null)
+                return _cachedGlobal;
+            var raw = _rocksDbContext.Get(EntryPrefix.Global.BuildPrefix());
+            if (raw is null)
+                return new Global();
+            _cachedGlobal = Global.Parser.ParseFrom(raw);
+            return _cachedGlobal;
         }
         
-        public void SetTotalBlockHeaderHeight(uint height)
+        private void _ChangeGlobal(Func<Global, Global> factory)
         {
-            throw new NotImplementedException();
-            /*_rocksDbContext.Save(_sysCurrentBlockHeaderKey, BitConverter.GetBytes(height));*/
+            _readerWriterLock.AcquireWriterLock(-1);
+            try
+            {
+                _ChangeGlobalUnsafe(factory(_GetGlobalUnsafe()));
+            }
+            finally
+            {
+                _readerWriterLock.ReleaseWriterLock();
+            }
         }
+
+        private void _ChangeGlobalUnsafe(Global nextGlobal)
+        {
+            _rocksDbContext.Save(EntryPrefix.Global.BuildPrefix(), nextGlobal.ToByteArray());
+            var raw = _rocksDbContext.Get(EntryPrefix.Global.BuildPrefix());
+            if (raw is null) return;
+            _cachedGlobal = Global.Parser.ParseFrom(raw);
+        }
+        
+        private Global _cachedGlobal;
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Core.Blockchain
+﻿using Phorkus.Core.Proto;
+
+namespace Phorkus.Core.Blockchain
 {
     public interface IBlockchainContext
     {
@@ -6,8 +8,8 @@
         
         ulong CurrentBlockHeight { get; }
         
-        HashedBlockHeader CurrentBlockHeader { get; }
+        Block CurrentBlockHeader { get; }
 
-        HashedBlockHeader CurrentBlock { get; }
+        Block CurrentBlock { get; }
     }
 }

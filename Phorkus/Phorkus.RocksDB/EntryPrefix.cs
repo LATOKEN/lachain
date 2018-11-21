@@ -1,7 +1,9 @@
 ﻿namespace Phorkus.RocksDB
 {
     public enum EntryPrefix : short
-    {        
+    {
+        Global = 0x0101,
+        
         AssetByHash = 0x0201,
         AssetHashByName = 0x0202,
         AssetHashes = 0x0203,

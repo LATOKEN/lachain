@@ -4,14 +4,16 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class MinerTranscationPersister : ITransactionPersister
     {
-        public OperatingError Persist(Transaction transaction, UInt256 hash)
+        public OperatingError Confirm(Transaction transaction, UInt256 hash)
         {
-            throw new System.NotImplementedException();
+            return OperatingError.Ok;
         }
         
         public OperatingError Verify(Transaction transaction)
         {
-            throw new System.NotImplementedException();
+            if (transaction.Type != TransactionType.Miner)
+                return OperatingError.InvalidTransaction;
+            return OperatingError.Ok;
         }
     }
 }

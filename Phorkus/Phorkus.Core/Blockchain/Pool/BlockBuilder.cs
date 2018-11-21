@@ -30,12 +30,11 @@ namespace Phorkus.Core.Blockchain.Pool
         {
             var header = new BlockHeader
             {
-                Version = 1,
+                Version = 0,
                 PrevBlockHash = _prevBlockHash,
                 MerkleRoot = null,
                 Timestamp = TimeUtils.CurrentTimeMillis(),
                 Index = _prevBlockIndex + 1,
-                Type = HeaderType.Extended,
                 Nonce = nonce
             };
             header.TransactionHashes.AddRange(_hashedTransactions.Select(tx => tx.Hash));

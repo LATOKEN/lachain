@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
+using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
 
@@ -11,15 +13,22 @@ namespace Phorkus.Core.Blockchain.Genesis
         public const ulong GenesisConsensusData = 2083236893UL;
 
         private readonly IGenesisAssetsBuilder _genesisAssetsBuilder;
+        private readonly ICrypto _crypto;
+        private readonly ITransactionManager _transactionManager;
 
-        public GenesisBuilder(IGenesisAssetsBuilder genesisAssetsBuilder)
+        public GenesisBuilder(
+            IGenesisAssetsBuilder genesisAssetsBuilder,
+            ICrypto crypto,
+            ITransactionManager transactionManager)
         {
             _genesisAssetsBuilder = genesisAssetsBuilder;
+            _crypto = crypto;
+            _transactionManager = transactionManager;
         }
 
         private BlockWithTransactions _genesisBlock;
 
-        public BlockWithTransactions Build()
+        public BlockWithTransactions Build(KeyPair keyPair)
         {
             if (_genesisBlock != null)
                 return _genesisBlock;
@@ -43,32 +52,37 @@ namespace Phorkus.Core.Blockchain.Genesis
                 governingToken
             };
             var genesisTransactions = txsBefore.Concat(tokenDistribution).ToArray();
-
+            
+            var nonce = 0ul;
+            foreach (var tx in genesisTransactions)
+            {
+                tx.Signature = SignatureUtils.Zero;
+                tx.From = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+                tx.Nonce = nonce++;
+            }
+            
+            var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, keyPair));
+            var signedTransactions = signed as SignedTransaction[] ?? signed.ToArray();
+            var txHashes = signedTransactions.Select(tx => tx.Hash).ToArray();
+            
             var header = new BlockHeader
             {
-                Version = 1,
+                Version = 0,
                 PrevBlockHash = UInt256Utils.Zero,
-                MerkleRoot = null,
+                MerkleRoot = MerkleTree.ComputeRoot(txHashes),
                 Timestamp = (ulong) genesisTimestamp.Seconds,
                 Index = 0,
-                Type = HeaderType.Extended,
                 Nonce = GenesisConsensusData
             };
+            header.TransactionHashes.AddRange(txHashes);
+            
             var result = new Block
             {
                 Hash = header.ToHash256(),
                 Header = header
             };
-            result.Header.TransactionHashes.AddRange(genesisTransactions.Select(tx => tx.ToHash256()).ToArray());
-
-            /* genesis block transactions don't have signatures */
-            var signed = genesisTransactions.Select(tx => new SignedTransaction
-            {
-                Transaction = tx,
-                Hash = tx.ToHash256(),
-                Signature = SignatureUtils.Zero
-            });
-            _genesisBlock = new BlockWithTransactions(result, signed.ToArray());
+            
+            _genesisBlock = new BlockWithTransactions(result, signedTransactions.ToArray());
             return _genesisBlock;
         }
     }

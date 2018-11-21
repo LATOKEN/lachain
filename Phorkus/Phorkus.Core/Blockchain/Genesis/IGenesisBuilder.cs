@@ -1,7 +1,9 @@
-﻿namespace Phorkus.Core.Blockchain.Genesis
+﻿using Phorkus.Core.Cryptography;
+
+namespace Phorkus.Core.Blockchain.Genesis
 {
     public interface IGenesisBuilder
     {
-        BlockWithTransactions Build();
+        BlockWithTransactions Build(KeyPair keyPair);
     }
 }
