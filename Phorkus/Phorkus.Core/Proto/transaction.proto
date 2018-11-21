@@ -21,7 +21,7 @@ message ContractTransaction {
     UInt160 asset = 1;
     UInt160 to = 2;
     UInt256 value = 3;
-    bytes data = 4;
+    bytes script = 4;
 }
 
 message IssueTransaction {

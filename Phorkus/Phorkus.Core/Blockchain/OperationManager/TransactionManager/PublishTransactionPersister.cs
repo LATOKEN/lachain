@@ -12,7 +12,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _contractRepository = contractRepository;
         }
 
-        public OperatingError Confirm(Transaction transaction)
+        public OperatingError Execute(Transaction transaction)
         {
             throw new System.NotImplementedException();
         }

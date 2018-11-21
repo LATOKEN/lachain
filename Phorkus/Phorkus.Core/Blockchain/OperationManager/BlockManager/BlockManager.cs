@@ -123,6 +123,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 return OperatingError.InvalidBlock;
             if (header.MerkleRoot is null || header.MerkleRoot.IsZero())
                 return OperatingError.InvalidBlock;
+            /* TODO: "verify merkle root here" */
             if (header.Timestamp == 0)
                 return OperatingError.InvalidBlock;
             if (header.Nonce == 0)

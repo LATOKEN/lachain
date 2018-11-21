@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using Phorkus.Core.Proto;
 
 namespace Phorkus.Core.Blockchain.Consensus
 {

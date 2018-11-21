@@ -33,7 +33,17 @@ namespace Phorkus.RocksDB.Repositories
                 return _ChangeBalanceUnsafe(owner, asset, result);
             }
         }
-        
+
+        public void TransferBalance(UInt160 from, UInt160 to, UInt160 asset, Money value)
+        {
+            lock (_rocksDbContext)
+            {
+                /* TODO: "this code might be unsafe" */
+                SubBalance(from, asset, value);
+                AddBalance(to, asset, value);
+            }
+        }
+
         public Money SubBalance(UInt160 owner, UInt160 asset, Money value)
         {
             lock (_rocksDbContext)

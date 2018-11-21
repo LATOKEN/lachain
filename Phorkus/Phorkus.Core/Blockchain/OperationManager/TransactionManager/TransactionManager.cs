@@ -88,7 +88,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var persister = _transactionPersisters[signed.Transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
-            var result = persister.Confirm(signed.Transaction);
+            var result = persister.Execute(signed.Transaction);
             if (result != OperatingError.Ok)
             {
                 _transactionRepository.ChangeTransactionState(txHash,

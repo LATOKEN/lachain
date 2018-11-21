@@ -1,4 +1,5 @@
-﻿using Phorkus.Core.Blockchain.Genesis;
+﻿using System.Collections.Generic;
+using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.BlockManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
@@ -38,20 +39,25 @@ namespace Phorkus.Core.Blockchain
         
         public bool TryBuildGenesisBlock(KeyPair keyPair)
         {
+            var genesisBlock = _genesisBuilder.Build(keyPair);
             if (CurrentBlockHeader != null)
                 return false;
-            var genesisBlock = _genesisBuilder.Build(keyPair);
-            foreach (var tx in genesisBlock.Transactions)
+            PersistBlockManually(genesisBlock.Block, genesisBlock.Transactions);
+            return true;
+        }
+
+        public void PersistBlockManually(Block block, IEnumerable<SignedTransaction> transactions)
+        {
+            foreach (var tx in transactions)
             {
                 var result = _transactionManager.Persist(tx);
                 if (result == OperatingError.Ok)
                     continue;
                 throw new InvalidTransactionException(result);
             }
-            var error = _blockManager.Persist(genesisBlock.Block);
+            var error = _blockManager.Persist(block);
             if (error != OperatingError.Ok)
                 throw new InvalidBlockException(error);
-            return true;
         }
     }
 }

@@ -48,7 +48,9 @@ namespace Phorkus.Core.Blockchain
         public override string ToString()
         {
             var str = _value.ToString();
-            return str.Substring(0, str.Length - DecimalDigits) + "." + str.Substring(str.Length - DecimalDigits);
+            if (_value != BigInteger.Zero)
+                return str.Substring(0, str.Length - DecimalDigits) + "." + str.Substring(str.Length - DecimalDigits);
+            return str;
         }
 
         public int CompareTo(Money other)

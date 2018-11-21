@@ -4,7 +4,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class WithdrawTransactionPersister : ITransactionPersister
     {
-        public OperatingError Confirm(Transaction transaction)
+        public OperatingError Execute(Transaction transaction)
         {
             throw new OperationNotSupportedException();
         }
