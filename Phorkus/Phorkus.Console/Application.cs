@@ -79,6 +79,10 @@ namespace Phorkus.Console
             
             networkManager.Start();
             
+            Thread.Sleep(1000);
+            var consensusManager = _container.Resolve<IConsensusManager>();
+            consensusManager.Start();
+            
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)
                 Thread.Sleep(1000);

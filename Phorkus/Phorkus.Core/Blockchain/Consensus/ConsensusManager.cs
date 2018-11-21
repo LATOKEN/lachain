@@ -79,6 +79,11 @@ namespace Phorkus.Core.Blockchain.Consensus
         private void _TaskWorker()
         {
             InitializeConsensus(0);
+            if (_context.MyIndex < 0)
+            {
+                _logger.LogWarning("Halting consensus process: we are not in validator list");
+                return;
+            }
             _context.Timestamp = _blockchainContext.CurrentBlock.Header.Timestamp;
             Thread.Sleep(1000);
             while (!_stopped)
