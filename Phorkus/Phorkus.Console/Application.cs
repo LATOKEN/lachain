@@ -1,4 +1,7 @@
-﻿using System.Threading;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using Newtonsoft.Json;
 using Phorkus.Core;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.Consensus;
@@ -7,6 +10,8 @@ using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
+using Phorkus.Core.Proto;
+using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
@@ -38,6 +43,7 @@ namespace Phorkus.Console
             var networkManager = _container.Resolve<INetworkManager>();
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var configManager = _container.Resolve<IConfigManager>();
+            var blockRepository = _container.Resolve<IBlockRepository>();
             var crypto = _container.Resolve<ICrypto>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -48,8 +54,21 @@ namespace Phorkus.Console
             System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToByteArray().ToHex());
             System.Console.WriteLine("Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToHex());
             System.Console.WriteLine("-------------------------------");
-
+            
             blockchainManager.TryBuildGenesisBlock(keyPair);
+
+            var genesisBlock = blockRepository.GetBlockByHeight(0);
+            System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
+            System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
+            System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
+            System.Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
+            System.Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
+            System.Console.WriteLine($" + transactionHashes: {genesisBlock.Header.TransactionHashes.Count}");
+            foreach (var s in genesisBlock.Header.TransactionHashes)
+                System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
+            System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
+            System.Console.WriteLine("-------------------------------");
+            
             networkManager.Start();
             
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
