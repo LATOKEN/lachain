@@ -50,8 +50,17 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
             
             blockchainManager.TryBuildGenesisBlock(keyPair);
-            
+var broadcaster = _container.Resolve<IBroadcaster>();
             networkManager.Start();
+            
+            broadcaster.Broadcast(new Message
+            {
+                Type = MessageType.HandshakeRequest,
+                HandshakeRequest = new HandshakeRequestMessage
+                {
+                    Node = networkContext.LocalNode
+               }
+            });
             
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

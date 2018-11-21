@@ -9,6 +9,8 @@ namespace Phorkus.Core
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             containerBuilder.RegisterSingleton<INetworkManager, NetworkManager>();
+            containerBuilder.RegisterSingleton<INetworkContext, NetworkContext>();
+            containerBuilder.RegisterSingleton<IBroadcaster, Broadcaster>();
         }
     }
 }

@@ -1,5 +1,8 @@
 using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Math.EC;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Config;
@@ -82,7 +85,12 @@ namespace Phorkus.Test
             System.Console.WriteLine("Address: " + address2.ToHex());
             
             var message = "0xbadcab1e".HexToBytes().Sha256();
-            var sig = crypto.Sign(message, privateKey);
+            var curve = SecNamedCurves.GetByName("secp256r1");
+            var point = curve.Curve.DecodePoint(publicKey);
+           System.Console.WriteLine("Compressed pubkey: " + point.GetEncoded(true).ToHex());
+            
+            var message2 = "0xbadcab1e".HexToBytes();
+            var sig = crypto.Sign(message2, privateKey);
             
             System.Console.WriteLine("Signature: " + sig.ToHex());
 

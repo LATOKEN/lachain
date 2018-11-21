@@ -3,9 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
-using Org.BouncyCastle.Crypto.Modes;
 using Phorkus.Core.Logging;
 
 namespace Phorkus.Core.Network.Tcp
@@ -33,14 +31,14 @@ namespace Phorkus.Core.Network.Tcp
             _networkConfig = networkConfig;
             _logger = logger;
         }
-        
+
         public bool IsWorking { get; private set; }
 
         public void Start()
         {
             if (IsWorking)
                 return;
-            
+
             _logger.LogWarning("Starting TCP server");
             IsWorking = true;
 
@@ -71,23 +69,23 @@ namespace Phorkus.Core.Network.Tcp
                 {
                     continue;
                 }
-                
+
                 var peer = new TcpPeer(socket, _transport);
                 OnPeerAccepted?.Invoke(this, peer);
             }
         }
-        
+
         public void Stop()
         {
             IsWorking = false;
             _tcpListener.Stop();
         }
 
-        private bool _IsSelfConnect(IPAddress ipAddress)
+        private static bool _IsSelfConnect(IPAddress ipAddress)
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
             if (host.AddressList.Contains(ipAddress))
-                return true;            
+                return true;
             var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
             foreach (var ni in networkInterfaces)
             {
@@ -96,6 +94,7 @@ namespace Phorkus.Core.Network.Tcp
                 {
                     continue;
                 }
+
                 foreach (var ip in ni.GetIPProperties().UnicastAddresses)
                 {
                     if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
@@ -105,9 +104,10 @@ namespace Phorkus.Core.Network.Tcp
                     return true;
                 }
             }
+
             return false;
         }
-        
+
         public IPeer ConnectTo(IpEndPoint ipEndPoint)
         {
             var ipAddress = _GetIpAddress(ipEndPoint.Host);
@@ -116,7 +116,7 @@ namespace Phorkus.Core.Network.Tcp
 
             if (_IsSelfConnect(ipAddress))
                 return null;
-            
+
             if (_networkConfig.ForceIPv6)
                 ipAddress = ipAddress.MapToIPv6();
             else if (ipAddress.IsIPv4MappedToIPv6)
@@ -124,7 +124,7 @@ namespace Phorkus.Core.Network.Tcp
 
             var ipEp = new IPEndPoint(ipAddress, ipEndPoint.Port);
             _logger.LogInformation($"Connecting to {ipEp}...");
-            
+
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
             try
@@ -136,13 +136,13 @@ namespace Phorkus.Core.Network.Tcp
                 /*_logger.LogWarning($"Unable to establish connection with client {ipEp}", e);*/
                 return null;
             }
-            
+
             _logger.LogInformation($"Connected to {ipEp}");
             var peer = new TcpPeer(socket, _transport);
             OnPeerConnected?.Invoke(this, peer);
             return peer;
         }
-        
+
         /// <summary>
         /// Get Ip from hostname or address
         /// </summary>

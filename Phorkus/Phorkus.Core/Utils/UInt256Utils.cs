@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Proto;
 
@@ -39,6 +40,11 @@ namespace Phorkus.Core.Utils
             if (bytes.Length > 33 || bytes.Length == 33 && bytes[32] != 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
             return bytes.Take(32).Concat(new byte[32 - bytes.Length]).ToArray().ToUInt256();
+        }
+
+        public static Money ToMoney(this UInt256 value)
+        {
+            return new Money(value.ToBigInteger());
         }
 
         public static UInt256 ToUInt256(this byte[] buffer)
