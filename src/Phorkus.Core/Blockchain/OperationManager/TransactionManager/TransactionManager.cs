@@ -76,7 +76,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
 
-        public OperatingError Confirm(UInt256 txHash)
+        public OperatingError Execute(UInt256 txHash)
         {
             var signed = _transactionRepository.GetTransactionByHash(txHash);
             if (signed is null)

@@ -22,7 +22,7 @@ namespace Phorkus.RocksDB.Repositories
             return _GetGlobal()?.BlockHeight ?? 0;
         }
         
-        public void SetTotalBlockHeight(uint height)
+        public void SetTotalBlockHeight(ulong height)
         {
             _ChangeGlobal(global => { global.BlockHeight = height;
                 return global;
@@ -34,7 +34,7 @@ namespace Phorkus.RocksDB.Repositories
             return _GetGlobal()?.BlockHeaderHeight ?? 0;
         }
         
-        public void SetTotalBlockHeaderHeight(uint height)
+        public void SetTotalBlockHeaderHeight(ulong height)
         {
             _ChangeGlobal(global => { global.BlockHeaderHeight = height;
                 return global;

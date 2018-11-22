@@ -67,13 +67,17 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* confirm block transactions */
             foreach (var txHash in block.Header.TransactionHashes)
             {
-                var result = _transactionManager.Confirm(txHash);
+                var result = _transactionManager.Execute(txHash);
                 if (result == OperatingError.Ok)
                     continue;
-                /* TODO: "rollback previous operations here" */
+                /* TODO: "mark transaction as failed here" */
             }
             /* write block to database */
             _blockRepository.AddBlock(block);
+            var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
+            if (block.Header.Index > currentHeaderHeight)
+                _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
+            _globalRepository.SetTotalBlockHeight(block.Header.Index);
             return OperatingError.Ok;
         }
         

@@ -12,7 +12,7 @@
         /// Set the total/ current block height
         /// </summary>
         /// <param name="height">Total / current block height</param>
-        void SetTotalBlockHeight(uint height);
+        void SetTotalBlockHeight(ulong height);
         
         /// <summary>
         /// Retrieves the total / current block header height
@@ -24,7 +24,7 @@
         /// Set the total/ current block header height
         /// </summary>
         /// <param name="height">Total / current block header height</param>
-        void SetTotalBlockHeaderHeight(uint height);
+        void SetTotalBlockHeaderHeight(ulong height);
 
         bool IsGenesisBlockExists();
     }
