@@ -111,7 +111,21 @@ namespace Phorkus.Core.Network
         
         public void StartFor(IPeer peer, CancellationToken cancellationToken)
         {
-            Task.Factory.StartNew(() => _Worker(peer, cancellationToken), cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            Task.Factory.StartNew(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        _Worker(peer, cancellationToken);
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError("Message listener's worker has failed", e);
+                    }
+                }
+            }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
     }
 }
