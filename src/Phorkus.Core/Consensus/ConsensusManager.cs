@@ -90,7 +90,9 @@ namespace Phorkus.Core.Consensus
                 return;
             }
             _context.Timestamp = _blockchainContext.CurrentBlock.Header.Timestamp;
-            Thread.Sleep(1000);
+            
+            Thread.Sleep(3000);
+            
             while (!_stopped)
             {
                 // If were are waiting for view change, just wait
