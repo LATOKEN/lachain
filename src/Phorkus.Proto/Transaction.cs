@@ -39,17 +39,17 @@ namespace Phorkus.Proto {
             "CgZzdGF0dXMYASABKA4yIy5UcmFuc2FjdGlvblN0YXRlLlRyYW5zYWN0aW9u",
             "U3RhdHVzInIKEVRyYW5zYWN0aW9uU3RhdHVzEhwKGFRSQU5TQUNUSU9OX1NU",
             "QVRVU19UQUtFThAAEiAKHFRSQU5TQUNUSU9OX1NUQVRVU19DT05GSVJNRUQQ",
-            "ARIdChlUUkFOU0FDVElPTl9TVEFUVVNfRkFJTEVEEAIi3wIKC1RyYW5zYWN0",
+            "ARIdChlUUkFOU0FDVElPTl9TVEFUVVNfRkFJTEVEEAIiwAIKC1RyYW5zYWN0",
             "aW9uEh4KBHR5cGUYASABKA4yEC5UcmFuc2FjdGlvblR5cGUSDwoHdmVyc2lv",
             "bhgCIAEoDRINCgVmbGFncxgDIAEoBBIWCgRmcm9tGAQgASgLMgguVUludDE2",
             "MBINCgVub25jZRgFIAEoBBIoCghjb250cmFjdBgGIAEoCzIULkNvbnRyYWN0",
             "VHJhbnNhY3Rpb25IABIiCgVpc3N1ZRgHIAEoCzIRLklzc3VlVHJhbnNhY3Rp",
             "b25IABImCgdwdWJsaXNoGAggASgLMhMuUHVibGlzaFRyYW5zYWN0aW9uSAAS",
             "KAoIcmVnaXN0ZXIYCSABKAsyFC5SZWdpc3RlclRyYW5zYWN0aW9uSAASIgoF",
-            "bWluZXIYCiABKAsyES5NaW5lclRyYW5zYWN0aW9uSAASHQoJc2lnbmF0dXJl",
-            "GAsgASgLMgouU2lnbmF0dXJlQgYKBGRhdGEiTgoRU2lnbmVkVHJhbnNhY3Rp",
-            "b24SIQoLdHJhbnNhY3Rpb24YASABKAsyDC5UcmFuc2FjdGlvbhIWCgRoYXNo",
-            "GAIgASgLMgguVUludDI1NiriAQoPVHJhbnNhY3Rpb25UeXBlEhoKFlRSQU5T",
+            "bWluZXIYCiABKAsyES5NaW5lclRyYW5zYWN0aW9uSABCBgoEZGF0YSJtChFT",
+            "aWduZWRUcmFuc2FjdGlvbhIhCgt0cmFuc2FjdGlvbhgBIAEoCzIMLlRyYW5z",
+            "YWN0aW9uEhYKBGhhc2gYAiABKAsyCC5VSW50MjU2Eh0KCXNpZ25hdHVyZRgD",
+            "IAEoCzIKLlNpZ25hdHVyZSriAQoPVHJhbnNhY3Rpb25UeXBlEhoKFlRSQU5T",
             "QUNUSU9OX1RZUEVfTUlORVIQABIdChlUUkFOU0FDVElPTl9UWVBFX1JFR0lT",
             "VEVSEAESGgoWVFJBTlNBQ1RJT05fVFlQRV9JU1NVRRACEh0KGVRSQU5TQUNU",
             "SU9OX1RZUEVfQ09OVFJBQ1QQAxIcChhUUkFOU0FDVElPTl9UWVBFX1BVQkxJ",
@@ -66,8 +66,8 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.RegisterTransaction), global::Phorkus.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner", "Minter" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MinerTransaction), global::Phorkus.Proto.MinerTransaction.Parser, new[]{ "Miner" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionState), global::Phorkus.Proto.TransactionState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.TransactionState.Types.TransactionStatus) }, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner", "Signature" }, new[]{ "Data" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.SignedTransaction), global::Phorkus.Proto.SignedTransaction.Parser, new[]{ "Transaction", "Hash" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner" }, new[]{ "Data" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.SignedTransaction), global::Phorkus.Proto.SignedTransaction.Parser, new[]{ "Transaction", "Hash", "Signature" }, null, null, null)
           }));
     }
     #endregion
@@ -1282,7 +1282,6 @@ namespace Phorkus.Proto {
       flags_ = other.flags_;
       from_ = other.from_ != null ? other.from_.Clone() : null;
       nonce_ = other.nonce_;
-      signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       switch (other.DataCase) {
         case DataOneofCase.Contract:
           Contract = other.Contract.Clone();
@@ -1419,17 +1418,6 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "signature" field.</summary>
-    public const int SignatureFieldNumber = 11;
-    private global::Phorkus.Proto.Signature signature_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.Signature Signature {
-      get { return signature_; }
-      set {
-        signature_ = value;
-      }
-    }
-
     private object data_;
     /// <summary>Enum of possible cases for the "data" oneof.</summary>
     public enum DataOneofCase {
@@ -1475,7 +1463,6 @@ namespace Phorkus.Proto {
       if (!object.Equals(Publish, other.Publish)) return false;
       if (!object.Equals(Register, other.Register)) return false;
       if (!object.Equals(Miner, other.Miner)) return false;
-      if (!object.Equals(Signature, other.Signature)) return false;
       if (DataCase != other.DataCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1493,7 +1480,6 @@ namespace Phorkus.Proto {
       if (dataCase_ == DataOneofCase.Publish) hash ^= Publish.GetHashCode();
       if (dataCase_ == DataOneofCase.Register) hash ^= Register.GetHashCode();
       if (dataCase_ == DataOneofCase.Miner) hash ^= Miner.GetHashCode();
-      if (signature_ != null) hash ^= Signature.GetHashCode();
       hash ^= (int) dataCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1548,10 +1534,6 @@ namespace Phorkus.Proto {
         output.WriteRawTag(82);
         output.WriteMessage(Miner);
       }
-      if (signature_ != null) {
-        output.WriteRawTag(90);
-        output.WriteMessage(Signature);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1590,9 +1572,6 @@ namespace Phorkus.Proto {
       if (dataCase_ == DataOneofCase.Miner) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Miner);
       }
-      if (signature_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Signature);
-      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1621,12 +1600,6 @@ namespace Phorkus.Proto {
       }
       if (other.Nonce != 0UL) {
         Nonce = other.Nonce;
-      }
-      if (other.signature_ != null) {
-        if (signature_ == null) {
-          signature_ = new global::Phorkus.Proto.Signature();
-        }
-        Signature.MergeFrom(other.Signature);
       }
       switch (other.DataCase) {
         case DataOneofCase.Contract:
@@ -1740,24 +1713,12 @@ namespace Phorkus.Proto {
             Miner = subBuilder;
             break;
           }
-          case 90: {
-            if (signature_ == null) {
-              signature_ = new global::Phorkus.Proto.Signature();
-            }
-            input.ReadMessage(signature_);
-            break;
-          }
         }
       }
     }
 
   }
 
-  /// <summary>
-  ///
-  ///tx_hash = hash( raw_tx + sign(hash(raw_tx)) )
-  ///check this link: https://en.bitcoin.it/wiki/Transaction_malleability
-  /// </summary>
   public sealed partial class SignedTransaction : pb::IMessage<SignedTransaction> {
     private static readonly pb::MessageParser<SignedTransaction> _parser = new pb::MessageParser<SignedTransaction>(() => new SignedTransaction());
     private pb::UnknownFieldSet _unknownFields;
@@ -1785,6 +1746,7 @@ namespace Phorkus.Proto {
     public SignedTransaction(SignedTransaction other) : this() {
       transaction_ = other.transaction_ != null ? other.transaction_.Clone() : null;
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
+      signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1815,6 +1777,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "signature" field.</summary>
+    public const int SignatureFieldNumber = 3;
+    private global::Phorkus.Proto.Signature signature_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.Signature Signature {
+      get { return signature_; }
+      set {
+        signature_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SignedTransaction);
@@ -1830,6 +1803,7 @@ namespace Phorkus.Proto {
       }
       if (!object.Equals(Transaction, other.Transaction)) return false;
       if (!object.Equals(Hash, other.Hash)) return false;
+      if (!object.Equals(Signature, other.Signature)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1838,6 +1812,7 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (transaction_ != null) hash ^= Transaction.GetHashCode();
       if (hash_ != null) hash ^= Hash.GetHashCode();
+      if (signature_ != null) hash ^= Signature.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1859,6 +1834,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(18);
         output.WriteMessage(Hash);
       }
+      if (signature_ != null) {
+        output.WriteRawTag(26);
+        output.WriteMessage(Signature);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1872,6 +1851,9 @@ namespace Phorkus.Proto {
       }
       if (hash_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Hash);
+      }
+      if (signature_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Signature);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1896,6 +1878,12 @@ namespace Phorkus.Proto {
         }
         Hash.MergeFrom(other.Hash);
       }
+      if (other.signature_ != null) {
+        if (signature_ == null) {
+          signature_ = new global::Phorkus.Proto.Signature();
+        }
+        Signature.MergeFrom(other.Signature);
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1919,6 +1907,13 @@ namespace Phorkus.Proto {
               hash_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(hash_);
+            break;
+          }
+          case 26: {
+            if (signature_ == null) {
+              signature_ = new global::Phorkus.Proto.Signature();
+            }
+            input.ReadMessage(signature_);
             break;
           }
         }

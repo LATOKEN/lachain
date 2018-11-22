@@ -40,7 +40,7 @@ namespace Phorkus.CoreTest
             
             System.Console.Write("Signing transaction... ");
             var signed = txManager.Sign(registerTx, new KeyPair(privateKey.ToPrivateKey(), publicKey.ToPublicKey()));
-            System.Console.WriteLine(signed.Transaction.Signature.Buffer.ToHex());
+            System.Console.WriteLine(signed.Signature.Buffer.ToHex());
             var publicKey2 = new PublicKey
             {
                 Buffer = ByteString.CopyFrom(publicKey)
@@ -49,7 +49,7 @@ namespace Phorkus.CoreTest
             var result = txManager.VerifySignature(signed, publicKey2);
             System.Console.WriteLine(result);
 
-            signed.Transaction.Signature = new Signature
+            signed.Signature = new Signature
             {
                 Buffer = ByteString.CopyFrom(
                     "0x4a252a9a20db1fed75aaf5770857ee6d364ca7fbcefcd1dd7f3194aa59ae2cb1d22a3860900de65157ba625d80030ffdfc64d1cc872e94dc8aff43199fb6a7f5"

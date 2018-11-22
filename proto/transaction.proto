@@ -70,14 +70,10 @@ message Transaction {
         RegisterTransaction register = 9;
         MinerTransaction miner = 10;
     }
-    Signature signature = 11;
 }
 
-/*
-tx_hash = hash( raw_tx + sign(hash(raw_tx)) )
-check this link: https://en.bitcoin.it/wiki/Transaction_malleability
-*/
 message SignedTransaction {
     Transaction transaction = 1;
     UInt256 hash = 2;
+    Signature signature = 3;
 }

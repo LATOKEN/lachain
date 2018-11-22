@@ -108,12 +108,13 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         {
             var hash = transaction.ToHash256();
             /* use raw byte arrays to sign transaction hash */
-            transaction.Signature = _crypto.Sign(hash.Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
+            var signature = _crypto.Sign(hash.Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
                 .ToSignature();
             var signed = new SignedTransaction
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256()
+                Hash = transaction.ToHash256(),
+                Signature = signature
             };
             OnTransactionSigned?.Invoke(this, signed);
             return signed;
@@ -121,15 +122,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError VerifySignature(SignedTransaction transaction, PublicKey publicKey)
         {
-            var tx = transaction.Transaction;
-            var sig = tx.Signature;
-            tx.Signature = SignatureUtils.Zero;
-            var hash = tx.ToHash256();
-            tx.Signature = sig;
             try
             {
-                var result = _crypto.VerifySignature(hash.Buffer.ToByteArray(),
-                    transaction.Transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+                var result = _crypto.VerifySignature(transaction.Hash.Buffer.ToByteArray(),
+                    transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
                 if (!result)
                     return OperatingError.InvalidSignature;
             }
@@ -143,16 +139,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError VerifySignature(SignedTransaction transaction)
         {
-            var tx = transaction.Transaction;
-            var sig = tx.Signature;
-            tx.Signature = SignatureUtils.Zero;
-            var hash = tx.ToHash256();
-            tx.Signature = sig;
             byte[] rawKey;
             try
             {
-                rawKey = _crypto.RecoverSignature(hash.Buffer.ToByteArray(),
-                    transaction.Transaction.Signature.Buffer.ToByteArray(),
+                rawKey = _crypto.RecoverSignature(transaction.Hash.Buffer.ToByteArray(),
+                    transaction.Signature.Buffer.ToByteArray(),
                     transaction.Transaction.From.Buffer.ToByteArray());
                 if (rawKey is null)
                     return OperatingError.InvalidSignature;

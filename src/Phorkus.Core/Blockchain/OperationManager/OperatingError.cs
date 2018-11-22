@@ -22,5 +22,6 @@
         AssetNotFound,
         InvalidOwner,
         BlockAlreadyExists,
+        AlreadySigned,
     }
 }

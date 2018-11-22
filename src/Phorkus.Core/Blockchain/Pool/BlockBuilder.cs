@@ -45,7 +45,7 @@ namespace Phorkus.Core.Blockchain.Pool
                 Version = 0,
                 PrevBlockHash = _prevBlockHash,
                 MerkleRoot = merkeRoot,
-                Timestamp = TimeUtils.CurrentTimeMillis(),
+                Timestamp = TimeUtils.CurrentTimeMillis() / 1000,
                 Index = _prevBlockIndex + 1,
                 Nonce = nonce
             };

@@ -15,6 +15,7 @@ namespace Phorkus.Core.Blockchain.Genesis
         private readonly IGenesisAssetsBuilder _genesisAssetsBuilder;
         private readonly ICrypto _crypto;
         private readonly ITransactionManager _transactionManager;
+        private readonly KeyPair _keyPair;
 
         public GenesisBuilder(
             IGenesisAssetsBuilder genesisAssetsBuilder,
@@ -24,16 +25,17 @@ namespace Phorkus.Core.Blockchain.Genesis
             _genesisAssetsBuilder = genesisAssetsBuilder;
             _crypto = crypto;
             _transactionManager = transactionManager;
+            _keyPair = new KeyPair("8a04748ce6329cf899cee3f3e0f4720d1a6d917a9183a11b323315de2ffbf84d".HexToBytes().ToPrivateKey(), crypto);
         }
 
         private BlockWithTransactions _genesisBlock;
-
-        public BlockWithTransactions Build(KeyPair keyPair)
+        
+        public BlockWithTransactions Build()
         {
             if (_genesisBlock != null)
                 return _genesisBlock;
 
-            var address = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var address = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             
             var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
@@ -58,12 +60,11 @@ namespace Phorkus.Core.Blockchain.Genesis
             var nonce = 0ul;
             foreach (var tx in genesisTransactions)
             {
-                tx.Signature = SignatureUtils.Zero;
                 tx.From = address;
                 tx.Nonce = nonce++;
             }
             
-            var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, keyPair));
+            var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, _keyPair));
             var signedTransactions = signed as SignedTransaction[] ?? signed.ToArray();
             var txHashes = signedTransactions.Select(tx => tx.Hash).ToArray();
             

@@ -11,8 +11,8 @@ namespace Phorkus.Core.Network
 {
     public class MessageListener : IMessageListener
     {
-        private readonly ConcurrentDictionary<IPeer, uint> _messageCount = new ConcurrentDictionary<IPeer, uint>();
-        private readonly ConcurrentDictionary<IPeer, uint> _lastMessage = new ConcurrentDictionary<IPeer, uint>();
+        private readonly ConcurrentDictionary<IPeer, ulong> _messageCount = new ConcurrentDictionary<IPeer, ulong>();
+        private readonly ConcurrentDictionary<IPeer, ulong> _lastMessage = new ConcurrentDictionary<IPeer, ulong>();
         
         public event EventHandler<Message> OnMessageHandled;
         public event EventHandler<IPeer> OnRateLimited;

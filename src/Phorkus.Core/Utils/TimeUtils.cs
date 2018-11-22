@@ -6,11 +6,11 @@ namespace Phorkus.Core.Utils
     {
         private static readonly DateTime WhenTheUniverseWasBorn = new DateTime(1970, 1, 1);
         
-        public static uint CurrentTimeMillis()
+        public static ulong CurrentTimeMillis()
         {
-            return (uint) DateTime.UtcNow.Subtract(WhenTheUniverseWasBorn).TotalMilliseconds;
+            return (ulong) DateTime.UtcNow.Subtract(WhenTheUniverseWasBorn).TotalMilliseconds;
         }
-
+        
         public static TimeSpan Multiply(TimeSpan timeSpan, double factor)
         {
             if (double.IsNaN(factor))

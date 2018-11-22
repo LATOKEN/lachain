@@ -10,6 +10,11 @@ namespace Phorkus.Core.Utils
         {
             Buffer = ByteString.CopyFrom(new byte[64])
         };
+
+        public static bool IsZero(this Signature signature)
+        {
+            return Zero.Equals(signature);
+        }
         
         public static Signature ToSignature(this byte[] signature)
         {

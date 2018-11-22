@@ -33,8 +33,7 @@ namespace Phorkus.Core.Blockchain
                 Flags = 0,
                 From = from,
                 Nonce = nonce,
-                Contract = contractTx,
-                Signature = SignatureUtils.Zero
+                Contract = contractTx
             };
             return tx;
         }
@@ -53,8 +52,7 @@ namespace Phorkus.Core.Blockchain
                 Flags = 0,
                 From = from,
                 Nonce = nonce,
-                Miner = miner,
-                Signature = SignatureUtils.Zero
+                Miner = miner
             };
             return tx;
         }
