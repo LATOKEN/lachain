@@ -7,10 +7,12 @@ namespace Phorkus.Core.Blockchain.Pool
     {
         IReadOnlyDictionary<UInt256, SignedTransaction> Transactions { get; }
 
-        void Add(SignedTransaction transaction);
+        bool Add(SignedTransaction transaction);
+        
+        IReadOnlyCollection<SignedTransaction> Peek(int limit = -1);
 
-        IReadOnlyCollection<SignedTransaction> Peek();
-
+        uint Size();
+        
         void Delete(UInt256 transactionHash);
 
         void Clear();

@@ -17,9 +17,9 @@ namespace Phorkus.Core.Blockchain
             _transactionManager = transactionManager;
         }
         
-        public Transaction TransferMoney(UInt160 from, UInt160 to, UInt160 asset, Money value)
+        public Transaction TransferMoney(UInt160 from, UInt160 to, UInt160 asset, Money value, uint nonceOffset = 0)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var nonce = _transactionRepository.GetTotalTransactionCount(from) + nonceOffset;
             var contract = new ContractTransaction
             {
                 Asset = asset,

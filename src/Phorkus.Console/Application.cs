@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using Newtonsoft.Json;
@@ -93,15 +95,128 @@ namespace Phorkus.Console
             System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
             System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
-            
-            var lastTime = TimeUtils.CurrentTimeMillis();
 
+            _BenchTxProcessing(transactionFactory, blockchainContext, transactionManager, blockManager,
+                blockchainManager, keyPair, asset);
+
+            _BenchOneTxInBlock(transactionFactory, blockchainContext, transactionManager, blockManager,
+                blockchainManager, keyPair, asset);
+
+
+            System.Console.WriteLine("-------------------------------");
+            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
+            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
+            System.Console.WriteLine("-------------------------------");
+            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
+            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
+            System.Console.WriteLine("-------------------------------");
+
+            networkManager.Start();
+            Thread.Sleep(1000);
+            consensusManager.Start();
+
+            System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
+            while (!_interrupt)
+                Thread.Sleep(1000);
+        }
+
+        private static void _Benchmark(string text, Func<int, int> action, uint tries)
+        {
+            var lastTime = TimeUtils.CurrentTimeMillis();
+            var mod = tries / 100;
+            if (mod == 0)
+                mod = 1;
+            for (var i = 0; i < tries; i++)
+            {
+                if (i % mod == 0)
+                {
+                    System.Console.CursorLeft = 0;
+                    System.Console.Write($"{text} {100 * i / tries}%");
+                }
+
+                action(i);
+            }
+            
+            var deltaTime = TimeUtils.CurrentTimeMillis() - lastTime;
+            System.Console.CursorLeft = text.Length;
+            System.Console.WriteLine($"{1000.0 * tries / deltaTime} TPS");
+        }
+
+        private static void _BenchTxProcessing(
+            ITransactionFactory transactionFactory,
+            IBlockchainContext blockchainContext,
+            ITransactionManager transactionManager,
+            IBlockManager blockManager,
+            IBlockchainManager blockchainManager,
+            KeyPair keyPair,
+            Asset asset)
+        {
+            var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
+            var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
+
+            var transactionPool = new TransactionPool(
+                transactionManager);
+
+            const int txGenerate = 10_000;
+            const int txPerBlock = 1_000;
+            
+            _Benchmark("Building TX pool... ", i =>
+            {
+                var tx = transactionFactory.TransferMoney(address1, address2, asset.Hash, Money.FromDecimal(1.2m),
+                    (uint) i);
+                transactionPool.Add(transactionManager.Sign(tx, keyPair));
+                return i;
+            }, txGenerate);
+
+            _Benchmark("Building blocks... ", i =>
+            {
+                var txs = transactionPool.Peek(txPerBlock);
+
+                var latestBlock = blockchainContext.CurrentBlock;
+                var blockWithTxs =
+                    new BlockBuilder(txs, latestBlock.Hash, latestBlock.Header.Index).Build(123456);
+                var block = blockWithTxs.Block;
+                block.Multisig = new MultiSig
+                {
+                    Quorum = 1,
+                    Signatures =
+                    {
+                        new MultiSig.Types.SignatureByValidator
+                        {
+                            Key = keyPair.PublicKey,
+                            Value = blockManager.Sign(block.Header, keyPair)
+                        }
+                    },
+                    Validators = {keyPair.PublicKey}
+                };
+                blockchainManager.PersistBlockManually(block, blockWithTxs.Transactions);
+                return i;
+            }, transactionPool.Size() / txPerBlock);
+        }
+
+        private static void _BenchOneTxInBlock(
+            ITransactionFactory transactionFactory,
+            IBlockchainContext blockchainContext,
+            ITransactionManager transactionManager,
+            IBlockManager blockManager,
+            IBlockchainManager blockchainManager,
+            KeyPair keyPair,
+            Asset asset)
+        {
+            var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
+            var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
+            var lastTime = TimeUtils.CurrentTimeMillis();
             const int tries = 1000;
             for (var i = 0; i < tries; i++)
             {
                 if (i % 10 == 0)
-                    System.Console.Write("\b\b\b\b\b\b" + (100 * i / tries) + "%");
-                var transferTx = transactionFactory.TransferMoney(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
+                {
+                    System.Console.CursorLeft = 0;
+                    System.Console.Write($"Benchmarking... {100 * i / tries}%");
+                }
+
+                var transferTx =
+                    transactionFactory.TransferMoney(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
                 var signed = transactionManager.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
                 var blockWithTxs =
@@ -122,26 +237,10 @@ namespace Phorkus.Console
                 };
                 blockchainManager.PersistBlockManually(block, blockWithTxs.Transactions);
             }
-            System.Console.Write("\b\b\b\b\b\b\b\b");
-            
-            var deltaTime = TimeUtils.CurrentTimeMillis() - lastTime;
-            
-            System.Console.WriteLine("TPS: " + 1000 * tries / deltaTime);
-            System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
-            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
-            System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
-            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
-            System.Console.WriteLine("-------------------------------");
-            
-            networkManager.Start();
-            Thread.Sleep(1000);
-            consensusManager.Start();
 
-            System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
-            while (!_interrupt)
-                Thread.Sleep(1000);
+            var deltaTime = TimeUtils.CurrentTimeMillis() - lastTime;
+            System.Console.CursorLeft = "Benchmarking... ".Length;
+            System.Console.WriteLine($"{1000 * tries / deltaTime} TPS");
         }
 
         private bool _interrupt;

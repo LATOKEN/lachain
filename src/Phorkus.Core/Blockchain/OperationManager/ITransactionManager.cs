@@ -24,5 +24,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         OperatingError VerifySignature(SignedTransaction transaction);
         
         OperatingError Verify(Transaction transaction);
+
+        uint CalcNextTxNonce(UInt160 from);
     }
 }

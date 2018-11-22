@@ -180,5 +180,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.UnsupportedTransaction;
             return persister.Verify(transaction);
         }
+
+        public uint CalcNextTxNonce(UInt160 from)
+        {
+            return _transactionRepository.GetTotalTransactionCount(from);
+        }
     }
 }
