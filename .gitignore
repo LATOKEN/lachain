@@ -264,5 +264,4 @@ PublishProfiles
 
 neo-cli/config.json
 src/NeoSharp.Application/appsettings.json
-
-# Phorkus/Phorkus.Core/Proto/*.cs
+src/Phorkus.Console/config.json
