@@ -15,6 +15,7 @@ message ConsensusPrepareRequest {
     repeated UInt256 transaction_hashes = 2;
     Transaction miner_transaction = 3;
     Signature signature = 4;
+    uint64 timestamp = 5;
 }
 
 message ConsensusPrepareResponse {

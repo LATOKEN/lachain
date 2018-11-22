@@ -45,7 +45,7 @@ namespace Phorkus.Core.Consensus
         private bool _stopped;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(60);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(5);
 
         public ConsensusManager(
             IBlockManager blockManager,
@@ -89,7 +89,6 @@ namespace Phorkus.Core.Consensus
                 _logger.LogWarning("Halting consensus process: we are not in validator list");
                 return;
             }
-            _context.Timestamp = _blockchainContext.CurrentBlock.Header.Timestamp;
             
             Thread.Sleep(3000);
             
@@ -157,7 +156,7 @@ namespace Phorkus.Core.Consensus
                         }
                     }
                 }
-
+                
                 // Regardless of our role, here we must collect transactions, signatures and assemble block
 
 //                TODO: we should get and verify all transactions here
@@ -167,35 +166,36 @@ namespace Phorkus.Core.Consensus
 //                    if (transaction != null) _context.CurrentProposal.Transactions[hash] = transaction;
 //                    else _transactionCrawler.AddTransactionHash(hash);
 //                });
-                lock (_allTransactionVerified)
-                {
-                    if (!Monitor.Wait(_allTransactionVerified, _timePerBlock)) // TODO: manage timeouts
-                    {
-                        _logger.LogWarning("Cannot retrieve all transactions in time, aborting");
-                        RequestChangeView();
-                        continue;
-                    }
-                }
+//                lock (_allTransactionVerified)
+//                {
+//                    if (!Monitor.Wait(_allTransactionVerified, _timePerBlock)) // TODO: manage timeouts
+//                    {
+//                        _logger.LogWarning("Cannot retrieve all transactions in time, aborting");
+//                        RequestChangeView();
+//                        continue;
+//                    }
+//                }
 
                 // When all transaction are collected and validated, we are able to sign block
                 _logger.LogInformation("Send prepare response");
-
+                
                 _context.MyState.BlockSignature = _blockManager.Sign(_context.GetProposedHeader(), _context.KeyPair);
                 SignAndBroadcast(_context.MakePrepareResponse(_context.MyState.BlockSignature));
 
                 _context.State |= ConsensusState.SignatureSent;
                 OnSignatureAcquired(_context.MyIndex, _context.MyState.BlockSignature);
 
-                // Wait until quorum of validators agrees on block
                 lock (_quorumSignaturesAcquired)
                 {
-                    // TODO: manage timeouts
-                    var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
-                    if (!Monitor.Wait(_quorumSignaturesAcquired, timeToWait))
+                    while (!IsQuorumReached())
                     {
+                        // TODO: manage timeouts
+                        var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
+                        if (Monitor.Wait(_quorumSignaturesAcquired, timeToWait))
+                            continue;
                         _logger.LogWarning("Cannot retrieve all signatures in time, aborting");
                         RequestChangeView();
-                        continue;
+                        break;
                     }
                 }
 
@@ -218,6 +218,8 @@ namespace Phorkus.Core.Consensus
                 _logger.LogInformation($"Block approved by consensus: {block.Hash}");
 
                 _context.State |= ConsensusState.BlockSent;
+                
+                _blockManager.Persist(block);
                 // TODO: persist block
 //                _blockManager.AddBlock(block).Start(); // ??
 //                _blockManager.WaitUntilBlockProcessed(block.Index);
@@ -318,7 +320,7 @@ namespace Phorkus.Core.Consensus
                 return;
             }
 
-            if (payload.Timestamp <= _blockchainContext.CurrentBlockHeader.Header.Timestamp ||
+            /*if (payload.Timestamp <= _blockchainContext.CurrentBlockHeader.Header.Timestamp ||
                 payload.Timestamp > (ulong) DateTime.UtcNow.AddMinutes(10).ToTimestamp().Seconds)
             {
                 _logger.LogDebug(
@@ -327,16 +329,16 @@ namespace Phorkus.Core.Consensus
                     $"last_block={_blockchainContext.CurrentBlockHeader.Header.Timestamp}"
                 );
                 return;
-            }
-
-            _context.Timestamp = payload.Timestamp;
-            _context.Nonce = prepareRequest.Nonce; // TODO: we are blindly accepting their nonce!
+            }*/
+            
             _context.CurrentProposal = new ConsensusProposal
             {
                 TransactionHashes = prepareRequest.TransactionHashes.ToArray(),
-                Transactions = new Dictionary<UInt256, SignedTransaction>()
+                Transactions = new Dictionary<UInt256, SignedTransaction>(),
+                Timestamp = prepareRequest.Timestamp,
+                Nonce = prepareRequest.Nonce
             };
-
+            
             var header = _context.GetProposedHeader();
             var sigVerified = _blockManager.VerifySignature(header, prepareRequest.Signature,
                 _context.Validators[payload.ValidatorIndex].PublicKey);
@@ -350,12 +352,16 @@ namespace Phorkus.Core.Consensus
             }
 
             _context.State |= ConsensusState.RequestReceived;
-            _context.Validators[payload.ValidatorIndex].BlockSignature = prepareRequest.Signature;
 
             OnSignatureAcquired(payload.ValidatorIndex, prepareRequest.Signature);
             _logger.LogInformation(
                 $"Prepare request from validator={payload.ValidatorIndex} accepted, requesting missing transactions"
             );
+            
+            lock (_prepareRequestReceived)
+            {
+                Monitor.PulseAll(_prepareRequestReceived);
+            }
         }
 
         public void HandleConsensusMessage(ConsensusMessage message)
@@ -439,13 +445,21 @@ namespace Phorkus.Core.Consensus
 
         private void OnSignatureAcquired(long validatorIndex, Signature signature)
         {
-            if (_context.Validators[validatorIndex].BlockSignature != null) return;
-            _context.SignaturesAcquired++;
-            if (_context.SignaturesAcquired < _context.Quorum) return;
             lock (_quorumSignaturesAcquired)
             {
+                if (_context.Validators[validatorIndex].BlockSignature != null)
+                    return;
+                _context.Validators[validatorIndex].BlockSignature = signature;
+                _context.SignaturesAcquired++;
+                if (!IsQuorumReached())
+                    return;
                 Monitor.PulseAll(_quorumSignaturesAcquired);
             }
+        }
+
+        private bool IsQuorumReached()
+        {
+            return _context.SignaturesAcquired >= _context.Quorum;
         }
 
         private void OnTransactionVerified(object sender, SignedTransaction e)

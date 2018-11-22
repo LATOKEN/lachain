@@ -26,26 +26,26 @@ namespace Phorkus.Proto {
           string.Concat(
             "Cg9jb25zZW5zdXMucHJvdG8aDWRlZmF1bHQucHJvdG8aEXRyYW5zYWN0aW9u",
             "LnByb3RvIi4KE0NvbnNlbnN1c0NoYW5nZVZpZXcSFwoPbmV3X3ZpZXdfbnVt",
-            "YmVyGAEgASgNIpYBChdDb25zZW5zdXNQcmVwYXJlUmVxdWVzdBINCgVub25j",
+            "YmVyGAEgASgNIqkBChdDb25zZW5zdXNQcmVwYXJlUmVxdWVzdBINCgVub25j",
             "ZRgBIAEoBBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyCC5VSW50MjU2",
             "EicKEW1pbmVyX3RyYW5zYWN0aW9uGAMgASgLMgwuVHJhbnNhY3Rpb24SHQoJ",
-            "c2lnbmF0dXJlGAQgASgLMgouU2lnbmF0dXJlIjkKGENvbnNlbnN1c1ByZXBh",
-            "cmVSZXNwb25zZRIdCglzaWduYXR1cmUYASABKAsyCi5TaWduYXR1cmUiugIK",
-            "EENvbnNlbnN1c1BheWxvYWQSDwoHdmVyc2lvbhgBIAEoDRIbCglwcmV2X2hh",
-            "c2gYAiABKAsyCC5VSW50MjU2EhMKC2Jsb2NrX2luZGV4GAMgASgEEhcKD3Zh",
-            "bGlkYXRvcl9pbmRleBgEIAEoDRIRCgl0aW1lc3RhbXAYBSABKAQSEwoLdmll",
-            "d19udW1iZXIYBiABKA0SKwoLY2hhbmdlX3ZpZXcYCCABKAsyFC5Db25zZW5z",
-            "dXNDaGFuZ2VWaWV3SAASMwoPcHJlcGFyZV9yZXF1ZXN0GAkgASgLMhguQ29u",
-            "c2Vuc3VzUHJlcGFyZVJlcXVlc3RIABI1ChBwcmVwYXJlX3Jlc3BvbnNlGAog",
-            "ASgLMhkuQ29uc2Vuc3VzUHJlcGFyZVJlc3BvbnNlSABCCQoHbWVzc2FnZSJV",
-            "ChBDb25zZW5zdXNNZXNzYWdlEiIKB3BheWxvYWQYASABKAsyES5Db25zZW5z",
-            "dXNQYXlsb2FkEh0KCXNpZ25hdHVyZRgCIAEoCzIKLlNpZ25hdHVyZUIQqgIN",
-            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "c2lnbmF0dXJlGAQgASgLMgouU2lnbmF0dXJlEhEKCXRpbWVzdGFtcBgFIAEo",
+            "BCI5ChhDb25zZW5zdXNQcmVwYXJlUmVzcG9uc2USHQoJc2lnbmF0dXJlGAEg",
+            "ASgLMgouU2lnbmF0dXJlIroCChBDb25zZW5zdXNQYXlsb2FkEg8KB3ZlcnNp",
+            "b24YASABKA0SGwoJcHJldl9oYXNoGAIgASgLMgguVUludDI1NhITCgtibG9j",
+            "a19pbmRleBgDIAEoBBIXCg92YWxpZGF0b3JfaW5kZXgYBCABKA0SEQoJdGlt",
+            "ZXN0YW1wGAUgASgEEhMKC3ZpZXdfbnVtYmVyGAYgASgNEisKC2NoYW5nZV92",
+            "aWV3GAggASgLMhQuQ29uc2Vuc3VzQ2hhbmdlVmlld0gAEjMKD3ByZXBhcmVf",
+            "cmVxdWVzdBgJIAEoCzIYLkNvbnNlbnN1c1ByZXBhcmVSZXF1ZXN0SAASNQoQ",
+            "cHJlcGFyZV9yZXNwb25zZRgKIAEoCzIZLkNvbnNlbnN1c1ByZXBhcmVSZXNw",
+            "b25zZUgAQgkKB21lc3NhZ2UiVQoQQ29uc2Vuc3VzTWVzc2FnZRIiCgdwYXls",
+            "b2FkGAEgASgLMhEuQ29uc2Vuc3VzUGF5bG9hZBIdCglzaWduYXR1cmUYAiAB",
+            "KAsyCi5TaWduYXR1cmVCEKoCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusChangeView), global::Phorkus.Proto.ConsensusChangeView.Parser, new[]{ "NewViewNumber" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareRequest), global::Phorkus.Proto.ConsensusPrepareRequest.Parser, new[]{ "Nonce", "TransactionHashes", "MinerTransaction", "Signature" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareRequest), global::Phorkus.Proto.ConsensusPrepareRequest.Parser, new[]{ "Nonce", "TransactionHashes", "MinerTransaction", "Signature", "Timestamp" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareResponse), global::Phorkus.Proto.ConsensusPrepareResponse.Parser, new[]{ "Signature" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPayload), global::Phorkus.Proto.ConsensusPayload.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber", "ChangeView", "PrepareRequest", "PrepareResponse" }, new[]{ "Message" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Payload", "Signature" }, null, null, null)
@@ -213,6 +213,7 @@ namespace Phorkus.Proto {
       transactionHashes_ = other.transactionHashes_.Clone();
       minerTransaction_ = other.minerTransaction_ != null ? other.minerTransaction_.Clone() : null;
       signature_ = other.signature_ != null ? other.signature_.Clone() : null;
+      timestamp_ = other.timestamp_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -264,6 +265,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 5;
+    private ulong timestamp_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Timestamp {
+      get { return timestamp_; }
+      set {
+        timestamp_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ConsensusPrepareRequest);
@@ -281,6 +293,7 @@ namespace Phorkus.Proto {
       if(!transactionHashes_.Equals(other.transactionHashes_)) return false;
       if (!object.Equals(MinerTransaction, other.MinerTransaction)) return false;
       if (!object.Equals(Signature, other.Signature)) return false;
+      if (Timestamp != other.Timestamp) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -291,6 +304,7 @@ namespace Phorkus.Proto {
       hash ^= transactionHashes_.GetHashCode();
       if (minerTransaction_ != null) hash ^= MinerTransaction.GetHashCode();
       if (signature_ != null) hash ^= Signature.GetHashCode();
+      if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -317,6 +331,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(34);
         output.WriteMessage(Signature);
       }
+      if (Timestamp != 0UL) {
+        output.WriteRawTag(40);
+        output.WriteUInt64(Timestamp);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -334,6 +352,9 @@ namespace Phorkus.Proto {
       }
       if (signature_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Signature);
+      }
+      if (Timestamp != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -361,6 +382,9 @@ namespace Phorkus.Proto {
           signature_ = new global::Phorkus.Proto.Signature();
         }
         Signature.MergeFrom(other.Signature);
+      }
+      if (other.Timestamp != 0UL) {
+        Timestamp = other.Timestamp;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -393,6 +417,10 @@ namespace Phorkus.Proto {
               signature_ = new global::Phorkus.Proto.Signature();
             }
             input.ReadMessage(signature_);
+            break;
+          }
+          case 40: {
+            Timestamp = input.ReadUInt64();
             break;
           }
         }

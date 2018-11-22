@@ -39,7 +39,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
         private bool _IsGenesisBlock(Block block)
         {
-            /* TODO: "this code might cause null reference exception if genesis block not initialized on startup" */
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
         
@@ -133,8 +132,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* TODO: "verify merkle root here" */
             if (header.Timestamp == 0)
                 return OperatingError.InvalidBlock;
-            if (header.Nonce == 0)
-                return OperatingError.InvalidNonce;
             return OperatingError.Ok;
         }
     }

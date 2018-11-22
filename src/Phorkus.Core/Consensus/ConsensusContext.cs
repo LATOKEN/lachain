@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Cryptography;
@@ -19,8 +18,6 @@ namespace Phorkus.Core.Consensus
         public ulong BlockIndex;
 
         public byte ViewNumber;
-        public ulong Timestamp;
-        public ulong Nonce; // TODO: fix very weak nonce generation mechanism
         public DateTime LastBlockRecieved;
         public long MyIndex;
         public readonly KeyPair KeyPair;
@@ -30,7 +27,7 @@ namespace Phorkus.Core.Consensus
         public readonly ObservedValidatorState[] Validators;
 
         public uint ValidatorCount => (uint) Validators.Length;
-        public uint Quorum => ValidatorCount - (ValidatorCount - 1) / 3;
+        public uint Quorum => 2; //ValidatorCount - (ValidatorCount - 1) / 3;
         public long PrimaryIndex => (long) ((BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount);
         public ConsensusState Role => MyIndex == PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup;
         public ObservedValidatorState MyState => MyIndex == -1 ? null : Validators[MyIndex];
@@ -44,36 +41,44 @@ namespace Phorkus.Core.Consensus
             CurrentProposal = null;
         }
 
-        private BlockHeader _memoizedHeader;
-
         public BlockHeader GetProposedHeader()
         {
             if (CurrentProposal?.TransactionHashes == null) return null;
-            if (_memoizedHeader != null) return _memoizedHeader;
-            return _memoizedHeader = new BlockHeader()
+            var result = new BlockHeader
             {
                 Version = Version,
                 PrevBlockHash = PreviousBlockHash,
                 MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes),
-                Timestamp = Timestamp,
+                Timestamp = CurrentProposal.Timestamp,
                 Index = BlockIndex,
-                Nonce = Nonce
+                Nonce = CurrentProposal.Nonce
             };
+            result.TransactionHashes.AddRange(CurrentProposal.TransactionHashes);
+            return result;
         }
 
         public Block GetProposedBlock()
         {
+            var header = GetProposedHeader();
             var block = new Block
             {
-                Header = GetProposedHeader(),
-                Hash = GetProposedHeader().ToHash256()
+                Header = header,
+                Hash = header.ToHash256(),
+                Multisig = new MultiSig()
             };
             block.Multisig.Quorum = Quorum;
-            block.Multisig.Signatures.AddRange(Validators.Select(v => new MultiSig.Types.SignatureByValidator
+            foreach (var validator in Validators)
             {
-                Key = v.PublicKey,
-                Value = v.BlockSignature
-            }));
+                if (validator.BlockSignature is null || validator.BlockSignature.IsZero())
+                    continue;
+                var entry = new MultiSig.Types.SignatureByValidator
+                {
+                    Key = validator.PublicKey,
+                    Value = validator.BlockSignature
+                };
+                block.Multisig.Signatures.Add(entry);                
+            }
+            block.Multisig.Validators.AddRange(Validators.Select(v => v.PublicKey));
             return block;
         }
 
@@ -94,8 +99,6 @@ namespace Phorkus.Core.Consensus
                     MyIndex = i;
                 }
             }
-
-            _memoizedHeader = null;
         }
 
         public void ChangeView(byte view)
@@ -104,8 +107,8 @@ namespace Phorkus.Core.Consensus
             ViewNumber = view;
             CurrentProposal = null;
             SignaturesAcquired = 0;
-            if (MyIndex >= 0) Validators[MyIndex].ExpectedViewNumber = view;
-            _memoizedHeader = null;
+            if (MyIndex >= 0)
+                Validators[MyIndex].ExpectedViewNumber = view;
         }
 
         private ConsensusPayload MakePayload()
@@ -138,6 +141,7 @@ namespace Phorkus.Core.Consensus
                 Nonce = block.Block.Header.Nonce,
                 MinerTransaction = block.Transactions.First().Transaction,
                 Signature = signature,
+                Timestamp = block.Block.Header.Timestamp
             };
             payload.PrepareRequest.TransactionHashes.AddRange(block.Transactions.Select(tx => tx.Hash));
             return payload;
