@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -21,7 +22,7 @@ namespace Phorkus.Core.Consensus
 {
     // ReSharper disable once RedundantNameQualifier
     using Timer = System.Timers.Timer;
-    
+
     public class ConsensusManager : IConsensusManager, IDisposable
     {
         // private readonly ITransactionCrawler _transactionCrawler;
@@ -45,7 +46,7 @@ namespace Phorkus.Core.Consensus
         private bool _stopped;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
 
         public ConsensusManager(
             IBlockManager blockManager,
@@ -89,9 +90,9 @@ namespace Phorkus.Core.Consensus
                 _logger.LogWarning("Halting consensus process: we are not in validator list");
                 return;
             }
-            
+
             Thread.Sleep(3000);
-            
+
             while (!_stopped)
             {
                 // If were are waiting for view change, just wait
@@ -99,15 +100,19 @@ namespace Phorkus.Core.Consensus
                 {
                     lock (_changeViewApproved)
                     {
-                        // TODO: manage timeouts
-                        var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
-                        if (!Monitor.Wait(_changeViewApproved, timeToWait))
+                        byte viewNumber;
+                        while (!CanChangeView(out viewNumber))
                         {
-                            RequestChangeView();
-                            continue;
+                            // TODO: manage timeouts
+                            var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
+                            if (!Monitor.Wait(_changeViewApproved, timeToWait))
+                            {
+                                RequestChangeView();
+                                continue;
+                            }
                         }
-
-                        InitializeConsensus(_context.ViewNumber);
+                        InitializeConsensus(viewNumber);
+                        continue;
                     }
                 }
 
@@ -121,21 +126,29 @@ namespace Phorkus.Core.Consensus
                     }
 
                     // TODO: produce block
-                    var blockBuilder = new BlockBuilder(_transactionPool, _blockchainContext.CurrentBlockHeader.Hash, _blockchainContext.CurrentBlockHeader.Header.Index);
+                    var blockBuilder = new BlockBuilder(_transactionPool, _blockchainContext.CurrentBlockHeader.Hash,
+                        _blockchainContext.CurrentBlockHeader.Header.Index);
                     var address = _crypto.ComputeAddress(_context.KeyPair.PublicKey.Buffer.ToByteArray());
                     var from = address.ToUInt160();
                     var minerTx = _transactionFactory.MinerTransaction(from);
                     var signed = _transactionManager.Sign(minerTx, _keyPair);
-                    
+
                     var blockWithTransactions = blockBuilder.Build(signed, (ulong) _random.Next());
                     _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
+                    _context.CurrentProposal = new ConsensusProposal
+                    {
+                        TransactionHashes = blockWithTransactions.Transactions.Select(tx => tx.Hash).ToArray(),
+                        Transactions = blockWithTransactions.Transactions.ToDictionary(tx => tx.Hash),
+                        Timestamp = blockWithTransactions.Block.Header.Timestamp,
+                        Nonce = blockWithTransactions.Block.Header.Nonce
+                    };
                     _context.State |= ConsensusState.RequestSent;
 
                     if (!_context.State.HasFlag(ConsensusState.SignatureSent))
                     {
-                        var mySignature = _blockManager.Sign(blockWithTransactions.Block.Header, _context.KeyPair);
-                        _context.MyState.BlockSignature = mySignature;
+                        var signature = _blockManager.Sign(blockWithTransactions.Block.Header, _context.KeyPair);
+                        OnSignatureAcquired(_context.MyIndex, signature);
                     }
 
                     SignAndBroadcast(
@@ -156,7 +169,7 @@ namespace Phorkus.Core.Consensus
                         }
                     }
                 }
-                
+
                 // Regardless of our role, here we must collect transactions, signatures and assemble block
 
 //                TODO: we should get and verify all transactions here
@@ -178,12 +191,12 @@ namespace Phorkus.Core.Consensus
 
                 // When all transaction are collected and validated, we are able to sign block
                 _logger.LogInformation("Send prepare response");
-                
-                _context.MyState.BlockSignature = _blockManager.Sign(_context.GetProposedHeader(), _context.KeyPair);
-                SignAndBroadcast(_context.MakePrepareResponse(_context.MyState.BlockSignature));
+
+                var mySignature = _blockManager.Sign(_context.GetProposedHeader(), _context.KeyPair);
+                SignAndBroadcast(_context.MakePrepareResponse(mySignature));
 
                 _context.State |= ConsensusState.SignatureSent;
-                OnSignatureAcquired(_context.MyIndex, _context.MyState.BlockSignature);
+                OnSignatureAcquired(_context.MyIndex, mySignature);
 
                 lock (_quorumSignaturesAcquired)
                 {
@@ -198,6 +211,9 @@ namespace Phorkus.Core.Consensus
                         break;
                     }
                 }
+
+                if (_context.State.HasFlag(ConsensusState.ViewChanging))
+                    continue;
 
                 _logger.LogInformation(
                     $"Collected sinatures={_context.SignaturesAcquired}, quorum={_context.Quorum}"
@@ -218,7 +234,7 @@ namespace Phorkus.Core.Consensus
                 _logger.LogInformation($"Block approved by consensus: {block.Hash}");
 
                 _context.State |= ConsensusState.BlockSent;
-                
+
                 _blockManager.Persist(block);
                 // TODO: persist block
 //                _blockManager.AddBlock(block).Start(); // ??
@@ -330,7 +346,7 @@ namespace Phorkus.Core.Consensus
                 );
                 return;
             }*/
-            
+
             _context.CurrentProposal = new ConsensusProposal
             {
                 TransactionHashes = prepareRequest.TransactionHashes.ToArray(),
@@ -338,7 +354,7 @@ namespace Phorkus.Core.Consensus
                 Timestamp = prepareRequest.Timestamp,
                 Nonce = prepareRequest.Nonce
             };
-            
+
             var header = _context.GetProposedHeader();
             var sigVerified = _blockManager.VerifySignature(header, prepareRequest.Signature,
                 _context.Validators[payload.ValidatorIndex].PublicKey);
@@ -357,7 +373,7 @@ namespace Phorkus.Core.Consensus
             _logger.LogInformation(
                 $"Prepare request from validator={payload.ValidatorIndex} accepted, requesting missing transactions"
             );
-            
+
             lock (_prepareRequestReceived)
             {
                 Monitor.PulseAll(_prepareRequestReceived);
@@ -406,7 +422,7 @@ namespace Phorkus.Core.Consensus
             if (body.ValidatorIndex >= _context.ValidatorCount) return;
 
             if (body.ViewNumber != _context.ViewNumber &&
-                body.ChangeView != null)
+                body.MessageCase != ConsensusPayload.MessageOneofCase.ChangeView)
             {
                 _logger.LogWarning(
                     $"Rejected consensus payload of type {body.MessageCase} because view does not match, " +
@@ -483,34 +499,55 @@ namespace Phorkus.Core.Consensus
                 $"nv={_context.MyState.ExpectedViewNumber} state={_context.State}"
             );
             SignAndBroadcast(_context.MakeChangeView());
-            CheckExpectedView(_context.MyState.ExpectedViewNumber);
+            CheckExpectedView();
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload)
         {
             var changeView = payload.ChangeView;
             if (changeView.NewViewNumber <= _context.Validators[payload.ValidatorIndex].ExpectedViewNumber)
+            {
+                _logger.LogInformation(
+                    $"Ignoring ChangeView payload from validator={payload.ValidatorIndex} view={payload.ViewNumber} " +
+                    $"since new_view={changeView.NewViewNumber}"
+                );
                 return;
+            }
+
             _logger.LogInformation(
                 $"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={payload.ViewNumber} " +
                 $"index={payload.ValidatorIndex} nv={changeView.NewViewNumber}"
             );
             _context.Validators[payload.ValidatorIndex].ExpectedViewNumber = (byte) changeView.NewViewNumber;
-            CheckExpectedView((byte) changeView.NewViewNumber);
+            CheckExpectedView();
         }
 
-        private void CheckExpectedView(byte viewNumber)
+        private void CheckExpectedView()
         {
-            if (_context.ViewNumber == viewNumber) return;
-            if (_context.Validators.Select(v => v.ExpectedViewNumber).Count(p => p == viewNumber) <
-                _context.Quorum) return;
             lock (_changeViewApproved)
             {
-                _context.ViewNumber = viewNumber;
+                if (!CanChangeView(out _))
+                    return;
+                /*_context.ViewNumber = viewNumber;*/
                 Monitor.PulseAll(_changeViewApproved);
             }
         }
-        
+
+        private bool CanChangeView(out byte viewNumber)
+        {
+            var mostCommon = _context.Validators
+                .GroupBy(v => v.ExpectedViewNumber)
+                .OrderByDescending(v => v.Count())
+                .Select(v => v.Key)
+                .First();
+            viewNumber = mostCommon;
+            if (_context.ViewNumber == viewNumber)
+                return false;
+            if (_context.Validators.Select(v => v.ExpectedViewNumber).Count(p => p == mostCommon) < _context.Quorum)
+                return false;
+            return true;
+        }
+
         private void SignAndBroadcast(ConsensusPayload payload)
         {
             var message = new ConsensusMessage

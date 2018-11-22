@@ -119,6 +119,7 @@ namespace Phorkus.Core.Consensus
                 PrevHash = PreviousBlockHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = (uint) MyIndex,
+                ViewNumber = ViewNumber,
                 Timestamp = (ulong) DateTime.UtcNow.ToTimestamp().Seconds
             };
         }
