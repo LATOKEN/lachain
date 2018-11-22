@@ -40,7 +40,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private bool _IsGenesisBlock(Block block)
         {
             /* TODO: "this code might cause null reference exception if genesis block not initialized on startup" */
-            return block.Hash.Equals(_genesisBuilder.Build(null).Block.Hash);
+            return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
         
         public OperatingError Persist(Block block)
