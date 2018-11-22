@@ -5,10 +5,10 @@ using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Proto;
 using Phorkus.Core.Utils;
+using Phorkus.Proto;
 
-namespace Phorkus.Test
+namespace Phorkus.CoreTest
 {
     [TestClass]
     public class CryptographyTest

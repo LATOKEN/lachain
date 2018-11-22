@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -44,10 +45,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         
         private OperatingError _VerifyScript(IEnumerable<byte> script)
         {
-            if (script is null)
+            if (script is null || !script.Any())
                 return OperatingError.Ok;
             /* TODO: "validate opcodes here" */
-            return OperatingError.Ok;
+            return OperatingError.InvalidTransaction;
         }
     }
 }

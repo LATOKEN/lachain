@@ -21,5 +21,6 @@
         AssetCannotBeIssued,
         AssetNotFound,
         InvalidOwner,
+        BlockAlreadyExists,
     }
 }

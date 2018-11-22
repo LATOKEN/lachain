@@ -18,6 +18,7 @@ using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
+using Phorkus.RocksDB.Repositories;
 
 namespace Phorkus.Console
 {
@@ -86,6 +87,9 @@ namespace Phorkus.Console
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
+            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
+            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
+            System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
             System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
@@ -124,7 +128,9 @@ namespace Phorkus.Console
             
             System.Console.WriteLine("TPS: " + 1000 * tries / deltaTime);
             System.Console.WriteLine("-------------------------------");
-            
+            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
+            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
+            System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
             System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
