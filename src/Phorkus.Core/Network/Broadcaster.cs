@@ -16,7 +16,6 @@ namespace Phorkus.Core.Network
             _logger = logger;
         }
         
-        
         public void Broadcast(Message message)
         {
             Parallel.ForEach(_networkContext.ActivePeers.Values, peer =>

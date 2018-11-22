@@ -138,7 +138,6 @@ namespace Phorkus.Core.Consensus
                 Nonce = block.Block.Header.Nonce,
                 MinerTransaction = block.Transactions.First().Transaction,
                 Signature = signature,
-                
             };
             payload.PrepareRequest.TransactionHashes.AddRange(block.Transactions.Select(tx => tx.Hash));
             return payload;

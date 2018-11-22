@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using Phorkus.Core;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
@@ -21,6 +22,11 @@ namespace Phorkus.Console
 
         public Application()
         {
+            AppDomain.CurrentDomain.UnhandledException += (sender, exception) =>
+            {
+                System.Console.Error.WriteLine(exception);
+            };
+            
             var containerBuilder = new SimpleInjectorContainerBuilder(
                 new ConfigManager("config.json"));
 
@@ -36,7 +42,7 @@ namespace Phorkus.Console
         }
 
         public void Start(string[] args)
-        {
+        {            
             var networkManager = _container.Resolve<INetworkManager>();
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
@@ -49,10 +55,10 @@ namespace Phorkus.Console
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
-
+            
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-
+            
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToByteArray().ToHex());
             System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToByteArray().ToHex());

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Cryptography;
@@ -27,25 +26,36 @@ namespace Phorkus.Core.Blockchain.Pool
             _prevBlockIndex = prevBlockIndex;
             _transactions = transactions;
         }
-        
+
         public BlockWithTransactions Build(ulong nonce)
         {
+            return Build(null, nonce);
+        }
+        
+        public BlockWithTransactions Build(SignedTransaction minerTransaction, ulong nonce)
+        {
+            var txs = _transactions;
+            if (minerTransaction != null)
+                txs = new[] {minerTransaction}.Concat(txs).ToArray();
+            var merkeRoot = UInt256Utils.Zero;
+            if (txs.Count > 0)
+                merkeRoot = MerkleTree.ComputeRoot(txs.Select(tx => tx.Hash).ToArray());
             var header = new BlockHeader
             {
                 Version = 0,
                 PrevBlockHash = _prevBlockHash,
-                MerkleRoot = MerkleTree.ComputeRoot(_transactions.Select(tx => tx.Hash).ToArray()),
+                MerkleRoot = merkeRoot,
                 Timestamp = TimeUtils.CurrentTimeMillis(),
                 Index = _prevBlockIndex + 1,
                 Nonce = nonce
             };
-            header.TransactionHashes.AddRange(_transactions.Select(tx => tx.Hash));
+            header.TransactionHashes.AddRange(txs.Select(tx => tx.Hash));
             var block = new Block
             {
                 Hash = header.ToByteArray().ToHash256(),
                 Header = header
             };
-            return new BlockWithTransactions(block, _transactions);
+            return new BlockWithTransactions(block, txs);
         }
     }
 }

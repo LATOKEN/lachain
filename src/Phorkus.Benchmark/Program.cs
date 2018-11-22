@@ -162,7 +162,7 @@ namespace Phorkus.Benchmark
             
             _Benchmark("Building TX pool... ", i =>
             {
-                var tx = transactionFactory.TransferMoney(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
+                var tx = transactionFactory.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
                 tx.Nonce += (ulong) i;
                 transactionPool.Add(transactionManager.Sign(tx, keyPair));
                 return i;
@@ -226,7 +226,7 @@ namespace Phorkus.Benchmark
                 }
 
                 var transferTx =
-                    transactionFactory.TransferMoney(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
+                    transactionFactory.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
                 var signed = transactionManager.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
                 var blockWithTxs =

@@ -31,8 +31,10 @@ namespace Phorkus.Core.Consensus
         private readonly ITransactionPool _transactionPool;
         private readonly IBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
+        private readonly ITransactionFactory _transactionFactory;
         private readonly ICrypto _crypto;
         private readonly ConsensusContext _context;
+        private readonly KeyPair _keyPair;
 
         private readonly object _allTransactionVerified = new object();
         private readonly object _quorumSignaturesAcquired = new object();
@@ -43,7 +45,7 @@ namespace Phorkus.Core.Consensus
         private bool _stopped;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(60);
 
         public ConsensusManager(
             IBlockManager blockManager,
@@ -53,6 +55,7 @@ namespace Phorkus.Core.Consensus
             IBroadcaster broadcaster,
             ILogger<ConsensusManager> logger,
             IConfigManager configManager,
+            ITransactionFactory transactionFactory,
             ICrypto crypto)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -63,9 +66,10 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto;
-            var keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            _context = new ConsensusContext(keyPair,
+            _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
+            _transactionFactory = transactionFactory;
             _random = new SecureRandom();
 
             (transactionManager ?? throw new ArgumentNullException(nameof(transactionManager)))
@@ -116,11 +120,13 @@ namespace Phorkus.Core.Consensus
                     }
 
                     // TODO: produce block
-                    var blockBuilder = new BlockBuilder(
-                        _transactionPool, _blockchainContext.CurrentBlockHeader.Hash,
-                        _blockchainContext.CurrentBlockHeader.Header.Index
-                    );
-                    var blockWithTransactions = blockBuilder.Build((ulong) _random.Next());
+                    var blockBuilder = new BlockBuilder(_transactionPool, _blockchainContext.CurrentBlockHeader.Hash, _blockchainContext.CurrentBlockHeader.Header.Index);
+                    var address = _crypto.ComputeAddress(_context.KeyPair.PublicKey.Buffer.ToByteArray());
+                    var from = address.ToUInt160();
+                    var minerTx = _transactionFactory.MinerTransaction(from);
+                    var signed = _transactionManager.Sign(minerTx, _keyPair);
+                    
+                    var blockWithTransactions = blockBuilder.Build(signed, (ulong) _random.Next());
                     _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
                     _context.State |= ConsensusState.RequestSent;
@@ -488,7 +494,7 @@ namespace Phorkus.Core.Consensus
                 Monitor.PulseAll(_changeViewApproved);
             }
         }
-
+        
         private void SignAndBroadcast(ConsensusPayload payload)
         {
             var message = new ConsensusMessage

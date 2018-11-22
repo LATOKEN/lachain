@@ -17,10 +17,10 @@ namespace Phorkus.Core.Blockchain
             _transactionManager = transactionManager;
         }
         
-        public Transaction TransferMoney(UInt160 from, UInt160 to, UInt160 asset, Money value)
+        public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
-            var contract = new ContractTransaction
+            var contractTx = new ContractTransaction
             {
                 Asset = asset,
                 To = to,
@@ -33,7 +33,27 @@ namespace Phorkus.Core.Blockchain
                 Flags = 0,
                 From = from,
                 Nonce = nonce,
-                Contract = contract,
+                Contract = contractTx,
+                Signature = SignatureUtils.Zero
+            };
+            return tx;
+        }
+        
+        public Transaction MinerTransaction(UInt160 from)
+        {
+            var nonce = _transactionRepository.GetTotalTransactionCount(@from);
+            var miner = new MinerTransaction
+            {
+                Miner = from
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Contract,
+                Version = 0,
+                Flags = 0,
+                From = from,
+                Nonce = nonce,
+                Miner = miner,
                 Signature = SignatureUtils.Zero
             };
             return tx;

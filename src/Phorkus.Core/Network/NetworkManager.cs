@@ -56,6 +56,7 @@ namespace Phorkus.Core.Network
             _networkLogger.LogInformation("Connecting to peers specified (" + _networkConfig.Peers.Length + " peers)");
             Task.Factory.StartNew(() =>
                 Parallel.ForEach(_networkConfig.Peers, peer => _server.ConnectTo(IpEndPoint.Parse(peer))));
+            
         }
 
         public void Stop()
