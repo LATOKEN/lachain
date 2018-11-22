@@ -1,4 +1,4 @@
-﻿using Phorkus.Core.Network.Proto;
+﻿using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

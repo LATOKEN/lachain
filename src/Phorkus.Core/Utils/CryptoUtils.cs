@@ -1,6 +1,6 @@
 ﻿using System;
 using Google.Protobuf;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Utils
 {

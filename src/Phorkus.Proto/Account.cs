@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from account.proto</summary>
   public static partial class AccountReflection {
@@ -29,13 +29,13 @@ namespace Phorkus.Core.Proto {
             "dW50U3RhdGUiFgoFVGVzdDESDQoFdmFsdWUYASABKA0iJQoFVGVzdDISDQoF",
             "dmFsdWUYASABKA0SDQoFaGVsbG8YAiABKA0qQgoMQWNjb3VudFN0YXRlEhgK",
             "FEFDQ09VTlRfU1RBVEVfQUNUSVZFEAASGAoUQUNDT1VOVF9TVEFURV9GUk9a",
-            "RU4QAUIVqgISUGhvcmt1cy5Db3JlLlByb3RvYgZwcm90bzM="));
+            "RU4QAUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.AccountState), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Account), global::Phorkus.Core.Proto.Account.Parser, new[]{ "Address", "State" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Test1), global::Phorkus.Core.Proto.Test1.Parser, new[]{ "Value" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Test2), global::Phorkus.Core.Proto.Test2.Parser, new[]{ "Value", "Hello" }, null, null, null)
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.AccountState), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Account), global::Phorkus.Proto.Account.Parser, new[]{ "Address", "State" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Test1), global::Phorkus.Proto.Test1.Parser, new[]{ "Value" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Test2), global::Phorkus.Proto.Test2.Parser, new[]{ "Value", "Hello" }, null, null, null)
           }));
     }
     #endregion
@@ -58,7 +58,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.AccountReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.AccountReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -87,9 +87,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "address" field.</summary>
     public const int AddressFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 address_;
+    private global::Phorkus.Proto.UInt160 address_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Address {
+    public global::Phorkus.Proto.UInt160 Address {
       get { return address_; }
       set {
         address_ = value;
@@ -98,9 +98,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "state" field.</summary>
     public const int StateFieldNumber = 2;
-    private global::Phorkus.Core.Proto.AccountState state_ = 0;
+    private global::Phorkus.Proto.AccountState state_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.AccountState State {
+    public global::Phorkus.Proto.AccountState State {
       get { return state_; }
       set {
         state_ = value;
@@ -178,7 +178,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.address_ != null) {
         if (address_ == null) {
-          address_ = new global::Phorkus.Core.Proto.UInt160();
+          address_ = new global::Phorkus.Proto.UInt160();
         }
         Address.MergeFrom(other.Address);
       }
@@ -198,13 +198,13 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (address_ == null) {
-              address_ = new global::Phorkus.Core.Proto.UInt160();
+              address_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(address_);
             break;
           }
           case 16: {
-            state_ = (global::Phorkus.Core.Proto.AccountState) input.ReadEnum();
+            state_ = (global::Phorkus.Proto.AccountState) input.ReadEnum();
             break;
           }
         }
@@ -221,7 +221,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.AccountReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Phorkus.Proto.AccountReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -350,7 +350,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.AccountReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.AccountReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

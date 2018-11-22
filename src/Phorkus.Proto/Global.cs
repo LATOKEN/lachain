@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from global.proto</summary>
   public static partial class GlobalReflection {
@@ -25,12 +25,12 @@ namespace Phorkus.Core.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgxnbG9iYWwucHJvdG8iOwoGR2xvYmFsEhsKE2Jsb2NrX2hlYWRlcl9oZWln",
-            "aHQYASABKAQSFAoMYmxvY2tfaGVpZ2h0GAIgASgEQhWqAhJQaG9ya3VzLkNv",
-            "cmUuUHJvdG9iBnByb3RvMw=="));
+            "aHQYASABKAQSFAoMYmxvY2tfaGVpZ2h0GAIgASgEQhCqAg1QaG9ya3VzLlBy",
+            "b3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Global), global::Phorkus.Core.Proto.Global.Parser, new[]{ "BlockHeaderHeight", "BlockHeight" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Global), global::Phorkus.Proto.Global.Parser, new[]{ "BlockHeaderHeight", "BlockHeight" }, null, null, null)
           }));
     }
     #endregion
@@ -45,7 +45,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.GlobalReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.GlobalReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from consensus.proto</summary>
   public static partial class ConsensusReflection {
@@ -44,16 +44,16 @@ namespace Phorkus.Core.Proto {
             "RVBBUkVfUkVRVUVTVBAgEisKJ0NPTlNFTlNVU19QQVlMT0FEX1RZUEVfUFJF",
             "UEFSRV9SRVNQT05TRRAhQgkKB21lc3NhZ2UiVQoQQ29uc2Vuc3VzTWVzc2Fn",
             "ZRIiCgdwYXlsb2FkGAEgASgLMhEuQ29uc2Vuc3VzUGF5bG9hZBIdCglzaWdu",
-            "YXR1cmUYAiABKAsyCi5TaWduYXR1cmVCFaoCElBob3JrdXMuQ29yZS5Qcm90",
-            "b2IGcHJvdG8z"));
+            "YXR1cmUYAiABKAsyCi5TaWduYXR1cmVCEKoCDVBob3JrdXMuUHJvdG9iBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, global::Phorkus.Core.Proto.TransactionReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.ConsensusChangeView), global::Phorkus.Core.Proto.ConsensusChangeView.Parser, new[]{ "NewViewNumber" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.ConsensusPrepareRequest), global::Phorkus.Core.Proto.ConsensusPrepareRequest.Parser, new[]{ "Nonce", "TransactionHashes", "MinerTransaction", "Signature" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.ConsensusPrepareResponse), global::Phorkus.Core.Proto.ConsensusPrepareResponse.Parser, new[]{ "Signature" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.ConsensusPayload), global::Phorkus.Core.Proto.ConsensusPayload.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber", "Type", "ChangeView", "PrepareRequest", "PrepareResponse" }, new[]{ "Message" }, new[]{ typeof(global::Phorkus.Core.Proto.ConsensusPayload.Types.ConsensusPayloadType) }, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.ConsensusMessage), global::Phorkus.Core.Proto.ConsensusMessage.Parser, new[]{ "Payload", "Signature" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusChangeView), global::Phorkus.Proto.ConsensusChangeView.Parser, new[]{ "NewViewNumber" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareRequest), global::Phorkus.Proto.ConsensusPrepareRequest.Parser, new[]{ "Nonce", "TransactionHashes", "MinerTransaction", "Signature" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareResponse), global::Phorkus.Proto.ConsensusPrepareResponse.Parser, new[]{ "Signature" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPayload), global::Phorkus.Proto.ConsensusPayload.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber", "Type", "ChangeView", "PrepareRequest", "PrepareResponse" }, new[]{ "Message" }, new[]{ typeof(global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType) }, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Payload", "Signature" }, null, null, null)
           }));
     }
     #endregion
@@ -68,7 +68,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ConsensusReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -197,7 +197,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ConsensusReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -239,19 +239,19 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "transaction_hashes" field.</summary>
     public const int TransactionHashesFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.UInt256> _repeated_transactionHashes_codec
-        = pb::FieldCodec.ForMessage(18, global::Phorkus.Core.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_transactionHashes_codec
+        = pb::FieldCodec.ForMessage(18, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> TransactionHashes {
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> TransactionHashes {
       get { return transactionHashes_; }
     }
 
     /// <summary>Field number for the "miner_transaction" field.</summary>
     public const int MinerTransactionFieldNumber = 3;
-    private global::Phorkus.Core.Proto.Transaction minerTransaction_;
+    private global::Phorkus.Proto.Transaction minerTransaction_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Transaction MinerTransaction {
+    public global::Phorkus.Proto.Transaction MinerTransaction {
       get { return minerTransaction_; }
       set {
         minerTransaction_ = value;
@@ -260,9 +260,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "signature" field.</summary>
     public const int SignatureFieldNumber = 4;
-    private global::Phorkus.Core.Proto.Signature signature_;
+    private global::Phorkus.Proto.Signature signature_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Signature Signature {
+    public global::Phorkus.Proto.Signature Signature {
       get { return signature_; }
       set {
         signature_ = value;
@@ -357,13 +357,13 @@ namespace Phorkus.Core.Proto {
       transactionHashes_.Add(other.transactionHashes_);
       if (other.minerTransaction_ != null) {
         if (minerTransaction_ == null) {
-          minerTransaction_ = new global::Phorkus.Core.Proto.Transaction();
+          minerTransaction_ = new global::Phorkus.Proto.Transaction();
         }
         MinerTransaction.MergeFrom(other.MinerTransaction);
       }
       if (other.signature_ != null) {
         if (signature_ == null) {
-          signature_ = new global::Phorkus.Core.Proto.Signature();
+          signature_ = new global::Phorkus.Proto.Signature();
         }
         Signature.MergeFrom(other.Signature);
       }
@@ -388,14 +388,14 @@ namespace Phorkus.Core.Proto {
           }
           case 26: {
             if (minerTransaction_ == null) {
-              minerTransaction_ = new global::Phorkus.Core.Proto.Transaction();
+              minerTransaction_ = new global::Phorkus.Proto.Transaction();
             }
             input.ReadMessage(minerTransaction_);
             break;
           }
           case 34: {
             if (signature_ == null) {
-              signature_ = new global::Phorkus.Core.Proto.Signature();
+              signature_ = new global::Phorkus.Proto.Signature();
             }
             input.ReadMessage(signature_);
             break;
@@ -414,7 +414,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ConsensusReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -442,9 +442,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "signature" field.</summary>
     public const int SignatureFieldNumber = 1;
-    private global::Phorkus.Core.Proto.Signature signature_;
+    private global::Phorkus.Proto.Signature signature_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Signature Signature {
+    public global::Phorkus.Proto.Signature Signature {
       get { return signature_; }
       set {
         signature_ = value;
@@ -513,7 +513,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.signature_ != null) {
         if (signature_ == null) {
-          signature_ = new global::Phorkus.Core.Proto.Signature();
+          signature_ = new global::Phorkus.Proto.Signature();
         }
         Signature.MergeFrom(other.Signature);
       }
@@ -530,7 +530,7 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (signature_ == null) {
-              signature_ = new global::Phorkus.Core.Proto.Signature();
+              signature_ = new global::Phorkus.Proto.Signature();
             }
             input.ReadMessage(signature_);
             break;
@@ -549,7 +549,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ConsensusReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -606,9 +606,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "prev_hash" field.</summary>
     public const int PrevHashFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt256 prevHash_;
+    private global::Phorkus.Proto.UInt256 prevHash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 PrevHash {
+    public global::Phorkus.Proto.UInt256 PrevHash {
       get { return prevHash_; }
       set {
         prevHash_ = value;
@@ -661,9 +661,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 7;
-    private global::Phorkus.Core.Proto.ConsensusPayload.Types.ConsensusPayloadType type_ = 0;
+    private global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType type_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ConsensusPayload.Types.ConsensusPayloadType Type {
+    public global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType Type {
       get { return type_; }
       set {
         type_ = value;
@@ -673,8 +673,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "change_view" field.</summary>
     public const int ChangeViewFieldNumber = 8;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ConsensusChangeView ChangeView {
-      get { return messageCase_ == MessageOneofCase.ChangeView ? (global::Phorkus.Core.Proto.ConsensusChangeView) message_ : null; }
+    public global::Phorkus.Proto.ConsensusChangeView ChangeView {
+      get { return messageCase_ == MessageOneofCase.ChangeView ? (global::Phorkus.Proto.ConsensusChangeView) message_ : null; }
       set {
         message_ = value;
         messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.ChangeView;
@@ -684,8 +684,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "prepare_request" field.</summary>
     public const int PrepareRequestFieldNumber = 9;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ConsensusPrepareRequest PrepareRequest {
-      get { return messageCase_ == MessageOneofCase.PrepareRequest ? (global::Phorkus.Core.Proto.ConsensusPrepareRequest) message_ : null; }
+    public global::Phorkus.Proto.ConsensusPrepareRequest PrepareRequest {
+      get { return messageCase_ == MessageOneofCase.PrepareRequest ? (global::Phorkus.Proto.ConsensusPrepareRequest) message_ : null; }
       set {
         message_ = value;
         messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.PrepareRequest;
@@ -695,8 +695,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "prepare_response" field.</summary>
     public const int PrepareResponseFieldNumber = 10;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ConsensusPrepareResponse PrepareResponse {
-      get { return messageCase_ == MessageOneofCase.PrepareResponse ? (global::Phorkus.Core.Proto.ConsensusPrepareResponse) message_ : null; }
+    public global::Phorkus.Proto.ConsensusPrepareResponse PrepareResponse {
+      get { return messageCase_ == MessageOneofCase.PrepareResponse ? (global::Phorkus.Proto.ConsensusPrepareResponse) message_ : null; }
       set {
         message_ = value;
         messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.PrepareResponse;
@@ -871,7 +871,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.prevHash_ != null) {
         if (prevHash_ == null) {
-          prevHash_ = new global::Phorkus.Core.Proto.UInt256();
+          prevHash_ = new global::Phorkus.Proto.UInt256();
         }
         PrevHash.MergeFrom(other.PrevHash);
       }
@@ -893,19 +893,19 @@ namespace Phorkus.Core.Proto {
       switch (other.MessageCase) {
         case MessageOneofCase.ChangeView:
           if (ChangeView == null) {
-            ChangeView = new global::Phorkus.Core.Proto.ConsensusChangeView();
+            ChangeView = new global::Phorkus.Proto.ConsensusChangeView();
           }
           ChangeView.MergeFrom(other.ChangeView);
           break;
         case MessageOneofCase.PrepareRequest:
           if (PrepareRequest == null) {
-            PrepareRequest = new global::Phorkus.Core.Proto.ConsensusPrepareRequest();
+            PrepareRequest = new global::Phorkus.Proto.ConsensusPrepareRequest();
           }
           PrepareRequest.MergeFrom(other.PrepareRequest);
           break;
         case MessageOneofCase.PrepareResponse:
           if (PrepareResponse == null) {
-            PrepareResponse = new global::Phorkus.Core.Proto.ConsensusPrepareResponse();
+            PrepareResponse = new global::Phorkus.Proto.ConsensusPrepareResponse();
           }
           PrepareResponse.MergeFrom(other.PrepareResponse);
           break;
@@ -928,7 +928,7 @@ namespace Phorkus.Core.Proto {
           }
           case 18: {
             if (prevHash_ == null) {
-              prevHash_ = new global::Phorkus.Core.Proto.UInt256();
+              prevHash_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(prevHash_);
             break;
@@ -950,11 +950,11 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 56: {
-            type_ = (global::Phorkus.Core.Proto.ConsensusPayload.Types.ConsensusPayloadType) input.ReadEnum();
+            type_ = (global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType) input.ReadEnum();
             break;
           }
           case 66: {
-            global::Phorkus.Core.Proto.ConsensusChangeView subBuilder = new global::Phorkus.Core.Proto.ConsensusChangeView();
+            global::Phorkus.Proto.ConsensusChangeView subBuilder = new global::Phorkus.Proto.ConsensusChangeView();
             if (messageCase_ == MessageOneofCase.ChangeView) {
               subBuilder.MergeFrom(ChangeView);
             }
@@ -963,7 +963,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 74: {
-            global::Phorkus.Core.Proto.ConsensusPrepareRequest subBuilder = new global::Phorkus.Core.Proto.ConsensusPrepareRequest();
+            global::Phorkus.Proto.ConsensusPrepareRequest subBuilder = new global::Phorkus.Proto.ConsensusPrepareRequest();
             if (messageCase_ == MessageOneofCase.PrepareRequest) {
               subBuilder.MergeFrom(PrepareRequest);
             }
@@ -972,7 +972,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 82: {
-            global::Phorkus.Core.Proto.ConsensusPrepareResponse subBuilder = new global::Phorkus.Core.Proto.ConsensusPrepareResponse();
+            global::Phorkus.Proto.ConsensusPrepareResponse subBuilder = new global::Phorkus.Proto.ConsensusPrepareResponse();
             if (messageCase_ == MessageOneofCase.PrepareResponse) {
               subBuilder.MergeFrom(PrepareResponse);
             }
@@ -1007,7 +1007,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ConsensusReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1036,9 +1036,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "payload" field.</summary>
     public const int PayloadFieldNumber = 1;
-    private global::Phorkus.Core.Proto.ConsensusPayload payload_;
+    private global::Phorkus.Proto.ConsensusPayload payload_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ConsensusPayload Payload {
+    public global::Phorkus.Proto.ConsensusPayload Payload {
       get { return payload_; }
       set {
         payload_ = value;
@@ -1047,9 +1047,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "signature" field.</summary>
     public const int SignatureFieldNumber = 2;
-    private global::Phorkus.Core.Proto.Signature signature_;
+    private global::Phorkus.Proto.Signature signature_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Signature Signature {
+    public global::Phorkus.Proto.Signature Signature {
       get { return signature_; }
       set {
         signature_ = value;
@@ -1127,13 +1127,13 @@ namespace Phorkus.Core.Proto {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Phorkus.Core.Proto.ConsensusPayload();
+          payload_ = new global::Phorkus.Proto.ConsensusPayload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.signature_ != null) {
         if (signature_ == null) {
-          signature_ = new global::Phorkus.Core.Proto.Signature();
+          signature_ = new global::Phorkus.Proto.Signature();
         }
         Signature.MergeFrom(other.Signature);
       }
@@ -1150,14 +1150,14 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Phorkus.Core.Proto.ConsensusPayload();
+              payload_ = new global::Phorkus.Proto.ConsensusPayload();
             }
             input.ReadMessage(payload_);
             break;
           }
           case 18: {
             if (signature_ == null) {
-              signature_ = new global::Phorkus.Core.Proto.Signature();
+              signature_ = new global::Phorkus.Proto.Signature();
             }
             input.ReadMessage(signature_);
             break;

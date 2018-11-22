@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from multisig.proto</summary>
   public static partial class MultisigReflection {
@@ -28,12 +28,12 @@ namespace Phorkus.Core.Proto {
             "DgoGcXVvcnVtGAEgASgNEh4KCnZhbGlkYXRvcnMYAiADKAsyCi5QdWJsaWNL",
             "ZXkSMgoKc2lnbmF0dXJlcxgDIAMoCzIeLk11bHRpU2lnLlNpZ25hdHVyZUJ5",
             "VmFsaWRhdG9yGkoKFFNpZ25hdHVyZUJ5VmFsaWRhdG9yEhcKA2tleRgBIAEo",
-            "CzIKLlB1YmxpY0tleRIZCgV2YWx1ZRgCIAEoCzIKLlNpZ25hdHVyZUIVqgIS",
-            "UGhvcmt1cy5Db3JlLlByb3RvYgZwcm90bzM="));
+            "CzIKLlB1YmxpY0tleRIZCgV2YWx1ZRgCIAEoCzIKLlNpZ25hdHVyZUIQqgIN",
+            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.MultiSig), global::Phorkus.Core.Proto.MultiSig.Parser, new[]{ "Quorum", "Validators", "Signatures" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator), global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator.Parser, new[]{ "Key", "Value" }, null, null, null)})
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MultiSig), global::Phorkus.Proto.MultiSig.Parser, new[]{ "Quorum", "Validators", "Signatures" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MultiSig.Types.SignatureByValidator), global::Phorkus.Proto.MultiSig.Types.SignatureByValidator.Parser, new[]{ "Key", "Value" }, null, null, null)})
           }));
     }
     #endregion
@@ -48,7 +48,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.MultisigReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.MultisigReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -89,21 +89,21 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "validators" field.</summary>
     public const int ValidatorsFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.PublicKey> _repeated_validators_codec
-        = pb::FieldCodec.ForMessage(18, global::Phorkus.Core.Proto.PublicKey.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.PublicKey> validators_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.PublicKey>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.PublicKey> _repeated_validators_codec
+        = pb::FieldCodec.ForMessage(18, global::Phorkus.Proto.PublicKey.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.PublicKey> validators_ = new pbc::RepeatedField<global::Phorkus.Proto.PublicKey>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.PublicKey> Validators {
+    public pbc::RepeatedField<global::Phorkus.Proto.PublicKey> Validators {
       get { return validators_; }
     }
 
     /// <summary>Field number for the "signatures" field.</summary>
     public const int SignaturesFieldNumber = 3;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator> _repeated_signatures_codec
-        = pb::FieldCodec.ForMessage(26, global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator> signatures_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.MultiSig.Types.SignatureByValidator> _repeated_signatures_codec
+        = pb::FieldCodec.ForMessage(26, global::Phorkus.Proto.MultiSig.Types.SignatureByValidator.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.MultiSig.Types.SignatureByValidator> signatures_ = new pbc::RepeatedField<global::Phorkus.Proto.MultiSig.Types.SignatureByValidator>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.MultiSig.Types.SignatureByValidator> Signatures {
+    public pbc::RepeatedField<global::Phorkus.Proto.MultiSig.Types.SignatureByValidator> Signatures {
       get { return signatures_; }
     }
 
@@ -219,7 +219,7 @@ namespace Phorkus.Core.Proto {
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Phorkus.Core.Proto.MultiSig.Descriptor.NestedTypes[0]; }
+          get { return global::Phorkus.Proto.MultiSig.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -248,9 +248,9 @@ namespace Phorkus.Core.Proto {
 
         /// <summary>Field number for the "key" field.</summary>
         public const int KeyFieldNumber = 1;
-        private global::Phorkus.Core.Proto.PublicKey key_;
+        private global::Phorkus.Proto.PublicKey key_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-        public global::Phorkus.Core.Proto.PublicKey Key {
+        public global::Phorkus.Proto.PublicKey Key {
           get { return key_; }
           set {
             key_ = value;
@@ -259,9 +259,9 @@ namespace Phorkus.Core.Proto {
 
         /// <summary>Field number for the "value" field.</summary>
         public const int ValueFieldNumber = 2;
-        private global::Phorkus.Core.Proto.Signature value_;
+        private global::Phorkus.Proto.Signature value_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-        public global::Phorkus.Core.Proto.Signature Value {
+        public global::Phorkus.Proto.Signature Value {
           get { return value_; }
           set {
             value_ = value;
@@ -339,13 +339,13 @@ namespace Phorkus.Core.Proto {
           }
           if (other.key_ != null) {
             if (key_ == null) {
-              key_ = new global::Phorkus.Core.Proto.PublicKey();
+              key_ = new global::Phorkus.Proto.PublicKey();
             }
             Key.MergeFrom(other.Key);
           }
           if (other.value_ != null) {
             if (value_ == null) {
-              value_ = new global::Phorkus.Core.Proto.Signature();
+              value_ = new global::Phorkus.Proto.Signature();
             }
             Value.MergeFrom(other.Value);
           }
@@ -362,14 +362,14 @@ namespace Phorkus.Core.Proto {
                 break;
               case 10: {
                 if (key_ == null) {
-                  key_ = new global::Phorkus.Core.Proto.PublicKey();
+                  key_ = new global::Phorkus.Proto.PublicKey();
                 }
                 input.ReadMessage(key_);
                 break;
               }
               case 18: {
                 if (value_ == null) {
-                  value_ = new global::Phorkus.Core.Proto.Signature();
+                  value_ = new global::Phorkus.Proto.Signature();
                 }
                 input.ReadMessage(value_);
                 break;

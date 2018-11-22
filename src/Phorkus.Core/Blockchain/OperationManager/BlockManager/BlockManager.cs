@@ -1,7 +1,7 @@
 ﻿using System;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 

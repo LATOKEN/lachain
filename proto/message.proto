@@ -1,5 +1,5 @@
 syntax = "proto3";
-option csharp_namespace = "Phorkus.Core.Network.Proto";
+option csharp_namespace = "Phorkus.Proto";
 
 import "default.proto";
 import "transaction.proto";

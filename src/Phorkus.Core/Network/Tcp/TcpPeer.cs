@@ -4,8 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Network.Proto;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network.Tcp
 {

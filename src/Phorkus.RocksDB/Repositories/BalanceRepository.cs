@@ -1,6 +1,6 @@
 ﻿using Google.Protobuf;
 using Phorkus.Core.Blockchain;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Storage;
 
 namespace Phorkus.RocksDB.Repositories

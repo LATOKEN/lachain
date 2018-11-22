@@ -1,4 +1,4 @@
-﻿using Phorkus.Core.Proto;
+﻿using Phorkus.Proto;
 using Phorkus.Core.Storage;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager

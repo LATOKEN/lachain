@@ -1,5 +1,5 @@
 using Phorkus.Core.Blockchain;
-using Phorkus.Core.Blockchain.Consensus;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.BlockManager;

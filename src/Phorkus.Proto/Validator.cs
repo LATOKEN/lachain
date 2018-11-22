@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from validator.proto</summary>
   public static partial class ValidatorReflection {
@@ -28,12 +28,12 @@ namespace Phorkus.Core.Proto {
             "Eh4KCnB1YmxpY19rZXkYASABKAsyCi5QdWJsaWNLZXkSHgoFc3RhdGUYAiAB",
             "KA4yDy5WYWxpZGF0b3JTdGF0ZRIXCgV2b3RlcxgDIAEoCzIILlVJbnQyNTYq",
             "SQoOVmFsaWRhdG9yU3RhdGUSGwoXVkFMSURBVE9SX1NUQVRFX1dBSVRJTkcQ",
-            "ABIaChZWQUxJREFUT1JfU1RBVEVfQUNUSVZFEAFCFaoCElBob3JrdXMuQ29y",
-            "ZS5Qcm90b2IGcHJvdG8z"));
+            "ABIaChZWQUxJREFUT1JfU1RBVEVfQUNUSVZFEAFCEKoCDVBob3JrdXMuUHJv",
+            "dG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.ValidatorState), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Validator), global::Phorkus.Core.Proto.Validator.Parser, new[]{ "PublicKey", "State", "Votes" }, null, null, null)
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ValidatorState), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Validator), global::Phorkus.Proto.Validator.Parser, new[]{ "PublicKey", "State", "Votes" }, null, null, null)
           }));
     }
     #endregion
@@ -56,7 +56,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ValidatorReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.ValidatorReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -86,9 +86,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "public_key" field.</summary>
     public const int PublicKeyFieldNumber = 1;
-    private global::Phorkus.Core.Proto.PublicKey publicKey_;
+    private global::Phorkus.Proto.PublicKey publicKey_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.PublicKey PublicKey {
+    public global::Phorkus.Proto.PublicKey PublicKey {
       get { return publicKey_; }
       set {
         publicKey_ = value;
@@ -97,9 +97,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "state" field.</summary>
     public const int StateFieldNumber = 2;
-    private global::Phorkus.Core.Proto.ValidatorState state_ = 0;
+    private global::Phorkus.Proto.ValidatorState state_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ValidatorState State {
+    public global::Phorkus.Proto.ValidatorState State {
       get { return state_; }
       set {
         state_ = value;
@@ -108,9 +108,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "votes" field.</summary>
     public const int VotesFieldNumber = 3;
-    private global::Phorkus.Core.Proto.UInt256 votes_;
+    private global::Phorkus.Proto.UInt256 votes_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Votes {
+    public global::Phorkus.Proto.UInt256 Votes {
       get { return votes_; }
       set {
         votes_ = value;
@@ -197,7 +197,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.publicKey_ != null) {
         if (publicKey_ == null) {
-          publicKey_ = new global::Phorkus.Core.Proto.PublicKey();
+          publicKey_ = new global::Phorkus.Proto.PublicKey();
         }
         PublicKey.MergeFrom(other.PublicKey);
       }
@@ -206,7 +206,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.votes_ != null) {
         if (votes_ == null) {
-          votes_ = new global::Phorkus.Core.Proto.UInt256();
+          votes_ = new global::Phorkus.Proto.UInt256();
         }
         Votes.MergeFrom(other.Votes);
       }
@@ -223,18 +223,18 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (publicKey_ == null) {
-              publicKey_ = new global::Phorkus.Core.Proto.PublicKey();
+              publicKey_ = new global::Phorkus.Proto.PublicKey();
             }
             input.ReadMessage(publicKey_);
             break;
           }
           case 16: {
-            state_ = (global::Phorkus.Core.Proto.ValidatorState) input.ReadEnum();
+            state_ = (global::Phorkus.Proto.ValidatorState) input.ReadEnum();
             break;
           }
           case 26: {
             if (votes_ == null) {
-              votes_ = new global::Phorkus.Core.Proto.UInt256();
+              votes_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(votes_);
             break;

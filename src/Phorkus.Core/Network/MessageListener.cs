@@ -4,9 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Phorkus.Core.Logging;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Utils;
-using MessageType = Phorkus.Core.Network.Proto.MessageType;
 
 namespace Phorkus.Core.Network
 {

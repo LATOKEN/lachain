@@ -4,7 +4,7 @@ using System.Numerics;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Utils
 {

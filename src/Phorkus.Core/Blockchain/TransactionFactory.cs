@@ -1,5 +1,5 @@
 ﻿using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 

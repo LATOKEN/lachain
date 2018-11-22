@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from default.proto</summary>
   public static partial class DefaultReflection {
@@ -27,16 +27,16 @@ namespace Phorkus.Core.Proto {
             "Cg1kZWZhdWx0LnByb3RvIhkKB1VJbnQxNjASDgoGYnVmZmVyGAEgASgMIhkK",
             "B1VJbnQyNTYSDgoGYnVmZmVyGAEgASgMIhsKCVB1YmxpY0tleRIOCgZidWZm",
             "ZXIYASABKAwiHAoKUHJpdmF0ZUtleRIOCgZidWZmZXIYASABKAwiGwoJU2ln",
-            "bmF0dXJlEg4KBmJ1ZmZlchgBIAEoDEIVqgISUGhvcmt1cy5Db3JlLlByb3Rv",
-            "YgZwcm90bzM="));
+            "bmF0dXJlEg4KBmJ1ZmZlchgBIAEoDEIQqgINUGhvcmt1cy5Qcm90b2IGcHJv",
+            "dG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.UInt160), global::Phorkus.Core.Proto.UInt160.Parser, new[]{ "Buffer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.UInt256), global::Phorkus.Core.Proto.UInt256.Parser, new[]{ "Buffer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.PublicKey), global::Phorkus.Core.Proto.PublicKey.Parser, new[]{ "Buffer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.PrivateKey), global::Phorkus.Core.Proto.PrivateKey.Parser, new[]{ "Buffer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Signature), global::Phorkus.Core.Proto.Signature.Parser, new[]{ "Buffer" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.UInt160), global::Phorkus.Proto.UInt160.Parser, new[]{ "Buffer" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.UInt256), global::Phorkus.Proto.UInt256.Parser, new[]{ "Buffer" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PublicKey), global::Phorkus.Proto.PublicKey.Parser, new[]{ "Buffer" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PrivateKey), global::Phorkus.Proto.PrivateKey.Parser, new[]{ "Buffer" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Signature), global::Phorkus.Proto.Signature.Parser, new[]{ "Buffer" }, null, null, null)
           }));
     }
     #endregion
@@ -51,7 +51,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.DefaultReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -180,7 +180,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.DefaultReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -309,7 +309,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.DefaultReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -438,7 +438,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.DefaultReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -567,7 +567,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.DefaultReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from node.proto</summary>
   public static partial class NodeReflection {
@@ -27,12 +27,12 @@ namespace Phorkus.Core.Proto {
             "Cgpub2RlLnByb3RvIo8BCgROb2RlEg8KB3ZlcnNpb24YASABKA0SEQoJdGlt",
             "ZXN0YW1wGAIgASgEEhAKCHNlcnZpY2VzGAMgASgEEgwKBHBvcnQYBCABKA0S",
             "DwoHYWRkcmVzcxgFIAEoCRINCgVub25jZRgGIAEoDRIUCgxibG9ja19oZWln",
-            "aHQYByABKAQSDQoFYWdlbnQYCCABKAlCFaoCElBob3JrdXMuQ29yZS5Qcm90",
-            "b2IGcHJvdG8z"));
+            "aHQYByABKAQSDQoFYWdlbnQYCCABKAlCEKoCDVBob3JrdXMuUHJvdG9iBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Node), global::Phorkus.Core.Proto.Node.Parser, new[]{ "Version", "Timestamp", "Services", "Port", "Address", "Nonce", "BlockHeight", "Agent" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Node), global::Phorkus.Proto.Node.Parser, new[]{ "Version", "Timestamp", "Services", "Port", "Address", "Nonce", "BlockHeight", "Agent" }, null, null, null)
           }));
     }
     #endregion
@@ -47,7 +47,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.NodeReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.NodeReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

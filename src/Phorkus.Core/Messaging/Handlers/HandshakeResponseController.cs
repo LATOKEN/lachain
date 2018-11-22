@@ -1,5 +1,5 @@
 ﻿using Phorkus.Core.Network;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Messaging.Handlers
 {

@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from asset.proto</summary>
   public static partial class AssetReflection {
@@ -30,12 +30,12 @@ namespace Phorkus.Core.Proto {
             "aXQYBSABKAsyCC5VSW50MjU2EhAKCGRlY2ltYWxzGAYgASgNEhcKBW93bmVy",
             "GAcgASgLMgguVUludDE2MBIYCgZtaW50ZXIYCCABKAsyCC5VSW50MTYwKlUK",
             "CUFzc2V0VHlwZRIYChRBU1NFVF9UWVBFX0dPVkVSTklORxAAEhUKEUFTU0VU",
-            "X1RZUEVfQ1VTVE9NEAESFwoTQVNTRVRfVFlQRV9QTEFURk9STRACQhWqAhJQ",
-            "aG9ya3VzLkNvcmUuUHJvdG9iBnByb3RvMw=="));
+            "X1RZUEVfQ1VTVE9NEAESFwoTQVNTRVRfVFlQRV9QTEFURk9STRACQhCqAg1Q",
+            "aG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.AssetType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Asset), global::Phorkus.Core.Proto.Asset.Parser, new[]{ "Hash", "Type", "Name", "Supply", "Limit", "Decimals", "Owner", "Minter" }, null, null, null)
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.AssetType), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Asset), global::Phorkus.Proto.Asset.Parser, new[]{ "Hash", "Type", "Name", "Supply", "Limit", "Decimals", "Owner", "Minter" }, null, null, null)
           }));
     }
     #endregion
@@ -59,7 +59,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.AssetReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.AssetReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -94,9 +94,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 hash_;
+    private global::Phorkus.Proto.UInt160 hash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Hash {
+    public global::Phorkus.Proto.UInt160 Hash {
       get { return hash_; }
       set {
         hash_ = value;
@@ -105,9 +105,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 2;
-    private global::Phorkus.Core.Proto.AssetType type_ = 0;
+    private global::Phorkus.Proto.AssetType type_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.AssetType Type {
+    public global::Phorkus.Proto.AssetType Type {
       get { return type_; }
       set {
         type_ = value;
@@ -127,9 +127,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "supply" field.</summary>
     public const int SupplyFieldNumber = 4;
-    private global::Phorkus.Core.Proto.UInt256 supply_;
+    private global::Phorkus.Proto.UInt256 supply_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Supply {
+    public global::Phorkus.Proto.UInt256 Supply {
       get { return supply_; }
       set {
         supply_ = value;
@@ -138,9 +138,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "limit" field.</summary>
     public const int LimitFieldNumber = 5;
-    private global::Phorkus.Core.Proto.UInt256 limit_;
+    private global::Phorkus.Proto.UInt256 limit_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Limit {
+    public global::Phorkus.Proto.UInt256 Limit {
       get { return limit_; }
       set {
         limit_ = value;
@@ -160,9 +160,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "owner" field.</summary>
     public const int OwnerFieldNumber = 7;
-    private global::Phorkus.Core.Proto.UInt160 owner_;
+    private global::Phorkus.Proto.UInt160 owner_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Owner {
+    public global::Phorkus.Proto.UInt160 Owner {
       get { return owner_; }
       set {
         owner_ = value;
@@ -171,9 +171,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "minter" field.</summary>
     public const int MinterFieldNumber = 8;
-    private global::Phorkus.Core.Proto.UInt160 minter_;
+    private global::Phorkus.Proto.UInt160 minter_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Minter {
+    public global::Phorkus.Proto.UInt160 Minter {
       get { return minter_; }
       set {
         minter_ = value;
@@ -305,7 +305,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.hash_ != null) {
         if (hash_ == null) {
-          hash_ = new global::Phorkus.Core.Proto.UInt160();
+          hash_ = new global::Phorkus.Proto.UInt160();
         }
         Hash.MergeFrom(other.Hash);
       }
@@ -317,13 +317,13 @@ namespace Phorkus.Core.Proto {
       }
       if (other.supply_ != null) {
         if (supply_ == null) {
-          supply_ = new global::Phorkus.Core.Proto.UInt256();
+          supply_ = new global::Phorkus.Proto.UInt256();
         }
         Supply.MergeFrom(other.Supply);
       }
       if (other.limit_ != null) {
         if (limit_ == null) {
-          limit_ = new global::Phorkus.Core.Proto.UInt256();
+          limit_ = new global::Phorkus.Proto.UInt256();
         }
         Limit.MergeFrom(other.Limit);
       }
@@ -332,13 +332,13 @@ namespace Phorkus.Core.Proto {
       }
       if (other.owner_ != null) {
         if (owner_ == null) {
-          owner_ = new global::Phorkus.Core.Proto.UInt160();
+          owner_ = new global::Phorkus.Proto.UInt160();
         }
         Owner.MergeFrom(other.Owner);
       }
       if (other.minter_ != null) {
         if (minter_ == null) {
-          minter_ = new global::Phorkus.Core.Proto.UInt160();
+          minter_ = new global::Phorkus.Proto.UInt160();
         }
         Minter.MergeFrom(other.Minter);
       }
@@ -355,13 +355,13 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (hash_ == null) {
-              hash_ = new global::Phorkus.Core.Proto.UInt160();
+              hash_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(hash_);
             break;
           }
           case 16: {
-            type_ = (global::Phorkus.Core.Proto.AssetType) input.ReadEnum();
+            type_ = (global::Phorkus.Proto.AssetType) input.ReadEnum();
             break;
           }
           case 26: {
@@ -370,14 +370,14 @@ namespace Phorkus.Core.Proto {
           }
           case 34: {
             if (supply_ == null) {
-              supply_ = new global::Phorkus.Core.Proto.UInt256();
+              supply_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(supply_);
             break;
           }
           case 42: {
             if (limit_ == null) {
-              limit_ = new global::Phorkus.Core.Proto.UInt256();
+              limit_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(limit_);
             break;
@@ -388,14 +388,14 @@ namespace Phorkus.Core.Proto {
           }
           case 58: {
             if (owner_ == null) {
-              owner_ = new global::Phorkus.Core.Proto.UInt160();
+              owner_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(owner_);
             break;
           }
           case 66: {
             if (minter_ == null) {
-              minter_ = new global::Phorkus.Core.Proto.UInt160();
+              minter_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(minter_);
             break;

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Google.Protobuf;
-using Phorkus.Core.Blockchain.Consensus;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.Config;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain.Genesis

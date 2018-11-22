@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

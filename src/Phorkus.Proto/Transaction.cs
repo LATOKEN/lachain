@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from transaction.proto</summary>
   public static partial class TransactionReflection {
@@ -55,19 +55,19 @@ namespace Phorkus.Core.Proto {
             "SU9OX1RZUEVfQ09OVFJBQ1QQAxIcChhUUkFOU0FDVElPTl9UWVBFX1BVQkxJ",
             "U0gQBBIcChhUUkFOU0FDVElPTl9UWVBFX0RFUE9TSVQQBRIdChlUUkFOU0FD",
             "VElPTl9UWVBFX1dJVEhEUkFXEAYqLAoPVHJhbnNhY3Rpb25GbGFnEhkKFVRS",
-            "QU5TQUNUSU9OX0ZMQUdfTk9ORRAAQhWqAhJQaG9ya3VzLkNvcmUuUHJvdG9i",
-            "BnByb3RvMw=="));
+            "QU5TQUNUSU9OX0ZMQUdfTk9ORRAAQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.AssetReflection.Descriptor, global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.TransactionType), typeof(global::Phorkus.Core.Proto.TransactionFlag), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.ContractTransaction), global::Phorkus.Core.Proto.ContractTransaction.Parser, new[]{ "Asset", "To", "Value", "Script" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.IssueTransaction), global::Phorkus.Core.Proto.IssueTransaction.Parser, new[]{ "Asset", "Supply", "To" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.PublishTransaction), global::Phorkus.Core.Proto.PublishTransaction.Parser, new[]{ "Hash", "Script" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.RegisterTransaction), global::Phorkus.Core.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner", "Minter" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.MinerTransaction), global::Phorkus.Core.Proto.MinerTransaction.Parser, new[]{ "Miner" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.TransactionState), global::Phorkus.Core.Proto.TransactionState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus) }, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Transaction), global::Phorkus.Core.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner", "Signature" }, new[]{ "Data" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.SignedTransaction), global::Phorkus.Core.Proto.SignedTransaction.Parser, new[]{ "Transaction", "Hash" }, null, null, null)
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.AssetReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionFlag), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractTransaction), global::Phorkus.Proto.ContractTransaction.Parser, new[]{ "Asset", "To", "Value", "Script" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.IssueTransaction), global::Phorkus.Proto.IssueTransaction.Parser, new[]{ "Asset", "Supply", "To" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PublishTransaction), global::Phorkus.Proto.PublishTransaction.Parser, new[]{ "Hash", "Script" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.RegisterTransaction), global::Phorkus.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner", "Minter" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MinerTransaction), global::Phorkus.Proto.MinerTransaction.Parser, new[]{ "Miner" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionState), global::Phorkus.Proto.TransactionState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.TransactionState.Types.TransactionStatus) }, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner", "Signature" }, new[]{ "Data" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.SignedTransaction), global::Phorkus.Proto.SignedTransaction.Parser, new[]{ "Transaction", "Hash" }, null, null, null)
           }));
     }
     #endregion
@@ -99,7 +99,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -130,9 +130,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "asset" field.</summary>
     public const int AssetFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 asset_;
+    private global::Phorkus.Proto.UInt160 asset_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Asset {
+    public global::Phorkus.Proto.UInt160 Asset {
       get { return asset_; }
       set {
         asset_ = value;
@@ -141,9 +141,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "to" field.</summary>
     public const int ToFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt160 to_;
+    private global::Phorkus.Proto.UInt160 to_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 To {
+    public global::Phorkus.Proto.UInt160 To {
       get { return to_; }
       set {
         to_ = value;
@@ -152,9 +152,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "value" field.</summary>
     public const int ValueFieldNumber = 3;
-    private global::Phorkus.Core.Proto.UInt256 value_;
+    private global::Phorkus.Proto.UInt256 value_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Value {
+    public global::Phorkus.Proto.UInt256 Value {
       get { return value_; }
       set {
         value_ = value;
@@ -261,19 +261,19 @@ namespace Phorkus.Core.Proto {
       }
       if (other.asset_ != null) {
         if (asset_ == null) {
-          asset_ = new global::Phorkus.Core.Proto.UInt160();
+          asset_ = new global::Phorkus.Proto.UInt160();
         }
         Asset.MergeFrom(other.Asset);
       }
       if (other.to_ != null) {
         if (to_ == null) {
-          to_ = new global::Phorkus.Core.Proto.UInt160();
+          to_ = new global::Phorkus.Proto.UInt160();
         }
         To.MergeFrom(other.To);
       }
       if (other.value_ != null) {
         if (value_ == null) {
-          value_ = new global::Phorkus.Core.Proto.UInt256();
+          value_ = new global::Phorkus.Proto.UInt256();
         }
         Value.MergeFrom(other.Value);
       }
@@ -293,21 +293,21 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (asset_ == null) {
-              asset_ = new global::Phorkus.Core.Proto.UInt160();
+              asset_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(asset_);
             break;
           }
           case 18: {
             if (to_ == null) {
-              to_ = new global::Phorkus.Core.Proto.UInt160();
+              to_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(to_);
             break;
           }
           case 26: {
             if (value_ == null) {
-              value_ = new global::Phorkus.Core.Proto.UInt256();
+              value_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(value_);
             break;
@@ -330,7 +330,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -360,9 +360,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "asset" field.</summary>
     public const int AssetFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 asset_;
+    private global::Phorkus.Proto.UInt160 asset_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Asset {
+    public global::Phorkus.Proto.UInt160 Asset {
       get { return asset_; }
       set {
         asset_ = value;
@@ -371,9 +371,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "supply" field.</summary>
     public const int SupplyFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt256 supply_;
+    private global::Phorkus.Proto.UInt256 supply_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Supply {
+    public global::Phorkus.Proto.UInt256 Supply {
       get { return supply_; }
       set {
         supply_ = value;
@@ -382,9 +382,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "to" field.</summary>
     public const int ToFieldNumber = 3;
-    private global::Phorkus.Core.Proto.UInt160 to_;
+    private global::Phorkus.Proto.UInt160 to_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 To {
+    public global::Phorkus.Proto.UInt160 To {
       get { return to_; }
       set {
         to_ = value;
@@ -471,19 +471,19 @@ namespace Phorkus.Core.Proto {
       }
       if (other.asset_ != null) {
         if (asset_ == null) {
-          asset_ = new global::Phorkus.Core.Proto.UInt160();
+          asset_ = new global::Phorkus.Proto.UInt160();
         }
         Asset.MergeFrom(other.Asset);
       }
       if (other.supply_ != null) {
         if (supply_ == null) {
-          supply_ = new global::Phorkus.Core.Proto.UInt256();
+          supply_ = new global::Phorkus.Proto.UInt256();
         }
         Supply.MergeFrom(other.Supply);
       }
       if (other.to_ != null) {
         if (to_ == null) {
-          to_ = new global::Phorkus.Core.Proto.UInt160();
+          to_ = new global::Phorkus.Proto.UInt160();
         }
         To.MergeFrom(other.To);
       }
@@ -500,21 +500,21 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (asset_ == null) {
-              asset_ = new global::Phorkus.Core.Proto.UInt160();
+              asset_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(asset_);
             break;
           }
           case 18: {
             if (supply_ == null) {
-              supply_ = new global::Phorkus.Core.Proto.UInt256();
+              supply_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(supply_);
             break;
           }
           case 26: {
             if (to_ == null) {
-              to_ = new global::Phorkus.Core.Proto.UInt160();
+              to_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(to_);
             break;
@@ -533,7 +533,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -562,9 +562,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 hash_;
+    private global::Phorkus.Proto.UInt160 hash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Hash {
+    public global::Phorkus.Proto.UInt160 Hash {
       get { return hash_; }
       set {
         hash_ = value;
@@ -653,7 +653,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.hash_ != null) {
         if (hash_ == null) {
-          hash_ = new global::Phorkus.Core.Proto.UInt160();
+          hash_ = new global::Phorkus.Proto.UInt160();
         }
         Hash.MergeFrom(other.Hash);
       }
@@ -673,7 +673,7 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (hash_ == null) {
-              hash_ = new global::Phorkus.Core.Proto.UInt160();
+              hash_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(hash_);
             break;
@@ -696,7 +696,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -729,9 +729,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 1;
-    private global::Phorkus.Core.Proto.AssetType type_ = 0;
+    private global::Phorkus.Proto.AssetType type_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.AssetType Type {
+    public global::Phorkus.Proto.AssetType Type {
       get { return type_; }
       set {
         type_ = value;
@@ -751,9 +751,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "supply" field.</summary>
     public const int SupplyFieldNumber = 3;
-    private global::Phorkus.Core.Proto.UInt256 supply_;
+    private global::Phorkus.Proto.UInt256 supply_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Supply {
+    public global::Phorkus.Proto.UInt256 Supply {
       get { return supply_; }
       set {
         supply_ = value;
@@ -773,9 +773,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "owner" field.</summary>
     public const int OwnerFieldNumber = 5;
-    private global::Phorkus.Core.Proto.UInt160 owner_;
+    private global::Phorkus.Proto.UInt160 owner_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Owner {
+    public global::Phorkus.Proto.UInt160 Owner {
       get { return owner_; }
       set {
         owner_ = value;
@@ -784,9 +784,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "minter" field.</summary>
     public const int MinterFieldNumber = 6;
-    private global::Phorkus.Core.Proto.UInt160 minter_;
+    private global::Phorkus.Proto.UInt160 minter_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Minter {
+    public global::Phorkus.Proto.UInt160 Minter {
       get { return minter_; }
       set {
         minter_ = value;
@@ -906,7 +906,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.supply_ != null) {
         if (supply_ == null) {
-          supply_ = new global::Phorkus.Core.Proto.UInt256();
+          supply_ = new global::Phorkus.Proto.UInt256();
         }
         Supply.MergeFrom(other.Supply);
       }
@@ -915,13 +915,13 @@ namespace Phorkus.Core.Proto {
       }
       if (other.owner_ != null) {
         if (owner_ == null) {
-          owner_ = new global::Phorkus.Core.Proto.UInt160();
+          owner_ = new global::Phorkus.Proto.UInt160();
         }
         Owner.MergeFrom(other.Owner);
       }
       if (other.minter_ != null) {
         if (minter_ == null) {
-          minter_ = new global::Phorkus.Core.Proto.UInt160();
+          minter_ = new global::Phorkus.Proto.UInt160();
         }
         Minter.MergeFrom(other.Minter);
       }
@@ -937,7 +937,7 @@ namespace Phorkus.Core.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            type_ = (global::Phorkus.Core.Proto.AssetType) input.ReadEnum();
+            type_ = (global::Phorkus.Proto.AssetType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -946,7 +946,7 @@ namespace Phorkus.Core.Proto {
           }
           case 26: {
             if (supply_ == null) {
-              supply_ = new global::Phorkus.Core.Proto.UInt256();
+              supply_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(supply_);
             break;
@@ -957,14 +957,14 @@ namespace Phorkus.Core.Proto {
           }
           case 42: {
             if (owner_ == null) {
-              owner_ = new global::Phorkus.Core.Proto.UInt160();
+              owner_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(owner_);
             break;
           }
           case 50: {
             if (minter_ == null) {
-              minter_ = new global::Phorkus.Core.Proto.UInt160();
+              minter_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(minter_);
             break;
@@ -983,7 +983,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1011,9 +1011,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "miner" field.</summary>
     public const int MinerFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 miner_;
+    private global::Phorkus.Proto.UInt160 miner_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Miner {
+    public global::Phorkus.Proto.UInt160 Miner {
       get { return miner_; }
       set {
         miner_ = value;
@@ -1082,7 +1082,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.miner_ != null) {
         if (miner_ == null) {
-          miner_ = new global::Phorkus.Core.Proto.UInt160();
+          miner_ = new global::Phorkus.Proto.UInt160();
         }
         Miner.MergeFrom(other.Miner);
       }
@@ -1099,7 +1099,7 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (miner_ == null) {
-              miner_ = new global::Phorkus.Core.Proto.UInt160();
+              miner_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(miner_);
             break;
@@ -1118,7 +1118,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1146,9 +1146,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "status" field.</summary>
     public const int StatusFieldNumber = 1;
-    private global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus status_ = 0;
+    private global::Phorkus.Proto.TransactionState.Types.TransactionStatus status_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus Status {
+    public global::Phorkus.Proto.TransactionState.Types.TransactionStatus Status {
       get { return status_; }
       set {
         status_ = value;
@@ -1230,7 +1230,7 @@ namespace Phorkus.Core.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            status_ = (global::Phorkus.Core.Proto.TransactionState.Types.TransactionStatus) input.ReadEnum();
+            status_ = (global::Phorkus.Proto.TransactionState.Types.TransactionStatus) input.ReadEnum();
             break;
           }
         }
@@ -1260,7 +1260,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1311,9 +1311,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 1;
-    private global::Phorkus.Core.Proto.TransactionType type_ = 0;
+    private global::Phorkus.Proto.TransactionType type_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.TransactionType Type {
+    public global::Phorkus.Proto.TransactionType Type {
       get { return type_; }
       set {
         type_ = value;
@@ -1344,9 +1344,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "from" field.</summary>
     public const int FromFieldNumber = 4;
-    private global::Phorkus.Core.Proto.UInt160 from_;
+    private global::Phorkus.Proto.UInt160 from_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 From {
+    public global::Phorkus.Proto.UInt160 From {
       get { return from_; }
       set {
         from_ = value;
@@ -1367,8 +1367,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "contract" field.</summary>
     public const int ContractFieldNumber = 6;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ContractTransaction Contract {
-      get { return dataCase_ == DataOneofCase.Contract ? (global::Phorkus.Core.Proto.ContractTransaction) data_ : null; }
+    public global::Phorkus.Proto.ContractTransaction Contract {
+      get { return dataCase_ == DataOneofCase.Contract ? (global::Phorkus.Proto.ContractTransaction) data_ : null; }
       set {
         data_ = value;
         dataCase_ = value == null ? DataOneofCase.None : DataOneofCase.Contract;
@@ -1378,8 +1378,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "issue" field.</summary>
     public const int IssueFieldNumber = 7;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.IssueTransaction Issue {
-      get { return dataCase_ == DataOneofCase.Issue ? (global::Phorkus.Core.Proto.IssueTransaction) data_ : null; }
+    public global::Phorkus.Proto.IssueTransaction Issue {
+      get { return dataCase_ == DataOneofCase.Issue ? (global::Phorkus.Proto.IssueTransaction) data_ : null; }
       set {
         data_ = value;
         dataCase_ = value == null ? DataOneofCase.None : DataOneofCase.Issue;
@@ -1389,8 +1389,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "publish" field.</summary>
     public const int PublishFieldNumber = 8;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.PublishTransaction Publish {
-      get { return dataCase_ == DataOneofCase.Publish ? (global::Phorkus.Core.Proto.PublishTransaction) data_ : null; }
+    public global::Phorkus.Proto.PublishTransaction Publish {
+      get { return dataCase_ == DataOneofCase.Publish ? (global::Phorkus.Proto.PublishTransaction) data_ : null; }
       set {
         data_ = value;
         dataCase_ = value == null ? DataOneofCase.None : DataOneofCase.Publish;
@@ -1400,8 +1400,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "register" field.</summary>
     public const int RegisterFieldNumber = 9;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.RegisterTransaction Register {
-      get { return dataCase_ == DataOneofCase.Register ? (global::Phorkus.Core.Proto.RegisterTransaction) data_ : null; }
+    public global::Phorkus.Proto.RegisterTransaction Register {
+      get { return dataCase_ == DataOneofCase.Register ? (global::Phorkus.Proto.RegisterTransaction) data_ : null; }
       set {
         data_ = value;
         dataCase_ = value == null ? DataOneofCase.None : DataOneofCase.Register;
@@ -1411,8 +1411,8 @@ namespace Phorkus.Core.Proto {
     /// <summary>Field number for the "miner" field.</summary>
     public const int MinerFieldNumber = 10;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.MinerTransaction Miner {
-      get { return dataCase_ == DataOneofCase.Miner ? (global::Phorkus.Core.Proto.MinerTransaction) data_ : null; }
+    public global::Phorkus.Proto.MinerTransaction Miner {
+      get { return dataCase_ == DataOneofCase.Miner ? (global::Phorkus.Proto.MinerTransaction) data_ : null; }
       set {
         data_ = value;
         dataCase_ = value == null ? DataOneofCase.None : DataOneofCase.Miner;
@@ -1421,9 +1421,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "signature" field.</summary>
     public const int SignatureFieldNumber = 11;
-    private global::Phorkus.Core.Proto.Signature signature_;
+    private global::Phorkus.Proto.Signature signature_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Signature Signature {
+    public global::Phorkus.Proto.Signature Signature {
       get { return signature_; }
       set {
         signature_ = value;
@@ -1615,7 +1615,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.from_ != null) {
         if (from_ == null) {
-          from_ = new global::Phorkus.Core.Proto.UInt160();
+          from_ = new global::Phorkus.Proto.UInt160();
         }
         From.MergeFrom(other.From);
       }
@@ -1624,38 +1624,38 @@ namespace Phorkus.Core.Proto {
       }
       if (other.signature_ != null) {
         if (signature_ == null) {
-          signature_ = new global::Phorkus.Core.Proto.Signature();
+          signature_ = new global::Phorkus.Proto.Signature();
         }
         Signature.MergeFrom(other.Signature);
       }
       switch (other.DataCase) {
         case DataOneofCase.Contract:
           if (Contract == null) {
-            Contract = new global::Phorkus.Core.Proto.ContractTransaction();
+            Contract = new global::Phorkus.Proto.ContractTransaction();
           }
           Contract.MergeFrom(other.Contract);
           break;
         case DataOneofCase.Issue:
           if (Issue == null) {
-            Issue = new global::Phorkus.Core.Proto.IssueTransaction();
+            Issue = new global::Phorkus.Proto.IssueTransaction();
           }
           Issue.MergeFrom(other.Issue);
           break;
         case DataOneofCase.Publish:
           if (Publish == null) {
-            Publish = new global::Phorkus.Core.Proto.PublishTransaction();
+            Publish = new global::Phorkus.Proto.PublishTransaction();
           }
           Publish.MergeFrom(other.Publish);
           break;
         case DataOneofCase.Register:
           if (Register == null) {
-            Register = new global::Phorkus.Core.Proto.RegisterTransaction();
+            Register = new global::Phorkus.Proto.RegisterTransaction();
           }
           Register.MergeFrom(other.Register);
           break;
         case DataOneofCase.Miner:
           if (Miner == null) {
-            Miner = new global::Phorkus.Core.Proto.MinerTransaction();
+            Miner = new global::Phorkus.Proto.MinerTransaction();
           }
           Miner.MergeFrom(other.Miner);
           break;
@@ -1673,7 +1673,7 @@ namespace Phorkus.Core.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            type_ = (global::Phorkus.Core.Proto.TransactionType) input.ReadEnum();
+            type_ = (global::Phorkus.Proto.TransactionType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -1686,7 +1686,7 @@ namespace Phorkus.Core.Proto {
           }
           case 34: {
             if (from_ == null) {
-              from_ = new global::Phorkus.Core.Proto.UInt160();
+              from_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(from_);
             break;
@@ -1696,7 +1696,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 50: {
-            global::Phorkus.Core.Proto.ContractTransaction subBuilder = new global::Phorkus.Core.Proto.ContractTransaction();
+            global::Phorkus.Proto.ContractTransaction subBuilder = new global::Phorkus.Proto.ContractTransaction();
             if (dataCase_ == DataOneofCase.Contract) {
               subBuilder.MergeFrom(Contract);
             }
@@ -1705,7 +1705,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 58: {
-            global::Phorkus.Core.Proto.IssueTransaction subBuilder = new global::Phorkus.Core.Proto.IssueTransaction();
+            global::Phorkus.Proto.IssueTransaction subBuilder = new global::Phorkus.Proto.IssueTransaction();
             if (dataCase_ == DataOneofCase.Issue) {
               subBuilder.MergeFrom(Issue);
             }
@@ -1714,7 +1714,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 66: {
-            global::Phorkus.Core.Proto.PublishTransaction subBuilder = new global::Phorkus.Core.Proto.PublishTransaction();
+            global::Phorkus.Proto.PublishTransaction subBuilder = new global::Phorkus.Proto.PublishTransaction();
             if (dataCase_ == DataOneofCase.Publish) {
               subBuilder.MergeFrom(Publish);
             }
@@ -1723,7 +1723,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 74: {
-            global::Phorkus.Core.Proto.RegisterTransaction subBuilder = new global::Phorkus.Core.Proto.RegisterTransaction();
+            global::Phorkus.Proto.RegisterTransaction subBuilder = new global::Phorkus.Proto.RegisterTransaction();
             if (dataCase_ == DataOneofCase.Register) {
               subBuilder.MergeFrom(Register);
             }
@@ -1732,7 +1732,7 @@ namespace Phorkus.Core.Proto {
             break;
           }
           case 82: {
-            global::Phorkus.Core.Proto.MinerTransaction subBuilder = new global::Phorkus.Core.Proto.MinerTransaction();
+            global::Phorkus.Proto.MinerTransaction subBuilder = new global::Phorkus.Proto.MinerTransaction();
             if (dataCase_ == DataOneofCase.Miner) {
               subBuilder.MergeFrom(Miner);
             }
@@ -1742,7 +1742,7 @@ namespace Phorkus.Core.Proto {
           }
           case 90: {
             if (signature_ == null) {
-              signature_ = new global::Phorkus.Core.Proto.Signature();
+              signature_ = new global::Phorkus.Proto.Signature();
             }
             input.ReadMessage(signature_);
             break;
@@ -1766,7 +1766,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.TransactionReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Phorkus.Proto.TransactionReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1795,9 +1795,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "transaction" field.</summary>
     public const int TransactionFieldNumber = 1;
-    private global::Phorkus.Core.Proto.Transaction transaction_;
+    private global::Phorkus.Proto.Transaction transaction_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Transaction Transaction {
+    public global::Phorkus.Proto.Transaction Transaction {
       get { return transaction_; }
       set {
         transaction_ = value;
@@ -1806,9 +1806,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt256 hash_;
+    private global::Phorkus.Proto.UInt256 hash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Hash {
+    public global::Phorkus.Proto.UInt256 Hash {
       get { return hash_; }
       set {
         hash_ = value;
@@ -1886,13 +1886,13 @@ namespace Phorkus.Core.Proto {
       }
       if (other.transaction_ != null) {
         if (transaction_ == null) {
-          transaction_ = new global::Phorkus.Core.Proto.Transaction();
+          transaction_ = new global::Phorkus.Proto.Transaction();
         }
         Transaction.MergeFrom(other.Transaction);
       }
       if (other.hash_ != null) {
         if (hash_ == null) {
-          hash_ = new global::Phorkus.Core.Proto.UInt256();
+          hash_ = new global::Phorkus.Proto.UInt256();
         }
         Hash.MergeFrom(other.Hash);
       }
@@ -1909,14 +1909,14 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (transaction_ == null) {
-              transaction_ = new global::Phorkus.Core.Proto.Transaction();
+              transaction_ = new global::Phorkus.Proto.Transaction();
             }
             input.ReadMessage(transaction_);
             break;
           }
           case 18: {
             if (hash_ == null) {
-              hash_ = new global::Phorkus.Core.Proto.UInt256();
+              hash_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(hash_);
             break;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain.Pool
 {

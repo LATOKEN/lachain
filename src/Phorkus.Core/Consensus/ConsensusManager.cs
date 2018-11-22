@@ -7,17 +7,17 @@ using System.Timers;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Org.BouncyCastle.Security;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
 using Phorkus.Core.Network;
-using Phorkus.Core.Network.Proto;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Utils;
 
-namespace Phorkus.Core.Blockchain.Consensus
+namespace Phorkus.Core.Consensus
 {
     using Timer = System.Timers.Timer;
 

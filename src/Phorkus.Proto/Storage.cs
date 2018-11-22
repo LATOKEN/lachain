@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from storage.proto</summary>
   public static partial class StorageReflection {
@@ -24,12 +24,12 @@ namespace Phorkus.Core.Proto {
     static StorageReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg1zdG9yYWdlLnByb3RvIhgKB1N0b3JhZ2USDQoFdmFsdWUYASABKAxCFaoC",
-            "ElBob3JrdXMuQ29yZS5Qcm90b2IGcHJvdG8z"));
+            "Cg1zdG9yYWdlLnByb3RvIhgKB1N0b3JhZ2USDQoFdmFsdWUYASABKAxCEKoC",
+            "DVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Storage), global::Phorkus.Core.Proto.Storage.Parser, new[]{ "Value" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Storage), global::Phorkus.Proto.Storage.Parser, new[]{ "Value" }, null, null, null)
           }));
     }
     #endregion
@@ -44,7 +44,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.StorageReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.StorageReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

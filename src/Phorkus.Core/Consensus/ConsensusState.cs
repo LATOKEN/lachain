@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phorkus.Core.Blockchain.Consensus
+namespace Phorkus.Core.Consensus
 {
     [Flags]
     public enum ConsensusState

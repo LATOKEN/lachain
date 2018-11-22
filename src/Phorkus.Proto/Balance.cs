@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from balance.proto</summary>
   public static partial class BalanceReflection {
@@ -26,12 +26,12 @@ namespace Phorkus.Core.Proto {
           string.Concat(
             "Cg1iYWxhbmNlLnByb3RvGg1kZWZhdWx0LnByb3RvIlcKB0JhbGFuY2USGQoH",
             "YWRkcmVzcxgBIAEoCzIILlVJbnQxNjASFwoFYXNzZXQYAiABKAsyCC5VSW50",
-            "MTYwEhgKBmFtb3VudBgDIAEoCzIILlVJbnQyNTZCFaoCElBob3JrdXMuQ29y",
-            "ZS5Qcm90b2IGcHJvdG8z"));
+            "MTYwEhgKBmFtb3VudBgDIAEoCzIILlVJbnQyNTZCEKoCDVBob3JrdXMuUHJv",
+            "dG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Balance), global::Phorkus.Core.Proto.Balance.Parser, new[]{ "Address", "Asset", "Amount" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Balance), global::Phorkus.Proto.Balance.Parser, new[]{ "Address", "Asset", "Amount" }, null, null, null)
           }));
     }
     #endregion
@@ -46,7 +46,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.BalanceReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.BalanceReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -76,9 +76,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "address" field.</summary>
     public const int AddressFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 address_;
+    private global::Phorkus.Proto.UInt160 address_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Address {
+    public global::Phorkus.Proto.UInt160 Address {
       get { return address_; }
       set {
         address_ = value;
@@ -87,9 +87,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "asset" field.</summary>
     public const int AssetFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt160 asset_;
+    private global::Phorkus.Proto.UInt160 asset_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Asset {
+    public global::Phorkus.Proto.UInt160 Asset {
       get { return asset_; }
       set {
         asset_ = value;
@@ -98,9 +98,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "amount" field.</summary>
     public const int AmountFieldNumber = 3;
-    private global::Phorkus.Core.Proto.UInt256 amount_;
+    private global::Phorkus.Proto.UInt256 amount_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Amount {
+    public global::Phorkus.Proto.UInt256 Amount {
       get { return amount_; }
       set {
         amount_ = value;
@@ -187,19 +187,19 @@ namespace Phorkus.Core.Proto {
       }
       if (other.address_ != null) {
         if (address_ == null) {
-          address_ = new global::Phorkus.Core.Proto.UInt160();
+          address_ = new global::Phorkus.Proto.UInt160();
         }
         Address.MergeFrom(other.Address);
       }
       if (other.asset_ != null) {
         if (asset_ == null) {
-          asset_ = new global::Phorkus.Core.Proto.UInt160();
+          asset_ = new global::Phorkus.Proto.UInt160();
         }
         Asset.MergeFrom(other.Asset);
       }
       if (other.amount_ != null) {
         if (amount_ == null) {
-          amount_ = new global::Phorkus.Core.Proto.UInt256();
+          amount_ = new global::Phorkus.Proto.UInt256();
         }
         Amount.MergeFrom(other.Amount);
       }
@@ -216,21 +216,21 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (address_ == null) {
-              address_ = new global::Phorkus.Core.Proto.UInt160();
+              address_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(address_);
             break;
           }
           case 18: {
             if (asset_ == null) {
-              asset_ = new global::Phorkus.Core.Proto.UInt160();
+              asset_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(asset_);
             break;
           }
           case 26: {
             if (amount_ == null) {
-              amount_ = new global::Phorkus.Core.Proto.UInt256();
+              amount_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(amount_);
             break;

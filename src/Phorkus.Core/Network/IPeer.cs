@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Network.Proto;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

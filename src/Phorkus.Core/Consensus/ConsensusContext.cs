@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Utils;
 
-namespace Phorkus.Core.Blockchain.Consensus
+namespace Phorkus.Core.Consensus
 {
     public class ConsensusContext
     {

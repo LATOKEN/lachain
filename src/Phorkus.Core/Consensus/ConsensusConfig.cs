@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Phorkus.Core.Blockchain.Consensus
+namespace Phorkus.Core.Consensus
 {
     public class ConsensusConfig
     {

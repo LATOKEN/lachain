@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

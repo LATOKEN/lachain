@@ -1,5 +1,5 @@
 using System;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain
 {

@@ -1,5 +1,5 @@
 ﻿using System;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Storage;
 
 namespace Phorkus.RocksDB.Repositories

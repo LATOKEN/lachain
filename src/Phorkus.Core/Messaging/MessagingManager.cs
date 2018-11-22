@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Phorkus.Core.Blockchain.Consensus;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.Messaging.Handlers;
 using Phorkus.Core.Network;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Messaging
 {

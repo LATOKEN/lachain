@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Phorkus.Core.Logging;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

@@ -4,7 +4,7 @@ using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Utils;
 
 namespace Phorkus.Benchmark

@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from block.proto</summary>
   public static partial class BlockReflection {
@@ -33,14 +33,14 @@ namespace Phorkus.Core.Proto {
             "FgoEaGFzaBgCIAEoCzIILlVJbnQyNTYSGwoIbXVsdGlzaWcYAyABKAsyCS5N",
             "dWx0aVNpZyJ4CgpCbG9ja1N0YXRlEicKBnN0YXR1cxgBIAEoDjIXLkJsb2Nr",
             "U3RhdGUuQmxvY2tTdGF0dXMiQQoLQmxvY2tTdGF0dXMSFgoSQkxPQ0tfU1RB",
-            "VFVTX1JFQURZEAASGgoWQkxPQ0tfU1RBVFVTX0NPTkZJUk1FRBABQhWqAhJQ",
-            "aG9ya3VzLkNvcmUuUHJvdG9iBnByb3RvMw=="));
+            "VFVTX1JFQURZEAASGgoWQkxPQ0tfU1RBVFVTX0NPTkZJUk1FRBABQhCqAg1Q",
+            "aG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, global::Phorkus.Core.Proto.MultisigReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.BlockHeader), global::Phorkus.Core.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Nonce", "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Block), global::Phorkus.Core.Proto.Block.Parser, new[]{ "Header", "Hash", "Multisig" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.BlockState), global::Phorkus.Core.Proto.BlockState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Core.Proto.BlockState.Types.BlockStatus) }, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Nonce", "TransactionHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "Multisig" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockState), global::Phorkus.Proto.BlockState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.BlockState.Types.BlockStatus) }, null)
           }));
     }
     #endregion
@@ -55,7 +55,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.BlockReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.BlockReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -100,9 +100,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "prev_block_hash" field.</summary>
     public const int PrevBlockHashFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt256 prevBlockHash_;
+    private global::Phorkus.Proto.UInt256 prevBlockHash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 PrevBlockHash {
+    public global::Phorkus.Proto.UInt256 PrevBlockHash {
       get { return prevBlockHash_; }
       set {
         prevBlockHash_ = value;
@@ -111,9 +111,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "merkle_root" field.</summary>
     public const int MerkleRootFieldNumber = 3;
-    private global::Phorkus.Core.Proto.UInt256 merkleRoot_;
+    private global::Phorkus.Proto.UInt256 merkleRoot_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 MerkleRoot {
+    public global::Phorkus.Proto.UInt256 MerkleRoot {
       get { return merkleRoot_; }
       set {
         merkleRoot_ = value;
@@ -155,11 +155,11 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "transaction_hashes" field.</summary>
     public const int TransactionHashesFieldNumber = 7;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.UInt256> _repeated_transactionHashes_codec
-        = pb::FieldCodec.ForMessage(58, global::Phorkus.Core.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_transactionHashes_codec
+        = pb::FieldCodec.ForMessage(58, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> TransactionHashes {
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> TransactionHashes {
       get { return transactionHashes_; }
     }
 
@@ -277,13 +277,13 @@ namespace Phorkus.Core.Proto {
       }
       if (other.prevBlockHash_ != null) {
         if (prevBlockHash_ == null) {
-          prevBlockHash_ = new global::Phorkus.Core.Proto.UInt256();
+          prevBlockHash_ = new global::Phorkus.Proto.UInt256();
         }
         PrevBlockHash.MergeFrom(other.PrevBlockHash);
       }
       if (other.merkleRoot_ != null) {
         if (merkleRoot_ == null) {
-          merkleRoot_ = new global::Phorkus.Core.Proto.UInt256();
+          merkleRoot_ = new global::Phorkus.Proto.UInt256();
         }
         MerkleRoot.MergeFrom(other.MerkleRoot);
       }
@@ -314,14 +314,14 @@ namespace Phorkus.Core.Proto {
           }
           case 18: {
             if (prevBlockHash_ == null) {
-              prevBlockHash_ = new global::Phorkus.Core.Proto.UInt256();
+              prevBlockHash_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(prevBlockHash_);
             break;
           }
           case 26: {
             if (merkleRoot_ == null) {
-              merkleRoot_ = new global::Phorkus.Core.Proto.UInt256();
+              merkleRoot_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(merkleRoot_);
             break;
@@ -356,7 +356,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.BlockReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Phorkus.Proto.BlockReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -386,9 +386,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "header" field.</summary>
     public const int HeaderFieldNumber = 1;
-    private global::Phorkus.Core.Proto.BlockHeader header_;
+    private global::Phorkus.Proto.BlockHeader header_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.BlockHeader Header {
+    public global::Phorkus.Proto.BlockHeader Header {
       get { return header_; }
       set {
         header_ = value;
@@ -397,9 +397,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 2;
-    private global::Phorkus.Core.Proto.UInt256 hash_;
+    private global::Phorkus.Proto.UInt256 hash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt256 Hash {
+    public global::Phorkus.Proto.UInt256 Hash {
       get { return hash_; }
       set {
         hash_ = value;
@@ -408,9 +408,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "multisig" field.</summary>
     public const int MultisigFieldNumber = 3;
-    private global::Phorkus.Core.Proto.MultiSig multisig_;
+    private global::Phorkus.Proto.MultiSig multisig_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.MultiSig Multisig {
+    public global::Phorkus.Proto.MultiSig Multisig {
       get { return multisig_; }
       set {
         multisig_ = value;
@@ -497,19 +497,19 @@ namespace Phorkus.Core.Proto {
       }
       if (other.header_ != null) {
         if (header_ == null) {
-          header_ = new global::Phorkus.Core.Proto.BlockHeader();
+          header_ = new global::Phorkus.Proto.BlockHeader();
         }
         Header.MergeFrom(other.Header);
       }
       if (other.hash_ != null) {
         if (hash_ == null) {
-          hash_ = new global::Phorkus.Core.Proto.UInt256();
+          hash_ = new global::Phorkus.Proto.UInt256();
         }
         Hash.MergeFrom(other.Hash);
       }
       if (other.multisig_ != null) {
         if (multisig_ == null) {
-          multisig_ = new global::Phorkus.Core.Proto.MultiSig();
+          multisig_ = new global::Phorkus.Proto.MultiSig();
         }
         Multisig.MergeFrom(other.Multisig);
       }
@@ -526,21 +526,21 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (header_ == null) {
-              header_ = new global::Phorkus.Core.Proto.BlockHeader();
+              header_ = new global::Phorkus.Proto.BlockHeader();
             }
             input.ReadMessage(header_);
             break;
           }
           case 18: {
             if (hash_ == null) {
-              hash_ = new global::Phorkus.Core.Proto.UInt256();
+              hash_ = new global::Phorkus.Proto.UInt256();
             }
             input.ReadMessage(hash_);
             break;
           }
           case 26: {
             if (multisig_ == null) {
-              multisig_ = new global::Phorkus.Core.Proto.MultiSig();
+              multisig_ = new global::Phorkus.Proto.MultiSig();
             }
             input.ReadMessage(multisig_);
             break;
@@ -559,7 +559,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.BlockReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.BlockReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -587,9 +587,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "status" field.</summary>
     public const int StatusFieldNumber = 1;
-    private global::Phorkus.Core.Proto.BlockState.Types.BlockStatus status_ = 0;
+    private global::Phorkus.Proto.BlockState.Types.BlockStatus status_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.BlockState.Types.BlockStatus Status {
+    public global::Phorkus.Proto.BlockState.Types.BlockStatus Status {
       get { return status_; }
       set {
         status_ = value;
@@ -671,7 +671,7 @@ namespace Phorkus.Core.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            status_ = (global::Phorkus.Core.Proto.BlockState.Types.BlockStatus) input.ReadEnum();
+            status_ = (global::Phorkus.Proto.BlockState.Types.BlockStatus) input.ReadEnum();
             break;
           }
         }

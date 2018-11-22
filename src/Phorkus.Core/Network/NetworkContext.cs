@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using Phorkus.Core.Config;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

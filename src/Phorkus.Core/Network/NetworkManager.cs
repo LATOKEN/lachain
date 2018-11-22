@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Phorkus.Core.Config;
 using Phorkus.Core.Logging;
 using Phorkus.Core.Messaging;
-using Phorkus.Core.Network.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Network.Tcp;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {

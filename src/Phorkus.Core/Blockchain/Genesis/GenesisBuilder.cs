@@ -3,7 +3,7 @@ using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Cryptography;
-using Phorkus.Core.Proto;
+using Phorkus.Proto;
 using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain.Genesis

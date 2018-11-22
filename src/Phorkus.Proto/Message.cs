@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Network.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from message.proto</summary>
   public static partial class MessageReflection {
@@ -62,24 +62,24 @@ namespace Phorkus.Core.Network.Proto {
             "TUVTU0FHRV9UWVBFX0dFVF9NRU1QT09MEAkSHAoYTUVTU0FHRV9UWVBFX01F",
             "TVBPT0xfR09UEAoSHwobTUVTU0FHRV9UWVBFX0dFVF9ORUlHSEJPVVJTEAsS",
             "HwobTUVTU0FHRV9UWVBFX05FSUdIQk9VUlNfR09UEAwSIgoeTUVTU0FHRV9U",
-            "WVBFX0NPTlNFTlNVU19NRVNTQUdFEA1CHaoCGlBob3JrdXMuQ29yZS5OZXR3",
-            "b3JrLlByb3RvYgZwcm90bzM="));
+            "WVBFX0NPTlNFTlNVU19NRVNTQUdFEA1CEKoCDVBob3JrdXMuUHJvdG9iBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, global::Phorkus.Core.Proto.TransactionReflection.Descriptor, global::Phorkus.Core.Proto.BlockReflection.Descriptor, global::Phorkus.Core.Proto.ConsensusReflection.Descriptor, global::Phorkus.Core.Proto.NodeReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Network.Proto.MessageType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.HandshakeRequestMessage), global::Phorkus.Core.Network.Proto.HandshakeRequestMessage.Parser, new[]{ "Node" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.HandshakeResponseMessage), global::Phorkus.Core.Network.Proto.HandshakeResponseMessage.Parser, new[]{ "Node" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage), global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage), global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage.Parser, new[]{ "BlockHeaders" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.GetBlocksMessage), global::Phorkus.Core.Network.Proto.GetBlocksMessage.Parser, new[]{ "BlockHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.BlocksGotMessage), global::Phorkus.Core.Network.Proto.BlocksGotMessage.Parser, new[]{ "Blocks" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.GetTransactionsMessage), global::Phorkus.Core.Network.Proto.GetTransactionsMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.TransactionsGotMessage), global::Phorkus.Core.Network.Proto.TransactionsGotMessage.Parser, new[]{ "Transactions" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.GetMempoolMessage), global::Phorkus.Core.Network.Proto.GetMempoolMessage.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.MempoolGotMessage), global::Phorkus.Core.Network.Proto.MempoolGotMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.GetNeighboursMessage), global::Phorkus.Core.Network.Proto.GetNeighboursMessage.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.NeighboursGotMessage), global::Phorkus.Core.Network.Proto.NeighboursGotMessage.Parser, new[]{ "Neighbours" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Network.Proto.Message), global::Phorkus.Core.Network.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlockHeaders", "BlockHeadersGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot", "ConsensusMessage" }, new[]{ "Body" }, null, null)
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.MessageType), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeRequestMessage), global::Phorkus.Proto.HandshakeRequestMessage.Parser, new[]{ "Node" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeResponseMessage), global::Phorkus.Proto.HandshakeResponseMessage.Parser, new[]{ "Node" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlockHeadersMessage), global::Phorkus.Proto.GetBlockHeadersMessage.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeadersGotMessage), global::Phorkus.Proto.BlockHeadersGotMessage.Parser, new[]{ "BlockHeaders" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksMessage), global::Phorkus.Proto.GetBlocksMessage.Parser, new[]{ "BlockHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlocksGotMessage), global::Phorkus.Proto.BlocksGotMessage.Parser, new[]{ "Blocks" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsMessage), global::Phorkus.Proto.GetTransactionsMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionsGotMessage), global::Phorkus.Proto.TransactionsGotMessage.Parser, new[]{ "Transactions" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetMempoolMessage), global::Phorkus.Proto.GetMempoolMessage.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MempoolGotMessage), global::Phorkus.Proto.MempoolGotMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetNeighboursMessage), global::Phorkus.Proto.GetNeighboursMessage.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NeighboursGotMessage), global::Phorkus.Proto.NeighboursGotMessage.Parser, new[]{ "Neighbours" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Message), global::Phorkus.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlockHeaders", "BlockHeadersGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot", "ConsensusMessage" }, new[]{ "Body" }, null, null)
           }));
     }
     #endregion
@@ -138,7 +138,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -166,9 +166,9 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "node" field.</summary>
     public const int NodeFieldNumber = 1;
-    private global::Phorkus.Core.Proto.Node node_;
+    private global::Phorkus.Proto.Node node_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Node Node {
+    public global::Phorkus.Proto.Node Node {
       get { return node_; }
       set {
         node_ = value;
@@ -237,7 +237,7 @@ namespace Phorkus.Core.Network.Proto {
       }
       if (other.node_ != null) {
         if (node_ == null) {
-          node_ = new global::Phorkus.Core.Proto.Node();
+          node_ = new global::Phorkus.Proto.Node();
         }
         Node.MergeFrom(other.Node);
       }
@@ -254,7 +254,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           case 10: {
             if (node_ == null) {
-              node_ = new global::Phorkus.Core.Proto.Node();
+              node_ = new global::Phorkus.Proto.Node();
             }
             input.ReadMessage(node_);
             break;
@@ -273,7 +273,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -301,9 +301,9 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "node" field.</summary>
     public const int NodeFieldNumber = 1;
-    private global::Phorkus.Core.Proto.Node node_;
+    private global::Phorkus.Proto.Node node_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.Node Node {
+    public global::Phorkus.Proto.Node Node {
       get { return node_; }
       set {
         node_ = value;
@@ -372,7 +372,7 @@ namespace Phorkus.Core.Network.Proto {
       }
       if (other.node_ != null) {
         if (node_ == null) {
-          node_ = new global::Phorkus.Core.Proto.Node();
+          node_ = new global::Phorkus.Proto.Node();
         }
         Node.MergeFrom(other.Node);
       }
@@ -389,7 +389,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           case 10: {
             if (node_ == null) {
-              node_ = new global::Phorkus.Core.Proto.Node();
+              node_ = new global::Phorkus.Proto.Node();
             }
             input.ReadMessage(node_);
             break;
@@ -408,7 +408,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -509,7 +509,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -537,11 +537,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "block_headers" field.</summary>
     public const int BlockHeadersFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.UInt256> _repeated_blockHeaders_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> blockHeaders_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_blockHeaders_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> blockHeaders_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> BlockHeaders {
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> BlockHeaders {
       get { return blockHeaders_; }
     }
 
@@ -630,7 +630,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -658,11 +658,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "block_hashes" field.</summary>
     public const int BlockHashesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.UInt256> _repeated_blockHashes_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> blockHashes_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_blockHashes_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> blockHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> BlockHashes {
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> BlockHashes {
       get { return blockHashes_; }
     }
 
@@ -751,7 +751,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -779,11 +779,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "blocks" field.</summary>
     public const int BlocksFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.Block> _repeated_blocks_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.Block.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.Block> blocks_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.Block>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.Block> _repeated_blocks_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.Block.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.Block> blocks_ = new pbc::RepeatedField<global::Phorkus.Proto.Block>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.Block> Blocks {
+    public pbc::RepeatedField<global::Phorkus.Proto.Block> Blocks {
       get { return blocks_; }
     }
 
@@ -872,7 +872,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -900,11 +900,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "transaction_hashes" field.</summary>
     public const int TransactionHashesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.UInt256> _repeated_transactionHashes_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_transactionHashes_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> TransactionHashes {
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> TransactionHashes {
       get { return transactionHashes_; }
     }
 
@@ -993,7 +993,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1021,11 +1021,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "transactions" field.</summary>
     public const int TransactionsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.Transaction> _repeated_transactions_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.Transaction.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.Transaction> transactions_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.Transaction>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.Transaction> _repeated_transactions_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.Transaction.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.Transaction> transactions_ = new pbc::RepeatedField<global::Phorkus.Proto.Transaction>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.Transaction> Transactions {
+    public pbc::RepeatedField<global::Phorkus.Proto.Transaction> Transactions {
       get { return transactions_; }
     }
 
@@ -1114,7 +1114,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1215,7 +1215,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1243,11 +1243,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "transaction_hashes" field.</summary>
     public const int TransactionHashesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.UInt256> _repeated_transactionHashes_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_transactionHashes_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.UInt256> TransactionHashes {
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> TransactionHashes {
       get { return transactionHashes_; }
     }
 
@@ -1336,7 +1336,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1437,7 +1437,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1465,11 +1465,11 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "neighbours" field.</summary>
     public const int NeighboursFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Core.Proto.Node> _repeated_neighbours_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Core.Proto.Node.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Core.Proto.Node> neighbours_ = new pbc::RepeatedField<global::Phorkus.Core.Proto.Node>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.Node> _repeated_neighbours_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.Node.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.Node> neighbours_ = new pbc::RepeatedField<global::Phorkus.Proto.Node>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Core.Proto.Node> Neighbours {
+    public pbc::RepeatedField<global::Phorkus.Proto.Node> Neighbours {
       get { return neighbours_; }
     }
 
@@ -1558,7 +1558,7 @@ namespace Phorkus.Core.Network.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Network.Proto.MessageReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1622,9 +1622,9 @@ namespace Phorkus.Core.Network.Proto {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 1;
-    private global::Phorkus.Core.Network.Proto.MessageType type_ = 0;
+    private global::Phorkus.Proto.MessageType type_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.MessageType Type {
+    public global::Phorkus.Proto.MessageType Type {
       get { return type_; }
       set {
         type_ = value;
@@ -1634,8 +1634,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "handshake_request" field.</summary>
     public const int HandshakeRequestFieldNumber = 10;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.HandshakeRequestMessage HandshakeRequest {
-      get { return bodyCase_ == BodyOneofCase.HandshakeRequest ? (global::Phorkus.Core.Network.Proto.HandshakeRequestMessage) body_ : null; }
+    public global::Phorkus.Proto.HandshakeRequestMessage HandshakeRequest {
+      get { return bodyCase_ == BodyOneofCase.HandshakeRequest ? (global::Phorkus.Proto.HandshakeRequestMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.HandshakeRequest;
@@ -1645,8 +1645,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "handshake_response" field.</summary>
     public const int HandshakeResponseFieldNumber = 11;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.HandshakeResponseMessage HandshakeResponse {
-      get { return bodyCase_ == BodyOneofCase.HandshakeResponse ? (global::Phorkus.Core.Network.Proto.HandshakeResponseMessage) body_ : null; }
+    public global::Phorkus.Proto.HandshakeResponseMessage HandshakeResponse {
+      get { return bodyCase_ == BodyOneofCase.HandshakeResponse ? (global::Phorkus.Proto.HandshakeResponseMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.HandshakeResponse;
@@ -1656,8 +1656,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "get_block_headers" field.</summary>
     public const int GetBlockHeadersFieldNumber = 12;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage GetBlockHeaders {
-      get { return bodyCase_ == BodyOneofCase.GetBlockHeaders ? (global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage) body_ : null; }
+    public global::Phorkus.Proto.GetBlockHeadersMessage GetBlockHeaders {
+      get { return bodyCase_ == BodyOneofCase.GetBlockHeaders ? (global::Phorkus.Proto.GetBlockHeadersMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetBlockHeaders;
@@ -1667,8 +1667,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "block_headers_got" field.</summary>
     public const int BlockHeadersGotFieldNumber = 13;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage BlockHeadersGot {
-      get { return bodyCase_ == BodyOneofCase.BlockHeadersGot ? (global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage) body_ : null; }
+    public global::Phorkus.Proto.BlockHeadersGotMessage BlockHeadersGot {
+      get { return bodyCase_ == BodyOneofCase.BlockHeadersGot ? (global::Phorkus.Proto.BlockHeadersGotMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.BlockHeadersGot;
@@ -1678,8 +1678,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "get_mempool" field.</summary>
     public const int GetMempoolFieldNumber = 14;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.GetMempoolMessage GetMempool {
-      get { return bodyCase_ == BodyOneofCase.GetMempool ? (global::Phorkus.Core.Network.Proto.GetMempoolMessage) body_ : null; }
+    public global::Phorkus.Proto.GetMempoolMessage GetMempool {
+      get { return bodyCase_ == BodyOneofCase.GetMempool ? (global::Phorkus.Proto.GetMempoolMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetMempool;
@@ -1689,8 +1689,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "mempool_got" field.</summary>
     public const int MempoolGotFieldNumber = 15;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.MempoolGotMessage MempoolGot {
-      get { return bodyCase_ == BodyOneofCase.MempoolGot ? (global::Phorkus.Core.Network.Proto.MempoolGotMessage) body_ : null; }
+    public global::Phorkus.Proto.MempoolGotMessage MempoolGot {
+      get { return bodyCase_ == BodyOneofCase.MempoolGot ? (global::Phorkus.Proto.MempoolGotMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.MempoolGot;
@@ -1700,8 +1700,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "get_transactions" field.</summary>
     public const int GetTransactionsFieldNumber = 16;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.GetTransactionsMessage GetTransactions {
-      get { return bodyCase_ == BodyOneofCase.GetTransactions ? (global::Phorkus.Core.Network.Proto.GetTransactionsMessage) body_ : null; }
+    public global::Phorkus.Proto.GetTransactionsMessage GetTransactions {
+      get { return bodyCase_ == BodyOneofCase.GetTransactions ? (global::Phorkus.Proto.GetTransactionsMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetTransactions;
@@ -1711,8 +1711,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "transactions_got" field.</summary>
     public const int TransactionsGotFieldNumber = 17;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.TransactionsGotMessage TransactionsGot {
-      get { return bodyCase_ == BodyOneofCase.TransactionsGot ? (global::Phorkus.Core.Network.Proto.TransactionsGotMessage) body_ : null; }
+    public global::Phorkus.Proto.TransactionsGotMessage TransactionsGot {
+      get { return bodyCase_ == BodyOneofCase.TransactionsGot ? (global::Phorkus.Proto.TransactionsGotMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.TransactionsGot;
@@ -1722,8 +1722,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "get_neighbours" field.</summary>
     public const int GetNeighboursFieldNumber = 18;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.GetNeighboursMessage GetNeighbours {
-      get { return bodyCase_ == BodyOneofCase.GetNeighbours ? (global::Phorkus.Core.Network.Proto.GetNeighboursMessage) body_ : null; }
+    public global::Phorkus.Proto.GetNeighboursMessage GetNeighbours {
+      get { return bodyCase_ == BodyOneofCase.GetNeighbours ? (global::Phorkus.Proto.GetNeighboursMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetNeighbours;
@@ -1733,8 +1733,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "neighbours_got" field.</summary>
     public const int NeighboursGotFieldNumber = 19;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Network.Proto.NeighboursGotMessage NeighboursGot {
-      get { return bodyCase_ == BodyOneofCase.NeighboursGot ? (global::Phorkus.Core.Network.Proto.NeighboursGotMessage) body_ : null; }
+    public global::Phorkus.Proto.NeighboursGotMessage NeighboursGot {
+      get { return bodyCase_ == BodyOneofCase.NeighboursGot ? (global::Phorkus.Proto.NeighboursGotMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.NeighboursGot;
@@ -1744,8 +1744,8 @@ namespace Phorkus.Core.Network.Proto {
     /// <summary>Field number for the "consensus_message" field.</summary>
     public const int ConsensusMessageFieldNumber = 20;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.ConsensusMessage ConsensusMessage {
-      get { return bodyCase_ == BodyOneofCase.ConsensusMessage ? (global::Phorkus.Core.Proto.ConsensusMessage) body_ : null; }
+    public global::Phorkus.Proto.ConsensusMessage ConsensusMessage {
+      get { return bodyCase_ == BodyOneofCase.ConsensusMessage ? (global::Phorkus.Proto.ConsensusMessage) body_ : null; }
       set {
         body_ = value;
         bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.ConsensusMessage;
@@ -1947,67 +1947,67 @@ namespace Phorkus.Core.Network.Proto {
       switch (other.BodyCase) {
         case BodyOneofCase.HandshakeRequest:
           if (HandshakeRequest == null) {
-            HandshakeRequest = new global::Phorkus.Core.Network.Proto.HandshakeRequestMessage();
+            HandshakeRequest = new global::Phorkus.Proto.HandshakeRequestMessage();
           }
           HandshakeRequest.MergeFrom(other.HandshakeRequest);
           break;
         case BodyOneofCase.HandshakeResponse:
           if (HandshakeResponse == null) {
-            HandshakeResponse = new global::Phorkus.Core.Network.Proto.HandshakeResponseMessage();
+            HandshakeResponse = new global::Phorkus.Proto.HandshakeResponseMessage();
           }
           HandshakeResponse.MergeFrom(other.HandshakeResponse);
           break;
         case BodyOneofCase.GetBlockHeaders:
           if (GetBlockHeaders == null) {
-            GetBlockHeaders = new global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage();
+            GetBlockHeaders = new global::Phorkus.Proto.GetBlockHeadersMessage();
           }
           GetBlockHeaders.MergeFrom(other.GetBlockHeaders);
           break;
         case BodyOneofCase.BlockHeadersGot:
           if (BlockHeadersGot == null) {
-            BlockHeadersGot = new global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage();
+            BlockHeadersGot = new global::Phorkus.Proto.BlockHeadersGotMessage();
           }
           BlockHeadersGot.MergeFrom(other.BlockHeadersGot);
           break;
         case BodyOneofCase.GetMempool:
           if (GetMempool == null) {
-            GetMempool = new global::Phorkus.Core.Network.Proto.GetMempoolMessage();
+            GetMempool = new global::Phorkus.Proto.GetMempoolMessage();
           }
           GetMempool.MergeFrom(other.GetMempool);
           break;
         case BodyOneofCase.MempoolGot:
           if (MempoolGot == null) {
-            MempoolGot = new global::Phorkus.Core.Network.Proto.MempoolGotMessage();
+            MempoolGot = new global::Phorkus.Proto.MempoolGotMessage();
           }
           MempoolGot.MergeFrom(other.MempoolGot);
           break;
         case BodyOneofCase.GetTransactions:
           if (GetTransactions == null) {
-            GetTransactions = new global::Phorkus.Core.Network.Proto.GetTransactionsMessage();
+            GetTransactions = new global::Phorkus.Proto.GetTransactionsMessage();
           }
           GetTransactions.MergeFrom(other.GetTransactions);
           break;
         case BodyOneofCase.TransactionsGot:
           if (TransactionsGot == null) {
-            TransactionsGot = new global::Phorkus.Core.Network.Proto.TransactionsGotMessage();
+            TransactionsGot = new global::Phorkus.Proto.TransactionsGotMessage();
           }
           TransactionsGot.MergeFrom(other.TransactionsGot);
           break;
         case BodyOneofCase.GetNeighbours:
           if (GetNeighbours == null) {
-            GetNeighbours = new global::Phorkus.Core.Network.Proto.GetNeighboursMessage();
+            GetNeighbours = new global::Phorkus.Proto.GetNeighboursMessage();
           }
           GetNeighbours.MergeFrom(other.GetNeighbours);
           break;
         case BodyOneofCase.NeighboursGot:
           if (NeighboursGot == null) {
-            NeighboursGot = new global::Phorkus.Core.Network.Proto.NeighboursGotMessage();
+            NeighboursGot = new global::Phorkus.Proto.NeighboursGotMessage();
           }
           NeighboursGot.MergeFrom(other.NeighboursGot);
           break;
         case BodyOneofCase.ConsensusMessage:
           if (ConsensusMessage == null) {
-            ConsensusMessage = new global::Phorkus.Core.Proto.ConsensusMessage();
+            ConsensusMessage = new global::Phorkus.Proto.ConsensusMessage();
           }
           ConsensusMessage.MergeFrom(other.ConsensusMessage);
           break;
@@ -2025,11 +2025,11 @@ namespace Phorkus.Core.Network.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            type_ = (global::Phorkus.Core.Network.Proto.MessageType) input.ReadEnum();
+            type_ = (global::Phorkus.Proto.MessageType) input.ReadEnum();
             break;
           }
           case 82: {
-            global::Phorkus.Core.Network.Proto.HandshakeRequestMessage subBuilder = new global::Phorkus.Core.Network.Proto.HandshakeRequestMessage();
+            global::Phorkus.Proto.HandshakeRequestMessage subBuilder = new global::Phorkus.Proto.HandshakeRequestMessage();
             if (bodyCase_ == BodyOneofCase.HandshakeRequest) {
               subBuilder.MergeFrom(HandshakeRequest);
             }
@@ -2038,7 +2038,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 90: {
-            global::Phorkus.Core.Network.Proto.HandshakeResponseMessage subBuilder = new global::Phorkus.Core.Network.Proto.HandshakeResponseMessage();
+            global::Phorkus.Proto.HandshakeResponseMessage subBuilder = new global::Phorkus.Proto.HandshakeResponseMessage();
             if (bodyCase_ == BodyOneofCase.HandshakeResponse) {
               subBuilder.MergeFrom(HandshakeResponse);
             }
@@ -2047,7 +2047,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 98: {
-            global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage subBuilder = new global::Phorkus.Core.Network.Proto.GetBlockHeadersMessage();
+            global::Phorkus.Proto.GetBlockHeadersMessage subBuilder = new global::Phorkus.Proto.GetBlockHeadersMessage();
             if (bodyCase_ == BodyOneofCase.GetBlockHeaders) {
               subBuilder.MergeFrom(GetBlockHeaders);
             }
@@ -2056,7 +2056,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 106: {
-            global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage subBuilder = new global::Phorkus.Core.Network.Proto.BlockHeadersGotMessage();
+            global::Phorkus.Proto.BlockHeadersGotMessage subBuilder = new global::Phorkus.Proto.BlockHeadersGotMessage();
             if (bodyCase_ == BodyOneofCase.BlockHeadersGot) {
               subBuilder.MergeFrom(BlockHeadersGot);
             }
@@ -2065,7 +2065,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 114: {
-            global::Phorkus.Core.Network.Proto.GetMempoolMessage subBuilder = new global::Phorkus.Core.Network.Proto.GetMempoolMessage();
+            global::Phorkus.Proto.GetMempoolMessage subBuilder = new global::Phorkus.Proto.GetMempoolMessage();
             if (bodyCase_ == BodyOneofCase.GetMempool) {
               subBuilder.MergeFrom(GetMempool);
             }
@@ -2074,7 +2074,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 122: {
-            global::Phorkus.Core.Network.Proto.MempoolGotMessage subBuilder = new global::Phorkus.Core.Network.Proto.MempoolGotMessage();
+            global::Phorkus.Proto.MempoolGotMessage subBuilder = new global::Phorkus.Proto.MempoolGotMessage();
             if (bodyCase_ == BodyOneofCase.MempoolGot) {
               subBuilder.MergeFrom(MempoolGot);
             }
@@ -2083,7 +2083,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 130: {
-            global::Phorkus.Core.Network.Proto.GetTransactionsMessage subBuilder = new global::Phorkus.Core.Network.Proto.GetTransactionsMessage();
+            global::Phorkus.Proto.GetTransactionsMessage subBuilder = new global::Phorkus.Proto.GetTransactionsMessage();
             if (bodyCase_ == BodyOneofCase.GetTransactions) {
               subBuilder.MergeFrom(GetTransactions);
             }
@@ -2092,7 +2092,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 138: {
-            global::Phorkus.Core.Network.Proto.TransactionsGotMessage subBuilder = new global::Phorkus.Core.Network.Proto.TransactionsGotMessage();
+            global::Phorkus.Proto.TransactionsGotMessage subBuilder = new global::Phorkus.Proto.TransactionsGotMessage();
             if (bodyCase_ == BodyOneofCase.TransactionsGot) {
               subBuilder.MergeFrom(TransactionsGot);
             }
@@ -2101,7 +2101,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 146: {
-            global::Phorkus.Core.Network.Proto.GetNeighboursMessage subBuilder = new global::Phorkus.Core.Network.Proto.GetNeighboursMessage();
+            global::Phorkus.Proto.GetNeighboursMessage subBuilder = new global::Phorkus.Proto.GetNeighboursMessage();
             if (bodyCase_ == BodyOneofCase.GetNeighbours) {
               subBuilder.MergeFrom(GetNeighbours);
             }
@@ -2110,7 +2110,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 154: {
-            global::Phorkus.Core.Network.Proto.NeighboursGotMessage subBuilder = new global::Phorkus.Core.Network.Proto.NeighboursGotMessage();
+            global::Phorkus.Proto.NeighboursGotMessage subBuilder = new global::Phorkus.Proto.NeighboursGotMessage();
             if (bodyCase_ == BodyOneofCase.NeighboursGot) {
               subBuilder.MergeFrom(NeighboursGot);
             }
@@ -2119,7 +2119,7 @@ namespace Phorkus.Core.Network.Proto {
             break;
           }
           case 162: {
-            global::Phorkus.Core.Proto.ConsensusMessage subBuilder = new global::Phorkus.Core.Proto.ConsensusMessage();
+            global::Phorkus.Proto.ConsensusMessage subBuilder = new global::Phorkus.Proto.ConsensusMessage();
             if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
               subBuilder.MergeFrom(ConsensusMessage);
             }

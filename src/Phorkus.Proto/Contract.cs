@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Core.Proto {
+namespace Phorkus.Proto {
 
   /// <summary>Holder for reflection information generated from contract.proto</summary>
   public static partial class ContractReflection {
@@ -32,11 +32,11 @@ namespace Phorkus.Core.Proto {
             "UkFNX1RZUEVfQllURV9BUlJBWRAFEhkKFVBBUkFNX1RZUEVfUFVCTElDX0tF",
             "WRAGEhUKEVBBUkFNX1RZUEVfU1RSSU5HEAcSFAoQUEFSQU1fVFlQRV9BUlJB",
             "WRAIEiAKHFBBUkFNX1RZUEVfSU5URVJPUF9JTlRFUkZBQ0UQCRITCg9QQVJB",
-            "TV9UWVBFX1ZPSUQQCkIVqgISUGhvcmt1cy5Db3JlLlByb3RvYgZwcm90bzM="));
+            "TV9UWVBFX1ZPSUQQCkIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Core.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Core.Proto.ParamType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Core.Proto.Contract), global::Phorkus.Core.Proto.Contract.Parser, new[]{ "Hash", "Script" }, null, null, null)
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ParamType), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Script" }, null, null, null)
           }));
     }
     #endregion
@@ -68,7 +68,7 @@ namespace Phorkus.Core.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Core.Proto.ContractReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -97,9 +97,9 @@ namespace Phorkus.Core.Proto {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 1;
-    private global::Phorkus.Core.Proto.UInt160 hash_;
+    private global::Phorkus.Proto.UInt160 hash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Core.Proto.UInt160 Hash {
+    public global::Phorkus.Proto.UInt160 Hash {
       get { return hash_; }
       set {
         hash_ = value;
@@ -188,7 +188,7 @@ namespace Phorkus.Core.Proto {
       }
       if (other.hash_ != null) {
         if (hash_ == null) {
-          hash_ = new global::Phorkus.Core.Proto.UInt160();
+          hash_ = new global::Phorkus.Proto.UInt160();
         }
         Hash.MergeFrom(other.Hash);
       }
@@ -208,7 +208,7 @@ namespace Phorkus.Core.Proto {
             break;
           case 10: {
             if (hash_ == null) {
-              hash_ = new global::Phorkus.Core.Proto.UInt160();
+              hash_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(hash_);
             break;
