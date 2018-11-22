@@ -62,11 +62,11 @@ namespace Phorkus.Core.Network
         private void _CheckRatePolicy(IPeer peer, uint messageCount)
         {
             var currentTime = TimeUtils.CurrentTimeMillis();
-            var lastTime = _lastMessage[peer];
+            var lastTime = _lastMessage.GetOrAdd(peer, currentTime);
             if (lastTime == 0)
                 lastTime = currentTime;
             var deltaTime = currentTime - lastTime;
-            var messages = _messageCount[peer] + messageCount;
+            var messages = _messageCount.GetOrAdd(peer, 0) + messageCount;
             /* try to check rate limit every second */
             if (deltaTime > 1000 && 60 * 1000 * messages / deltaTime > peer.RateLimit)
                 OnRateLimited?.Invoke(this, peer);

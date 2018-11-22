@@ -30,29 +30,24 @@ namespace Phorkus.Proto {
             "ZRgBIAEoBBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyCC5VSW50MjU2",
             "EicKEW1pbmVyX3RyYW5zYWN0aW9uGAMgASgLMgwuVHJhbnNhY3Rpb24SHQoJ",
             "c2lnbmF0dXJlGAQgASgLMgouU2lnbmF0dXJlIjkKGENvbnNlbnN1c1ByZXBh",
-            "cmVSZXNwb25zZRIdCglzaWduYXR1cmUYASABKAsyCi5TaWduYXR1cmUiigQK",
+            "cmVSZXNwb25zZRIdCglzaWduYXR1cmUYASABKAsyCi5TaWduYXR1cmUiugIK",
             "EENvbnNlbnN1c1BheWxvYWQSDwoHdmVyc2lvbhgBIAEoDRIbCglwcmV2X2hh",
             "c2gYAiABKAsyCC5VSW50MjU2EhMKC2Jsb2NrX2luZGV4GAMgASgEEhcKD3Zh",
             "bGlkYXRvcl9pbmRleBgEIAEoDRIRCgl0aW1lc3RhbXAYBSABKAQSEwoLdmll",
-            "d19udW1iZXIYBiABKA0SNAoEdHlwZRgHIAEoDjImLkNvbnNlbnN1c1BheWxv",
-            "YWQuQ29uc2Vuc3VzUGF5bG9hZFR5cGUSKwoLY2hhbmdlX3ZpZXcYCCABKAsy",
-            "FC5Db25zZW5zdXNDaGFuZ2VWaWV3SAASMwoPcHJlcGFyZV9yZXF1ZXN0GAkg",
-            "ASgLMhguQ29uc2Vuc3VzUHJlcGFyZVJlcXVlc3RIABI1ChBwcmVwYXJlX3Jl",
-            "c3BvbnNlGAogASgLMhkuQ29uc2Vuc3VzUHJlcGFyZVJlc3BvbnNlSAAilwEK",
-            "FENvbnNlbnN1c1BheWxvYWRUeXBlEiYKIkNPTlNFTlNVU19QQVlMT0FEX1RZ",
-            "UEVfQ0hBTkdFX1ZJRVcQABIqCiZDT05TRU5TVVNfUEFZTE9BRF9UWVBFX1BS",
-            "RVBBUkVfUkVRVUVTVBAgEisKJ0NPTlNFTlNVU19QQVlMT0FEX1RZUEVfUFJF",
-            "UEFSRV9SRVNQT05TRRAhQgkKB21lc3NhZ2UiVQoQQ29uc2Vuc3VzTWVzc2Fn",
-            "ZRIiCgdwYXlsb2FkGAEgASgLMhEuQ29uc2Vuc3VzUGF5bG9hZBIdCglzaWdu",
-            "YXR1cmUYAiABKAsyCi5TaWduYXR1cmVCEKoCDVBob3JrdXMuUHJvdG9iBnBy",
-            "b3RvMw=="));
+            "d19udW1iZXIYBiABKA0SKwoLY2hhbmdlX3ZpZXcYCCABKAsyFC5Db25zZW5z",
+            "dXNDaGFuZ2VWaWV3SAASMwoPcHJlcGFyZV9yZXF1ZXN0GAkgASgLMhguQ29u",
+            "c2Vuc3VzUHJlcGFyZVJlcXVlc3RIABI1ChBwcmVwYXJlX3Jlc3BvbnNlGAog",
+            "ASgLMhkuQ29uc2Vuc3VzUHJlcGFyZVJlc3BvbnNlSABCCQoHbWVzc2FnZSJV",
+            "ChBDb25zZW5zdXNNZXNzYWdlEiIKB3BheWxvYWQYASABKAsyES5Db25zZW5z",
+            "dXNQYXlsb2FkEh0KCXNpZ25hdHVyZRgCIAEoCzIKLlNpZ25hdHVyZUIQqgIN",
+            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusChangeView), global::Phorkus.Proto.ConsensusChangeView.Parser, new[]{ "NewViewNumber" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareRequest), global::Phorkus.Proto.ConsensusPrepareRequest.Parser, new[]{ "Nonce", "TransactionHashes", "MinerTransaction", "Signature" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPrepareResponse), global::Phorkus.Proto.ConsensusPrepareResponse.Parser, new[]{ "Signature" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPayload), global::Phorkus.Proto.ConsensusPayload.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber", "Type", "ChangeView", "PrepareRequest", "PrepareResponse" }, new[]{ "Message" }, new[]{ typeof(global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType) }, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusPayload), global::Phorkus.Proto.ConsensusPayload.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber", "ChangeView", "PrepareRequest", "PrepareResponse" }, new[]{ "Message" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Payload", "Signature" }, null, null, null)
           }));
     }
@@ -572,7 +567,6 @@ namespace Phorkus.Proto {
       validatorIndex_ = other.validatorIndex_;
       timestamp_ = other.timestamp_;
       viewNumber_ = other.viewNumber_;
-      type_ = other.type_;
       switch (other.MessageCase) {
         case MessageOneofCase.ChangeView:
           ChangeView = other.ChangeView.Clone();
@@ -659,17 +653,6 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "type" field.</summary>
-    public const int TypeFieldNumber = 7;
-    private global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType type_ = 0;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType Type {
-      get { return type_; }
-      set {
-        type_ = value;
-      }
-    }
-
     /// <summary>Field number for the "change_view" field.</summary>
     public const int ChangeViewFieldNumber = 8;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -742,7 +725,6 @@ namespace Phorkus.Proto {
       if (ValidatorIndex != other.ValidatorIndex) return false;
       if (Timestamp != other.Timestamp) return false;
       if (ViewNumber != other.ViewNumber) return false;
-      if (Type != other.Type) return false;
       if (!object.Equals(ChangeView, other.ChangeView)) return false;
       if (!object.Equals(PrepareRequest, other.PrepareRequest)) return false;
       if (!object.Equals(PrepareResponse, other.PrepareResponse)) return false;
@@ -759,7 +741,6 @@ namespace Phorkus.Proto {
       if (ValidatorIndex != 0) hash ^= ValidatorIndex.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (ViewNumber != 0) hash ^= ViewNumber.GetHashCode();
-      if (Type != 0) hash ^= Type.GetHashCode();
       if (messageCase_ == MessageOneofCase.ChangeView) hash ^= ChangeView.GetHashCode();
       if (messageCase_ == MessageOneofCase.PrepareRequest) hash ^= PrepareRequest.GetHashCode();
       if (messageCase_ == MessageOneofCase.PrepareResponse) hash ^= PrepareResponse.GetHashCode();
@@ -801,10 +782,6 @@ namespace Phorkus.Proto {
         output.WriteRawTag(48);
         output.WriteUInt32(ViewNumber);
       }
-      if (Type != 0) {
-        output.WriteRawTag(56);
-        output.WriteEnum((int) Type);
-      }
       if (messageCase_ == MessageOneofCase.ChangeView) {
         output.WriteRawTag(66);
         output.WriteMessage(ChangeView);
@@ -842,9 +819,6 @@ namespace Phorkus.Proto {
       }
       if (ViewNumber != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ViewNumber);
-      }
-      if (Type != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Type);
       }
       if (messageCase_ == MessageOneofCase.ChangeView) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ChangeView);
@@ -886,9 +860,6 @@ namespace Phorkus.Proto {
       }
       if (other.ViewNumber != 0) {
         ViewNumber = other.ViewNumber;
-      }
-      if (other.Type != 0) {
-        Type = other.Type;
       }
       switch (other.MessageCase) {
         case MessageOneofCase.ChangeView:
@@ -949,10 +920,6 @@ namespace Phorkus.Proto {
             ViewNumber = input.ReadUInt32();
             break;
           }
-          case 56: {
-            type_ = (global::Phorkus.Proto.ConsensusPayload.Types.ConsensusPayloadType) input.ReadEnum();
-            break;
-          }
           case 66: {
             global::Phorkus.Proto.ConsensusChangeView subBuilder = new global::Phorkus.Proto.ConsensusChangeView();
             if (messageCase_ == MessageOneofCase.ChangeView) {
@@ -983,19 +950,6 @@ namespace Phorkus.Proto {
         }
       }
     }
-
-    #region Nested types
-    /// <summary>Container for nested types declared in the ConsensusPayload message type.</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static partial class Types {
-      public enum ConsensusPayloadType {
-        [pbr::OriginalName("CONSENSUS_PAYLOAD_TYPE_CHANGE_VIEW")] ChangeView = 0,
-        [pbr::OriginalName("CONSENSUS_PAYLOAD_TYPE_PREPARE_REQUEST")] PrepareRequest = 32,
-        [pbr::OriginalName("CONSENSUS_PAYLOAD_TYPE_PREPARE_RESPONSE")] PrepareResponse = 33,
-      }
-
-    }
-    #endregion
 
   }
 

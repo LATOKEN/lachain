@@ -400,26 +400,26 @@ namespace Phorkus.Core.Consensus
             if (body.ValidatorIndex >= _context.ValidatorCount) return;
 
             if (body.ViewNumber != _context.ViewNumber &&
-                body.Type != ConsensusPayload.Types.ConsensusPayloadType.ChangeView)
+                body.ChangeView != null)
             {
                 _logger.LogWarning(
-                    $"Rejected consensus payload of type {body.Type} because view does not match, " +
+                    $"Rejected consensus payload of type {body.MessageCase} because view does not match, " +
                     $"my={_context.ViewNumber} theirs={body.ViewNumber} validator={message.Payload.ValidatorIndex}"
                 );
                 return;
             }
 
             _logger.LogInformation($"Received consensus payload from validator={message.Payload.ValidatorIndex} " +
-                                   $"of type {body.Type}");
-            switch (body.Type)
+                                   $"of type {body.MessageCase}");
+            switch (body.MessageCase)
             {
-                case ConsensusPayload.Types.ConsensusPayloadType.ChangeView:
+                case ConsensusPayload.MessageOneofCase.ChangeView:
                     OnChangeViewReceived(body);
                     break;
-                case ConsensusPayload.Types.ConsensusPayloadType.PrepareRequest:
+                case ConsensusPayload.MessageOneofCase.PrepareRequest:
                     OnPrepareRequestReceived(body);
                     break;
-                case ConsensusPayload.Types.ConsensusPayloadType.PrepareResponse:
+                case ConsensusPayload.MessageOneofCase.PrepareResponse:
                     OnPrepareResponseReceived(body);
                     break;
                 default:

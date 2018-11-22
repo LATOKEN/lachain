@@ -22,18 +22,12 @@ message ConsensusPrepareResponse {
 }
 
 message ConsensusPayload {
-    enum ConsensusPayloadType {
-        CONSENSUS_PAYLOAD_TYPE_CHANGE_VIEW = 0x00;
-        CONSENSUS_PAYLOAD_TYPE_PREPARE_REQUEST = 0x20;
-        CONSENSUS_PAYLOAD_TYPE_PREPARE_RESPONSE = 0x21;
-    }
     uint32 version = 1;
     UInt256 prev_hash = 2;
     uint64 block_index = 3;
     uint32 validator_index = 4;
     uint64 timestamp = 5;
     uint32 view_number = 6;
-    ConsensusPayloadType type = 7;
     oneof message {
         ConsensusChangeView change_view = 8;
         ConsensusPrepareRequest prepare_request = 9;

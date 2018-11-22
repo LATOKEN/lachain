@@ -114,8 +114,8 @@ namespace Phorkus.Core.Network.Tcp
             if (ipAddress == null)
                 throw new InvalidOperationException($"\"{ipEndPoint.Host}\" cannot be resolved to an ip address.");
 
-            if (_IsSelfConnect(ipAddress))
-                return null;
+//            if (_IsSelfConnect(ipAddress))
+//                return null;
 
             if (_networkConfig.ForceIPv6)
                 ipAddress = ipAddress.MapToIPv6();
