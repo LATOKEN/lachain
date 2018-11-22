@@ -37,7 +37,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public event EventHandler<SignedTransaction> OnTransactionPersisted;
         public event EventHandler<SignedTransaction> OnTransactionFailed;
-        public event EventHandler<SignedTransaction> OnTransactionConfirmed;
+        public event EventHandler<SignedTransaction> OnTransactionExecuted;
         public event EventHandler<SignedTransaction> OnTransactionSigned;
 
         public Transaction GetByHash(UInt256 transactionHash)
@@ -100,7 +100,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             /* finalize transaction state */
             _transactionRepository.ChangeTransactionState(txHash,
                 new TransactionState {Status = TransactionState.Types.TransactionStatus.Confirmed});
-            OnTransactionConfirmed?.Invoke(this, signed);
+            OnTransactionExecuted?.Invoke(this, signed);
             return OperatingError.Ok;
         }
 

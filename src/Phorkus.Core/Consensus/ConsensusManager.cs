@@ -19,8 +19,9 @@ using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Consensus
 {
+    // ReSharper disable once RedundantNameQualifier
     using Timer = System.Timers.Timer;
-
+    
     public class ConsensusManager : IConsensusManager, IDisposable
     {
         // private readonly ITransactionCrawler _transactionCrawler;
