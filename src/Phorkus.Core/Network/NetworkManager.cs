@@ -94,7 +94,7 @@ namespace Phorkus.Core.Network
             try
             {
                 if (!_messagingManager.HandleMessage(peer, message))
-                    _networkLogger.LogWarning($"Unable to log handle message ({message.Type})");
+                    _networkLogger.LogWarning($"Unable to handle message ({message.Type})");
             }
             catch (Exception e)
             {

@@ -83,8 +83,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (signed is null)
                 return OperatingError.TransactionLost;
             var state = _transactionRepository.GetTransactionState(txHash);
-            if (state != null && state.Status == TransactionState.Types.TransactionStatus.Confirmed)
-                return OperatingError.InvalidState;
+            /*if (state != null && state.Status == TransactionState.Types.TransactionStatus.Confirmed)
+                return OperatingError.InvalidState;*/
             /* try to persist transaction */
             var persister = _transactionPersisters[signed.Transaction.Type];
             if (persister == null)

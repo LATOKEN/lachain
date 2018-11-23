@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using Google.Protobuf;
 using Org.BouncyCastle.Security;
 using Phorkus.Core.Blockchain;
@@ -38,7 +37,6 @@ namespace Phorkus.Core.Consensus
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
         private readonly object _changeViewApproved = new object();
-        private readonly object _timeToProduceBlock = new object();
         private Timer _timer;
         private bool _stopped;
         private bool _gotNewBlock;
@@ -76,7 +74,7 @@ namespace Phorkus.Core.Consensus
             _random = new SecureRandom();
             _stopped = true;
             _gotNewBlock = false;
-            
+
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
 
@@ -84,7 +82,8 @@ namespace Phorkus.Core.Consensus
         {
             lock (this)
             {
-                _gotNewBlock = true;                
+                _context.LastBlockRecieved = DateTime.UtcNow;
+                _gotNewBlock = true;
             }
         }
 
@@ -101,7 +100,7 @@ namespace Phorkus.Core.Consensus
                 _logger.LogWarning("Halting consensus process: we are not in validator list");
                 return;
             }
-            
+
             _stopped = false;
 
             while (!_stopped)
@@ -130,11 +129,9 @@ namespace Phorkus.Core.Consensus
                 if (_context.Role.HasFlag(ConsensusState.Primary))
                 {
                     // if we are primary, wait until block must be produced
-                    lock (_timeToProduceBlock)
-                    {
-                        if (DateTime.UtcNow - _context.LastBlockRecieved < _timePerBlock)
-                            Monitor.Wait(_timeToProduceBlock);
-                    }
+                    var timeToAwait = _timePerBlock - (DateTime.UtcNow - _context.LastBlockRecieved);
+                    if (timeToAwait.TotalSeconds > 0)
+                        Thread.Sleep(timeToAwait);
 
                     // TODO: produce block
                     var blockBuilder = new BlockBuilder(_transactionPool, _blockchainContext.CurrentBlockHeader.Hash,
@@ -256,14 +253,6 @@ namespace Phorkus.Core.Consensus
             Task.Factory.StartNew(_TaskWorker);
         }
 
-        private void OnTimer(object sender, ElapsedEventArgs e)
-        {
-            lock (_timeToProduceBlock)
-            {
-                Monitor.PulseAll(_timeToProduceBlock);
-            }
-        }
-
         private void InitializeConsensus(byte viewNumber)
         {
             if (viewNumber == 0)
@@ -284,13 +273,6 @@ namespace Phorkus.Core.Consensus
             }
 
             _context.State |= ConsensusState.Primary;
-            var span = DateTime.UtcNow - _context.LastBlockRecieved;
-            if (span >= _timePerBlock) OnTimer(null, null);
-            else
-            {
-                _timer = new Timer((_timePerBlock - span).TotalMilliseconds);
-                _timer.Elapsed += OnTimer;
-            }
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload)
@@ -547,6 +529,7 @@ namespace Phorkus.Core.Consensus
                     return true;
                 }
             }
+
             var mostCommon = _context.Validators
                 .GroupBy(v => v.ExpectedViewNumber)
                 .OrderByDescending(v => v.Count())
