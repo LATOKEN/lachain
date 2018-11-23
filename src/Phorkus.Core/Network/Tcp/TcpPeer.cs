@@ -94,7 +94,14 @@ namespace Phorkus.Core.Network.Tcp
             {
                 while (!_stream.DataAvailable)
                     Thread.Sleep(100);
-                return _transport.ReadMessages(_stream);
+                try
+                {
+                    return _transport.ReadMessages(_stream);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
             catch (Exception error)
             {
