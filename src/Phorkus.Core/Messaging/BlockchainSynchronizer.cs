@@ -58,6 +58,7 @@ namespace Phorkus.Core.Messaging
             _broadcaster.Broadcast(_messageFactory.GetTransactionsMessage(lostTxs));
             lock (_transactionsGot)
             {
+                /* TODO: "possible error if one peer doesn't have one of transactions requested" */
                 lostTxs = _HaveTransactions(txHashes);
                 if (!lostTxs.Any())
                     return (uint) txHashes.Length;
@@ -137,6 +138,13 @@ namespace Phorkus.Core.Messaging
 
         private void _SynchronizerWorker()
         {
+            var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
+            if (myHeight > _networkContext.LocalNode.BlockHeight)
+            {
+                _networkContext.LocalNode.BlockHeight = myHeight;
+                _broadcaster.Broadcast(_messageFactory.HandshakeResponse(_networkContext.LocalNode));
+            }
+            
             Thread.Sleep(1000);
 
             var activePeers = _networkContext.ActivePeers.Values
@@ -149,8 +157,7 @@ namespace Phorkus.Core.Messaging
                 _currentMaximumHeight = maxHeight;
 
             Thread.Sleep(1000);
-
-            var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
+            
             if (_blockchainContext.CurrentBlockHeaderHeight >= _currentMaximumHeight)
                 return;
             foreach (var peer in arrayOfPeers)

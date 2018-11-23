@@ -50,5 +50,18 @@ namespace Phorkus.Core.Messaging
                 TransactionsGot = transactionsGotMessage
             };
         }
+
+        public Message HandshakeResponse(Node node)
+        {
+            var handshakeResponse = new HandshakeResponseMessage
+            {
+                Node = node
+            };
+            return new Message
+            {
+                Type = MessageType.HandshakeResponse,
+                HandshakeResponse = handshakeResponse
+            };
+        }
     }
 }

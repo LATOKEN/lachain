@@ -12,5 +12,7 @@ namespace Phorkus.Core.Messaging
         Message GetTransactionsMessage(IEnumerable<UInt256> hashes);
         
         Message TransactionsGotMessage(IEnumerable<SignedTransaction> transactions);
+
+        Message HandshakeResponse(Node node);
     }
 }

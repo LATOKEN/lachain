@@ -76,9 +76,6 @@ namespace Phorkus.Core.Consensus
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _transactionFactory = transactionFactory;
             _random = new SecureRandom();
-
-            (transactionManager ?? throw new ArgumentNullException(nameof(transactionManager)))
-                .OnTransactionPersisted += OnTransactionVerified;
         }
 
         public void Stop()
