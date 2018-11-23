@@ -21,6 +21,12 @@ namespace Phorkus.Benchmark
     public class Application : IBootstrapper
     {
         private readonly IContainer _container;
+        
+        internal static void Main(string[] args)
+        {
+            var app = new Application();
+            app.Start(args);
+        }
 
         public Application()
         {
@@ -40,7 +46,6 @@ namespace Phorkus.Benchmark
 
         public void Start(string[] args)
         {
-            var networkManager = _container.Resolve<INetworkManager>();
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
@@ -51,8 +56,7 @@ namespace Phorkus.Benchmark
             var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
-            var consensusManager = _container.Resolve<IConsensusManager>();
-
+            
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
 
@@ -104,14 +108,6 @@ namespace Phorkus.Benchmark
             Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
             Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
-
-            networkManager.Start();
-            Thread.Sleep(1000);
-            consensusManager.Start();
-
-            Console.CancelKeyPress += (sender, e) => _interrupt = true;
-            while (!_interrupt)
-                Thread.Sleep(1000);
         }
 
         private static void _Benchmark(string text, Func<int, int> action, uint tries)
@@ -246,7 +242,5 @@ namespace Phorkus.Benchmark
             Console.CursorLeft = "Benchmarking... ".Length;
             Console.WriteLine($"{1000 * tries / deltaTime} TPS");
         }
-
-        private bool _interrupt;
     }
 }
