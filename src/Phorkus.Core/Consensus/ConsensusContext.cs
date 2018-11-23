@@ -71,12 +71,14 @@ namespace Phorkus.Core.Consensus
             {
                 if (validator.BlockSignature is null || validator.BlockSignature.IsZero())
                     continue;
+                if (block.Multisig.Signatures.Select(e => e.Key).Contains(validator.PublicKey))
+                    continue;
                 var entry = new MultiSig.Types.SignatureByValidator
                 {
                     Key = validator.PublicKey,
                     Value = validator.BlockSignature
                 };
-                block.Multisig.Signatures.Add(entry);                
+                block.Multisig.Signatures.Add(entry);
             }
             block.Multisig.Validators.AddRange(Validators.Select(v => v.PublicKey));
             return block;

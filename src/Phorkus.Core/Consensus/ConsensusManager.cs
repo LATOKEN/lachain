@@ -222,15 +222,6 @@ namespace Phorkus.Core.Consensus
                 // TODO: check multisig one last time
 
                 var block = _context.GetProposedBlock();
-                foreach (var validator in _context.Validators)
-                {
-                    if (validator.BlockSignature == null) continue;
-                    block.Multisig.Signatures.Add(new MultiSig.Types.SignatureByValidator
-                    {
-                        Key = validator.PublicKey,
-                        Value = validator.BlockSignature
-                    });
-                }
 
                 _logger.LogInformation($"Block approved by consensus: {block.Hash}");
 
