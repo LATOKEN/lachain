@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 using Org.BouncyCastle.Security;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -21,12 +19,10 @@ using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Consensus
 {
-    // ReSharper disable once RedundantNameQualifier
     using Timer = System.Timers.Timer;
 
     public class ConsensusManager : IConsensusManager, IDisposable
     {
-        // private readonly ITransactionCrawler _transactionCrawler;
         private readonly IBlockManager _blockManager;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockchainContext _blockchainContext;
@@ -39,7 +35,6 @@ namespace Phorkus.Core.Consensus
         private readonly KeyPair _keyPair;
         private readonly IBlockchainSynchronizer _blockchainSynchronizer;
 
-        private readonly object _allTransactionVerified = new object();
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
         private readonly object _changeViewApproved = new object();
@@ -64,21 +59,20 @@ namespace Phorkus.Core.Consensus
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
-            _transactionManager = transactionManager;
-            _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
+            _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
-            _broadcaster = broadcaster;
+            _transactionFactory = transactionFactory ?? throw new ArgumentNullException(nameof(transactionFactory));
+            _blockchainSynchronizer =
+                blockchainSynchronizer ?? throw new ArgumentNullException(nameof(blockchainSynchronizer));
+            _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
+            _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _crypto = crypto;
-            _blockchainSynchronizer = blockchainSynchronizer;
+            _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
+            
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
             _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
-            _transactionFactory = transactionFactory;
             _random = new SecureRandom();
-
-            (transactionManager ?? throw new ArgumentNullException(nameof(transactionManager)))
-                .OnTransactionPersisted += OnTransactionVerified;
         }
 
         public void Stop()
@@ -112,9 +106,9 @@ namespace Phorkus.Core.Consensus
                             if (!Monitor.Wait(_changeViewApproved, timeToWait))
                             {
                                 RequestChangeView();
-                                continue;
                             }
                         }
+
                         InitializeConsensus(viewNumber);
                         continue;
                     }
@@ -139,11 +133,12 @@ namespace Phorkus.Core.Consensus
                     var minerError = _transactionManager.Persist(signed);
                     if (minerError != OperatingError.Ok)
                     {
-                        _logger.LogError($"Unable to persis miner transaction (it is very bad), cuz error {minerError}");
+                        _logger.LogError(
+                            $"Unable to persis miner transaction (it is very bad), cuz error {minerError}");
                         RequestChangeView();
                         continue;
                     }
-                    
+
                     var blockWithTransactions = blockBuilder.Build(signed, (ulong) _random.Next());
                     _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
@@ -182,14 +177,17 @@ namespace Phorkus.Core.Consensus
                 }
 
                 // Regardless of our role, here we must collect transactions, signatures and assemble block
-                var txsGot = _blockchainSynchronizer.WaitForTransactions(_context.CurrentProposal.TransactionHashes, _timePerBlock);
+                var txsGot =
+                    _blockchainSynchronizer.WaitForTransactions(_context.CurrentProposal.TransactionHashes,
+                        _timePerBlock);
                 if (txsGot != _context.CurrentProposal.TransactionHashes.Length)
                 {
-                    _logger.LogWarning($"Cannot retrieve all transactions in time, got only {txsGot} of {_context.CurrentProposal.TransactionHashes.Length}, aborting");
+                    _logger.LogWarning(
+                        $"Cannot retrieve all transactions in time, got only {txsGot} of {_context.CurrentProposal.TransactionHashes.Length}, aborting");
                     RequestChangeView();
                     continue;
                 }
-                
+
                 // When all transaction are collected and validated, we are able to sign block
                 _logger.LogInformation("Send prepare response");
 
@@ -329,7 +327,8 @@ namespace Phorkus.Core.Consensus
                 return;
             }
 
-            /*if (payload.Timestamp <= _blockchainContext.CurrentBlockHeader.Header.Timestamp ||
+            /* TODO: block timestamping policy
+            if (payload.Timestamp <= _blockchainContext.CurrentBlockHeader.Header.Timestamp ||
                 payload.Timestamp > (ulong) DateTime.UtcNow.AddMinutes(10).ToTimestamp().Seconds)
             {
                 _logger.LogDebug(
@@ -471,18 +470,6 @@ namespace Phorkus.Core.Consensus
             return _context.SignaturesAcquired >= _context.Quorum;
         }
 
-        private void OnTransactionVerified(object sender, SignedTransaction e)
-        {
-            if (_context.CurrentProposal is null || e?.Hash is null  || _context.CurrentProposal.Transactions.ContainsKey(e.Hash))
-                return;
-            _context.CurrentProposal.Transactions[e.Hash] = e;
-            if (!_context.CurrentProposal.IsComplete) return;
-            lock (_allTransactionVerified)
-            {
-                Monitor.PulseAll(_allTransactionVerified);
-            }
-        }
-
         private void RequestChangeView()
         {
             _context.State |= ConsensusState.ViewChanging;
@@ -502,7 +489,8 @@ namespace Phorkus.Core.Consensus
             {
                 _logger.LogInformation(
                     $"Ignoring ChangeView payload from validator={payload.ValidatorIndex} view={payload.ViewNumber} " +
-                    $"since new_view={changeView.NewViewNumber}"
+                    $"since new_view={changeView.NewViewNumber} and " +
+                    $"last_view={_context.Validators[payload.ValidatorIndex].ExpectedViewNumber}"
                 );
                 return;
             }
