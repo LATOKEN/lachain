@@ -41,6 +41,7 @@ namespace Phorkus.Core.Consensus
         private readonly object _timeToProduceBlock = new object();
         private Timer _timer;
         private bool _stopped;
+        private bool _gotNewBlock;
         private readonly SecureRandom _random;
 
         private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
@@ -68,12 +69,23 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
-            
+
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
             _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _random = new SecureRandom();
             _stopped = true;
+            _gotNewBlock = false;
+            
+            _blockManager.OnBlockPersisted += OnBlockPersisted;
+        }
+
+        private void OnBlockPersisted(object sender, Block e)
+        {
+            lock (this)
+            {
+                _gotNewBlock = true;                
+            }
         }
 
         public void Stop()
@@ -383,6 +395,7 @@ namespace Phorkus.Core.Consensus
                 );
                 return;
             }
+
             var body = message.Payload;
             if (_context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (body.ValidatorIndex == _context.MyIndex) return;
@@ -525,6 +538,15 @@ namespace Phorkus.Core.Consensus
 
         private bool CanChangeView(out byte viewNumber)
         {
+            lock (this)
+            {
+                if (_gotNewBlock)
+                {
+                    _gotNewBlock = false;
+                    viewNumber = 0;
+                    return true;
+                }
+            }
             var mostCommon = _context.Validators
                 .GroupBy(v => v.ExpectedViewNumber)
                 .OrderByDescending(v => v.Count())
