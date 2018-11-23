@@ -18,8 +18,9 @@ namespace Phorkus.Core.Network
 
         public void WriteMessages(IEnumerable<Message> messages, Stream stream)
         {
-            /* TODO: "possible attack on message size (be careful with limitations)" */
-            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            byte[] packet;
+            using (var memory = new MemoryStream())
+            using (var writer = new BinaryWriter(memory))
             {
                 writer.Write(_networkConfig.Magic);
                 var bytes = messages.ToByteArray();
@@ -28,6 +29,13 @@ namespace Phorkus.Core.Network
                 var crc32 = Crc32Algorithm.Compute(bytes);
                 writer.Write(crc32);
                 writer.Flush();
+                packet = memory.ToArray();
+            }
+            
+            /* TODO: "possible attack on message size (be careful with limitations)" */
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                writer.Write(packet);
             }
         }
         
