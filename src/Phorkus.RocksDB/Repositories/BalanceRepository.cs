@@ -29,7 +29,7 @@ namespace Phorkus.RocksDB.Repositories
                 var balance = _GetBalanceOrDefaultUnsafe(owner, asset);
                 var result = balance + value;
                 if (result < balance + value)
-                    throw new InfluentFundsException();
+                    throw new InsufficientFundsException();
                 return _ChangeBalanceUnsafe(owner, asset, result);
             }
         }
@@ -51,7 +51,7 @@ namespace Phorkus.RocksDB.Repositories
                 var balance = _GetBalanceOrDefaultUnsafe(owner, asset);
                 var result = balance - value;
                 if (result < Money.Zero)
-                    throw new InfluentFundsException();
+                    throw new InsufficientFundsException();
                 return _ChangeBalanceUnsafe(owner, asset, result);
             }
         }

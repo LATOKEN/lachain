@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Org.BouncyCastle.Asn1.Sec;
@@ -13,6 +15,28 @@ namespace Phorkus.CoreTest
     [TestClass]
     public class CryptographyTest
     {
+        [TestMethod]
+        public void Test_BouncyCastle_SignRoundTrip()
+        {
+            var crypto = new BouncyCastle();
+            var privateKey = "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48".HexToBytes();
+            var publicKey = crypto.ComputePublicKey(privateKey);
+            var address = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToBytes();
+
+            CollectionAssert.AreEqual(address, crypto.ComputeAddress(publicKey));
+
+            for (var it = 0; it < 256; ++it)
+            {
+                var message = "0xdeadbeef" + it.ToString("X2");
+                var digest = message.HexToBytes();
+                var signature = crypto.Sign(digest, privateKey);
+                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey));
+                var recoveredPubkey = crypto.RecoverSignature(digest, signature);
+                CollectionAssert.AreEqual(recoveredPubkey, publicKey);                
+            }
+            
+        }
+        
         [TestMethod]
         public void Test_BouncyCastle_Sign()
         {
@@ -95,7 +119,7 @@ namespace Phorkus.CoreTest
             var isValid = crypto.VerifySignature(message, sig, publicKey);
             System.Console.WriteLine("Is signature valid: " + isValid);
             
-            var publicKey2 = crypto.RecoverSignature(message, sig, true, 1);
+            var publicKey2 = crypto.RecoverSignature(message, sig);
             System.Console.WriteLine("Restored public key: " + publicKey2.ToHex());
             System.Console.WriteLine("Restored address: " + crypto.ComputeAddress(publicKey2).ToHex());
         }

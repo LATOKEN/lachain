@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Phorkus.Core.Cryptography;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
@@ -139,22 +140,21 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError VerifySignature(SignedTransaction transaction)
         {
-            byte[] rawKey;
             try
             {
-                rawKey = _crypto.RecoverSignature(transaction.Hash.Buffer.ToByteArray(),
-                    transaction.Signature.Buffer.ToByteArray(),
-                    transaction.Transaction.From.Buffer.ToByteArray());
-                if (rawKey is null)
+                var rawKey = _crypto.RecoverSignature(
+                    transaction.Hash.Buffer.ToByteArray(),
+                    transaction.Signature.Buffer.ToByteArray()
+                );
+                var address = _crypto.ComputeAddress(rawKey);
+                if (rawKey is null || !_crypto.ComputeAddress(rawKey).SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
                     return OperatingError.InvalidSignature;
-                rawKey = _crypto.DecodePublicKey(rawKey, true, out _, out _);
+                return OperatingError.Ok;
             }
             catch (Exception)
             {
                 return OperatingError.InvalidSignature;
             }
-            /* TODO: "i don't think that we need recover here again, cuz signature already verified" */
-            return VerifySignature(transaction, rawKey.ToPublicKey());
         }
 
         public OperatingError Verify(Transaction transaction)
