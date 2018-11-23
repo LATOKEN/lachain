@@ -73,6 +73,7 @@ namespace Phorkus.Core.Consensus
             _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _random = new SecureRandom();
+            _stopped = true;
         }
 
         public void Stop()
@@ -90,6 +91,7 @@ namespace Phorkus.Core.Consensus
             }
 
             Thread.Sleep(3000);
+            _stopped = false;
 
             while (!_stopped)
             {
@@ -374,6 +376,14 @@ namespace Phorkus.Core.Consensus
 
         public void HandleConsensusMessage(ConsensusMessage message)
         {
+            if (_stopped)
+            {
+                _logger.LogWarning(
+                    $"Cannot handle consensus payload from validator={message.Payload.ValidatorIndex}: " +
+                    "consensus is stopped"
+                );
+                return;
+            }
             var body = message.Payload;
             if (_context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (body.ValidatorIndex == _context.MyIndex) return;

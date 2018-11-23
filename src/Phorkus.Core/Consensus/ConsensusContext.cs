@@ -28,7 +28,10 @@ namespace Phorkus.Core.Consensus
 
         public uint ValidatorCount => (uint) Validators.Length;
         public uint Quorum => 2; //ValidatorCount - (ValidatorCount - 1) / 3;
-        public long PrimaryIndex => (long) ((BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount);
+
+        public long PrimaryIndex =>
+            ((long) (BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount + ValidatorCount) % ValidatorCount;
+
         public ConsensusState Role => MyIndex == PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup;
         public ObservedValidatorState MyState => MyIndex == -1 ? null : Validators[MyIndex];
 
@@ -80,6 +83,7 @@ namespace Phorkus.Core.Consensus
                 };
                 block.Multisig.Signatures.Add(entry);
             }
+
             block.Multisig.Validators.AddRange(Validators.Select(v => v.PublicKey));
             return block;
         }
