@@ -473,7 +473,7 @@ namespace Phorkus.Core.Consensus
 
         private void OnTransactionVerified(object sender, SignedTransaction e)
         {
-            if (_context.CurrentProposal is null || _context.CurrentProposal.Transactions.ContainsKey(e.Hash))
+            if (_context.CurrentProposal is null || e?.Hash is null  || _context.CurrentProposal.Transactions.ContainsKey(e.Hash))
                 return;
             _context.CurrentProposal.Transactions[e.Hash] = e;
             if (!_context.CurrentProposal.IsComplete) return;
