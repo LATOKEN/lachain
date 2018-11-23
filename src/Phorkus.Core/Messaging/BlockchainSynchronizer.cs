@@ -100,7 +100,7 @@ namespace Phorkus.Core.Messaging
 
             if (haveNotTxs.Count > 0)
             {
-                peer.Send(_messageFactory.GetTransactionsMessage(haveNotTxs));
+                _broadcaster.Broadcast(_messageFactory.GetTransactionsMessage(haveNotTxs));
                 return;
             }
 
@@ -160,12 +160,7 @@ namespace Phorkus.Core.Messaging
             
             if (_blockchainContext.CurrentBlockHeaderHeight >= _currentMaximumHeight)
                 return;
-            foreach (var peer in arrayOfPeers)
-            {
-                if (peer.Node.BlockHeight <= myHeight)
-                    continue;
-                peer.Send(_messageFactory.GetBlocksMessage(myHeight));
-            }
+            _broadcaster.Broadcast(_messageFactory.GetBlocksMessage(myHeight));
         }
 
         public void Start()

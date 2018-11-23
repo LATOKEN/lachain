@@ -18,13 +18,14 @@ namespace Phorkus.Core.Messaging.Handlers
 
         public void HandleMessage(IPeer peer, Message message)
         {
-            var handshakeRequest = message.HandshakeResponse;
-            if (handshakeRequest is null)
+            var handshakeResponse = message.HandshakeResponse;
+            if (handshakeResponse is null)
                 throw new InvalidMessageException();
             /* request headers if we don't have */
             var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
-            if (myHeight < handshakeRequest.Node.BlockHeight)
+            if (myHeight < handshakeResponse.Node.BlockHeight)
                 peer.Send(_messageFactory.GetBlocksMessage(myHeight));
+            System.Console.WriteLine($"Node changed it's block height {handshakeResponse.Node.BlockHeight}");
         }
     }
 }
