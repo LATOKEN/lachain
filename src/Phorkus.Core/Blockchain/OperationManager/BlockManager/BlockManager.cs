@@ -1,6 +1,7 @@
 ﻿using System;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Cryptography;
+using Phorkus.Core.Logging;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -14,19 +15,22 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private readonly ITransactionManager _transactionManager;
         private readonly ICrypto _crypto;
         private readonly IGenesisBuilder _genesisBuilder;
+        private readonly ILogger<IBlockManager> _logger;
         
         public BlockManager(
             IGlobalRepository globalRepository,
             IBlockRepository blockRepository,
             ITransactionManager transactionManager,
             ICrypto crypto,
-            IGenesisBuilder genesisBuilder)
+            IGenesisBuilder genesisBuilder,
+            ILogger<IBlockManager> logger)
         {
             _globalRepository = globalRepository;
             _blockRepository = blockRepository;
             _transactionManager = transactionManager;
             _crypto = crypto;
             _genesisBuilder = genesisBuilder;
+            _logger = logger;
         }
         
         public event EventHandler<Block> OnBlockPersisted;
@@ -66,17 +70,26 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* confirm block transactions */
             foreach (var txHash in block.Header.TransactionHashes)
             {
+                if (_transactionManager.GetByHash(txHash) is null)
+                    return OperatingError.TransactionLost;
+            }
+            foreach (var txHash in block.Header.TransactionHashes)
+            {
                 var result = _transactionManager.Execute(txHash);
                 if (result == OperatingError.Ok)
                     continue;
-                /* TODO: "mark transaction as failed here" */
+                /* TODO: "we need block synchronization on transaction lost for example" */
+                _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()}, {result}");
+                /* TODO: "mark transaction as failed to execute here or something else" */
             }
             /* write block to database */
             _blockRepository.AddBlock(block);
+            _logger.LogInformation($"Persisted new block with hash {block.Hash}");
             var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
             if (block.Header.Index > currentHeaderHeight)
                 _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
             _globalRepository.SetTotalBlockHeight(block.Header.Index);
+            /*logger.LogInformation($"Changed current block height to {block.Header.Index}");*/
             return OperatingError.Ok;
         }
         

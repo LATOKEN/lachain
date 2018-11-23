@@ -34,7 +34,7 @@ namespace Phorkus.Core.Storage
 
         Block GetNextBlockByHash(UInt256 blockHash);
         
-        IEnumerable<Block> GetBlocksByHeightRange(uint height, uint count);
+        IEnumerable<Block> GetBlocksByHeightRange(ulong height, ulong count);
 
         IEnumerable<Block> GetBlocksByHashes(IEnumerable<UInt256> hashes);
     }

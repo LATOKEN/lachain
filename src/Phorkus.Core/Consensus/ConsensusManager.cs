@@ -14,6 +14,7 @@ using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
+using Phorkus.Core.Messaging;
 using Phorkus.Core.Network;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
@@ -36,6 +37,7 @@ namespace Phorkus.Core.Consensus
         private readonly ICrypto _crypto;
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
+        private readonly IBlockchainSynchronizer _blockchainSynchronizer;
 
         private readonly object _allTransactionVerified = new object();
         private readonly object _quorumSignaturesAcquired = new object();
@@ -57,7 +59,8 @@ namespace Phorkus.Core.Consensus
             ILogger<ConsensusManager> logger,
             IConfigManager configManager,
             ITransactionFactory transactionFactory,
-            ICrypto crypto)
+            ICrypto crypto,
+            IBlockchainSynchronizer blockchainSynchronizer)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
@@ -67,6 +70,7 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto;
+            _blockchainSynchronizer = blockchainSynchronizer;
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
             _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
@@ -132,7 +136,14 @@ namespace Phorkus.Core.Consensus
                     var from = address.ToUInt160();
                     var minerTx = _transactionFactory.MinerTransaction(from);
                     var signed = _transactionManager.Sign(minerTx, _keyPair);
-
+                    var minerError = _transactionManager.Persist(signed);
+                    if (minerError != OperatingError.Ok)
+                    {
+                        _logger.LogError($"Unable to persis miner transaction (it is very bad), cuz error {minerError}");
+                        RequestChangeView();
+                        continue;
+                    }
+                    
                     var blockWithTransactions = blockBuilder.Build(signed, (ulong) _random.Next());
                     _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
@@ -171,24 +182,14 @@ namespace Phorkus.Core.Consensus
                 }
 
                 // Regardless of our role, here we must collect transactions, signatures and assemble block
-
-//                TODO: we should get and verify all transactions here
-//                _context.CurrentProposal.TransactionHashes.ForEach(hash =>
-//                {
-//                    var transaction = _transactionPool.FindByHash(hash);
-//                    if (transaction != null) _context.CurrentProposal.Transactions[hash] = transaction;
-//                    else _transactionCrawler.AddTransactionHash(hash);
-//                });
-//                lock (_allTransactionVerified)
-//                {
-//                    if (!Monitor.Wait(_allTransactionVerified, _timePerBlock)) // TODO: manage timeouts
-//                    {
-//                        _logger.LogWarning("Cannot retrieve all transactions in time, aborting");
-//                        RequestChangeView();
-//                        continue;
-//                    }
-//                }
-
+                var txsGot = _blockchainSynchronizer.WaitForTransactions(_context.CurrentProposal.TransactionHashes, _timePerBlock);
+                if (txsGot != _context.CurrentProposal.TransactionHashes.Length)
+                {
+                    _logger.LogWarning($"Cannot retrieve all transactions in time, got only {txsGot} of {_context.CurrentProposal.TransactionHashes.Length}, aborting");
+                    RequestChangeView();
+                    continue;
+                }
+                
                 // When all transaction are collected and validated, we are able to sign block
                 _logger.LogInformation("Send prepare response");
 
@@ -235,10 +236,11 @@ namespace Phorkus.Core.Consensus
 
                 _context.State |= ConsensusState.BlockSent;
 
-                _blockManager.Persist(block);
-                // TODO: persist block
-//                _blockManager.AddBlock(block).Start(); // ??
-//                _blockManager.WaitUntilBlockProcessed(block.Index);
+                var result = _blockManager.Persist(block);
+                if (result == OperatingError.Ok)
+                    _logger.LogInformation($"Block persist completed: {block.Hash}");
+                else
+                    _logger.LogWarning($"Block hasn't been persisted: {block.Hash}, cuz error {result}");
 
                 _logger.LogInformation($"Block persist completed: {block.Hash}");
                 _context.LastBlockRecieved = DateTime.UtcNow;

@@ -15,7 +15,9 @@ namespace Phorkus.Core.Messaging.Handlers
 
         public void HandleMessage(IPeer peer, Message message)
         {
-            if (message.BodyCase != Message.BodyOneofCase.ConsensusMessage) return;
+            var consensusMessage = message.ConsensusMessage;
+            if (consensusMessage is null)
+                throw new InvalidMessageException();            
             _consensusManager.HandleConsensusMessage(message.ConsensusMessage);
         }
     }

@@ -31,29 +31,29 @@ namespace Phorkus.Core.Network
             _logger.LogInformation($"Starting message listener for peer {peer.EndPoint}");
             while (peer.IsConnected && !cancellationToken.IsCancellationRequested)
             {
-                /* read array with messages from peer */
-                var messages = peer.Receive();
-                if (messages == null)
-                    continue;
-                /* convert messages to array */
-                var array = messages as Message[] ?? messages.ToArray();
-                if (array.Length == 0)
-                    continue;
-                /* handshake unknown peer */
-                if (!peer.IsKnown && !_TryHandshake(peer, array))
-                    break;
-                /* handle messages */
-                foreach (var message in array)
+                try
                 {
-                    if (message.Type == MessageType.HandshakeRequest ||
-                        message.Type == MessageType.HandshakeResponse)
-                    {
+                    /* read array with messages from peer */
+                    var messages = peer.Receive();
+                    if (messages == null)
                         continue;
-                    }
-                    OnMessageHandled?.Invoke(peer, message);
+                    /* convert messages to array */
+                    var array = messages as Message[] ?? messages.ToArray();
+                    if (array.Length == 0)
+                        continue;
+                    /* handshake unknown peer */
+                    if (!peer.IsKnown && !_TryHandshake(peer, array))
+                        break;
+                    /* handle messages */
+                    foreach (var message in array)
+                        OnMessageHandled?.Invoke(peer, message);
+                    /* refresh message counts (for rate limitations in future) */
+                    _CheckRatePolicy(peer, (uint) array.Length);
                 }
-                /* refresh message counts (for rate limitations in future) */
-                _CheckRatePolicy(peer, (uint) array.Length);
+                catch (Exception e)
+                {
+                    _logger.LogError($"An error occurred while handling message {e}");
+                }
             }
             _logger.LogInformation($"Terminating message listener for peer {peer.EndPoint}");
             peer.Disconnect();

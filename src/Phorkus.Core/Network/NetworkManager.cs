@@ -91,7 +91,15 @@ namespace Phorkus.Core.Network
         {
             if (!(sender is IPeer peer))
                 throw new ArgumentNullException(nameof(peer));
-            _messagingManager.HandleMessage(peer, message);
+            try
+            {
+                if (!_messagingManager.HandleMessage(peer, message))
+                    _networkLogger.LogWarning($"Unable to log handle message ({message.Type})");
+            }
+            catch (Exception e)
+            {
+                _networkLogger.LogError($"Unable to handle message {message.Type}: {e}");
+            }
         }
 
         private void _RateLimited(object sender, IPeer peer)

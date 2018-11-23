@@ -74,7 +74,15 @@ namespace Phorkus.Core.Network.Tcp
                     messages = new Queue<Message>(_messages);
                     _messages.Clear();
                 }
-                _transport.WriteMessages(messages, _stream);
+
+                try
+                {
+                    _transport.WriteMessages(messages, _stream);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
 

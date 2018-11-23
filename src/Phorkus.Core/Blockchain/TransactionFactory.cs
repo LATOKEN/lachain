@@ -1,7 +1,6 @@
 ﻿using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
-using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -47,7 +46,7 @@ namespace Phorkus.Core.Blockchain
             };
             var tx = new Transaction
             {
-                Type = TransactionType.Contract,
+                Type = TransactionType.Miner,
                 Version = 0,
                 Flags = 0,
                 From = from,

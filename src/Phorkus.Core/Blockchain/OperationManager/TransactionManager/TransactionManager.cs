@@ -40,10 +40,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         public event EventHandler<SignedTransaction> OnTransactionExecuted;
         public event EventHandler<SignedTransaction> OnTransactionSigned;
 
-        public Transaction GetByHash(UInt256 transactionHash)
+        public SignedTransaction GetByHash(UInt256 transactionHash)
         {
             var tx = _transactionRepository.GetTransactionByHash(transactionHash);
-            return tx != null ? new Transaction(tx.Transaction) : null;
+            return tx;
         }
 
         public OperatingError Persist(SignedTransaction transaction)

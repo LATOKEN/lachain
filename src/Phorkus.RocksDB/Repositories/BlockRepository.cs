@@ -51,12 +51,18 @@ namespace Phorkus.RocksDB.Repositories
             return _GetBlockByHeight(block.Header.Index + 1);
         }
         
-        public IEnumerable<Block> GetBlocksByHeightRange(uint height, uint count)
+        public IEnumerable<Block> GetBlocksByHeightRange(ulong height, ulong count)
         {
-            var prefixes = Enumerable.Range((int) height, (int) count).Select(
-                h => EntryPrefix.BlockHashByHeight.BuildPrefix((uint) h));
-            var hashes = _rocksDbContext.GetMany(prefixes).Values.Where(h => h != null).Select(UInt256.Parser.ParseFrom);
-            return GetBlocksByHashes(hashes);
+            var result = new List<Block>();
+            for (var i = height; i <= height + count; i++)
+            {
+                var block = _GetBlockByHeight(i);
+                if (block is null)
+                    continue;
+                result.Add(block);
+            }
+
+            return result;
         }
         
         public IEnumerable<Block> GetBlocksByHashes(IEnumerable<UInt256> hashes)

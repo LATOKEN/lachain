@@ -1,10 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
-using Newtonsoft.Json;
 using Phorkus.Core;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
@@ -20,7 +15,6 @@ using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
-using Phorkus.RocksDB.Repositories;
 
 namespace Phorkus.Benchmark
 {
@@ -154,7 +148,7 @@ namespace Phorkus.Benchmark
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
-            var transactionPool = new TransactionPool(
+            var transactionPool = new TransactionPool(null,
                 transactionManager);
 
             const int txGenerate = 1000;

@@ -5,6 +5,6 @@ namespace Phorkus.Core.Messaging
 {
     public interface IMessagingManager
     {
-        void HandleMessage(IPeer peer, Message message);
+        bool HandleMessage(IPeer peer, Message message);
     }
 }

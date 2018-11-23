@@ -3,7 +3,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Core.Messaging.Handlers
 {
-    public class NeighboursGotMessageHandler : IMessageHandler
+    public class HandshakeRequestMessageHandler : IMessageHandler
     {
         public void HandleMessage(IPeer peer, Message message)
         {

@@ -9,5 +9,7 @@ namespace Phorkus.Core.DI
         TEntity Resolve<TEntity>() where TEntity : class;
 
         bool TryResolve(Type parameterType, out object obj);
+
+        TEntity Factory<TEntity>() where TEntity : class;
     }
 }

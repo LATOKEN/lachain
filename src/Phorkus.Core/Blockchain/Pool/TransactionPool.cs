@@ -11,6 +11,7 @@ namespace Phorkus.Core.Blockchain.Pool
     {
         public const int PeekLimit = 1000;
 
+        private readonly ITransactionVerifier _transactionVerifier;
         private readonly ITransactionManager _transactionManager;
         
         /*private readonly ConcurrentDictionary<UInt256, SignedTransaction> _transactions
@@ -19,8 +20,11 @@ namespace Phorkus.Core.Blockchain.Pool
         private readonly ConcurrentQueue<SignedTransaction> _transactions
             = new ConcurrentQueue<SignedTransaction>();
 
-        public TransactionPool(ITransactionManager transactionManager)
+        public TransactionPool(
+            ITransactionVerifier transactionVerifier,
+            ITransactionManager transactionManager)
         {
+            _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
             _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
         }
 

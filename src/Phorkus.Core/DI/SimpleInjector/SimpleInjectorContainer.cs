@@ -13,7 +13,7 @@ namespace Phorkus.Core.DI.SimpleInjector
         }
 
         public object Resolve(Type serviceType)
-        {
+        {   
             return _container.GetInstance(serviceType);
         }
 
@@ -34,6 +34,13 @@ namespace Phorkus.Core.DI.SimpleInjector
 
             obj = null;
             return false;
+        }
+
+        public TEntity Factory<TEntity>() where TEntity : class
+        {
+            var registration = Lifestyle.Singleton.CreateRegistration<TEntity>(_container);
+            _container.AddRegistration(typeof(TEntity), registration);
+            return _container.GetInstance<TEntity>();
         }
     }
 }

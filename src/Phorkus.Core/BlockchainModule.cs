@@ -16,6 +16,7 @@ namespace Phorkus.Core
         {
             /* global */
             containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
+            containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionFactory, TransactionFactory>();
             /* consensus */
             containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();

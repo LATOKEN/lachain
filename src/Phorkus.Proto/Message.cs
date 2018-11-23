@@ -28,50 +28,43 @@ namespace Phorkus.Proto {
             "cm90bxoLYmxvY2sucHJvdG8aD2NvbnNlbnN1cy5wcm90bxoKbm9kZS5wcm90",
             "byIuChdIYW5kc2hha2VSZXF1ZXN0TWVzc2FnZRITCgRub2RlGAEgASgLMgUu",
             "Tm9kZSIvChhIYW5kc2hha2VSZXNwb25zZU1lc3NhZ2USEwoEbm9kZRgBIAEo",
-            "CzIFLk5vZGUiGAoWR2V0QmxvY2tIZWFkZXJzTWVzc2FnZSI5ChZCbG9ja0hl",
-            "YWRlcnNHb3RNZXNzYWdlEh8KDWJsb2NrX2hlYWRlcnMYASADKAsyCC5VSW50",
-            "MjU2IjIKEEdldEJsb2Nrc01lc3NhZ2USHgoMYmxvY2tfaGFzaGVzGAEgAygL",
-            "MgguVUludDI1NiIqChBCbG9ja3NHb3RNZXNzYWdlEhYKBmJsb2NrcxgBIAMo",
-            "CzIGLkJsb2NrIj4KFkdldFRyYW5zYWN0aW9uc01lc3NhZ2USJAoSdHJhbnNh",
-            "Y3Rpb25faGFzaGVzGAEgAygLMgguVUludDI1NiI8ChZUcmFuc2FjdGlvbnNH",
-            "b3RNZXNzYWdlEiIKDHRyYW5zYWN0aW9ucxgBIAMoCzIMLlRyYW5zYWN0aW9u",
-            "IhMKEUdldE1lbXBvb2xNZXNzYWdlIjkKEU1lbXBvb2xHb3RNZXNzYWdlEiQK",
-            "EnRyYW5zYWN0aW9uX2hhc2hlcxgBIAMoCzIILlVJbnQyNTYiFgoUR2V0TmVp",
-            "Z2hib3Vyc01lc3NhZ2UiMQoUTmVpZ2hib3Vyc0dvdE1lc3NhZ2USGQoKbmVp",
-            "Z2hib3VycxgBIAMoCzIFLk5vZGUi2wQKB01lc3NhZ2USGgoEdHlwZRgBIAEo",
-            "DjIMLk1lc3NhZ2VUeXBlEjUKEWhhbmRzaGFrZV9yZXF1ZXN0GAogASgLMhgu",
-            "SGFuZHNoYWtlUmVxdWVzdE1lc3NhZ2VIABI3ChJoYW5kc2hha2VfcmVzcG9u",
-            "c2UYCyABKAsyGS5IYW5kc2hha2VSZXNwb25zZU1lc3NhZ2VIABI0ChFnZXRf",
-            "YmxvY2tfaGVhZGVycxgMIAEoCzIXLkdldEJsb2NrSGVhZGVyc01lc3NhZ2VI",
-            "ABI0ChFibG9ja19oZWFkZXJzX2dvdBgNIAEoCzIXLkJsb2NrSGVhZGVyc0dv",
-            "dE1lc3NhZ2VIABIpCgtnZXRfbWVtcG9vbBgOIAEoCzISLkdldE1lbXBvb2xN",
-            "ZXNzYWdlSAASKQoLbWVtcG9vbF9nb3QYDyABKAsyEi5NZW1wb29sR290TWVz",
-            "c2FnZUgAEjMKEGdldF90cmFuc2FjdGlvbnMYECABKAsyFy5HZXRUcmFuc2Fj",
-            "dGlvbnNNZXNzYWdlSAASMwoQdHJhbnNhY3Rpb25zX2dvdBgRIAEoCzIXLlRy",
-            "YW5zYWN0aW9uc0dvdE1lc3NhZ2VIABIvCg5nZXRfbmVpZ2hib3VycxgSIAEo",
-            "CzIVLkdldE5laWdoYm91cnNNZXNzYWdlSAASLwoObmVpZ2hib3Vyc19nb3QY",
-            "EyABKAsyFS5OZWlnaGJvdXJzR290TWVzc2FnZUgAEi4KEWNvbnNlbnN1c19t",
-            "ZXNzYWdlGBQgASgLMhEuQ29uc2Vuc3VzTWVzc2FnZUgAQgYKBGJvZHkq2gMK",
-            "C01lc3NhZ2VUeXBlEhgKFE1FU1NBR0VfVFlQRV9VTktOT1dOEAASIgoeTUVT",
-            "U0FHRV9UWVBFX0hBTkRTSEFLRV9SRVFVRVNUEAESIwofTUVTU0FHRV9UWVBF",
-            "X0hBTkRTSEFLRV9SRVNQT05TRRACEiIKHk1FU1NBR0VfVFlQRV9HRVRfQkxP",
-            "Q0tfSEVBREVSUxADEiIKHk1FU1NBR0VfVFlQRV9CTE9DS19IRUFERVJTX0dP",
-            "VBAEEhsKF01FU1NBR0VfVFlQRV9HRVRfQkxPQ0tTEAUSGwoXTUVTU0FHRV9U",
-            "WVBFX0JMT0NLU19HT1QQBhIhCh1NRVNTQUdFX1RZUEVfR0VUX1RSQU5TQUNU",
-            "SU9OUxAHEiEKHU1FU1NBR0VfVFlQRV9UUkFOU0FDVElPTlNfR09UEAgSHAoY",
-            "TUVTU0FHRV9UWVBFX0dFVF9NRU1QT09MEAkSHAoYTUVTU0FHRV9UWVBFX01F",
-            "TVBPT0xfR09UEAoSHwobTUVTU0FHRV9UWVBFX0dFVF9ORUlHSEJPVVJTEAsS",
-            "HwobTUVTU0FHRV9UWVBFX05FSUdIQk9VUlNfR09UEAwSIgoeTUVTU0FHRV9U",
-            "WVBFX0NPTlNFTlNVU19NRVNTQUdFEA1CEKoCDVBob3JrdXMuUHJvdG9iBnBy",
-            "b3RvMw=="));
+            "CzIFLk5vZGUiIgoQR2V0QmxvY2tzTWVzc2FnZRIOCgZoZWlnaHQYASABKAQi",
+            "KgoQQmxvY2tzR290TWVzc2FnZRIWCgZibG9ja3MYASADKAsyBi5CbG9jayI+",
+            "ChZHZXRUcmFuc2FjdGlvbnNNZXNzYWdlEiQKEnRyYW5zYWN0aW9uX2hhc2hl",
+            "cxgBIAMoCzIILlVJbnQyNTYiQgoWVHJhbnNhY3Rpb25zR290TWVzc2FnZRIo",
+            "Cgx0cmFuc2FjdGlvbnMYASADKAsyEi5TaWduZWRUcmFuc2FjdGlvbiITChFH",
+            "ZXRNZW1wb29sTWVzc2FnZSI5ChFNZW1wb29sR290TWVzc2FnZRIkChJ0cmFu",
+            "c2FjdGlvbl9oYXNoZXMYASADKAsyCC5VSW50MjU2IhYKFEdldE5laWdoYm91",
+            "cnNNZXNzYWdlIjEKFE5laWdoYm91cnNHb3RNZXNzYWdlEhkKCm5laWdoYm91",
+            "cnMYASADKAsyBS5Ob2RlIsEECgdNZXNzYWdlEhoKBHR5cGUYASABKA4yDC5N",
+            "ZXNzYWdlVHlwZRI1ChFoYW5kc2hha2VfcmVxdWVzdBgKIAEoCzIYLkhhbmRz",
+            "aGFrZVJlcXVlc3RNZXNzYWdlSAASNwoSaGFuZHNoYWtlX3Jlc3BvbnNlGAsg",
+            "ASgLMhkuSGFuZHNoYWtlUmVzcG9uc2VNZXNzYWdlSAASJwoKZ2V0X2Jsb2Nr",
+            "cxgMIAEoCzIRLkdldEJsb2Nrc01lc3NhZ2VIABInCgpibG9ja3NfZ290GA0g",
+            "ASgLMhEuQmxvY2tzR290TWVzc2FnZUgAEikKC2dldF9tZW1wb29sGA4gASgL",
+            "MhIuR2V0TWVtcG9vbE1lc3NhZ2VIABIpCgttZW1wb29sX2dvdBgPIAEoCzIS",
+            "Lk1lbXBvb2xHb3RNZXNzYWdlSAASMwoQZ2V0X3RyYW5zYWN0aW9ucxgQIAEo",
+            "CzIXLkdldFRyYW5zYWN0aW9uc01lc3NhZ2VIABIzChB0cmFuc2FjdGlvbnNf",
+            "Z290GBEgASgLMhcuVHJhbnNhY3Rpb25zR290TWVzc2FnZUgAEi8KDmdldF9u",
+            "ZWlnaGJvdXJzGBIgASgLMhUuR2V0TmVpZ2hib3Vyc01lc3NhZ2VIABIvCg5u",
+            "ZWlnaGJvdXJzX2dvdBgTIAEoCzIVLk5laWdoYm91cnNHb3RNZXNzYWdlSAAS",
+            "LgoRY29uc2Vuc3VzX21lc3NhZ2UYFCABKAsyES5Db25zZW5zdXNNZXNzYWdl",
+            "SABCBgoEYm9keSqSAwoLTWVzc2FnZVR5cGUSGAoUTUVTU0FHRV9UWVBFX1VO",
+            "S05PV04QABIiCh5NRVNTQUdFX1RZUEVfSEFORFNIQUtFX1JFUVVFU1QQARIj",
+            "Ch9NRVNTQUdFX1RZUEVfSEFORFNIQUtFX1JFU1BPTlNFEAISGwoXTUVTU0FH",
+            "RV9UWVBFX0dFVF9CTE9DS1MQBRIbChdNRVNTQUdFX1RZUEVfQkxPQ0tTX0dP",
+            "VBAGEiEKHU1FU1NBR0VfVFlQRV9HRVRfVFJBTlNBQ1RJT05TEAcSIQodTUVT",
+            "U0FHRV9UWVBFX1RSQU5TQUNUSU9OU19HT1QQCBIcChhNRVNTQUdFX1RZUEVf",
+            "R0VUX01FTVBPT0wQCRIcChhNRVNTQUdFX1RZUEVfTUVNUE9PTF9HT1QQChIf",
+            "ChtNRVNTQUdFX1RZUEVfR0VUX05FSUdIQk9VUlMQCxIfChtNRVNTQUdFX1RZ",
+            "UEVfTkVJR0hCT1VSU19HT1QQDBIiCh5NRVNTQUdFX1RZUEVfQ09OU0VOU1VT",
+            "X01FU1NBR0UQDUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.MessageType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeRequestMessage), global::Phorkus.Proto.HandshakeRequestMessage.Parser, new[]{ "Node" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeResponseMessage), global::Phorkus.Proto.HandshakeResponseMessage.Parser, new[]{ "Node" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlockHeadersMessage), global::Phorkus.Proto.GetBlockHeadersMessage.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeadersGotMessage), global::Phorkus.Proto.BlockHeadersGotMessage.Parser, new[]{ "BlockHeaders" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksMessage), global::Phorkus.Proto.GetBlocksMessage.Parser, new[]{ "BlockHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksMessage), global::Phorkus.Proto.GetBlocksMessage.Parser, new[]{ "Height" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlocksGotMessage), global::Phorkus.Proto.BlocksGotMessage.Parser, new[]{ "Blocks" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsMessage), global::Phorkus.Proto.GetTransactionsMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionsGotMessage), global::Phorkus.Proto.TransactionsGotMessage.Parser, new[]{ "Transactions" }, null, null, null),
@@ -79,7 +72,7 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MempoolGotMessage), global::Phorkus.Proto.MempoolGotMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetNeighboursMessage), global::Phorkus.Proto.GetNeighboursMessage.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NeighboursGotMessage), global::Phorkus.Proto.NeighboursGotMessage.Parser, new[]{ "Neighbours" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Message), global::Phorkus.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlockHeaders", "BlockHeadersGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot", "ConsensusMessage" }, new[]{ "Body" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Message), global::Phorkus.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlocks", "BlocksGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot", "ConsensusMessage" }, new[]{ "Body" }, null, null)
           }));
     }
     #endregion
@@ -96,11 +89,6 @@ namespace Phorkus.Proto {
     /// </summary>
     [pbr::OriginalName("MESSAGE_TYPE_HANDSHAKE_REQUEST")] HandshakeRequest = 1,
     [pbr::OriginalName("MESSAGE_TYPE_HANDSHAKE_RESPONSE")] HandshakeResponse = 2,
-    /// <summary>
-    /// request block headers from peer 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_GET_BLOCK_HEADERS")] GetBlockHeaders = 3,
-    [pbr::OriginalName("MESSAGE_TYPE_BLOCK_HEADERS_GOT")] BlockHeadersGot = 4,
     /// <summary>
     /// request block headers from peer 
     /// </summary>
@@ -400,228 +388,6 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class GetBlockHeadersMessage : pb::IMessage<GetBlockHeadersMessage> {
-    private static readonly pb::MessageParser<GetBlockHeadersMessage> _parser = new pb::MessageParser<GetBlockHeadersMessage>(() => new GetBlockHeadersMessage());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<GetBlockHeadersMessage> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[2]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetBlockHeadersMessage() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetBlockHeadersMessage(GetBlockHeadersMessage other) : this() {
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetBlockHeadersMessage Clone() {
-      return new GetBlockHeadersMessage(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as GetBlockHeadersMessage);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(GetBlockHeadersMessage other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(GetBlockHeadersMessage other) {
-      if (other == null) {
-        return;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class BlockHeadersGotMessage : pb::IMessage<BlockHeadersGotMessage> {
-    private static readonly pb::MessageParser<BlockHeadersGotMessage> _parser = new pb::MessageParser<BlockHeadersGotMessage>(() => new BlockHeadersGotMessage());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<BlockHeadersGotMessage> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[3]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlockHeadersGotMessage() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlockHeadersGotMessage(BlockHeadersGotMessage other) : this() {
-      blockHeaders_ = other.blockHeaders_.Clone();
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlockHeadersGotMessage Clone() {
-      return new BlockHeadersGotMessage(this);
-    }
-
-    /// <summary>Field number for the "block_headers" field.</summary>
-    public const int BlockHeadersFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_blockHeaders_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> blockHeaders_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> BlockHeaders {
-      get { return blockHeaders_; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as BlockHeadersGotMessage);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(BlockHeadersGotMessage other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if(!blockHeaders_.Equals(other.blockHeaders_)) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      hash ^= blockHeaders_.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      blockHeaders_.WriteTo(output, _repeated_blockHeaders_codec);
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      size += blockHeaders_.CalculateSize(_repeated_blockHeaders_codec);
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(BlockHeadersGotMessage other) {
-      if (other == null) {
-        return;
-      }
-      blockHeaders_.Add(other.blockHeaders_);
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            blockHeaders_.AddEntriesFrom(input, _repeated_blockHeaders_codec);
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
   public sealed partial class GetBlocksMessage : pb::IMessage<GetBlocksMessage> {
     private static readonly pb::MessageParser<GetBlocksMessage> _parser = new pb::MessageParser<GetBlocksMessage>(() => new GetBlocksMessage());
     private pb::UnknownFieldSet _unknownFields;
@@ -630,7 +396,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -647,7 +413,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public GetBlocksMessage(GetBlocksMessage other) : this() {
-      blockHashes_ = other.blockHashes_.Clone();
+      height_ = other.height_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -656,14 +422,15 @@ namespace Phorkus.Proto {
       return new GetBlocksMessage(this);
     }
 
-    /// <summary>Field number for the "block_hashes" field.</summary>
-    public const int BlockHashesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_blockHashes_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> blockHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
+    /// <summary>Field number for the "height" field.</summary>
+    public const int HeightFieldNumber = 1;
+    private ulong height_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> BlockHashes {
-      get { return blockHashes_; }
+    public ulong Height {
+      get { return height_; }
+      set {
+        height_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -679,14 +446,14 @@ namespace Phorkus.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if(!blockHashes_.Equals(other.blockHashes_)) return false;
+      if (Height != other.Height) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      hash ^= blockHashes_.GetHashCode();
+      if (Height != 0UL) hash ^= Height.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -700,7 +467,10 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      blockHashes_.WriteTo(output, _repeated_blockHashes_codec);
+      if (Height != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(Height);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -709,7 +479,9 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      size += blockHashes_.CalculateSize(_repeated_blockHashes_codec);
+      if (Height != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Height);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -721,7 +493,9 @@ namespace Phorkus.Proto {
       if (other == null) {
         return;
       }
-      blockHashes_.Add(other.blockHashes_);
+      if (other.Height != 0UL) {
+        Height = other.Height;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -733,8 +507,8 @@ namespace Phorkus.Proto {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
-          case 10: {
-            blockHashes_.AddEntriesFrom(input, _repeated_blockHashes_codec);
+          case 8: {
+            Height = input.ReadUInt64();
             break;
           }
         }
@@ -751,7 +525,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -872,7 +646,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -993,7 +767,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1021,11 +795,11 @@ namespace Phorkus.Proto {
 
     /// <summary>Field number for the "transactions" field.</summary>
     public const int TransactionsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.Transaction> _repeated_transactions_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.Transaction.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.Transaction> transactions_ = new pbc::RepeatedField<global::Phorkus.Proto.Transaction>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.SignedTransaction> _repeated_transactions_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.SignedTransaction.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.SignedTransaction> transactions_ = new pbc::RepeatedField<global::Phorkus.Proto.SignedTransaction>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.Transaction> Transactions {
+    public pbc::RepeatedField<global::Phorkus.Proto.SignedTransaction> Transactions {
       get { return transactions_; }
     }
 
@@ -1114,7 +888,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1215,7 +989,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1336,7 +1110,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1437,7 +1211,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1558,7 +1332,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1583,11 +1357,11 @@ namespace Phorkus.Proto {
         case BodyOneofCase.HandshakeResponse:
           HandshakeResponse = other.HandshakeResponse.Clone();
           break;
-        case BodyOneofCase.GetBlockHeaders:
-          GetBlockHeaders = other.GetBlockHeaders.Clone();
+        case BodyOneofCase.GetBlocks:
+          GetBlocks = other.GetBlocks.Clone();
           break;
-        case BodyOneofCase.BlockHeadersGot:
-          BlockHeadersGot = other.BlockHeadersGot.Clone();
+        case BodyOneofCase.BlocksGot:
+          BlocksGot = other.BlocksGot.Clone();
           break;
         case BodyOneofCase.GetMempool:
           GetMempool = other.GetMempool.Clone();
@@ -1653,25 +1427,25 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "get_block_headers" field.</summary>
-    public const int GetBlockHeadersFieldNumber = 12;
+    /// <summary>Field number for the "get_blocks" field.</summary>
+    public const int GetBlocksFieldNumber = 12;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.GetBlockHeadersMessage GetBlockHeaders {
-      get { return bodyCase_ == BodyOneofCase.GetBlockHeaders ? (global::Phorkus.Proto.GetBlockHeadersMessage) body_ : null; }
+    public global::Phorkus.Proto.GetBlocksMessage GetBlocks {
+      get { return bodyCase_ == BodyOneofCase.GetBlocks ? (global::Phorkus.Proto.GetBlocksMessage) body_ : null; }
       set {
         body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetBlockHeaders;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetBlocks;
       }
     }
 
-    /// <summary>Field number for the "block_headers_got" field.</summary>
-    public const int BlockHeadersGotFieldNumber = 13;
+    /// <summary>Field number for the "blocks_got" field.</summary>
+    public const int BlocksGotFieldNumber = 13;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.BlockHeadersGotMessage BlockHeadersGot {
-      get { return bodyCase_ == BodyOneofCase.BlockHeadersGot ? (global::Phorkus.Proto.BlockHeadersGotMessage) body_ : null; }
+    public global::Phorkus.Proto.BlocksGotMessage BlocksGot {
+      get { return bodyCase_ == BodyOneofCase.BlocksGot ? (global::Phorkus.Proto.BlocksGotMessage) body_ : null; }
       set {
         body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.BlockHeadersGot;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.BlocksGot;
       }
     }
 
@@ -1758,8 +1532,8 @@ namespace Phorkus.Proto {
       None = 0,
       HandshakeRequest = 10,
       HandshakeResponse = 11,
-      GetBlockHeaders = 12,
-      BlockHeadersGot = 13,
+      GetBlocks = 12,
+      BlocksGot = 13,
       GetMempool = 14,
       MempoolGot = 15,
       GetTransactions = 16,
@@ -1796,8 +1570,8 @@ namespace Phorkus.Proto {
       if (Type != other.Type) return false;
       if (!object.Equals(HandshakeRequest, other.HandshakeRequest)) return false;
       if (!object.Equals(HandshakeResponse, other.HandshakeResponse)) return false;
-      if (!object.Equals(GetBlockHeaders, other.GetBlockHeaders)) return false;
-      if (!object.Equals(BlockHeadersGot, other.BlockHeadersGot)) return false;
+      if (!object.Equals(GetBlocks, other.GetBlocks)) return false;
+      if (!object.Equals(BlocksGot, other.BlocksGot)) return false;
       if (!object.Equals(GetMempool, other.GetMempool)) return false;
       if (!object.Equals(MempoolGot, other.MempoolGot)) return false;
       if (!object.Equals(GetTransactions, other.GetTransactions)) return false;
@@ -1815,8 +1589,8 @@ namespace Phorkus.Proto {
       if (Type != 0) hash ^= Type.GetHashCode();
       if (bodyCase_ == BodyOneofCase.HandshakeRequest) hash ^= HandshakeRequest.GetHashCode();
       if (bodyCase_ == BodyOneofCase.HandshakeResponse) hash ^= HandshakeResponse.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.GetBlockHeaders) hash ^= GetBlockHeaders.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.BlockHeadersGot) hash ^= BlockHeadersGot.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.GetBlocks) hash ^= GetBlocks.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.BlocksGot) hash ^= BlocksGot.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GetMempool) hash ^= GetMempool.GetHashCode();
       if (bodyCase_ == BodyOneofCase.MempoolGot) hash ^= MempoolGot.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GetTransactions) hash ^= GetTransactions.GetHashCode();
@@ -1850,13 +1624,13 @@ namespace Phorkus.Proto {
         output.WriteRawTag(90);
         output.WriteMessage(HandshakeResponse);
       }
-      if (bodyCase_ == BodyOneofCase.GetBlockHeaders) {
+      if (bodyCase_ == BodyOneofCase.GetBlocks) {
         output.WriteRawTag(98);
-        output.WriteMessage(GetBlockHeaders);
+        output.WriteMessage(GetBlocks);
       }
-      if (bodyCase_ == BodyOneofCase.BlockHeadersGot) {
+      if (bodyCase_ == BodyOneofCase.BlocksGot) {
         output.WriteRawTag(106);
-        output.WriteMessage(BlockHeadersGot);
+        output.WriteMessage(BlocksGot);
       }
       if (bodyCase_ == BodyOneofCase.GetMempool) {
         output.WriteRawTag(114);
@@ -1903,11 +1677,11 @@ namespace Phorkus.Proto {
       if (bodyCase_ == BodyOneofCase.HandshakeResponse) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(HandshakeResponse);
       }
-      if (bodyCase_ == BodyOneofCase.GetBlockHeaders) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(GetBlockHeaders);
+      if (bodyCase_ == BodyOneofCase.GetBlocks) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(GetBlocks);
       }
-      if (bodyCase_ == BodyOneofCase.BlockHeadersGot) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlockHeadersGot);
+      if (bodyCase_ == BodyOneofCase.BlocksGot) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlocksGot);
       }
       if (bodyCase_ == BodyOneofCase.GetMempool) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(GetMempool);
@@ -1957,17 +1731,17 @@ namespace Phorkus.Proto {
           }
           HandshakeResponse.MergeFrom(other.HandshakeResponse);
           break;
-        case BodyOneofCase.GetBlockHeaders:
-          if (GetBlockHeaders == null) {
-            GetBlockHeaders = new global::Phorkus.Proto.GetBlockHeadersMessage();
+        case BodyOneofCase.GetBlocks:
+          if (GetBlocks == null) {
+            GetBlocks = new global::Phorkus.Proto.GetBlocksMessage();
           }
-          GetBlockHeaders.MergeFrom(other.GetBlockHeaders);
+          GetBlocks.MergeFrom(other.GetBlocks);
           break;
-        case BodyOneofCase.BlockHeadersGot:
-          if (BlockHeadersGot == null) {
-            BlockHeadersGot = new global::Phorkus.Proto.BlockHeadersGotMessage();
+        case BodyOneofCase.BlocksGot:
+          if (BlocksGot == null) {
+            BlocksGot = new global::Phorkus.Proto.BlocksGotMessage();
           }
-          BlockHeadersGot.MergeFrom(other.BlockHeadersGot);
+          BlocksGot.MergeFrom(other.BlocksGot);
           break;
         case BodyOneofCase.GetMempool:
           if (GetMempool == null) {
@@ -2047,21 +1821,21 @@ namespace Phorkus.Proto {
             break;
           }
           case 98: {
-            global::Phorkus.Proto.GetBlockHeadersMessage subBuilder = new global::Phorkus.Proto.GetBlockHeadersMessage();
-            if (bodyCase_ == BodyOneofCase.GetBlockHeaders) {
-              subBuilder.MergeFrom(GetBlockHeaders);
+            global::Phorkus.Proto.GetBlocksMessage subBuilder = new global::Phorkus.Proto.GetBlocksMessage();
+            if (bodyCase_ == BodyOneofCase.GetBlocks) {
+              subBuilder.MergeFrom(GetBlocks);
             }
             input.ReadMessage(subBuilder);
-            GetBlockHeaders = subBuilder;
+            GetBlocks = subBuilder;
             break;
           }
           case 106: {
-            global::Phorkus.Proto.BlockHeadersGotMessage subBuilder = new global::Phorkus.Proto.BlockHeadersGotMessage();
-            if (bodyCase_ == BodyOneofCase.BlockHeadersGot) {
-              subBuilder.MergeFrom(BlockHeadersGot);
+            global::Phorkus.Proto.BlocksGotMessage subBuilder = new global::Phorkus.Proto.BlocksGotMessage();
+            if (bodyCase_ == BodyOneofCase.BlocksGot) {
+              subBuilder.MergeFrom(BlocksGot);
             }
             input.ReadMessage(subBuilder);
-            BlockHeadersGot = subBuilder;
+            BlocksGot = subBuilder;
             break;
           }
           case 114: {

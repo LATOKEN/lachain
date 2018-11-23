@@ -8,6 +8,7 @@ using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.SimpleInjector;
+using Phorkus.Core.Messaging;
 using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -42,7 +43,7 @@ namespace Phorkus.Console
         }
 
         public void Start(string[] args)
-        {            
+        {
             var networkManager = _container.Resolve<INetworkManager>();
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
@@ -55,6 +56,8 @@ namespace Phorkus.Console
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
+            var blockchainSynchronizer = _container.Resolve<IBlockchainSynchronizer>();
+            var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -81,7 +84,7 @@ namespace Phorkus.Console
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
 
             var asset = assetRepository.GetAssetByName("LA");
-
+            
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
             
@@ -94,8 +97,10 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
 
             networkManager.Start();
+            blockchainSynchronizer.Start();
+            transactionVerifier.Start();
             Thread.Sleep(1000);
-            consensusManager.Start();
+//            consensusManager.Start();
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)
