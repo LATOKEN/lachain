@@ -99,7 +99,6 @@ namespace Phorkus.Console
             networkManager.Start();
             blockchainSynchronizer.Start();
             transactionVerifier.Start();
-            Thread.Sleep(1000);
             consensusManager.Start();
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;

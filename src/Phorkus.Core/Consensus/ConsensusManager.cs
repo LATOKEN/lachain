@@ -89,8 +89,7 @@ namespace Phorkus.Core.Consensus
                 _logger.LogWarning("Halting consensus process: we are not in validator list");
                 return;
             }
-
-            Thread.Sleep(3000);
+            
             _stopped = false;
 
             while (!_stopped)
