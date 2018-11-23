@@ -83,9 +83,11 @@ namespace Phorkus.Core.Consensus
             lock (this)
             {
                 _context.LastBlockRecieved = DateTime.UtcNow;
-                _gotNewBlock = true;
+                if (_context.State.HasFlag(ConsensusState.ViewChanging))
+                    _gotNewBlock = true;
             }
         }
+
 
         public void Stop()
         {
@@ -114,7 +116,7 @@ namespace Phorkus.Core.Consensus
                         while (!CanChangeView(out viewNumber))
                         {
                             // TODO: manage timeouts
-                            var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
+                            var timeToWait = TimeUtils.Multiply(_timePerBlock, _context.MyState.ExpectedViewNumber);
                             if (!Monitor.Wait(_changeViewApproved, timeToWait))
                             {
                                 RequestChangeView();
@@ -509,11 +511,13 @@ namespace Phorkus.Core.Consensus
 
         private void CheckExpectedView()
         {
+            _logger.LogTrace($"Current view profile: {string.Join(" ", _context.Validators.Select(validator => validator.ExpectedViewNumber))}");
             lock (_changeViewApproved)
             {
                 if (!CanChangeView(out _))
                     return;
                 /*_context.ViewNumber = viewNumber;*/
+                _logger.LogTrace("We are ready to change view!");
                 Monitor.PulseAll(_changeViewApproved);
             }
         }
