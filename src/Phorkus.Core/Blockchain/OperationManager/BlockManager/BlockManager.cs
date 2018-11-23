@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
@@ -32,10 +33,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             _genesisBuilder = genesisBuilder;
             _logger = logger;
         }
-        
+
         public event EventHandler<Block> OnBlockPersisted;
         public event EventHandler<Block> OnBlockSigned;
-        
+
         public Block GetByHash(UInt256 blockHash)
         {
             return _blockRepository.GetBlockByHash(blockHash);
@@ -45,7 +46,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
-        
+
         public OperatingError Persist(Block block)
         {
             /* verify next block */
@@ -92,15 +93,17 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /*logger.LogInformation($"Changed current block height to {block.Header.Index}");*/
             return OperatingError.Ok;
         }
-        
+
         public Signature Sign(BlockHeader block, KeyPair keyPair)
         {
-            return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray()).ToSignature();
+            return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
+                .ToSignature();
         }
-        
+
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, PublicKey publicKey)
         {
-            var result = _crypto.VerifySignature(blockHeader.ToHash256().Buffer.ToByteArray(), signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+            var result = _crypto.VerifySignature(blockHeader.ToHash256().Buffer.ToByteArray(),
+                signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
@@ -113,8 +116,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             var verified = 0;
             if (_IsGenesisBlock(block))
                 return OperatingError.Ok;
-            if (multisig is null)
+            if (multisig is null ||
+                multisig.Validators.Intersect(multisig.Signatures.Select(sig => sig.Key)).Count() !=
+                multisig.Signatures.Count
+            )
                 return OperatingError.InvalidMultisig;
+
             foreach (var entry in multisig.Signatures)
             {
                 var publicKey = entry.Key.Buffer.ToByteArray();
@@ -130,9 +137,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                     // ignore
                 }
             }
+
             return verified >= multisig.Quorum ? OperatingError.Ok : OperatingError.QuorumNotReached;
         }
-        
+
         public OperatingError Verify(Block block)
         {
             var header = block.Header;

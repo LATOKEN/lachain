@@ -28,10 +28,8 @@ namespace Phorkus.Core.Cryptography
         /// <param name="signature"></param>
         /// <param name="check"></param>
         /// <returns></returns>
-        byte[] RecoverSignature(byte[] message, byte[] signature, bool check, int recId = 0);
+        byte[] RecoverSignature(byte[] message, byte[] signature);
         
-        byte[] RecoverSignature(byte[] message, byte[] signature, byte[] address);
-
         byte[] ComputeAddress(byte[] publicKey);
         
         /// <summary>

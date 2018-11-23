@@ -8,7 +8,7 @@ namespace Phorkus.Core.Utils
     {
         public static Signature Zero = new Signature
         {
-            Buffer = ByteString.CopyFrom(new byte[64])
+            Buffer = ByteString.CopyFrom(new byte[65])
         };
 
         public static bool IsZero(this Signature signature)
@@ -18,7 +18,7 @@ namespace Phorkus.Core.Utils
         
         public static Signature ToSignature(this byte[] signature)
         {
-            if (signature.Length != 64)
+            if (signature.Length != 65)
                 throw new ArgumentOutOfRangeException(nameof(signature));
             return new Signature
             {

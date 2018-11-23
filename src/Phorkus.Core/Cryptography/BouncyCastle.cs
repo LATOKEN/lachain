@@ -7,11 +7,44 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
+using Org.BouncyCastle.Math.EC.Multiplier;
 using Org.BouncyCastle.Security;
-using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Cryptography
 {
+    internal sealed class EcDsaSignerWithRecId : ECDsaSigner
+    {
+        public BigInteger[] GenerateSignatureWithRecId(byte[] message, out byte recId)
+        {
+            ECDomainParameters parameters = key.Parameters;
+            BigInteger n = parameters.N;
+            BigInteger e = CalculateE(n, message);
+            BigInteger d = ((ECPrivateKeyParameters) key).D;
+            if (kCalculator.IsDeterministic)
+                kCalculator.Init(n, d, message);
+            else
+                kCalculator.Init(n, random);
+            ECMultiplier basePointMultiplier = CreateBasePointMultiplier();
+            BigInteger val;
+            BigInteger bigInteger;
+            do
+            {
+                BigInteger k;
+                do
+                {
+                    k = kCalculator.NextK();
+                    var T = basePointMultiplier.Multiply(parameters.G, k).Normalize();
+                    val = T.AffineXCoord.ToBigInteger().Mod(n);
+                    recId = (byte) (T.YCoord.TestBitZero() ? 1 : 0);
+                } while (val.SignValue == 0);
+
+                bigInteger = k.ModInverse(n).Multiply(e.Add(d.Multiply(val))).Mod(n);
+            } while (bigInteger.SignValue == 0);
+
+            return new[] {val, bigInteger};
+        }
+    }
+
     public class BouncyCastle : ICrypto
     {
         private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256r1");
@@ -30,11 +63,11 @@ namespace Phorkus.Core.Cryptography
             signer.Init(false, keyParameters);
             signer.BlockUpdate(message, 0, message.Length);
 
-            if (signature.Length == 64)
+            if (signature.Length == 65)
             {
                 signature = new DerSequence(
-                        new DerInteger(new BigInteger(1, signature.Take(32).ToArray())),
-                        new DerInteger(new BigInteger(1, signature.Skip(32).ToArray())))
+                        new DerInteger(new BigInteger(1, signature.Skip(1).Take(32).ToArray())),
+                        new DerInteger(new BigInteger(1, signature.Skip(1).Skip(32).ToArray())))
                     .GetDerEncoded();
             }
 
@@ -44,34 +77,36 @@ namespace Phorkus.Core.Cryptography
         public byte[] Sign(byte[] message, byte[] prikey)
         {
             var priv = new ECPrivateKeyParameters("ECDSA", new BigInteger(1, prikey), Domain);
-            var signer = new ECDsaSigner();
-            var fullsign = new byte[64];
+            var signer = new EcDsaSignerWithRecId();
+            var fullsign = new byte[65];
 
             message = message.Sha256();
             signer.Init(true, priv);
-            var signature = signer.GenerateSignature(message);
+            var signature = signer.GenerateSignatureWithRecId(message, out var recId);
             var r = signature[0].ToByteArray();
             var s = signature[1].ToByteArray();
             var rLen = r.Length;
             var sLen = s.Length;
 
-            // Buid Signature ensuring Neo expected format. 32byte r + 32byte s.
+            // Build Signature ensuring expected format. 1byte v + 32byte r + 32byte s.
+            fullsign[0] = recId;
             if (rLen < 32)
-                Array.Copy(r, 0, fullsign, 32 - rLen, rLen);
+                Array.Copy(r, 0, fullsign, 33 - rLen, rLen);
             else
-                Array.Copy(r, rLen - 32, fullsign, 0, 32);
+                Array.Copy(r, rLen - 32, fullsign, 1, 32);
             if (sLen < 32)
-                Array.Copy(s, 0, fullsign, 64 - sLen, sLen);
+                Array.Copy(s, 0, fullsign, 65 - sLen, sLen);
             else
-                Array.Copy(s, sLen - 32, fullsign, 32, 32);
+                Array.Copy(s, sLen - 32, fullsign, 33, 32);
 
             return fullsign;
         }
 
-        public byte[] RecoverSignature(byte[] message, byte[] signature, bool check, int recId)
+        public byte[] RecoverSignature(byte[] message, byte[] signature)
         {
-            var r = new BigInteger(new byte[] { 0 }.Concat(signature.Take(32)).ToArray(), 0, 33);
-            var s = new BigInteger(new byte[] { 0 }.Concat(signature.Skip(32)).ToArray(), 0, 33);
+            var recId = signature[0];
+            var r = new BigInteger(new byte[] {0}.Concat(signature.Skip(1).Take(32)).ToArray(), 0, 33);
+            var s = new BigInteger(new byte[] {0}.Concat(signature.Skip(1).Skip(32)).ToArray(), 0, 33);
 
             var hash = message.Sha256();
 
@@ -92,13 +127,6 @@ namespace Phorkus.Core.Cryptography
             xEnc.CopyTo(compEncoding, 1);
             var R = curve.DecodePoint(compEncoding);
 
-            if (check)
-            {
-                var O = R.Multiply(order);
-                if (!O.IsInfinity)
-                    throw new ArgumentException("Check failed");
-            }
-
             var e = CalculateE(order, hash);
 
             var rInv = r.ModInverse(order);
@@ -106,31 +134,7 @@ namespace Phorkus.Core.Cryptography
             var erInv = e.Multiply(rInv).Mod(order);
 
             var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
-            return point.GetEncoded(false);
-        }
-
-        public byte[] RecoverSignature(byte[] message, byte[] signature, byte[] address)
-        {
-            for (var i = 0; i < 4; i++)
-            {
-                byte[] publicKey;
-                try
-                {
-                    publicKey = RecoverSignature(message, signature, true, i);
-                }
-                catch (Exception)
-                {
-                    continue;
-                }
-                if (publicKey is null)
-                    continue;
-                var check = ComputeAddress(publicKey);
-                if (!check.SequenceEqual(address))
-                    continue;
-                return publicKey;
-            }
-
-            return null;
+            return point.Normalize().GetEncoded(false);
         }
 
         public byte[] ComputeAddress(byte[] publicKey)

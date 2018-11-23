@@ -2,7 +2,7 @@
 
 namespace Phorkus.Core.Blockchain
 {
-    public class InfluentFundsException : Exception
+    public class InsufficientFundsException : Exception
     {
     }
 }
