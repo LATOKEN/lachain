@@ -116,14 +116,16 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             var verified = 0;
             if (_IsGenesisBlock(block))
                 return OperatingError.Ok;
-            if (multisig is null ||
-                multisig.Validators.Intersect(multisig.Signatures.Select(sig => sig.Key)).Count() !=
-                multisig.Signatures.Count
-            )
+            if (multisig is null)
                 return OperatingError.InvalidMultisig;
-
+            if (multisig.Signatures.Select(sig => sig.Key).Distinct().Count() != multisig.Signatures.Count)
+                return OperatingError.InvalidMultisig;
+            if (multisig.Validators.Distinct().Count() != multisig.Validators.Count)
+                return OperatingError.InvalidMultisig;
             foreach (var entry in multisig.Signatures)
             {
+                if (!multisig.Validators.Contains(entry.Key))
+                    continue;
                 var publicKey = entry.Key.Buffer.ToByteArray();
                 var sig = entry.Value.Buffer.ToByteArray();
                 try
