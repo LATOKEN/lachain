@@ -1,0 +1,6 @@
+{
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainPhorkus"
+  }
+}

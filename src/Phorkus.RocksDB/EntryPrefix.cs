@@ -17,5 +17,7 @@
         TransactionStateByHash = 0x0403,
         
         BalanceByOwnerAndAsset = 0x0501,
+        
+        TestPrefix = 0x0601,
     }
 }
