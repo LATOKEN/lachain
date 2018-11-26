@@ -1,28 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
+using Google.Protobuf;
 
-namespace Phorkus.Storage
+namespace Phorkus.Storage.Treap
 {
-    public class PersistentTreeMapManager<TIDentifier, TKey, TValue>
-        where TIDentifier : IEquatable<TIDentifier>
-        where TKey : IComparable<TKey>
+    public class PersistentTreeMapManager<TKey, TValue, TComparator>
+        where TComparator : IComparer<TKey>
+        where TKey : IMessage
+        where TValue : IMessage
     {
-        private readonly IPersistentMapStorageContext<TIDentifier, TKey, TValue> _context;
+        private readonly IPersistentMapStorageContext<TKey, TValue> _context;
         private readonly Random _random;
+        private readonly TComparator _comparator;
 
-        public PersistentTreeMapManager(IPersistentMapStorageContext<TIDentifier, TKey, TValue> context)
+        public PersistentTreeMapManager(IPersistentMapStorageContext<TKey, TValue> context, TComparator comparator)
         {
             _context = context;
+            _comparator = comparator;
             _random = new Random();
         }
 
-        public TIDentifier Merge(TIDentifier left, TIDentifier right)
+        public IPersistentTreeMap Merge(IPersistentTreeMap left, IPersistentTreeMap right)
         {
             if (left.Equals(_context.NullIDentifier)) return right;
             if (right.Equals(_context.NullIDentifier)) return left;
 
             var leftNode = _context.GetNodeById(left);
             var rightNode = _context.GetNodeById(right);
-            if (leftNode.Key.CompareTo(rightNode.Key) > 0)
+            if (_comparator.Compare(leftNode.Key, rightNode.Key) > 0)
                 throw new ArgumentOutOfRangeException(nameof(left));
             if ((_random.Next() & 1) == 0)
             {
@@ -36,7 +41,7 @@ namespace Phorkus.Storage
             }
         }
 
-        public void Split(TIDentifier root, TKey key, out TIDentifier left, out TIDentifier right)
+        public void Split(IPersistentTreeMap root, TKey key, out IPersistentTreeMap left, out IPersistentTreeMap right)
         {
             if (root.Equals(_context.NullIDentifier))
             {
@@ -44,8 +49,9 @@ namespace Phorkus.Storage
                 right = _context.NullIDentifier;
                 return;
             }
+
             var rootNode = _context.GetNodeById(root);
-            if (rootNode.Key.CompareTo(key) < 0)
+            if (_comparator.Compare(rootNode.Key, key) < 0)
             {
                 Split(rootNode.RightSon, key, out var newRight, out right);
                 left = _context.NewNode(rootNode.LeftSon, newRight, rootNode.Key, rootNode.Value);
@@ -57,14 +63,15 @@ namespace Phorkus.Storage
             }
         }
 
-        public TIDentifier Add(TIDentifier root, TKey key, TValue value)
+        public IPersistentTreeMap Add(IPersistentTreeMap root, TKey key, TValue value)
         {
             if (root.Equals(_context.NullIDentifier))
             {
                 return _context.NewNode(_context.NullIDentifier, _context.NullIDentifier, key, value);
             }
+
             var rootNode = _context.GetNodeById(root);
-            var c = rootNode.Key.CompareTo(key);
+            var c = _comparator.Compare(rootNode.Key, key);
             if (c == 0) throw new ArgumentOutOfRangeException(nameof(key));
             if ((_random.Next() & 1) == 0)
             {
