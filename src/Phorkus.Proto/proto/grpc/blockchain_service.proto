@@ -1,0 +1,16 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Network.Grpc";
+
+import "message.proto";
+
+service BlockchainService {
+
+    rpc Handshake(HandshakeRequest) returns (HandshakeReply);
+    rpc Ping(PingRequest) returns (PingReply);
+
+    rpc GetBlocksByHashes (GetBlocksByHashesRequest) returns (stream GetBlocksByHashesReply);
+    rpc GetBlocksByHeightRange (GetBlocksByHeightRangeRequest) returns (stream GetBlocksByHeightRangeReply);
+
+    rpc GetTransactionsByHashes (GetTransactionsByHashesRequest) returns (stream GetTransactionsByHashesReply);
+    rpc GetTransactionHashesByBlockHeight (GetTransactionHashesByBlockHeightRequest) returns (stream GetTransactionHashesByBlockHeightReply);
+}

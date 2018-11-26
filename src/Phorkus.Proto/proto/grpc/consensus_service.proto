@@ -1,0 +1,10 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Network.Grpc";
+
+import "consensus.proto";
+
+service ConsensusService {
+    
+    rpc PrepareBlock(BlockPrepareRequest) returns(BlockPrepareReply);
+    rpc ChangeView(ChangeViewRequest) returns(ChangeViewReply);
+}

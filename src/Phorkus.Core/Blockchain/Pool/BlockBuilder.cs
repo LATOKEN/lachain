@@ -49,10 +49,10 @@ namespace Phorkus.Core.Blockchain.Pool
                 Index = _prevBlockIndex + 1,
                 Nonce = nonce
             };
-            header.TransactionHashes.AddRange(txs.Select(tx => tx.Hash));
             var block = new Block
             {
                 Hash = header.ToByteArray().ToHash256(),
+                TransactionHashes = { txs.Select(tx => tx.Hash) },
                 Header = header
             };
             return new BlockWithTransactions(block, txs);

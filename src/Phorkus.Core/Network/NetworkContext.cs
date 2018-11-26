@@ -6,8 +6,13 @@ using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {
-    class NetworkContext : INetworkContext
+    public class NetworkContext : INetworkContext
     {
+        public ConcurrentDictionary<PeerAddress, IRemotePeer> ActivePeers { get; }
+            = new ConcurrentDictionary<PeerAddress, IRemotePeer>();
+        
+        public Node LocalNode { get; }
+        
         public NetworkContext(IConfigManager configManager, IBlockchainContext blockchainContext)
         {
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
@@ -23,10 +28,5 @@ namespace Phorkus.Core.Network
                 Agent = "Phorkus-v0.0"
             };
         }
-
-        public Node LocalNode { get; }
-
-        public ConcurrentDictionary<IpEndPoint, IPeer> ActivePeers { get; }
-            = new ConcurrentDictionary<IpEndPoint, IPeer>();
     }
 }

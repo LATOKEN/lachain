@@ -1,9 +1,9 @@
-﻿using Phorkus.Proto;
-
-namespace Phorkus.Core.Network
+﻿namespace Phorkus.Core.Network
 {
     public interface IBroadcaster
     {
-        void Broadcast(Message message);
+        IBlockchainService BlockchainService { get; }
+
+        IConsensusService ConsensusService { get; }
     }
 }

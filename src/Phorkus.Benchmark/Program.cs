@@ -8,6 +8,7 @@ using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
+using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
 using Phorkus.Proto;
@@ -76,8 +77,8 @@ namespace Phorkus.Benchmark
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
             Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
             Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
-            Console.WriteLine($" + transactionHashes: {genesisBlock.Header.TransactionHashes.Count}");
-            foreach (var s in genesisBlock.Header.TransactionHashes)
+            Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.Count}");
+            foreach (var s in genesisBlock.TransactionHashes)
                 Console.WriteLine($" + - {s.Buffer.ToHex()}");
             Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
             Console.WriteLine("-------------------------------");

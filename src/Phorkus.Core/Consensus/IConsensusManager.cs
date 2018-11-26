@@ -1,11 +1,18 @@
-﻿using Phorkus.Proto;
+﻿using Google.Protobuf;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Consensus
 {
     public interface IConsensusManager
     {
         void Start();
+        
         void Stop();
-        void HandleConsensusMessage(ConsensusMessage message);
+
+        bool CanHandleConsensusMessage(Validator validator, IMessage message);
+
+        void OnBlockPrepareRequestReceived(BlockPrepareRequest blockPrepare);
+
+        void OnChangeViewReceived(ChangeViewRequest changeView);
     }
 }

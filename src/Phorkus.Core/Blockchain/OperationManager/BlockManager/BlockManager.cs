@@ -69,12 +69,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             if (error != OperatingError.Ok)
                 return error;
             /* confirm block transactions */
-            foreach (var txHash in block.Header.TransactionHashes)
+            foreach (var txHash in block.TransactionHashes)
             {
                 if (_transactionManager.GetByHash(txHash) is null)
                     return OperatingError.TransactionLost;
             }
-            foreach (var txHash in block.Header.TransactionHashes)
+            foreach (var txHash in block.TransactionHashes)
             {
                 var result = _transactionManager.Execute(txHash);
                 if (result == OperatingError.Ok)
@@ -152,7 +152,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 return OperatingError.InvalidBlock;
             if (header.MerkleRoot is null || header.MerkleRoot.IsZero())
                 return OperatingError.InvalidBlock;
-            /* TODO: "verify merkle root here" */
+            if (!MerkleTree.ComputeRoot(block.TransactionHashes).Equals(header.MerkleRoot))
+                return OperatingError.InvalidMerkeRoot;
             if (header.Timestamp == 0)
                 return OperatingError.InvalidBlock;
             return OperatingError.Ok;

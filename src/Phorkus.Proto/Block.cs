@@ -25,21 +25,21 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgtibG9jay5wcm90bxoNZGVmYXVsdC5wcm90bxoObXVsdGlzaWcucHJvdG8i",
-            "twEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
+            "kQEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
             "a19oYXNoGAIgASgLMgguVUludDI1NhIdCgttZXJrbGVfcm9vdBgDIAEoCzII",
             "LlVJbnQyNTYSEQoJdGltZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEg0K",
-            "BW5vbmNlGAYgASgEEiQKEnRyYW5zYWN0aW9uX2hhc2hlcxgHIAMoCzIILlVJ",
-            "bnQyNTYiWgoFQmxvY2sSHAoGaGVhZGVyGAEgASgLMgwuQmxvY2tIZWFkZXIS",
-            "FgoEaGFzaBgCIAEoCzIILlVJbnQyNTYSGwoIbXVsdGlzaWcYAyABKAsyCS5N",
-            "dWx0aVNpZyJ4CgpCbG9ja1N0YXRlEicKBnN0YXR1cxgBIAEoDjIXLkJsb2Nr",
-            "U3RhdGUuQmxvY2tTdGF0dXMiQQoLQmxvY2tTdGF0dXMSFgoSQkxPQ0tfU1RB",
-            "VFVTX1JFQURZEAASGgoWQkxPQ0tfU1RBVFVTX0NPTkZJUk1FRBABQhCqAg1Q",
-            "aG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "BW5vbmNlGAYgASgEIoABCgVCbG9jaxIcCgZoZWFkZXIYASABKAsyDC5CbG9j",
+            "a0hlYWRlchIWCgRoYXNoGAIgASgLMgguVUludDI1NhIkChJ0cmFuc2FjdGlv",
+            "bl9oYXNoZXMYBCADKAsyCC5VSW50MjU2EhsKCG11bHRpc2lnGAMgASgLMgku",
+            "TXVsdGlTaWcieAoKQmxvY2tTdGF0ZRInCgZzdGF0dXMYASABKA4yFy5CbG9j",
+            "a1N0YXRlLkJsb2NrU3RhdHVzIkEKC0Jsb2NrU3RhdHVzEhYKEkJMT0NLX1NU",
+            "QVRVU19SRUFEWRAAEhoKFkJMT0NLX1NUQVRVU19DT05GSVJNRUQQAUIQqgIN",
+            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Nonce", "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "Multisig" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Nonce" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockState), global::Phorkus.Proto.BlockState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.BlockState.Types.BlockStatus) }, null)
           }));
     }
@@ -78,7 +78,6 @@ namespace Phorkus.Proto {
       timestamp_ = other.timestamp_;
       index_ = other.index_;
       nonce_ = other.nonce_;
-      transactionHashes_ = other.transactionHashes_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -153,16 +152,6 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "transaction_hashes" field.</summary>
-    public const int TransactionHashesFieldNumber = 7;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_transactionHashes_codec
-        = pb::FieldCodec.ForMessage(58, global::Phorkus.Proto.UInt256.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> TransactionHashes {
-      get { return transactionHashes_; }
-    }
-
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as BlockHeader);
@@ -182,7 +171,6 @@ namespace Phorkus.Proto {
       if (Timestamp != other.Timestamp) return false;
       if (Index != other.Index) return false;
       if (Nonce != other.Nonce) return false;
-      if(!transactionHashes_.Equals(other.transactionHashes_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -195,7 +183,6 @@ namespace Phorkus.Proto {
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (Index != 0UL) hash ^= Index.GetHashCode();
       if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
-      hash ^= transactionHashes_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -233,7 +220,6 @@ namespace Phorkus.Proto {
         output.WriteRawTag(48);
         output.WriteUInt64(Nonce);
       }
-      transactionHashes_.WriteTo(output, _repeated_transactionHashes_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -260,7 +246,6 @@ namespace Phorkus.Proto {
       if (Nonce != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
       }
-      size += transactionHashes_.CalculateSize(_repeated_transactionHashes_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -296,7 +281,6 @@ namespace Phorkus.Proto {
       if (other.Nonce != 0UL) {
         Nonce = other.Nonce;
       }
-      transactionHashes_.Add(other.transactionHashes_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -338,10 +322,6 @@ namespace Phorkus.Proto {
             Nonce = input.ReadUInt64();
             break;
           }
-          case 58: {
-            transactionHashes_.AddEntriesFrom(input, _repeated_transactionHashes_codec);
-            break;
-          }
         }
       }
     }
@@ -375,6 +355,7 @@ namespace Phorkus.Proto {
     public Block(Block other) : this() {
       header_ = other.header_ != null ? other.header_.Clone() : null;
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
+      transactionHashes_ = other.transactionHashes_.Clone();
       multisig_ = other.multisig_ != null ? other.multisig_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -406,6 +387,16 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "transaction_hashes" field.</summary>
+    public const int TransactionHashesFieldNumber = 4;
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_transactionHashes_codec
+        = pb::FieldCodec.ForMessage(34, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> transactionHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> TransactionHashes {
+      get { return transactionHashes_; }
+    }
+
     /// <summary>Field number for the "multisig" field.</summary>
     public const int MultisigFieldNumber = 3;
     private global::Phorkus.Proto.MultiSig multisig_;
@@ -432,6 +423,7 @@ namespace Phorkus.Proto {
       }
       if (!object.Equals(Header, other.Header)) return false;
       if (!object.Equals(Hash, other.Hash)) return false;
+      if(!transactionHashes_.Equals(other.transactionHashes_)) return false;
       if (!object.Equals(Multisig, other.Multisig)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -441,6 +433,7 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (header_ != null) hash ^= Header.GetHashCode();
       if (hash_ != null) hash ^= Hash.GetHashCode();
+      hash ^= transactionHashes_.GetHashCode();
       if (multisig_ != null) hash ^= Multisig.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -467,6 +460,7 @@ namespace Phorkus.Proto {
         output.WriteRawTag(26);
         output.WriteMessage(Multisig);
       }
+      transactionHashes_.WriteTo(output, _repeated_transactionHashes_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -481,6 +475,7 @@ namespace Phorkus.Proto {
       if (hash_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Hash);
       }
+      size += transactionHashes_.CalculateSize(_repeated_transactionHashes_codec);
       if (multisig_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Multisig);
       }
@@ -507,6 +502,7 @@ namespace Phorkus.Proto {
         }
         Hash.MergeFrom(other.Hash);
       }
+      transactionHashes_.Add(other.transactionHashes_);
       if (other.multisig_ != null) {
         if (multisig_ == null) {
           multisig_ = new global::Phorkus.Proto.MultiSig();
@@ -543,6 +539,10 @@ namespace Phorkus.Proto {
               multisig_ = new global::Phorkus.Proto.MultiSig();
             }
             input.ReadMessage(multisig_);
+            break;
+          }
+          case 34: {
+            transactionHashes_.AddEntriesFrom(input, _repeated_transactionHashes_codec);
             break;
           }
         }

@@ -77,11 +77,11 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Index = 0,
                 Nonce = GenesisConsensusData
             };
-            header.TransactionHashes.AddRange(txHashes);
             
             var result = new Block
             {
                 Hash = header.ToHash256(),
+                TransactionHashes = { txHashes },
                 Header = header
             };
             

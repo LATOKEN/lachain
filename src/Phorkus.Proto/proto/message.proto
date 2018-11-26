@@ -1,0 +1,134 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Proto";
+
+import "default.proto";
+import "transaction.proto";
+import "block.proto";
+import "consensus.proto";
+import "node.proto";
+
+message HandshakeRequest {
+    Node node = 1;
+}
+
+message HandshakeReply {
+    Node node = 1;
+}
+
+message PingRequest {
+    uint64 timestamp = 1;
+}
+
+message PingReply {
+    uint64 timestamp = 1;
+}
+
+message GetBlocksByHashesRequest {
+    repeated UInt256 block_hashes = 1;
+}
+
+message GetBlocksByHashesReply {
+    repeated Block blocks = 1;
+}
+
+message GetBlocksByHeightRangeRequest {
+    uint64 from_height = 1;
+    uint64 to_height = 2;
+}
+
+message GetBlocksByHeightRangeReply {
+    repeated UInt256 block_hashes = 1;
+}
+
+message GetTransactionsByHashesRequest {
+    repeated UInt256 transaction_hashes = 1;
+}
+
+message GetTransactionsByHashesReply {
+    repeated SignedTransaction transactions = 1;
+}
+
+message GetTransactionHashesByBlockHeightRequest {
+    uint64 block_height = 1;
+}
+
+message GetTransactionHashesByBlockHeightReply {
+    repeated UInt256 transaction_hashes = 1;
+}
+
+//enum MessageType {
+//    /* unknown message type, should not be used */
+//    MESSAGE_TYPE_UNKNOWN = 0;
+//    /* messages for handshake */
+//    MESSAGE_TYPE_HANDSHAKE_REQUEST = 1;
+//    MESSAGE_TYPE_HANDSHAKE_RESPONSE = 2;
+//    /* request block headers from peer */
+//    MESSAGE_TYPE_GET_BLOCKS = 5;
+//    MESSAGE_TYPE_BLOCKS_GOT = 6;
+//    /* request transaction from peer */
+//    MESSAGE_TYPE_GET_TRANSACTIONS = 7;
+//    MESSAGE_TYPE_TRANSACTIONS_GOT = 8;
+//    /* request transaction pool */
+//    MESSAGE_TYPE_GET_MEMPOOL = 9;
+//    MESSAGE_TYPE_MEMPOOL_GOT = 10;
+//    /* request peer neighbours */
+//    MESSAGE_TYPE_GET_NEIGHBOURS = 11;
+//    MESSAGE_TYPE_NEIGHBOURS_GOT = 12;
+//    /* consensus message */
+//    MESSAGE_TYPE_CONSENSUS_MESSAGE = 13;
+//}
+//
+//message HandshakeRequestMessage {
+//    Node node = 1;
+//}
+//
+//message HandshakeResponseMessage {
+//    Node node = 1;
+//}
+//
+//message GetBlocksMessage {
+//    uint64 height = 1;
+//}
+//
+//message BlocksGotMessage {
+//    repeated Block blocks = 1;
+//}
+//
+//message GetTransactionsMessage {
+//    repeated UInt256 transaction_hashes = 1;
+//}
+//
+//message TransactionsGotMessage {
+//    repeated SignedTransaction transactions = 1;
+//}
+//
+//message GetMempoolMessage {
+//}
+//
+//message MempoolGotMessage {
+//    repeated UInt256 transaction_hashes = 1;
+//}
+//
+//message GetNeighboursMessage {
+//}
+//
+//message NeighboursGotMessage {
+//    repeated Node neighbours = 1;
+//}
+//
+//message Message {
+//    MessageType type = 1;
+//    oneof body {
+//        HandshakeRequestMessage handshake_request = 10;
+//        HandshakeResponseMessage handshake_response = 11;
+//        GetBlocksMessage get_blocks = 12;
+//        BlocksGotMessage blocks_got = 13;
+//        GetMempoolMessage get_mempool = 14;
+//        MempoolGotMessage mempool_got = 15;
+//        GetTransactionsMessage get_transactions = 16;
+//        TransactionsGotMessage transactions_got = 17;
+//        GetNeighboursMessage get_neighbours = 18;
+//        NeighboursGotMessage neighbours_got = 19;
+//        ConsensusMessage consensus_message = 20;
+//    }
+//}
