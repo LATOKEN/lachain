@@ -28,7 +28,7 @@ namespace Phorkus.Faker
             
             Console.WriteLine("Starting faker with command: " + command);
             
-            new BlockGenerator(5000, 100).Start(container);
+            new BlockGenerator(5000, 10).Start(container);
         }
     }
 }

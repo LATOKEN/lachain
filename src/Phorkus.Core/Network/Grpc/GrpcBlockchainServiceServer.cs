@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Phorkus.Core.Storage;
@@ -44,11 +45,30 @@ namespace Phorkus.Core.Network.Grpc
         public override Task GetBlocksByHashes(GetBlocksByHashesRequest request, IServerStreamWriter<GetBlocksByHashesReply> responseStream, ServerCallContext context)
         {
             var blocks = _blockRepository.GetBlocksByHashes(request.BlockHashes);
-            var reply = new GetBlocksByHashesReply
+            var chunk = new List<Block>();
+            foreach (var block in blocks)
             {
-                Blocks = { blocks }
-            };
-            return responseStream.WriteAsync(reply);
+                chunk.Add(block);
+                if (chunk.Count <= 1024)
+                    continue;
+                var reply = new GetBlocksByHashesReply
+                {
+                    Blocks = { chunk }
+                };
+                responseStream.WriteAsync(reply).Wait();
+                chunk.Clear();
+            }
+
+            if (chunk.Count > 0)
+            {
+                var reply = new GetBlocksByHashesReply
+                {
+                    Blocks = { chunk }
+                };
+                responseStream.WriteAsync(reply).Wait();
+                chunk.Clear();
+            }
+            return Task.CompletedTask;
         }
 
         public override Task GetBlocksByHeightRange(GetBlocksByHeightRangeRequest request, IServerStreamWriter<GetBlocksByHeightRangeReply> responseStream,

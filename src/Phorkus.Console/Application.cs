@@ -28,36 +28,6 @@ namespace Phorkus.Console
                 System.Console.Error.WriteLine(exception);
             };
             
-//            // -------- SERVER --------------
-//            
-//            var server = new Server
-//            {
-//                Services = { GrpcBlockchainServiceClient.BindService(new HelloWorldServiceImpl()) },
-//                Ports = { new ServerPort("localhost", 50051, ServerCredentials.Insecure) }
-//            };
-//            server.Start();
-//
-//            // -------- CLIENT --------------
-//            
-//            var channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
-//            var client = new HelloWorldService.HelloWorldServiceClient(channel);
-//
-//            var reply = client.SayHello(new HelloRequest { Name = "You" });
-//
-//            while (reply.ResponseStream.MoveNext(CancellationToken.None).Result)
-//            {
-//                var current = reply.ResponseStream.Current;
-//                if (current is null)
-//                    break;
-//                System.Console.WriteLine("Greeting: " + current);
-//            }
-//            
-//            channel.ShutdownAsync().Wait();
-//            
-//            return;
-//            
-//          // ---------------------------
-            
             var containerBuilder = new SimpleInjectorContainerBuilder(
                 new ConfigManager("config.json"));
 
@@ -112,7 +82,7 @@ namespace Phorkus.Console
             foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-
+            
             var asset = assetRepository.GetAssetByName("LA");
             
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();

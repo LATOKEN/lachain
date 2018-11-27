@@ -16,6 +16,7 @@ namespace Phorkus.Core.Network
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ILogger<ISynchronizer> _logger;
+        private readonly ITransactionVerifier _transactionVerifier;
         private readonly INetworkContext _networkContext;
 
         public Synchronizer(
@@ -23,6 +24,7 @@ namespace Phorkus.Core.Network
             IBlockManager blockManager,
             IBlockchainContext blockchainContext,
             ILogger<ISynchronizer> logger,
+            ITransactionVerifier transactionVerifier,
             INetworkContext networkContext)
         {
             _transactionManager = transactionManager;
@@ -30,6 +32,7 @@ namespace Phorkus.Core.Network
             _blockchainContext = blockchainContext;
             _logger = logger;
             _networkContext = networkContext;
+            _transactionVerifier = transactionVerifier;
         }
 
         public uint HandleTransactionsFromPeer(IEnumerable<SignedTransaction> transactions, IRemotePeer remotePeer)
@@ -126,11 +129,11 @@ namespace Phorkus.Core.Network
                     var peerBlocks = peer.BlockchainService.GetBlocksByHashes(blockHashes).ToArray();
                     var i = 0;
                     foreach (var block in peerBlocks)
-                    {
+                    {   
                         if (++i % 1 == 0 && peerBlocks.Length > 1)
                         {
-                            Console.CursorLeft = 0;
                             Console.Write($"Downloading transactions... {i}/{peerBlocks.Length} ({100 * i / peerBlocks.Length}%)");
+                            Console.CursorLeft = 0;
                         }
                         var dontHave = _HaveTransactions(block);
                         if (dontHave.Count == 0)
@@ -138,6 +141,8 @@ namespace Phorkus.Core.Network
                         var txs = peer.BlockchainService.GetTransactionsByHashes(dontHave).ToArray();
                         if (txs.Length != dontHave.Count)
                             continue;
+                        foreach (var tx in txs)
+                            _transactionVerifier.VerifyTransaction(tx);
                         foreach (var tx in txs)
                         {
                             var result = _transactionManager.Persist(tx);
@@ -151,7 +156,7 @@ namespace Phorkus.Core.Network
                 })
                 .Aggregate((b1, b2) => b1.Concat(b2).ToArray())
                 .ToDictionary(b => b.Hash);
-
+            
             var ordered = blocks.Values.OrderBy(b => b.Header.Index).ToArray();
             foreach (var block in ordered)
             {
