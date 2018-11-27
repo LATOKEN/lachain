@@ -6,8 +6,8 @@ namespace Phorkus.Storage.Mappings
 {
     public class BlockMapManager : PersistentTreeMapManager<UInt256, Block, UInt256Comparer>
     {
-        public BlockMapManager(IPersistentMapStorageContext<UInt256, Block> context, UInt256Comparer comparator)
-            : base(context, comparator)
+        public BlockMapManager(IPersistentMapStorageContext<UInt256, Block> context, UInt256Comparer comparator, IPersistentTreeMapFactory factory)
+            : base(context, comparator, factory)
         {
         }
     }

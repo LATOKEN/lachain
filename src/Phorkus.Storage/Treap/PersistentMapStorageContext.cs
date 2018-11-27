@@ -9,29 +9,21 @@ namespace Phorkus.Storage.Treap
         where TValue : IMessage
     {
         private readonly IPersistentMapRepository<TKey, TValue> _repository;
-        private readonly IPersistentTreeMapFactory _factory;
-
-        public PersistentMapStorageContext(IPersistentMapRepository<TKey, TValue> repository, IPersistentTreeMapFactory factory)
+        
+        public PersistentMapStorageContext(IPersistentMapRepository<TKey, TValue> repository)
         {
             _repository = repository;
-            _factory = factory;
         }
-
-        public IPersistentTreeMap NullIDentifier => _factory.NullIdentifier;
 
         public PersistentTreeMapNode<TKey, TValue> GetNodeById(IPersistentTreeMap id)
         {
             return _repository.GetNode(id);
         }
 
-        public IPersistentTreeMap NewNode(IPersistentTreeMap leftSon, IPersistentTreeMap rightSon, TKey key, TValue value)
+        public IPersistentTreeMap PersistNode(IPersistentTreeMap id, PersistentTreeMapNode<TKey, TValue> value)
         {
-            var newId = _factory.NewVersionId();
-            _repository.WriteNode(
-                newId,
-                new PersistentTreeMapNode<TKey, TValue>(leftSon, rightSon, key, value)
-            );
-            return newId;
+            _repository.WriteNode(id, value);
+            return id;
         }
     }
 }

@@ -6,9 +6,7 @@ namespace Phorkus.Storage.Treap
         where TKey : IMessage 
         where TValue : IMessage
     {
-        IPersistentTreeMap NullIDentifier { get; }
-        
         PersistentTreeMapNode<TKey, TValue> GetNodeById(IPersistentTreeMap id);
-        IPersistentTreeMap NewNode(IPersistentTreeMap leftSon, IPersistentTreeMap rightSon, TKey key, TValue value);
+        IPersistentTreeMap PersistNode(IPersistentTreeMap id, PersistentTreeMapNode<TKey, TValue> value);
     }
 }

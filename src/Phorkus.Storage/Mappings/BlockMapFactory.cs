@@ -13,7 +13,7 @@ namespace Phorkus.Storage.Mappings
         
         public IPersistentTreeMap NewVersionId()
         {
-            return new BlockMap(_curId++);
+            return new BlockMap(++_curId);
         }
 
         public IPersistentTreeMap NullIdentifier { get; } = new BlockMap(0);
