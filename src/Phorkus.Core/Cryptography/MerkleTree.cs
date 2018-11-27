@@ -180,12 +180,12 @@ namespace Phorkus.Core.Cryptography
         /// </summary>
         /// <param name="hashes">Hash list</param>
         /// <returns>Result of the calculation</returns>
-        public static UInt256 ComputeRoot(UInt256[] hashes)
+        public static UInt256 ComputeRoot(IReadOnlyCollection<UInt256> hashes)
         {
-            if (hashes == null || hashes.Length == 0)
+            if (hashes == null || hashes.Count == 0)
                 throw new ArgumentException(nameof(hashes));
-            if (hashes.Length == 1)
-                return hashes[0];
+            if (hashes.Count == 1)
+                return hashes.First();
             var tree = new MerkleTree(hashes);
             return tree.Root.Hash;
         }

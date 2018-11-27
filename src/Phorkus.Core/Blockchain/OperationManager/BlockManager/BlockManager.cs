@@ -15,14 +15,16 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private readonly IBlockRepository _blockRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly ICrypto _crypto;
+        private readonly IValidatorManager _validatorManager;
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly ILogger<IBlockManager> _logger;
-        
+
         public BlockManager(
             IGlobalRepository globalRepository,
             IBlockRepository blockRepository,
             ITransactionManager transactionManager,
             ICrypto crypto,
+            IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
             ILogger<IBlockManager> logger)
         {
@@ -30,6 +32,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             _blockRepository = blockRepository;
             _transactionManager = transactionManager;
             _crypto = crypto;
+            _validatorManager = validatorManager;
             _genesisBuilder = genesisBuilder;
             _logger = logger;
         }
@@ -69,12 +72,13 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             if (error != OperatingError.Ok)
                 return error;
             /* confirm block transactions */
-            foreach (var txHash in block.Header.TransactionHashes)
+            foreach (var txHash in block.TransactionHashes)
             {
                 if (_transactionManager.GetByHash(txHash) is null)
                     return OperatingError.TransactionLost;
             }
-            foreach (var txHash in block.Header.TransactionHashes)
+
+            foreach (var txHash in block.TransactionHashes)
             {
                 var result = _transactionManager.Execute(txHash);
                 if (result == OperatingError.Ok)
@@ -83,6 +87,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()}, {result}");
                 /* TODO: "mark transaction as failed to execute here or something else" */
             }
+
             /* write block to database */
             _blockRepository.AddBlock(block);
             _logger.LogInformation($"Persisted new block with hash {block.Hash}");
@@ -139,7 +144,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                     // ignore
                 }
             }
-
+            /* TODO: "don't forget to enable this validation" */
+            /*if ((int) multisig.Quorum < (int) _validatorManager.Quorum)
+                return OperatingError.InvalidMultisig;*/
+            
             return verified >= multisig.Quorum ? OperatingError.Ok : OperatingError.QuorumNotReached;
         }
 
@@ -152,7 +160,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 return OperatingError.InvalidBlock;
             if (header.MerkleRoot is null || header.MerkleRoot.IsZero())
                 return OperatingError.InvalidBlock;
-            /* TODO: "verify merkle root here" */
+            if (!MerkleTree.ComputeRoot(block.TransactionHashes).Equals(header.MerkleRoot))
+                return OperatingError.InvalidMerkeRoot;
             if (header.Timestamp == 0)
                 return OperatingError.InvalidBlock;
             return OperatingError.Ok;

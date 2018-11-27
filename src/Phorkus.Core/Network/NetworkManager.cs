@@ -1,115 +1,113 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Phorkus.Core.Config;
-using Phorkus.Core.Logging;
-using Phorkus.Core.Messaging;
-using Phorkus.Proto;
-using Phorkus.Core.Network.Tcp;
+using Phorkus.Core.Cryptography;
+using Phorkus.Core.Network.Grpc;
+using Phorkus.Core.Storage;
+using Phorkus.Core.Utils;
+using Phorkus.Network.Grpc;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {
     public class NetworkManager : INetworkManager
     {
-        private readonly IMessageListener _messageListener;
-        private readonly IMessagingManager _messagingManager;
-        private readonly IServer _server;
-        private readonly ILogger<NetworkManager> _networkLogger;
         private readonly INetworkContext _networkContext;
-        private readonly NetworkConfig _networkConfig;
+        
+        public event EventHandler<IRemotePeer> OnPeerConnected;
+        public event EventHandler<IRemotePeer> OnPeerClosed;
 
+        private class RemotePeer : IRemotePeer
+        {
+            public bool IsConnected { get; set; }
+            public bool IsKnown { get; set; }
+            public PeerAddress Address { get; set; }
+            public Node Node { get; set; }
+            public IRateLimiter RateLimiter { get; set; }
+            public DateTime Connected { get; set; }
+            public IBlockchainService BlockchainService { get; set; }
+            public IConsensusService ConsensusService { get; set; }
+        }
+        
         public NetworkManager(
-            IMessagingManager messagingManager,
             IConfigManager configManager,
-            ILogger<NetworkManager> networkLogger,
-            ILogger<TcpServer> tcpLogger,
-            ILogger<MessageListener> listenerLogger,
-            INetworkContext networkContext
-        )
+            ITransactionRepository transactionRepository,
+            IBlockRepository blockRepository,
+            ICrypto crypto,
+            INetworkContext networkContext)
         {
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            _networkContext = networkContext;
-            _messageListener = new MessageListener(_networkContext, listenerLogger);
-            _networkLogger = networkLogger;
-            _messagingManager = messagingManager;
-            _server = new TcpServer(networkConfig, new DefaultTransport(networkConfig), tcpLogger);
-            _networkConfig = networkConfig;
-        }
 
+            var server = new Server
+            {
+                Services =
+                {
+                    BlockchainService.BindService(new GrpcBlockchainServiceServer(networkContext, transactionRepository, blockRepository)),
+                    ConsensusService.BindService(new GrpcConsensusServiceServer(null, crypto))
+                },
+                Ports = { new ServerPort("0.0.0.0", networkConfig.Port, ServerCredentials.Insecure) }
+            };
+            server.Start();
+            
+            Parallel.ForEach(networkConfig.Peers, address =>
+            {
+                var peerAddress = PeerAddress.Parse(address);
+                var remotePeer = new RemotePeer
+                {
+                    IsConnected = true,
+                    IsKnown = false,
+                    Address = peerAddress,
+                    Node = new Node(),
+                    RateLimiter = new NullRateLimiter(),
+                    Connected = DateTime.Now,
+                    BlockchainService = new GrpcBlockchainServiceClient(peerAddress),
+                    ConsensusService = new GrpcConsensusServiceClient(peerAddress, crypto)
+                };
+                if (_IsNodeAvailable(networkContext, remotePeer))
+                    networkContext.ActivePeers.TryAdd(peerAddress, remotePeer);
+            });
+            
+            _networkContext = networkContext;
+        }
+        
+        private bool _IsNodeAvailable(INetworkContext networkContext, IRemotePeer remotePeer)
+        {
+            try
+            {
+                var ping = new PingRequest
+                {
+                    Timestamp = TimeUtils.CurrentTimeMillis()
+                };
+                var pong = remotePeer.BlockchainService.Ping(ping);
+                if (pong.Timestamp != ping.Timestamp)
+                    return false;
+
+                var handshake = new HandshakeRequest
+                {
+                    Node = networkContext.LocalNode
+                };
+                var reply = remotePeer.BlockchainService.Handshake(handshake);
+                if (reply.Node == null || !reply.Node.IsValid())
+                    return false;
+                remotePeer.Node = reply.Node;
+                remotePeer.IsKnown = true;
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e.Message);
+                return false;
+            }
+
+            return true;
+        }
+        
         public void Start()
         {
-            if (_server.IsWorking)
-                return;
-
-            _networkLogger.LogInformation("Starting network manager");
-
-            _server.OnPeerConnected += _PeerConnected;
-            _server.OnPeerAccepted += _PeerConnected;
-            _server.OnPeerClosed += _PeerClosed;
-            _messageListener.OnMessageHandled += _MessageHandled;
-            _messageListener.OnRateLimited += _RateLimited;
-
-            _server.Start();
-
-            _networkLogger.LogInformation("Connecting to peers specified (" + _networkConfig.Peers.Length + " peers)");
-            Task.Factory.StartNew(() =>
-                Parallel.ForEach(_networkConfig.Peers, peer => _server.ConnectTo(IpEndPoint.Parse(peer))));
-            
         }
 
         public void Stop()
         {
-            Parallel.ForEach(_networkContext.ActivePeers.Values, peer => peer.Disconnect());
-        }
-
-        private void _PeerConnected(object sender, IPeer peer)
-        {
-            _networkLogger.LogInformation(
-                $"Handled connection with peer ({peer.EndPoint}) with hash code ({peer.GetHashCode()})");
-            /* TODO: "also check ACL here" */
-            var result = _networkContext.ActivePeers.TryAdd(peer.EndPoint, peer);
-            if (!result)
-                return;
-            peer.OnDisconnect += (s, e) => _networkContext.ActivePeers.TryRemove(peer.EndPoint, out _);
-            _messageListener.StartFor(peer, CancellationToken.None);
-            Task.Factory.StartNew(peer.Run, TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(peer.Run, TaskCreationOptions.LongRunning);
-            var message = new Message
-            {
-                Type = MessageType.HandshakeRequest,
-                HandshakeRequest = new HandshakeRequestMessage
-                {
-                    Node = _networkContext.LocalNode
-                }
-            };
-            peer.Send(message);
-        }
-
-        private void _MessageHandled(object sender, Message message)
-        {
-            if (!(sender is IPeer peer))
-                throw new ArgumentNullException(nameof(peer));
-            try
-            {
-                if (!_messagingManager.HandleMessage(peer, message))
-                    _networkLogger.LogWarning($"Unable to handle message ({message.Type})");
-            }
-            catch (Exception e)
-            {
-                _networkLogger.LogError($"Unable to handle message {message.Type}: {e}");
-            }
-        }
-
-        private void _RateLimited(object sender, IPeer peer)
-        {
-            /* TODO: "disconnect peer here" */
-        }
-
-        private void _PeerClosed(object sender, IPeer peer)
-        {
-            _networkContext.ActivePeers.TryRemove(peer.EndPoint, out _);
         }
     }
 }

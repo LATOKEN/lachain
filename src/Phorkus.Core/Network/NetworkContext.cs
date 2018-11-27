@@ -6,27 +6,30 @@ using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {
-    class NetworkContext : INetworkContext
+    public class NetworkContext : INetworkContext
     {
+        public ConcurrentDictionary<PeerAddress, IRemotePeer> ActivePeers { get; }
+            = new ConcurrentDictionary<PeerAddress, IRemotePeer>();
+
+        private readonly IBlockchainContext _blockchainContext;
+        private readonly NetworkConfig _networkConfig;
+        
+        public Node LocalNode => new Node
+        {
+            Version = 0,
+            Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            Services = 0,
+            Port = _networkConfig.Port,
+            Address = "localhost",
+            Nonce = (uint) new Random().Next(1 << 30),
+            BlockHeight = _blockchainContext.CurrentBlockHeaderHeight,
+            Agent = "Phorkus-v0.0"
+        };
+        
         public NetworkContext(IConfigManager configManager, IBlockchainContext blockchainContext)
         {
-            var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            LocalNode = new Node
-            {
-                Version = 0,
-                Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Services = 0,
-                Port = networkConfig.Port,
-                Address = "localhost",
-                Nonce = (uint) new Random().Next(1 << 30),
-                BlockHeight = blockchainContext.CurrentBlockHeaderHeight,
-                Agent = "Phorkus-v0.0"
-            };
+            _blockchainContext = blockchainContext;
+            _networkConfig = configManager.GetConfig<NetworkConfig>("network");
         }
-
-        public Node LocalNode { get; }
-
-        public ConcurrentDictionary<IpEndPoint, IPeer> ActivePeers { get; }
-            = new ConcurrentDictionary<IpEndPoint, IPeer>();
     }
 }

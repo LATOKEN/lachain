@@ -23,5 +23,6 @@
         InvalidOwner,
         BlockAlreadyExists,
         AlreadySigned,
+        InvalidMerkeRoot,
     }
 }

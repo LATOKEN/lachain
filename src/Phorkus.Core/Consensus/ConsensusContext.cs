@@ -56,7 +56,6 @@ namespace Phorkus.Core.Consensus
                 Index = BlockIndex,
                 Nonce = CurrentProposal.Nonce
             };
-            result.TransactionHashes.AddRange(CurrentProposal.TransactionHashes);
             return result;
         }
 
@@ -66,6 +65,7 @@ namespace Phorkus.Core.Consensus
             var block = new Block
             {
                 Header = header,
+                TransactionHashes = { CurrentProposal.TransactionHashes },
                 Hash = header.ToHash256(),
                 Multisig = new MultiSig()
             };
@@ -117,9 +117,9 @@ namespace Phorkus.Core.Consensus
                 Validators[MyIndex].ExpectedViewNumber = view;
         }
 
-        private ConsensusPayload MakePayload()
+        private Validator MakeValidator()
         {
-            return new ConsensusPayload
+            return new Validator
             {
                 Version = Version,
                 PrevHash = PreviousBlockHash,
@@ -130,38 +130,38 @@ namespace Phorkus.Core.Consensus
             };
         }
 
-        public ConsensusPayload MakeChangeView()
+        public ChangeViewRequest MakeChangeView()
         {
-            var payload = MakePayload();
-            payload.ChangeView = new ConsensusChangeView
+            return new ChangeViewRequest
             {
+                Validator = MakeValidator(),
                 NewViewNumber = Validators[MyIndex].ExpectedViewNumber
             };
-            return payload;
         }
 
-        public ConsensusPayload MakePrepareRequest(BlockWithTransactions block, Signature signature)
+        public BlockPrepareRequest MakePrepareRequest(BlockWithTransactions block, Signature signature)
         {
-            var payload = MakePayload();
-            payload.PrepareRequest = new ConsensusPrepareRequest
+            return new BlockPrepareRequest
             {
+                Validator = MakeValidator(),
                 Nonce = block.Block.Header.Nonce,
+                TransactionHashes =
+                {
+                    block.Transactions.Select(tx => tx.Hash)
+                },
                 MinerTransaction = block.Transactions.First().Transaction,
                 Signature = signature,
                 Timestamp = block.Block.Header.Timestamp
             };
-            payload.PrepareRequest.TransactionHashes.AddRange(block.Transactions.Select(tx => tx.Hash));
-            return payload;
         }
 
-        public ConsensusPayload MakePrepareResponse(Signature signature)
+        public BlockPrepareReply MakePrepareResponse(Signature signature)
         {
-            var payload = MakePayload();
-            payload.PrepareResponse = new ConsensusPrepareResponse
+            return new BlockPrepareReply
             {
+                Validator = MakeValidator(),
                 Signature = signature
             };
-            return payload;
         }
 
         public void UpdateCurrentProposal(BlockWithTransactions block)

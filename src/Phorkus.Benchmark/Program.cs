@@ -8,8 +8,8 @@ using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
+using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
-using Phorkus.Core.Network;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -21,7 +21,7 @@ namespace Phorkus.Benchmark
     public class Application : IBootstrapper
     {
         private readonly IContainer _container;
-        
+
         internal static void Main(string[] args)
         {
             var app = new Application();
@@ -56,7 +56,7 @@ namespace Phorkus.Benchmark
             var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
-            
+
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
 
@@ -76,8 +76,8 @@ namespace Phorkus.Benchmark
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
             Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
             Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
-            Console.WriteLine($" + transactionHashes: {genesisBlock.Header.TransactionHashes.Count}");
-            foreach (var s in genesisBlock.Header.TransactionHashes)
+            Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.Count}");
+            foreach (var s in genesisBlock.TransactionHashes)
                 Console.WriteLine($" + - {s.Buffer.ToHex()}");
             Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
             Console.WriteLine("-------------------------------");
@@ -126,7 +126,7 @@ namespace Phorkus.Benchmark
 
                 action(i);
             }
-            
+
             var deltaTime = TimeUtils.CurrentTimeMillis() - lastTime;
             Console.CursorLeft = text.Length;
             Console.WriteLine($"{1000.0 * tries / deltaTime} TPS");
@@ -149,43 +149,45 @@ namespace Phorkus.Benchmark
 
             const int txGenerate = 1000;
             const int txPerBlock = 500;
-            
+
             _Benchmark("Building TX pool... ", i =>
             {
-                var tx = transactionFactory.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
+                var tx = transactionFactory.TransferTransaction(address1, address2, asset.Hash,
+                    Money.FromDecimal(1.2m));
                 tx.Nonce += (ulong) i;
                 transactionPool.Add(transactionManager.Sign(tx, keyPair));
                 return i;
             }, txGenerate);
 
             var blocks = new BlockWithTransactions[transactionPool.Size() / txPerBlock];
-            
+
             _Benchmark("Generating blocks... ", i =>
-            {
-                var txs = transactionPool.Peek(txPerBlock);
-                var latestBlock = blockchainContext.CurrentBlock;
-                if (i > 0)
-                    latestBlock = blocks[i - 1].Block;
-                var blockWithTxs =
-                    new BlockBuilder(txs, latestBlock.Hash, latestBlock.Header.Index).Build(123456);
-                var block = blockWithTxs.Block;
-                block.Multisig = new MultiSig
                 {
-                    Quorum = 1,
-                    Signatures =
+                    var txs = transactionPool.Peek(txPerBlock);
+                    var latestBlock = blockchainContext.CurrentBlock;
+                    if (i > 0)
+                        latestBlock = blocks[i - 1].Block;
+                    var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                        .WithTransactions(txs)
+                        .Build(123456);
+                    var block = blockWithTxs.Block;
+                    block.Multisig = new MultiSig
                     {
-                        new MultiSig.Types.SignatureByValidator
+                        Quorum = 1,
+                        Signatures =
                         {
-                            Key = keyPair.PublicKey,
-                            Value = blockManager.Sign(block.Header, keyPair)
-                        }
-                    },
-                    Validators = {keyPair.PublicKey}
-                };
-                blocks[i] = blockWithTxs;
-                return i;
-            }, transactionPool.Size() / txPerBlock);
-            
+                            new MultiSig.Types.SignatureByValidator
+                            {
+                                Key = keyPair.PublicKey,
+                                Value = blockManager.Sign(block.Header, keyPair)
+                            }
+                        },
+                        Validators = {keyPair.PublicKey}
+                    };
+                    blocks[i] = blockWithTxs;
+                    return i;
+                }, transactionPool.Size() / txPerBlock);
+
             _Benchmark("Processing blocks... ", i =>
             {
                 var blockWithTxs = blocks[i];
@@ -219,8 +221,9 @@ namespace Phorkus.Benchmark
                     transactionFactory.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
                 var signed = transactionManager.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
-                var blockWithTxs =
-                    new BlockBuilder(new[] {signed}, latestBlock.Hash, latestBlock.Header.Index).Build(123456);
+                var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                    .WithTransactions(new[] {signed})
+                    .Build(123456);
                 var block = blockWithTxs.Block;
                 block.Multisig = new MultiSig
                 {

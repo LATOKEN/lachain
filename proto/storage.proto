@@ -1,6 +1,0 @@
-syntax = "proto3";
-option csharp_namespace = "Phorkus.Proto";
-
-message Storage {
-    bytes value = 1;
-}

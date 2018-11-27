@@ -26,103 +26,48 @@ namespace Phorkus.Proto {
           string.Concat(
             "Cg1tZXNzYWdlLnByb3RvGg1kZWZhdWx0LnByb3RvGhF0cmFuc2FjdGlvbi5w",
             "cm90bxoLYmxvY2sucHJvdG8aD2NvbnNlbnN1cy5wcm90bxoKbm9kZS5wcm90",
-            "byIuChdIYW5kc2hha2VSZXF1ZXN0TWVzc2FnZRITCgRub2RlGAEgASgLMgUu",
-            "Tm9kZSIvChhIYW5kc2hha2VSZXNwb25zZU1lc3NhZ2USEwoEbm9kZRgBIAEo",
-            "CzIFLk5vZGUiIgoQR2V0QmxvY2tzTWVzc2FnZRIOCgZoZWlnaHQYASABKAQi",
-            "KgoQQmxvY2tzR290TWVzc2FnZRIWCgZibG9ja3MYASADKAsyBi5CbG9jayI+",
-            "ChZHZXRUcmFuc2FjdGlvbnNNZXNzYWdlEiQKEnRyYW5zYWN0aW9uX2hhc2hl",
-            "cxgBIAMoCzIILlVJbnQyNTYiQgoWVHJhbnNhY3Rpb25zR290TWVzc2FnZRIo",
-            "Cgx0cmFuc2FjdGlvbnMYASADKAsyEi5TaWduZWRUcmFuc2FjdGlvbiITChFH",
-            "ZXRNZW1wb29sTWVzc2FnZSI5ChFNZW1wb29sR290TWVzc2FnZRIkChJ0cmFu",
-            "c2FjdGlvbl9oYXNoZXMYASADKAsyCC5VSW50MjU2IhYKFEdldE5laWdoYm91",
-            "cnNNZXNzYWdlIjEKFE5laWdoYm91cnNHb3RNZXNzYWdlEhkKCm5laWdoYm91",
-            "cnMYASADKAsyBS5Ob2RlIsEECgdNZXNzYWdlEhoKBHR5cGUYASABKA4yDC5N",
-            "ZXNzYWdlVHlwZRI1ChFoYW5kc2hha2VfcmVxdWVzdBgKIAEoCzIYLkhhbmRz",
-            "aGFrZVJlcXVlc3RNZXNzYWdlSAASNwoSaGFuZHNoYWtlX3Jlc3BvbnNlGAsg",
-            "ASgLMhkuSGFuZHNoYWtlUmVzcG9uc2VNZXNzYWdlSAASJwoKZ2V0X2Jsb2Nr",
-            "cxgMIAEoCzIRLkdldEJsb2Nrc01lc3NhZ2VIABInCgpibG9ja3NfZ290GA0g",
-            "ASgLMhEuQmxvY2tzR290TWVzc2FnZUgAEikKC2dldF9tZW1wb29sGA4gASgL",
-            "MhIuR2V0TWVtcG9vbE1lc3NhZ2VIABIpCgttZW1wb29sX2dvdBgPIAEoCzIS",
-            "Lk1lbXBvb2xHb3RNZXNzYWdlSAASMwoQZ2V0X3RyYW5zYWN0aW9ucxgQIAEo",
-            "CzIXLkdldFRyYW5zYWN0aW9uc01lc3NhZ2VIABIzChB0cmFuc2FjdGlvbnNf",
-            "Z290GBEgASgLMhcuVHJhbnNhY3Rpb25zR290TWVzc2FnZUgAEi8KDmdldF9u",
-            "ZWlnaGJvdXJzGBIgASgLMhUuR2V0TmVpZ2hib3Vyc01lc3NhZ2VIABIvCg5u",
-            "ZWlnaGJvdXJzX2dvdBgTIAEoCzIVLk5laWdoYm91cnNHb3RNZXNzYWdlSAAS",
-            "LgoRY29uc2Vuc3VzX21lc3NhZ2UYFCABKAsyES5Db25zZW5zdXNNZXNzYWdl",
-            "SABCBgoEYm9keSqSAwoLTWVzc2FnZVR5cGUSGAoUTUVTU0FHRV9UWVBFX1VO",
-            "S05PV04QABIiCh5NRVNTQUdFX1RZUEVfSEFORFNIQUtFX1JFUVVFU1QQARIj",
-            "Ch9NRVNTQUdFX1RZUEVfSEFORFNIQUtFX1JFU1BPTlNFEAISGwoXTUVTU0FH",
-            "RV9UWVBFX0dFVF9CTE9DS1MQBRIbChdNRVNTQUdFX1RZUEVfQkxPQ0tTX0dP",
-            "VBAGEiEKHU1FU1NBR0VfVFlQRV9HRVRfVFJBTlNBQ1RJT05TEAcSIQodTUVT",
-            "U0FHRV9UWVBFX1RSQU5TQUNUSU9OU19HT1QQCBIcChhNRVNTQUdFX1RZUEVf",
-            "R0VUX01FTVBPT0wQCRIcChhNRVNTQUdFX1RZUEVfTUVNUE9PTF9HT1QQChIf",
-            "ChtNRVNTQUdFX1RZUEVfR0VUX05FSUdIQk9VUlMQCxIfChtNRVNTQUdFX1RZ",
-            "UEVfTkVJR0hCT1VSU19HT1QQDBIiCh5NRVNTQUdFX1RZUEVfQ09OU0VOU1VT",
-            "X01FU1NBR0UQDUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "byInChBIYW5kc2hha2VSZXF1ZXN0EhMKBG5vZGUYASABKAsyBS5Ob2RlIiUK",
+            "DkhhbmRzaGFrZVJlcGx5EhMKBG5vZGUYASABKAsyBS5Ob2RlIiAKC1BpbmdS",
+            "ZXF1ZXN0EhEKCXRpbWVzdGFtcBgBIAEoBCIeCglQaW5nUmVwbHkSEQoJdGlt",
+            "ZXN0YW1wGAEgASgEIjoKGEdldEJsb2Nrc0J5SGFzaGVzUmVxdWVzdBIeCgxi",
+            "bG9ja19oYXNoZXMYASADKAsyCC5VSW50MjU2IjAKFkdldEJsb2Nrc0J5SGFz",
+            "aGVzUmVwbHkSFgoGYmxvY2tzGAEgAygLMgYuQmxvY2siRwodR2V0QmxvY2tz",
+            "QnlIZWlnaHRSYW5nZVJlcXVlc3QSEwoLZnJvbV9oZWlnaHQYASABKAQSEQoJ",
+            "dG9faGVpZ2h0GAIgASgEIj0KG0dldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VSZXBs",
+            "eRIeCgxibG9ja19oYXNoZXMYASADKAsyCC5VSW50MjU2IkYKHkdldFRyYW5z",
+            "YWN0aW9uc0J5SGFzaGVzUmVxdWVzdBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMY",
+            "ASADKAsyCC5VSW50MjU2IkgKHEdldFRyYW5zYWN0aW9uc0J5SGFzaGVzUmVw",
+            "bHkSKAoMdHJhbnNhY3Rpb25zGAEgAygLMhIuU2lnbmVkVHJhbnNhY3Rpb24i",
+            "QAooR2V0VHJhbnNhY3Rpb25IYXNoZXNCeUJsb2NrSGVpZ2h0UmVxdWVzdBIU",
+            "CgxibG9ja19oZWlnaHQYASABKAQiTgomR2V0VHJhbnNhY3Rpb25IYXNoZXNC",
+            "eUJsb2NrSGVpZ2h0UmVwbHkSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAEgAygL",
+            "MgguVUludDI1NkIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.MessageType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeRequestMessage), global::Phorkus.Proto.HandshakeRequestMessage.Parser, new[]{ "Node" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeResponseMessage), global::Phorkus.Proto.HandshakeResponseMessage.Parser, new[]{ "Node" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksMessage), global::Phorkus.Proto.GetBlocksMessage.Parser, new[]{ "Height" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlocksGotMessage), global::Phorkus.Proto.BlocksGotMessage.Parser, new[]{ "Blocks" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsMessage), global::Phorkus.Proto.GetTransactionsMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionsGotMessage), global::Phorkus.Proto.TransactionsGotMessage.Parser, new[]{ "Transactions" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetMempoolMessage), global::Phorkus.Proto.GetMempoolMessage.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MempoolGotMessage), global::Phorkus.Proto.MempoolGotMessage.Parser, new[]{ "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetNeighboursMessage), global::Phorkus.Proto.GetNeighboursMessage.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NeighboursGotMessage), global::Phorkus.Proto.NeighboursGotMessage.Parser, new[]{ "Neighbours" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Message), global::Phorkus.Proto.Message.Parser, new[]{ "Type", "HandshakeRequest", "HandshakeResponse", "GetBlocks", "BlocksGot", "GetMempool", "MempoolGot", "GetTransactions", "TransactionsGot", "GetNeighbours", "NeighboursGot", "ConsensusMessage" }, new[]{ "Body" }, null, null)
+          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeRequest), global::Phorkus.Proto.HandshakeRequest.Parser, new[]{ "Node" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeReply), global::Phorkus.Proto.HandshakeReply.Parser, new[]{ "Node" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PingRequest), global::Phorkus.Proto.PingRequest.Parser, new[]{ "Timestamp" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PingReply), global::Phorkus.Proto.PingReply.Parser, new[]{ "Timestamp" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksByHashesRequest), global::Phorkus.Proto.GetBlocksByHashesRequest.Parser, new[]{ "BlockHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksByHashesReply), global::Phorkus.Proto.GetBlocksByHashesReply.Parser, new[]{ "Blocks" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksByHeightRangeRequest), global::Phorkus.Proto.GetBlocksByHeightRangeRequest.Parser, new[]{ "FromHeight", "ToHeight" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksByHeightRangeReply), global::Phorkus.Proto.GetBlocksByHeightRangeReply.Parser, new[]{ "BlockHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsByHashesRequest), global::Phorkus.Proto.GetTransactionsByHashesRequest.Parser, new[]{ "TransactionHashes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsByHashesReply), global::Phorkus.Proto.GetTransactionsByHashesReply.Parser, new[]{ "Transactions" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest), global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest.Parser, new[]{ "BlockHeight" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply), global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply.Parser, new[]{ "TransactionHashes" }, null, null, null)
           }));
     }
     #endregion
 
   }
-  #region Enums
-  public enum MessageType {
-    /// <summary>
-    /// unknown message type, should not be used 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_UNKNOWN")] Unknown = 0,
-    /// <summary>
-    /// messages for handshake 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_HANDSHAKE_REQUEST")] HandshakeRequest = 1,
-    [pbr::OriginalName("MESSAGE_TYPE_HANDSHAKE_RESPONSE")] HandshakeResponse = 2,
-    /// <summary>
-    /// request block headers from peer 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_GET_BLOCKS")] GetBlocks = 5,
-    [pbr::OriginalName("MESSAGE_TYPE_BLOCKS_GOT")] BlocksGot = 6,
-    /// <summary>
-    /// request transaction from peer 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_GET_TRANSACTIONS")] GetTransactions = 7,
-    [pbr::OriginalName("MESSAGE_TYPE_TRANSACTIONS_GOT")] TransactionsGot = 8,
-    /// <summary>
-    /// request transaction pool 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_GET_MEMPOOL")] GetMempool = 9,
-    [pbr::OriginalName("MESSAGE_TYPE_MEMPOOL_GOT")] MempoolGot = 10,
-    /// <summary>
-    /// request peer neighbours 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_GET_NEIGHBOURS")] GetNeighbours = 11,
-    [pbr::OriginalName("MESSAGE_TYPE_NEIGHBOURS_GOT")] NeighboursGot = 12,
-    /// <summary>
-    /// consensus message 
-    /// </summary>
-    [pbr::OriginalName("MESSAGE_TYPE_CONSENSUS_MESSAGE")] ConsensusMessage = 13,
-  }
-
-  #endregion
-
   #region Messages
-  public sealed partial class HandshakeRequestMessage : pb::IMessage<HandshakeRequestMessage> {
-    private static readonly pb::MessageParser<HandshakeRequestMessage> _parser = new pb::MessageParser<HandshakeRequestMessage>(() => new HandshakeRequestMessage());
+  public sealed partial class HandshakeRequest : pb::IMessage<HandshakeRequest> {
+    private static readonly pb::MessageParser<HandshakeRequest> _parser = new pb::MessageParser<HandshakeRequest>(() => new HandshakeRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<HandshakeRequestMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<HandshakeRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -135,21 +80,21 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public HandshakeRequestMessage() {
+    public HandshakeRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public HandshakeRequestMessage(HandshakeRequestMessage other) : this() {
+    public HandshakeRequest(HandshakeRequest other) : this() {
       node_ = other.node_ != null ? other.node_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public HandshakeRequestMessage Clone() {
-      return new HandshakeRequestMessage(this);
+    public HandshakeRequest Clone() {
+      return new HandshakeRequest(this);
     }
 
     /// <summary>Field number for the "node" field.</summary>
@@ -165,11 +110,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as HandshakeRequestMessage);
+      return Equals(other as HandshakeRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(HandshakeRequestMessage other) {
+    public bool Equals(HandshakeRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -219,7 +164,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(HandshakeRequestMessage other) {
+    public void MergeFrom(HandshakeRequest other) {
       if (other == null) {
         return;
       }
@@ -253,11 +198,11 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class HandshakeResponseMessage : pb::IMessage<HandshakeResponseMessage> {
-    private static readonly pb::MessageParser<HandshakeResponseMessage> _parser = new pb::MessageParser<HandshakeResponseMessage>(() => new HandshakeResponseMessage());
+  public sealed partial class HandshakeReply : pb::IMessage<HandshakeReply> {
+    private static readonly pb::MessageParser<HandshakeReply> _parser = new pb::MessageParser<HandshakeReply>(() => new HandshakeReply());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<HandshakeResponseMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<HandshakeReply> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -270,21 +215,21 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public HandshakeResponseMessage() {
+    public HandshakeReply() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public HandshakeResponseMessage(HandshakeResponseMessage other) : this() {
+    public HandshakeReply(HandshakeReply other) : this() {
       node_ = other.node_ != null ? other.node_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public HandshakeResponseMessage Clone() {
-      return new HandshakeResponseMessage(this);
+    public HandshakeReply Clone() {
+      return new HandshakeReply(this);
     }
 
     /// <summary>Field number for the "node" field.</summary>
@@ -300,11 +245,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as HandshakeResponseMessage);
+      return Equals(other as HandshakeReply);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(HandshakeResponseMessage other) {
+    public bool Equals(HandshakeReply other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -354,7 +299,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(HandshakeResponseMessage other) {
+    public void MergeFrom(HandshakeReply other) {
       if (other == null) {
         return;
       }
@@ -388,11 +333,11 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class GetBlocksMessage : pb::IMessage<GetBlocksMessage> {
-    private static readonly pb::MessageParser<GetBlocksMessage> _parser = new pb::MessageParser<GetBlocksMessage>(() => new GetBlocksMessage());
+  public sealed partial class PingRequest : pb::IMessage<PingRequest> {
+    private static readonly pb::MessageParser<PingRequest> _parser = new pb::MessageParser<PingRequest>(() => new PingRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<GetBlocksMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<PingRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -405,55 +350,55 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetBlocksMessage() {
+    public PingRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetBlocksMessage(GetBlocksMessage other) : this() {
-      height_ = other.height_;
+    public PingRequest(PingRequest other) : this() {
+      timestamp_ = other.timestamp_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetBlocksMessage Clone() {
-      return new GetBlocksMessage(this);
+    public PingRequest Clone() {
+      return new PingRequest(this);
     }
 
-    /// <summary>Field number for the "height" field.</summary>
-    public const int HeightFieldNumber = 1;
-    private ulong height_;
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 1;
+    private ulong timestamp_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong Height {
-      get { return height_; }
+    public ulong Timestamp {
+      get { return timestamp_; }
       set {
-        height_ = value;
+        timestamp_ = value;
       }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as GetBlocksMessage);
+      return Equals(other as PingRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(GetBlocksMessage other) {
+    public bool Equals(PingRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Height != other.Height) return false;
+      if (Timestamp != other.Timestamp) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Height != 0UL) hash ^= Height.GetHashCode();
+      if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -467,9 +412,9 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Height != 0UL) {
+      if (Timestamp != 0UL) {
         output.WriteRawTag(8);
-        output.WriteUInt64(Height);
+        output.WriteUInt64(Timestamp);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -479,8 +424,8 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Height != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Height);
+      if (Timestamp != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -489,12 +434,12 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(GetBlocksMessage other) {
+    public void MergeFrom(PingRequest other) {
       if (other == null) {
         return;
       }
-      if (other.Height != 0UL) {
-        Height = other.Height;
+      if (other.Timestamp != 0UL) {
+        Timestamp = other.Timestamp;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -508,7 +453,7 @@ namespace Phorkus.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            Height = input.ReadUInt64();
+            Timestamp = input.ReadUInt64();
             break;
           }
         }
@@ -517,11 +462,11 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class BlocksGotMessage : pb::IMessage<BlocksGotMessage> {
-    private static readonly pb::MessageParser<BlocksGotMessage> _parser = new pb::MessageParser<BlocksGotMessage>(() => new BlocksGotMessage());
+  public sealed partial class PingReply : pb::IMessage<PingReply> {
+    private static readonly pb::MessageParser<PingReply> _parser = new pb::MessageParser<PingReply>(() => new PingReply());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<BlocksGotMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<PingReply> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -534,21 +479,271 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlocksGotMessage() {
+    public PingReply() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlocksGotMessage(BlocksGotMessage other) : this() {
+    public PingReply(PingReply other) : this() {
+      timestamp_ = other.timestamp_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public PingReply Clone() {
+      return new PingReply(this);
+    }
+
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 1;
+    private ulong timestamp_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Timestamp {
+      get { return timestamp_; }
+      set {
+        timestamp_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as PingReply);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(PingReply other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Timestamp != other.Timestamp) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Timestamp != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(Timestamp);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Timestamp != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(PingReply other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Timestamp != 0UL) {
+        Timestamp = other.Timestamp;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Timestamp = input.ReadUInt64();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class GetBlocksByHashesRequest : pb::IMessage<GetBlocksByHashesRequest> {
+    private static readonly pb::MessageParser<GetBlocksByHashesRequest> _parser = new pb::MessageParser<GetBlocksByHashesRequest>(() => new GetBlocksByHashesRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GetBlocksByHashesRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHashesRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHashesRequest(GetBlocksByHashesRequest other) : this() {
+      blockHashes_ = other.blockHashes_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHashesRequest Clone() {
+      return new GetBlocksByHashesRequest(this);
+    }
+
+    /// <summary>Field number for the "block_hashes" field.</summary>
+    public const int BlockHashesFieldNumber = 1;
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_blockHashes_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> blockHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> BlockHashes {
+      get { return blockHashes_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as GetBlocksByHashesRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(GetBlocksByHashesRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if(!blockHashes_.Equals(other.blockHashes_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= blockHashes_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      blockHashes_.WriteTo(output, _repeated_blockHashes_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      size += blockHashes_.CalculateSize(_repeated_blockHashes_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(GetBlocksByHashesRequest other) {
+      if (other == null) {
+        return;
+      }
+      blockHashes_.Add(other.blockHashes_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            blockHashes_.AddEntriesFrom(input, _repeated_blockHashes_codec);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class GetBlocksByHashesReply : pb::IMessage<GetBlocksByHashesReply> {
+    private static readonly pb::MessageParser<GetBlocksByHashesReply> _parser = new pb::MessageParser<GetBlocksByHashesReply>(() => new GetBlocksByHashesReply());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GetBlocksByHashesReply> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHashesReply() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHashesReply(GetBlocksByHashesReply other) : this() {
       blocks_ = other.blocks_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlocksGotMessage Clone() {
-      return new BlocksGotMessage(this);
+    public GetBlocksByHashesReply Clone() {
+      return new GetBlocksByHashesReply(this);
     }
 
     /// <summary>Field number for the "blocks" field.</summary>
@@ -563,11 +758,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as BlocksGotMessage);
+      return Equals(other as GetBlocksByHashesReply);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(BlocksGotMessage other) {
+    public bool Equals(GetBlocksByHashesReply other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -612,7 +807,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(BlocksGotMessage other) {
+    public void MergeFrom(GetBlocksByHashesReply other) {
       if (other == null) {
         return;
       }
@@ -638,15 +833,15 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class GetTransactionsMessage : pb::IMessage<GetTransactionsMessage> {
-    private static readonly pb::MessageParser<GetTransactionsMessage> _parser = new pb::MessageParser<GetTransactionsMessage>(() => new GetTransactionsMessage());
+  public sealed partial class GetBlocksByHeightRangeRequest : pb::IMessage<GetBlocksByHeightRangeRequest> {
+    private static readonly pb::MessageParser<GetBlocksByHeightRangeRequest> _parser = new pb::MessageParser<GetBlocksByHeightRangeRequest>(() => new GetBlocksByHeightRangeRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<GetTransactionsMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<GetBlocksByHeightRangeRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -655,21 +850,299 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetTransactionsMessage() {
+    public GetBlocksByHeightRangeRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetTransactionsMessage(GetTransactionsMessage other) : this() {
+    public GetBlocksByHeightRangeRequest(GetBlocksByHeightRangeRequest other) : this() {
+      fromHeight_ = other.fromHeight_;
+      toHeight_ = other.toHeight_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHeightRangeRequest Clone() {
+      return new GetBlocksByHeightRangeRequest(this);
+    }
+
+    /// <summary>Field number for the "from_height" field.</summary>
+    public const int FromHeightFieldNumber = 1;
+    private ulong fromHeight_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong FromHeight {
+      get { return fromHeight_; }
+      set {
+        fromHeight_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "to_height" field.</summary>
+    public const int ToHeightFieldNumber = 2;
+    private ulong toHeight_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong ToHeight {
+      get { return toHeight_; }
+      set {
+        toHeight_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as GetBlocksByHeightRangeRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(GetBlocksByHeightRangeRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (FromHeight != other.FromHeight) return false;
+      if (ToHeight != other.ToHeight) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (FromHeight != 0UL) hash ^= FromHeight.GetHashCode();
+      if (ToHeight != 0UL) hash ^= ToHeight.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (FromHeight != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(FromHeight);
+      }
+      if (ToHeight != 0UL) {
+        output.WriteRawTag(16);
+        output.WriteUInt64(ToHeight);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (FromHeight != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(FromHeight);
+      }
+      if (ToHeight != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(ToHeight);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(GetBlocksByHeightRangeRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.FromHeight != 0UL) {
+        FromHeight = other.FromHeight;
+      }
+      if (other.ToHeight != 0UL) {
+        ToHeight = other.ToHeight;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            FromHeight = input.ReadUInt64();
+            break;
+          }
+          case 16: {
+            ToHeight = input.ReadUInt64();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class GetBlocksByHeightRangeReply : pb::IMessage<GetBlocksByHeightRangeReply> {
+    private static readonly pb::MessageParser<GetBlocksByHeightRangeReply> _parser = new pb::MessageParser<GetBlocksByHeightRangeReply>(() => new GetBlocksByHeightRangeReply());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GetBlocksByHeightRangeReply> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[7]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHeightRangeReply() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHeightRangeReply(GetBlocksByHeightRangeReply other) : this() {
+      blockHashes_ = other.blockHashes_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlocksByHeightRangeReply Clone() {
+      return new GetBlocksByHeightRangeReply(this);
+    }
+
+    /// <summary>Field number for the "block_hashes" field.</summary>
+    public const int BlockHashesFieldNumber = 1;
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.UInt256> _repeated_blockHashes_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.UInt256.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.UInt256> blockHashes_ = new pbc::RepeatedField<global::Phorkus.Proto.UInt256>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Phorkus.Proto.UInt256> BlockHashes {
+      get { return blockHashes_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as GetBlocksByHeightRangeReply);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(GetBlocksByHeightRangeReply other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if(!blockHashes_.Equals(other.blockHashes_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= blockHashes_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      blockHashes_.WriteTo(output, _repeated_blockHashes_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      size += blockHashes_.CalculateSize(_repeated_blockHashes_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(GetBlocksByHeightRangeReply other) {
+      if (other == null) {
+        return;
+      }
+      blockHashes_.Add(other.blockHashes_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            blockHashes_.AddEntriesFrom(input, _repeated_blockHashes_codec);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class GetTransactionsByHashesRequest : pb::IMessage<GetTransactionsByHashesRequest> {
+    private static readonly pb::MessageParser<GetTransactionsByHashesRequest> _parser = new pb::MessageParser<GetTransactionsByHashesRequest>(() => new GetTransactionsByHashesRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GetTransactionsByHashesRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[8]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetTransactionsByHashesRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetTransactionsByHashesRequest(GetTransactionsByHashesRequest other) : this() {
       transactionHashes_ = other.transactionHashes_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetTransactionsMessage Clone() {
-      return new GetTransactionsMessage(this);
+    public GetTransactionsByHashesRequest Clone() {
+      return new GetTransactionsByHashesRequest(this);
     }
 
     /// <summary>Field number for the "transaction_hashes" field.</summary>
@@ -684,11 +1157,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as GetTransactionsMessage);
+      return Equals(other as GetTransactionsByHashesRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(GetTransactionsMessage other) {
+    public bool Equals(GetTransactionsByHashesRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -733,7 +1206,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(GetTransactionsMessage other) {
+    public void MergeFrom(GetTransactionsByHashesRequest other) {
       if (other == null) {
         return;
       }
@@ -759,15 +1232,15 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class TransactionsGotMessage : pb::IMessage<TransactionsGotMessage> {
-    private static readonly pb::MessageParser<TransactionsGotMessage> _parser = new pb::MessageParser<TransactionsGotMessage>(() => new TransactionsGotMessage());
+  public sealed partial class GetTransactionsByHashesReply : pb::IMessage<GetTransactionsByHashesReply> {
+    private static readonly pb::MessageParser<GetTransactionsByHashesReply> _parser = new pb::MessageParser<GetTransactionsByHashesReply>(() => new GetTransactionsByHashesReply());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<TransactionsGotMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<GetTransactionsByHashesReply> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -776,21 +1249,21 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public TransactionsGotMessage() {
+    public GetTransactionsByHashesReply() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public TransactionsGotMessage(TransactionsGotMessage other) : this() {
+    public GetTransactionsByHashesReply(GetTransactionsByHashesReply other) : this() {
       transactions_ = other.transactions_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public TransactionsGotMessage Clone() {
-      return new TransactionsGotMessage(this);
+    public GetTransactionsByHashesReply Clone() {
+      return new GetTransactionsByHashesReply(this);
     }
 
     /// <summary>Field number for the "transactions" field.</summary>
@@ -805,11 +1278,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as TransactionsGotMessage);
+      return Equals(other as GetTransactionsByHashesReply);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(TransactionsGotMessage other) {
+    public bool Equals(GetTransactionsByHashesReply other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -854,7 +1327,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(TransactionsGotMessage other) {
+    public void MergeFrom(GetTransactionsByHashesReply other) {
       if (other == null) {
         return;
       }
@@ -880,15 +1353,15 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class GetMempoolMessage : pb::IMessage<GetMempoolMessage> {
-    private static readonly pb::MessageParser<GetMempoolMessage> _parser = new pb::MessageParser<GetMempoolMessage>(() => new GetMempoolMessage());
+  public sealed partial class GetTransactionHashesByBlockHeightRequest : pb::IMessage<GetTransactionHashesByBlockHeightRequest> {
+    private static readonly pb::MessageParser<GetTransactionHashesByBlockHeightRequest> _parser = new pb::MessageParser<GetTransactionHashesByBlockHeightRequest>(() => new GetTransactionHashesByBlockHeightRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<GetMempoolMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<GetTransactionHashesByBlockHeightRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -897,41 +1370,55 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetMempoolMessage() {
+    public GetTransactionHashesByBlockHeightRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetMempoolMessage(GetMempoolMessage other) : this() {
+    public GetTransactionHashesByBlockHeightRequest(GetTransactionHashesByBlockHeightRequest other) : this() {
+      blockHeight_ = other.blockHeight_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetMempoolMessage Clone() {
-      return new GetMempoolMessage(this);
+    public GetTransactionHashesByBlockHeightRequest Clone() {
+      return new GetTransactionHashesByBlockHeightRequest(this);
+    }
+
+    /// <summary>Field number for the "block_height" field.</summary>
+    public const int BlockHeightFieldNumber = 1;
+    private ulong blockHeight_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong BlockHeight {
+      get { return blockHeight_; }
+      set {
+        blockHeight_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as GetMempoolMessage);
+      return Equals(other as GetTransactionHashesByBlockHeightRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(GetMempoolMessage other) {
+    public bool Equals(GetTransactionHashesByBlockHeightRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (BlockHeight != other.BlockHeight) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
+      if (BlockHeight != 0UL) hash ^= BlockHeight.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -945,6 +1432,10 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+      if (BlockHeight != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(BlockHeight);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -953,6 +1444,9 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
+      if (BlockHeight != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(BlockHeight);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -960,9 +1454,12 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(GetMempoolMessage other) {
+    public void MergeFrom(GetTransactionHashesByBlockHeightRequest other) {
       if (other == null) {
         return;
+      }
+      if (other.BlockHeight != 0UL) {
+        BlockHeight = other.BlockHeight;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -975,21 +1472,25 @@ namespace Phorkus.Proto {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
+          case 8: {
+            BlockHeight = input.ReadUInt64();
+            break;
+          }
         }
       }
     }
 
   }
 
-  public sealed partial class MempoolGotMessage : pb::IMessage<MempoolGotMessage> {
-    private static readonly pb::MessageParser<MempoolGotMessage> _parser = new pb::MessageParser<MempoolGotMessage>(() => new MempoolGotMessage());
+  public sealed partial class GetTransactionHashesByBlockHeightReply : pb::IMessage<GetTransactionHashesByBlockHeightReply> {
+    private static readonly pb::MessageParser<GetTransactionHashesByBlockHeightReply> _parser = new pb::MessageParser<GetTransactionHashesByBlockHeightReply>(() => new GetTransactionHashesByBlockHeightReply());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<MempoolGotMessage> Parser { get { return _parser; } }
+    public static pb::MessageParser<GetTransactionHashesByBlockHeightReply> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -998,21 +1499,21 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public MempoolGotMessage() {
+    public GetTransactionHashesByBlockHeightReply() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public MempoolGotMessage(MempoolGotMessage other) : this() {
+    public GetTransactionHashesByBlockHeightReply(GetTransactionHashesByBlockHeightReply other) : this() {
       transactionHashes_ = other.transactionHashes_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public MempoolGotMessage Clone() {
-      return new MempoolGotMessage(this);
+    public GetTransactionHashesByBlockHeightReply Clone() {
+      return new GetTransactionHashesByBlockHeightReply(this);
     }
 
     /// <summary>Field number for the "transaction_hashes" field.</summary>
@@ -1027,11 +1528,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as MempoolGotMessage);
+      return Equals(other as GetTransactionHashesByBlockHeightReply);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(MempoolGotMessage other) {
+    public bool Equals(GetTransactionHashesByBlockHeightReply other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -1076,7 +1577,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(MempoolGotMessage other) {
+    public void MergeFrom(GetTransactionHashesByBlockHeightReply other) {
       if (other == null) {
         return;
       }
@@ -1094,811 +1595,6 @@ namespace Phorkus.Proto {
             break;
           case 10: {
             transactionHashes_.AddEntriesFrom(input, _repeated_transactionHashes_codec);
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class GetNeighboursMessage : pb::IMessage<GetNeighboursMessage> {
-    private static readonly pb::MessageParser<GetNeighboursMessage> _parser = new pb::MessageParser<GetNeighboursMessage>(() => new GetNeighboursMessage());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<GetNeighboursMessage> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[8]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetNeighboursMessage() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetNeighboursMessage(GetNeighboursMessage other) : this() {
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GetNeighboursMessage Clone() {
-      return new GetNeighboursMessage(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as GetNeighboursMessage);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(GetNeighboursMessage other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(GetNeighboursMessage other) {
-      if (other == null) {
-        return;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class NeighboursGotMessage : pb::IMessage<NeighboursGotMessage> {
-    private static readonly pb::MessageParser<NeighboursGotMessage> _parser = new pb::MessageParser<NeighboursGotMessage>(() => new NeighboursGotMessage());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<NeighboursGotMessage> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[9]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public NeighboursGotMessage() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public NeighboursGotMessage(NeighboursGotMessage other) : this() {
-      neighbours_ = other.neighbours_.Clone();
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public NeighboursGotMessage Clone() {
-      return new NeighboursGotMessage(this);
-    }
-
-    /// <summary>Field number for the "neighbours" field.</summary>
-    public const int NeighboursFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.Node> _repeated_neighbours_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.Node.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.Node> neighbours_ = new pbc::RepeatedField<global::Phorkus.Proto.Node>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.Node> Neighbours {
-      get { return neighbours_; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as NeighboursGotMessage);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(NeighboursGotMessage other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if(!neighbours_.Equals(other.neighbours_)) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      hash ^= neighbours_.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      neighbours_.WriteTo(output, _repeated_neighbours_codec);
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      size += neighbours_.CalculateSize(_repeated_neighbours_codec);
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(NeighboursGotMessage other) {
-      if (other == null) {
-        return;
-      }
-      neighbours_.Add(other.neighbours_);
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            neighbours_.AddEntriesFrom(input, _repeated_neighbours_codec);
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class Message : pb::IMessage<Message> {
-    private static readonly pb::MessageParser<Message> _parser = new pb::MessageParser<Message>(() => new Message());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Message> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.MessageReflection.Descriptor.MessageTypes[10]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Message() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Message(Message other) : this() {
-      type_ = other.type_;
-      switch (other.BodyCase) {
-        case BodyOneofCase.HandshakeRequest:
-          HandshakeRequest = other.HandshakeRequest.Clone();
-          break;
-        case BodyOneofCase.HandshakeResponse:
-          HandshakeResponse = other.HandshakeResponse.Clone();
-          break;
-        case BodyOneofCase.GetBlocks:
-          GetBlocks = other.GetBlocks.Clone();
-          break;
-        case BodyOneofCase.BlocksGot:
-          BlocksGot = other.BlocksGot.Clone();
-          break;
-        case BodyOneofCase.GetMempool:
-          GetMempool = other.GetMempool.Clone();
-          break;
-        case BodyOneofCase.MempoolGot:
-          MempoolGot = other.MempoolGot.Clone();
-          break;
-        case BodyOneofCase.GetTransactions:
-          GetTransactions = other.GetTransactions.Clone();
-          break;
-        case BodyOneofCase.TransactionsGot:
-          TransactionsGot = other.TransactionsGot.Clone();
-          break;
-        case BodyOneofCase.GetNeighbours:
-          GetNeighbours = other.GetNeighbours.Clone();
-          break;
-        case BodyOneofCase.NeighboursGot:
-          NeighboursGot = other.NeighboursGot.Clone();
-          break;
-        case BodyOneofCase.ConsensusMessage:
-          ConsensusMessage = other.ConsensusMessage.Clone();
-          break;
-      }
-
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Message Clone() {
-      return new Message(this);
-    }
-
-    /// <summary>Field number for the "type" field.</summary>
-    public const int TypeFieldNumber = 1;
-    private global::Phorkus.Proto.MessageType type_ = 0;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.MessageType Type {
-      get { return type_; }
-      set {
-        type_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "handshake_request" field.</summary>
-    public const int HandshakeRequestFieldNumber = 10;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.HandshakeRequestMessage HandshakeRequest {
-      get { return bodyCase_ == BodyOneofCase.HandshakeRequest ? (global::Phorkus.Proto.HandshakeRequestMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.HandshakeRequest;
-      }
-    }
-
-    /// <summary>Field number for the "handshake_response" field.</summary>
-    public const int HandshakeResponseFieldNumber = 11;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.HandshakeResponseMessage HandshakeResponse {
-      get { return bodyCase_ == BodyOneofCase.HandshakeResponse ? (global::Phorkus.Proto.HandshakeResponseMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.HandshakeResponse;
-      }
-    }
-
-    /// <summary>Field number for the "get_blocks" field.</summary>
-    public const int GetBlocksFieldNumber = 12;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.GetBlocksMessage GetBlocks {
-      get { return bodyCase_ == BodyOneofCase.GetBlocks ? (global::Phorkus.Proto.GetBlocksMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetBlocks;
-      }
-    }
-
-    /// <summary>Field number for the "blocks_got" field.</summary>
-    public const int BlocksGotFieldNumber = 13;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.BlocksGotMessage BlocksGot {
-      get { return bodyCase_ == BodyOneofCase.BlocksGot ? (global::Phorkus.Proto.BlocksGotMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.BlocksGot;
-      }
-    }
-
-    /// <summary>Field number for the "get_mempool" field.</summary>
-    public const int GetMempoolFieldNumber = 14;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.GetMempoolMessage GetMempool {
-      get { return bodyCase_ == BodyOneofCase.GetMempool ? (global::Phorkus.Proto.GetMempoolMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetMempool;
-      }
-    }
-
-    /// <summary>Field number for the "mempool_got" field.</summary>
-    public const int MempoolGotFieldNumber = 15;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.MempoolGotMessage MempoolGot {
-      get { return bodyCase_ == BodyOneofCase.MempoolGot ? (global::Phorkus.Proto.MempoolGotMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.MempoolGot;
-      }
-    }
-
-    /// <summary>Field number for the "get_transactions" field.</summary>
-    public const int GetTransactionsFieldNumber = 16;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.GetTransactionsMessage GetTransactions {
-      get { return bodyCase_ == BodyOneofCase.GetTransactions ? (global::Phorkus.Proto.GetTransactionsMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetTransactions;
-      }
-    }
-
-    /// <summary>Field number for the "transactions_got" field.</summary>
-    public const int TransactionsGotFieldNumber = 17;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.TransactionsGotMessage TransactionsGot {
-      get { return bodyCase_ == BodyOneofCase.TransactionsGot ? (global::Phorkus.Proto.TransactionsGotMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.TransactionsGot;
-      }
-    }
-
-    /// <summary>Field number for the "get_neighbours" field.</summary>
-    public const int GetNeighboursFieldNumber = 18;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.GetNeighboursMessage GetNeighbours {
-      get { return bodyCase_ == BodyOneofCase.GetNeighbours ? (global::Phorkus.Proto.GetNeighboursMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GetNeighbours;
-      }
-    }
-
-    /// <summary>Field number for the "neighbours_got" field.</summary>
-    public const int NeighboursGotFieldNumber = 19;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.NeighboursGotMessage NeighboursGot {
-      get { return bodyCase_ == BodyOneofCase.NeighboursGot ? (global::Phorkus.Proto.NeighboursGotMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.NeighboursGot;
-      }
-    }
-
-    /// <summary>Field number for the "consensus_message" field.</summary>
-    public const int ConsensusMessageFieldNumber = 20;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.ConsensusMessage ConsensusMessage {
-      get { return bodyCase_ == BodyOneofCase.ConsensusMessage ? (global::Phorkus.Proto.ConsensusMessage) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.ConsensusMessage;
-      }
-    }
-
-    private object body_;
-    /// <summary>Enum of possible cases for the "body" oneof.</summary>
-    public enum BodyOneofCase {
-      None = 0,
-      HandshakeRequest = 10,
-      HandshakeResponse = 11,
-      GetBlocks = 12,
-      BlocksGot = 13,
-      GetMempool = 14,
-      MempoolGot = 15,
-      GetTransactions = 16,
-      TransactionsGot = 17,
-      GetNeighbours = 18,
-      NeighboursGot = 19,
-      ConsensusMessage = 20,
-    }
-    private BodyOneofCase bodyCase_ = BodyOneofCase.None;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BodyOneofCase BodyCase {
-      get { return bodyCase_; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void ClearBody() {
-      bodyCase_ = BodyOneofCase.None;
-      body_ = null;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Message);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Message other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Type != other.Type) return false;
-      if (!object.Equals(HandshakeRequest, other.HandshakeRequest)) return false;
-      if (!object.Equals(HandshakeResponse, other.HandshakeResponse)) return false;
-      if (!object.Equals(GetBlocks, other.GetBlocks)) return false;
-      if (!object.Equals(BlocksGot, other.BlocksGot)) return false;
-      if (!object.Equals(GetMempool, other.GetMempool)) return false;
-      if (!object.Equals(MempoolGot, other.MempoolGot)) return false;
-      if (!object.Equals(GetTransactions, other.GetTransactions)) return false;
-      if (!object.Equals(TransactionsGot, other.TransactionsGot)) return false;
-      if (!object.Equals(GetNeighbours, other.GetNeighbours)) return false;
-      if (!object.Equals(NeighboursGot, other.NeighboursGot)) return false;
-      if (!object.Equals(ConsensusMessage, other.ConsensusMessage)) return false;
-      if (BodyCase != other.BodyCase) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Type != 0) hash ^= Type.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.HandshakeRequest) hash ^= HandshakeRequest.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.HandshakeResponse) hash ^= HandshakeResponse.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.GetBlocks) hash ^= GetBlocks.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.BlocksGot) hash ^= BlocksGot.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.GetMempool) hash ^= GetMempool.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.MempoolGot) hash ^= MempoolGot.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.GetTransactions) hash ^= GetTransactions.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.TransactionsGot) hash ^= TransactionsGot.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.GetNeighbours) hash ^= GetNeighbours.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.NeighboursGot) hash ^= NeighboursGot.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.ConsensusMessage) hash ^= ConsensusMessage.GetHashCode();
-      hash ^= (int) bodyCase_;
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Type != 0) {
-        output.WriteRawTag(8);
-        output.WriteEnum((int) Type);
-      }
-      if (bodyCase_ == BodyOneofCase.HandshakeRequest) {
-        output.WriteRawTag(82);
-        output.WriteMessage(HandshakeRequest);
-      }
-      if (bodyCase_ == BodyOneofCase.HandshakeResponse) {
-        output.WriteRawTag(90);
-        output.WriteMessage(HandshakeResponse);
-      }
-      if (bodyCase_ == BodyOneofCase.GetBlocks) {
-        output.WriteRawTag(98);
-        output.WriteMessage(GetBlocks);
-      }
-      if (bodyCase_ == BodyOneofCase.BlocksGot) {
-        output.WriteRawTag(106);
-        output.WriteMessage(BlocksGot);
-      }
-      if (bodyCase_ == BodyOneofCase.GetMempool) {
-        output.WriteRawTag(114);
-        output.WriteMessage(GetMempool);
-      }
-      if (bodyCase_ == BodyOneofCase.MempoolGot) {
-        output.WriteRawTag(122);
-        output.WriteMessage(MempoolGot);
-      }
-      if (bodyCase_ == BodyOneofCase.GetTransactions) {
-        output.WriteRawTag(130, 1);
-        output.WriteMessage(GetTransactions);
-      }
-      if (bodyCase_ == BodyOneofCase.TransactionsGot) {
-        output.WriteRawTag(138, 1);
-        output.WriteMessage(TransactionsGot);
-      }
-      if (bodyCase_ == BodyOneofCase.GetNeighbours) {
-        output.WriteRawTag(146, 1);
-        output.WriteMessage(GetNeighbours);
-      }
-      if (bodyCase_ == BodyOneofCase.NeighboursGot) {
-        output.WriteRawTag(154, 1);
-        output.WriteMessage(NeighboursGot);
-      }
-      if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
-        output.WriteRawTag(162, 1);
-        output.WriteMessage(ConsensusMessage);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Type != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Type);
-      }
-      if (bodyCase_ == BodyOneofCase.HandshakeRequest) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(HandshakeRequest);
-      }
-      if (bodyCase_ == BodyOneofCase.HandshakeResponse) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(HandshakeResponse);
-      }
-      if (bodyCase_ == BodyOneofCase.GetBlocks) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(GetBlocks);
-      }
-      if (bodyCase_ == BodyOneofCase.BlocksGot) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlocksGot);
-      }
-      if (bodyCase_ == BodyOneofCase.GetMempool) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(GetMempool);
-      }
-      if (bodyCase_ == BodyOneofCase.MempoolGot) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(MempoolGot);
-      }
-      if (bodyCase_ == BodyOneofCase.GetTransactions) {
-        size += 2 + pb::CodedOutputStream.ComputeMessageSize(GetTransactions);
-      }
-      if (bodyCase_ == BodyOneofCase.TransactionsGot) {
-        size += 2 + pb::CodedOutputStream.ComputeMessageSize(TransactionsGot);
-      }
-      if (bodyCase_ == BodyOneofCase.GetNeighbours) {
-        size += 2 + pb::CodedOutputStream.ComputeMessageSize(GetNeighbours);
-      }
-      if (bodyCase_ == BodyOneofCase.NeighboursGot) {
-        size += 2 + pb::CodedOutputStream.ComputeMessageSize(NeighboursGot);
-      }
-      if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
-        size += 2 + pb::CodedOutputStream.ComputeMessageSize(ConsensusMessage);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Message other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Type != 0) {
-        Type = other.Type;
-      }
-      switch (other.BodyCase) {
-        case BodyOneofCase.HandshakeRequest:
-          if (HandshakeRequest == null) {
-            HandshakeRequest = new global::Phorkus.Proto.HandshakeRequestMessage();
-          }
-          HandshakeRequest.MergeFrom(other.HandshakeRequest);
-          break;
-        case BodyOneofCase.HandshakeResponse:
-          if (HandshakeResponse == null) {
-            HandshakeResponse = new global::Phorkus.Proto.HandshakeResponseMessage();
-          }
-          HandshakeResponse.MergeFrom(other.HandshakeResponse);
-          break;
-        case BodyOneofCase.GetBlocks:
-          if (GetBlocks == null) {
-            GetBlocks = new global::Phorkus.Proto.GetBlocksMessage();
-          }
-          GetBlocks.MergeFrom(other.GetBlocks);
-          break;
-        case BodyOneofCase.BlocksGot:
-          if (BlocksGot == null) {
-            BlocksGot = new global::Phorkus.Proto.BlocksGotMessage();
-          }
-          BlocksGot.MergeFrom(other.BlocksGot);
-          break;
-        case BodyOneofCase.GetMempool:
-          if (GetMempool == null) {
-            GetMempool = new global::Phorkus.Proto.GetMempoolMessage();
-          }
-          GetMempool.MergeFrom(other.GetMempool);
-          break;
-        case BodyOneofCase.MempoolGot:
-          if (MempoolGot == null) {
-            MempoolGot = new global::Phorkus.Proto.MempoolGotMessage();
-          }
-          MempoolGot.MergeFrom(other.MempoolGot);
-          break;
-        case BodyOneofCase.GetTransactions:
-          if (GetTransactions == null) {
-            GetTransactions = new global::Phorkus.Proto.GetTransactionsMessage();
-          }
-          GetTransactions.MergeFrom(other.GetTransactions);
-          break;
-        case BodyOneofCase.TransactionsGot:
-          if (TransactionsGot == null) {
-            TransactionsGot = new global::Phorkus.Proto.TransactionsGotMessage();
-          }
-          TransactionsGot.MergeFrom(other.TransactionsGot);
-          break;
-        case BodyOneofCase.GetNeighbours:
-          if (GetNeighbours == null) {
-            GetNeighbours = new global::Phorkus.Proto.GetNeighboursMessage();
-          }
-          GetNeighbours.MergeFrom(other.GetNeighbours);
-          break;
-        case BodyOneofCase.NeighboursGot:
-          if (NeighboursGot == null) {
-            NeighboursGot = new global::Phorkus.Proto.NeighboursGotMessage();
-          }
-          NeighboursGot.MergeFrom(other.NeighboursGot);
-          break;
-        case BodyOneofCase.ConsensusMessage:
-          if (ConsensusMessage == null) {
-            ConsensusMessage = new global::Phorkus.Proto.ConsensusMessage();
-          }
-          ConsensusMessage.MergeFrom(other.ConsensusMessage);
-          break;
-      }
-
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 8: {
-            type_ = (global::Phorkus.Proto.MessageType) input.ReadEnum();
-            break;
-          }
-          case 82: {
-            global::Phorkus.Proto.HandshakeRequestMessage subBuilder = new global::Phorkus.Proto.HandshakeRequestMessage();
-            if (bodyCase_ == BodyOneofCase.HandshakeRequest) {
-              subBuilder.MergeFrom(HandshakeRequest);
-            }
-            input.ReadMessage(subBuilder);
-            HandshakeRequest = subBuilder;
-            break;
-          }
-          case 90: {
-            global::Phorkus.Proto.HandshakeResponseMessage subBuilder = new global::Phorkus.Proto.HandshakeResponseMessage();
-            if (bodyCase_ == BodyOneofCase.HandshakeResponse) {
-              subBuilder.MergeFrom(HandshakeResponse);
-            }
-            input.ReadMessage(subBuilder);
-            HandshakeResponse = subBuilder;
-            break;
-          }
-          case 98: {
-            global::Phorkus.Proto.GetBlocksMessage subBuilder = new global::Phorkus.Proto.GetBlocksMessage();
-            if (bodyCase_ == BodyOneofCase.GetBlocks) {
-              subBuilder.MergeFrom(GetBlocks);
-            }
-            input.ReadMessage(subBuilder);
-            GetBlocks = subBuilder;
-            break;
-          }
-          case 106: {
-            global::Phorkus.Proto.BlocksGotMessage subBuilder = new global::Phorkus.Proto.BlocksGotMessage();
-            if (bodyCase_ == BodyOneofCase.BlocksGot) {
-              subBuilder.MergeFrom(BlocksGot);
-            }
-            input.ReadMessage(subBuilder);
-            BlocksGot = subBuilder;
-            break;
-          }
-          case 114: {
-            global::Phorkus.Proto.GetMempoolMessage subBuilder = new global::Phorkus.Proto.GetMempoolMessage();
-            if (bodyCase_ == BodyOneofCase.GetMempool) {
-              subBuilder.MergeFrom(GetMempool);
-            }
-            input.ReadMessage(subBuilder);
-            GetMempool = subBuilder;
-            break;
-          }
-          case 122: {
-            global::Phorkus.Proto.MempoolGotMessage subBuilder = new global::Phorkus.Proto.MempoolGotMessage();
-            if (bodyCase_ == BodyOneofCase.MempoolGot) {
-              subBuilder.MergeFrom(MempoolGot);
-            }
-            input.ReadMessage(subBuilder);
-            MempoolGot = subBuilder;
-            break;
-          }
-          case 130: {
-            global::Phorkus.Proto.GetTransactionsMessage subBuilder = new global::Phorkus.Proto.GetTransactionsMessage();
-            if (bodyCase_ == BodyOneofCase.GetTransactions) {
-              subBuilder.MergeFrom(GetTransactions);
-            }
-            input.ReadMessage(subBuilder);
-            GetTransactions = subBuilder;
-            break;
-          }
-          case 138: {
-            global::Phorkus.Proto.TransactionsGotMessage subBuilder = new global::Phorkus.Proto.TransactionsGotMessage();
-            if (bodyCase_ == BodyOneofCase.TransactionsGot) {
-              subBuilder.MergeFrom(TransactionsGot);
-            }
-            input.ReadMessage(subBuilder);
-            TransactionsGot = subBuilder;
-            break;
-          }
-          case 146: {
-            global::Phorkus.Proto.GetNeighboursMessage subBuilder = new global::Phorkus.Proto.GetNeighboursMessage();
-            if (bodyCase_ == BodyOneofCase.GetNeighbours) {
-              subBuilder.MergeFrom(GetNeighbours);
-            }
-            input.ReadMessage(subBuilder);
-            GetNeighbours = subBuilder;
-            break;
-          }
-          case 154: {
-            global::Phorkus.Proto.NeighboursGotMessage subBuilder = new global::Phorkus.Proto.NeighboursGotMessage();
-            if (bodyCase_ == BodyOneofCase.NeighboursGot) {
-              subBuilder.MergeFrom(NeighboursGot);
-            }
-            input.ReadMessage(subBuilder);
-            NeighboursGot = subBuilder;
-            break;
-          }
-          case 162: {
-            global::Phorkus.Proto.ConsensusMessage subBuilder = new global::Phorkus.Proto.ConsensusMessage();
-            if (bodyCase_ == BodyOneofCase.ConsensusMessage) {
-              subBuilder.MergeFrom(ConsensusMessage);
-            }
-            input.ReadMessage(subBuilder);
-            ConsensusMessage = subBuilder;
             break;
           }
         }

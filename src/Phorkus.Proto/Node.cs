@@ -24,13 +24,13 @@ namespace Phorkus.Proto {
     static NodeReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cgpub2RlLnByb3RvIo8BCgROb2RlEg8KB3ZlcnNpb24YASABKA0SEQoJdGlt",
-            "ZXN0YW1wGAIgASgEEhAKCHNlcnZpY2VzGAMgASgEEgwKBHBvcnQYBCABKA0S",
-            "DwoHYWRkcmVzcxgFIAEoCRINCgVub25jZRgGIAEoDRIUCgxibG9ja19oZWln",
-            "aHQYByABKAQSDQoFYWdlbnQYCCABKAlCEKoCDVBob3JrdXMuUHJvdG9iBnBy",
-            "b3RvMw=="));
+            "Cgpub2RlLnByb3RvGg1kZWZhdWx0LnByb3RvIo8BCgROb2RlEg8KB3ZlcnNp",
+            "b24YASABKA0SEQoJdGltZXN0YW1wGAIgASgEEhAKCHNlcnZpY2VzGAMgASgE",
+            "EgwKBHBvcnQYBCABKA0SDwoHYWRkcmVzcxgFIAEoCRINCgVub25jZRgGIAEo",
+            "DRIUCgxibG9ja19oZWlnaHQYByABKAQSDQoFYWdlbnQYCCABKAlCEKoCDVBo",
+            "b3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Node), global::Phorkus.Proto.Node.Parser, new[]{ "Version", "Timestamp", "Services", "Port", "Address", "Nonce", "BlockHeight", "Agent" }, null, null, null)
           }));

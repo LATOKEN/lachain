@@ -5,8 +5,8 @@ namespace Phorkus.Core.Network
 {
     public interface INetworkContext
     {
-        Node LocalNode { get; }
+        ConcurrentDictionary<PeerAddress, IRemotePeer> ActivePeers { get; }
         
-        ConcurrentDictionary<IpEndPoint, IPeer> ActivePeers { get; }
+        Node LocalNode { get; }
     }
 }

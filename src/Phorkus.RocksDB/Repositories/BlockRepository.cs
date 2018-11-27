@@ -4,7 +4,6 @@ using System.Linq;
 using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
-using Phorkus.Core.Utils;
 
 namespace Phorkus.RocksDB.Repositories
 {
@@ -37,9 +36,9 @@ namespace Phorkus.RocksDB.Repositories
         public bool AddBlock(Block block)
         {
             /* write block by hash */
-            _rocksDbContext.Save(EntryPrefix.BlockByHash.BuildPrefix(block.ToHash256()), block.ToByteArray());
+            _rocksDbContext.Save(EntryPrefix.BlockByHash.BuildPrefix(block.Hash), block.ToByteArray());
             /* write block hash by height */
-            _rocksDbContext.Save(EntryPrefix.BlockHashByHeight.BuildPrefix(block.Header.Index), block.ToHash256().ToByteArray());
+            _rocksDbContext.Save(EntryPrefix.BlockHashByHeight.BuildPrefix(block.Header.Index), block.Hash.ToByteArray());
             return true;
         }
         
@@ -67,9 +66,7 @@ namespace Phorkus.RocksDB.Repositories
         
         public IEnumerable<Block> GetBlocksByHashes(IEnumerable<UInt256> hashes)
         {
-            var prefixes = hashes.Select(h => EntryPrefix.BlockByHash.BuildPrefix(h));
-            var result = _rocksDbContext.GetMany(prefixes);
-            return result.Values.Where(b => b != null).Select(Block.Parser.ParseFrom);
+            return hashes.Select(_GetBlockByHash).Where(block => block != null);
         }
         
         private Block _GetBlockByHeight(ulong blockHeight)

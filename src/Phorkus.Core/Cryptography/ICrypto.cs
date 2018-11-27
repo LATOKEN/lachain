@@ -12,6 +12,8 @@ namespace Phorkus.Core.Cryptography
         /// <param name="pubkey">Public Key</param>
         /// <returns>Bool</returns>
         bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey);
+        
+        bool VerifySignature(byte[] message, byte[] signature);
 
         /// <summary>
         /// Sign sha256 Message (secp256r1)

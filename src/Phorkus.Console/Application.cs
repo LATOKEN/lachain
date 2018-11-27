@@ -1,14 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
-using Phorkus.Core;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
+using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
-using Phorkus.Core.Messaging;
 using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -55,18 +55,18 @@ namespace Phorkus.Console
             var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
-            var consensusManager = _container.Resolve<IConsensusManager>();
-            var blockchainSynchronizer = _container.Resolve<IBlockchainSynchronizer>();
+//            var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
+            var synchronizer = _container.Resolve<ISynchronizer>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
             
             System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToByteArray().ToHex());
-            System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToByteArray().ToHex());
+            System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
+            System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToHex());
             System.Console.WriteLine(
-                "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToHex());
+                "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToHex());
             System.Console.WriteLine("-------------------------------");
 
             if (blockchainManager.TryBuildGenesisBlock(keyPair))
@@ -78,11 +78,11 @@ namespace Phorkus.Console
             System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
             System.Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
             System.Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
-            System.Console.WriteLine($" + transactionHashes: {genesisBlock.Header.TransactionHashes.Count}");
-            foreach (var s in genesisBlock.Header.TransactionHashes)
+            System.Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.ToArray().Length}");
+            foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-
+            
             var asset = assetRepository.GetAssetByName("LA");
             
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
@@ -96,10 +96,10 @@ namespace Phorkus.Console
             System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
 
-            networkManager.Start();
-            blockchainSynchronizer.Start();
+            //networkManager.Start();
             transactionVerifier.Start();
-            consensusManager.Start();
+//            consensusManager.Start();
+            synchronizer.Start();
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

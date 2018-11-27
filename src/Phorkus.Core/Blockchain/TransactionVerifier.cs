@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
 using Phorkus.Core.Utils;
 using Phorkus.Proto;
@@ -11,8 +12,11 @@ namespace Phorkus.Core.Blockchain
 {
     public class TransactionVerifier : ITransactionVerifier
     {
-        private readonly ITransactionManager _transactionManager;
         private readonly ILogger<ITransactionVerifier> _logger;
+        private readonly ICrypto _crypto;
+
+        private readonly IDictionary<UInt160, PublicKey> _publicKeyCache
+            = new Dictionary<UInt160, PublicKey>();
 
         private readonly Queue<SignedTransaction> _transactionQueue
             = new Queue<SignedTransaction>();
@@ -20,14 +24,21 @@ namespace Phorkus.Core.Blockchain
         private readonly object _queueNotEmpty = new object();
 
         public TransactionVerifier(
-            ITransactionManager transactionManager,
-            ILogger<ITransactionVerifier> logger)
+            ILogger<ITransactionVerifier> logger,
+            ICrypto crypto)
         {
-            _transactionManager = transactionManager;
+            _crypto = crypto;
             _logger = logger;
         }
 
         public event EventHandler<SignedTransaction> OnTransactionVerified;
+
+        public void VerifyTransaction(SignedTransaction signedTransaction, PublicKey publicKey)
+        {
+            var address = _crypto.ComputeAddress(publicKey.Buffer.ToByteArray()).ToUInt160();
+            _publicKeyCache.Add(address, publicKey);
+            VerifyTransaction(signedTransaction);
+        }
 
         public void VerifyTransaction(SignedTransaction signedTransaction)
         {
@@ -40,15 +51,57 @@ namespace Phorkus.Core.Blockchain
             }
         }
 
-        public bool VerifyTransactionImmediately(SignedTransaction signedTransaction)
+        public bool VerifyTransactionImmediately(SignedTransaction transaction, PublicKey publicKey)
         {
-            if (signedTransaction is null)
-                throw new ArgumentNullException(nameof(signedTransaction));
-            if (!signedTransaction.Hash.Equals(signedTransaction.Transaction.ToHash256()))
+            try
+            {
+                /* verify transaction signature */
+                var result = _crypto.VerifySignature(transaction.Hash.Buffer.ToByteArray(),
+                    transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+                if (!result)
+                    return false;
+            }
+            catch (Exception)
+            {
                 return false;
-            if (_transactionManager.Verify(signedTransaction.Transaction) != OperatingError.Ok)
+            }
+
+            return true;
+        }
+
+        public bool VerifyTransactionImmediately(SignedTransaction transaction)
+        {
+            if (transaction is null)
+                throw new ArgumentNullException(nameof(transaction));
+
+            /* validate transaction hash */
+            if (!transaction.Hash.Equals(transaction.Transaction.ToHash256()))
                 return false;
-            return _transactionManager.VerifySignature(signedTransaction) == OperatingError.Ok;
+
+            try
+            {
+                /* try to verify signature using public key cache to avoid EC recover */
+                if (_publicKeyCache.TryGetValue(transaction.Transaction.From, out var publicKey))
+                    return VerifyTransactionImmediately(transaction, publicKey);
+
+                /* recover EC to get public key from signature to compute address */
+                var rawKey = _crypto.RecoverSignature(transaction.Hash.Buffer.ToByteArray(),
+                    transaction.Signature.Buffer.ToByteArray());
+                var address = _crypto.ComputeAddress(rawKey);
+
+                /* check if recovered addres from public key is valid */
+                if (rawKey is null || !address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
+                    return false;
+
+                /* try to remember public key for this address */
+                _publicKeyCache.Add(transaction.Transaction.From, rawKey.ToPublicKey());
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void _Worker()
@@ -79,7 +132,7 @@ namespace Phorkus.Core.Blockchain
 
         public void Start()
         {
-            uint workers = 1;
+            uint workers = 4;
             if (workers <= 0)
                 throw new ArgumentOutOfRangeException(nameof(workers));
             if (_working)
