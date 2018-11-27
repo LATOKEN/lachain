@@ -1,6 +1,6 @@
 ﻿using Phorkus.Proto;
 
-namespace Phorkus.Core.Storage
+namespace Phorkus.Core.Storage.Repositories
 {
     public interface IContractRepository
     {

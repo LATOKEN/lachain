@@ -1,6 +1,7 @@
 ﻿using System;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Storage;
+using Phorkus.Core.Storage.Repositories;
 
 namespace Phorkus.RocksDB.Repositories
 {

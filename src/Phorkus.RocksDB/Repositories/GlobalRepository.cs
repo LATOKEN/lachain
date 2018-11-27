@@ -3,6 +3,7 @@ using System.Threading;
 using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
+using Phorkus.Core.Storage.Repositories;
 
 namespace Phorkus.RocksDB.Repositories
 {
