@@ -61,6 +61,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             /* check transaction with this hash in database */
             if (_transactionRepository.ContainsTransactionByHash(transaction.Hash))
                 return OperatingError.Ok;
+            var latestTx = _transactionRepository.GetLatestTransactionByFrom(transaction.Transaction.From);
+            if (latestTx != null && transaction.Transaction.Nonce != latestTx.Transaction.Nonce + 1)
+                return OperatingError.InvalidNonce;
             /* verify transaction signature */
             var sigVerifyError = VerifySignature(transaction);
             if (sigVerifyError != OperatingError.Ok)
@@ -160,9 +163,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             /* validate default transaction attributes */
             if (transaction.Version != 0)
                 return OperatingError.UnsupportedVersion;
-            var latestTx = _transactionRepository.GetLatestTransactionByFrom(transaction.From);
-            if (latestTx != null && transaction.Nonce != latestTx.Transaction.Nonce + 1)
-                return OperatingError.InvalidNonce;
             /* verify transaction via persister */
             var persister = _transactionPersisters[transaction.Type];
             if (persister == null)

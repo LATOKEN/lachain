@@ -6,6 +6,7 @@ using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
+using IValidatorManager = Phorkus.Core.Blockchain.IValidatorManager;
 
 namespace Phorkus.Core.DI.Modules
 {
@@ -17,6 +18,7 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionFactory, TransactionFactory>();
+            containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             /* consensus */
 //            containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
             /* gensis */
