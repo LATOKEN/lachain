@@ -5,7 +5,6 @@ using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
-using Phorkus.Core.Storage.Repositories;
 using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.BlockManager

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Storage.Repositories
+namespace Phorkus.Core.Storage
 {
     public interface IAssetRepository
     {

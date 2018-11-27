@@ -1,6 +1,6 @@
 ﻿using Phorkus.Core.Blockchain;
 
-namespace Phorkus.Core.Storage.Repositories
+namespace Phorkus.Core.Storage
 {
     public interface IStorageRepository
     {

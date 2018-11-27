@@ -1,6 +1,6 @@
 ﻿using Google.Protobuf;
 
-namespace Phorkus.Core.Storage
+namespace Phorkus.Hestia
 {    
     public interface IStorageManager
     {

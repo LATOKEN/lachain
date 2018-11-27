@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Phorkus.Core.Storage;
-using Phorkus.Core.Storage.Repositories;
 using Phorkus.Proto;
 using static Phorkus.Network.Grpc.BlockchainService;
 

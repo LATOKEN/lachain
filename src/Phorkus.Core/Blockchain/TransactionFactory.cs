@@ -1,7 +1,6 @@
 ﻿using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
-using Phorkus.Core.Storage.Repositories;
 
 namespace Phorkus.Core.Blockchain
 {
