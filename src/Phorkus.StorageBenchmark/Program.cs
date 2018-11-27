@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Phorkus.Core;
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
+using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Utils;
 using Phorkus.Proto;
