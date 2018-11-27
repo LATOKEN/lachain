@@ -87,6 +87,7 @@ namespace Phorkus.Console
             var blockManager = _container.Resolve<IBlockManager>();
 //            var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
+            var synchronizer = _container.Resolve<ISynchronizer>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -126,9 +127,9 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
 
             //networkManager.Start();
-//            blockchainSynchronizer.Start();
             transactionVerifier.Start();
 //            consensusManager.Start();
+            synchronizer.Start();
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

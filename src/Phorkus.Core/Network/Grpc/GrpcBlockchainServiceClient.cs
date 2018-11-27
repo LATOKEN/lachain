@@ -18,7 +18,16 @@ namespace Phorkus.Core.Network.Grpc
 
         public HandshakeReply Handshake(HandshakeRequest request)
         {
-            return _client.Handshake(request);
+            try
+            {
+                return _client.Handshake(request);
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
+
+            return null;
         }
 
         public PingReply Ping(PingRequest request)
@@ -33,8 +42,6 @@ namespace Phorkus.Core.Network.Grpc
                 BlockHashes = {blockHashes}
             };
             var reply = _client.GetBlocksByHashes(request);
-            if (reply.GetStatus().StatusCode != StatusCode.OK)
-                throw new NetworkException($"Unable to get response from client: {reply.GetStatus()}");
             return _streamToEnumerator(reply.ResponseStream, body => body.Blocks.GetEnumerator());
         }
 
@@ -46,13 +53,40 @@ namespace Phorkus.Core.Network.Grpc
                 ToHeight = toBlock
             };
             var reply = _client.GetBlocksByHeightRange(request);
-            if (reply.GetStatus().StatusCode != StatusCode.OK)
-                throw new NetworkException($"Unable to get response from client: {reply.GetStatus()}");
             return _streamToEnumerator(reply.ResponseStream, body => body.BlockHashes.GetEnumerator());
         }
 
-        private IEnumerable<TK> _streamToEnumerator<TE, TK>(IAsyncEnumerator<TE> asyncEnumerator,
-            Func<TE, IEnumerator<TK>> mapper)
+        public IEnumerable<SignedTransaction> GetTransactionsByHashes(IEnumerable<UInt256> transactionHashes)
+        {
+            var request = new GetTransactionsByHashesRequest
+            {
+                TransactionHashes = { transactionHashes }
+            };
+            var reply = _client.GetTransactionsByHashes(request);
+            return _streamToEnumerator(reply.ResponseStream, body => body.Transactions.GetEnumerator());
+        }
+
+        public IEnumerable<UInt256> GetTransactionHashesByBlockHeight(ulong blockHeight)
+        {
+            var request = new GetTransactionHashesByBlockHeightRequest
+            {
+                BlockHeight = blockHeight
+            };
+            var reply = _client.GetTransactionHashesByBlockHeight(request);
+            return _streamToEnumerator(reply.ResponseStream, body => body.TransactionHashes.GetEnumerator());
+        }
+
+        public IEnumerable<UInt256> GetMemoryPool()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<Node> GetNeighbours()
+        {
+            throw new NotImplementedException();
+        }
+        
+        private IEnumerable<TK> _streamToEnumerator<TE, TK>(IAsyncEnumerator<TE> asyncEnumerator, Func<TE, IEnumerator<TK>> mapper)
             where TK : class
             where TE : class
         {
@@ -65,26 +99,6 @@ namespace Phorkus.Core.Network.Grpc
                 while (enumerator.MoveNext())
                     yield return enumerator.Current;
             }
-        }
-
-        public IEnumerable<SignedTransaction> GetTransactionsByHashes(IEnumerable<UInt256> transactionHashes)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<UInt256> GetTransactionHashesByBlockHeight(ulong blockHeight)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<UInt256> GetMemoryPool()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<Node> GetNeighbours()
-        {
-            throw new NotImplementedException();
         }
     }
 }

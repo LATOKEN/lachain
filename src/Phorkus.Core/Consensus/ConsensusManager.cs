@@ -138,8 +138,8 @@ namespace Phorkus.Core.Consensus
                         Thread.Sleep(timeToAwait);
 
                     // TODO: produce block
-                    var blockBuilder = new BlockBuilder(_transactionPool, _blockchainContext.CurrentBlockHeader.Hash,
-                        _blockchainContext.CurrentBlockHeader.Header.Index);
+                    var blockBuilder = new BlockBuilder(_blockchainContext.CurrentBlockHeader.Header)
+                        .WithTransactions(_transactionPool);
                     var minerTx = _transactionFactory.MinerTransaction(
                         _crypto.ComputeAddress(_context.KeyPair.PublicKey.Buffer.ToByteArray()).ToUInt160());
                     var signed = _transactionManager.Sign(minerTx, _keyPair);
@@ -152,7 +152,7 @@ namespace Phorkus.Core.Consensus
                         continue;
                     }
 
-                    var blockWithTransactions = blockBuilder.Build(signed, (ulong) _random.Next());
+                    var blockWithTransactions = blockBuilder.WithMiner(signed).Build((ulong) _random.Next());
                     _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
                     _context.CurrentProposal = new ConsensusProposal

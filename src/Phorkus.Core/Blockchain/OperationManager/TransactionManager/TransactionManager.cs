@@ -107,17 +107,21 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public SignedTransaction Sign(Transaction transaction, KeyPair keyPair)
         {
-            var hash = transaction.ToHash256();
             /* use raw byte arrays to sign transaction hash */
-            var signature = _crypto.Sign(hash.Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
-                .ToSignature();
+            var message = transaction.ToHash256().Buffer.ToByteArray();
+            var signature = _crypto.Sign(message, keyPair.PrivateKey.Buffer.ToByteArray());
+            /* we're afraid */
+            var pubKey = _crypto.RecoverSignature(message, signature);
+            if (!pubKey.SequenceEqual(keyPair.PublicKey.Buffer.ToByteArray()))
+                throw new InvalidKeyPairException();
             var signed = new SignedTransaction
             {
                 Transaction = transaction,
                 Hash = transaction.ToHash256(),
-                Signature = signature
+                Signature = signature.ToSignature()
             };
             OnTransactionSigned?.Invoke(this, signed);
+
             return signed;
         }
 
@@ -142,13 +146,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         {
             try
             {
-                var rawKey = _crypto.RecoverSignature(
-                    transaction.Hash.Buffer.ToByteArray(),
-                    transaction.Signature.Buffer.ToByteArray()
-                );
+                if (addressToPublicKeys.TryGetValue(transaction.Transaction.From, out var publicKey))
+                    return VerifySignature(transaction, publicKey);
+                var rawKey = _crypto.RecoverSignature(transaction.Hash.Buffer.ToByteArray(),
+                    transaction.Signature.Buffer.ToByteArray());
                 var address = _crypto.ComputeAddress(rawKey);
-                if (rawKey is null || !_crypto.ComputeAddress(rawKey).SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
+                if (rawKey is null || !address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
                     return OperatingError.InvalidSignature;
+                addressToPublicKeys.Add(transaction.Transaction.From, rawKey.ToPublicKey());
                 return OperatingError.Ok;
             }
             catch (Exception)
@@ -156,6 +161,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.InvalidSignature;
             }
         }
+        
+        private readonly IDictionary<UInt160, PublicKey> addressToPublicKeys
+            = new Dictionary<UInt160, PublicKey>();
 
         public OperatingError Verify(Transaction transaction)
         {

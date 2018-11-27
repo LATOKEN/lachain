@@ -79,7 +79,7 @@ namespace Phorkus.Core.Cryptography
             var publicKey = RecoverSignature(message, signature);
             if (publicKey is null)
                 return false;
-            return VerifySignature(message, publicKey);
+            return VerifySignature(message, signature, publicKey);
         }
 
         public byte[] Sign(byte[] message, byte[] prikey)
@@ -142,7 +142,7 @@ namespace Phorkus.Core.Cryptography
             var erInv = e.Multiply(rInv).Mod(order);
 
             var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
-            return point.Normalize().GetEncoded(false);
+            return point.Normalize().GetEncoded(true);
         }
 
         public byte[] ComputeAddress(byte[] publicKey)
@@ -160,7 +160,7 @@ namespace Phorkus.Core.Cryptography
             return trunc;
         }
 
-        public byte[] ComputePublicKey(byte[] privateKey, bool compress = false)
+        public byte[] ComputePublicKey(byte[] privateKey, bool compress = true)
         {
             if (privateKey == null)
                 throw new ArgumentException(nameof(privateKey));

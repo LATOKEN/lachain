@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Grpc.Core;
 using Phorkus.Core.Config;
-using Phorkus.Core.Consensus;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Network.Grpc;
 using Phorkus.Core.Storage;
