@@ -7,7 +7,6 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
-using Org.BouncyCastle.Math.EC.Multiplier;
 using Org.BouncyCastle.Security;
 
 namespace Phorkus.Core.Cryptography
@@ -16,15 +15,15 @@ namespace Phorkus.Core.Cryptography
     {
         public BigInteger[] GenerateSignatureWithRecId(byte[] message, out byte recId)
         {
-            ECDomainParameters parameters = key.Parameters;
-            BigInteger n = parameters.N;
-            BigInteger e = CalculateE(n, message);
-            BigInteger d = ((ECPrivateKeyParameters) key).D;
+            var parameters = key.Parameters;
+            var n = parameters.N;
+            var e = CalculateE(n, message);
+            var d = ((ECPrivateKeyParameters) key).D;
             if (kCalculator.IsDeterministic)
                 kCalculator.Init(n, d, message);
             else
                 kCalculator.Init(n, random);
-            ECMultiplier basePointMultiplier = CreateBasePointMultiplier();
+            var basePointMultiplier = CreateBasePointMultiplier();
             BigInteger val;
             BigInteger bigInteger;
             do

@@ -90,7 +90,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
             /* write block to database */
             _blockRepository.AddBlock(block);
-            _logger.LogInformation($"Persisted new block with hash {block.Hash}");
+            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash}");
             var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
             if (block.Header.Index > currentHeaderHeight)
                 _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
@@ -104,7 +104,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
                 .ToSignature();
         }
-
+        
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, PublicKey publicKey)
         {
             var result = _crypto.VerifySignature(blockHeader.ToHash256().Buffer.ToByteArray(),

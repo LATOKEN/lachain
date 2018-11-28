@@ -85,7 +85,7 @@ namespace Phorkus.Core.Network
                 return;
             if (error != OperatingError.Ok)
             {
-                _logger.LogWarning($"Unable to persist block {block.Header.Index}, got error {error}, dropping peer");
+                _logger.LogWarning($"Unable to persist block {block.Header.Index} (current height {_blockchainContext.CurrentBlockHeight}), got error {error}, dropping peer");
                 return;
             }
 
@@ -163,7 +163,7 @@ namespace Phorkus.Core.Network
                 var error = _blockManager.Persist(block);
                 if (error == OperatingError.Ok || error == OperatingError.BlockAlreadyExists)
                     continue;
-                _logger.LogWarning($"Unable to persist block {block.Header.Index}, got error {error}, dropping peer");
+                _logger.LogWarning($"Unable to persist block {block.Header.Index} (current height {_blockchainContext.CurrentBlockHeight}), got error {error}, dropping peer");
             }
         }
 

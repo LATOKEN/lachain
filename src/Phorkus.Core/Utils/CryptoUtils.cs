@@ -8,7 +8,6 @@ namespace Phorkus.Core.Utils
     {
         public static PublicKey ToPublicKey(this byte[] buffer)
         {
-            /* TODO: "why public key has 33 bytes instead of 32?" */
             if (buffer.Length != 33)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
             return new PublicKey

@@ -1,7 +1,7 @@
 ﻿using Google.Protobuf;
 
 namespace Phorkus.Hestia
-{    
+{
     public interface IStorageManager
     {
         long Version { get; }

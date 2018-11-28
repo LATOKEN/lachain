@@ -13,6 +13,12 @@ namespace Phorkus.Core.Cryptography
         /// <returns>Bool</returns>
         bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey);
         
+        /// <summary>
+        /// Verifies signature from recovered public key
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
         bool VerifySignature(byte[] message, byte[] signature);
 
         /// <summary>
@@ -28,10 +34,14 @@ namespace Phorkus.Core.Cryptography
         /// </summary>
         /// <param name="message"></param>
         /// <param name="signature"></param>
-        /// <param name="check"></param>
         /// <returns></returns>
         byte[] RecoverSignature(byte[] message, byte[] signature);
         
+        /// <summary>
+        /// Computes address from public key
+        /// </summary>
+        /// <param name="publicKey"></param>
+        /// <returns></returns>
         byte[] ComputeAddress(byte[] publicKey);
         
         /// <summary>

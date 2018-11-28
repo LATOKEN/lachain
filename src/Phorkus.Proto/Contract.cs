@@ -24,42 +24,280 @@ namespace Phorkus.Proto {
     static ContractReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg5jb250cmFjdC5wcm90bxoNZGVmYXVsdC5wcm90byIyCghDb250cmFjdBIW",
-            "CgRoYXNoGAEgASgLMgguVUludDE2MBIOCgZzY3JpcHQYAiABKAwqnwIKCVBh",
-            "cmFtVHlwZRIYChRQQVJBTV9UWVBFX1NJR05BVFVSRRAAEhYKElBBUkFNX1RZ",
-            "UEVfQk9PTEVBThABEhYKElBBUkFNX1RZUEVfSU5URUdFUhACEhYKElBBUkFN",
-            "X1RZUEVfSEFTSDE2MBADEhYKElBBUkFNX1RZUEVfSEFTSDI1NhAEEhkKFVBB",
-            "UkFNX1RZUEVfQllURV9BUlJBWRAFEhkKFVBBUkFNX1RZUEVfUFVCTElDX0tF",
-            "WRAGEhUKEVBBUkFNX1RZUEVfU1RSSU5HEAcSFAoQUEFSQU1fVFlQRV9BUlJB",
-            "WRAIEiAKHFBBUkFNX1RZUEVfSU5URVJPUF9JTlRFUkZBQ0UQCRITCg9QQVJB",
-            "TV9UWVBFX1ZPSUQQCkIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "Cg5jb250cmFjdC5wcm90bxoNZGVmYXVsdC5wcm90byKOAQoLQ29udHJhY3RB",
+            "QkkSDgoGbWV0aG9kGAEgASgJEgwKBGhhc2gYAiABKAwSHAoFaW5wdXQYAyAD",
+            "KA4yDS5Db250cmFjdFR5cGUSHQoGb3V0cHV0GAQgASgOMg0uQ29udHJhY3RU",
+            "eXBlEiQKCW1vZGlmaWVycxgFIAMoDjIRLkNvbnRyYWN0TW9kaWZpZXIiTQoI",
+            "Q29udHJhY3QSFgoEaGFzaBgBIAEoCzIILlVJbnQxNjASGQoDYWJpGAIgAygL",
+            "MgwuQ29udHJhY3RBQkkSDgoGc2NyaXB0GAMgASgMKsMCCgxDb250cmFjdFR5",
+            "cGUSGwoXQ09OVFJBQ1RfVFlQRV9TSUdOQVRVUkUQABIZChVDT05UUkFDVF9U",
+            "WVBFX0JPT0xFQU4QARIZChVDT05UUkFDVF9UWVBFX0lOVEVHRVIQAhIZChVD",
+            "T05UUkFDVF9UWVBFX0hBU0gxNjAQAxIZChVDT05UUkFDVF9UWVBFX0hBU0gy",
+            "NTYQBBIcChhDT05UUkFDVF9UWVBFX0JZVEVfQVJSQVkQBRIcChhDT05UUkFD",
+            "VF9UWVBFX1BVQkxJQ19LRVkQBhIYChRDT05UUkFDVF9UWVBFX1NUUklORxAH",
+            "EhcKE0NPTlRSQUNUX1RZUEVfQVJSQVkQCBIjCh9DT05UUkFDVF9UWVBFX0lO",
+            "VEVST1BfSU5URVJGQUNFEAkSFgoSQ09OVFJBQ1RfVFlQRV9WT0lEEAoqMQoQ",
+            "Q29udHJhY3RNb2RpZmllchIdChlDT05UUkFDVF9NT0RJRklFUl9QQVlBQkxF",
+            "EABCEKoCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ParamType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Script" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractABI), global::Phorkus.Proto.ContractABI.Parser, new[]{ "Method", "Hash", "Input", "Output", "Modifiers" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Script" }, null, null, null)
           }));
     }
     #endregion
 
   }
   #region Enums
-  public enum ParamType {
-    [pbr::OriginalName("PARAM_TYPE_SIGNATURE")] Signature = 0,
-    [pbr::OriginalName("PARAM_TYPE_BOOLEAN")] Boolean = 1,
-    [pbr::OriginalName("PARAM_TYPE_INTEGER")] Integer = 2,
-    [pbr::OriginalName("PARAM_TYPE_HASH160")] Hash160 = 3,
-    [pbr::OriginalName("PARAM_TYPE_HASH256")] Hash256 = 4,
-    [pbr::OriginalName("PARAM_TYPE_BYTE_ARRAY")] ByteArray = 5,
-    [pbr::OriginalName("PARAM_TYPE_PUBLIC_KEY")] PublicKey = 6,
-    [pbr::OriginalName("PARAM_TYPE_STRING")] String = 7,
-    [pbr::OriginalName("PARAM_TYPE_ARRAY")] Array = 8,
-    [pbr::OriginalName("PARAM_TYPE_INTEROP_INTERFACE")] InteropInterface = 9,
-    [pbr::OriginalName("PARAM_TYPE_VOID")] Void = 10,
+  public enum ContractType {
+    [pbr::OriginalName("CONTRACT_TYPE_SIGNATURE")] Signature = 0,
+    [pbr::OriginalName("CONTRACT_TYPE_BOOLEAN")] Boolean = 1,
+    [pbr::OriginalName("CONTRACT_TYPE_INTEGER")] Integer = 2,
+    [pbr::OriginalName("CONTRACT_TYPE_HASH160")] Hash160 = 3,
+    [pbr::OriginalName("CONTRACT_TYPE_HASH256")] Hash256 = 4,
+    [pbr::OriginalName("CONTRACT_TYPE_BYTE_ARRAY")] ByteArray = 5,
+    [pbr::OriginalName("CONTRACT_TYPE_PUBLIC_KEY")] PublicKey = 6,
+    [pbr::OriginalName("CONTRACT_TYPE_STRING")] String = 7,
+    [pbr::OriginalName("CONTRACT_TYPE_ARRAY")] Array = 8,
+    [pbr::OriginalName("CONTRACT_TYPE_INTEROP_INTERFACE")] InteropInterface = 9,
+    [pbr::OriginalName("CONTRACT_TYPE_VOID")] Void = 10,
+  }
+
+  public enum ContractModifier {
+    [pbr::OriginalName("CONTRACT_MODIFIER_PAYABLE")] Payable = 0,
   }
 
   #endregion
 
   #region Messages
+  public sealed partial class ContractABI : pb::IMessage<ContractABI> {
+    private static readonly pb::MessageParser<ContractABI> _parser = new pb::MessageParser<ContractABI>(() => new ContractABI());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ContractABI> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ContractABI() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ContractABI(ContractABI other) : this() {
+      method_ = other.method_;
+      hash_ = other.hash_;
+      input_ = other.input_.Clone();
+      output_ = other.output_;
+      modifiers_ = other.modifiers_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ContractABI Clone() {
+      return new ContractABI(this);
+    }
+
+    /// <summary>Field number for the "method" field.</summary>
+    public const int MethodFieldNumber = 1;
+    private string method_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Method {
+      get { return method_; }
+      set {
+        method_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "hash" field.</summary>
+    public const int HashFieldNumber = 2;
+    private pb::ByteString hash_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pb::ByteString Hash {
+      get { return hash_; }
+      set {
+        hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "input" field.</summary>
+    public const int InputFieldNumber = 3;
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.ContractType> _repeated_input_codec
+        = pb::FieldCodec.ForEnum(26, x => (int) x, x => (global::Phorkus.Proto.ContractType) x);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.ContractType> input_ = new pbc::RepeatedField<global::Phorkus.Proto.ContractType>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Phorkus.Proto.ContractType> Input {
+      get { return input_; }
+    }
+
+    /// <summary>Field number for the "output" field.</summary>
+    public const int OutputFieldNumber = 4;
+    private global::Phorkus.Proto.ContractType output_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.ContractType Output {
+      get { return output_; }
+      set {
+        output_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "modifiers" field.</summary>
+    public const int ModifiersFieldNumber = 5;
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.ContractModifier> _repeated_modifiers_codec
+        = pb::FieldCodec.ForEnum(42, x => (int) x, x => (global::Phorkus.Proto.ContractModifier) x);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.ContractModifier> modifiers_ = new pbc::RepeatedField<global::Phorkus.Proto.ContractModifier>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Phorkus.Proto.ContractModifier> Modifiers {
+      get { return modifiers_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ContractABI);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ContractABI other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Method != other.Method) return false;
+      if (Hash != other.Hash) return false;
+      if(!input_.Equals(other.input_)) return false;
+      if (Output != other.Output) return false;
+      if(!modifiers_.Equals(other.modifiers_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Method.Length != 0) hash ^= Method.GetHashCode();
+      if (Hash.Length != 0) hash ^= Hash.GetHashCode();
+      hash ^= input_.GetHashCode();
+      if (Output != 0) hash ^= Output.GetHashCode();
+      hash ^= modifiers_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Method.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Method);
+      }
+      if (Hash.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteBytes(Hash);
+      }
+      input_.WriteTo(output, _repeated_input_codec);
+      if (Output != 0) {
+        output.WriteRawTag(32);
+        output.WriteEnum((int) Output);
+      }
+      modifiers_.WriteTo(output, _repeated_modifiers_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Method.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Method);
+      }
+      if (Hash.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Hash);
+      }
+      size += input_.CalculateSize(_repeated_input_codec);
+      if (Output != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Output);
+      }
+      size += modifiers_.CalculateSize(_repeated_modifiers_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ContractABI other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Method.Length != 0) {
+        Method = other.Method;
+      }
+      if (other.Hash.Length != 0) {
+        Hash = other.Hash;
+      }
+      input_.Add(other.input_);
+      if (other.Output != 0) {
+        Output = other.Output;
+      }
+      modifiers_.Add(other.modifiers_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Method = input.ReadString();
+            break;
+          }
+          case 18: {
+            Hash = input.ReadBytes();
+            break;
+          }
+          case 26:
+          case 24: {
+            input_.AddEntriesFrom(input, _repeated_input_codec);
+            break;
+          }
+          case 32: {
+            output_ = (global::Phorkus.Proto.ContractType) input.ReadEnum();
+            break;
+          }
+          case 42:
+          case 40: {
+            modifiers_.AddEntriesFrom(input, _repeated_modifiers_codec);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class Contract : pb::IMessage<Contract> {
     private static readonly pb::MessageParser<Contract> _parser = new pb::MessageParser<Contract>(() => new Contract());
     private pb::UnknownFieldSet _unknownFields;
@@ -68,7 +306,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -86,6 +324,7 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Contract(Contract other) : this() {
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
+      abi_ = other.abi_.Clone();
       script_ = other.script_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -106,8 +345,18 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "abi" field.</summary>
+    public const int AbiFieldNumber = 2;
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.ContractABI> _repeated_abi_codec
+        = pb::FieldCodec.ForMessage(18, global::Phorkus.Proto.ContractABI.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.ContractABI> abi_ = new pbc::RepeatedField<global::Phorkus.Proto.ContractABI>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Phorkus.Proto.ContractABI> Abi {
+      get { return abi_; }
+    }
+
     /// <summary>Field number for the "script" field.</summary>
-    public const int ScriptFieldNumber = 2;
+    public const int ScriptFieldNumber = 3;
     private pb::ByteString script_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pb::ByteString Script {
@@ -131,6 +380,7 @@ namespace Phorkus.Proto {
         return true;
       }
       if (!object.Equals(Hash, other.Hash)) return false;
+      if(!abi_.Equals(other.abi_)) return false;
       if (Script != other.Script) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -139,6 +389,7 @@ namespace Phorkus.Proto {
     public override int GetHashCode() {
       int hash = 1;
       if (hash_ != null) hash ^= Hash.GetHashCode();
+      hash ^= abi_.GetHashCode();
       if (Script.Length != 0) hash ^= Script.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -157,8 +408,9 @@ namespace Phorkus.Proto {
         output.WriteRawTag(10);
         output.WriteMessage(Hash);
       }
+      abi_.WriteTo(output, _repeated_abi_codec);
       if (Script.Length != 0) {
-        output.WriteRawTag(18);
+        output.WriteRawTag(26);
         output.WriteBytes(Script);
       }
       if (_unknownFields != null) {
@@ -172,6 +424,7 @@ namespace Phorkus.Proto {
       if (hash_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Hash);
       }
+      size += abi_.CalculateSize(_repeated_abi_codec);
       if (Script.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(Script);
       }
@@ -192,6 +445,7 @@ namespace Phorkus.Proto {
         }
         Hash.MergeFrom(other.Hash);
       }
+      abi_.Add(other.abi_);
       if (other.Script.Length != 0) {
         Script = other.Script;
       }
@@ -214,6 +468,10 @@ namespace Phorkus.Proto {
             break;
           }
           case 18: {
+            abi_.AddEntriesFrom(input, _repeated_abi_codec);
+            break;
+          }
+          case 26: {
             Script = input.ReadBytes();
             break;
           }
