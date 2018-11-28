@@ -28,49 +28,93 @@ namespace Phorkus.Proto {
             "KA0SCQoBbhgCIAEoDRIKCgJwaRgDIAEoDBIKCgJxaRgEIAEoDBIKCgJmaRgF",
             "IAEoDBIKCgJnaRgGIAEoDBIKCgJoaRgHIAEoDCJZCg9CZ3dQdWJsaWNQYXJh",
             "bXMSCQoBaRgBIAEoDRIJCgFuGAIgASgNEgkKAWoYAyABKA0SCwoDcGlqGAQg",
-            "ASgMEgsKA3FpahgFIAEoDBILCgNoaWoYBiABKAwiFwoJQ29tcGxhaW50EgoK",
-            "AmlkGAEgASgNIhoKCUJnd25Qb2ludBINCgVwb2ludBgBIAEoDCIcCgpUaGV0",
-            "YVBvaW50Eg4KBnRoZXRhaRgBIAEoDCIrCg9WZXJpZmljYXRpb25LZXkSGAoQ",
-            "dmVyaWZpY2F0aW9uX2tleRgBIAEoDCIrCg5RaVRlc3RGb3JSb3VuZBIKCgJx",
-            "aRgBIAEoDBINCgVyb3VuZBgCIAEoDSJGCgpDYW5kaWRhdGVOEgkKAW4YASAB",
-            "KAwSLQoSYmd3X3ByaXZhdGVfcGFyYW1zGAIgASgLMhEuQmd3UHJpdmF0ZVBh",
-            "cmFtcyJhChVCaXByaW1hbGl0eVRlc3RSZXN1bHQSCQoBbhgBIAEoDBItChJi",
-            "Z3dfcHJpdmF0ZV9wYXJhbXMYAiABKAsyES5CZ3dQcml2YXRlUGFyYW1zEg4K",
-            "BnBhc3NlcxgDIAEoCCLuAgobS2V5c0Rlcml2YXRpb25Qcml2YXRlUGFyYW1z",
-            "EgkKAWkYASABKA0SPAoLZHJpX3NoYXJpbmcYAiABKAsyJy5LZXlzRGVyaXZh",
-            "dGlvblByaXZhdGVQYXJhbXMuUG9seW5vbWlhbBJBCg1iZXRhaV9zaGFyaW5n",
-            "GAMgASgLMiouS2V5c0Rlcml2YXRpb25Qcml2YXRlUGFyYW1zLlBvbHlub21p",
-            "YWxNb2QSPwoLcGhpX3NoYXJpbmcYBCABKAsyKi5LZXlzRGVyaXZhdGlvblBy",
-            "aXZhdGVQYXJhbXMuUG9seW5vbWlhbE1vZBJACgx6ZXJvX3NoYXJpbmcYBSAB",
-            "KAsyKi5LZXlzRGVyaXZhdGlvblByaXZhdGVQYXJhbXMuUG9seW5vbWlhbE1v",
-            "ZBoXCgpQb2x5bm9taWFsEgkKAWEYASADKAwaJwoNUG9seW5vbWlhbE1vZBIJ",
-            "CgFhGAEgAygMEgsKA21vZBgCIAEoDCJsChpLZXlzRGVyaXZhdGlvblB1Ymxp",
-            "Y1BhcmFtcxIJCgFpGAEgASgNEgkKAWoYAiABKA0SDgoGYmV0YWlqGAMgASgM",
-            "EgwKBGRyaWoYBCABKAwSDQoFcGhpaWoYBSABKAwSCwoDaGlqGAYgASgMIlUK",
-            "GFByb3RvY29sR2VuZXJhdGlvblBhcmFtcxIJCgFwGAEgASgMEgkKAW4YAiAB",
-            "KA0SCQoBdBgDIAEoDRINCgViaWdfaxgEIAEoDRIJCgFrGAUgASgNQhCqAg1Q",
-            "aG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "ASgMEgsKA3FpahgFIAEoDBILCgNoaWoYBiABKAwi7gMKEkJnd1Byb3RvY29s",
+            "TWVzc2FnZRIyCgljb21wbGFpbnQYASABKAsyHS5CZ3dQcm90b2NvbE1lc3Nh",
+            "Z2UuQ29tcGxhaW50SAASMwoKYmd3bl9wb2ludBgCIAEoCzIdLkJnd1Byb3Rv",
+            "Y29sTWVzc2FnZS5CZ3duUG9pbnRIABI1Cgt0aGV0YV9wb2ludBgDIAEoCzIe",
+            "LkJnd1Byb3RvY29sTWVzc2FnZS5UaGV0YVBvaW50SAASPwoQdmVyaWZpY2F0",
+            "aW9uX2tleRgEIAEoCzIjLkJnd1Byb3RvY29sTWVzc2FnZS5WZXJpZmljYXRp",
+            "b25LZXlIABI/ChFxaV90ZXN0X2Zvcl9yb3VuZBgFIAEoCzIiLkJnd1Byb3Rv",
+            "Y29sTWVzc2FnZS5RaVRlc3RGb3JSb3VuZEgAGhcKCUNvbXBsYWludBIKCgJp",
+            "ZBgBIAEoDRoaCglCZ3duUG9pbnQSDQoFcG9pbnQYASABKAwaHAoKVGhldGFQ",
+            "b2ludBIOCgZ0aGV0YWkYASABKAwaKwoPVmVyaWZpY2F0aW9uS2V5EhgKEHZl",
+            "cmlmaWNhdGlvbl9rZXkYASABKAwaKwoOUWlUZXN0Rm9yUm91bmQSCgoCcWkY",
+            "ASABKAwSDQoFcm91bmQYAiABKA1CCQoHbWVzc2FnZSJGCgpDYW5kaWRhdGVO",
+            "EgkKAW4YASABKAwSLQoSYmd3X3ByaXZhdGVfcGFyYW1zGAIgASgLMhEuQmd3",
+            "UHJpdmF0ZVBhcmFtcyJhChVCaXByaW1hbGl0eVRlc3RSZXN1bHQSCQoBbhgB",
+            "IAEoDBItChJiZ3dfcHJpdmF0ZV9wYXJhbXMYAiABKAsyES5CZ3dQcml2YXRl",
+            "UGFyYW1zEg4KBnBhc3NlcxgDIAEoCCLuAgobS2V5c0Rlcml2YXRpb25Qcml2",
+            "YXRlUGFyYW1zEgkKAWkYASABKA0SPAoLZHJpX3NoYXJpbmcYAiABKAsyJy5L",
+            "ZXlzRGVyaXZhdGlvblByaXZhdGVQYXJhbXMuUG9seW5vbWlhbBJBCg1iZXRh",
+            "aV9zaGFyaW5nGAMgASgLMiouS2V5c0Rlcml2YXRpb25Qcml2YXRlUGFyYW1z",
+            "LlBvbHlub21pYWxNb2QSPwoLcGhpX3NoYXJpbmcYBCABKAsyKi5LZXlzRGVy",
+            "aXZhdGlvblByaXZhdGVQYXJhbXMuUG9seW5vbWlhbE1vZBJACgx6ZXJvX3No",
+            "YXJpbmcYBSABKAsyKi5LZXlzRGVyaXZhdGlvblByaXZhdGVQYXJhbXMuUG9s",
+            "eW5vbWlhbE1vZBoXCgpQb2x5bm9taWFsEgkKAWEYASADKAwaJwoNUG9seW5v",
+            "bWlhbE1vZBIJCgFhGAEgAygMEgsKA21vZBgCIAEoDCJsChpLZXlzRGVyaXZh",
+            "dGlvblB1YmxpY1BhcmFtcxIJCgFpGAEgASgNEgkKAWoYAiABKA0SDgoGYmV0",
+            "YWlqGAMgASgMEgwKBGRyaWoYBCABKAwSDQoFcGhpaWoYBSABKAwSCwoDaGlq",
+            "GAYgASgMKrQDCgVTdGF0ZRIYChRTVEFURV9JTklUSUFMSVpBVElPThAAEhoK",
+            "FlNUQVRFX0dFTkVSQVRJTkdfU0hBUkUQARIaChZTVEFURV9DT0xMRUNUSU5H",
+            "X1NIQVJFEAISGgoWU1RBVEVfR0VORVJBVElOR19QT0lOVBADEhoKFlNUQVRF",
+            "X0NPTExFQ1RJTkdfUE9JTlQQBBIXChNTVEFURV9HRU5FUkFUSU5HX1FKEAUS",
+            "FwoTU1RBVEVfQ09MTEVDVElOR19RShAGEhcKE1NUQVRFX1ZBTElEQVRJTkdf",
+            "UUoQBxIfChtTVEFURV9HRU5FUkFUSU5HX0RFUklWQVRJT04QCBIfChtTVEFU",
+            "RV9DT0xMRUNUSU5HX0RFUklWQVRJT04QCRIaChZTVEFURV9HRU5FUkFUSU5H",
+            "X1RIRVRBEAoSGgoWU1RBVEVfQ09MTEVDVElOR19USEVUQRALEiEKHVNUQVRF",
+            "X0dFTkVSQVRJTkdfVkVSSUZJQ0FUSU9OEAwSIQodU1RBVEVfQ09MTEVDVElO",
+            "R19WRVJJRklDQVRJT04QDRIWChJTVEFURV9GSU5BTElaQVRJT04QY0IQqgIN",
+            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.State), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwPrivateParams), global::Phorkus.Proto.BgwPrivateParams.Parser, new[]{ "I", "N", "Pi", "Qi", "Fi", "Gi", "Hi" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwPublicParams), global::Phorkus.Proto.BgwPublicParams.Parser, new[]{ "I", "N", "J", "Pij", "Qij", "Hij" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Complaint), global::Phorkus.Proto.Complaint.Parser, new[]{ "Id" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwnPoint), global::Phorkus.Proto.BgwnPoint.Parser, new[]{ "Point" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ThetaPoint), global::Phorkus.Proto.ThetaPoint.Parser, new[]{ "Thetai" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.VerificationKey), global::Phorkus.Proto.VerificationKey.Parser, new[]{ "VerificationKey_" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.QiTestForRound), global::Phorkus.Proto.QiTestForRound.Parser, new[]{ "Qi", "Round" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwProtocolMessage), global::Phorkus.Proto.BgwProtocolMessage.Parser, new[]{ "Complaint", "BgwnPoint", "ThetaPoint", "VerificationKey", "QiTestForRound" }, new[]{ "Message" }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint), global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint.Parser, new[]{ "Id" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint), global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint.Parser, new[]{ "Point" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint), global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint.Parser, new[]{ "Thetai" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey), global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey.Parser, new[]{ "VerificationKey_" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound), global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound.Parser, new[]{ "Qi", "Round" }, null, null, null)}),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.CandidateN), global::Phorkus.Proto.CandidateN.Parser, new[]{ "N", "BgwPrivateParams" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BiprimalityTestResult), global::Phorkus.Proto.BiprimalityTestResult.Parser, new[]{ "N", "BgwPrivateParams", "Passes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.KeysDerivationPrivateParams), global::Phorkus.Proto.KeysDerivationPrivateParams.Parser, new[]{ "I", "DriSharing", "BetaiSharing", "PhiSharing", "ZeroSharing" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.KeysDerivationPrivateParams.Types.Polynomial), global::Phorkus.Proto.KeysDerivationPrivateParams.Types.Polynomial.Parser, new[]{ "A" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.KeysDerivationPrivateParams.Types.PolynomialMod), global::Phorkus.Proto.KeysDerivationPrivateParams.Types.PolynomialMod.Parser, new[]{ "A", "Mod" }, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.KeysDerivationPublicParams), global::Phorkus.Proto.KeysDerivationPublicParams.Parser, new[]{ "I", "J", "Betaij", "Drij", "Phiij", "Hij" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ProtocolGenerationParams), global::Phorkus.Proto.ProtocolGenerationParams.Parser, new[]{ "P", "N", "T", "BigK", "K" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.KeysDerivationPublicParams), global::Phorkus.Proto.KeysDerivationPublicParams.Parser, new[]{ "I", "J", "Betaij", "Drij", "Phiij", "Hij" }, null, null, null)
           }));
     }
     #endregion
 
   }
+  #region Enums
+  public enum State {
+    [pbr::OriginalName("STATE_INITIALIZATION")] Initialization = 0,
+    [pbr::OriginalName("STATE_GENERATING_SHARE")] GeneratingShare = 1,
+    [pbr::OriginalName("STATE_COLLECTING_SHARE")] CollectingShare = 2,
+    [pbr::OriginalName("STATE_GENERATING_POINT")] GeneratingPoint = 3,
+    [pbr::OriginalName("STATE_COLLECTING_POINT")] CollectingPoint = 4,
+    /// <summary>
+    /// &lt;---+
+    /// </summary>
+    [pbr::OriginalName("STATE_GENERATING_QJ")] GeneratingQj = 5,
+    /// <summary>
+    ///     | (repeat several times)
+    /// </summary>
+    [pbr::OriginalName("STATE_COLLECTING_QJ")] CollectingQj = 6,
+    /// <summary>
+    /// ----+
+    /// </summary>
+    [pbr::OriginalName("STATE_VALIDATING_QJ")] ValidatingQj = 7,
+    [pbr::OriginalName("STATE_GENERATING_DERIVATION")] GeneratingDerivation = 8,
+    [pbr::OriginalName("STATE_COLLECTING_DERIVATION")] CollectingDerivation = 9,
+    [pbr::OriginalName("STATE_GENERATING_THETA")] GeneratingTheta = 10,
+    [pbr::OriginalName("STATE_COLLECTING_THETA")] CollectingTheta = 11,
+    [pbr::OriginalName("STATE_GENERATING_VERIFICATION")] GeneratingVerification = 12,
+    [pbr::OriginalName("STATE_COLLECTING_VERIFICATION")] CollectingVerification = 13,
+    [pbr::OriginalName("STATE_FINALIZATION")] Finalization = 99,
+  }
+
+  #endregion
+
   #region Messages
   public sealed partial class BgwPrivateParams : pb::IMessage<BgwPrivateParams> {
     private static readonly pb::MessageParser<BgwPrivateParams> _parser = new pb::MessageParser<BgwPrivateParams>(() => new BgwPrivateParams());
@@ -677,11 +721,11 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class Complaint : pb::IMessage<Complaint> {
-    private static readonly pb::MessageParser<Complaint> _parser = new pb::MessageParser<Complaint>(() => new Complaint());
+  public sealed partial class BgwProtocolMessage : pb::IMessage<BgwProtocolMessage> {
+    private static readonly pb::MessageParser<BgwProtocolMessage> _parser = new pb::MessageParser<BgwProtocolMessage>(() => new BgwProtocolMessage());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Complaint> Parser { get { return _parser; } }
+    public static pb::MessageParser<BgwProtocolMessage> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -694,454 +738,148 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Complaint() {
+    public BgwProtocolMessage() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Complaint(Complaint other) : this() {
-      id_ = other.id_;
+    public BgwProtocolMessage(BgwProtocolMessage other) : this() {
+      switch (other.MessageCase) {
+        case MessageOneofCase.Complaint:
+          Complaint = other.Complaint.Clone();
+          break;
+        case MessageOneofCase.BgwnPoint:
+          BgwnPoint = other.BgwnPoint.Clone();
+          break;
+        case MessageOneofCase.ThetaPoint:
+          ThetaPoint = other.ThetaPoint.Clone();
+          break;
+        case MessageOneofCase.VerificationKey:
+          VerificationKey = other.VerificationKey.Clone();
+          break;
+        case MessageOneofCase.QiTestForRound:
+          QiTestForRound = other.QiTestForRound.Clone();
+          break;
+      }
+
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Complaint Clone() {
-      return new Complaint(this);
+    public BgwProtocolMessage Clone() {
+      return new BgwProtocolMessage(this);
     }
 
-    /// <summary>Field number for the "id" field.</summary>
-    public const int IdFieldNumber = 1;
-    private uint id_;
-    /// <summary>
-    /// the id of the party that produced the invalid share
-    /// </summary>
+    /// <summary>Field number for the "complaint" field.</summary>
+    public const int ComplaintFieldNumber = 1;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Id {
-      get { return id_; }
+    public global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint Complaint {
+      get { return messageCase_ == MessageOneofCase.Complaint ? (global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint) message_ : null; }
       set {
-        id_ = value;
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.Complaint;
       }
     }
 
+    /// <summary>Field number for the "bgwn_point" field.</summary>
+    public const int BgwnPointFieldNumber = 2;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Complaint);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Complaint other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Id != other.Id) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Id != 0) hash ^= Id.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Id != 0) {
-        output.WriteRawTag(8);
-        output.WriteUInt32(Id);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Id != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Id);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Complaint other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Id != 0) {
-        Id = other.Id;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 8: {
-            Id = input.ReadUInt32();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class BgwnPoint : pb::IMessage<BgwnPoint> {
-    private static readonly pb::MessageParser<BgwnPoint> _parser = new pb::MessageParser<BgwnPoint>(() => new BgwnPoint());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<BgwnPoint> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[3]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BgwnPoint() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BgwnPoint(BgwnPoint other) : this() {
-      point_ = other.point_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BgwnPoint Clone() {
-      return new BgwnPoint(this);
-    }
-
-    /// <summary>Field number for the "point" field.</summary>
-    public const int PointFieldNumber = 1;
-    private pb::ByteString point_ = pb::ByteString.Empty;
-    /// <summary>
-    /// a share of N
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Point {
-      get { return point_; }
+    public global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint BgwnPoint {
+      get { return messageCase_ == MessageOneofCase.BgwnPoint ? (global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint) message_ : null; }
       set {
-        point_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.BgwnPoint;
       }
     }
 
+    /// <summary>Field number for the "theta_point" field.</summary>
+    public const int ThetaPointFieldNumber = 3;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as BgwnPoint);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(BgwnPoint other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Point != other.Point) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Point.Length != 0) hash ^= Point.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Point.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteBytes(Point);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Point.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Point);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(BgwnPoint other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Point.Length != 0) {
-        Point = other.Point;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            Point = input.ReadBytes();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class ThetaPoint : pb::IMessage<ThetaPoint> {
-    private static readonly pb::MessageParser<ThetaPoint> _parser = new pb::MessageParser<ThetaPoint>(() => new ThetaPoint());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ThetaPoint> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[4]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThetaPoint() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThetaPoint(ThetaPoint other) : this() {
-      thetai_ = other.thetai_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThetaPoint Clone() {
-      return new ThetaPoint(this);
-    }
-
-    /// <summary>Field number for the "thetai" field.</summary>
-    public const int ThetaiFieldNumber = 1;
-    private pb::ByteString thetai_ = pb::ByteString.Empty;
-    /// <summary>
-    /// a share of Theta
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Thetai {
-      get { return thetai_; }
+    public global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint ThetaPoint {
+      get { return messageCase_ == MessageOneofCase.ThetaPoint ? (global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint) message_ : null; }
       set {
-        thetai_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.ThetaPoint;
       }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as ThetaPoint);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ThetaPoint other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Thetai != other.Thetai) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Thetai.Length != 0) hash ^= Thetai.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Thetai.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteBytes(Thetai);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Thetai.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Thetai);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ThetaPoint other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Thetai.Length != 0) {
-        Thetai = other.Thetai;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            Thetai = input.ReadBytes();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class VerificationKey : pb::IMessage<VerificationKey> {
-    private static readonly pb::MessageParser<VerificationKey> _parser = new pb::MessageParser<VerificationKey>(() => new VerificationKey());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<VerificationKey> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[5]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public VerificationKey() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public VerificationKey(VerificationKey other) : this() {
-      verificationKey_ = other.verificationKey_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public VerificationKey Clone() {
-      return new VerificationKey(this);
     }
 
     /// <summary>Field number for the "verification_key" field.</summary>
-    public const int VerificationKey_FieldNumber = 1;
-    private pb::ByteString verificationKey_ = pb::ByteString.Empty;
-    /// <summary>
-    /// A verification key
-    /// </summary>
+    public const int VerificationKeyFieldNumber = 4;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString VerificationKey_ {
-      get { return verificationKey_; }
+    public global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey VerificationKey {
+      get { return messageCase_ == MessageOneofCase.VerificationKey ? (global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey) message_ : null; }
       set {
-        verificationKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.VerificationKey;
       }
+    }
+
+    /// <summary>Field number for the "qi_test_for_round" field.</summary>
+    public const int QiTestForRoundFieldNumber = 5;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound QiTestForRound {
+      get { return messageCase_ == MessageOneofCase.QiTestForRound ? (global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound) message_ : null; }
+      set {
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.QiTestForRound;
+      }
+    }
+
+    private object message_;
+    /// <summary>Enum of possible cases for the "message" oneof.</summary>
+    public enum MessageOneofCase {
+      None = 0,
+      Complaint = 1,
+      BgwnPoint = 2,
+      ThetaPoint = 3,
+      VerificationKey = 4,
+      QiTestForRound = 5,
+    }
+    private MessageOneofCase messageCase_ = MessageOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageOneofCase MessageCase {
+      get { return messageCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void ClearMessage() {
+      messageCase_ = MessageOneofCase.None;
+      message_ = null;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as VerificationKey);
+      return Equals(other as BgwProtocolMessage);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(VerificationKey other) {
+    public bool Equals(BgwProtocolMessage other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (VerificationKey_ != other.VerificationKey_) return false;
+      if (!object.Equals(Complaint, other.Complaint)) return false;
+      if (!object.Equals(BgwnPoint, other.BgwnPoint)) return false;
+      if (!object.Equals(ThetaPoint, other.ThetaPoint)) return false;
+      if (!object.Equals(VerificationKey, other.VerificationKey)) return false;
+      if (!object.Equals(QiTestForRound, other.QiTestForRound)) return false;
+      if (MessageCase != other.MessageCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (VerificationKey_.Length != 0) hash ^= VerificationKey_.GetHashCode();
+      if (messageCase_ == MessageOneofCase.Complaint) hash ^= Complaint.GetHashCode();
+      if (messageCase_ == MessageOneofCase.BgwnPoint) hash ^= BgwnPoint.GetHashCode();
+      if (messageCase_ == MessageOneofCase.ThetaPoint) hash ^= ThetaPoint.GetHashCode();
+      if (messageCase_ == MessageOneofCase.VerificationKey) hash ^= VerificationKey.GetHashCode();
+      if (messageCase_ == MessageOneofCase.QiTestForRound) hash ^= QiTestForRound.GetHashCode();
+      hash ^= (int) messageCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1155,9 +893,25 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (VerificationKey_.Length != 0) {
+      if (messageCase_ == MessageOneofCase.Complaint) {
         output.WriteRawTag(10);
-        output.WriteBytes(VerificationKey_);
+        output.WriteMessage(Complaint);
+      }
+      if (messageCase_ == MessageOneofCase.BgwnPoint) {
+        output.WriteRawTag(18);
+        output.WriteMessage(BgwnPoint);
+      }
+      if (messageCase_ == MessageOneofCase.ThetaPoint) {
+        output.WriteRawTag(26);
+        output.WriteMessage(ThetaPoint);
+      }
+      if (messageCase_ == MessageOneofCase.VerificationKey) {
+        output.WriteRawTag(34);
+        output.WriteMessage(VerificationKey);
+      }
+      if (messageCase_ == MessageOneofCase.QiTestForRound) {
+        output.WriteRawTag(42);
+        output.WriteMessage(QiTestForRound);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1167,8 +921,20 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (VerificationKey_.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(VerificationKey_);
+      if (messageCase_ == MessageOneofCase.Complaint) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Complaint);
+      }
+      if (messageCase_ == MessageOneofCase.BgwnPoint) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BgwnPoint);
+      }
+      if (messageCase_ == MessageOneofCase.ThetaPoint) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ThetaPoint);
+      }
+      if (messageCase_ == MessageOneofCase.VerificationKey) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(VerificationKey);
+      }
+      if (messageCase_ == MessageOneofCase.QiTestForRound) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(QiTestForRound);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1177,13 +943,43 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(VerificationKey other) {
+    public void MergeFrom(BgwProtocolMessage other) {
       if (other == null) {
         return;
       }
-      if (other.VerificationKey_.Length != 0) {
-        VerificationKey_ = other.VerificationKey_;
+      switch (other.MessageCase) {
+        case MessageOneofCase.Complaint:
+          if (Complaint == null) {
+            Complaint = new global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint();
+          }
+          Complaint.MergeFrom(other.Complaint);
+          break;
+        case MessageOneofCase.BgwnPoint:
+          if (BgwnPoint == null) {
+            BgwnPoint = new global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint();
+          }
+          BgwnPoint.MergeFrom(other.BgwnPoint);
+          break;
+        case MessageOneofCase.ThetaPoint:
+          if (ThetaPoint == null) {
+            ThetaPoint = new global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint();
+          }
+          ThetaPoint.MergeFrom(other.ThetaPoint);
+          break;
+        case MessageOneofCase.VerificationKey:
+          if (VerificationKey == null) {
+            VerificationKey = new global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey();
+          }
+          VerificationKey.MergeFrom(other.VerificationKey);
+          break;
+        case MessageOneofCase.QiTestForRound:
+          if (QiTestForRound == null) {
+            QiTestForRound = new global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound();
+          }
+          QiTestForRound.MergeFrom(other.QiTestForRound);
+          break;
       }
+
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1196,175 +992,751 @@ namespace Phorkus.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            VerificationKey_ = input.ReadBytes();
+            global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint subBuilder = new global::Phorkus.Proto.BgwProtocolMessage.Types.Complaint();
+            if (messageCase_ == MessageOneofCase.Complaint) {
+              subBuilder.MergeFrom(Complaint);
+            }
+            input.ReadMessage(subBuilder);
+            Complaint = subBuilder;
+            break;
+          }
+          case 18: {
+            global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint subBuilder = new global::Phorkus.Proto.BgwProtocolMessage.Types.BgwnPoint();
+            if (messageCase_ == MessageOneofCase.BgwnPoint) {
+              subBuilder.MergeFrom(BgwnPoint);
+            }
+            input.ReadMessage(subBuilder);
+            BgwnPoint = subBuilder;
+            break;
+          }
+          case 26: {
+            global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint subBuilder = new global::Phorkus.Proto.BgwProtocolMessage.Types.ThetaPoint();
+            if (messageCase_ == MessageOneofCase.ThetaPoint) {
+              subBuilder.MergeFrom(ThetaPoint);
+            }
+            input.ReadMessage(subBuilder);
+            ThetaPoint = subBuilder;
+            break;
+          }
+          case 34: {
+            global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey subBuilder = new global::Phorkus.Proto.BgwProtocolMessage.Types.VerificationKey();
+            if (messageCase_ == MessageOneofCase.VerificationKey) {
+              subBuilder.MergeFrom(VerificationKey);
+            }
+            input.ReadMessage(subBuilder);
+            VerificationKey = subBuilder;
+            break;
+          }
+          case 42: {
+            global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound subBuilder = new global::Phorkus.Proto.BgwProtocolMessage.Types.QiTestForRound();
+            if (messageCase_ == MessageOneofCase.QiTestForRound) {
+              subBuilder.MergeFrom(QiTestForRound);
+            }
+            input.ReadMessage(subBuilder);
+            QiTestForRound = subBuilder;
             break;
           }
         }
       }
     }
 
-  }
-
-  public sealed partial class QiTestForRound : pb::IMessage<QiTestForRound> {
-    private static readonly pb::MessageParser<QiTestForRound> _parser = new pb::MessageParser<QiTestForRound>(() => new QiTestForRound());
-    private pb::UnknownFieldSet _unknownFields;
+    #region Nested types
+    /// <summary>Container for nested types declared in the BgwProtocolMessage message type.</summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<QiTestForRound> Parser { get { return _parser; } }
+    public static partial class Types {
+      public sealed partial class Complaint : pb::IMessage<Complaint> {
+        private static readonly pb::MessageParser<Complaint> _parser = new pb::MessageParser<Complaint>(() => new Complaint());
+        private pb::UnknownFieldSet _unknownFields;
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pb::MessageParser<Complaint> Parser { get { return _parser; } }
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[6]; }
-    }
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pbr::MessageDescriptor Descriptor {
+          get { return global::Phorkus.Proto.BgwProtocolMessage.Descriptor.NestedTypes[0]; }
+        }
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        pbr::MessageDescriptor pb::IMessage.Descriptor {
+          get { return Descriptor; }
+        }
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public QiTestForRound() {
-      OnConstruction();
-    }
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public Complaint() {
+          OnConstruction();
+        }
 
-    partial void OnConstruction();
+        partial void OnConstruction();
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public QiTestForRound(QiTestForRound other) : this() {
-      qi_ = other.qi_;
-      round_ = other.round_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public Complaint(Complaint other) : this() {
+          id_ = other.id_;
+          _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+        }
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public QiTestForRound Clone() {
-      return new QiTestForRound(this);
-    }
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public Complaint Clone() {
+          return new Complaint(this);
+        }
 
-    /// <summary>Field number for the "qi" field.</summary>
-    public const int QiFieldNumber = 1;
-    private pb::ByteString qi_ = pb::ByteString.Empty;
-    /// <summary>
-    /// a Qi in the Biprimality test
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Qi {
-      get { return qi_; }
-      set {
-        qi_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "round" field.</summary>
-    public const int RoundFieldNumber = 2;
-    private uint round_;
-    /// <summary>
-    /// the current round number in the Biprimality test
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Round {
-      get { return round_; }
-      set {
-        round_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as QiTestForRound);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(QiTestForRound other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Qi != other.Qi) return false;
-      if (Round != other.Round) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Qi.Length != 0) hash ^= Qi.GetHashCode();
-      if (Round != 0) hash ^= Round.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Qi.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteBytes(Qi);
-      }
-      if (Round != 0) {
-        output.WriteRawTag(16);
-        output.WriteUInt32(Round);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Qi.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Qi);
-      }
-      if (Round != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Round);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(QiTestForRound other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Qi.Length != 0) {
-        Qi = other.Qi;
-      }
-      if (other.Round != 0) {
-        Round = other.Round;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            Qi = input.ReadBytes();
-            break;
-          }
-          case 16: {
-            Round = input.ReadUInt32();
-            break;
+        /// <summary>Field number for the "id" field.</summary>
+        public const int IdFieldNumber = 1;
+        private uint id_;
+        /// <summary>
+        /// the id of the party that produced the invalid share
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public uint Id {
+          get { return id_; }
+          set {
+            id_ = value;
           }
         }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override bool Equals(object other) {
+          return Equals(other as Complaint);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public bool Equals(Complaint other) {
+          if (ReferenceEquals(other, null)) {
+            return false;
+          }
+          if (ReferenceEquals(other, this)) {
+            return true;
+          }
+          if (Id != other.Id) return false;
+          return Equals(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override int GetHashCode() {
+          int hash = 1;
+          if (Id != 0) hash ^= Id.GetHashCode();
+          if (_unknownFields != null) {
+            hash ^= _unknownFields.GetHashCode();
+          }
+          return hash;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override string ToString() {
+          return pb::JsonFormatter.ToDiagnosticString(this);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void WriteTo(pb::CodedOutputStream output) {
+          if (Id != 0) {
+            output.WriteRawTag(8);
+            output.WriteUInt32(Id);
+          }
+          if (_unknownFields != null) {
+            _unknownFields.WriteTo(output);
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public int CalculateSize() {
+          int size = 0;
+          if (Id != 0) {
+            size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Id);
+          }
+          if (_unknownFields != null) {
+            size += _unknownFields.CalculateSize();
+          }
+          return size;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(Complaint other) {
+          if (other == null) {
+            return;
+          }
+          if (other.Id != 0) {
+            Id = other.Id;
+          }
+          _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(pb::CodedInputStream input) {
+          uint tag;
+          while ((tag = input.ReadTag()) != 0) {
+            switch(tag) {
+              default:
+                _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+                break;
+              case 8: {
+                Id = input.ReadUInt32();
+                break;
+              }
+            }
+          }
+        }
+
       }
+
+      public sealed partial class BgwnPoint : pb::IMessage<BgwnPoint> {
+        private static readonly pb::MessageParser<BgwnPoint> _parser = new pb::MessageParser<BgwnPoint>(() => new BgwnPoint());
+        private pb::UnknownFieldSet _unknownFields;
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pb::MessageParser<BgwnPoint> Parser { get { return _parser; } }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pbr::MessageDescriptor Descriptor {
+          get { return global::Phorkus.Proto.BgwProtocolMessage.Descriptor.NestedTypes[1]; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        pbr::MessageDescriptor pb::IMessage.Descriptor {
+          get { return Descriptor; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public BgwnPoint() {
+          OnConstruction();
+        }
+
+        partial void OnConstruction();
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public BgwnPoint(BgwnPoint other) : this() {
+          point_ = other.point_;
+          _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public BgwnPoint Clone() {
+          return new BgwnPoint(this);
+        }
+
+        /// <summary>Field number for the "point" field.</summary>
+        public const int PointFieldNumber = 1;
+        private pb::ByteString point_ = pb::ByteString.Empty;
+        /// <summary>
+        /// a share of N
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public pb::ByteString Point {
+          get { return point_; }
+          set {
+            point_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override bool Equals(object other) {
+          return Equals(other as BgwnPoint);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public bool Equals(BgwnPoint other) {
+          if (ReferenceEquals(other, null)) {
+            return false;
+          }
+          if (ReferenceEquals(other, this)) {
+            return true;
+          }
+          if (Point != other.Point) return false;
+          return Equals(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override int GetHashCode() {
+          int hash = 1;
+          if (Point.Length != 0) hash ^= Point.GetHashCode();
+          if (_unknownFields != null) {
+            hash ^= _unknownFields.GetHashCode();
+          }
+          return hash;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override string ToString() {
+          return pb::JsonFormatter.ToDiagnosticString(this);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void WriteTo(pb::CodedOutputStream output) {
+          if (Point.Length != 0) {
+            output.WriteRawTag(10);
+            output.WriteBytes(Point);
+          }
+          if (_unknownFields != null) {
+            _unknownFields.WriteTo(output);
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public int CalculateSize() {
+          int size = 0;
+          if (Point.Length != 0) {
+            size += 1 + pb::CodedOutputStream.ComputeBytesSize(Point);
+          }
+          if (_unknownFields != null) {
+            size += _unknownFields.CalculateSize();
+          }
+          return size;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(BgwnPoint other) {
+          if (other == null) {
+            return;
+          }
+          if (other.Point.Length != 0) {
+            Point = other.Point;
+          }
+          _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(pb::CodedInputStream input) {
+          uint tag;
+          while ((tag = input.ReadTag()) != 0) {
+            switch(tag) {
+              default:
+                _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+                break;
+              case 10: {
+                Point = input.ReadBytes();
+                break;
+              }
+            }
+          }
+        }
+
+      }
+
+      public sealed partial class ThetaPoint : pb::IMessage<ThetaPoint> {
+        private static readonly pb::MessageParser<ThetaPoint> _parser = new pb::MessageParser<ThetaPoint>(() => new ThetaPoint());
+        private pb::UnknownFieldSet _unknownFields;
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pb::MessageParser<ThetaPoint> Parser { get { return _parser; } }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pbr::MessageDescriptor Descriptor {
+          get { return global::Phorkus.Proto.BgwProtocolMessage.Descriptor.NestedTypes[2]; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        pbr::MessageDescriptor pb::IMessage.Descriptor {
+          get { return Descriptor; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public ThetaPoint() {
+          OnConstruction();
+        }
+
+        partial void OnConstruction();
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public ThetaPoint(ThetaPoint other) : this() {
+          thetai_ = other.thetai_;
+          _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public ThetaPoint Clone() {
+          return new ThetaPoint(this);
+        }
+
+        /// <summary>Field number for the "thetai" field.</summary>
+        public const int ThetaiFieldNumber = 1;
+        private pb::ByteString thetai_ = pb::ByteString.Empty;
+        /// <summary>
+        /// a share of Theta
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public pb::ByteString Thetai {
+          get { return thetai_; }
+          set {
+            thetai_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override bool Equals(object other) {
+          return Equals(other as ThetaPoint);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public bool Equals(ThetaPoint other) {
+          if (ReferenceEquals(other, null)) {
+            return false;
+          }
+          if (ReferenceEquals(other, this)) {
+            return true;
+          }
+          if (Thetai != other.Thetai) return false;
+          return Equals(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override int GetHashCode() {
+          int hash = 1;
+          if (Thetai.Length != 0) hash ^= Thetai.GetHashCode();
+          if (_unknownFields != null) {
+            hash ^= _unknownFields.GetHashCode();
+          }
+          return hash;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override string ToString() {
+          return pb::JsonFormatter.ToDiagnosticString(this);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void WriteTo(pb::CodedOutputStream output) {
+          if (Thetai.Length != 0) {
+            output.WriteRawTag(10);
+            output.WriteBytes(Thetai);
+          }
+          if (_unknownFields != null) {
+            _unknownFields.WriteTo(output);
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public int CalculateSize() {
+          int size = 0;
+          if (Thetai.Length != 0) {
+            size += 1 + pb::CodedOutputStream.ComputeBytesSize(Thetai);
+          }
+          if (_unknownFields != null) {
+            size += _unknownFields.CalculateSize();
+          }
+          return size;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(ThetaPoint other) {
+          if (other == null) {
+            return;
+          }
+          if (other.Thetai.Length != 0) {
+            Thetai = other.Thetai;
+          }
+          _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(pb::CodedInputStream input) {
+          uint tag;
+          while ((tag = input.ReadTag()) != 0) {
+            switch(tag) {
+              default:
+                _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+                break;
+              case 10: {
+                Thetai = input.ReadBytes();
+                break;
+              }
+            }
+          }
+        }
+
+      }
+
+      public sealed partial class VerificationKey : pb::IMessage<VerificationKey> {
+        private static readonly pb::MessageParser<VerificationKey> _parser = new pb::MessageParser<VerificationKey>(() => new VerificationKey());
+        private pb::UnknownFieldSet _unknownFields;
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pb::MessageParser<VerificationKey> Parser { get { return _parser; } }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pbr::MessageDescriptor Descriptor {
+          get { return global::Phorkus.Proto.BgwProtocolMessage.Descriptor.NestedTypes[3]; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        pbr::MessageDescriptor pb::IMessage.Descriptor {
+          get { return Descriptor; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public VerificationKey() {
+          OnConstruction();
+        }
+
+        partial void OnConstruction();
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public VerificationKey(VerificationKey other) : this() {
+          verificationKey_ = other.verificationKey_;
+          _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public VerificationKey Clone() {
+          return new VerificationKey(this);
+        }
+
+        /// <summary>Field number for the "verification_key" field.</summary>
+        public const int VerificationKey_FieldNumber = 1;
+        private pb::ByteString verificationKey_ = pb::ByteString.Empty;
+        /// <summary>
+        /// a verification key
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public pb::ByteString VerificationKey_ {
+          get { return verificationKey_; }
+          set {
+            verificationKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override bool Equals(object other) {
+          return Equals(other as VerificationKey);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public bool Equals(VerificationKey other) {
+          if (ReferenceEquals(other, null)) {
+            return false;
+          }
+          if (ReferenceEquals(other, this)) {
+            return true;
+          }
+          if (VerificationKey_ != other.VerificationKey_) return false;
+          return Equals(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override int GetHashCode() {
+          int hash = 1;
+          if (VerificationKey_.Length != 0) hash ^= VerificationKey_.GetHashCode();
+          if (_unknownFields != null) {
+            hash ^= _unknownFields.GetHashCode();
+          }
+          return hash;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override string ToString() {
+          return pb::JsonFormatter.ToDiagnosticString(this);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void WriteTo(pb::CodedOutputStream output) {
+          if (VerificationKey_.Length != 0) {
+            output.WriteRawTag(10);
+            output.WriteBytes(VerificationKey_);
+          }
+          if (_unknownFields != null) {
+            _unknownFields.WriteTo(output);
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public int CalculateSize() {
+          int size = 0;
+          if (VerificationKey_.Length != 0) {
+            size += 1 + pb::CodedOutputStream.ComputeBytesSize(VerificationKey_);
+          }
+          if (_unknownFields != null) {
+            size += _unknownFields.CalculateSize();
+          }
+          return size;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(VerificationKey other) {
+          if (other == null) {
+            return;
+          }
+          if (other.VerificationKey_.Length != 0) {
+            VerificationKey_ = other.VerificationKey_;
+          }
+          _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(pb::CodedInputStream input) {
+          uint tag;
+          while ((tag = input.ReadTag()) != 0) {
+            switch(tag) {
+              default:
+                _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+                break;
+              case 10: {
+                VerificationKey_ = input.ReadBytes();
+                break;
+              }
+            }
+          }
+        }
+
+      }
+
+      public sealed partial class QiTestForRound : pb::IMessage<QiTestForRound> {
+        private static readonly pb::MessageParser<QiTestForRound> _parser = new pb::MessageParser<QiTestForRound>(() => new QiTestForRound());
+        private pb::UnknownFieldSet _unknownFields;
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pb::MessageParser<QiTestForRound> Parser { get { return _parser; } }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public static pbr::MessageDescriptor Descriptor {
+          get { return global::Phorkus.Proto.BgwProtocolMessage.Descriptor.NestedTypes[4]; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        pbr::MessageDescriptor pb::IMessage.Descriptor {
+          get { return Descriptor; }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public QiTestForRound() {
+          OnConstruction();
+        }
+
+        partial void OnConstruction();
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public QiTestForRound(QiTestForRound other) : this() {
+          qi_ = other.qi_;
+          round_ = other.round_;
+          _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public QiTestForRound Clone() {
+          return new QiTestForRound(this);
+        }
+
+        /// <summary>Field number for the "qi" field.</summary>
+        public const int QiFieldNumber = 1;
+        private pb::ByteString qi_ = pb::ByteString.Empty;
+        /// <summary>
+        /// a Qi in the Biprimality test
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public pb::ByteString Qi {
+          get { return qi_; }
+          set {
+            qi_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+          }
+        }
+
+        /// <summary>Field number for the "round" field.</summary>
+        public const int RoundFieldNumber = 2;
+        private uint round_;
+        /// <summary>
+        /// the current round number in the Biprimality test
+        /// </summary>
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public uint Round {
+          get { return round_; }
+          set {
+            round_ = value;
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override bool Equals(object other) {
+          return Equals(other as QiTestForRound);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public bool Equals(QiTestForRound other) {
+          if (ReferenceEquals(other, null)) {
+            return false;
+          }
+          if (ReferenceEquals(other, this)) {
+            return true;
+          }
+          if (Qi != other.Qi) return false;
+          if (Round != other.Round) return false;
+          return Equals(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override int GetHashCode() {
+          int hash = 1;
+          if (Qi.Length != 0) hash ^= Qi.GetHashCode();
+          if (Round != 0) hash ^= Round.GetHashCode();
+          if (_unknownFields != null) {
+            hash ^= _unknownFields.GetHashCode();
+          }
+          return hash;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public override string ToString() {
+          return pb::JsonFormatter.ToDiagnosticString(this);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void WriteTo(pb::CodedOutputStream output) {
+          if (Qi.Length != 0) {
+            output.WriteRawTag(10);
+            output.WriteBytes(Qi);
+          }
+          if (Round != 0) {
+            output.WriteRawTag(16);
+            output.WriteUInt32(Round);
+          }
+          if (_unknownFields != null) {
+            _unknownFields.WriteTo(output);
+          }
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public int CalculateSize() {
+          int size = 0;
+          if (Qi.Length != 0) {
+            size += 1 + pb::CodedOutputStream.ComputeBytesSize(Qi);
+          }
+          if (Round != 0) {
+            size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Round);
+          }
+          if (_unknownFields != null) {
+            size += _unknownFields.CalculateSize();
+          }
+          return size;
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(QiTestForRound other) {
+          if (other == null) {
+            return;
+          }
+          if (other.Qi.Length != 0) {
+            Qi = other.Qi;
+          }
+          if (other.Round != 0) {
+            Round = other.Round;
+          }
+          _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+        }
+
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+        public void MergeFrom(pb::CodedInputStream input) {
+          uint tag;
+          while ((tag = input.ReadTag()) != 0) {
+            switch(tag) {
+              default:
+                _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+                break;
+              case 10: {
+                Qi = input.ReadBytes();
+                break;
+              }
+              case 16: {
+                Round = input.ReadUInt32();
+                break;
+              }
+            }
+          }
+        }
+
+      }
+
     }
+    #endregion
 
   }
 
@@ -1376,7 +1748,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1545,7 +1917,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1745,7 +2117,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2290,7 +2662,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2549,265 +2921,6 @@ namespace Phorkus.Proto {
           }
           case 50: {
             Hij = input.ReadBytes();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  /// <summary>
-  /// TODO: "maybe this class should be encoded into genesis block" 
-  /// </summary>
-  public sealed partial class ProtocolGenerationParams : pb::IMessage<ProtocolGenerationParams> {
-    private static readonly pb::MessageParser<ProtocolGenerationParams> _parser = new pb::MessageParser<ProtocolGenerationParams>(() => new ProtocolGenerationParams());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ProtocolGenerationParams> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.PaillierReflection.Descriptor.MessageTypes[11]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ProtocolGenerationParams() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ProtocolGenerationParams(ProtocolGenerationParams other) : this() {
-      p_ = other.p_;
-      n_ = other.n_;
-      t_ = other.t_;
-      bigK_ = other.bigK_;
-      k_ = other.k_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ProtocolGenerationParams Clone() {
-      return new ProtocolGenerationParams(this);
-    }
-
-    /// <summary>Field number for the "p" field.</summary>
-    public const int PFieldNumber = 1;
-    private pb::ByteString p_ = pb::ByteString.Empty;
-    /// <summary>
-    /// large prime P' used for secret sharing with polynomials over the integer mod P'
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString P {
-      get { return p_; }
-      set {
-        p_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "n" field.</summary>
-    public const int NFieldNumber = 2;
-    private uint n_;
-    /// <summary>
-    /// the number of parties in the key generation protocol
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint N {
-      get { return n_; }
-      set {
-        n_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "t" field.</summary>
-    public const int TFieldNumber = 3;
-    private uint t_;
-    /// <summary>
-    /// the maximum number of parties an adversary can corrupt without breaking the security of the protocol
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint T {
-      get { return t_; }
-      set {
-        t_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "big_k" field.</summary>
-    public const int BigKFieldNumber = 4;
-    private uint bigK_;
-    /// <summary>
-    /// the security of the statistical hiding of &amp;Phi;(N) with &amp;Beta; and R
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint BigK {
-      get { return bigK_; }
-      set {
-        bigK_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "k" field.</summary>
-    public const int KFieldNumber = 5;
-    private uint k_;
-    /// <summary>
-    /// the bitlength of p and q, so that N has a security of 2k
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint K {
-      get { return k_; }
-      set {
-        k_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as ProtocolGenerationParams);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ProtocolGenerationParams other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (P != other.P) return false;
-      if (N != other.N) return false;
-      if (T != other.T) return false;
-      if (BigK != other.BigK) return false;
-      if (K != other.K) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (P.Length != 0) hash ^= P.GetHashCode();
-      if (N != 0) hash ^= N.GetHashCode();
-      if (T != 0) hash ^= T.GetHashCode();
-      if (BigK != 0) hash ^= BigK.GetHashCode();
-      if (K != 0) hash ^= K.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (P.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteBytes(P);
-      }
-      if (N != 0) {
-        output.WriteRawTag(16);
-        output.WriteUInt32(N);
-      }
-      if (T != 0) {
-        output.WriteRawTag(24);
-        output.WriteUInt32(T);
-      }
-      if (BigK != 0) {
-        output.WriteRawTag(32);
-        output.WriteUInt32(BigK);
-      }
-      if (K != 0) {
-        output.WriteRawTag(40);
-        output.WriteUInt32(K);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (P.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(P);
-      }
-      if (N != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(N);
-      }
-      if (T != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(T);
-      }
-      if (BigK != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(BigK);
-      }
-      if (K != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(K);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ProtocolGenerationParams other) {
-      if (other == null) {
-        return;
-      }
-      if (other.P.Length != 0) {
-        P = other.P;
-      }
-      if (other.N != 0) {
-        N = other.N;
-      }
-      if (other.T != 0) {
-        T = other.T;
-      }
-      if (other.BigK != 0) {
-        BigK = other.BigK;
-      }
-      if (other.K != 0) {
-        K = other.K;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            P = input.ReadBytes();
-            break;
-          }
-          case 16: {
-            N = input.ReadUInt32();
-            break;
-          }
-          case 24: {
-            T = input.ReadUInt32();
-            break;
-          }
-          case 32: {
-            BigK = input.ReadUInt32();
-            break;
-          }
-          case 40: {
-            K = input.ReadUInt32();
             break;
           }
         }

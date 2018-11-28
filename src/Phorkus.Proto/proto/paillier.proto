@@ -1,6 +1,50 @@
 syntax = "proto3";
 option csharp_namespace = "Phorkus.Proto";
 
+/*
+    Flow:
+    1. Generating protocol params using generator
+    2. BGW
+    2.1 Generating private and public params
+    2.2 Generating and broadcasting public params for each participant
+    2.3 Collecting public params from other participants
+    2.4 Calculating Nj from public params and broadcasting it to other participants
+    2.5 Collecting Nj from other participants
+    2.6 Calculating N from Nj collected
+    3. Biprimality test
+    3.1 Generate Qj for every N
+    3.2 Collect Qj from other participants
+    3.3 Validate multiply of these Qj's
+    4. Keys Derivation
+    4.1 Collect biprimality tests from other participants
+    4.2 Generate keys derivation public params and broadcast to other participants
+    4.3 Collect keys derivation public params from other participants
+    4.4 Calculate THETAj based on just received public params.
+    4.5 Broadcast THETAj to other participants.
+    4.6 Collect THETAj from other participants
+    4.7 Calculate verification key from received THETA's and broadcast to other participants
+    4.8 Collect verification keys from other participants
+    4.9 Calculate paillier private threshold key (PROFIT)
+*/
+
+enum State {
+    STATE_INITIALIZATION = 0;
+    STATE_GENERATING_SHARE = 1;
+    STATE_COLLECTING_SHARE = 2;
+    STATE_GENERATING_POINT = 3;
+    STATE_COLLECTING_POINT = 4;
+    STATE_GENERATING_QJ = 5; // <---+
+    STATE_COLLECTING_QJ = 6; //     | (repeat several times)
+    STATE_VALIDATING_QJ = 7; // ----+
+    STATE_GENERATING_DERIVATION = 8;
+    STATE_COLLECTING_DERIVATION = 9;
+    STATE_GENERATING_THETA = 10;
+    STATE_COLLECTING_THETA = 11;
+    STATE_GENERATING_VERIFICATION = 12;
+    STATE_COLLECTING_VERIFICATION = 13;
+    STATE_FINALIZATION = 99;
+}
+
 message BgwPrivateParams {
     uint32 i = 1; // the id of the party
     uint32 n = 2; // the number of parties
@@ -20,25 +64,30 @@ message BgwPublicParams {
     bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
 }
 
-message Complaint {
-    uint32 id = 1; // the id of the party that produced the invalid share
-}
-
-message BgwnPoint {
-    bytes point = 1; // a share of N
-}
-
-message ThetaPoint {
-    bytes thetai = 1; // a share of Theta
-}
-
-message VerificationKey {
-    bytes verification_key = 1; // A verification key
-}
-
-message QiTestForRound {
-    bytes qi = 1; // a Qi in the Biprimality test
-    uint32 round = 2; // the current round number in the Biprimality test
+message BgwProtocolMessage {
+    message Complaint {
+        uint32 id = 1; // the id of the party that produced the invalid share
+    }
+    message BgwnPoint {
+        bytes point = 1; // a share of N
+    }
+    message ThetaPoint {
+        bytes thetai = 1; // a share of Theta
+    }
+    message VerificationKey {
+        bytes verification_key = 1; // a verification key
+    }
+    message QiTestForRound {
+        bytes qi = 1; // a Qi in the Biprimality test
+        uint32 round = 2; // the current round number in the Biprimality test
+    }
+    oneof message {
+        Complaint complaint = 1;
+        BgwnPoint bgwn_point = 2;
+        ThetaPoint theta_point = 3;
+        VerificationKey verification_key = 4;
+        QiTestForRound qi_test_for_round = 5;
+    }
 }
 
 message CandidateN {
@@ -74,13 +123,4 @@ message KeysDerivationPublicParams {
     bytes drij = 4;
     bytes phiij = 5;
     bytes hij = 6;
-}
-
-/* TODO: "maybe this class should be encoded into genesis block" */
-message ProtocolGenerationParams {
-    bytes p = 1; // large prime P' used for secret sharing with polynomials over the integer mod P'
-    uint32 n = 2; // the number of parties in the key generation protocol
-    uint32 t = 3; // the maximum number of parties an adversary can corrupt without breaking the security of the protocol
-    uint32 big_k = 4; // the security of the statistical hiding of &Phi;(N) with &Beta; and R
-    uint32 k = 5; // the bitlength of p and q, so that N has a security of 2k
 }
