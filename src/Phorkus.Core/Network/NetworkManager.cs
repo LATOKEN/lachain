@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Cryptography;
 using Phorkus.Core.Network.Grpc;
@@ -34,6 +35,8 @@ namespace Phorkus.Core.Network
             IConfigManager configManager,
             ITransactionRepository transactionRepository,
             IBlockRepository blockRepository,
+            IBlockSynchronizer blockSynchronizer,
+            IBlockManager blockManager,
             ICrypto crypto,
             INetworkContext networkContext)
         {
@@ -43,7 +46,7 @@ namespace Phorkus.Core.Network
             {
                 Services =
                 {
-                    BlockchainService.BindService(new GrpcBlockchainServiceServer(networkContext, transactionRepository, blockRepository)),
+                    BlockchainService.BindService(new GrpcBlockchainServiceServer(networkContext, transactionRepository, blockRepository, blockSynchronizer)),
                     ConsensusService.BindService(new GrpcConsensusServiceServer(null, crypto))
                 },
                 Ports = { new ServerPort("0.0.0.0", networkConfig.Port, ServerCredentials.Insecure) }
@@ -68,7 +71,19 @@ namespace Phorkus.Core.Network
                     networkContext.ActivePeers.TryAdd(peerAddress, remotePeer);
             });
             
+            blockManager.OnBlockPersisted += _OnBlockPersisted;
+            
             _networkContext = networkContext;
+        }
+        
+        private void _OnBlockPersisted(object sender, Block block)
+        {
+            var handshake = new HandshakeRequest
+            {
+                Node = _networkContext.LocalNode
+            };
+            foreach (var peer in _networkContext.ActivePeers.Values)
+                peer.BlockchainService.Handshake(handshake);
         }
         
         private bool _IsNodeAvailable(INetworkContext networkContext, IRemotePeer remotePeer)

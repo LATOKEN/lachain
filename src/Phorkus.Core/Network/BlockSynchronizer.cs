@@ -10,20 +10,23 @@ using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
 {
-    public class Synchronizer : ISynchronizer
+    public class BlockSynchronizer : IBlockSynchronizer
     {
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
-        private readonly ILogger<ISynchronizer> _logger;
+        private readonly ILogger<IBlockSynchronizer> _logger;
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly INetworkContext _networkContext;
 
-        public Synchronizer(
+        private readonly object _peerHasBlocks
+            = new object();                
+        
+        public BlockSynchronizer(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             IBlockchainContext blockchainContext,
-            ILogger<ISynchronizer> logger,
+            ILogger<IBlockSynchronizer> logger,
             ITransactionVerifier transactionVerifier,
             INetworkContext networkContext)
         {
@@ -92,14 +95,56 @@ namespace Phorkus.Core.Network
             _logger.LogInformation($"Synchronized block {block.Header.Index} with hash {block.Hash}");
         }
 
+        public void HandlePeerHasBlocks(ulong blockHeight)
+        {
+            lock (_peerHasBlocks)
+            {
+                Monitor.PulseAll(_peerHasBlocks);
+            }
+        }
+
+        private IEnumerable<Block> _DownloadTransactions(IEnumerable<UInt256> blockHashes, IRemotePeer peer)
+        {
+            var validBlocks = new List<Block>();
+            var i = 0;
+            var blocks = peer.BlockchainService.GetBlocksByHashes(blockHashes).ToArray();
+            foreach (var block in blocks)
+            {   
+                if (++i % 1 == 0 && blocks.Length > 1)
+                {
+                    Console.Write($"Downloading transactions... {i}/{blocks.Length} ({100 * i / blocks.Length}%)");
+                    Console.CursorLeft = 0;
+                }
+                var dontHave = _HaveTransactions(block);
+                if (dontHave.Count == 0)
+                    continue;
+                var txs = peer.BlockchainService.GetTransactionsByHashes(dontHave).ToArray();
+                if (txs.Length != dontHave.Count)
+                    continue;
+                foreach (var tx in txs)
+                    _transactionVerifier.VerifyTransaction(tx);
+                foreach (var tx in txs)
+                {
+                    var result = _transactionManager.Persist(tx);
+                    if (result == OperatingError.Ok)
+                        continue;
+                    Console.WriteLine($"Unable to persist transaction {tx.Hash}, cuz error {result}");
+                    /* TODO: "revert block here" */   
+                }
+                dontHave = _HaveTransactions(block);
+                if (dontHave.Count > 0)
+                    continue;
+                validBlocks.Add(block);
+            }
+            return validBlocks;
+        }
+        
         private void _Worker()
         {
             var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
             
-            Thread.Sleep(1000);
-
             if (_networkContext.ActivePeers.Values.Count == 0)
                 return;
             
@@ -107,6 +152,7 @@ namespace Phorkus.Core.Network
             {
                 Node = _networkContext.LocalNode
             };
+            /* TODO: "this code should be optimized" */
             var maxHeight0 = _networkContext.ActivePeers.Values.Max(peer =>
             {
                 var handshaken = peer.BlockchainService.Handshake(handshake);
@@ -117,43 +163,14 @@ namespace Phorkus.Core.Network
             if (myHeight >= maxHeight)
                 return;
 
-            var blockHashes = _networkContext.ActivePeers.Values //.AsParallel()
+            var blockHashes = _networkContext.ActivePeers.Values.AsParallel()
                 .Select(peer => peer.BlockchainService.GetBlocksHashesByHeightRange(myHeight + 1, maxHeight))
                 .Aggregate((b1, b2) => b1.Concat(b2))
                 .Distinct()
                 .ToArray();
             
-            var blocks = _networkContext.ActivePeers.Values //.AsParallel()
-                .Select(peer =>
-                {
-                    var peerBlocks = peer.BlockchainService.GetBlocksByHashes(blockHashes).ToArray();
-                    var i = 0;
-                    foreach (var block in peerBlocks)
-                    {   
-                        if (++i % 1 == 0 && peerBlocks.Length > 1)
-                        {
-                            Console.Write($"Downloading transactions... {i}/{peerBlocks.Length} ({100 * i / peerBlocks.Length}%)");
-                            Console.CursorLeft = 0;
-                        }
-                        var dontHave = _HaveTransactions(block);
-                        if (dontHave.Count == 0)
-                            continue;
-                        var txs = peer.BlockchainService.GetTransactionsByHashes(dontHave).ToArray();
-                        if (txs.Length != dontHave.Count)
-                            continue;
-                        foreach (var tx in txs)
-                            _transactionVerifier.VerifyTransaction(tx);
-                        foreach (var tx in txs)
-                        {
-                            var result = _transactionManager.Persist(tx);
-                            if (result == OperatingError.Ok)
-                                continue;
-                            Console.WriteLine($"Unable to persist transaction {tx.Hash}, cuz error {result}");
-                            /* TODO: "revert block here" */   
-                        }
-                    }
-                    return peerBlocks;
-                })
+            var blocks = _networkContext.ActivePeers.Values
+                .Select(peer => _DownloadTransactions(blockHashes, peer))
                 .Aggregate((b1, b2) => b1.Concat(b2).ToArray())
                 .ToDictionary(b => b.Hash);
             
@@ -164,6 +181,11 @@ namespace Phorkus.Core.Network
                 if (error == OperatingError.Ok || error == OperatingError.BlockAlreadyExists)
                     continue;
                 _logger.LogWarning($"Unable to persist block {block.Header.Index} (current height {_blockchainContext.CurrentBlockHeight}), got error {error}, dropping peer");
+            }
+            
+            lock (_peerHasBlocks)
+            {
+                Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             }
         }
 

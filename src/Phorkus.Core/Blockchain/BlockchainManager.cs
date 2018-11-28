@@ -45,7 +45,7 @@ namespace Phorkus.Core.Blockchain
             PersistBlockManually(genesisBlock.Block, genesisBlock.Transactions);
             return true;
         }
-
+        
         public void PersistBlockManually(Block block, IEnumerable<SignedTransaction> transactions)
         {
             foreach (var tx in transactions)

@@ -57,7 +57,7 @@ namespace Phorkus.Console
             var blockManager = _container.Resolve<IBlockManager>();
 //            var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
-            var synchronizer = _container.Resolve<ISynchronizer>();
+            var synchronizer = _container.Resolve<IBlockSynchronizer>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);

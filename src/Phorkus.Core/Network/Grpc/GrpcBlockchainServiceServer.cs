@@ -13,15 +13,18 @@ namespace Phorkus.Core.Network.Grpc
         private readonly INetworkContext _networkContext;
         private readonly ITransactionRepository _transactionRepository;
         private readonly IBlockRepository _blockRepository;
+        private readonly IBlockSynchronizer _blockSynchronizer;
 
         public GrpcBlockchainServiceServer(
             INetworkContext networkContext,
             ITransactionRepository transactionRepository,
-            IBlockRepository blockRepository)
+            IBlockRepository blockRepository,
+            IBlockSynchronizer blockSynchronizer)
         {
             _networkContext = networkContext;
             _transactionRepository = transactionRepository;
             _blockRepository = blockRepository;
+            _blockSynchronizer = blockSynchronizer;
         }
 
         public override Task<HandshakeReply> Handshake(HandshakeRequest request, ServerCallContext context)
@@ -30,6 +33,7 @@ namespace Phorkus.Core.Network.Grpc
             {
                 Node = _networkContext.LocalNode
             };
+            _blockSynchronizer.HandlePeerHasBlocks(request.Node.BlockHeight);
             return Task.FromResult(reply);
         }
         

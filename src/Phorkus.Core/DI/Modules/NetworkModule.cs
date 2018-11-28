@@ -10,7 +10,7 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<INetworkManager, NetworkManager>();
             containerBuilder.RegisterSingleton<INetworkContext, NetworkContext>();
             containerBuilder.RegisterSingleton<IBroadcaster, DefaultBroadcaster>();
-            containerBuilder.RegisterSingleton<ISynchronizer, Synchronizer>();
+            containerBuilder.RegisterSingleton<IBlockSynchronizer, BlockSynchronizer>();
         }
     }
 }

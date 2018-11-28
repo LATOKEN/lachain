@@ -13,8 +13,8 @@ protoc --csharp_out .. global.proto
 protoc --csharp_out .. message.proto
 protoc --csharp_out .. multisig.proto
 protoc --csharp_out .. node.proto
+protoc --csharp_out .. paillier.proto
 protoc --csharp_out .. transaction.proto
-protoc --csharp_out .. validator.proto
 
 cd ..
 mkdir Grpc

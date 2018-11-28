@@ -32,7 +32,7 @@ namespace Phorkus.Core.Consensus
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
         private readonly IConsensusService _consensusService;
-        private readonly ISynchronizer _synchronizer;
+        private readonly IBlockSynchronizer _blockSynchronizer;
 
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
@@ -54,7 +54,7 @@ namespace Phorkus.Core.Consensus
             IConfigManager configManager,
             ITransactionFactory transactionFactory,
             ICrypto crypto,
-            ISynchronizer blockchainSynchronizer,
+            IBlockSynchronizer blockchainBlockSynchronizer,
             IConsensusService consensusService)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -62,8 +62,8 @@ namespace Phorkus.Core.Consensus
             _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _transactionFactory = transactionFactory ?? throw new ArgumentNullException(nameof(transactionFactory));
-            _synchronizer =
-                blockchainSynchronizer ?? throw new ArgumentNullException(nameof(blockchainSynchronizer));
+            _blockSynchronizer =
+                blockchainBlockSynchronizer ?? throw new ArgumentNullException(nameof(blockchainBlockSynchronizer));
             _consensusService = consensusService;
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
@@ -199,7 +199,7 @@ namespace Phorkus.Core.Consensus
 
                 // Regardless of our role, here we must collect transactions, signatures and assemble block
                 var txsGot =
-                    _synchronizer.WaitForTransactions(_context.CurrentProposal.TransactionHashes,
+                    _blockSynchronizer.WaitForTransactions(_context.CurrentProposal.TransactionHashes,
                         _timePerBlock);
                 if (txsGot != _context.CurrentProposal.TransactionHashes.Length)
                 {

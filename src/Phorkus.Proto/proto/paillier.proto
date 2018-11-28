@@ -1,0 +1,23 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Proto";
+
+import "default.proto";
+
+message BgwPrivateParams {
+    uint32 i = 1; // the id of the party
+    uint32 n = 2; // the number of parties
+    bytes pi = 3; // the contribution of party Pi to p
+    bytes qi = 4; // the contribution of party Pi to q
+    bytes fi = 5; // the polynomial used to share pi
+    bytes gi = 6; // the polynomial used to share qi
+    bytes hi = 7; // the polynomial used to share Ni
+}
+
+message BgwPublicParams {
+    uint32 i = 1; // the id of the party
+    uint32 n = 2; // the number of parties
+    uint32 j = 3; // the id of the party for which these shares were generated
+    bytes pij = 4; // the share pij = f(j) of party i's pi generated for party j
+    bytes qij = 5; // the share qij = g(j) of party i's qi generated for party j
+    bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
+}
