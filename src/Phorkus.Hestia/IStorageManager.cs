@@ -1,15 +1,11 @@
-﻿using Google.Protobuf;
-
-namespace Phorkus.Hestia
-{    
+﻿namespace Phorkus.Hestia
+{
     public interface IStorageManager
     {
-        long Version { get; }
+        ulong LatestCommitedVersion(uint repository);
 
-        TValue Get<TKey, TValue>(ulong version, TKey key)
-            where TKey : IMessage
-            where TValue : IMessage;
-        
-        IState NewState(ulong version);
+        byte[] Get(uint repository, ulong version, byte[] key);
+
+        IStorageState NewState(uint repository);
     }
 }

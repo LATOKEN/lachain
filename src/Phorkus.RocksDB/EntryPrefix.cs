@@ -18,6 +18,7 @@
         
         BalanceByOwnerAndAsset = 0x0501,
         
-        TestPrefix = 0x0601,
+        StorageVersionIndex = 0x0601,
+        PersistentTreeMap = 0x0602,
     }
 }

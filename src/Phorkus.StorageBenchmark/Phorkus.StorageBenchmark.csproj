@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phorkus.Core\Phorkus.Core.csproj" />
+    <ProjectReference Include="..\Phorkus.Hestia\Phorkus.Hestia.csproj" />
     <ProjectReference Include="..\Phorkus.RocksDB\Phorkus.RocksDB.csproj" />
-    <ProjectReference Include="..\Phorkus.Storage\Phorkus.Storage.csproj" />
   </ItemGroup>
 </Project>
