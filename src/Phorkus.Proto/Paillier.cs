@@ -54,17 +54,17 @@ namespace Phorkus.Proto {
             "bWlhbE1vZBIJCgFhGAEgAygMEgsKA21vZBgCIAEoDCJsChpLZXlzRGVyaXZh",
             "dGlvblB1YmxpY1BhcmFtcxIJCgFpGAEgASgNEgkKAWoYAiABKA0SDgoGYmV0",
             "YWlqGAMgASgMEgwKBGRyaWoYBCABKAwSDQoFcGhpaWoYBSABKAwSCwoDaGlq",
-            "GAYgASgMKrQDCgVTdGF0ZRIYChRTVEFURV9JTklUSUFMSVpBVElPThAAEhoK",
+            "GAYgASgMKr0DCgVTdGF0ZRIYChRTVEFURV9JTklUSUFMSVpBVElPThAAEhoK",
             "FlNUQVRFX0dFTkVSQVRJTkdfU0hBUkUQARIaChZTVEFURV9DT0xMRUNUSU5H",
             "X1NIQVJFEAISGgoWU1RBVEVfR0VORVJBVElOR19QT0lOVBADEhoKFlNUQVRF",
-            "X0NPTExFQ1RJTkdfUE9JTlQQBBIXChNTVEFURV9HRU5FUkFUSU5HX1FKEAUS",
-            "FwoTU1RBVEVfQ09MTEVDVElOR19RShAGEhcKE1NUQVRFX1ZBTElEQVRJTkdf",
-            "UUoQBxIfChtTVEFURV9HRU5FUkFUSU5HX0RFUklWQVRJT04QCBIfChtTVEFU",
-            "RV9DT0xMRUNUSU5HX0RFUklWQVRJT04QCRIaChZTVEFURV9HRU5FUkFUSU5H",
-            "X1RIRVRBEAoSGgoWU1RBVEVfQ09MTEVDVElOR19USEVUQRALEiEKHVNUQVRF",
-            "X0dFTkVSQVRJTkdfVkVSSUZJQ0FUSU9OEAwSIQodU1RBVEVfQ09MTEVDVElO",
-            "R19WRVJJRklDQVRJT04QDRIWChJTVEFURV9GSU5BTElaQVRJT04QY0IQqgIN",
-            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "X0NPTExFQ1RJTkdfUE9JTlQQBBIaChZTVEFURV9HRU5FUkFUSU5HX1BST09G",
+            "EAUSGgoWU1RBVEVfQ09MTEVDVElOR19QUk9PRhAGEhoKFlNUQVRFX1ZBTElE",
+            "QVRJTkdfUFJPT0YQBxIfChtTVEFURV9HRU5FUkFUSU5HX0RFUklWQVRJT04Q",
+            "CBIfChtTVEFURV9DT0xMRUNUSU5HX0RFUklWQVRJT04QCRIaChZTVEFURV9H",
+            "RU5FUkFUSU5HX1RIRVRBEAoSGgoWU1RBVEVfQ09MTEVDVElOR19USEVUQRAL",
+            "EiEKHVNUQVRFX0dFTkVSQVRJTkdfVkVSSUZJQ0FUSU9OEAwSIQodU1RBVEVf",
+            "Q09MTEVDVElOR19WRVJJRklDQVRJT04QDRIWChJTVEFURV9GSU5BTElaQVRJ",
+            "T04QY0IQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.State), }, new pbr::GeneratedClrTypeInfo[] {
@@ -95,15 +95,15 @@ namespace Phorkus.Proto {
     /// <summary>
     /// &lt;---+
     /// </summary>
-    [pbr::OriginalName("STATE_GENERATING_QJ")] GeneratingQj = 5,
+    [pbr::OriginalName("STATE_GENERATING_PROOF")] GeneratingProof = 5,
     /// <summary>
     ///     | (repeat several times)
     /// </summary>
-    [pbr::OriginalName("STATE_COLLECTING_QJ")] CollectingQj = 6,
+    [pbr::OriginalName("STATE_COLLECTING_PROOF")] CollectingProof = 6,
     /// <summary>
     /// ----+
     /// </summary>
-    [pbr::OriginalName("STATE_VALIDATING_QJ")] ValidatingQj = 7,
+    [pbr::OriginalName("STATE_VALIDATING_PROOF")] ValidatingProof = 7,
     [pbr::OriginalName("STATE_GENERATING_DERIVATION")] GeneratingDerivation = 8,
     [pbr::OriginalName("STATE_COLLECTING_DERIVATION")] CollectingDerivation = 9,
     [pbr::OriginalName("STATE_GENERATING_THETA")] GeneratingTheta = 10,

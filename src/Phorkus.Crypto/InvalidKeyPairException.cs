@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public class InvalidKeyPairException : Exception
     {

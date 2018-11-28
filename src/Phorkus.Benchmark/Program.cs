@@ -6,13 +6,13 @@ using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
-using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
 

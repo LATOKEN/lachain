@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public static class Base58
     {

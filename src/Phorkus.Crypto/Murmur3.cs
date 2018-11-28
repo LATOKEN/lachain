@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     sealed class Murmur3 : HashAlgorithm
     {

@@ -1,6 +1,6 @@
 ﻿using Google.Protobuf;
 using Grpc.Core;
-using Phorkus.Core.Cryptography;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Network.Grpc

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Linq;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public class BloomFilter
     {

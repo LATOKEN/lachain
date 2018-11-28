@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
-using Phorkus.Core.Cryptography;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.Blockchain.Pool
 {

@@ -1,4 +1,4 @@
-﻿using Phorkus.Core.Cryptography;
+﻿using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Core

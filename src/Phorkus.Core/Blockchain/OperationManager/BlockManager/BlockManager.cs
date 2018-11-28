@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
-using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 {

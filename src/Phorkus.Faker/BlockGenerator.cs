@@ -7,11 +7,11 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
-using Phorkus.Core.Cryptography;
 using Phorkus.Core.DI;
 using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Faker

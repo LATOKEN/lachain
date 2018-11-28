@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Phorkus.Core.Cryptography;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.Utils
 {

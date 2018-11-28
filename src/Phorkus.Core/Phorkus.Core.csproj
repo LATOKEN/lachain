@@ -15,6 +15,7 @@
     <PackageReference Include="SimpleInjector" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Phorkus.Crypto\Phorkus.Crypto.csproj" />
     <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
   </ItemGroup>
 </Project>

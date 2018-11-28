@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
-using Phorkus.Core.Cryptography;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Utils

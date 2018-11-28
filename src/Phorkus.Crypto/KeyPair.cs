@@ -1,8 +1,8 @@
 ﻿using System;
+using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Core.Utils;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public class KeyPair : IEquatable<KeyPair>
     {
@@ -18,7 +18,10 @@ namespace Phorkus.Core.Cryptography
         public KeyPair(PrivateKey privateKey, ICrypto crypto)
         {
             PrivateKey = privateKey;
-            PublicKey = crypto.ComputePublicKey(privateKey.Buffer.ToByteArray(), true).ToPublicKey();
+            PublicKey = new PublicKey
+            {
+                Buffer = ByteString.CopyFrom(crypto.ComputePublicKey(privateKey.Buffer.ToByteArray(), true))
+            };
         }
 
         public bool Equals(KeyPair other)

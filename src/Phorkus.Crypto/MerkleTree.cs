@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Core.Utils;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public class MerkleTreeNode
     {
@@ -169,7 +168,10 @@ namespace Phorkus.Core.Cryptography
                 var hash = new byte[Hash2Size];
                 Array.Copy(current.LeftChild.Hash.ToByteArray(), 0, hash, 0, HashSize);
                 Array.Copy(current.RightChild.Hash.ToByteArray(), 0, hash, HashSize, HashSize);
-                current.Hash = hash.ToHash256();
+                current.Hash = new UInt256
+                {
+                    Buffer = ByteString.CopyFrom(hash)
+                };
             }
 
             return Build(parents); //TailCall

@@ -1,5 +1,5 @@
 using Phorkus.Core.Config;
-using Phorkus.Core.Cryptography;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.DI.Modules
 {

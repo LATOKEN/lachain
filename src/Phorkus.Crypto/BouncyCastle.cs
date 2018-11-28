@@ -9,7 +9,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     internal sealed class EcDsaSignerWithRecId : ECDsaSigner
     {

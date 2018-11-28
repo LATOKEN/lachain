@@ -2,7 +2,7 @@
 using System.Text;
 using Org.BouncyCastle.Crypto.Digests;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public static class HashUtils
     {

@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public interface ICrypto
     {

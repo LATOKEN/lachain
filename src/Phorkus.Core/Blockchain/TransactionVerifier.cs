@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Phorkus.Core.Cryptography;
 using Phorkus.Core.Logging;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain

@@ -3,9 +3,9 @@ using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.BlockManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
-using Phorkus.Core.Cryptography;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.Blockchain
 {

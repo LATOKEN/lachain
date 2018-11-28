@@ -2,10 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Phorkus.Core.Cryptography;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {

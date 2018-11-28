@@ -33,9 +33,9 @@ enum State {
     STATE_COLLECTING_SHARE = 2;
     STATE_GENERATING_POINT = 3;
     STATE_COLLECTING_POINT = 4;
-    STATE_GENERATING_QJ = 5; // <---+
-    STATE_COLLECTING_QJ = 6; //     | (repeat several times)
-    STATE_VALIDATING_QJ = 7; // ----+
+    STATE_GENERATING_PROOF = 5; // <---+
+    STATE_COLLECTING_PROOF = 6; //     | (repeat several times)
+    STATE_VALIDATING_PROOF = 7; // ----+
     STATE_GENERATING_DERIVATION = 8;
     STATE_COLLECTING_DERIVATION = 9;
     STATE_GENERATING_THETA = 10;

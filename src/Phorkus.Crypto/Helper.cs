@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 
-namespace Phorkus.Core.Cryptography
+namespace Phorkus.Crypto
 {
     public static class Helper
     {
