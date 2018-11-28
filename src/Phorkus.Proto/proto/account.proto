@@ -11,12 +11,3 @@ message Account {
     UInt160 address = 1;
     AccountState state = 2;
 }
-
-message Test1 {
-    uint32 value = 1;
-}
-
-message Test2 {
-    uint32 value = 1;
-    uint32 hello = 2;
-}

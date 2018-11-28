@@ -24,13 +24,42 @@ message BgwPublicParams {
 
 // Kirill:
 // - Complaint
+message Complaint {
+    uint32 id = 1; // the id of the party that produced the invalid share
+}
 // - BGWNPoint
+message BGWNPoint {
+    bytes point = 1; // a share of Theta
+}
+
 // - ThetaPoint
+message ThetaPoint {
+    bytes thetai = 1; // a share of N
+}
 // - VerificationKey
+message VerificationKey {
+    bytes verificationKey = 1; // A verification key
+}
 // - QiTestForRound
-// - Participants (?)
+message QiTestForRound {
+    bytes Qi = 1; // a Qi in the Biprimality test
+    uint32 round = 2; // the current round number in the Biprimality test
+}
+// - Participants (????)
+message Participants {
+    bytes participants = 1; // 
+}
 // - CandidateN
+message CandidateN {
+    bytes N = 1; //  the candidate to RSA modulus   
+    BgwPrivateParams bgwPrivateParameters = 2; // the BGW private parameters associated with the candidate to RSA modulus
+}
 // - BiprimalityTestResult
+message BiprimalityTestResult {    
+    bytes N = 1; // the candidate to RSA modulus		
+    BgwPrivateParams bgwPrivateParameters = 2; // The BGW private parameters associated with N    
+    bool passes = 3; // the result of the Biprimality test. True if succeed, false if not
+}
 //
 // Dmitry:
 // - BGWPrivateParameters
