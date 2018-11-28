@@ -21,3 +21,21 @@ message BgwPublicParams {
     bytes qij = 5; // the share qij = g(j) of party i's qi generated for party j
     bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
 }
+
+// Kirill:
+// - Complaint
+// - BGWNPoint
+// - ThetaPoint
+// - VerificationKey
+// - QiTestForRound
+// - Participants (?)
+// - CandidateN
+// - BiprimalityTestResult
+//
+// Dmitry:
+// - BGWPrivateParameters
+// - BGWPublicParameters
+// - KeysDerivationPrivateParameters (bullshit)
+// - KeysDerivationPublicParameters (bullshit)
+// - ProtocolParameters
+// 
