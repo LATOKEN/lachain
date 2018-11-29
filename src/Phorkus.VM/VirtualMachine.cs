@@ -43,7 +43,8 @@ namespace Phorkus.VM
 //                        ltBytes1 = ltBytes1.Reverse().ToArray();
 //                        ltBytes2 = ltBytes2.Reverse().ToArray();
                     }
-                    state.StackPush(new[] { new BigInteger(ltBytes1) < new BigInteger(ltBytes2) ? (byte)1 : (byte)0 });
+
+                    state.StackPush(new[] {new BigInteger(ltBytes1) < new BigInteger(ltBytes2) ? (byte) 1 : (byte) 0});
                     state.Step();
                     break;
                 case Opcode.Gt:
@@ -54,7 +55,8 @@ namespace Phorkus.VM
 //                        gtBytes1 = gtBytes1.Reverse().ToArray();
 //                        gtBytes2 = gtBytes2.Reverse().ToArray();
                     }
-                    state.StackPush(new[] { new BigInteger(gtBytes1) > new BigInteger(gtBytes2) ? (byte)1 : (byte)0 });
+
+                    state.StackPush(new[] {new BigInteger(gtBytes1) > new BigInteger(gtBytes2) ? (byte) 1 : (byte) 0});
                     state.Step();
                     break;
                 case Opcode.Slt:
@@ -65,7 +67,9 @@ namespace Phorkus.VM
 //                        sltBytes1 = sltBytes1.Reverse().ToArray();
 //                        sltBytes2 = sltBytes2.Reverse().ToArray();
                     }
-                    state.StackPush(new[] { new BigInteger(sltBytes1) < new BigInteger(sltBytes2) ? (byte)1 : (byte)0 });
+
+                    state.StackPush(new[]
+                        {new BigInteger(sltBytes1) < new BigInteger(sltBytes2) ? (byte) 1 : (byte) 0});
                     state.Step();
                     break;
                 case Opcode.Sgt:
@@ -76,7 +80,9 @@ namespace Phorkus.VM
 //                        sgtBytes1 = sgtBytes1.Reverse().ToArray();
 //                        sgtBytes2 = sgtBytes2.Reverse().ToArray();
                     }
-                    state.StackPush(new[] { new BigInteger(sgtBytes1) > new BigInteger(sgtBytes2) ? (byte)1 : (byte)0 });
+
+                    state.StackPush(new[]
+                        {new BigInteger(sgtBytes1) > new BigInteger(sgtBytes2) ? (byte) 1 : (byte) 0});
 
                     state.Step();
                     break;
@@ -89,7 +95,8 @@ namespace Phorkus.VM
 //                        eqBytes1 = eqBytes1.Reverse().ToArray();
 //                        eqBytes2 = eqBytes2.Reverse().ToArray();
                     }
-                    state.StackPush(new[] { new BigInteger(eqBytes1) == new BigInteger(eqBytes2) ? (byte)1: (byte)0});
+
+                    state.StackPush(new[] {new BigInteger(eqBytes1) == new BigInteger(eqBytes2) ? (byte) 1 : (byte) 0});
                     state.Step();
 
                     break;
@@ -100,16 +107,16 @@ namespace Phorkus.VM
                     state.Step();
                     break;
                 case Opcode.And:
-                                   
+
                     var andBytes1 = state.StackPop();
                     var andBytes2 = state.StackPop();
                     //check endianism
                     var andB1 = new BigInteger(andBytes1);
                     andB1 = andB1 & new BigInteger(andBytes2);
-     
+
                     state.StackPush(andB1.ToByteArray());
                     state.Step();
-                    
+
                     break;
                 case Opcode.Or:
 
@@ -145,7 +152,7 @@ namespace Phorkus.VM
                     var pos = new BigInteger(byteBytes1);
                     var word = PadTo32Bytes(byteBytes2);
 
-                    var result = pos < 32 ? new [] { word[(int)pos]} : new byte[0];
+                    var result = pos < 32 ? new[] {word[(int) pos]} : new byte[0];
 
                     state.StackPush(result);
                     state.Step();
@@ -249,7 +256,7 @@ namespace Phorkus.VM
                 case Opcode.Push31:
                 case Opcode.Push32:
                     state.Step();
-                    var pushNumber = opcode - (int)Opcode.Push1 + 1;
+                    var pushNumber = opcode - (int) Opcode.Push1 + 1;
                     var data = state.Sweep(pushNumber);
 
                     state.StackPush(data);
@@ -284,7 +291,7 @@ namespace Phorkus.VM
                 case Opcode.Swap11:
                 case Opcode.Swap12:
                 case Opcode.Swap13:
-                case Opcode.Swap14:  
+                case Opcode.Swap14:
                 case Opcode.Swap15:
                 case Opcode.Swap16:
                     break;
@@ -318,12 +325,12 @@ namespace Phorkus.VM
             var ret = new byte[32];
 
             for (var i = 0; i < ret.Length; i++)
-                    ret[i] = 0;          
+                ret[i] = 0;
             Array.Copy(bytesToPad, 0, ret, 32 - bytesToPad.Length, bytesToPad.Length);
 
             return ret;
         }
-    
+
 
         public OpcodeDesc GetInstructionInfo(byte opcode)
         {

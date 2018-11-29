@@ -2,6 +2,6 @@
 {
     public interface ITransactionData
     {
-        
+        byte[] RawTransaction { get; }
     }
 }
