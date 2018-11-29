@@ -61,7 +61,7 @@ namespace Phorkus.Faker
             Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
             Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
             Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.ToArray().Length}");
-            foreach (var s in genesisBlock.TransactionHashes)
+            foreach (var s in genesisBlock.TransactionHashes.ToArray())
                 Console.WriteLine($" + - {s.Buffer.ToHex()}");
             Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
 
