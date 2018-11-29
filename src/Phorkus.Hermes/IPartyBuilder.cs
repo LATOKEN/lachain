@@ -1,4 +1,5 @@
-﻿using Phorkus.Proto;
+﻿using System.Collections.Generic;
+using Phorkus.Proto;
 
 namespace Phorkus.Hermes
 {
@@ -8,13 +9,15 @@ namespace Phorkus.Hermes
 
         void Initialize();
 
-        void GenerateShare();
+        BgwPublicParams GenerateShare();
 
-        void CollectShare();
+        void CollectShare(IReadOnlyCollection<BgwPublicParams> shares);
 
-        void GeneratePoint();
+        BgwnPoint GeneratePoint();
 
-        void CollectPoint();
+        void CollectPoint(IReadOnlyCollection<BgwnPoint> points);
+        
+        // other states here
         
         void Finalize();
     }

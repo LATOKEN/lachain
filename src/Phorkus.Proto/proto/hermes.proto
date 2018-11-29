@@ -64,23 +64,24 @@ message BgwPublicParams {
     bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
 }
 
+message Complaint {
+    uint32 id = 1; // the id of the party that produced the invalid share
+}
+message BgwnPoint {
+    bytes point = 1; // a share of N
+}
+message ThetaPoint {
+    bytes thetai = 1; // a share of Theta
+}
+message VerificationKey {
+    bytes verification_key = 1; // a verification key
+}
+message QiTestForRound {
+    bytes qi = 1; // a Qi in the Biprimality test
+    uint32 round = 2; // the current round number in the Biprimality test
+}
+
 message BgwProtocolMessage {
-    message Complaint {
-        uint32 id = 1; // the id of the party that produced the invalid share
-    }
-    message BgwnPoint {
-        bytes point = 1; // a share of N
-    }
-    message ThetaPoint {
-        bytes thetai = 1; // a share of Theta
-    }
-    message VerificationKey {
-        bytes verification_key = 1; // a verification key
-    }
-    message QiTestForRound {
-        bytes qi = 1; // a Qi in the Biprimality test
-        uint32 round = 2; // the current round number in the Biprimality test
-    }
     oneof message {
         Complaint complaint = 1;
         BgwnPoint bgwn_point = 2;
