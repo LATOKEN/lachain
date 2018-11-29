@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using Phorkus.Hermes.Generator.Network;
+using Phorkus.Hermes.Generator.State;
+
 
 namespace Phorkus.Hermes.Generator
 {
@@ -21,12 +24,12 @@ namespace Phorkus.Hermes.Generator
             throw new System.NotImplementedException();
         }
 
-        public BgwnPoint GeneratePoint()
+        public Messages.BGWNPoint GeneratePoint()
         {
             throw new System.NotImplementedException();
         }
 
-        public void CollectPoint(IReadOnlyCollection<BgwnPoint> points)
+        public void CollectPoint(IReadOnlyCollection<Messages.BGWNPoint> points)
         {
             throw new System.NotImplementedException();
         }

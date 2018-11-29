@@ -1,6 +1,7 @@
 ﻿using System;
 using Google.Protobuf;
 using Org.BouncyCastle.Math;
+using Phorkus.Hermes.Generator.State;
 using Phorkus.Hermes.Math;
 using Phorkus.Proto;
 
@@ -54,15 +55,8 @@ namespace Phorkus.Hermes.Generator.Builders
             var qj = bgwPrivParam.gi.eval(j);
             var hj = bgwPrivParam.hi.eval(j);
 
-            return new BgwPublicParams
-            {
-                I = i,
-                N = bgwPrivParam.n,
-                J = j,
-                Pij = ByteString.CopyFrom(pj.ToByteArray()),
-                Qij = ByteString.CopyFrom(qj.ToByteArray()),
-                Hij = ByteString.CopyFrom(hj.ToByteArray())
-            };
+            return new BgwPublicParams(i, j, bgwPrivParam.n, pj, qj, hj);
         }
+ 
     }
 }
