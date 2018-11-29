@@ -1,13 +1,12 @@
 ﻿using System;
 using Google.Protobuf;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Config;
 using Phorkus.Hermes.Math;
 using Phorkus.Proto;
 
-namespace Phorkus.Hermes.Generator
+namespace Phorkus.Hermes.Generator.Builders
 {
-    public static class DerivationGenerator
+    public static class DerivationBuilder
     {
         public static KeysDerivationPrivateParameters GeneratePrivate(GenesisPrivateParams protocolParameters, int i,
             BigInteger N, BigInteger Phii, Random rand)

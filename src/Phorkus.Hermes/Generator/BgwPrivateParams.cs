@@ -1,7 +1,7 @@
 ﻿using Org.BouncyCastle.Math;
 using Phorkus.Hermes.Math;
 
-namespace Phorkus.Hermes.Config
+namespace Phorkus.Hermes.Generator
 {
     public class BgwPrivateParams
     {

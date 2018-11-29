@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Config;
-using Phorkus.Hermes.State;
 using Phorkus.Proto;
 
-namespace ThresholdWODealer.actordata
+namespace Phorkus.Hermes.Generator.State
 {
 /** Represents the state data of the BGW protocol Actor's FSM.
  * <p>

@@ -1,13 +1,12 @@
 ﻿using System;
 using Google.Protobuf;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Config;
 using Phorkus.Hermes.Math;
 using Phorkus.Proto;
 
-namespace Phorkus.Hermes.Generator
+namespace Phorkus.Hermes.Generator.Builders
 {
-    public static class BgwGenerator
+    public static class BgwBuilder
     {
         /** Generates the private parameters for a given party in the BGW protocol
          * @param i the id of the party. i &in; [1,n], n the number of parties

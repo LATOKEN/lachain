@@ -3,10 +3,8 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes
 {
-    public interface IPartyBuilder
+    public interface IPartyProtocol
     {
-        PartyState CurrentState { get; }
-
         void Initialize();
 
         BgwPublicParams GenerateShare();

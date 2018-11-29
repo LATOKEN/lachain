@@ -1,12 +1,10 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Proto;
 
-namespace Phorkus.Hermes
+namespace Phorkus.Hermes.Generator
 {
-    public class PartyBuilder : IPartyBuilder
+    public class GeneratorPartyProtocol : IPartyProtocol
     {
-        public PartyState CurrentState { get; }
-        
         public void Initialize()
         {
             throw new System.NotImplementedException();

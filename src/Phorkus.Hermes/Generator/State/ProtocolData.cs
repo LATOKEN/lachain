@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Config;
 using Phorkus.Proto;
 
-namespace Phorkus.Hermes.State
+namespace Phorkus.Hermes.Generator.State
 {
     public class ProtocolData : AbstractData<ProtocolData>
     {

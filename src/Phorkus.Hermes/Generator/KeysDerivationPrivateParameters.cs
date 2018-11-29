@@ -1,6 +1,6 @@
 ﻿using Phorkus.Hermes.Math;
 
-namespace Phorkus.Hermes.Config
+namespace Phorkus.Hermes.Generator
 {
     public class KeysDerivationPrivateParameters
     {

@@ -1,6 +1,5 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Config;
 using Phorkus.Hermes.Math;
 
 namespace Phorkus.Hermes.Generator

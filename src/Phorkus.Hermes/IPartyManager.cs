@@ -2,6 +2,6 @@
 {
     public interface IPartyManager
     {
-        IPartyBuilder CreateParty(uint parties, uint threshold, ulong keyLength);
+        IPartyProtocol CreateParty(uint parties, uint threshold, ulong keyLength);
     }
 }

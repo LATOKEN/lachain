@@ -1,6 +1,6 @@
 ﻿using Org.BouncyCastle.Math;
 
-namespace Phorkus.Hermes.Config
+namespace Phorkus.Hermes.Generator
 {
     public class GenesisPrivateParams
     {

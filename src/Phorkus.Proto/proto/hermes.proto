@@ -2,7 +2,7 @@ syntax = "proto3";
 option csharp_namespace = "Phorkus.Proto";
 
 /*
-    Flow:
+    Private Key Generation Flow:
     1. Generating protocol params using generator
     2. BGW
     2.1 Generating private and public params
@@ -25,9 +25,12 @@ option csharp_namespace = "Phorkus.Proto";
     4.7 Calculate verification key from received THETA's and broadcast to other participants
     4.8 Collect verification keys from other participants
     4.9 Calculate paillier private threshold key (PROFIT)
+    
+    Signature Flow:
+    
 */
 
-enum PartyState {
+enum GeneratorState {
     STATE_INITIALIZATION = 0;
     STATE_GENERATING_SHARE = 1;
     STATE_COLLECTING_SHARE = 2;
@@ -55,42 +58,6 @@ enum PartyState {
 //    bytes hi = 7; // the polynomial used to share Ni
 //}
 
-message BgwPublicParams {
-    int32 i = 1; // the id of the party
-    int32 n = 2; // the number of parties
-    int32 j = 3; // the id of the party for which these shares were generated
-    bytes pij = 4; // the share pij = f(j) of party i's pi generated for party j
-    bytes qij = 5; // the share qij = g(j) of party i's qi generated for party j
-    bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
-}
-
-message Complaint {
-    uint32 id = 1; // the id of the party that produced the invalid share
-}
-message BgwnPoint {
-    bytes point = 1; // a share of N
-}
-message ThetaPoint {
-    bytes thetai = 1; // a share of Theta
-}
-message VerificationKey {
-    bytes verification_key = 1; // a verification key
-}
-message QiTestForRound {
-    bytes qi = 1; // a Qi in the Biprimality test
-    uint32 round = 2; // the current round number in the Biprimality test
-}
-
-message BgwProtocolMessage {
-    oneof message {
-        Complaint complaint = 1;
-        BgwnPoint bgwn_point = 2;
-        ThetaPoint theta_point = 3;
-        VerificationKey verification_key = 4;
-        QiTestForRound qi_test_for_round = 5;
-    }
-}
-
 //message CandidateN {
 //    bytes n = 1; //  the candidate to RSA modulus   
 //    BgwPrivateParams bgw_private_params = 2; // the BGW private parameters associated with the candidate to RSA modulus
@@ -117,11 +84,49 @@ message BgwProtocolMessage {
 //    PolynomialMod zero_sharing = 5;
 //}
 
-message KeysDerivationPublicParams {
-    int32 i = 1; // the id of the party
-    int32 j = 2; // the id of the party for which these shares were generated
-    bytes betaij = 3;
-    bytes drij = 4;
-    bytes phiij = 5;
-    bytes hij = 6;
-}
+// -------------------------------------------------------------------------------------------------------
+
+//message BgwPublicParams {
+//    int32 i = 1; // the id of the party
+//    int32 n = 2; // the number of parties
+//    int32 j = 3; // the id of the party for which these shares were generated
+//    bytes pij = 4; // the share pij = f(j) of party i's pi generated for party j
+//    bytes qij = 5; // the share qij = g(j) of party i's qi generated for party j
+//    bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
+//}
+//
+//message Complaint {
+//    uint32 id = 1; // the id of the party that produced the invalid share
+//}
+//message BgwnPoint {
+//    bytes point = 1; // a share of N
+//}
+//message ThetaPoint {
+//    bytes thetai = 1; // a share of Theta
+//}
+//message VerificationKey {
+//    bytes verification_key = 1; // a verification key
+//}
+//message QiTestForRound {
+//    bytes qi = 1; // a Qi in the Biprimality test
+//    uint32 round = 2; // the current round number in the Biprimality test
+//}
+//
+//message GeneratorMessage {
+//    oneof message {
+//        Complaint complaint = 1;
+//        BgwnPoint bgwn_point = 2;
+//        ThetaPoint theta_point = 3;
+//        VerificationKey verification_key = 4;
+//        QiTestForRound qi_test_for_round = 5;
+//    }
+//}
+//
+//message KeysDerivationPublicParams {
+//    int32 i = 1; // the id of the party
+//    int32 j = 2; // the id of the party for which these shares were generated
+//    bytes betaij = 3;
+//    bytes drij = 4;
+//    bytes phiij = 5;
+//    bytes hij = 6;
+//}

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Proto;
 
-namespace Phorkus.Hermes.State
+namespace Phorkus.Hermes.Generator.State
 {
     public abstract class AbstractData<T>
     {
