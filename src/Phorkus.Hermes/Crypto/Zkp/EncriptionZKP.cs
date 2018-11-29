@@ -1,8 +1,8 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Pailler.Key;
+using Phorkus.Hermes.Crypto.Key;
 
-namespace Phorkus.Hermes.Pailler.Zkp
+namespace Phorkus.Hermes.Crypto.Zkp
 {
 public class EncryptionZKP : ZKP {
     private static long serialVersionUID = 6683900023178557008L;

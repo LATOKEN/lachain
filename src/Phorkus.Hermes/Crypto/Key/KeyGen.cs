@@ -3,7 +3,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Console = System.Console;
 
-namespace Phorkus.Hermes.Pailler.Key
+namespace Phorkus.Hermes.Crypto.Key
 {
 	/**
 	 * Generates key pairs for the Paillier encryption scheme.  This set of static

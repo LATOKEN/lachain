@@ -1,7 +1,7 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
 
-namespace Phorkus.Hermes.Pailler.Key
+namespace Phorkus.Hermes.Crypto.Key
 {
 
 /** 

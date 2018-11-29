@@ -1,7 +1,7 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
 
-namespace Phorkus.Hermes.Pailler
+namespace Phorkus.Hermes.Crypto
 {
 /**
  * A set of static utilities for manipulating Bytes.  The methods used in this

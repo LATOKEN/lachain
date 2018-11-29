@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using Org.BouncyCastle.Math;
 
-namespace Phorkus.Hermes.Pailler.Key
+namespace Phorkus.Hermes.Crypto.Key
 {
 /**
  * A private key for the threshold Paillier scheme <i>CS</i><sub>1</sub>.  This

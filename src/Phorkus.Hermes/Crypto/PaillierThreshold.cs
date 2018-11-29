@@ -1,9 +1,9 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Pailler.Key;
-using Phorkus.Hermes.Pailler.Zkp;
+using Phorkus.Hermes.Crypto.Key;
+using Phorkus.Hermes.Crypto.Zkp;
 
-namespace Phorkus.Hermes.Pailler
+namespace Phorkus.Hermes.Crypto
 {
 /**
  * A simple implementation of the threshold Paillier encryption scheme

@@ -1,8 +1,8 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Pailler.Key;
+using Phorkus.Hermes.Crypto.Key;
 
-namespace Phorkus.Hermes.Pailler
+namespace Phorkus.Hermes.Crypto
 {
 	/**
 	 * A simple implementation of the generalized Paillier encryption scheme

@@ -3,7 +3,7 @@ using System.IO;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 
-namespace Phorkus.Hermes.Pailler.Key
+namespace Phorkus.Hermes.Crypto.Key
 {
 /** 
  * A simple public key for the generalized Paillier cryptosystem

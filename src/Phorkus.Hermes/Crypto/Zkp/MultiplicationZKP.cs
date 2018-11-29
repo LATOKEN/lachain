@@ -1,8 +1,8 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Pailler.Key;
+using Phorkus.Hermes.Crypto.Key;
 
-namespace Phorkus.Hermes.Pailler.Zkp
+namespace Phorkus.Hermes.Crypto.Zkp
 {
 	/**
 	 * A non-interactive Zero Knowledge Proof that the multiplication of a

@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using Org.BouncyCastle.Math;
 
-namespace Phorkus.Hermes.Pailler.Zkp
+namespace Phorkus.Hermes.Crypto.Zkp
 {
     public abstract class ZKP
     {

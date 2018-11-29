@@ -24,55 +24,14 @@ namespace Phorkus.Proto {
     static HermesReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxoZXJtZXMucHJvdG8qxgMKDkdlbmVyYXRvclN0YXRlEhgKFFNUQVRFX0lO",
-            "SVRJQUxJWkFUSU9OEAASGgoWU1RBVEVfR0VORVJBVElOR19TSEFSRRABEhoK",
-            "FlNUQVRFX0NPTExFQ1RJTkdfU0hBUkUQAhIaChZTVEFURV9HRU5FUkFUSU5H",
-            "X1BPSU5UEAMSGgoWU1RBVEVfQ09MTEVDVElOR19QT0lOVBAEEhoKFlNUQVRF",
-            "X0dFTkVSQVRJTkdfUFJPT0YQBRIaChZTVEFURV9DT0xMRUNUSU5HX1BST09G",
-            "EAYSGgoWU1RBVEVfVkFMSURBVElOR19QUk9PRhAHEh8KG1NUQVRFX0dFTkVS",
-            "QVRJTkdfREVSSVZBVElPThAIEh8KG1NUQVRFX0NPTExFQ1RJTkdfREVSSVZB",
-            "VElPThAJEhoKFlNUQVRFX0dFTkVSQVRJTkdfVEhFVEEQChIaChZTVEFURV9D",
-            "T0xMRUNUSU5HX1RIRVRBEAsSIQodU1RBVEVfR0VORVJBVElOR19WRVJJRklD",
-            "QVRJT04QDBIhCh1TVEFURV9DT0xMRUNUSU5HX1ZFUklGSUNBVElPThANEhYK",
-            "ElNUQVRFX0ZJTkFMSVpBVElPThBjQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90",
-            "bzM="));
+            "CgxoZXJtZXMucHJvdG9CEKoCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.GeneratorState), }, null));
+          new pbr::GeneratedClrTypeInfo(null, null));
     }
     #endregion
 
   }
-  #region Enums
-  public enum GeneratorState {
-    [pbr::OriginalName("STATE_INITIALIZATION")] StateInitialization = 0,
-    [pbr::OriginalName("STATE_GENERATING_SHARE")] StateGeneratingShare = 1,
-    [pbr::OriginalName("STATE_COLLECTING_SHARE")] StateCollectingShare = 2,
-    [pbr::OriginalName("STATE_GENERATING_POINT")] StateGeneratingPoint = 3,
-    [pbr::OriginalName("STATE_COLLECTING_POINT")] StateCollectingPoint = 4,
-    /// <summary>
-    /// &lt;---+
-    /// </summary>
-    [pbr::OriginalName("STATE_GENERATING_PROOF")] StateGeneratingProof = 5,
-    /// <summary>
-    ///     | (repeat several times)
-    /// </summary>
-    [pbr::OriginalName("STATE_COLLECTING_PROOF")] StateCollectingProof = 6,
-    /// <summary>
-    /// ----+
-    /// </summary>
-    [pbr::OriginalName("STATE_VALIDATING_PROOF")] StateValidatingProof = 7,
-    [pbr::OriginalName("STATE_GENERATING_DERIVATION")] StateGeneratingDerivation = 8,
-    [pbr::OriginalName("STATE_COLLECTING_DERIVATION")] StateCollectingDerivation = 9,
-    [pbr::OriginalName("STATE_GENERATING_THETA")] StateGeneratingTheta = 10,
-    [pbr::OriginalName("STATE_COLLECTING_THETA")] StateCollectingTheta = 11,
-    [pbr::OriginalName("STATE_GENERATING_VERIFICATION")] StateGeneratingVerification = 12,
-    [pbr::OriginalName("STATE_COLLECTING_VERIFICATION")] StateCollectingVerification = 13,
-    [pbr::OriginalName("STATE_FINALIZATION")] StateFinalization = 99,
-  }
-
-  #endregion
-
 }
 
 #endregion Designer generated code

@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
-using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator
 {
-    public class GeneratorPartyProtocol : IPartyProtocol
+    public class DefaultGeneratorProtocol : IGeneratorProtocol
     {
+        public GeneratorState CurrentState { get; }
+
         public void Initialize()
         {
             throw new System.NotImplementedException();

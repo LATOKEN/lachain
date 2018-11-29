@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
-using Phorkus.Proto;
+using Phorkus.Hermes.Generator;
 
 namespace Phorkus.Hermes
 {
-    public interface IPartyProtocol
+    public interface IGeneratorProtocol
     {
+        GeneratorState CurrentState { get; }
+
         void Initialize();
 
         BgwPublicParams GenerateShare();

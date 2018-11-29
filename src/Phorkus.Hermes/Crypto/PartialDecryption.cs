@@ -1,8 +1,8 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Pailler.Key;
+using Phorkus.Hermes.Crypto.Key;
 
-namespace Phorkus.Hermes.Pailler
+namespace Phorkus.Hermes.Crypto
 {
 /**
  * A partial decryption in the Threshold Paillier encryption scheme with
