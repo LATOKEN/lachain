@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Hermes.Generator;
-using Phorkus.Hermes.Generator.Network;
+using Phorkus.Hermes.Generator.Messages;
 using Phorkus.Hermes.Generator.State;
 
 namespace Phorkus.Hermes
@@ -15,9 +15,9 @@ namespace Phorkus.Hermes
 
         void CollectShare(IReadOnlyCollection<BgwPublicParams> shares);
 
-        Messages.BGWNPoint GeneratePoint();
+        BGWNPoint GeneratePoint();
 
-        void CollectPoint(IReadOnlyCollection<Messages.BGWNPoint> points);
+        void CollectPoint(IReadOnlyCollection<BGWNPoint> points);
         
         // other states here
         
