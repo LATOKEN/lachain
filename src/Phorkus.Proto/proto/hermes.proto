@@ -27,7 +27,7 @@ option csharp_namespace = "Phorkus.Proto";
     4.9 Calculate paillier private threshold key (PROFIT)
 */
 
-enum State {
+enum PartyState {
     STATE_INITIALIZATION = 0;
     STATE_GENERATING_SHARE = 1;
     STATE_COLLECTING_SHARE = 2;
@@ -45,20 +45,20 @@ enum State {
     STATE_FINALIZATION = 99;
 }
 
-message BgwPrivateParams {
-    uint32 i = 1; // the id of the party
-    uint32 n = 2; // the number of parties
-    bytes pi = 3; // the contribution of party Pi to p
-    bytes qi = 4; // the contribution of party Pi to q
-    bytes fi = 5; // the polynomial used to share pi
-    bytes gi = 6; // the polynomial used to share qi
-    bytes hi = 7; // the polynomial used to share Ni
-}
+//message BgwPrivateParams {
+//    int32 i = 1; // the id of the party
+//    int32 n = 2; // the number of parties
+//    bytes pi = 3; // the contribution of party Pi to p
+//    bytes qi = 4; // the contribution of party Pi to q
+//    bytes fi = 5; // the polynomial used to share pi
+//    bytes gi = 6; // the polynomial used to share qi
+//    bytes hi = 7; // the polynomial used to share Ni
+//}
 
 message BgwPublicParams {
-    uint32 i = 1; // the id of the party
-    uint32 n = 2; // the number of parties
-    uint32 j = 3; // the id of the party for which these shares were generated
+    int32 i = 1; // the id of the party
+    int32 n = 2; // the number of parties
+    int32 j = 3; // the id of the party for which these shares were generated
     bytes pij = 4; // the share pij = f(j) of party i's pi generated for party j
     bytes qij = 5; // the share qij = g(j) of party i's qi generated for party j
     bytes hij = 6; // the share hij = h(j) of party i's zero generated for party j
@@ -90,35 +90,35 @@ message BgwProtocolMessage {
     }
 }
 
-message CandidateN {
-    bytes n = 1; //  the candidate to RSA modulus   
-    BgwPrivateParams bgw_private_params = 2; // the BGW private parameters associated with the candidate to RSA modulus
-}
+//message CandidateN {
+//    bytes n = 1; //  the candidate to RSA modulus   
+//    BgwPrivateParams bgw_private_params = 2; // the BGW private parameters associated with the candidate to RSA modulus
+//}
+//
+//message BiprimalityTestResult {
+//    bytes n = 1; // the candidate to RSA modulus		
+//    BgwPrivateParams bgw_private_params = 2; // the BGW private parameters associated with N    
+//    bool passes = 3; // the result of the Biprimality test. True if succeed, false if not
+//}
 
-message BiprimalityTestResult {
-    bytes n = 1; // the candidate to RSA modulus		
-    BgwPrivateParams bgw_private_params = 2; // the BGW private parameters associated with N    
-    bool passes = 3; // the result of the Biprimality test. True if succeed, false if not
-}
-
-message KeysDerivationPrivateParams {
-    uint32 i = 1; // the id of the party
-    message Polynomial {
-        repeated bytes a = 1;
-    }
-    Polynomial dri_sharing = 2;
-    message PolynomialMod {
-        repeated bytes a = 1;
-        bytes mod = 2;
-    }
-    PolynomialMod betai_sharing = 3;
-    PolynomialMod phi_sharing = 4;
-    PolynomialMod zero_sharing = 5;
-}
+//message KeysDerivationPrivateParams {
+//    int32 i = 1; // the id of the party
+//    message Polynomial {
+//        repeated bytes a = 1;
+//    }
+//    Polynomial dri_sharing = 2;
+//    message PolynomialMod {
+//        repeated bytes a = 1;
+//        bytes mod = 2;
+//    }
+//    PolynomialMod betai_sharing = 3;
+//    PolynomialMod phi_sharing = 4;
+//    PolynomialMod zero_sharing = 5;
+//}
 
 message KeysDerivationPublicParams {
-    uint32 i = 1; // the id of the party
-    uint32 j = 2; // the id of the party for which these shares were generated
+    int32 i = 1; // the id of the party
+    int32 j = 2; // the id of the party for which these shares were generated
     bytes betaij = 3;
     bytes drij = 4;
     bytes phiij = 5;

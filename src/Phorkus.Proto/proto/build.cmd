@@ -10,10 +10,10 @@ protoc --csharp_out .. consensus.proto
 protoc --csharp_out .. contract.proto
 protoc --csharp_out .. default.proto
 protoc --csharp_out .. global.proto
+protoc --csharp_out .. hermes.proto
 protoc --csharp_out .. message.proto
 protoc --csharp_out .. multisig.proto
 protoc --csharp_out .. node.proto
-protoc --csharp_out .. paillier.proto
 protoc --csharp_out .. transaction.proto
 
 cd ..
