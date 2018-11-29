@@ -5,4 +5,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Phorkus.RocksDB\Phorkus.RocksDB.csproj" />
+  </ItemGroup>
 </Project>
