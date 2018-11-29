@@ -17,5 +17,8 @@
         TransactionStateByHash = 0x0403,
         
         BalanceByOwnerAndAsset = 0x0501,
+        
+        StorageVersionIndex = 0x0601,
+        PersistentTreeMap = 0x0602,
     }
 }
