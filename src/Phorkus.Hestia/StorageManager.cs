@@ -15,11 +15,10 @@ namespace Phorkus.Hestia
             var dbContext = rocksDbContext;
             var versionIndexer = new VersionIndexer(dbContext);
             var versionFactory = new VersionFactory(versionIndexer.GetVersion(0));
-            var storageContext = new PersistentMapStorageContext(dbContext);
             foreach (var repository in repositories)
             {
                 _repositoryManagers[repository] = new RepositoryManager(
-                    repository, storageContext, versionFactory, versionIndexer
+                    repository, dbContext, versionFactory, versionIndexer
                 );
             }
         }

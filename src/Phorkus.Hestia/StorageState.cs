@@ -1,11 +1,9 @@
-﻿using Phorkus.Hestia.PersistentMap;
-
-namespace Phorkus.Hestia
+﻿namespace Phorkus.Hestia
 {
     class StorageState : IStorageState
     {
         private readonly RepositoryManager _repositoryManager;
-        private readonly PersistentMapManager _mapManager;
+        private readonly IMapManager _mapManager;
         private readonly ulong _initialVersion;
 
         // This constructor is internal and only used in RepositoryManager
@@ -24,7 +22,7 @@ namespace Phorkus.Hestia
         {
             return _mapManager.Find(CurrentVersion, key);
         }
-        
+
         public ulong Add(byte[] key, byte[] value)
         {
             CurrentVersion = _mapManager.Add(CurrentVersion, key, value);

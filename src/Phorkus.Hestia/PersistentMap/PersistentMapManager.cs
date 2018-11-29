@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Phorkus.Hestia.PersistentMap
 {
-    public class PersistentMapManager
+    public class PersistentMapManager : IMapManager
     {
         private readonly PersistentMapStorageContext _storageContext;
         private readonly Random _random;
@@ -47,7 +46,7 @@ namespace Phorkus.Hestia.PersistentMap
             //ClearCaches();
         }
 
-        public uint EnsurePersisted(ulong root)
+        private uint EnsurePersisted(ulong root)
         {
             if (!_nodeCache.TryGetValue(root, out var node)) return 0;
             if (_persistedNodes.Contains(root)) return 0;
@@ -77,7 +76,7 @@ namespace Phorkus.Hestia.PersistentMap
             return first.Length - second.Length;
         }
 
-        public ulong Merge(ulong left, ulong right)
+        private ulong Merge(ulong left, ulong right)
         {
             if (left == 0) return right;
             if (right == 0) return left;
@@ -98,7 +97,7 @@ namespace Phorkus.Hestia.PersistentMap
             }
         }
 
-        public void Split(ulong root, byte[] key, out ulong left, out ulong right)
+        private void Split(ulong root, byte[] key, out ulong left, out ulong right)
         {
             if (root == 0)
             {
