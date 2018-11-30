@@ -8,6 +8,7 @@ namespace Phorkus.Hermes.Signer
 {
     public class Zkpi2
     {
+        private CurveParams curveParams;
         private ECPoint u1;
         private BigInteger u2;
         private BigInteger u3;
@@ -45,7 +46,7 @@ namespace Phorkus.Hermes.Signer
         public void deserialize(String s)
         {
             String[] arr = s.Split(',');
-            u1 = BitcoinParams.Instance.CURVE.Curve.DecodePoint(HexUtil.hexToBytes(arr[0]));
+            u1 = curveParams.Curve.Curve.DecodePoint(HexUtil.hexToBytes(arr[0]));
             u2 = new BigInteger(arr[1]);
             u3 = new BigInteger(arr[2]);
             z1 = new BigInteger(arr[3]);
@@ -60,16 +61,19 @@ namespace Phorkus.Hermes.Signer
             v3 = new BigInteger(arr[12]);
         }
 
-        public Zkpi2()
+        public Zkpi2(CurveParams curveParams)
         {
+            this.curveParams = curveParams;
         }
 
-        public Zkpi2(PublicParameters parameters, BigInteger eta1, BigInteger eta2,
-            JavaRandom rand, ECPoint c, BigInteger w, BigInteger u,
+        public Zkpi2(CurveParams curveParams, PublicParameters parameters, BigInteger eta1, BigInteger eta2,
+            LinearRandom rand, ECPoint c, BigInteger w, BigInteger u,
             BigInteger randomness)
         {
+            this.curveParams = curveParams;
+            
             BigInteger N = parameters.paillierPubKey.getN();
-            BigInteger q = BitcoinParams.Instance.q;
+            BigInteger q = curveParams.Q;
             BigInteger nSquared = N.Multiply(N);
             BigInteger nTilde = parameters.nTilde;
             BigInteger h1 = parameters.h1;
@@ -131,7 +135,7 @@ namespace Phorkus.Hermes.Signer
             BigInteger nTilde = parameters.nTilde;
             BigInteger nSquared = N.Multiply(N);
             BigInteger g = N.Add(BigInteger.One);
-            BigInteger q = BitcoinParams.Instance.q;
+            BigInteger q = curveParams.Q;
             
             if (!u1.Equals(c.Multiply(s1).Add(r.Multiply(e.Negate()))))
             {

@@ -1,4 +1,7 @@
-﻿namespace Phorkus.Hermes
+﻿using System.Collections.Generic;
+using Phorkus.Hermes.Signer;
+
+namespace Phorkus.Hermes
 {
     public class PartyManager : IPartyManager
     {
@@ -7,9 +10,9 @@
             throw new System.NotImplementedException();
         }
         
-        public ISignerProtocol CreateSignerProtocol()
+        public ISignerProtocol CreateSignerProtocol(byte[] share, IEnumerable<byte> privateKey, byte[] publicKey, string curveType)
         {
-            throw new System.NotImplementedException();
+            return new DefaultSignerProtocol(share, privateKey, publicKey, curveType);
         }
     }
 }

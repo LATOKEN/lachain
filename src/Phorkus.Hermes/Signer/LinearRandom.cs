@@ -2,9 +2,9 @@
 
 namespace Phorkus.Hermes.Signer
 {
-    public class JavaRandom : System.Random
+    public class LinearRandom : Random
     {
-        public JavaRandom(ulong seed)
+        public LinearRandom(ulong seed)
         {
             this.seed = (seed ^ 0x5DEECE66DUL) & ((1UL << 48) - 1);
         }

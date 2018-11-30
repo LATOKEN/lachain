@@ -15,7 +15,7 @@ namespace Phorkus.Hermes.Signer
 {
     public static class Util
     {
-        public static BigInteger randomFromZn(BigInteger n, JavaRandom rand)
+        public static BigInteger randomFromZn(BigInteger n, LinearRandom rand)
         {
             BigInteger result;
             do
@@ -55,7 +55,7 @@ namespace Phorkus.Hermes.Signer
          *
          * @param n the modulus
          */
-        public static BigInteger randomFromZnStar(BigInteger n, JavaRandom rand)
+        public static BigInteger randomFromZnStar(BigInteger n, LinearRandom rand)
         {
             BigInteger result;
             do
@@ -107,14 +107,9 @@ namespace Phorkus.Hermes.Signer
             return output;
         }
 
-        public static PublicParameters generateParamsforBitcoin(int k, int kPrime,
-            JavaRandom rand, PaillierKey paillierPubKey)
+        public static PublicParameters generateParamsforBitcoin(CurveParams curveParams, int k, int kPrime,
+            LinearRandom rand, PaillierKey paillierPubKey)
         {
-            /* TODO: "duplicate BitcoinParams" */
-            X9ECParameters par = SecNamedCurves.GetByName("secp256k1");
-            ECDomainParameters CURVE = new ECDomainParameters(par.Curve,
-                par.G, par.N, par.H);
-
             int primeCertainty = k;
             BigInteger p;
             BigInteger q;
@@ -148,7 +143,7 @@ namespace Phorkus.Hermes.Signer
             BigInteger x = randomFromZn(pPrimeqPrime, rand);
             BigInteger h1 = h2.ModPow(x, nHat);
 
-            return new PublicParameters(CURVE, nHat, h1, h2, paillierPubKey);
+            return new PublicParameters(curveParams.Curve, nHat, h1, h2, paillierPubKey);
         }
     }
 }

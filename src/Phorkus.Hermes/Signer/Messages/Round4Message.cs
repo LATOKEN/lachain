@@ -33,7 +33,7 @@ namespace Phorkus.Hermes.Signer.Messages
                 new BigInteger(values[0]),
                 new BigInteger(values[1])
             };
-            zkp2 = new Zkpi2();
+            zkp2 = new Zkpi2(null);
             zkp2.deserialize(arr[1]);
         }
     }

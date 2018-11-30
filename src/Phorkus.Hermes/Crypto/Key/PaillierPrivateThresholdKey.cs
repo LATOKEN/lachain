@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Signer;
 
 namespace Phorkus.Hermes.Crypto.Key
 {
@@ -197,7 +196,7 @@ namespace Phorkus.Hermes.Crypto.Key
             this.si = si;
             this.id = i;
         }
-
+        
         public PaillierPrivateThresholdKey(byte[] b, int seed, bool old)
             : base(ByteUtils.getLowerLayer(b), seed, old)
         {

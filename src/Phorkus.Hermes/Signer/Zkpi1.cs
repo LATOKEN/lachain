@@ -14,12 +14,12 @@ namespace Phorkus.Hermes.Signer
         private BigInteger s3;
         private BigInteger e;
         private BigInteger v;
-
-        public Zkpi1(PublicParameters parameters, BigInteger eta, JavaRandom rand,
+        
+        public Zkpi1(CurveParams curveParams, PublicParameters parameters, BigInteger eta, LinearRandom rand,
             BigInteger r, BigInteger c1, BigInteger c2, BigInteger c3)
         {
             BigInteger N = parameters.paillierPubKey.getN();
-            BigInteger q = BitcoinParams.Instance.q;
+            BigInteger q = curveParams.Q;
             BigInteger nSquared = N.Multiply(N);
             BigInteger nTilde = parameters.nTilde;
             BigInteger h1 = parameters.h1;
