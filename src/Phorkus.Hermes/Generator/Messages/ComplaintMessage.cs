@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Hermes.Generator.Messages
+﻿using System.IO;
+
+namespace Phorkus.Hermes.Generator.Messages
 {
     public class ComplaintMessage
     {
@@ -8,6 +10,25 @@
         public ComplaintMessage(int id)
         {
             this.id = id;
+        }
+        
+        public ComplaintMessage(byte[] buffer)
+        {
+            using (var stream = new MemoryStream(buffer))
+            using (var reader = new BinaryReader(stream))
+            {
+                id = reader.ReadInt32();
+            }
+        }
+        
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(id);
+                return stream.ToArray();
+            }
         }
     }
 }
