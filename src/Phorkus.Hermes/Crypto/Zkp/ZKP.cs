@@ -20,7 +20,7 @@ namespace Phorkus.Hermes.Crypto.Zkp
             HashFunction = HashAlgorithm.Create(hashFunctionName);
         }
 
-        protected BigInteger hash(params object[] byteArrays)
+        protected BigInteger hash(params byte[][] byteArrays)
         {
             if (byteArrays.Length == 0)
             {
@@ -30,8 +30,8 @@ namespace Phorkus.Hermes.Crypto.Zkp
             using (var stream = new MemoryStream())
             {
                 foreach (var bytes in byteArrays)
-                    stream.Write((byte[]) bytes, 0, ((byte[]) bytes).Length);
-                stream.Write((byte[]) byteArrays[byteArrays.Length - 1], 0, ((byte[]) byteArrays[byteArrays.Length - 1]).Length);
+                    stream.Write(bytes, 0, bytes.Length);
+                stream.Write(byteArrays[byteArrays.Length - 1], 0, byteArrays[byteArrays.Length - 1].Length);
                 var hash = HashFunction.ComputeHash(stream.ToArray());
                 /* TODO: "be careful with biginteger's sign here" */
                 return new BigInteger(hash);

@@ -71,7 +71,7 @@ public class PaillierPrivateKey : PaillierKey {
 	 * @param seed		a long integer needed to start a random
 	 * 					number generator
 	 */
-	public PaillierPrivateKey(BigInteger n, BigInteger d, long seed)
+	public PaillierPrivateKey(BigInteger n, BigInteger d, int seed)
 	:base(n, seed)
 	{
 		//checks to see that d mod n is relatively prime to n
@@ -96,7 +96,7 @@ public class PaillierPrivateKey : PaillierKey {
 	 * @param seed		a long integer needed to start a random
 	 * 					number generator
 	 */
-	public PaillierPrivateKey(BigInteger p, BigInteger q, BigInteger d, long seed)
+	public PaillierPrivateKey(BigInteger p, BigInteger q, BigInteger d, int seed)
 	:base(p,q,seed){
 		
 		
@@ -131,7 +131,7 @@ public class PaillierPrivateKey : PaillierKey {
 	 * 
 	 * @see #toByteArray()
 	 */
-	public PaillierPrivateKey(byte[] b, long seed) 
+	public PaillierPrivateKey(byte[] b, int seed) 
 	: base(ByteUtils.getLowerLayer(b), seed)
 	{
 		int offset = ByteUtils.getInt(b, b.Length-4); // start of this layer's data

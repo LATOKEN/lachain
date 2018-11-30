@@ -89,7 +89,7 @@ namespace Phorkus.Hermes.Crypto.Key
 		 * @param seed  Specifies the seed for the random number generator used.  
 		 * @return      Private key for the generalized Paillier cryptosystem
 		 */
-		public static PaillierPrivateKey PaillierKey(int s, long seed) {
+		public static PaillierPrivateKey PaillierKey(int s, int seed) {
 		/* TODO Should this method be incorporated into PaillierKey as another
 		 * constructor? */
 			if (s<=0) {
@@ -285,7 +285,7 @@ namespace Phorkus.Hermes.Crypto.Key
 			PaillierPrivateThresholdKey[] res = new PaillierPrivateThresholdKey[l];
 			for(int i = 0; i < l; i++) {
 				res[i] = new PaillierPrivateThresholdKey(n, l, combineSharesConstant, w, v, 
-						viarray, shares[i], i+1, rnd.NextLong());
+						viarray, shares[i], i+1, rnd.NextInt());
 			}
 	
 			/*System.out.print("The polynomial f(X)=");
@@ -380,7 +380,7 @@ namespace Phorkus.Hermes.Crypto.Key
 			PaillierPrivateThresholdKey[] res = new PaillierPrivateThresholdKey[l];
 			for(int i = 0; i < l; i++) {
 				res[i] = new PaillierPrivateThresholdKey(n, l, combineSharesConstant, w, v, 
-						viarray, shares[i], i+1, rnd.NextLong());
+						viarray, shares[i], i+1, rnd.NextInt());
 			}
 			
 			Console.WriteLine("The polynomial f(X)=");

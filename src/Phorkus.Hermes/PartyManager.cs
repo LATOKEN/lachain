@@ -2,7 +2,12 @@
 {
     public class PartyManager : IPartyManager
     {
-        public IGeneratorProtocol CreateParty(uint parties, uint threshold, ulong keyLength)
+        public IGeneratorProtocol CreateGeneratorProtocol(uint parties, uint threshold, ulong keyLength)
+        {
+            throw new System.NotImplementedException();
+        }
+        
+        public ISignerProtocol CreateSignerProtocol()
         {
             throw new System.NotImplementedException();
         }
