@@ -1,5 +1,7 @@
 ﻿using System;
+using Phorkus.Hestia.PersistentHashTrie;
 using Phorkus.Hestia.PersistentMap;
+using Phorkus.RocksDB;
 
 namespace Phorkus.Hestia
 {
@@ -8,19 +10,20 @@ namespace Phorkus.Hestia
         private readonly uint _repositoryId;
         private readonly VersionFactory _versionFactory;
         private readonly VersionIndexer _versionIndexer;
-        public readonly PersistentMapManager MapManager;
+        public readonly IMapManager MapManager;
         public ulong LatestVersion { get; private set; }
         public bool TransactionInProgress { get; private set; }
 
         public RepositoryManager(
-            uint repositoryId, PersistentMapStorageContext storageContext,
+            uint repositoryId, IRocksDbContext dbContext,
             VersionFactory versionFactory, VersionIndexer versionIndexer
         )
         {
             _repositoryId = repositoryId;
             _versionFactory = versionFactory;
             _versionIndexer = versionIndexer;
-            MapManager = new PersistentMapManager(storageContext, versionFactory);
+            var storageContext = new PersistentHashTrieStorageContext(dbContext);
+            MapManager = new PersistentHashTrieManager(storageContext, versionFactory);
             LatestVersion = _versionIndexer.GetVersion(_repositoryId);
             TransactionInProgress = false;
         }
