@@ -7,7 +7,7 @@ namespace Phorkus.Hestia.PersistentHashTrie
 {
     public class LeafNode : IHashTrieNode
     {
-        private List<KeyValuePair<byte[], byte[]>> Pairs { get; }
+        public List<KeyValuePair<byte[], byte[]>> Pairs { get; }
 
         public LeafNode(byte[] key, byte[] value)
         {
@@ -25,6 +25,8 @@ namespace Phorkus.Hestia.PersistentHashTrie
         {
             return 0u;
         }
+
+        public IEnumerable<ulong> Children { get; } = Enumerable.Empty<ulong>();
 
         public static LeafNode Insert(LeafNode node, byte[] key, byte[] value, bool check = false)
         {
@@ -47,7 +49,7 @@ namespace Phorkus.Hestia.PersistentHashTrie
 
             if (!found)
             {
-                copy.Pairs.Append(new KeyValuePair<byte[], byte[]>(key, value));
+                copy.Pairs.Add(new KeyValuePair<byte[], byte[]>(key, value));
             }
 
             return copy;

@@ -55,7 +55,7 @@
 
         public ulong Commit()
         {
-            _mapManager.Checkoint(CurrentVersion);
+            _mapManager.Checkpoint(CurrentVersion);
             _repositoryManager.TerminateTransaction(CurrentVersion);
             return CurrentVersion;
         }

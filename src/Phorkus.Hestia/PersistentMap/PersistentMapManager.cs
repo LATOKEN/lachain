@@ -38,7 +38,7 @@ namespace Phorkus.Hestia.PersistentMap
             return newId;
         }
 
-        public void Checkoint(ulong root) // TODO: we can invalidate caches less aggressively
+        public void Checkpoint(ulong root) // TODO: we can invalidate caches less aggressively
         {
             uint x = EnsurePersisted(root);
             Console.WriteLine($"{x} nodes persisted");

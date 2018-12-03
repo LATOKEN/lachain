@@ -2,7 +2,7 @@
 {
     public interface IMapManager
     {
-        void Checkoint(ulong root);
+        void Checkpoint(ulong root);
         void ClearCaches();
         ulong Add(ulong root, byte[] key, byte[] value);
         ulong AddOrUpdate(ulong root, byte[] key, byte[] value);

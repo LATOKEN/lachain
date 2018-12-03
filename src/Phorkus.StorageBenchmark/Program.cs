@@ -30,12 +30,22 @@ namespace Phorkus.StorageBenchmark
             _container = containerBuilder.Build();
         }
 
+        private static uint _next = 48821;
+
+        private static uint Rand()
+        {
+            unchecked
+            {
+                _next = _next * 1103515245 + 12345;
+                return _next / 2;
+            }
+        }
+
         public void Start(string[] args)
         {
             var rocksDbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = new StorageManager(rocksDbContext, new uint[] {1});
-            
-            Random random = new Random();
+
             uint T = 100000, batches = 100;
             IDictionary<byte[], byte[]> blocks = new Dictionary<byte[], byte[]>();
 
@@ -47,10 +57,10 @@ namespace Phorkus.StorageBenchmark
                 var start = TimeUtils.CurrentTimeMillis();
                 for (var i = 0u; i < T; ++i)
                 {
-                    if (blocks.Count == 0 || random.Next() % 3 != 0)
+                    if (blocks.Count == 0 || Rand() % 3 != 0)
                     {
-                        var key = BitConverter.GetBytes(random.Next());
-                        var value = BitConverter.GetBytes(random.Next());
+                        var key = BitConverter.GetBytes(Rand());
+                        var value = BitConverter.GetBytes(Rand());
                         blocks[key] = value;
                         state.AddOrUpdate(key, value);
                     }
