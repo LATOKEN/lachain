@@ -1,6 +1,5 @@
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
-using Phorkus.Core.Logging;
 
 namespace Phorkus.Logger
 {

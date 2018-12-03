@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 
-namespace Phorkus.Core.Logging
+namespace Phorkus.Logger
 {
     public class LoggerAdapter<TCategory> : ILogger<TCategory>
     {

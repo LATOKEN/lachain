@@ -17,6 +17,13 @@ message PrivateKey {
     bytes buffer = 1;
 }
 
+message ThresholdKey {
+    PrivateKey private_key = 1;
+    repeated PublicKey validators = 2;
+    PublicKey public_key = 3;
+    PrivateKey private_share = 4;
+}
+
 message Signature {
     bytes buffer = 1;
 }

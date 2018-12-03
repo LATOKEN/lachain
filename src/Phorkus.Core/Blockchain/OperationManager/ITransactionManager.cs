@@ -14,7 +14,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         OperatingError Persist(SignedTransaction transaction);
 
-        OperatingError Execute(UInt256 txHash);
+        OperatingError Execute(Block block, UInt256 txHash);
         
         OperatingError Verify(Transaction transaction);
 

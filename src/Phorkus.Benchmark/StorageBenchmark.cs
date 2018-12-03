@@ -9,13 +9,13 @@ using Phorkus.Core.Utils;
 using Phorkus.Hestia;
 using Phorkus.RocksDB;
 
-namespace Phorkus.StorageBenchmark
+namespace Phorkus.Benchmark
 {
-    public class Application : IBootstrapper
+    public class StorageBenchmark : IBootstrapper
     {
         private readonly IContainer _container;
 
-        public Application()
+        public StorageBenchmark()
         {
             AppDomain.CurrentDomain.UnhandledException += (sender, exception) =>
             {
@@ -72,15 +72,6 @@ namespace Phorkus.StorageBenchmark
             
                 Console.WriteLine($"Commited {T} operations in {commit - inMemPhase}ms");
             }
-        }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            var app = new Application();
-            app.Start(args);
         }
     }
 }

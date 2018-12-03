@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
-using Phorkus.Core.Logging;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Logger;
 
 namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 {
@@ -17,6 +17,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private readonly ICrypto _crypto;
         private readonly IValidatorManager _validatorManager;
         private readonly IGenesisBuilder _genesisBuilder;
+        private readonly IMultisigVerifier _multisigVerifier;
         private readonly ILogger<IBlockManager> _logger;
 
         public BlockManager(
@@ -26,6 +27,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             ICrypto crypto,
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
+            IMultisigVerifier multisigVerifier,
             ILogger<IBlockManager> logger)
         {
             _globalRepository = globalRepository;
@@ -34,6 +36,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             _crypto = crypto;
             _validatorManager = validatorManager;
             _genesisBuilder = genesisBuilder;
+            _multisigVerifier = multisigVerifier;
             _logger = logger;
         }
 
@@ -80,7 +83,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
             foreach (var txHash in block.TransactionHashes)
             {
-                var result = _transactionManager.Execute(txHash);
+                var result = _transactionManager.Execute(block, txHash);
                 if (result == OperatingError.Ok)
                     continue;
                 /* TODO: "we need block synchronization on transaction lost for example" */
@@ -104,7 +107,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
                 .ToSignature();
         }
-        
+
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, PublicKey publicKey)
         {
             var result = _crypto.VerifySignature(blockHeader.ToHash256().Buffer.ToByteArray(),
@@ -114,41 +117,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
         public OperatingError VerifySignatures(Block block)
         {
-            var multisig = block.Multisig;
             if (!block.Header.ToHash256().Equals(block.Hash))
                 return OperatingError.HashMismatched;
-            var hash = block.Hash;
-            var verified = 0;
             if (_IsGenesisBlock(block))
                 return OperatingError.Ok;
-            if (multisig is null)
-                return OperatingError.InvalidMultisig;
-            if (multisig.Signatures.Select(sig => sig.Key).Distinct().Count() != multisig.Signatures.Count)
-                return OperatingError.InvalidMultisig;
-            if (multisig.Validators.Distinct().Count() != multisig.Validators.Count)
-                return OperatingError.InvalidMultisig;
-            foreach (var entry in multisig.Signatures)
-            {
-                if (!multisig.Validators.Contains(entry.Key))
-                    continue;
-                var publicKey = entry.Key.Buffer.ToByteArray();
-                var sig = entry.Value.Buffer.ToByteArray();
-                try
-                {
-                    if (!_crypto.VerifySignature(hash.Buffer.ToByteArray(), sig, publicKey))
-                        continue;
-                    ++verified;
-                }
-                catch (Exception)
-                {
-                    // ignore
-                }
-            }
-            /* TODO: "don't forget to enable this validation" */
-            /*if ((int) multisig.Quorum < (int) _validatorManager.Quorum)
-                return OperatingError.InvalidMultisig;*/
-            
-            return verified >= multisig.Quorum ? OperatingError.Ok : OperatingError.QuorumNotReached;
+            return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash);
         }
 
         public OperatingError Verify(Block block)

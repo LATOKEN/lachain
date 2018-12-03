@@ -1,4 +1,4 @@
-﻿namespace Phorkus.Core.Logging
+﻿namespace Phorkus.Logger
 {
     public class LoggerProvider<T> : ILoggerProvider<T>
     {

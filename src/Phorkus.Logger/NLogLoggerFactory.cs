@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
-using Phorkus.Core.Logging;
 
 namespace Phorkus.Logger
 {

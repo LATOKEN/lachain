@@ -22,12 +22,13 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             IBalanceRepository balanceRepository,
             IContractRepository contractRepository,
             ICrypto crypto,
-            ITransactionVerifier transactionVerifier)
+            ITransactionVerifier transactionVerifier,
+            IMultisigVerifier multisigVerifier)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionPersister>
             {
                 {TransactionType.Miner, new MinerTranscationPersister()},
-                {TransactionType.Register, new RegisterTransactionPersister(assetRepository)},
+                {TransactionType.Register, new RegisterTransactionPersister(multisigVerifier, assetRepository)},
                 {TransactionType.Issue, new IssueTransactionPersister(assetRepository, balanceRepository)},
                 {TransactionType.Contract, new ContractTransactionPersister(balanceRepository)},
                 {TransactionType.Publish, new PublishTransactionPersister(contractRepository)},
@@ -38,10 +39,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            
-            transactionVerifier.OnTransactionVerified += (sender, transaction) => _verifiedTransactions.TryAdd(transaction.Hash, transaction.Hash);
+
+            transactionVerifier.OnTransactionVerified += (sender, transaction) =>
+                _verifiedTransactions.TryAdd(transaction.Hash, transaction.Hash);
         }
-        
+
         private readonly ConcurrentDictionary<UInt256, UInt256> _verifiedTransactions
             = new ConcurrentDictionary<UInt256, UInt256>();
 
@@ -89,7 +91,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
 
-        public OperatingError Execute(UInt256 txHash)
+        public OperatingError Execute(Block block, UInt256 txHash)
         {
             var signed = _transactionRepository.GetTransactionByHash(txHash);
             if (signed is null)
@@ -101,7 +103,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var persister = _transactionPersisters[signed.Transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
-            var result = persister.Execute(signed.Transaction);
+            var result = persister.Execute(block, signed.Transaction);
             if (result != OperatingError.Ok)
             {
                 _transactionRepository.ChangeTransactionState(txHash,
@@ -133,7 +135,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 Signature = signature.ToSignature()
             };
             OnTransactionSigned?.Invoke(this, signed);
-
             return signed;
         }
 
@@ -145,7 +146,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                     : OperatingError.InvalidSignature;
             _verifiedTransactions.TryRemove(transaction.Hash, out _);
             return OperatingError.Ok;
-
         }
 
         public OperatingError VerifySignature(SignedTransaction transaction)

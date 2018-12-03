@@ -6,22 +6,34 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class RegisterTransactionPersister : ITransactionPersister
     {
+        private readonly IMultisigVerifier _multisigVerifier;
         private readonly IAssetRepository _assetRepository;
 
-        public RegisterTransactionPersister(IAssetRepository assetRepository)
+        public RegisterTransactionPersister(
+            IMultisigVerifier multisigVerifier,
+            IAssetRepository assetRepository)
         {
             _assetRepository = assetRepository;
+            _multisigVerifier = multisigVerifier;
         }
-
-        public OperatingError Execute(Transaction transaction)
+        
+        public OperatingError Execute(Block block, Transaction transaction)
         {
+            /* don't execute invalid transactions */
             var result = Verify(transaction);
             if (result != OperatingError.Ok)
                 return result;
             var registerTx = transaction.Register;
+            /* don't allow to register governing tokens in non-genesis block */
+            if (registerTx.Type == AssetType.Governing && block.Header.Index != 0)
+                return OperatingError.InvalidTransaction;
+            /* check asset registration */
+            /* TODO: "only validators can register new tokens" */
+            /* check transaction's minter or set owner */
             var minter = registerTx.Minter;
             if (minter is null)
                 minter = registerTx.Owner;
+            /* create new asset and register it */
             var asset = new Asset
             {
                 Hash = transaction.Register.ToHash160(),
@@ -37,8 +49,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         
         public OperatingError Verify(Transaction transaction)
         {
+            /* transaction type should be register */
             if (transaction.Type != TransactionType.Register)
                 return OperatingError.InvalidTransaction;
+            /* transaction structure should be defined */
             if (transaction.Register is null)
                 return OperatingError.InvalidTransaction;
             return OperatingError.Ok;

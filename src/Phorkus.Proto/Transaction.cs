@@ -25,42 +25,42 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChF0cmFuc2FjdGlvbi5wcm90bxoLYXNzZXQucHJvdG8aDWRlZmF1bHQucHJv",
-            "dG8ibQoTQ29udHJhY3RUcmFuc2FjdGlvbhIXCgVhc3NldBgBIAEoCzIILlVJ",
-            "bnQxNjASFAoCdG8YAiABKAsyCC5VSW50MTYwEhcKBXZhbHVlGAMgASgLMggu",
-            "VUludDI1NhIOCgZzY3JpcHQYBCABKAwiWwoQSXNzdWVUcmFuc2FjdGlvbhIX",
-            "CgVhc3NldBgBIAEoCzIILlVJbnQxNjASGAoGc3VwcGx5GAIgASgLMgguVUlu",
-            "dDI1NhIUCgJ0bxgDIAEoCzIILlVJbnQxNjAiPAoSUHVibGlzaFRyYW5zYWN0",
-            "aW9uEhYKBGhhc2gYASABKAsyCC5VSW50MTYwEg4KBnNjcmlwdBgCIAEoDCKc",
-            "AQoTUmVnaXN0ZXJUcmFuc2FjdGlvbhIYCgR0eXBlGAEgASgOMgouQXNzZXRU",
-            "eXBlEgwKBG5hbWUYAiABKAkSGAoGc3VwcGx5GAMgASgLMgguVUludDI1NhIQ",
-            "CghkZWNpbWFscxgEIAEoDRIXCgVvd25lchgFIAEoCzIILlVJbnQxNjASGAoG",
-            "bWludGVyGAYgASgLMgguVUludDE2MCIrChBNaW5lclRyYW5zYWN0aW9uEhcK",
-            "BW1pbmVyGAEgASgLMgguVUludDE2MCK7AQoQVHJhbnNhY3Rpb25TdGF0ZRIz",
-            "CgZzdGF0dXMYASABKA4yIy5UcmFuc2FjdGlvblN0YXRlLlRyYW5zYWN0aW9u",
-            "U3RhdHVzInIKEVRyYW5zYWN0aW9uU3RhdHVzEhwKGFRSQU5TQUNUSU9OX1NU",
-            "QVRVU19UQUtFThAAEiAKHFRSQU5TQUNUSU9OX1NUQVRVU19DT05GSVJNRUQQ",
-            "ARIdChlUUkFOU0FDVElPTl9TVEFUVVNfRkFJTEVEEAIiwAIKC1RyYW5zYWN0",
-            "aW9uEh4KBHR5cGUYASABKA4yEC5UcmFuc2FjdGlvblR5cGUSDwoHdmVyc2lv",
-            "bhgCIAEoDRINCgVmbGFncxgDIAEoBBIWCgRmcm9tGAQgASgLMgguVUludDE2",
-            "MBINCgVub25jZRgFIAEoBBIoCghjb250cmFjdBgGIAEoCzIULkNvbnRyYWN0",
-            "VHJhbnNhY3Rpb25IABIiCgVpc3N1ZRgHIAEoCzIRLklzc3VlVHJhbnNhY3Rp",
-            "b25IABImCgdwdWJsaXNoGAggASgLMhMuUHVibGlzaFRyYW5zYWN0aW9uSAAS",
-            "KAoIcmVnaXN0ZXIYCSABKAsyFC5SZWdpc3RlclRyYW5zYWN0aW9uSAASIgoF",
-            "bWluZXIYCiABKAsyES5NaW5lclRyYW5zYWN0aW9uSABCBgoEZGF0YSJtChFT",
-            "aWduZWRUcmFuc2FjdGlvbhIhCgt0cmFuc2FjdGlvbhgBIAEoCzIMLlRyYW5z",
-            "YWN0aW9uEhYKBGhhc2gYAiABKAsyCC5VSW50MjU2Eh0KCXNpZ25hdHVyZRgD",
-            "IAEoCzIKLlNpZ25hdHVyZSriAQoPVHJhbnNhY3Rpb25UeXBlEhoKFlRSQU5T",
-            "QUNUSU9OX1RZUEVfTUlORVIQABIdChlUUkFOU0FDVElPTl9UWVBFX1JFR0lT",
-            "VEVSEAESGgoWVFJBTlNBQ1RJT05fVFlQRV9JU1NVRRACEh0KGVRSQU5TQUNU",
-            "SU9OX1RZUEVfQ09OVFJBQ1QQAxIcChhUUkFOU0FDVElPTl9UWVBFX1BVQkxJ",
-            "U0gQBBIcChhUUkFOU0FDVElPTl9UWVBFX0RFUE9TSVQQBRIdChlUUkFOU0FD",
-            "VElPTl9UWVBFX1dJVEhEUkFXEAYqLAoPVHJhbnNhY3Rpb25GbGFnEhkKFVRS",
-            "QU5TQUNUSU9OX0ZMQUdfTk9ORRAAQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90",
-            "bzM="));
+            "dG8ihAEKE0NvbnRyYWN0VHJhbnNhY3Rpb24SFwoFYXNzZXQYASABKAsyCC5V",
+            "SW50MTYwEhQKAnRvGAIgASgLMgguVUludDE2MBIXCgV2YWx1ZRgDIAEoCzII",
+            "LlVJbnQyNTYSDgoGc2NyaXB0GAQgASgMEhUKA2ZlZRgFIAEoCzIILlVJbnQy",
+            "NTYiWwoQSXNzdWVUcmFuc2FjdGlvbhIXCgVhc3NldBgBIAEoCzIILlVJbnQx",
+            "NjASGAoGc3VwcGx5GAIgASgLMgguVUludDI1NhIUCgJ0bxgDIAEoCzIILlVJ",
+            "bnQxNjAiPAoSUHVibGlzaFRyYW5zYWN0aW9uEhYKBGhhc2gYASABKAsyCC5V",
+            "SW50MTYwEg4KBnNjcmlwdBgCIAEoDCKcAQoTUmVnaXN0ZXJUcmFuc2FjdGlv",
+            "bhIYCgR0eXBlGAEgASgOMgouQXNzZXRUeXBlEgwKBG5hbWUYAiABKAkSGAoG",
+            "c3VwcGx5GAMgASgLMgguVUludDI1NhIQCghkZWNpbWFscxgEIAEoDRIXCgVv",
+            "d25lchgFIAEoCzIILlVJbnQxNjASGAoGbWludGVyGAYgASgLMgguVUludDE2",
+            "MCIrChBNaW5lclRyYW5zYWN0aW9uEhcKBW1pbmVyGAEgASgLMgguVUludDE2",
+            "MCK7AQoQVHJhbnNhY3Rpb25TdGF0ZRIzCgZzdGF0dXMYASABKA4yIy5UcmFu",
+            "c2FjdGlvblN0YXRlLlRyYW5zYWN0aW9uU3RhdHVzInIKEVRyYW5zYWN0aW9u",
+            "U3RhdHVzEhwKGFRSQU5TQUNUSU9OX1NUQVRVU19UQUtFThAAEiAKHFRSQU5T",
+            "QUNUSU9OX1NUQVRVU19DT05GSVJNRUQQARIdChlUUkFOU0FDVElPTl9TVEFU",
+            "VVNfRkFJTEVEEAIiwAIKC1RyYW5zYWN0aW9uEh4KBHR5cGUYASABKA4yEC5U",
+            "cmFuc2FjdGlvblR5cGUSDwoHdmVyc2lvbhgCIAEoDRINCgVmbGFncxgDIAEo",
+            "BBIWCgRmcm9tGAQgASgLMgguVUludDE2MBINCgVub25jZRgFIAEoBBIoCghj",
+            "b250cmFjdBgGIAEoCzIULkNvbnRyYWN0VHJhbnNhY3Rpb25IABIiCgVpc3N1",
+            "ZRgHIAEoCzIRLklzc3VlVHJhbnNhY3Rpb25IABImCgdwdWJsaXNoGAggASgL",
+            "MhMuUHVibGlzaFRyYW5zYWN0aW9uSAASKAoIcmVnaXN0ZXIYCSABKAsyFC5S",
+            "ZWdpc3RlclRyYW5zYWN0aW9uSAASIgoFbWluZXIYCiABKAsyES5NaW5lclRy",
+            "YW5zYWN0aW9uSABCBgoEZGF0YSJtChFTaWduZWRUcmFuc2FjdGlvbhIhCgt0",
+            "cmFuc2FjdGlvbhgBIAEoCzIMLlRyYW5zYWN0aW9uEhYKBGhhc2gYAiABKAsy",
+            "CC5VSW50MjU2Eh0KCXNpZ25hdHVyZRgDIAEoCzIKLlNpZ25hdHVyZSriAQoP",
+            "VHJhbnNhY3Rpb25UeXBlEhoKFlRSQU5TQUNUSU9OX1RZUEVfTUlORVIQABId",
+            "ChlUUkFOU0FDVElPTl9UWVBFX1JFR0lTVEVSEAESGgoWVFJBTlNBQ1RJT05f",
+            "VFlQRV9JU1NVRRACEh0KGVRSQU5TQUNUSU9OX1RZUEVfQ09OVFJBQ1QQAxIc",
+            "ChhUUkFOU0FDVElPTl9UWVBFX1BVQkxJU0gQBBIcChhUUkFOU0FDVElPTl9U",
+            "WVBFX0RFUE9TSVQQBRIdChlUUkFOU0FDVElPTl9UWVBFX1dJVEhEUkFXEAYq",
+            "LAoPVHJhbnNhY3Rpb25GbGFnEhkKFVRSQU5TQUNUSU9OX0ZMQUdfTk9ORRAA",
+            "QhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.AssetReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionFlag), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractTransaction), global::Phorkus.Proto.ContractTransaction.Parser, new[]{ "Asset", "To", "Value", "Script" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractTransaction), global::Phorkus.Proto.ContractTransaction.Parser, new[]{ "Asset", "To", "Value", "Script", "Fee" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.IssueTransaction), global::Phorkus.Proto.IssueTransaction.Parser, new[]{ "Asset", "Supply", "To" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PublishTransaction), global::Phorkus.Proto.PublishTransaction.Parser, new[]{ "Hash", "Script" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.RegisterTransaction), global::Phorkus.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner", "Minter" }, null, null, null),
@@ -120,6 +120,7 @@ namespace Phorkus.Proto {
       to_ = other.to_ != null ? other.to_.Clone() : null;
       value_ = other.value_ != null ? other.value_.Clone() : null;
       script_ = other.script_;
+      fee_ = other.fee_ != null ? other.fee_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -172,6 +173,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "fee" field.</summary>
+    public const int FeeFieldNumber = 5;
+    private global::Phorkus.Proto.UInt256 fee_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt256 Fee {
+      get { return fee_; }
+      set {
+        fee_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ContractTransaction);
@@ -189,6 +201,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(To, other.To)) return false;
       if (!object.Equals(Value, other.Value)) return false;
       if (Script != other.Script) return false;
+      if (!object.Equals(Fee, other.Fee)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -199,6 +212,7 @@ namespace Phorkus.Proto {
       if (to_ != null) hash ^= To.GetHashCode();
       if (value_ != null) hash ^= Value.GetHashCode();
       if (Script.Length != 0) hash ^= Script.GetHashCode();
+      if (fee_ != null) hash ^= Fee.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -228,6 +242,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(34);
         output.WriteBytes(Script);
       }
+      if (fee_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(Fee);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -247,6 +265,9 @@ namespace Phorkus.Proto {
       }
       if (Script.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(Script);
+      }
+      if (fee_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Fee);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -279,6 +300,12 @@ namespace Phorkus.Proto {
       }
       if (other.Script.Length != 0) {
         Script = other.Script;
+      }
+      if (other.fee_ != null) {
+        if (fee_ == null) {
+          fee_ = new global::Phorkus.Proto.UInt256();
+        }
+        Fee.MergeFrom(other.Fee);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -314,6 +341,13 @@ namespace Phorkus.Proto {
           }
           case 34: {
             Script = input.ReadBytes();
+            break;
+          }
+          case 42: {
+            if (fee_ == null) {
+              fee_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(fee_);
             break;
           }
         }

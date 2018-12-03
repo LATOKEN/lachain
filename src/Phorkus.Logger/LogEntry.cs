@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 
-namespace Phorkus.Core.Logging
+namespace Phorkus.Logger
 {
     public class LogEntry
     {

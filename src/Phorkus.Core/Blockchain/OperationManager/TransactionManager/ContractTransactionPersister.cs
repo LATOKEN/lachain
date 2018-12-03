@@ -15,7 +15,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _balanceRepository = balanceRepository;
         }
         
-        public OperatingError Execute(Transaction transaction)
+        public OperatingError Execute(Block block, Transaction transaction)
         {
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
