@@ -224,7 +224,7 @@ namespace Phorkus.Hermes.Crypto.Key
             // [ bitlength si ] 4 bytes
             // [ si ]
 
-            using (var stream = new MemoryStream(b, base.byteArraySize(), b.Length))
+            using (var stream = new MemoryStream(b, base.byteArraySize(), b.Length - base.byteArraySize(), false))
             using (var reader = new BinaryReader(stream))
             {
                 this.id = reader.ReadInt32();

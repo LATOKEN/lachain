@@ -19,7 +19,7 @@ namespace Phorkus.Hermes.Crypto
 	
 	
 	
-public class PartialDecryption{
+public class PartialDecryption : IEquatable<PartialDecryption> {
 	
 	/*
 	 * 
@@ -37,7 +37,9 @@ public class PartialDecryption{
 	
 	/** The ID number of the decryption server who decrypted this. */
 	private int id;
+
 	
+
 	/*
 	 * 
 	 * Constructors
@@ -131,6 +133,29 @@ public class PartialDecryption{
         }
         Array.Copy(dec, 0, b, 4, dec.Length);
         return b;
+	}
+
+	public bool Equals(PartialDecryption other)
+	{
+		if (ReferenceEquals(null, other)) return false;
+		if (ReferenceEquals(this, other)) return true;
+		return Equals(decryption, other.decryption) && id == other.id;
+	}
+
+	public override bool Equals(object obj)
+	{
+		if (ReferenceEquals(null, obj)) return false;
+		if (ReferenceEquals(this, obj)) return true;
+		if (obj.GetType() != this.GetType()) return false;
+		return Equals((PartialDecryption) obj);
+	}
+
+	public override int GetHashCode()
+	{
+		unchecked
+		{
+			return ((decryption != null ? decryption.GetHashCode() : 0) * 397) ^ id;
+		}
 	}
 }
 

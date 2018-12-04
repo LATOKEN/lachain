@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 
@@ -14,7 +16,11 @@ namespace Phorkus.Hermes.Signer
         private BigInteger s3;
         private BigInteger e;
         private BigInteger v;
-        
+
+        public Zkpi1()
+        {
+        }
+
         public Zkpi1(CurveParams curveParams, PublicParameters parameters, BigInteger eta, LinearRandom rand,
             BigInteger r, BigInteger c1, BigInteger c2, BigInteger c3)
         {
@@ -52,7 +58,6 @@ namespace Phorkus.Hermes.Signer
             s3 = e.Multiply(rho).Add(gamma);
         }
 
-
         public bool verify(PublicParameters parameters, ECDomainParameters CURVE,
             BigInteger c1, BigInteger c2, BigInteger c3)
         {
@@ -62,7 +67,7 @@ namespace Phorkus.Hermes.Signer
             BigInteger nTilde = parameters.nTilde;
             BigInteger nSquared = N.Pow(2);
             BigInteger g = N.Add(BigInteger.One);
-            
+
             if (!u1.Equals(g.ModPow(s1, nSquared).Multiply(s2.ModPow(N, nSquared))
                 .Multiply(c3.ModPow(e.Negate(), nSquared)).Mod(nSquared)))
             {
@@ -74,7 +79,7 @@ namespace Phorkus.Hermes.Signer
 //            {
 //                return false;
 //            }
-            
+
             if (!v.Equals(c2.ModPow(s1, nSquared)
                 .Multiply(c1.ModPow(e.Negate(), nSquared)).Mod(nSquared)))
             {
@@ -82,7 +87,7 @@ namespace Phorkus.Hermes.Signer
             }
 
 
-            byte[] digestRecovered = Util.sha256Hash(new []
+            byte[] digestRecovered = Util.sha256Hash(new[]
             {
                 Util.getBytes(c1), Util.getBytes(c2), Util.getBytes(c3),
                 Util.getBytes(z), Util.getBytes(u1), Util.getBytes(u2), Util.getBytes(v)
@@ -101,6 +106,36 @@ namespace Phorkus.Hermes.Signer
             }
 
             return true;
+        }
+
+        public void fromByteArray(byte[] buffer)
+        {
+            using (var stream = new MemoryStream(buffer))
+            using (var reader = new BinaryReader(stream))
+            {
+                var str = reader.ReadString();
+                var bigs = str.Split('|').Select(value => new BigInteger(value)).ToArray();
+                z = bigs[0];
+                u1 = bigs[1];
+                u2 = bigs[2];
+                s1 = bigs[3];
+                s2 = bigs[4];
+                s3 = bigs[5];
+                e = bigs[6];
+                v = bigs[7];
+            }
+        }
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                var bigs = new[] {z, u1, u2, s1, s2, s3, e, v};
+                var str = string.Join("|", bigs.Select(value => value.ToString()));
+                writer.Write(str);
+                return stream.ToArray();
+            }
         }
     }
 }

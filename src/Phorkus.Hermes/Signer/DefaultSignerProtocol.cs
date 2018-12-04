@@ -27,7 +27,7 @@ namespace Phorkus.Hermes.Signer
 
         public void Initialize(byte[] message)
         {
-            var paillierKey = new PaillierPrivateThresholdKey(_share, 4289, true);
+            var paillierKey = new PaillierPrivateThresholdKey(_share, 4289);
             var curveParams = new CurveParams(_curveType);
             
             /* TODO: "this seed should be replaced with something more random, like transaction hash" */

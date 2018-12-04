@@ -5,6 +5,7 @@ using Phorkus.Core.Blockchain.OperationManager.BlockManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
+using Phorkus.Core.Threshold;
 
 namespace Phorkus.Core.DI.Modules
 {
@@ -28,6 +29,7 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
             /* pool */
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
+            containerBuilder.RegisterSingleton<IThresholdManager, ThresholdManager>();
         }
     }
 }

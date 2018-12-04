@@ -5,6 +5,7 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Network.Grpc;
 using Phorkus.Core.Storage;
+using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Network.Grpc;
@@ -29,6 +30,7 @@ namespace Phorkus.Core.Network
             public DateTime Connected { get; set; }
             public IBlockchainService BlockchainService { get; set; }
             public IConsensusService ConsensusService { get; set; }
+            public IThresholdService ThresholdService { get; set; }
         }
         
         public NetworkManager(
@@ -38,6 +40,7 @@ namespace Phorkus.Core.Network
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager,
             ICrypto crypto,
+            IThresholdManager thresholdManager,
             INetworkContext networkContext)
         {
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
@@ -46,6 +49,7 @@ namespace Phorkus.Core.Network
             {
                 Services =
                 {
+                    ThresholdService.BindService(new GrpcThresholdServiceServer(thresholdManager, crypto)),
                     BlockchainService.BindService(new GrpcBlockchainServiceServer(networkContext, transactionRepository, blockRepository, blockSynchronizer)),
                     ConsensusService.BindService(new GrpcConsensusServiceServer(null, crypto))
                 },
@@ -65,7 +69,8 @@ namespace Phorkus.Core.Network
                     RateLimiter = new NullRateLimiter(),
                     Connected = DateTime.Now,
                     BlockchainService = new GrpcBlockchainServiceClient(peerAddress),
-                    ConsensusService = new GrpcConsensusServiceClient(peerAddress, crypto)
+                    ConsensusService = new GrpcConsensusServiceClient(peerAddress, crypto),
+                    ThresholdService = new GrpcThresholdServiceClient(peerAddress, crypto)
                 };
                 if (_IsNodeAvailable(networkContext, remotePeer))
                     networkContext.ActivePeers.TryAdd(peerAddress, remotePeer);

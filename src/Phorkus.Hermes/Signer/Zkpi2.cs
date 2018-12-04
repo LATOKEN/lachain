@@ -27,7 +27,8 @@ namespace Phorkus.Hermes.Signer
         {
             byte[] u1s = u1.GetEncoded(false);
             StringBuilder res = new StringBuilder();
-            res.Append(HexUtil.bytesToHex(u1s));
+            res.Append(curveParams.Name);
+            res.Append("," + HexUtil.bytesToHex(u1s));
             res.Append("," + u2);
             res.Append("," + u3);
             res.Append("," + z1);
@@ -45,27 +46,28 @@ namespace Phorkus.Hermes.Signer
 
         public void deserialize(String s)
         {
-            String[] arr = s.Split(',');
-            u1 = curveParams.Curve.Curve.DecodePoint(HexUtil.hexToBytes(arr[0]));
-            u2 = new BigInteger(arr[1]);
-            u3 = new BigInteger(arr[2]);
-            z1 = new BigInteger(arr[3]);
-            z2 = new BigInteger(arr[4]);
-            s1 = new BigInteger(arr[5]);
-            s2 = new BigInteger(arr[6]);
-            t1 = new BigInteger(arr[7]);
-            t2 = new BigInteger(arr[8]);
-            t3 = new BigInteger(arr[9]);
-            e = new BigInteger(arr[10]);
-            v1 = new BigInteger(arr[11]);
-            v3 = new BigInteger(arr[12]);
+            string[] arr = s.Split(',');
+            var curveName = arr[0];
+            curveParams = new CurveParams(curveName);
+            u1 = curveParams.Curve.Curve.DecodePoint(HexUtil.hexToBytes(arr[1]));
+            u2 = new BigInteger(arr[2]);
+            u3 = new BigInteger(arr[3]);
+            z1 = new BigInteger(arr[4]);
+            z2 = new BigInteger(arr[5]);
+            s1 = new BigInteger(arr[6]);
+            s2 = new BigInteger(arr[7]);
+            t1 = new BigInteger(arr[8]);
+            t2 = new BigInteger(arr[9]);
+            t3 = new BigInteger(arr[10]);
+            e = new BigInteger(arr[11]);
+            v1 = new BigInteger(arr[12]);
+            v3 = new BigInteger(arr[13]);
         }
 
-        public Zkpi2(CurveParams curveParams)
+        public Zkpi2()
         {
-            this.curveParams = curveParams;
         }
-
+        
         public Zkpi2(CurveParams curveParams, PublicParameters parameters, BigInteger eta1, BigInteger eta2,
             LinearRandom rand, ECPoint c, BigInteger w, BigInteger u,
             BigInteger randomness)
@@ -122,9 +124,8 @@ namespace Phorkus.Hermes.Signer
             t2 = e.Multiply(eta2).Add(theta);
             t3 = e.Multiply(rho2).Add(tau);
         }
-
-
-        public bool verify(PublicParameters parameters, ECDomainParameters CURVE,
+        
+        public bool verify(CurveParams curveParams, PublicParameters parameters, ECDomainParameters CURVE,
             ECPoint r, BigInteger u, BigInteger w)
         {
             ECPoint c = parameters.getG(CURVE);

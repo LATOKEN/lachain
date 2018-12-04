@@ -1,5 +1,5 @@
 ﻿using Phorkus.Core.Config;
-using Phorkus.Core.Hermes;
+using Phorkus.Core.Threshold;
 
 namespace Phorkus.Core.DI.Modules
 {
@@ -7,7 +7,7 @@ namespace Phorkus.Core.DI.Modules
     {
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
-            containerBuilder.RegisterSingleton<IHermesSigner, HermesSigner>();
+            containerBuilder.RegisterSingleton<IThresholdManager, ThresholdManager>();
         }
     }
 }

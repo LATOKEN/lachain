@@ -168,6 +168,7 @@ namespace Phorkus.Hermes.Signer
             foreach (Round4Message msg in messages)
             {
                 if (!msg.zkp2.verify(
+                    curveParams,
                     parameters,
                     curveParams.Curve,
                     curveParams.Curve.Curve.DecodePoint(

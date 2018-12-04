@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Core.Storage
+﻿using Phorkus.Proto;
+
+namespace Phorkus.Core.Storage
 {
     public interface IGlobalRepository
     {
@@ -27,5 +29,9 @@
         void SetTotalBlockHeaderHeight(ulong height);
 
         bool IsGenesisBlockExists();
+        
+        ThresholdKey GetShare();
+        
+        void AddChange(ThresholdKey thresholdKey);
     }
 }

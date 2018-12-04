@@ -11,6 +11,8 @@ namespace Phorkus.Hermes.Signer
         public ECPoint G { get; }
         public BigInteger Q { get; }
 
+        public string Name { get; }
+
         public CurveParams(string curveName)
         {
             var parameters = SecNamedCurves.GetByName(curveName);
@@ -18,6 +20,7 @@ namespace Phorkus.Hermes.Signer
                 throw new InvalidCurveException("Unable to resolve curve by name (" + curveName + ")");
             Curve = new ECDomainParameters(parameters.Curve, parameters.G, parameters.N, parameters.H);
             G = Curve.G;
+            Name = curveName;
             Q = parameters.N;
         }
     }

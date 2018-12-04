@@ -25,6 +25,7 @@ namespace Phorkus.Core.Network.Grpc
         {
             if (!_VerifyMessageSignature(request, context, request.Validator))
                 return Task.FromResult<BlockPrepareReply>(null);
+            
             throw new NotImplementedException();
         }
 
@@ -32,6 +33,7 @@ namespace Phorkus.Core.Network.Grpc
         {
             if (!_VerifyMessageSignature(request, context, request.Validator))
                 return Task.FromResult<ChangeViewReply>(null);
+            
             throw new NotImplementedException();
         }
 

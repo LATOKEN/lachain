@@ -8,5 +8,7 @@ namespace Phorkus.Core.Blockchain
         IReadOnlyCollection<PublicKey> Validators { get; }
 
         uint Quorum { get; }
+
+        uint GetValidatorIndex(PublicKey publicKey);
     }
 }
