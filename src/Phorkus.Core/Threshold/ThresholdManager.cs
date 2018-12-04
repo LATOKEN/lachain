@@ -231,7 +231,7 @@ namespace Phorkus.Core.Threshold
             foreach (var validator in _validatorManager.Validators)
             {
                 var msgs = _ValidatorMessages((int) _validatorManager.GetValidatorIndex(validator));
-                if (msgs.Count > (byte) state)
+                if (msgs.Count < (byte) state)
                     continue;
                 ++exists;
             }
