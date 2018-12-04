@@ -68,6 +68,8 @@ namespace Phorkus.Core.Network
                 foreach (var peer in networkConfig.Peers)
                 {
                     var peerAddress = PeerAddress.Parse(peer);
+                    if (networkContext.ActivePeers.ContainsKey(peerAddress))
+                        continue;
                     var remotePeer = new RemotePeer
                     {
                         IsConnected = true,
@@ -82,6 +84,8 @@ namespace Phorkus.Core.Network
                     };
                     if (_IsNodeAvailable(networkContext, remotePeer))
                         networkContext.ActivePeers.TryAdd(peerAddress, remotePeer);
+                    else
+                        networkContext.ActivePeers.TryRemove(peerAddress, out _);
                 }
             };
             timer.Interval = 1000;
@@ -134,8 +138,8 @@ namespace Phorkus.Core.Network
         {
             try
             {
-                if (_IsSelfConnect(remotePeer.Address))
-                    return false;
+//                if (_IsSelfConnect(remotePeer.Address))
+//                    return false;
                 var ping = new PingRequest
                 {
                     Timestamp = TimeUtils.CurrentTimeMillis()

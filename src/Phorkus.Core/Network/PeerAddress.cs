@@ -10,7 +10,7 @@ namespace Phorkus.Core.Network
         TcpWithTls = 2
     }
     
-    public class PeerAddress
+    public class PeerAddress : IEquatable<PeerAddress>
     {
         private static readonly Regex IpEndPointPattern =
             new Regex(@"^(?<proto>\w+)://(?<address>[^/]+)/?:(?<port>\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -49,10 +49,28 @@ namespace Phorkus.Core.Network
 
         public override int GetHashCode()
         {
-            var hashCode = Protocol.GetHashCode();
-            hashCode ^= Host.GetHashCode();
-            hashCode ^= Port.GetHashCode();
-            return hashCode;
+            unchecked
+            {
+                var hashCode = (int) Protocol;
+                hashCode = (hashCode * 397) ^ (Host != null ? Host.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ Port;
+                return hashCode;
+            }
+        }
+
+        public bool Equals(PeerAddress other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Protocol == other.Protocol && string.Equals(Host, other.Host) && Port == other.Port;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((PeerAddress) obj);
         }
     }
 }
