@@ -8,4 +8,9 @@
     <ProjectReference Include="..\Phorkus.Logger\Phorkus.Logger.csproj" />
     <ProjectReference Include="..\Phorkus.RocksDB\Phorkus.RocksDB.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

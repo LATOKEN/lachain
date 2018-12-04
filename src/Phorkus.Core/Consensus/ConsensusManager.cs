@@ -9,11 +9,11 @@ using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
-using Phorkus.Core.Logging;
 using Phorkus.Core.Network;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Logger;
 
 namespace Phorkus.Core.Consensus
 {

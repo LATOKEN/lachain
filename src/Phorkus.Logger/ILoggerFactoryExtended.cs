@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Phorkus.Core.Logging
+namespace Phorkus.Logger
 {
     public delegate void DelOnLog(LogEntry log);
 

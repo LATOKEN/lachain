@@ -122,8 +122,8 @@ public class PaillierKey {
 	 * @param seed      a long integer needed to start a random
 	 *                  number generator
 	 */
-	public PaillierKey(BigInteger n, long seed):
-		this(n, new SecureRandom(BigInteger.ValueOf(seed).ToByteArray()))
+	public PaillierKey(BigInteger n, int seed):
+		this(n, new Random(seed))
 	{
 	}
 	
@@ -139,13 +139,19 @@ public class PaillierKey {
 	 * @param seed      a long integer needed to start a random
 	 *                  number generator
 	 */
-	public PaillierKey(BigInteger p, BigInteger q, long seed)
+	public PaillierKey(BigInteger p, BigInteger q, int seed)
 		:this(p.Multiply(p), seed) {
 		
 		//TODO Check to see if p and q are of same length, for security purposes (?)
 		if (p.CompareTo(q) == 0)
 			throw new ArgumentException("p and q must be different primes");
 		//TODO make this a checked exception (?)
+	}
+
+	public PaillierKey(byte[] b, int seed, bool old)
+		:this(new BigInteger(b), seed)
+	{
+		/* TODO: "old variable for previous format" */
 	}
 	
 	/**
@@ -157,13 +163,13 @@ public class PaillierKey {
 	 * 
 	 * @see #toByteArray()
 	 */
-	public PaillierKey(byte[] b, long seed)
+	public PaillierKey(byte[] b, int seed)
 	:this(BigInteger.Zero, seed)
 	{ 
 		// The encoding is :
 		// [ bitlength of n ]
 		// [ n ]
-		using (var stream = new MemoryStream())
+		using (var stream = new MemoryStream(b))
 		using (var reader = new BinaryReader(stream))
 		{
 			int byteLenN = reader.ReadInt32();
@@ -192,7 +198,7 @@ public class PaillierKey {
 	 *                  key
 	 */
 	public PaillierKey getPublicKey() {
-		return new PaillierKey(n, (long)rnd.NextDouble());
+		return new PaillierKey(n, (int)rnd.NextDouble());
 	}
 	
 	/**

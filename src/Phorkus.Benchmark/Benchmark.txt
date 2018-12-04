@@ -101,3 +101,55 @@ Commited 100000 operations in 1591ms
 
 
 (!) ~1G of memory
+
+=== HMAT benchmark (no cache misses)
+
+commit number 97
+100000 insertions in 547ms
+0.00547ms per insertion
+182815.356489945 insertions per sec
+293946 nodes persisted
+78400000 nodes in cache
+Commited 100000 operations in 2159ms
+commit number 98
+100000 insertions in 590ms
+0.0059ms per insertion
+169491.525423729 insertions per sec
+294087 nodes persisted
+79200000 nodes in cache
+Commited 100000 operations in 1982ms
+commit number 99
+100000 insertions in 4927ms
+0.04927ms per insertion
+20296.3263649279 insertions per sec
+294340 nodes persisted
+80000000 nodes in cache
+Commited 100000 operations in 2050ms
+
+(!) ~24 GB of memory
+
+=== HMAT benchmark (aggresive cache pruning)
+
+commit number 97
+100000 insertions in 3083ms
+0.03083ms per insertion
+32435.9390204346 insertions per sec
+293946 nodes persisted
+800000 nodes in cache
+Commited 100000 operations in 1819ms
+commit number 98
+100000 insertions in 2595ms
+0.02595ms per insertion
+38535.6454720617 insertions per sec
+294087 nodes persisted
+800000 nodes in cache
+Commited 100000 operations in 1659ms
+commit number 99
+100000 insertions in 3135ms
+0.03135ms per insertion
+31897.9266347687 insertions per sec
+294340 nodes persisted
+800000 nodes in cache
+Commited 100000 operations in 1739ms
+
+(!) ~1 GB of memory

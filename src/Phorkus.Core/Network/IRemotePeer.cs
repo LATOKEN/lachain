@@ -20,5 +20,7 @@ namespace Phorkus.Core.Network
         IBlockchainService BlockchainService { get; }
 
         IConsensusService ConsensusService { get; }
+
+        IThresholdService ThresholdService { get; }
     }
 }

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Logging;
+using Phorkus.Logger;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Network

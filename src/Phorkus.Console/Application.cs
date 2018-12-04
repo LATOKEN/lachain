@@ -10,6 +10,7 @@ using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
+using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
@@ -58,6 +59,7 @@ namespace Phorkus.Console
 //            var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var synchronizer = _container.Resolve<IBlockSynchronizer>();
+            var thresholdManager = _container.Resolve<IThresholdManager>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -95,11 +97,13 @@ namespace Phorkus.Console
             System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
             System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
-
+            
             //networkManager.Start();
             transactionVerifier.Start();
 //            consensusManager.Start();
-            synchronizer.Start();
+//            synchronizer.Start();
+            
+            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

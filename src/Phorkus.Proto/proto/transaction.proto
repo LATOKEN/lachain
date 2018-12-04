@@ -22,6 +22,7 @@ message ContractTransaction {
     UInt160 to = 2;
     UInt256 value = 3;
     bytes script = 4;
+    UInt256 fee = 5;
 }
 
 message IssueTransaction {
