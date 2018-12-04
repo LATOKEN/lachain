@@ -10,7 +10,7 @@ namespace Phorkus.Hermes.Generator.State
  * This is an immutable object type in order to comply to the Akka good practices regarding FSMs.
  * @author Christian Mouchet
  */
-    public class BGWData : AbstractData<BGWData>
+    public class BGWData : Data
     {
         
         /** Collection of the recieved shares of N*/
@@ -40,7 +40,7 @@ namespace Phorkus.Hermes.Generator.State
                 new Dictionary<int, BigInteger>());
         }
 
-        public bool HasShareOf(ICollection<int> var)
+        public bool HasShareOf(IEnumerable<int> var)
         {
             return var.All(i => bgwPublicParameters.ContainsKey(i));
         }
@@ -50,7 +50,7 @@ namespace Phorkus.Hermes.Generator.State
             return bgwPublicParameters;
         }
 
-        public bool hasNiOf(ICollection<int> isy)
+        public bool hasNiOf(IEnumerable<int> isy)
         {
             return isy.All(i => Ns.ContainsKey(i));
         }
@@ -69,12 +69,12 @@ namespace Phorkus.Hermes.Generator.State
                 Ns);
         }
 
-        public BGWData withPrivateParameters(BgwPrivateParams param)
+        public BGWData WithPrivateParameters(BgwPrivateParams param)
         {
-            return new BGWData(Participants, param, bgwPublicParameters, Ns);
+            return new BGWData(participants, param, bgwPublicParameters, Ns);
         }
 
-        public BGWData withNewShare(BgwPublicParams share, int fromId)
+        public BGWData WithNewShare(BgwPublicParams share, int fromId)
         {
             if (bgwPublicParameters.ContainsKey(fromId))
                 return this;
@@ -82,7 +82,7 @@ namespace Phorkus.Hermes.Generator.State
             IDictionary<int, BgwPublicParams> newMap =
                 new Dictionary<int, BgwPublicParams>(bgwPublicParameters);
             newMap.Add(fromId, share);
-            return new BGWData(Participants, bgwPrivateParameters, newMap, Ns);
+            return new BGWData(participants, bgwPrivateParameters, newMap, Ns);
         }
 
         public BGWData withNewNi(BigInteger Ni, int fromId)
@@ -92,13 +92,13 @@ namespace Phorkus.Hermes.Generator.State
 
             IDictionary<int, BigInteger> newNs = new Dictionary<int, BigInteger>(Ns);
             newNs.Add(fromId, Ni);
-            return new BGWData(Participants, bgwPrivateParameters, bgwPublicParameters, newNs);
+            return new BGWData(participants, bgwPrivateParameters, bgwPublicParameters, newNs);
         }
 
         // IDictionary<IActorRef, int> 
         public BGWData withCandidateN(BigInteger candidateN)
         {
-            return new BGWData(Participants, bgwPrivateParameters, bgwPublicParameters, Ns);
+            return new BGWData(participants, bgwPrivateParameters, bgwPublicParameters, Ns);
         }
     }
 }

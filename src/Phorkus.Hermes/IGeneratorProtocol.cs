@@ -9,7 +9,7 @@ namespace Phorkus.Hermes
     {
         GeneratorState CurrentState { get; }
 
-        void Initialize();
+        BiprimalityTestData Initialize();
 
         BgwPublicParams GenerateShare();
 

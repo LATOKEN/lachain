@@ -6,7 +6,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public class BiprimalityTestData : AbstractData<BiprimalityTestData>
+    public class BiprimalityTestData : Data
     {
         private Dictionary<int, BigInteger>[] Qs;
 
@@ -65,7 +65,7 @@ namespace Phorkus.Hermes.Generator.State
         public BiprimalityTestData withNewCandidateN(BigInteger N,
             BgwPrivateParams bgwPrivateParameters)
         {
-            return new BiprimalityTestData(Participants, N, bgwPrivateParameters, Qs, round);
+            return new BiprimalityTestData(participants, N, bgwPrivateParameters, Qs, round);
         }
 
         public BiprimalityTestData withNewQi(BigInteger Qi, int fromId, int round)
@@ -80,7 +80,7 @@ namespace Phorkus.Hermes.Generator.State
             newQs[round % 2] = newMap;
             newQs[(round + 1) % 2] = Qs[(round + 1) % 2];
 
-            return new BiprimalityTestData(Participants, N, bgwPrivateParameters, newQs, round);
+            return new BiprimalityTestData(participants, N, bgwPrivateParameters, newQs, round);
         }
 
         public override BiprimalityTestData WithParticipants(IReadOnlyDictionary<PublicKey, int> participants)
@@ -96,12 +96,12 @@ namespace Phorkus.Hermes.Generator.State
 
             newQs[round % 2] = new Dictionary<int, BigInteger>();
             newQs[(round + 1) % 2] = new Dictionary<int, BigInteger>(Qs[(round + 1) % 2]);
-            return new BiprimalityTestData(Participants, N, bgwPrivateParameters, newQs, round + 1);
+            return new BiprimalityTestData(participants, N, bgwPrivateParameters, newQs, round + 1);
         }
 
         public BiprimalityTestData forNextCandidate()
         {
-            return init().WithParticipants(Participants);
+            return init().WithParticipants(participants);
         }
     }
 }

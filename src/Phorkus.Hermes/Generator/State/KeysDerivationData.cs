@@ -5,7 +5,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public class KeysDerivationData : AbstractData<KeysDerivationData>
+    public class KeysDerivationData : Data
     {
         /** The current candidate to RSA modulus*/
         public readonly BigInteger N;
@@ -90,25 +90,25 @@ namespace Phorkus.Hermes.Generator.State
 
         public KeysDerivationData withN(BigInteger N)
         {
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, verificationKeys);
         }
 
         public KeysDerivationData withPrivateParameters(KeysDerivationPrivateParameters keysDerivationPrivateParameters)
         {
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, verificationKeys);
         }
 
         public KeysDerivationData withFi(BigInteger fi)
         {
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, verificationKeys);
         }
 
         public KeysDerivationData withThetaprime(BigInteger thetaprime)
         {
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, verificationKeys);
         }
 
@@ -123,19 +123,19 @@ namespace Phorkus.Hermes.Generator.State
             var newBetasMap = publicParameters1;
 
             newBetasMap.Add(j, keysDerivationPublicParameters);
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 newBetasMap, thetas, verificationKeys);
         }
 
         public KeysDerivationData withRPoint(BigInteger RPoint)
         {
-            return new KeysDerivationData(Participants, N, RPoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, RPoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, verificationKeys);
         }
 
         public KeysDerivationData withNewV(BigInteger v)
         {
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, verificationKeys);
         }
 
@@ -150,7 +150,7 @@ namespace Phorkus.Hermes.Generator.State
                 ? new Dictionary<int, BigInteger>(thetas)
                 : new Dictionary<int, BigInteger>();
             newThetaMap.Add(j, theta);
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, newThetaMap, verificationKeys);
         }
 
@@ -165,7 +165,7 @@ namespace Phorkus.Hermes.Generator.State
                 ? new Dictionary<int, BigInteger>(verificationKeys)
                 : new Dictionary<int, BigInteger>();
             newVKMap.Add(j, newVerifKey);
-            return new KeysDerivationData(Participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
+            return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, newVKMap);
         }
         
