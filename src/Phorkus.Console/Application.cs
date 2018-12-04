@@ -102,7 +102,7 @@ namespace Phorkus.Console
             transactionVerifier.Start();
 //            consensusManager.Start();
             synchronizer.Start();
-
+            
             var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
