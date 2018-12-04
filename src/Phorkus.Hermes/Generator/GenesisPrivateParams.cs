@@ -1,7 +1,9 @@
-﻿using Org.BouncyCastle.Math;
+﻿using System;
+using Org.BouncyCastle.Math;
 
 namespace Phorkus.Hermes.Generator
 {
+	[Obsolete]
     public class GenesisPrivateParams
     {
 		/** Large prime P' used for secret sharing with polynomials over the integer mod P' */

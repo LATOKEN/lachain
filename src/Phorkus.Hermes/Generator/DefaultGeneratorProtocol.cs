@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
+using Phorkus.Hermes.Crypto.Key;
 using Phorkus.Hermes.Generator.Messages;
 using Phorkus.Hermes.Generator.State;
 using Phorkus.Hermes.Math;
 using Phorkus.Proto;
-
 
 namespace Phorkus.Hermes.Generator
 {
@@ -16,186 +16,309 @@ namespace Phorkus.Hermes.Generator
         public static int N_PARTIES = 10; // Current implementation: works for 3 to 30 
         public static int T_THRESHOLD = 4; // Should be less than n/2
         public static int KEY_SIZE = 128; // Tested up to 512
-        private SecureRandom sr = new SecureRandom();
-        
-        private Data participants;
-        private static PublicKey publicKey; // todo: attention: analogue master in Java code
-        private static ProtocolParameters protoParam;
+        public static int NUMBER_OF_ROUNDS = 10;
+
+        private readonly SecureRandom sr = new SecureRandom();
+
+        private IReadOnlyDictionary<PublicKey, int> participants;
+        private PublicKey publicKey;
+        private ProtocolParameters protoParam;
         private BGWData bgwData;
-        
+        private BiprimalityTestData biprimalityTestData;
+        private KeysDerivationData keysDerivationData;
+        private CandidateN candidateN;
 
-        public DefaultGeneratorProtocol(Data participants)
+        public DefaultGeneratorProtocol(IReadOnlyDictionary<PublicKey, int> participants, PublicKey publicKey)
         {
-            IDictionary<PublicKey, int> indexMap = new Dictionary<PublicKey, int>(N_PARTIES);
-            for(var i=1; i<=N_PARTIES; i++) {
-                // пересылка по сети каждой стороне параметры протокола protoParam
-                // from Java: indexMap.Add(system.actorOf(Props.create(ProtocolActor.class, protoParam),"Actor"+i),i);
-            }
-                        
             this.participants = participants;
-            
-            protoParam = ProtocolParameters.gen(KEY_SIZE, N_PARTIES, T_THRESHOLD, new SecureRandom()); 
-        }
-        
-        public GeneratorState CurrentState { get; }
-
-        public BiprimalityTestData Initialize()
-        {
-            BiprimalityTestData.init();
-            //IDictionary<PublicKey, int> actors = participants;
-            BigInteger gp = getGp(candidateN.N, 0);
-            BigInteger Qi = getQi(gp,candidateN.N, candidateN.bgwPrivateParameters.pi, candidateN.bgwPrivateParameters.qi, actors.get(this.master));
-
+            this.publicKey = publicKey;
         }
 
-        public BgwPublicParams GenerateShare()
+        public GeneratorState CurrentState { get; private set; }
+
+        public void Initialize()
         {
-            // 2. BGW
-            {
-                // 2.1 Generating private and public params
-                INITILIZATION();               
-            }
-            
-            {
-                // 2.2 Generating and broadcasting public params for each participant
-                // разослать всем кроме меня BGWPublicParameters    
-            }
-            
-            {
-                //2.3 Collecting public params from other participants
-                // Collect the pji and qji shares and compute its own Ni share
-                BGW_COLLECTING_PjQj(newShare,  sender);
-                
-                return GoTo(States.BGW_COLLECTING_Nj).using(dataWithNewShare.withNewNi(Ni, actors.get(this.master)));
-                
-            }
-            throw new System.NotImplementedException();
+            CurrentState = GeneratorState.Initialization;
+
+            protoParam = ProtocolParameters.gen(KEY_SIZE, N_PARTIES, T_THRESHOLD, new SecureRandom());
+            Console.WriteLine("Pp=" + protoParam.P);
+        }
+
+        public IReadOnlyCollection<BgwPublicParams> GenerateShare()
+        {
+            CurrentState = GeneratorState.GeneratingShare;
+
+            // Generates new p, q and all necessary sharings
+            var bgwPrivateParameters = BgwPrivateParams.genFor(participants[publicKey], protoParam, sr);
+            var bgwSelfShare = BgwPublicParams.genFor(participants[publicKey], bgwPrivateParameters);
+
+            bgwData = BGWData.Init()
+                .WithPrivateParameters(bgwPrivateParameters)
+                .WithNewShare(bgwSelfShare, participants[publicKey])
+                .WithParticipants(participants);
+
+            var shares = participants.Select(p => BgwPublicParams.genFor(p.Value, bgwData.bgwPrivateParameters))
+                .ToList();
+            return shares;
         }
 
         public void CollectShare(IReadOnlyCollection<BgwPublicParams> shares)
         {
-            throw new System.NotImplementedException();
+            CurrentState = GeneratorState.CollectingShare;
+
+            for (var i = 0; i < shares.Count; i++)
+                bgwData = bgwData.WithNewShare(shares.ElementAt(i), i);
+            if (!bgwData.HasShareOf(participants.Values))
+                throw new Exception("We havn't collected all required shares from other participants");
+
+            var badActors = bgwData.shares()
+                .Where(e => !e.Value.isCorrect(protoParam))
+                .Select(e => e.Key); // Check the shares (not implemented yet)
+            if (badActors.Any())
+                throw new Exception("There are bad actors that sent incorrect share");
         }
 
         public BGWNPoint GeneratePoint()
         {
-            throw new System.NotImplementedException();
+            CurrentState = GeneratorState.GeneratingPoint;
+
+            var sumPj = bgwData.shares().Select(e => e.Value.pij)
+                .Aggregate(BigInteger.Zero, (p1, p2) => p1.Add(p2));
+            var sumQj = bgwData.shares().Select(e => e.Value.qij)
+                .Aggregate(BigInteger.Zero, (q1, q2) => q1.Add(q2));
+            var sumHj = bgwData.shares().Select(e => e.Value.hij)
+                .Aggregate(BigInteger.Zero, (h1, h2) => h1.Add(h2));
+            var Ni = sumPj.Multiply(sumQj).Add(sumHj).Mod(protoParam.P);
+
+            bgwData = bgwData.withNewNi(Ni, participants[publicKey]);
+            return new BGWNPoint(bgwData.Ns[participants[publicKey]]);
         }
 
         public void CollectPoint(IReadOnlyCollection<BGWNPoint> points)
         {
-            throw new System.NotImplementedException();
+            CurrentState = GeneratorState.CollectingPoint;
+
+            for (var i = 0; i < points.Count; i++)
+                bgwData = bgwData.withNewNi(points.ElementAt(i).point, i);
+            if (!bgwData.hasNiOf(participants.Values))
+                throw new Exception("We havn't collected all required points from other participants");
+
+            var Nis = bgwData.nis().Select(e => e.Value).ToList();
+            var N = IntegersUtils.GetIntercept(Nis, protoParam.P);
+
+            candidateN = new CandidateN(N, bgwData.bgwPrivateParameters);
         }
 
-        public void Finalize()
+        public QiTestForRound GenerateProof()
         {
-            throw new System.NotImplementedException();
-        }
+            CurrentState = GeneratorState.GeneratingProof;
 
-        private void INITILIZATION()
-        {
-            bgwData = BGWData.Init();
-            
-            // Generates new p, q and all necessary sharings
-            var parties = participants.GetParticipants();
-            var bgwPrivateParameters = BgwPrivateParams.genFor(parties[publicKey], protoParam, sr);
-            var bgwSelfShare = BgwPublicParams.genFor(parties[publicKey], bgwPrivateParameters);
-                
-            var nextStateData = bgwData.WithPrivateParameters(bgwPrivateParameters)
-                .WithNewShare(bgwSelfShare, parties[publicKey])
-                .WithParticipants(parties); 
-            
-            // call transition between two states: INITILIZATION -> BGW_COLLECTING_PjQj
-            //return goTo(States.BGW_COLLECTING_PjQj).using(nextStateData);
-        } 
-        private void BGW_COLLECTING_PjQj(BgwPublicParams newShare, PublicKey sender)
-        {
-            var actors = participants.GetParticipants();
-
-            //2.3 Collecting public params from other participants
-            // Collect the pji and qji shares and compute its own Ni share
-
-            var dataWithNewShare = bgwData.WithNewShare(newShare, actors[sender]);
-
-            if (!dataWithNewShare.HasShareOf(actors.Values))
-                // return Stay().Using(dataWithNewShare); todo Stay() - это Akka - убрать!
-                ;
+            if (biprimalityTestData is null)
+                biprimalityTestData = BiprimalityTestData.init();
             else
-            {
-                var badActors = dataWithNewShare.shares()
-                    .Where(e => !e.Value.isCorrect(protoParam))
-                    .Select(e => e.Key); // Check the shares (not implemented yet)
+                biprimalityTestData = biprimalityTestData.forNextRound();
 
-                if (badActors.Any())
+            var gp = getGp(candidateN.N, 0);
+            var Qi = getQi(gp, candidateN.N, candidateN.BgwPrivateParameters.pi,
+                candidateN.BgwPrivateParameters.qi, participants[publicKey]);
+
+            return new QiTestForRound(
+                biprimalityTestData.qiss(biprimalityTestData.round)[biprimalityTestData.GetParticipants()[publicKey]],
+                biprimalityTestData.round);
+        }
+
+        public void CollectProof(IReadOnlyCollection<QiTestForRound> proofs)
+        {
+            CurrentState = GeneratorState.CollectingProof;
+
+            for (var i = 0; i < proofs.Count; i++)
+                biprimalityTestData =
+                    biprimalityTestData.withNewQi(proofs.ElementAt(i).Qi, i, proofs.ElementAt(i).round);
+            if (!biprimalityTestData.hasQiOf(participants.Values, biprimalityTestData.round))
+                throw new Exception("We havn't collected all proofs from other participants");
+        }
+
+        public BiprimalityTestResult ValidateProof()
+        {
+            CurrentState = GeneratorState.ValidatingProof;
+
+            var check = biprimalityTestData.qis(biprimalityTestData.round).Select(
+                    qi => qi.Key == 1 ? qi.Value : qi.Value.ModInverse(biprimalityTestData.N))
+                .Aggregate(BigInteger.One, (qi, qj) => qi.Multiply(qj)).Mod(biprimalityTestData.N);
+
+            BigInteger minusOne = BigInteger.One.Negate().Mod(biprimalityTestData.N);
+
+            if (check.Equals(minusOne) || check.Equals(BigInteger.One))
+            {
+                if (participants[publicKey] == 1)
+                    Console.WriteLine("PASSED TEST " + biprimalityTestData.round);
+
+                if (biprimalityTestData.round == NUMBER_OF_ROUNDS)
                 {
-                    // todo: отправка сообщений пример ниже - переписать
-//                    badActors.ForEach(id => broadCast(new Messages.Complaint(id), actors.Keys));
-//                    return Stop(new Failure("A BGW share was invalid."));
+                    return new BiprimalityTestResult(biprimalityTestData.N, biprimalityTestData.bgwPrivateParameters,
+                        true);
                 }
 
-                var sumPj = dataWithNewShare.shares().Select(e => e.Value.pij)
-                    .Aggregate(BigInteger.Zero, (p1, p2) => p1.Add(p2));
-                var sumQj = dataWithNewShare.shares().Select(e => e.Value.qij)
-                    .Aggregate(BigInteger.Zero, (p1, p2) => p1.Add(p2));
-                var sumHj = dataWithNewShare.shares().Select(e => e.Value.hij)
-                    .Aggregate(BigInteger.Zero, (p1, p2) => p1.Add(p2));
-                var Ni = sumPj.Multiply(sumQj).Add(sumHj).Mod(protoParam.P);
-                
-                // todo: отправка сообщений пример ниже - переписать
-                //return GoTo(States.BGW_COLLECTING_Nj).using (dataWithNewShare.withNewNi(Ni, actors.get(this.master))) ;
+                // Resets N, BgwPrivateParameters, gprime, Qi and increments round counter for next round
+                BiprimalityTestData nextData = biprimalityTestData.forNextRound();
+
+                BigInteger nextgp = getGp(nextData.N, nextData.round);
+                BigInteger nextQi = getQi(nextgp, nextData.N, nextData.bgwPrivateParameters.pi,
+                    nextData.bgwPrivateParameters.qi, participants[publicKey]);
+
+                biprimalityTestData = nextData.withNewQi(nextQi, participants[publicKey], nextData.round);
             }
+
+            return new BiprimalityTestResult(biprimalityTestData.N, biprimalityTestData.bgwPrivateParameters, false);
         }
 
-        private void BGW_COLLECTING_Nj(BGWNPoint newNi)
+        public IReadOnlyCollection<KeysDerivationPublicParameters> GenerateDerivation(BiprimalityTestResult acceptedN)
         {
-            // Collect the Nj shares and compute N using Lagrangian interpolation
-            var actors = participants.GetParticipants();
+            keysDerivationData = KeysDerivationData.init();
 
-            var a1 = participants as BGWData;
-            
-                
-                
-                
-            BGWData dataWithNewNi = a1.withNewNi(newNi.point, actors.get(sender()));
-            if (!dataWithNewNi.hasNiOf(actors.values())) {
-                return stay().using(dataWithNewNi);
-            } else {
-                List<BigInteger> Nis = dataWithNewNi.nis()
-                    .map(e -> e.getValue())
-                    .collect(Collectors.toList());
-                BigInteger N = IntegersUtils.getIntercept(Nis, protocolParameters.P);
+            var self = participants[publicKey];
 
-                if (this.master != self())
-                    this.master.tell(new Messages.CandidateN(N, data.bgwPrivateParameters), self());
-            }
+            BigInteger N = acceptedN.N;
+            BigInteger pi = acceptedN.BgwPrivateParameters.pi;
+            BigInteger qi = acceptedN.BgwPrivateParameters.qi;
 
-            return goTo(States.INITILIZATION).using(BGWData.init().withParticipants(data.getParticipants()));
+            var Phii = self == 1
+                ? N.Subtract(pi).Subtract(qi).Add(BigInteger.One)
+                : pi.Negate().Subtract(qi);
 
+            var keysDerivationPrivateParameters = KeysDerivationPrivateParameters.gen(protoParam, self, N, Phii, sr);
+            var keysDerivationPublicParameters =
+                KeysDerivationPublicParameters.genFor(self, keysDerivationPrivateParameters);
+
+            keysDerivationData = keysDerivationData.withN(N)
+                .withPrivateParameters(keysDerivationPrivateParameters)
+                .withNewPublicParametersFor(self, keysDerivationPublicParameters);
+
+            var privateParameters =
+                keysDerivationData.keysDerivationPrivateParameters;
+
+            return participants.Values.Select(p => KeysDerivationPublicParameters.genFor(p, privateParameters))
+                .ToList();
         }
-        
-        
-        
 
-        private BigInteger getGp(BigInteger N, int round) {
-		
-            int hash = N.GetHashCode()*(round+1);
-		
+        public void CollectDerivation(IReadOnlyCollection<KeysDerivationPublicParameters> derivations)
+        {
+            for (var i = 0; i < derivations.Count; i++)
+                keysDerivationData = keysDerivationData.withNewPublicParametersFor(i, derivations.ElementAt(i));
+            if (!keysDerivationData.hasBetaiRiOf(participants.Values))
+                throw new Exception("We havn't collected all required derivations from other participants");
+        }
+
+        public ThetaPoint GenerateTheta()
+        {
+            var publicParameters = keysDerivationData.publicParameters();
+
+            var betaPointi = publicParameters.Select(e => e.Value.betaij)
+                .Aggregate(BigInteger.Zero, (b1, b2) => b1.Add(b2));
+            publicParameters = keysDerivationData.publicParameters();
+            var DRPointi = publicParameters.Select(e => e.Value.DRij)
+                .Aggregate(BigInteger.Zero, (b1, b2) => b1.Add(b2));
+            publicParameters = keysDerivationData.publicParameters();
+            var PhiPointi = publicParameters.Select(e => e.Value.Phiij)
+                .Aggregate(BigInteger.Zero, (b1, b2) => b1.Add(b2));
+            publicParameters = keysDerivationData.publicParameters();
+            var hij = publicParameters.Select(e => e.Value.hij).Aggregate(BigInteger.Zero, (b1, b2) => b1.Add(b2));
+            var delta = IntegersUtils.Factorial(BigInteger.ValueOf(protoParam.n));
+            var thetai = delta.Multiply(PhiPointi).Multiply(betaPointi).Mod(protoParam.P)
+                .Add(keysDerivationData.N.Multiply(DRPointi).Mod(protoParam.P)).Add(hij).Mod(protoParam.P);
+
+            keysDerivationData = keysDerivationData.withNewThetaFor(participants[publicKey], thetai)
+                .withRPoint(DRPointi);
+
+            return new ThetaPoint(thetai);
+        }
+
+        public void CollectTheta(IReadOnlyCollection<ThetaPoint> thetas)
+        {
+            for (var i = 0; i < thetas.Count; i++)
+                keysDerivationData = keysDerivationData.withNewThetaFor(i, thetas.ElementAt(i).thetai);
+            if (!keysDerivationData.hasThetaiOf(participants.Values))
+                throw new Exception("We havn't collected all required thetas from other participants");
+
+            throw new NotImplementedException();
+        }
+
+        public VerificationKey GenerateVerification()
+        {
+            List<BigInteger> thetas = keysDerivationData.thetas.Values.ToList();
+            BigInteger thetap = IntegersUtils.GetIntercept(thetas, protoParam.P);
+            BigInteger theta = thetap.Mod(keysDerivationData.N);
+
+            // Parties should have the same v, using theta to seed the random generator
+            BigInteger v = IntegersUtils.PickProbableGeneratorOfZnSquare(keysDerivationData.N, 2 * protoParam.k,
+                new SecureRandom(theta.ToByteArray())); /* TODO: "is it ok?" */
+
+            BigInteger secreti = thetap.Subtract(keysDerivationData.N.Multiply(keysDerivationData.DRpoint));
+            BigInteger delta = IntegersUtils.Factorial(BigInteger.ValueOf(protoParam.n));
+
+            BigInteger verificationKeyi =
+                v.ModPow(delta.Multiply(secreti), keysDerivationData.N.Multiply(keysDerivationData.N));
+
+            keysDerivationData = keysDerivationData
+                .withNewVerificationKeyFor(participants[publicKey], verificationKeyi)
+                .withNewV(v)
+                .withFi(secreti)
+                .withThetaprime(thetap);
+
+            return new VerificationKey(keysDerivationData.verificationKeys[participants[publicKey]]);
+        }
+
+        public void CollectVerification(IReadOnlyCollection<VerificationKey> verificationKeys)
+        {
+            for (var i = 0; i < verificationKeys.Count; i++)
+                keysDerivationData =
+                    keysDerivationData.withNewVerificationKeyFor(i, verificationKeys.ElementAt(i).verificationKey);
+            if (!keysDerivationData.hasVerifKeyOf(participants.Values))
+                throw new Exception("We havn't collected all required verification keys from other participants");
+        }
+
+        public PaillierPrivateThresholdKey Finalize()
+        {
+            var verificationKeys = new BigInteger[protoParam.n];
+            foreach (var entry in keysDerivationData.verificationKeys)
+                verificationKeys[entry.Key - 1] = entry.Value;
+            var privateKey = new PaillierPrivateThresholdKey(keysDerivationData.N,
+                keysDerivationData.thetaprime,
+                protoParam.n,
+                protoParam.t + 1,
+                keysDerivationData.v,
+                verificationKeys,
+                keysDerivationData.fi,
+                participants[publicKey],
+                sr.NextInt());
+            return privateKey;
+        }
+
+        private BigInteger getGp(BigInteger N, int round)
+        {
+            int hash = N.GetHashCode() * (round + 1);
+
             BigInteger candidateGp = BigInteger.ValueOf(hash).Abs();
-		
-            while(IntegersUtils.Jacobi(candidateGp, N) != 1)
+
+            while (IntegersUtils.Jacobi(candidateGp, N) != 1)
                 candidateGp = candidateGp.Add(BigInteger.One);
-		
+
             return candidateGp;
         }
-        
-        private BigInteger getQi(BigInteger gp, BigInteger N, BigInteger pi, BigInteger qi, int i) {
+
+        private BigInteger getQi(BigInteger gp, BigInteger N, BigInteger pi, BigInteger qi, int i)
+        {
             BigInteger four = BigInteger.ValueOf(4);
             BigInteger exp;
-            if (i == 1) {
+            if (i == 1)
+            {
                 exp = N.Add(BigInteger.One).Subtract(pi).Subtract(qi).Divide(four);
-            } else {
+            }
+            else
+            {
                 exp = pi.Add(qi).Divide(four);
             }
+
             return gp.ModPow(exp, N);
         }
     }

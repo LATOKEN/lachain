@@ -5,7 +5,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public class KeysDerivationData : Data
+    public class KeysDerivationData : Data<KeysDerivationData>
     {
         /** The current candidate to RSA modulus*/
         public readonly BigInteger N;
@@ -31,7 +31,7 @@ namespace Phorkus.Hermes.Generator.State
         /** Collection of the verification keys of all actors*/
         public readonly IDictionary<int, BigInteger> verificationKeys;
 
-        public readonly IDictionary<int, BgwPublicParams> publicParameters1;
+        public readonly IDictionary<int, KeysDerivationPublicParameters> publicParameters1;
         
 
 
@@ -42,7 +42,7 @@ namespace Phorkus.Hermes.Generator.State
             BigInteger fi,
             BigInteger thetaprime,
             KeysDerivationPrivateParameters keysDerivationPrivateParameters,
-            IDictionary<int, BgwPublicParams> publicParameters,
+            IDictionary<int, KeysDerivationPublicParameters> publicParameters,
             IDictionary<int, BigInteger> thetas,
             IDictionary<int, BigInteger> verificationKeys) : base(participants)
         {
@@ -77,7 +77,7 @@ namespace Phorkus.Hermes.Generator.State
         // public Stream<Entry<Integer, KeysDerivationPublicParameters>> publicParameters() {
         //     return this.publicParameters.entrySet().stream();
         // }
-        public IEnumerable<KeyValuePair<int, BgwPublicParams>> publicParameters()
+        public IEnumerable<KeyValuePair<int, KeysDerivationPublicParameters>> publicParameters()
         {
             return publicParameters1;
         }
@@ -113,7 +113,7 @@ namespace Phorkus.Hermes.Generator.State
         }
 
         public KeysDerivationData withNewPublicParametersFor(int j,
-            BgwPublicParams keysDerivationPublicParameters)
+            KeysDerivationPublicParameters keysDerivationPublicParameters)
         {
             if (publicParameters1 != null && publicParameters1.ContainsKey(j))
             {

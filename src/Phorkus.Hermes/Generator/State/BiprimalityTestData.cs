@@ -6,7 +6,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public class BiprimalityTestData : Data
+    public class BiprimalityTestData : Data<BiprimalityTestData>
     {
         private Dictionary<int, BigInteger>[] Qs;
 
@@ -45,7 +45,7 @@ namespace Phorkus.Hermes.Generator.State
             return new BiprimalityTestData(null, null, null, Qs, 0);
         }
 
-        public bool hasQiOf(ICollection<int> isy, int round)
+        public bool hasQiOf(IEnumerable<int> isy, int round)
         {
             if (isy == null)
                 throw new ArgumentNullException(nameof(isy));

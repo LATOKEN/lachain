@@ -10,7 +10,7 @@ namespace Phorkus.Hermes.Generator.State
  * This is an immutable object type in order to comply to the Akka good practices regarding FSMs.
  * @author Christian Mouchet
  */
-    public class BGWData : Data
+    public class BGWData : Data<BGWData>
     {
         
         /** Collection of the recieved shares of N*/

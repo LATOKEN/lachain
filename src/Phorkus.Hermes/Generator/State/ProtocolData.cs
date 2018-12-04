@@ -4,7 +4,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public class ProtocolData : Data
+    public class ProtocolData : Data<ProtocolData>
     {
         /** The current candidate to RSA modulus in the protocol. Can be accepted or not depending on the phase.*/
         public BigInteger N;
@@ -12,9 +12,7 @@ namespace Phorkus.Hermes.Generator.State
         /** The BGW private parameters associated with the current N.*/
         public BgwPrivateParams bgwPrivateParameters;
 
-        private ProtocolData(IReadOnlyDictionary<PublicKey, int> participants,
-            BigInteger N,
-            BgwPrivateParams bgwPrivateParameters)
+        private ProtocolData(IReadOnlyDictionary<PublicKey, int> participants, BigInteger N, BgwPrivateParams bgwPrivateParameters)
             : base(participants)
         {
             this.N = N;

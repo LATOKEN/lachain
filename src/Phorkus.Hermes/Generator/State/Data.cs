@@ -3,7 +3,8 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public abstract class Data
+    public abstract class Data<T>
+        where T : Data<T>
     {
         protected IReadOnlyDictionary<PublicKey, int> participants;
 
@@ -16,7 +17,7 @@ namespace Phorkus.Hermes.Generator.State
          * @param participants the new ActorRef->Party index mapping
          * @return updated structure with a new ActorRef->Party index mapping.
          */
-        public abstract Data WithParticipants(IReadOnlyDictionary<PublicKey, int> participants);
+        public abstract T WithParticipants(IReadOnlyDictionary<PublicKey, int> participants);
 
         public IReadOnlyDictionary<PublicKey, int> GetParticipants() {
             return participants;
