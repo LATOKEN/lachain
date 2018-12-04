@@ -30,7 +30,7 @@ namespace Phorkus.Hermes.Signer.Messages
                 for (var i = 0; i < glen; i++)
                 {
                     var len = reader.ReadInt32();
-                    bigs[i] = new BigInteger(reader.ReadBytes(len));
+                    bigs[i] = new BigInteger((reader.ReadBytes(len)).ToArray());
                 }
                 openUiVi = bigs;
                 var zlen = reader.ReadInt32();

@@ -15,7 +15,7 @@ namespace Phorkus.Hermes.Signer
         private PaillierThreshold pI;
         private BigInteger encryptedDSAKey;
         public CurveParams curveParams;
-        private LinearRandom rnd;
+        private Random rnd;
         private BigInteger rhoI;
         private BigInteger randomness1;
         private BigInteger uI;
@@ -47,7 +47,7 @@ namespace Phorkus.Hermes.Signer
             BigInteger encryptedDSAKey, byte[] message)
         {
             this.curveParams = curveParams;
-            rnd = new LinearRandom(123456789);
+            rnd = new Random(123456789);
             paillierPublicKey = new Paillier(paillierKeyShare.getPublicKey());
             pI = new PaillierThreshold(paillierKeyShare);
             this.message = message;

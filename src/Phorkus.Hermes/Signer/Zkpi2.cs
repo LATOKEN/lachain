@@ -69,7 +69,7 @@ namespace Phorkus.Hermes.Signer
         }
         
         public Zkpi2(CurveParams curveParams, PublicParameters parameters, BigInteger eta1, BigInteger eta2,
-            LinearRandom rand, ECPoint c, BigInteger w, BigInteger u,
+            Random rand, ECPoint c, BigInteger w, BigInteger u,
             BigInteger randomness)
         {
             this.curveParams = curveParams;
@@ -128,7 +128,7 @@ namespace Phorkus.Hermes.Signer
         public bool verify(CurveParams curveParams, PublicParameters parameters, ECDomainParameters CURVE,
             ECPoint r, BigInteger u, BigInteger w)
         {
-            ECPoint c = parameters.getG(CURVE);
+            ECPoint c = parameters.getG();
 
             BigInteger h1 = parameters.h1;
             BigInteger h2 = parameters.h2;

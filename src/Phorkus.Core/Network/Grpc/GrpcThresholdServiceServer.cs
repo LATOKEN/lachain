@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
@@ -25,9 +24,17 @@ namespace Phorkus.Core.Network.Grpc
         
         public override Task<ThresholdMessage> ExchangeMessage(ThresholdMessage request, ServerCallContext context)
         {
-            if (!_VerifyMessageSignature(request, context, out var publicKey))
-                throw new Exception("Unable to validate ECDSA signature");
-            return Task.FromResult(_thresholdManager.HandleThresholdMessage(request, publicKey.ToPublicKey()));
+            try
+            {
+                if (!_VerifyMessageSignature(request, context, out var publicKey))
+                    throw new Exception("Unable to validate ECDSA signature");
+                return Task.FromResult(_thresholdManager.HandleThresholdMessage(request, publicKey.ToPublicKey()));
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e);
+                return null;
+            }
         }
         
         private bool _VerifyMessageSignature(IMessage message, ServerCallContext context, out byte[] publicKey)

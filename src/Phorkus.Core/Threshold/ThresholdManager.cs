@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading;
 using Google.Protobuf;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
@@ -36,7 +34,7 @@ namespace Phorkus.Core.Threshold
         private readonly IDictionary<PublicKey, SignerState> _signerStates
             = new Dictionary<PublicKey, SignerState>();
 
-        private IList<byte[]>[] _messagePerValidator;
+        private byte[][][] _messagePerValidator;
 
         private readonly object _messageChanged = new object();
 
@@ -52,7 +50,7 @@ namespace Phorkus.Core.Threshold
             _validatorManager = validatorManager;
             _networkContext = networkContext;
             _logger = logger;
-            _messagePerValidator = new IList<byte[]>[validatorManager.Validators.Count];
+            _messagePerValidator = new byte[validatorManager.Validators.Count + 1][][];
         }
 
         public ThresholdKey GeneratePrivateKey()
@@ -60,7 +58,7 @@ namespace Phorkus.Core.Threshold
             throw new NotImplementedException();
         }
 
-        public Signature SignData(KeyPair keyPair, string curveType, byte[] message)
+        public byte[] SignData(KeyPair keyPair, string curveType, byte[] message)
         {
             var myIndex = _validatorManager.GetValidatorIndex(keyPair.PublicKey);
 
@@ -87,29 +85,22 @@ namespace Phorkus.Core.Threshold
 
             var pk = new PaillierPrivateThresholdKey(HexUtil.hexToBytes(sharesForTest[myIndex % sharesForTest.Length]),
                 4289, true);
-            var plainRnd = new LinearRandom(123456789);
+            var plainRnd = new Random(123456789);
             var curveParams = new CurveParams(curveType);
             var privateKey =
                 new BigInteger("d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 16);
             var randomness = Util.randomFromZnStar(curveParams.Q, plainRnd);
             var encryptedPrivateKey = new Paillier(pk).encrypt(privateKey, randomness);
             var publicKey = curveParams.G.Multiply(privateKey.Mod(curveParams.Q)).Normalize();
+            
+            _logger.LogInformation($"Public key: {publicKey}");
 
             var share = new ThresholdKey
             {
-                PrivateKey = new PrivateKey
-                {
-                    Buffer = ByteString.CopyFrom(encryptedPrivateKey.ToByteArray())
-                },
+                PrivateKey = encryptedPrivateKey.ToByteArray().ToPrivateKey(),
                 Validators = {_validatorManager.Validators},
-                PublicKey = new PublicKey
-                {
-                    Buffer = ByteString.CopyFrom(publicKey.GetEncoded(true))
-                },
-                PrivateShare = new PrivateKey
-                {
-                    Buffer = ByteString.CopyFrom(pk.toByteArray())
-                }
+                PublicKey = publicKey.GetEncoded(true).ToPublicKey(),
+                PrivateShare = pk.toByteArray().ToPrivateKey()
             };
             
             /* TODO: "i think we have to use password encryption for starting blockchain with private shares" */
@@ -122,7 +113,7 @@ namespace Phorkus.Core.Threshold
                 share.PublicKey.Buffer.ToByteArray(),
                 curveType);
             signer.Initialize(message);
-            /* round #1 */
+            /* rounds */
             _logger.LogInformation("Working on round #1");
             var r1 = _Broadcast(signer.Round1(), keyPair, signer);
             _logger.LogInformation("Working on round #2");
@@ -137,12 +128,18 @@ namespace Phorkus.Core.Threshold
             var r6 = _Broadcast(signer.Round6(r5), keyPair, signer);
             _logger.LogInformation("Calculating signature");
             var final = signer.Finalize(r6);
-            /* TODO: "calculate V and combine VRS" */
             _logger.LogInformation($"Signatre generated R:{final.r}, S:{final.s}");
-            return new Signature
-            {
-                Buffer = ByteString.CopyFrom(null)
-            };
+            return padTo32(final.r).Concat(padTo32(final.s)).ToArray();
+        }
+
+        private byte[] padTo32(BigInteger value)
+        {
+            var buffer = value.ToByteArray().Skip(1).ToArray();
+            var result = new byte[32];
+            if (buffer.Length > result.Length)
+                throw new ArgumentOutOfRangeException(nameof(buffer));
+            Buffer.BlockCopy(buffer, 0, result, 0, buffer.Length);
+            return result;
         }
 
         public ThresholdMessage HandleThresholdMessage(ThresholdMessage thresholdMessage, PublicKey publicKey)
@@ -156,15 +153,13 @@ namespace Phorkus.Core.Threshold
                 if (reader.ReadInt32() != validatorIndex)
                     throw new Exception("Invalid validator index specified");
                 var state = (SignerState) reader.ReadByte();
-                _logger.LogInformation($"Handled state message {state}, from ${validatorIndex}");
+                _logger.LogInformation($"Handled state message {state}, from {validatorIndex}");
                 var len = reader.ReadLength();
                 bytes = reader.ReadBytes((int) len);
                 lock (_messageChanged)
                 {
                     var msgs = _ValidatorMessages((int) validatorIndex);
-                    if (msgs.Count + 1 != (byte) state)
-                        throw new Exception("Invalid message state");
-                    msgs.Add(bytes);
+                    msgs[(byte) state] = bytes;
                     Monitor.PulseAll(_messageChanged);
                 }
             }
@@ -193,15 +188,13 @@ namespace Phorkus.Core.Threshold
                 bytes = stream.ToArray();
             }
 
-            _logger.LogInformation($"Broadcasting state {signer.CurrentState}, i'm ${validatorIndex}");
+            _logger.LogInformation($"Broadcasting state {signer.CurrentState}, i'm {validatorIndex}");
 
             /* store */
             lock (_messageChanged)
             {
                 var msgs = _ValidatorMessages(validatorIndex);
-                if (msgs.Count + 1 != (byte) signer.CurrentState)
-                    throw new Exception("Invalid message state");
-                msgs.Add(bytes);
+                msgs[(byte) signer.CurrentState] = bytes;
                 Monitor.PulseAll(_messageChanged);
             }
 
@@ -229,10 +222,10 @@ namespace Phorkus.Core.Threshold
             {
                 var index = _validatorManager.GetValidatorIndex(validator);
                 var msgs = _ValidatorMessages((int) index);
-                if (msgs.Count < (byte) signer.CurrentState)
-                    throw new Exception("Invalid count of user msgs");
+                if (msgs[(byte) signer.CurrentState] is null)
+                    throw new Exception($"Invalid validator's state, waiting for ({signer.CurrentState})");
                 var t = new T();
-                t.fromByteArray(msgs.ElementAt((byte) signer.CurrentState - 1));
+                t.fromByteArray(msgs[(byte) signer.CurrentState]);
                 result.Add(t);
             }
 
@@ -245,7 +238,7 @@ namespace Phorkus.Core.Threshold
             foreach (var validator in _validatorManager.Validators)
             {
                 var msgs = _ValidatorMessages((int) _validatorManager.GetValidatorIndex(validator));
-                if (msgs.Count < (byte) state)
+                if (msgs[(byte) state] is null)
                     continue;
                 ++exists;
             }
@@ -254,8 +247,8 @@ namespace Phorkus.Core.Threshold
                 return false;
             return true;
         }
-
-        private IList<byte[]> _ValidatorMessages(int validatorIndex)
+        
+        private byte[][] _ValidatorMessages(int validatorIndex)
         {
             try
             {
@@ -268,7 +261,7 @@ namespace Phorkus.Core.Threshold
                 // ignore
             }
 
-            _messagePerValidator[validatorIndex] = new List<byte[]>();
+            _messagePerValidator[validatorIndex] = new byte[0x100][];
             return _messagePerValidator[validatorIndex];
         }
     }

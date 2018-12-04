@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using Org.BouncyCastle.Math;
 using Phorkus.Hermes.Crypto.Key;
 
@@ -67,10 +69,18 @@ public class PartialDecryption : IEquatable<PartialDecryption> {
 	 * @param b
 	 */
 	public PartialDecryption(byte[] b) {
-		var dec = new byte[b.Length-4];
-		Array.Copy(b, 4, dec, 0, dec.Length);
-		decryption = new BigInteger(dec);
-		id = b[0]<<24 + b[1]<<16 + b[2]<<8 + b[3];
+		using (var stream = new MemoryStream(b))
+		using (var reader = new BinaryReader(stream))
+		{
+			var len = reader.ReadInt32();
+			var buf = reader.ReadBytes(len);
+			decryption = new BigInteger(buf);
+			id = reader.ReadInt32();
+		}
+//		var dec = new byte[b.Length-4];
+//		Array.Copy(b, 4, dec, 0, dec.Length);
+//		decryption = new BigInteger(dec);
+//		id = b[0]<<24 + b[1]<<16 + b[2]<<8 + b[3];
 	}
 	
 	/**
@@ -125,14 +135,23 @@ public class PartialDecryption : IEquatable<PartialDecryption> {
 		// [ id ]
 		// [ decryption ]
 		
-		var dec = decryption.ToByteArray();
-		var b = new byte[4+dec.Length];
-        for (var i = 0; i < 4; i++) {
-            var offset = (3 - i) * 8;
-            b[i] = (byte) ((id >> offset) & 0xFF);// b[i] = (byte) ((id >>> offset) & 0xFF);
-        }
-        Array.Copy(dec, 0, b, 4, dec.Length);
-        return b;
+		using (var memory = new MemoryStream())
+		using (var writer = new BinaryWriter(memory))
+		{
+			var dec = decryption.ToByteArray();
+			writer.Write(dec.Length);
+			writer.Write(dec);
+			writer.Write(id);
+			return memory.ToArray();
+		}
+//		var dec = decryption.ToByteArray();
+//		var b = new byte[4+dec.Length];
+//        for (var i = 0; i < 4; i++) {
+//            var offset = (3 - i) * 8;
+//            b[i] = (byte) ((id >> offset) & 0xFF);// b[i] = (byte) ((id >>> offset) & 0xFF);
+//        }
+//        Array.Copy(dec, 0, b, 4, dec.Length);
+//        return b;
 	}
 
 	public bool Equals(PartialDecryption other)

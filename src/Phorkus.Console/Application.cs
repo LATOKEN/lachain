@@ -101,7 +101,7 @@ namespace Phorkus.Console
             //networkManager.Start();
             transactionVerifier.Start();
 //            consensusManager.Start();
-            synchronizer.Start();
+//            synchronizer.Start();
             
             var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 

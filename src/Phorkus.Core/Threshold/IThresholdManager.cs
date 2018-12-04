@@ -8,7 +8,7 @@ namespace Phorkus.Core.Threshold
     {
         ThresholdKey GeneratePrivateKey();
         
-        Signature SignData(KeyPair keyPair, string curveType, byte[] message);
+        byte[] SignData(KeyPair keyPair, string curveType, byte[] message);
 
         ThresholdMessage HandleThresholdMessage(ThresholdMessage thresholdMessage, PublicKey publicKey);
     }

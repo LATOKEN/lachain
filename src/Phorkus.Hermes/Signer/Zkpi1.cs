@@ -21,7 +21,7 @@ namespace Phorkus.Hermes.Signer
         {
         }
 
-        public Zkpi1(CurveParams curveParams, PublicParameters parameters, BigInteger eta, LinearRandom rand,
+        public Zkpi1(CurveParams curveParams, PublicParameters parameters, BigInteger eta, Random rand,
             BigInteger r, BigInteger c1, BigInteger c2, BigInteger c3)
         {
             BigInteger N = parameters.paillierPubKey.getN();
