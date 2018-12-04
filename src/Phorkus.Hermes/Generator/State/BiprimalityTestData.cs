@@ -76,7 +76,7 @@ namespace Phorkus.Hermes.Generator.State
             IDictionary<int, BigInteger> newMap = new Dictionary<int, BigInteger>(Qs[round % 2]);
             newMap.Add(fromId, Qi);
 
-            IDictionary<int, BigInteger>[] newQs = new Dictionary<int, BigInteger>[2];
+            IDictionary<int, BigInteger>[] newQs = new IDictionary<int, BigInteger>[2];
             newQs[round % 2] = newMap;
             newQs[(round + 1) % 2] = Qs[(round + 1) % 2];
 

@@ -14,7 +14,7 @@ using Phorkus.Hermes.Signer.Messages;
 namespace Phorkus.HermesTest
 {
     [TestClass]
-    public class DefaultTest
+    public class SignatureTest
     {
         private static byte[] Sha3(byte[] message)
         {
