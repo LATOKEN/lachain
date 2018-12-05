@@ -4,6 +4,8 @@
     {
         ITransactionFactory GetTransactionFactory(BlockchainType blockchainType);
 
+        ITransactionBroadcaster GetTransactionBroadcaster(BlockchainType blockchainType);
+        
         ITransactionCrawler GetTransactionCrawler(BlockchainType blockchainType);
     }
 }

@@ -18,6 +18,11 @@ namespace Phorkus.CrossChain
             throw new ArgumentOutOfRangeException(nameof(blockchainType), blockchainType, null);
         }
 
+        public ITransactionBroadcaster GetTransactionBroadcaster(BlockchainType blockchainType)
+        {
+            throw new NotImplementedException();
+        }
+
         public ITransactionCrawler GetTransactionCrawler(BlockchainType blockchainType)
         {
             throw new NotImplementedException();
