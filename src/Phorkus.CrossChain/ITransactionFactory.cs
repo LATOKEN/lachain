@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Phorkus.Proto;
 
 namespace Phorkus.CrossChain
 {
     public interface ITransactionFactory
     {
-        IDataToSign CreateDataToSign(byte[] from, byte[] to, UInt256 value);
+        IDataToSign CreateDataToSign(string publicKey, string from, string to, long value);
         
-        ITransactionData CreateTransaction(byte[] from, byte[] to, UInt256 value, IReadOnlyCollection<byte[]> signatures);
+        ITransactionData CreateRawTransaction(string publicKey, string from, string to, long value, 
+            IReadOnlyCollection<byte[]> signatures);
     }
 }

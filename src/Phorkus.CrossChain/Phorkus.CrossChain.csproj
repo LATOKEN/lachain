@@ -5,4 +5,19 @@
   <ItemGroup>
     <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NBitcoin" Version="4.1.1.72" />
+    <PackageReference Include="Nethereum.ABI" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Accounts" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Contracts" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Geth" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Hex" Version="3.0.0" />
+    <PackageReference Include="Nethereum.JsonRpc.Client" Version="3.0.0" />
+    <PackageReference Include="Nethereum.JsonRpc.RpcClient" Version="3.0.0" />
+    <PackageReference Include="Nethereum.RLP" Version="3.0.0" />
+    <PackageReference Include="Nethereum.RPC" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Signer" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Util" Version="3.0.0" />
+    <PackageReference Include="Nethereum.Web3" Version="3.0.0" />
+  </ItemGroup>
 </Project>
