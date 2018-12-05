@@ -4,11 +4,11 @@ using System.Text;
 
 namespace Phorkus.CrossChain
 {
-    public class Utils
+    public static class Utils
     {
         public const int LongHexLength = 16;
         public const int IntHexLength = 8;
-        
+
         public static string ConvertIntToReversedHex(int data, int totalLength)
         {
             var reversedBytes = System.Net.IPAddress.NetworkToHostOrder(data);
@@ -19,10 +19,10 @@ namespace Phorkus.CrossChain
             {
                 trimmed += "00";
             }
+
             return trimmed;
         }
 
-        
         public static string ConvertUIntToReversedHex(uint data, int totalLength)
         {
             var reversedBytes = System.Net.IPAddress.NetworkToHostOrder(data);
@@ -33,9 +33,10 @@ namespace Phorkus.CrossChain
             {
                 trimmed += "00";
             }
+
             return trimmed;
         }
-        
+
         public static string ConvertByteArrayToString(byte[] bytes)
         {
             var hex = new StringBuilder(bytes.Length << 1);
@@ -43,6 +44,7 @@ namespace Phorkus.CrossChain
             {
                 hex.AppendFormat("{0:x2}", b);
             }
+
             return hex.ToString();
         }
 
@@ -55,7 +57,7 @@ namespace Phorkus.CrossChain
 
             return hex;
         }
-        
+
         public static string ConvertLongToReversedHex(long data)
         {
             var reversedBytes = System.Net.IPAddress.NetworkToHostOrder(data);
@@ -66,6 +68,7 @@ namespace Phorkus.CrossChain
             {
                 trimmed += "00";
             }
+
             return trimmed;
         }
 
@@ -73,10 +76,10 @@ namespace Phorkus.CrossChain
         {
             if (hexString.Length % 2 != 0)
             {
-                throw new ArgumentException(String.Format(CultureInfo.InvariantCulture, 
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture,
                     "The binary key cannot have an odd number of digits: {0}", hexString));
             }
-
+            
             var data = new byte[hexString.Length >> 1];
             for (var index = 0; index < data.Length; index++)
             {
@@ -84,9 +87,9 @@ namespace Phorkus.CrossChain
                 data[index] = byte.Parse(byteValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             }
 
-            return data; 
+            return data;
         }
-        
+
         public static string ReverseHex(string num)
         {
             var number = Convert.ToInt32(num, 16);

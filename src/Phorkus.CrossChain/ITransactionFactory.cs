@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Phorkus.Proto;
+﻿using System.Collections.Generic;
 
 namespace Phorkus.CrossChain
 {

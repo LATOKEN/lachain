@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Text;
 using NBitcoin;
 using NBitcoin.Crypto;
-using NBitcoin.Protocol;
 using NBitcoin.RPC;
-using Phorkus.Proto;
-using Phorkus.CrossChain;
 
 namespace Phorkus.CrossChain.Bitcoin
 {
@@ -58,6 +50,7 @@ namespace Phorkus.CrossChain.Bitcoin
                 throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
                     "Bad request", RPCResponse.Load(Stream.Null));
             }
+
             var satoshiPerByte = (long) (estimateFee.Result.FeeRate.SatoshiPerByte * (decimal) 1e8);
             return satoshiPerByte * calcBytes(inputsNum, outputsNum);
         }
@@ -98,11 +91,12 @@ namespace Phorkus.CrossChain.Bitcoin
             bitcoinDataToSign.EllipticCurveType = EllipticCurveType.Secp256K1;
             bitcoinDataToSign.DataToSign = new[]
             {
-                Hashes.Hash256(Hashes.Hash256(Utils.ConvertHexStringToByteArray(Version + hashedPrevOuts + hashedSeq
-                                                                                + prevOuts + scriptCode
-                                                                                + Utils.ConvertLongToReversedHex(
-                                                                                    prevAmount) + Sequence + hashedOuts
-                                                                                + LockTime + HashType)).ToBytes())
+                Hashes.Hash256(Hashes.Hash256(Utils.ConvertHexStringToByteArray(
+                        Version + hashedPrevOuts + hashedSeq
+                        + prevOuts + scriptCode
+                        + Utils.ConvertLongToReversedHex(
+                            prevAmount) + Sequence + hashedOuts
+                        + LockTime + HashType)).ToBytes())
                     .ToBytes()
             };
 
@@ -126,37 +120,39 @@ namespace Phorkus.CrossChain.Bitcoin
             var redeemScript = "17160014" + Hashes.Hash160(Utils.ConvertHexStringToByteArray(publicKey)).ToString();
             foreach (var output in outputs.Key)
             {
-                prevOuts += Utils.ReverseHex(output.Hash.ToString()) + redeemScript
-                                                                     + Utils.ConvertUIntToReversedHex(output.N,
-                                                                         Utils.IntHexLength) + Sequence;
+                prevOuts += Utils.ReverseHex(output.Hash.ToString())
+                            + redeemScript
+                            + Utils.ConvertUIntToReversedHex(output.N,
+                                Utils.IntHexLength) + Sequence;
             }
 
             var signature = Utils.ConvertByteArrayToString(signatures.FirstOrDefault());
             var r = AppendSigPrefix(signature.Substring(0, 64));
             var s = AppendSigPrefix(signature.Substring(64, 64));
             var bitcoinTransactionData = new BitcoinTransactionData();
-            bitcoinTransactionData.RawTransaction = Utils.ConvertHexStringToByteArray(Version + Marker + Flag
-                                                                                      + Utils.ConvertIntToReversedHex(
-                                                                                          inputSz, 1) + prevOuts
-                                                                                      + Utils.ConvertIntToReversedHex(
-                                                                                          outputSz, 1)
-                                                                                      + Utils.ConvertLongToReversedHex(
-                                                                                          value)
-                                                                                      + Utils.ConvertIntToReversedHex(
-                                                                                          scriptPubKeyValue.Length / 2,
-                                                                                          1)
-                                                                                      + scriptPubKeyValue
-                                                                                      + Utils.ConvertLongToReversedHex(
-                                                                                          change)
-                                                                                      + Utils.ConvertIntToReversedHex(
-                                                                                          scriptPubKeyChange.Length / 2,
-                                                                                          1)
-                                                                                      + scriptPubKeyChange + WitnessCode
-                                                                                      + Utils.ConvertIntToReversedHex(
-                                                                                          r.Length / 2 + s.Length / 2 +
-                                                                                          publicKey.Length / 2 + 1, 1)
-                                                                                      + r + s + HashType + publicKey +
-                                                                                      LockTime);
+            bitcoinTransactionData.RawTransaction = Utils.ConvertHexStringToByteArray(
+                Version + Marker + Flag
+                + Utils.ConvertIntToReversedHex(
+                    inputSz, 1) + prevOuts
+                + Utils.ConvertIntToReversedHex(
+                    outputSz, 1)
+                + Utils.ConvertLongToReversedHex(
+                    value)
+                + Utils.ConvertIntToReversedHex(
+                    scriptPubKeyValue.Length / 2,
+                    1)
+                + scriptPubKeyValue
+                + Utils.ConvertLongToReversedHex(
+                    change)
+                + Utils.ConvertIntToReversedHex(
+                    scriptPubKeyChange.Length / 2,
+                    1)
+                + scriptPubKeyChange + WitnessCode
+                + Utils.ConvertIntToReversedHex(
+                    r.Length / 2 + s.Length / 2 +
+                    publicKey.Length / 2 + 1, 1)
+                + r + s + HashType + publicKey +
+                LockTime);
             return bitcoinTransactionData;
         }
     }

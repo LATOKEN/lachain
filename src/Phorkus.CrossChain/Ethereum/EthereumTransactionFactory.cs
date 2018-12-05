@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Numerics;
 using NBitcoin.RPC;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RLP;
 using Nethereum.RPC;
-using Nethereum.Signer;
-using Phorkus.Proto;
 
 namespace Phorkus.CrossChain.Ethereum
 {
@@ -78,12 +74,13 @@ namespace Phorkus.CrossChain.Ethereum
             ethereumDataToSign.EllipticCurveType = EllipticCurveType.Secp256K1;
             ethereumDataToSign.DataToSign = new[]
             {
-                RLP.EncodeElement(Utils.ConvertHexStringToByteArray(nonce.ToString("x2")
-                                                                    + gasPrice.ToString("x2") +
-                                                                    GasTransfer.ToString("x2")
-                                                                    + Utils.AppendZero(to)
-                                                                    + value.ToString("x2") + NullData + InitV +
-                                                                    NullData + NullData))
+                RLP.EncodeElement(Utils.ConvertHexStringToByteArray(
+                    nonce.ToString("x2")
+                    + gasPrice.ToString("x2") +
+                    GasTransfer.ToString("x2")
+                    + Utils.AppendZero(to)
+                    + value.ToString("x2") + NullData + InitV +
+                    NullData + NullData))
             };
             return ethereumDataToSign;
         }
