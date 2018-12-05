@@ -62,7 +62,7 @@ namespace Phorkus.Hermes.Generator
             return shares;
         }
 
-        public void CollectShare(IReadOnlyCollection<BgwPublicParams> shares)
+        public BGWNPoint GeneratePoint(IReadOnlyCollection<BgwPublicParams> shares)
         {
             CurrentState = GeneratorState.CollectingShare;
 
@@ -77,12 +77,9 @@ namespace Phorkus.Hermes.Generator
                 .Select(e => e.Key); // Check the shares (not implemented yet)
             if (badActors.Any())
                 throw new Exception("There are bad actors that sent incorrect share");
-        }
-
-        public BGWNPoint GeneratePoint()
-        {
+         
             CurrentState = GeneratorState.GeneratingPoint;
-
+            
             var sumPj = bgwData.shares().Select(e => e.Value.pij)
                 .Aggregate(BigInteger.Zero, (p1, p2) => p1.Add(p2));
             var sumQj = bgwData.shares().Select(e => e.Value.qij)
@@ -95,7 +92,7 @@ namespace Phorkus.Hermes.Generator
             return new BGWNPoint(bgwData.Ns[participants[publicKey]]);
         }
 
-        public void CollectPoint(IReadOnlyCollection<BGWNPoint> points)
+        public QiTestForRound GenerateProof(IReadOnlyCollection<BGWNPoint> points)
         {
             CurrentState = GeneratorState.CollectingPoint;
 
@@ -108,10 +105,7 @@ namespace Phorkus.Hermes.Generator
             var N = IntegersUtils.GetIntercept(Nis, protoParam.P);
 
             candidateN = new CandidateN(N, bgwData.bgwPrivateParameters);
-        }
-
-        public QiTestForRound GenerateProof()
-        {
+            
             CurrentState = GeneratorState.GeneratingProof;
 
             if (biprimalityTestData is null)
@@ -132,7 +126,7 @@ namespace Phorkus.Hermes.Generator
                 biprimalityTestData.round);
         }
 
-        public void CollectProof(IReadOnlyCollection<QiTestForRound> proofs)
+        public BiprimalityTestResult ValidateProof(IReadOnlyCollection<QiTestForRound> proofs)
         {
             CurrentState = GeneratorState.CollectingProof;
 
@@ -141,10 +135,7 @@ namespace Phorkus.Hermes.Generator
                     biprimalityTestData.withNewQi(proofs.ElementAt(i).Qi, i + 1, proofs.ElementAt(i).round);
             if (!biprimalityTestData.hasQiOf(participants.Values, biprimalityTestData.round))
                 throw new Exception("We havn't collected all proofs from other participants");
-        }
-
-        public BiprimalityTestResult ValidateProof()
-        {
+            
             CurrentState = GeneratorState.ValidatingProof;
 
             var check = biprimalityTestData.qis(biprimalityTestData.round)
@@ -216,7 +207,7 @@ namespace Phorkus.Hermes.Generator
                 .ToList();
         }
 
-        public void CollectDerivation(IReadOnlyCollection<KeysDerivationPublicParameters> derivations)
+        public ThetaPoint GenerateTheta(IReadOnlyCollection<KeysDerivationPublicParameters> derivations)
         {
             CurrentState = GeneratorState.CollectingDerivation;
             
@@ -224,10 +215,7 @@ namespace Phorkus.Hermes.Generator
                 keysDerivationData = keysDerivationData.withNewPublicParametersFor(i + 1, derivations.ElementAt(i));
             if (!keysDerivationData.hasBetaiRiOf(participants.Values))
                 throw new Exception("We havn't collected all required derivations from other participants");
-        }
-
-        public ThetaPoint GenerateTheta()
-        {
+            
             CurrentState = GeneratorState.GeneratingTheta;
             
             var publicParameters = keysDerivationData.publicParameters();
@@ -252,7 +240,7 @@ namespace Phorkus.Hermes.Generator
             return new ThetaPoint(thetai);
         }
 
-        public void CollectTheta(IReadOnlyCollection<ThetaPoint> thetas)
+        public VerificationKey GenerateVerification(IReadOnlyCollection<ThetaPoint> thetas)
         {
             CurrentState = GeneratorState.CollectingTheta;
             
@@ -260,16 +248,11 @@ namespace Phorkus.Hermes.Generator
                 keysDerivationData = keysDerivationData.withNewThetaFor(i + 1, thetas.ElementAt(i).thetai);
             if (!keysDerivationData.hasThetaiOf(participants.Values))
                 throw new Exception("We havn't collected all required thetas from other participants");
-
-            throw new NotImplementedException();
-        }
-
-        public VerificationKey GenerateVerification()
-        {
+            
             CurrentState = GeneratorState.GeneratingVerification;
             
-            List<BigInteger> thetas = keysDerivationData.thetas.Values.ToList();
-            BigInteger thetap = IntegersUtils.GetIntercept(thetas, protoParam.P);
+            List<BigInteger> ts = keysDerivationData.thetas.Values.ToList();
+            BigInteger thetap = IntegersUtils.GetIntercept(ts, protoParam.P);
             BigInteger theta = thetap.Mod(keysDerivationData.N);
 
             // Parties should have the same v, using theta to seed the random generator
@@ -291,7 +274,7 @@ namespace Phorkus.Hermes.Generator
             return new VerificationKey(keysDerivationData.verificationKeys[participants[publicKey]]);
         }
 
-        public void CollectVerification(IReadOnlyCollection<VerificationKey> verificationKeys)
+        public PaillierPrivateThresholdKey Finalize(IReadOnlyCollection<VerificationKey> verificationKeys)
         {
             CurrentState = GeneratorState.CollectingVerification;
             
@@ -300,21 +283,18 @@ namespace Phorkus.Hermes.Generator
                     keysDerivationData.withNewVerificationKeyFor(i + 1, verificationKeys.ElementAt(i).verificationKey);
             if (!keysDerivationData.hasVerifKeyOf(participants.Values))
                 throw new Exception("We havn't collected all required verification keys from other participants");
-        }
-
-        public PaillierPrivateThresholdKey Finalize()
-        {
+            
             CurrentState = GeneratorState.Finalization;
             
-            var verificationKeys = new BigInteger[protoParam.n];
+            var keys = new BigInteger[protoParam.n];
             foreach (var entry in keysDerivationData.verificationKeys)
-                verificationKeys[entry.Key - 1] = entry.Value;
+                keys[entry.Key - 1] = entry.Value;
             var privateKey = new PaillierPrivateThresholdKey(keysDerivationData.N,
                 keysDerivationData.thetaprime,
                 protoParam.n,
                 protoParam.t + 1,
                 keysDerivationData.v,
-                verificationKeys,
+                keys,
                 keysDerivationData.fi,
                 participants[publicKey],
                 rand.NextInt());

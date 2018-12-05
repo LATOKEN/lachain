@@ -13,31 +13,19 @@ namespace Phorkus.Hermes
         void Initialize();
 
         IReadOnlyCollection<BgwPublicParams> GenerateShare();
+        
+        BGWNPoint GeneratePoint(IReadOnlyCollection<BgwPublicParams> shares);
 
-        void CollectShare(IReadOnlyCollection<BgwPublicParams> shares);
+        QiTestForRound GenerateProof(IReadOnlyCollection<BGWNPoint> points);
 
-        BGWNPoint GeneratePoint();
-
-        void CollectPoint(IReadOnlyCollection<BGWNPoint> points);
-
-        QiTestForRound GenerateProof();
-
-        void CollectProof(IReadOnlyCollection<QiTestForRound> proofs);
-
-        BiprimalityTestResult ValidateProof();
+        BiprimalityTestResult ValidateProof(IReadOnlyCollection<QiTestForRound> proofs);
 
         IReadOnlyCollection<KeysDerivationPublicParameters> GenerateDerivation(BiprimalityTestResult acceptedN);
 
-        void CollectDerivation(IReadOnlyCollection<KeysDerivationPublicParameters> derivations);
-
-        ThetaPoint GenerateTheta();
-
-        void CollectTheta(IReadOnlyCollection<ThetaPoint> thetas);
-
-        VerificationKey GenerateVerification();
-
-        void CollectVerification(IReadOnlyCollection<VerificationKey> verificationKeys);
+        ThetaPoint GenerateTheta(IReadOnlyCollection<KeysDerivationPublicParameters> derivations);
         
-        PaillierPrivateThresholdKey Finalize();
+        VerificationKey GenerateVerification(IReadOnlyCollection<ThetaPoint> thetas);
+        
+        PaillierPrivateThresholdKey Finalize(IReadOnlyCollection<VerificationKey> verificationKeys);
     }
 }

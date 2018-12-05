@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -67,34 +65,26 @@ namespace Phorkus.HermesTest
                 }
             }
             
-            Console.WriteLine("Collecting shares");
-            
-            for (var i = 0; i < participants.Count; i++)
-                protos[i].CollectShare(flippedShares[i]);
-
             Console.WriteLine("Generating point");
             
             var points = new BGWNPoint[participants.Count];
             for (var i = 0; i < participants.Count; i++)
-                points[i] = protos[i].GeneratePoint();
-            for (var i = 0; i < participants.Count; i++)
-                protos[i].CollectPoint(points);
-            
+                points[i] = protos[i].GeneratePoint(flippedShares[i]);
+
             BiprimalityTestResult biprimalityTestResult = null;
-            for (var round = 0; round < 100; round++)
+            for (var round = 0; round < 10; round++)
             {
                 Console.WriteLine($"Testing biprimality {round}/10");
                 
                 var proofs = new QiTestForRound[participants.Count];
                 for (var i = 0; i < participants.Count; i++)
-                    proofs[i] = protos[i].GenerateProof();
-                for (var i = 0; i < participants.Count; i++)
-                    protos[i].CollectProof(proofs);
+                    proofs[i] = protos[i].GenerateProof(points);
+                
                 for (var i = 0; i < participants.Count; i++)
                 {
                     try
                     {
-                        var test = protos[i].ValidateProof();
+                        var test = protos[i].ValidateProof(proofs);
                         if (!test.passes)
                             continue;
                         biprimalityTestResult = test;
@@ -128,37 +118,24 @@ namespace Phorkus.HermesTest
                     flippedDerivation[j][i] = si[j];
                 }
             }
-            
-            Console.WriteLine("Collecting derivations");
-            
-            for (var i = 0; i < participants.Count; i++)
-                protos[i].CollectDerivation(flippedDerivation[i]);
 
             Console.WriteLine("Generating thetas");
             
             var thetas = new ThetaPoint[participants.Count];
             for (var i = 0; i < participants.Count; i++)
-                thetas[i] = protos[i].GenerateTheta();
-            
-            Console.WriteLine("Collecting thetas");
-            
-            for (var i = 0; i < participants.Count; i++)
-                protos[i].CollectTheta(thetas);
+                thetas[i] = protos[i].GenerateTheta(flippedDerivation[i]);
 
             Console.WriteLine("Generating verification codes");
             
             var verificationKeys = new VerificationKey[participants.Count];
             for (var i = 0; i < participants.Count; i++)
-                verificationKeys[i] = protos[i].GenerateVerification();
-            for (var i = 0; i < participants.Count; i++)
-                protos[i].CollectVerification(verificationKeys);
+                verificationKeys[i] = protos[i].GenerateVerification(thetas);
 
             Console.WriteLine("Finalizing");
             
             for (var i = 0; i < participants.Count; i++)
             {
-                var PrivateKey = protos[i].Finalize();
-
+                var PrivateKey = protos[i].Finalize(verificationKeys);
                 Console.WriteLine("Private Key: " + HexUtil.bytesToHex(PrivateKey.toByteArray()));
             }
         }
