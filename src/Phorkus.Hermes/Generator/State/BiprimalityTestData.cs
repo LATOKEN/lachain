@@ -6,7 +6,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State
 {
-    public class BiprimalityTestData : AbstractData<BiprimalityTestData>
+    public class BiprimalityTestData : Data<BiprimalityTestData>
     {
         private Dictionary<int, BigInteger>[] Qs;
 
@@ -45,7 +45,7 @@ namespace Phorkus.Hermes.Generator.State
             return new BiprimalityTestData(null, null, null, Qs, 0);
         }
 
-        public bool hasQiOf(ICollection<int> isy, int round)
+        public bool hasQiOf(IEnumerable<int> isy, int round)
         {
             if (isy == null)
                 throw new ArgumentNullException(nameof(isy));
@@ -65,7 +65,7 @@ namespace Phorkus.Hermes.Generator.State
         public BiprimalityTestData withNewCandidateN(BigInteger N,
             BgwPrivateParams bgwPrivateParameters)
         {
-            return new BiprimalityTestData(Participants, N, bgwPrivateParameters, Qs, round);
+            return new BiprimalityTestData(participants, N, bgwPrivateParameters, Qs, round);
         }
 
         public BiprimalityTestData withNewQi(BigInteger Qi, int fromId, int round)
@@ -76,11 +76,11 @@ namespace Phorkus.Hermes.Generator.State
             IDictionary<int, BigInteger> newMap = new Dictionary<int, BigInteger>(Qs[round % 2]);
             newMap.Add(fromId, Qi);
 
-            IDictionary<int, BigInteger>[] newQs = new Dictionary<int, BigInteger>[2];
+            IDictionary<int, BigInteger>[] newQs = new IDictionary<int, BigInteger>[2];
             newQs[round % 2] = newMap;
             newQs[(round + 1) % 2] = Qs[(round + 1) % 2];
 
-            return new BiprimalityTestData(Participants, N, bgwPrivateParameters, newQs, round);
+            return new BiprimalityTestData(participants, N, bgwPrivateParameters, newQs, round);
         }
 
         public override BiprimalityTestData WithParticipants(IReadOnlyDictionary<PublicKey, int> participants)
@@ -96,12 +96,12 @@ namespace Phorkus.Hermes.Generator.State
 
             newQs[round % 2] = new Dictionary<int, BigInteger>();
             newQs[(round + 1) % 2] = new Dictionary<int, BigInteger>(Qs[(round + 1) % 2]);
-            return new BiprimalityTestData(Participants, N, bgwPrivateParameters, newQs, round + 1);
+            return new BiprimalityTestData(participants, N, bgwPrivateParameters, newQs, round + 1);
         }
 
         public BiprimalityTestData forNextCandidate()
         {
-            return init().WithParticipants(Participants);
+            return init().WithParticipants(participants);
         }
     }
 }

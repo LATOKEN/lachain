@@ -1,9 +1,7 @@
 ﻿using System;
-using Google.Protobuf;
 using Org.BouncyCastle.Math;
 using Phorkus.Hermes.Generator.State;
 using Phorkus.Hermes.Math;
-using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.Builders
 {

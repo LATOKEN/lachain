@@ -8,7 +8,7 @@
         GeneratingPoint,
         CollectingPoint,
         GeneratingProof, // <---+
-        CollectingProof, //     | (repeat several times)
+        CollectingProof, //     | (repeat 10 times)
         ValidatingProof, // ----+
         GeneratingDerivation,
         CollectingDerivation,

@@ -15,7 +15,7 @@ namespace Phorkus.Hermes.Signer
 {
     public static class Util
     {
-        public static BigInteger randomFromZn(BigInteger n, LinearRandom rand)
+        public static BigInteger randomFromZn(BigInteger n, Random rand)
         {
             BigInteger result;
             do
@@ -55,7 +55,7 @@ namespace Phorkus.Hermes.Signer
          *
          * @param n the modulus
          */
-        public static BigInteger randomFromZnStar(BigInteger n, LinearRandom rand)
+        public static BigInteger randomFromZnStar(BigInteger n, Random rand)
         {
             BigInteger result;
             do
@@ -108,7 +108,7 @@ namespace Phorkus.Hermes.Signer
         }
 
         public static PublicParameters generateParamsforBitcoin(CurveParams curveParams, int k, int kPrime,
-            LinearRandom rand, PaillierKey paillierPubKey)
+            Random rand, PaillierKey paillierPubKey)
         {
             int primeCertainty = k;
             BigInteger p;

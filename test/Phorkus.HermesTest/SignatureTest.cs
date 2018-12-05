@@ -14,7 +14,7 @@ using Phorkus.Hermes.Signer.Messages;
 namespace Phorkus.HermesTest
 {
     [TestClass]
-    public class DefaultTest
+    public class SignatureTest
     {
         private static byte[] Sha3(byte[] message)
         {
@@ -29,11 +29,29 @@ namespace Phorkus.HermesTest
         {
             return (long) DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
         }
+
+        private void _validateMsgs<T>(IEnumerable<T> ts)
+            where T : ISignerMessage, new()
+        {
+            foreach (var t in ts)
+                _validateMsg(t);
+        }
+        
+        private void _validateMsg<T>(T t)
+            where T : ISignerMessage, new()
+        {
+            var bytes = t.ToByteArray();
+            var next = new T();
+            next.fromByteArray(bytes);
+            var bytes2 = next.ToByteArray();
+            if (!bytes.SequenceEqual(bytes2))
+                throw new Exception("Wooooow!");
+        }
         
         [TestMethod]
         public void TestSignature()
         {
-            var plainRnd = new LinearRandom(123456789);
+            var plainRnd = new Random(123456789);
 
             long checkpoint = CurrentTimeMillis();
 
@@ -56,16 +74,18 @@ namespace Phorkus.HermesTest
             
             PaillierKey paillierKey = privatePaillierKeyShares[0].getPublicKey();
             
-            plainRnd = new LinearRandom(98428965);
+            plainRnd = new Random(98428965);
             PublicParameters publicParameters = Util.generateParamsforBitcoin(curveParams, 60, 256, plainRnd, paillierKey);
             
-            plainRnd = new LinearRandom(58984789);
+            plainRnd = new Random(58984789);
             
             var players = new List<PlayerSigner>();
 
             byte[] message =
                 HexUtil.hexToBytes("e581b3843b9aca0083030d4094627306090abab3a6e1400e9345bc60c78a8bef570180118080");
             message = Sha3(message);
+            
+            message = HexUtil.hexToBytes("0xbadcab1e");
             //message = injectEthereumPrefix(message);
             Console.WriteLine("Hashed msg=" + HexUtil.bytesToHex(message));
 
@@ -104,10 +124,11 @@ namespace Phorkus.HermesTest
             currentTime = CurrentTimeMillis();
             Console.WriteLine("R1 took " + (currentTime - checkpoint) + " ms");
             checkpoint = currentTime;
-
+            
             List<Round2Message> round2Messages = new List<Round2Message>();
             for (int i = 0; i < n; ++i)
             {
+                _validateMsgs(round1Messages);
                 List<Round1Message> inputs = new List<Round1Message>(round1Messages);
                 inputs.RemoveAt(i);
                 round2Messages.Add(players[i].round2(inputs.ToArray()));
@@ -120,6 +141,7 @@ namespace Phorkus.HermesTest
             List<Round3Message> round3Messages = new List<Round3Message>();
             for (int i = 0; i < n; ++i)
             {
+                _validateMsgs(round2Messages);
                 List<Round2Message> inputs = new List<Round2Message>(round2Messages);
                 inputs.RemoveAt(i);
                 round3Messages.Add(players[i].round3(inputs.ToArray()));
@@ -132,6 +154,7 @@ namespace Phorkus.HermesTest
             List<Round4Message> round4Messages = new List<Round4Message>();
             for (int i = 0; i < n; ++i)
             {
+                _validateMsgs(round3Messages);
                 List<Round3Message> inputs = new List<Round3Message>(round3Messages);
                 inputs.RemoveAt(i);
                 round4Messages.Add(players[i].round4(inputs.ToArray()));
@@ -144,6 +167,7 @@ namespace Phorkus.HermesTest
             List<Round5Message> round5Messages = new List<Round5Message>();
             for (int i = 0; i < n; ++i)
             {
+                _validateMsgs(round4Messages);
                 List<Round4Message> inputs = new List<Round4Message>(round4Messages);
                 inputs.RemoveAt(i);
                 round5Messages.Add(players[i].round5(inputs.ToArray()));
@@ -156,6 +180,7 @@ namespace Phorkus.HermesTest
             List<Round6Message> round6Messages = new List<Round6Message>();
             for (int i = 0; i < n; ++i)
             {
+                _validateMsgs(round5Messages);
                 List<Round5Message> inputs = new List<Round5Message>(round5Messages);
                 inputs.RemoveAt(i);
                 round6Messages.Add(players[i].round6(inputs.ToArray()));

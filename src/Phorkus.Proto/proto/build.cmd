@@ -22,5 +22,6 @@ cd proto
 
 protoc --csharp_out ../Grpc -I . -I ./grpc blockchain_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=%PLUGIN%
 protoc --csharp_out ../Grpc -I . -I ./grpc consensus_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=%PLUGIN%
+protoc --csharp_out ../Grpc -I . -I ./grpc threshold_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=%PLUGIN%
 
 endlocal

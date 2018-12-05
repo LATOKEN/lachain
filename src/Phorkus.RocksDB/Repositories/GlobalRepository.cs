@@ -46,6 +46,16 @@ namespace Phorkus.RocksDB.Repositories
             return _GetGlobal() != null;
         }
 
+        public ThresholdKey GetShare()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddChange(ThresholdKey thresholdKey)
+        {
+            throw new NotImplementedException();
+        }
+
         private Global _GetGlobal()
         {
             _readerWriterLock.AcquireReaderLock(-1);

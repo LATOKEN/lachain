@@ -1,6 +1,6 @@
 namespace Phorkus.Hermes.Signer
 {
-    public enum SignerState
+    public enum SignerState : byte
     {
         Initialization,
         Round1,

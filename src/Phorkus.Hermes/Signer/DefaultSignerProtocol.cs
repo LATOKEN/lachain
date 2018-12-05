@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
@@ -27,17 +28,27 @@ namespace Phorkus.Hermes.Signer
 
         public void Initialize(byte[] message)
         {
-            var paillierKey = new PaillierPrivateThresholdKey(_share, 4289, true);
+            var paillierKey = new PaillierPrivateThresholdKey(_share, 4289);
             var curveParams = new CurveParams(_curveType);
             
             /* TODO: "this seed should be replaced with something more random, like transaction hash" */
-            var rnd = new LinearRandom(98428965);
+            var rnd = new Random(98428965);
+
+            var l1 = rnd.Next(31);
+            var l2 = rnd.Next(31);
+            var l3 = rnd.Next(31);
             
             /* convert private key to big integer (don't forget about first sign byte) */
             var bigPrivateKey = new BigInteger(new byte[1].Concat(_privateKey).ToArray());
             
             /* generate public params */
             var publicParameters = Util.generateParamsforBitcoin(curveParams, 60, 256, rnd, paillierKey);
+            
+            Console.WriteLine("G: " + publicParameters.getG());
+            Console.WriteLine("h1: " + publicParameters.h1);
+            Console.WriteLine("h2: " + publicParameters.h2);
+            Console.WriteLine("Tilde: " + publicParameters.nTilde);
+            Console.WriteLine("PP: " + publicParameters.paillierPubKey);
             
             _playerSigner = new PlayerSigner(publicParameters, curveParams, paillierKey, bigPrivateKey, message);
             CurrentState = SignerState.Initialization;
@@ -82,16 +93,15 @@ namespace Phorkus.Hermes.Signer
         public DSASignature Finalize(IEnumerable<Round6Message> round6Messages)
         {
             CurrentState = SignerState.Finalization;
-            var publicKey = _playerSigner.curveParams.Curve.Curve.CreatePoint(
-                new BigInteger(new byte[1].Concat(_publicKey.Take(32)).ToArray()), 
-                new BigInteger(new byte[1].Concat(_publicKey.Skip(32)).ToArray())
-            );
+            var publicKey = _playerSigner.curveParams.Curve.Curve.DecodePoint(_publicKey);
+            Console.WriteLine("Public Key: " + publicKey);
             var signature = _playerSigner.outputSignature(round6Messages);
             BigInteger mprime = new BigInteger(1, _playerSigner.message);
             BigInteger invS = signature.s.ModInverse(_playerSigner.curveParams.Q);
             ECPoint validation = publicKey.Multiply(signature.r.Multiply(invS).Mod(_playerSigner.curveParams.Q))
                 .Add(_playerSigner.curveParams.G.Multiply(mprime.Multiply(invS).Mod(_playerSigner.curveParams.Q)));
             BigInteger vX = validation.Normalize().XCoord.ToBigInteger().Mod(_playerSigner.curveParams.Q);
+            Console.WriteLine("R: " + signature.r + ", S: " + signature.s);
             if (!vX.Equals(signature.r))
                 throw new InvalidSignatureException("Signature validation failed");
             return signature;

@@ -303,7 +303,7 @@ namespace Phorkus.Hermes.Crypto.Key
             // ...
             // [ vl ]
 
-            using (var stream = new MemoryStream(b, base.byteArraySize(), b.Length, false))
+            using (var stream = new MemoryStream(b, base.byteArraySize(), b.Length - base.byteArraySize(), false))
             using (var reader = new BinaryReader(stream))
             {
                 this.l = reader.ReadInt32();
@@ -471,6 +471,8 @@ namespace Phorkus.Hermes.Crypto.Key
                 writer.Write(upperLayer);
                 writer.Write(l);
                 writer.Write(w);
+                if (thetaPrime is null)
+                    thetaPrime = BigInteger.One;
                 writer.Write(thetaPrime.ToByteArray().Length);
                 writer.Write(v.ToByteArray().Length);
                 for (var i = 0; i < l; i++)
