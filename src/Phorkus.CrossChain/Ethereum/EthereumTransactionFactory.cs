@@ -11,61 +11,22 @@ namespace Phorkus.CrossChain.Ethereum
 {
     public class EthereumTransactionFactory : ITransactionFactory
     {
-        private const string InitV = "17";
-        private const uint GasTransfer = 21000;
-        private const string NullData = "00";
+        private EthereumTransactionService _ethereumTransactionService;
 
-        public BigInteger GetNonce(string address)
+        internal EthereumTransactionFactory()
         {
-            var uri = new System.Uri(@"http://localhost:8545/");
-            var ethApiService = new EthApiService(new RpcClient(uri, null, null));
-            var getNonce = ethApiService.Transactions.GetTransactionCount.SendRequestAsync(address);
-            getNonce.Wait();
-            if (getNonce.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
-            return getNonce.Result.Value;
+            _ethereumTransactionService = new EthereumTransactionService();
         }
 
-        public BigInteger GetGasPrice()
+        public IDataToSign CreateDataToSign(byte[] @from, byte[] to, byte[] value)
         {
-            var uri = new System.Uri(@"http://localhost:8545/");
-            var ethApiService = new EthApiService(new RpcClient(uri, null, null));
-            var getGasPrice = ethApiService.GasPrice.SendRequestAsync();
-            getGasPrice.Wait();
-            if (getGasPrice.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
-            return getGasPrice.Result.Value;
-        }
-
-        public BigInteger GetBalance(string address)
-        {
-            var uri = new System.Uri(@"http://localhost:8545/");
-            var ethApiService = new EthApiService(new RpcClient(uri, null, null));
-            var getBalance = ethApiService.GetBalance.SendRequestAsync(address);
-            getBalance.Wait();
-            if (getBalance.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
-            return getBalance.Result.Value;
-        }
-
-        public IDataToSign CreateDataToSign(string publicKey, string @from, string to, long value)
-        {
-            var nonce = GetNonce(from);
-            var gasPrice = GetGasPrice();
-            var balance = GetBalance(from);
-            if (balance < gasPrice * GasTransfer + value)
+            var stringFrom = Utils.ConvertByteArrayToString(from);
+            var stringTo = Utils.ConvertByteArrayToString(to);
+            var longValue = Utils.ConvertHexToLong(Utils.ConvertByteArrayToString(value));
+            var nonce = _ethereumTransactionService.GetNonce(stringFrom);
+            var gasPrice = _ethereumTransactionService.GetGasPrice();
+            var balance = _ethereumTransactionService.GetBalance(stringFrom);
+            if (balance < gasPrice * EthereumConfig.GasTransfer + longValue)
             {
                 throw new InvalidDataException("Insufficient balance");
             }
@@ -77,21 +38,24 @@ namespace Phorkus.CrossChain.Ethereum
                 RLP.EncodeElement(Utils.ConvertHexStringToByteArray(
                     nonce.ToString("x2")
                     + gasPrice.ToString("x2") +
-                    GasTransfer.ToString("x2")
-                    + Utils.AppendZero(to)
-                    + value.ToString("x2") + NullData + InitV +
-                    NullData + NullData))
+                    EthereumConfig.GasTransfer.ToString("x2")
+                    + Utils.AppendZero(stringTo)
+                    + longValue.ToString("x2") + EthereumConfig.NullData + EthereumConfig.InitV +
+                    EthereumConfig.NullData + EthereumConfig.NullData))
             };
             return ethereumDataToSign;
         }
 
-        public ITransactionData CreateRawTransaction(string publicKey, string @from, string to, long value,
+        public ITransactionData CreateRawTransaction(byte[] @from, byte[] to, byte[] value,
             IReadOnlyCollection<byte[]> signatures)
         {
-            var nonce = GetNonce(from);
-            var gasPrice = GetGasPrice();
-            var balance = GetBalance(from);
-            if (balance < gasPrice * GasTransfer + value)
+            var stringFrom = Utils.ConvertByteArrayToString(from);
+            var stringTo = Utils.ConvertByteArrayToString(to);
+            var longValue = Utils.ConvertHexToLong(Utils.ConvertByteArrayToString(value));
+            var nonce = _ethereumTransactionService.GetNonce(stringFrom);
+            var gasPrice = _ethereumTransactionService.GetGasPrice();
+            var balance = _ethereumTransactionService.GetBalance(stringFrom);
+            if (balance < gasPrice * EthereumConfig.GasTransfer + longValue)
             {
                 throw new InvalidDataException("Insufficient balance");
             }
@@ -104,11 +68,11 @@ namespace Phorkus.CrossChain.Ethereum
             ethereumTransactionData.RawTransaction = RLP.EncodeElement(Utils.ConvertHexStringToByteArray(
                 nonce.ToString("x2")
                 + gasPrice.ToString(
-                    "x2") + GasTransfer
+                    "x2") + EthereumConfig.GasTransfer
                     .ToString("x2")
-                + to +
-                value.ToString("x2") +
-                NullData + v + r + s));
+                + Utils.AppendZero(stringTo) +
+                longValue.ToString("x2") +
+                EthereumConfig.NullData + v + r + s));
             return ethereumTransactionData;
         }
     }

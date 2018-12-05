@@ -1,4 +1,5 @@
-﻿using Phorkus.Proto;
+﻿using System.Numerics;
+using Phorkus.Proto;
 
 namespace Phorkus.CrossChain
 {
@@ -10,6 +11,6 @@ namespace Phorkus.CrossChain
         
         AddressFormat AddressFormat { get; }
 
-        UInt256 Value { get; }
+        BigInteger Value { get; }
     }
 }

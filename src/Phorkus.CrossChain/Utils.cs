@@ -72,6 +72,11 @@ namespace Phorkus.CrossChain
             return trimmed;
         }
 
+        public static long ConvertHexToLong(string hex)
+        {
+            return Convert.ToInt64(hex, 16);
+        }
+
         public static byte[] ConvertHexStringToByteArray(string hexString)
         {
             if (hexString.Length % 2 != 0)
