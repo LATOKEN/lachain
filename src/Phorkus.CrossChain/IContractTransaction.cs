@@ -7,7 +7,7 @@ namespace Phorkus.CrossChain
     {
         BlockchainType BlockchainType { get; }
 
-        byte[] From { get; }
+        UInt160 From { get; }
         
         AddressFormat AddressFormat { get; }
 
