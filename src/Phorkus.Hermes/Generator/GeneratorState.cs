@@ -1,4 +1,5 @@
-﻿namespace Phorkus.Hermes.Generator
+﻿
+namespace Phorkus.Hermes.Generator
 {
     public enum GeneratorState
     {

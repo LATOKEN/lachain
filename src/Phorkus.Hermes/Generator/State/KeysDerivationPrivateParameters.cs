@@ -1,9 +1,8 @@
 ﻿using System;
 using Org.BouncyCastle.Math;
-using Phorkus.Hermes.Generator.State;
 using Phorkus.Hermes.Math;
 
-namespace Phorkus.Hermes.Generator
+namespace Phorkus.Hermes.Generator.State
 {
     public class KeysDerivationPrivateParameters
     {
