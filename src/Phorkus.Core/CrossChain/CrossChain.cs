@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
-using Nethereum.Contracts.MessageEncodingServices;
-using Nethereum.Util;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
-using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
@@ -24,9 +21,9 @@ namespace Phorkus.Core.CrossChain
             = new Dictionary<BlockchainType, Timer>();
 
         private readonly IGlobalRepository _globalRepository;
-        private readonly ILogger<ICrossChain> _logger;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionPool _transactionPool;
+        private readonly ITransactionManager _transactionManager;
 
         private readonly BlockchainType[] _blockchainTypes =
         {
@@ -34,22 +31,21 @@ namespace Phorkus.Core.CrossChain
             BlockchainType.Ethereum
         };
 
+        private ThresholdKey _thresholdKey;
+        private KeyPair _keyPair;
+
         public bool IsWorking { get; set; }
 
         public CrossChain(
             IGlobalRepository globalRepository,
-            ILogger<ICrossChain> logger,
             ITransactionBuilder transactionBuilder,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool,
+            ITransactionManager transactionManager)
         {
             _globalRepository = globalRepository;
-            _logger = logger;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
-        }
-
-        private void _Worker()
-        {
+            _transactionManager = transactionManager;
         }
 
         private void _SynchronizeBlockchain(object state)
@@ -63,12 +59,8 @@ namespace Phorkus.Core.CrossChain
             if (currentHeight >= blockchainHeight)
                 return;
             /* determine and encode our public key */
-            var thresholdKey = _globalRepository.GetShare();
-            if (thresholdKey is null)
-                throw new Exception(
-                    "You can't fetch transactions from other blockchains, cuz you don't have private share");
-            var rawPublicKey = thresholdKey.PublicKey.Buffer.ToByteArray();
-            var address = _EncodeAddress(transactionService.AddressFormat, rawPublicKey);
+            var rawPublicKey = _thresholdKey.PublicKey.Buffer.ToByteArray();
+            var address = AddressEncoder.EncodeAddress(transactionService.AddressFormat, rawPublicKey);
             /* try get transactions */
             for (var height = currentHeight; height <= blockchainHeight; height++)
             {
@@ -77,35 +69,24 @@ namespace Phorkus.Core.CrossChain
                     _CreateDepositTransaction(tx);
             }
         }
-
+        
         private void _CreateDepositTransaction(IContractTransaction contractTransaction)
         {
             /* TODO: "cross-chain module should return UInt160 value as from" */
             var recipient = contractTransaction.From.ToUInt160();
-            var tx = _transactionBuilder.DepositTransaction(recipient, contractTransaction.BlockchainType, contractTransaction.Value,
-                contractTransaction.AddressFormat, contractTransaction.Timestamp);
-            /* TODO: "sign transaction here and put into transaction pool" */
+            var tx = _transactionBuilder.DepositTransaction(recipient,
+                contractTransaction.BlockchainType,
+                contractTransaction.Value,
+                contractTransaction.AddressFormat,
+                contractTransaction.Timestamp);
+            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            _transactionPool.Add(signedTx);
         }
-
-        private byte[] _EncodeAddress(AddressFormat addressFormat, byte[] publicKey)
+        
+        public void Start(ThresholdKey thresholdKey, KeyPair keyPair)
         {
-            switch (addressFormat)
-            {
-                case AddressFormat.Ripmd160:
-                    return publicKey.Ripemd160();
-                case AddressFormat.Ed25519:
-                    return publicKey.Ed25519();
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(addressFormat), addressFormat, null);
-            }
-        }
-
-        public void Start()
-        {
-            var thresholdKey = _globalRepository.GetShare();
-            if (thresholdKey is null)
-                throw new Exception(
-                    "You can't fetch transactions from other blockchains, cuz you don't have private share");
+            _thresholdKey = thresholdKey ?? throw new ArgumentNullException(nameof(thresholdKey));
+            _keyPair = keyPair ?? throw new ArgumentNullException(nameof(keyPair));
 
             foreach (var blockchainType in _blockchainTypes)
             {
@@ -116,22 +97,6 @@ namespace Phorkus.Core.CrossChain
                 _synchronizeTimers.Add(blockchainType,
                     new Timer(_SynchronizeBlockchain, blockchainType, blockGenerationTime, blockGenerationTime));
             }
-
-            Task.Factory.StartNew(() =>
-            {
-                while (IsWorking)
-                {
-                    try
-                    {
-                        _Worker();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError($"Cross chain worker has failed: {e}");
-                        Thread.Sleep(3000);
-                    }
-                }
-            }, TaskCreationOptions.LongRunning);
         }
 
         public void Stop()
@@ -140,6 +105,8 @@ namespace Phorkus.Core.CrossChain
                 timer.Value.Dispose();
             _synchronizeTimers.Clear();
             IsWorking = false;
+            _thresholdKey = null;
+            _keyPair = null;
         }
     }
 }
