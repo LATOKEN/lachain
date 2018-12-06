@@ -1,15 +1,16 @@
 ﻿using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
+using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain
 {
-    public class TransactionFactory : ITransactionFactory
+    public class TransactionBuilder : ITransactionBuilder
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ITransactionManager _transactionManager;
 
-        public TransactionFactory(ITransactionRepository transactionRepository,
+        public TransactionBuilder(ITransactionRepository transactionRepository,
             ITransactionManager transactionManager)
         {
             _transactionRepository = transactionRepository;
@@ -52,6 +53,30 @@ namespace Phorkus.Core.Blockchain
                 From = from,
                 Nonce = nonce,
                 Miner = miner
+            };
+            return tx;
+        }
+        
+        public Transaction DepositTransaction(UInt160 from, BlockchainType blockchainType, Money value, AddressFormat addressFormat,
+            ulong timestamp)
+        {
+            var nonce = _transactionRepository.GetTotalTransactionCount(@from);
+            var deposit = new DepositTransaction
+            {
+                From = from,
+                BlockchainType = blockchainType,
+                Value = value.ToUInt256(),
+                AddressFormat = addressFormat,
+                Timestamp = timestamp
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Deposit,
+                Version = 0,
+                Flags = 0,
+                From = from,
+                Nonce = nonce,
+                Deposit = deposit
             };
             return tx;
         }

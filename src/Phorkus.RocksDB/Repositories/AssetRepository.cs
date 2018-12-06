@@ -4,6 +4,7 @@ using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.RocksDB.Repositories
 {

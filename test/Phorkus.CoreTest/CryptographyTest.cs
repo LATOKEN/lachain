@@ -9,6 +9,7 @@ using Phorkus.Core.Config;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.CoreTest
 {

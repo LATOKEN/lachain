@@ -8,6 +8,7 @@ using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Utils;
 using Phorkus.Hestia;
 using Phorkus.RocksDB;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Benchmark
 {

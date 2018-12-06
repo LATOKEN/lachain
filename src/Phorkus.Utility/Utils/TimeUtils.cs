@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class TimeUtils
     {

@@ -1,4 +1,6 @@
 using System.Numerics;
+using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.CrossChain.Bitcoin
 {
@@ -10,15 +12,17 @@ namespace Phorkus.CrossChain.Bitcoin
 
         public AddressFormat AddressFormat { get; set; }
 
-        public BigInteger Value { get; }
-
+        public Money Value { get; }
+        
+        public ulong Timestamp { get; }
+        
         public BitcoinContractTransaction(BlockchainType blockchainType, byte[] from, AddressFormat addressFormat,
             BigInteger value)
         {
             BlockchainType = blockchainType;
             From = from;
             AddressFormat = addressFormat;
-            Value = value;
+            Value = MoneyFormatter.FormatMoney(value, BitcoinConfig.Decimals);
         }
     }
 }

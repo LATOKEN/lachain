@@ -2,7 +2,7 @@
 using Google.Protobuf;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class CryptoUtils
     {

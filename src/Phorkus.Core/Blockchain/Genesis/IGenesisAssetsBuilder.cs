@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain.Genesis
 {

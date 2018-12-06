@@ -1,7 +1,8 @@
 syntax = "proto3";
 option csharp_namespace = "Phorkus.Proto";
-import "asset.proto";
+
 import "default.proto";
+import "asset.proto";
 
 enum TransactionType {
     TRANSACTION_TYPE_MINER = 0;
@@ -15,6 +16,16 @@ enum TransactionType {
 
 enum TransactionFlag {
     TRANSACTION_FLAG_NONE = 0x0000;
+}
+
+enum BlockchainType {
+    BITCOIN = 0;
+    ETHEREUM = 1;
+}
+
+enum AddressFormat {
+    RIPMD160 = 0;
+    ED25519 = 1;
 }
 
 message ContractTransaction {
@@ -49,6 +60,17 @@ message MinerTransaction {
     UInt160 miner = 1;
 }
 
+message DepositTransaction {
+    UInt160 from = 1;
+    BlockchainType blockchain_type = 2;
+    UInt256 value = 3;
+    AddressFormat address_format = 4;
+    uint64 timestamp = 5;
+}
+
+message WithdrawTransaction {
+}
+
 message TransactionState {
     enum TransactionStatus {
         TRANSACTION_STATUS_TAKEN = 0;
@@ -70,6 +92,8 @@ message Transaction {
         PublishTransaction publish = 8;
         RegisterTransaction register = 9;
         MinerTransaction miner = 10;
+        DepositTransaction deposit = 11;
+        WithdrawTransaction withdraw = 12;
     }
 }
 

@@ -51,7 +51,17 @@ namespace Phorkus.RocksDB.Repositories
             throw new NotImplementedException();
         }
 
-        public void AddChange(ThresholdKey thresholdKey)
+        public void SetShare(ThresholdKey thresholdKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ulong GetBlockchainHeight(BlockchainType blockchainType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ulong SetBlockchainHeight(BlockchainType blockchainType)
         {
             throw new NotImplementedException();
         }

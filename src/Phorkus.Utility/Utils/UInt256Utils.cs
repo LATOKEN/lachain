@@ -2,11 +2,9 @@
 using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
-using Phorkus.Core.Blockchain;
-using Phorkus.Crypto;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class UInt256Utils
     {
@@ -20,14 +18,6 @@ namespace Phorkus.Core.Utils
             return Zero.Equals(value);
         }
         
-        public static UInt256 ToHash256(this byte[] buffer)
-        {
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(buffer.Sha256())
-            };
-        }
-
         public static BigInteger ToBigInteger(this UInt256 value)
         {
             return new BigInteger(value.Buffer.ToByteArray().Reverse().Concat(new byte[] {0}).ToArray());

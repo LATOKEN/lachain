@@ -17,6 +17,7 @@ using Phorkus.Hermes.Signer;
 using Phorkus.Logger;
 using Phorkus.Network.Grpc;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Threshold
 {

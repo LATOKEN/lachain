@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.RPC;
+using Phorkus.Proto;
 
 namespace Phorkus.CrossChain.Bitcoin
 {
@@ -19,6 +19,10 @@ namespace Phorkus.CrossChain.Bitcoin
         {
             _rpcClient = new RPCClient(NBitcoin.Network.Main);
         }
+        
+        public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
+        
+        public ulong BlockGenerationTime { get; } = 10 * 60 * 1000;
 
         public ulong CurrentBlockHeight => (ulong) _rpcClient.GetBlockCount();
 

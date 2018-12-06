@@ -2,10 +2,9 @@
 using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
-using Phorkus.Crypto;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class UInt160Utils
     {
@@ -14,14 +13,6 @@ namespace Phorkus.Core.Utils
         public static bool IsZero(this UInt160 value)
         {
             return Zero.Equals(value);
-        }
-        
-        public static UInt160 ToHash160(this byte[] buffer)
-        {
-            return new UInt160
-            {
-                Buffer = ByteString.CopyFrom(buffer.Ripemd160())
-            };
         }
         
         public static UInt160 ToUInt160(this byte[] buffer)

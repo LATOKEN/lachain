@@ -6,6 +6,7 @@ using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 {

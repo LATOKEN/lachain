@@ -4,6 +4,7 @@ using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.Pool
 {

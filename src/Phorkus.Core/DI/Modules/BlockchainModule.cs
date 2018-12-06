@@ -16,7 +16,7 @@ namespace Phorkus.Core.DI.Modules
             /* global */
             containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
-            containerBuilder.RegisterSingleton<ITransactionFactory, TransactionFactory>();
+            containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IMultisigVerifier, MultisigVerifier>();
             /* consensus */

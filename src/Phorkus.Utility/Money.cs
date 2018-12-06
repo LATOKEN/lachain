@@ -2,13 +2,13 @@
 using System.Globalization;
 using System.Numerics;
 using Phorkus.Proto;
-using Phorkus.Core.Utils;
+using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Utility
 {
     public class Money : IComparable<Money>, IEquatable<Money>
     {
-        private const int DecimalDigits = 18;
+        public const int DecimalDigits = 18;
         
         private static readonly BigInteger D = BigInteger.Pow(10, DecimalDigits);
         private static readonly BigInteger MaxIntegralPart = D - 1;

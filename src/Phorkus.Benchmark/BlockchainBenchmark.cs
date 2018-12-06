@@ -13,6 +13,8 @@ using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.RocksDB;
+using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Benchmark
 {
@@ -44,7 +46,7 @@ namespace Phorkus.Benchmark
             var blockRepository = _container.Resolve<IBlockRepository>();
             var assetRepository = _container.Resolve<IAssetRepository>();
             var crypto = _container.Resolve<ICrypto>();
-            var transactionFactory = _container.Resolve<ITransactionFactory>();
+            var transactionFactory = _container.Resolve<ITransactionBuilder>();
             var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
@@ -124,7 +126,7 @@ namespace Phorkus.Benchmark
         }
 
         private static void _BenchTxProcessing(
-            ITransactionFactory transactionFactory,
+            ITransactionBuilder transactionBuilder,
             IBlockchainContext blockchainContext,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
@@ -143,7 +145,7 @@ namespace Phorkus.Benchmark
 
             _Benchmark("Building TX pool... ", i =>
             {
-                var tx = transactionFactory.TransferTransaction(address1, address2, asset.Hash,
+                var tx = transactionBuilder.TransferTransaction(address1, address2, asset.Hash,
                     Money.FromDecimal(1.2m));
                 tx.Nonce += (ulong) i;
                 transactionPool.Add(transactionManager.Sign(tx, keyPair));
@@ -188,7 +190,7 @@ namespace Phorkus.Benchmark
         }
 
         private static void _BenchOneTxInBlock(
-            ITransactionFactory transactionFactory,
+            ITransactionBuilder transactionBuilder,
             IBlockchainContext blockchainContext,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
@@ -209,7 +211,7 @@ namespace Phorkus.Benchmark
                 }
 
                 var transferTx =
-                    transactionFactory.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
+                    transactionBuilder.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
                 var signed = transactionManager.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
                 var blockWithTxs = new BlockBuilder(latestBlock.Header)
