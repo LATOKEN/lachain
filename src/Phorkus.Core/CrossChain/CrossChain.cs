@@ -9,7 +9,6 @@ using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.CrossChain
 {
@@ -72,9 +71,8 @@ namespace Phorkus.Core.CrossChain
         
         private void _CreateDepositTransaction(IContractTransaction contractTransaction)
         {
-            /* TODO: "cross-chain module should return UInt160 value as from" */
-            var recipient = contractTransaction.From.ToUInt160();
-            var tx = _transactionBuilder.DepositTransaction(recipient,
+            var tx = _transactionBuilder.DepositTransaction(
+                contractTransaction.From,
                 contractTransaction.BlockchainType,
                 contractTransaction.Value,
                 contractTransaction.TransactionHash,
