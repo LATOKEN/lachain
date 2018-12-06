@@ -4,20 +4,17 @@ namespace Phorkus.CrossChain.Ethereum
 {
     public class EthereumContractTransaction: IContractTransaction
     {
-        public BlockchainType BlockchainType { get; set; }
+        public BlockchainType BlockchainType { get; } = BlockchainType.Ethereum;
 
         public byte[] From { get; set; }
 
-        public AddressFormat AddressFormat { get; set; }
+        public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
         public BigInteger Value { get; }
-
-        public EthereumContractTransaction(BlockchainType blockchainType, byte[] from, AddressFormat addressFormat,
-            BigInteger value)
+        
+        public EthereumContractTransaction(byte[] from, BigInteger value)
         {
-            BlockchainType = blockchainType;
             From = from;
-            AddressFormat = addressFormat;
             Value = value;
         }
     }

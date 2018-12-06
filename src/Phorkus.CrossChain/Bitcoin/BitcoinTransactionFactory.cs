@@ -1,24 +1,22 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.Crypto;
-using NBitcoin.RPC;
 
 namespace Phorkus.CrossChain.Bitcoin
 {
     public class BitcoinTransactionFactory : ITransactionFactory
     {
-        private BitcoinTransactionService _bitcoinTransactionService;
-
+        private readonly BitcoinTransactionService _bitcoinTransactionService;
+        
         internal BitcoinTransactionFactory()
         {
             _bitcoinTransactionService = new BitcoinTransactionService();
         }
-    
-        private string AppendSigPrefix(string signature)
+        
+        private static string AppendSigPrefix(string signature)
         {
-            var appendSig = "";
+            string appendSig;
             if ((signature[0] >= '8' && signature[0] <= '9') || (signature[0] >= 'a' && signature[0] <= 'f'))
             {
                 appendSig = "00" + signature;
@@ -47,7 +45,7 @@ namespace Phorkus.CrossChain.Bitcoin
             bitcoinTransactionData.RawTransaction = new byte[0];
             var scriptPubKeyValue = fromBtc.ScriptPubKey.ToString();
             var scriptPubKeyChange = toBtc.ScriptPubKey.ToString();
-            var change = prevAmount - _bitcoinTransactionService.GetFee(inputSz, outputSz);
+            var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz);
             var scriptCode = "1976a914"
                              + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey)).ToString() + "88ac";
             var prevOuts = "";
@@ -98,7 +96,7 @@ namespace Phorkus.CrossChain.Bitcoin
             var toBtc = new BitcoinScriptAddress(stringTo, NBitcoin.Network.Main);
             var scriptPubKeyValue = fromBtc.ScriptPubKey.ToString();
             var scriptPubKeyChange = toBtc.ScriptPubKey.ToString();
-            var change = prevAmount - _bitcoinTransactionService.GetFee(inputSz, outputSz);
+            var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz);
             var prevOuts = "";
             var redeemScript =
                 "17160014" + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey)).ToString();

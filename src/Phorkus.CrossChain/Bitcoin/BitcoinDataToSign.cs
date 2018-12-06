@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using Phorkus.Proto;
-
 
 namespace Phorkus.CrossChain.Bitcoin
 {

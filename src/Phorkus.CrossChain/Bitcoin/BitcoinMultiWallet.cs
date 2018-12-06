@@ -1,13 +1,10 @@
-using System;
-using Phorkus.Proto;
-
 namespace Phorkus.CrossChain.Bitcoin
 {
     public class BitcoinMultiWallet : IMultiWallet
     {
         private readonly string _publicKey;
 
-        public BitcoinMultiWallet(String publicKey)
+        public BitcoinMultiWallet(string publicKey)
         {
             _publicKey = publicKey;
         }

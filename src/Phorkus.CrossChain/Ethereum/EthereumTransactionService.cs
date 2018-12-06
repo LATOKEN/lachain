@@ -4,13 +4,12 @@ using System.Numerics;
 using NBitcoin.RPC;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC;
-using Phorkus.CrossChain.Bitcoin;
 
 namespace Phorkus.CrossChain.Ethereum
 {
     public class EthereumTransactionService : ITransactionService
     {
-        private EthApiService _ethApiService;
+        private readonly EthApiService _ethApiService;
 
         internal EthereumTransactionService()
         {
@@ -22,11 +21,7 @@ namespace Phorkus.CrossChain.Ethereum
             var getNonce = _ethApiService.Transactions.GetTransactionCount.SendRequestAsync(address);
             getNonce.Wait();
             if (getNonce.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
+                throw new BlockchainNotAvailableException($"Unable to calculate nonce for address ({address}) from Ethereum network");
             return getNonce.Result.Value;
         }
 
@@ -35,11 +30,7 @@ namespace Phorkus.CrossChain.Ethereum
             var getGasPrice = _ethApiService.GasPrice.SendRequestAsync();
             getGasPrice.Wait();
             if (getGasPrice.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
+                throw new BlockchainNotAvailableException("Unable to fetch current gas price from Ethereum network");
             return getGasPrice.Result.Value;
         }
 
@@ -48,28 +39,22 @@ namespace Phorkus.CrossChain.Ethereum
             var getBalance = _ethApiService.GetBalance.SendRequestAsync(address);
             getBalance.Wait();
             if (getBalance.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
+                throw new BlockchainNotAvailableException($"Unable to fetch balance for address {address} from Ethereum network");
             return getBalance.Result.Value;
         }
 
-        public ulong CurrentBlockHeight { get; }
-
-        public BigInteger GetLastBlockHeight()
+        public ulong CurrentBlockHeight
         {
-            var getBlockHeight = _ethApiService.Blocks.GetBlockNumber.SendRequestAsync();
-            getBlockHeight.Wait();
-
-            if (getBlockHeight.IsFaulted)
+            get
             {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
+                var getBlockHeight = _ethApiService.Blocks.GetBlockNumber.SendRequestAsync();
+                getBlockHeight.Wait();
 
-            return getBlockHeight.Result.Value;
+                if (getBlockHeight.IsFaulted)
+                    throw new BlockchainNotAvailableException($"Unable to determine current block height");
+
+                return (ulong) getBlockHeight.Result.Value;
+            }
         }
 
         public IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight)
@@ -79,48 +64,31 @@ namespace Phorkus.CrossChain.Ethereum
                     .GetBlockNumber.ToString());
             getTransactions.Wait();
             if (getTransactions.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
+                throw new BlockchainNotAvailableException($"Unable to get tranasction at block ({blockHeight})");
 
             var address = Utils.ConvertByteArrayToString(recipient);
             var transactions = new List<EthereumContractTransaction>();
             foreach (var tx in getTransactions.Result.Transactions)
             {
-                if (tx.To == address)
-                {
-                    transactions.Add(new EthereumContractTransaction(BlockchainType.Ethereum,
-                        Utils.ConvertHexStringToByteArray(tx.From), AddressFormat.Ripmd160, tx.Value.Value));
-                }
+                if (tx.To != address)
+                    continue;
+                var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(tx.From),
+                    tx.Value.Value);
+                transactions.Add(ethereumTx);
             }
-
             return transactions;
         }
-
-        public bool BroadcastTransactionsBatch(ITransactionData[] transactionData)
-        {
-            return true;
-        }
-
-        public bool StoreTransaction(ITransactionData transactionData)
-        {
-            return true;
-        }
-
-        public bool BroadcastTransaction(ITransactionData transactionData)
+        
+        public byte[] BroadcastTransaction(ITransactionData transactionData)
         {
             var sendTransaction =
                 _ethApiService.Transactions.SendRawTransaction.SendRequestAsync(
                     Utils.ConvertByteArrayToString(transactionData.RawTransaction));
             sendTransaction.Wait();
             if (sendTransaction.IsFaulted)
-            {
-                throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                    "Bad request", RPCResponse.Load(Stream.Null));
-            }
-
-            return sendTransaction.IsCompleted;
+                throw new BlockchainNotAvailableException("Unable to broadcast transaction to Ethereum network");
+            var txHash = sendTransaction.Result;
+            return Utils.ConvertHexStringToByteArray(txHash);
         }
     }
 }
