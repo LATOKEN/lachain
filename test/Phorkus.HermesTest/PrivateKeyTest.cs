@@ -36,7 +36,7 @@ namespace Phorkus.HermesTest
 
             var myKey = ToPublicKey(
                 HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a"));
-            
+
             var protos = new IGeneratorProtocol[participants.Count];
             for (var i = 0; i < participants.Count; i++)
                 protos[i] = new DefaultGeneratorProtocol(participants, myKey);

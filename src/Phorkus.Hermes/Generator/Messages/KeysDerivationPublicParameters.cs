@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Math;
+﻿using System.IO;
+using Org.BouncyCastle.Math;
 using Phorkus.Hermes.Generator.State;
 
 namespace Phorkus.Hermes.Generator.Messages
@@ -36,6 +37,57 @@ namespace Phorkus.Hermes.Generator.Messages
             BigInteger Phiij = keysDerivationPrivateParameters.PhiSharing.eval(j);
             BigInteger hij = keysDerivationPrivateParameters.zeroSharing.eval(j);
             return new KeysDerivationPublicParameters(keysDerivationPrivateParameters.i, j, Betaij, DRij, Phiij, hij);
+        }
+        
+        public KeysDerivationPublicParameters(byte[] buffer)
+        {
+            using (var stream = new MemoryStream(buffer))
+            using (var reader = new BinaryReader(stream))
+            {
+                
+                var betaijLength = reader.ReadInt32();
+                var DRijLength = reader.ReadInt32();
+                var PhiijLength  = reader.ReadInt32();
+                var hijLength =reader.ReadInt32(); 
+                
+                betaij = new BigInteger(reader.ReadBytes(betaijLength));
+                DRij = new BigInteger(reader.ReadBytes(DRijLength));
+                Phiij = new BigInteger(reader.ReadBytes(PhiijLength));
+                hij = new BigInteger(reader.ReadBytes(hijLength));
+                
+                i = reader.ReadInt32();
+                j = reader.ReadInt32();
+                
+                
+            }
+        }
+        
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                var betaijArray = betaij.ToByteArray();
+                writer.Write(betaijArray.Length);
+                writer.Write(betaijArray);
+                
+                var DRijArray = DRij.ToByteArray();
+                writer.Write(DRijArray.Length);
+                writer.Write(DRijArray);
+                
+                var PhiijArray = Phiij.ToByteArray();
+                writer.Write(PhiijArray.Length);
+                writer.Write(PhiijArray);
+                
+                var hijArray = hij.ToByteArray();
+                writer.Write(hijArray.Length);
+                writer.Write(hijArray);
+
+                writer.Write(i);
+                writer.Write(j);
+                
+                return stream.ToArray();
+            }
         }
     }
 }
