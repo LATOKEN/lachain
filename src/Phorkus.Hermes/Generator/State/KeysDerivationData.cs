@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Org.BouncyCastle.Math;
+using Phorkus.Hermes.Generator.Messages;
 using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator.State

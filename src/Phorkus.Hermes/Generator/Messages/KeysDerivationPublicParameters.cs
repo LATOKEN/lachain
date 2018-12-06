@@ -1,6 +1,7 @@
 ﻿using Org.BouncyCastle.Math;
+using Phorkus.Hermes.Generator.State;
 
-namespace Phorkus.Hermes.Generator.State
+namespace Phorkus.Hermes.Generator.Messages
 {
     /**
      * The structure used by the parties to exchange their shares in the key derivation
