@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using Google.Protobuf;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Config;
 using Phorkus.Proto;
-using Phorkus.Core.Utils;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
+using Phorkus.Crypto;
 
 namespace Phorkus.Core.Blockchain.Genesis
 {
     public class GenesisAssetsBuilder : IGenesisAssetsBuilder
     {
+        private readonly ICrypto _crypto;
         private readonly IEnumerable<string> _validators;
         
-        public GenesisAssetsBuilder(IConfigManager configManager)
+        public GenesisAssetsBuilder(IConfigManager configManager, ICrypto crypto)
         {
+            _crypto = crypto;
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             if (config is null)
                 throw new ArgumentNullException(nameof(configManager), "Unable to resolve consensus configuration");
@@ -71,7 +72,8 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Issue = new IssueTransaction
                 {
                     Asset = asset,
-                    Supply = supply.ToUInt256()
+                    Supply = supply.ToUInt256(),
+                    To = _crypto.ComputeAddress(owner.Buffer.ToByteArray()).ToUInt160()
                 },
                 Nonce = 0
             };
@@ -84,10 +86,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             foreach (var validator in _validators)
             foreach (var asset in assets)
             {
-                var publicKey = new PublicKey
-                {
-                    Buffer = ByteString.CopyFrom(validator.HexToBytes())
-                };
+                var publicKey = validator.HexToBytes().ToPublicKey();
                 txs.Add(BuildGenesisTokenIssue(publicKey, value, asset));
             }
             return txs;

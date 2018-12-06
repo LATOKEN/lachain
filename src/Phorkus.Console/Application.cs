@@ -13,6 +13,7 @@ using Phorkus.Core.Storage;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Hestia;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
 using Phorkus.Utility.Utils;
@@ -40,6 +41,7 @@ namespace Phorkus.Console
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<PersistentStorageModule>();
 
             _container = containerBuilder.Build();
         }
@@ -54,7 +56,6 @@ namespace Phorkus.Console
             var assetRepository = _container.Resolve<IAssetRepository>();
             var crypto = _container.Resolve<ICrypto>();
             var transactionFactory = _container.Resolve<ITransactionBuilder>();
-            var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
 //            var consensusManager = _container.Resolve<IConsensusManager>();
@@ -95,8 +96,8 @@ namespace Phorkus.Console
             System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
-            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
+//            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
+//            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
             
             //networkManager.Start();

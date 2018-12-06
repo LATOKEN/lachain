@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -14,27 +15,26 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICrypto _crypto;
-        private readonly IReadOnlyDictionary<TransactionType, ITransactionPersister> _transactionPersisters;
+        private readonly IReadOnlyDictionary<TransactionType, ITransactionExecuter> _transactionPersisters;
         private readonly ITransactionVerifier _transactionVerifier;
 
         public TransactionManager(
             ITransactionRepository transactionRepository,
             IAssetRepository assetRepository,
-            IBalanceRepository balanceRepository,
             IContractRepository contractRepository,
             ICrypto crypto,
             ITransactionVerifier transactionVerifier,
             IMultisigVerifier multisigVerifier)
         {
-            _transactionPersisters = new Dictionary<TransactionType, ITransactionPersister>
+            _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
-                {TransactionType.Miner, new MinerTranscationPersister()},
-                {TransactionType.Register, new RegisterTransactionPersister(multisigVerifier, assetRepository)},
-                {TransactionType.Issue, new IssueTransactionPersister(assetRepository, balanceRepository)},
-                {TransactionType.Contract, new ContractTransactionPersister(balanceRepository)},
-                {TransactionType.Publish, new PublishTransactionPersister(contractRepository)},
-                {TransactionType.Deposit, new DepositTransactionPersister()},
-                {TransactionType.Withdraw, new WithdrawTransactionPersister()}
+                {TransactionType.Miner, new MinerTranscationExecuter()},
+                {TransactionType.Register, new RegisterTransactionExecuter(multisigVerifier, assetRepository)},
+                {TransactionType.Issue, new IssueTransactionExecuter(assetRepository)},
+                {TransactionType.Contract, new ContractTransactionExecuter()},
+                {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
+                {TransactionType.Deposit, new DepositTransactionExecuter()},
+                {TransactionType.Withdraw, new WithdrawTransactionExecuter()}
             };
             _transactionRepository =
                 transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
@@ -92,7 +92,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
 
-        public OperatingError Execute(Block block, UInt256 txHash)
+        public OperatingError Execute(Block block, UInt256 txHash, IBlockchainSnapshot snapshot)
         {
             var signed = _transactionRepository.GetTransactionByHash(txHash);
             if (signed is null)
@@ -104,7 +104,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var persister = _transactionPersisters[signed.Transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
-            var result = persister.Execute(block, signed.Transaction);
+            var result = persister.Execute(block, signed.Transaction, snapshot);
             if (result != OperatingError.Ok)
             {
                 _transactionRepository.ChangeTransactionState(txHash,

@@ -45,12 +45,12 @@ namespace Phorkus.Benchmark
         public void Start(string[] args)
         {
             var rocksDbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = new StorageManager(rocksDbContext, new uint[] {1});
+            var storageManager = new StorageManager(rocksDbContext);
 
             uint T = 100000, batches = 100;
             IDictionary<byte[], byte[]> blocks = new Dictionary<byte[], byte[]>();
 
-            var state = storageManager.NewState(1);
+            var state = storageManager.GetLastState(1);
             Console.WriteLine("Initial repo version: " + state.CurrentVersion);
             for (var it = 0u; it < batches; ++it)
             {

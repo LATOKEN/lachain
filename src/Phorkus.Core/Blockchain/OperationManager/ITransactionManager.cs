@@ -1,4 +1,5 @@
 ﻿using System;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain.OperationManager
@@ -14,7 +15,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         OperatingError Persist(SignedTransaction transaction);
 
-        OperatingError Execute(Block block, UInt256 txHash);
+        OperatingError Execute(Block block, UInt256 txHash, IBlockchainSnapshot snapshot);
         
         OperatingError Verify(Transaction transaction);
 

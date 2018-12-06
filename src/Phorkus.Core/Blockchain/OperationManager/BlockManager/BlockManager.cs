@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
@@ -20,6 +21,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IMultisigVerifier _multisigVerifier;
         private readonly ILogger<IBlockManager> _logger;
+        private readonly IBlockchainStateManager _blockchainStateManager;
 
         public BlockManager(
             IGlobalRepository globalRepository,
@@ -29,7 +31,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
             IMultisigVerifier multisigVerifier,
-            ILogger<IBlockManager> logger)
+            ILogger<IBlockManager> logger,
+            IBlockchainStateManager blockchainStateManager)
         {
             _globalRepository = globalRepository;
             _blockRepository = blockRepository;
@@ -39,6 +42,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             _genesisBuilder = genesisBuilder;
             _multisigVerifier = multisigVerifier;
             _logger = logger;
+            _blockchainStateManager = blockchainStateManager;
         }
 
         public event EventHandler<Block> OnBlockPersisted;
@@ -84,16 +88,22 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
             foreach (var txHash in block.TransactionHashes)
             {
-                var result = _transactionManager.Execute(block, txHash);
+                var snapshot = _blockchainStateManager.NewSnapshot();
+                var result = _transactionManager.Execute(block, txHash, snapshot);
                 if (result == OperatingError.Ok)
+                {
+                    _blockchainStateManager.Approve();
                     continue;
+                }                    
                 /* TODO: "we need block synchronization on transaction lost for example" */
                 _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()}, {result}");
                 /* TODO: "mark transaction as failed to execute here or something else" */
+                _blockchainStateManager.Rollback();
             }
 
             /* write block to database */
             _blockRepository.AddBlock(block);
+            _blockchainStateManager.CommitApproved();
             _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash}");
             var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
             if (block.Header.Index > currentHeaderHeight)

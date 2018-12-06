@@ -2,6 +2,7 @@
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.DI;
@@ -10,6 +11,7 @@ using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Hestia;
 using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.RocksDB;
@@ -34,6 +36,7 @@ namespace Phorkus.Benchmark
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<PersistentStorageModule>();
 
             _container = containerBuilder.Build();
         }
@@ -46,10 +49,10 @@ namespace Phorkus.Benchmark
             var blockRepository = _container.Resolve<IBlockRepository>();
             var assetRepository = _container.Resolve<IAssetRepository>();
             var crypto = _container.Resolve<ICrypto>();
-            var transactionFactory = _container.Resolve<ITransactionBuilder>();
-            var balanceRepository = _container.Resolve<IBalanceRepository>();
+            var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
+            var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -74,32 +77,37 @@ namespace Phorkus.Benchmark
             foreach (var s in genesisBlock.TransactionHashes)
                 Console.WriteLine($" + - {s.Buffer.ToHex()}");
             Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-            Console.WriteLine("-------------------------------");
-
+            
             var asset = assetRepository.GetAssetByName("LA");
 
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
-            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
-            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
-            Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
-            Console.WriteLine("-------------------------------");
-
-            _BenchTxProcessing(transactionFactory, blockchainContext, transactionManager, blockManager,
-                blockchainManager, keyPair, asset);
-
-            _BenchOneTxInBlock(transactionFactory, blockchainContext, transactionManager, blockManager,
-                blockchainManager, keyPair, asset);
-
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address2, asset.Hash));
+            Console.WriteLine("-------------------------------");
+
+            _BenchTxProcessing(transactionBuilder, blockchainContext, transactionManager, blockManager,
+                blockchainManager, keyPair, asset);
+
+            Console.WriteLine("-------------------------------");
+            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address2, asset.Hash));
+            Console.WriteLine("-------------------------------");
+            
+            _BenchOneTxInBlock(transactionBuilder, blockchainContext, transactionManager, blockManager,
+                blockchainManager, keyPair, asset);
+
+            Console.WriteLine("-------------------------------");
+            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
+            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
+            Console.WriteLine("-------------------------------");
+            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
         }
 
@@ -125,10 +133,10 @@ namespace Phorkus.Benchmark
             Console.WriteLine($"{1000.0 * tries / deltaTime} TPS");
         }
 
-        private static void _BenchTxProcessing(
+        private void _BenchTxProcessing(
             ITransactionBuilder transactionBuilder,
             IBlockchainContext blockchainContext,
-            ITransactionManager transactionManager,
+            ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IBlockchainManager blockchainManager,
             KeyPair keyPair,
@@ -137,10 +145,9 @@ namespace Phorkus.Benchmark
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
-            var transactionPool = new TransactionPool(null,
-                transactionManager);
+            var transactionPool = _container.Resolve<ITransactionPool>();
 
-            const int txGenerate = 1000;
+            const int txGenerate = 2000;
             const int txPerBlock = 500;
 
             _Benchmark("Building TX pool... ", i =>
@@ -148,7 +155,7 @@ namespace Phorkus.Benchmark
                 var tx = transactionBuilder.TransferTransaction(address1, address2, asset.Hash,
                     Money.FromDecimal(1.2m));
                 tx.Nonce += (ulong) i;
-                transactionPool.Add(transactionManager.Sign(tx, keyPair));
+                transactionPool.Add(transactionSigner.Sign(tx, keyPair));
                 return i;
             }, txGenerate);
 
@@ -192,7 +199,7 @@ namespace Phorkus.Benchmark
         private static void _BenchOneTxInBlock(
             ITransactionBuilder transactionBuilder,
             IBlockchainContext blockchainContext,
-            ITransactionManager transactionManager,
+            ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IBlockchainManager blockchainManager,
             KeyPair keyPair,
@@ -212,7 +219,7 @@ namespace Phorkus.Benchmark
 
                 var transferTx =
                     transactionBuilder.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
-                var signed = transactionManager.Sign(transferTx, keyPair);
+                var signed = transactionSigner.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
                 var blockWithTxs = new BlockBuilder(latestBlock.Header)
                     .WithTransactions(new[] {signed})

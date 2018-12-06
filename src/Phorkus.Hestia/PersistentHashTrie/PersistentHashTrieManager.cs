@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Phorkus.Hestia.PersistentHashTrie
 {
@@ -20,25 +21,20 @@ namespace Phorkus.Hestia.PersistentHashTrie
             _random = new Random();
         }
 
-        private uint EnsurePersisted(ulong root)
+        private void EnsurePersisted(ulong root)
         {
-            if (root == 0) return 0;
-            if (!_nodeCache.TryGetValue(root, out var node)) return 0;
-            if (_persistedNodes.Contains(root)) return 0;
-            uint result = 0;
-            foreach (var child in node.Children) result += EnsurePersisted(child);
+            if (root == 0) return;
+            if (!_nodeCache.TryGetValue(root, out var node)) return;
+            if (_persistedNodes.Contains(root)) return;
+            foreach (var child in node.Children) EnsurePersisted(child);
             _storageContext.WriteNode(root, node);
             _persistedNodes.Add(root);
-            result += 1;
-            return result;
         }
 
 
         public void Checkpoint(ulong root)
         {
-            var x = EnsurePersisted(root);
-            Console.WriteLine($"{x} nodes persisted");
-            Console.WriteLine($"{_nodeCache.Count} nodes in cache");
+            EnsurePersisted(root);
             ClearCaches();
         }
 
@@ -48,39 +44,47 @@ namespace Phorkus.Hestia.PersistentHashTrie
             _persistedNodes.Clear();
         }
 
+        private static uint Hash(IEnumerable<byte> key)
+        {
+            unchecked
+            {
+                return key.Aggregate(0u, (current, b) => current * 1131861u + b);
+            }
+        }
+
         public ulong Add(ulong root, byte[] key, byte[] value)
         {
-            var hash = (uint) key.GetHashCode();
+            var hash = Hash(key);
             return AddInternal(root, hash, 0, key, value);
         }
 
         public ulong AddOrUpdate(ulong root, byte[] key, byte[] value)
         {
-            var hash = (uint) key.GetHashCode();
+            var hash = Hash(key);
             return AddOrUpdateInternal(root, hash, 0, key, value);
         }
 
         public ulong Update(ulong root, byte[] key, byte[] value)
         {
-            var hash = (uint) key.GetHashCode();
+            var hash = Hash(key);
             return UpdateInternal(root, hash, 0, key, value);
         }
 
         public ulong Delete(ulong root, byte[] key, out byte[] value)
         {
-            var hash = (uint) key.GetHashCode();
+            var hash = Hash(key);
             return DeleteInternal(root, hash, 0, key, out value);
         }
 
         public ulong TryDelete(ulong root, byte[] key, out byte[] value)
         {
-            var hash = (uint) key.GetHashCode();
+            var hash = Hash(key);
             return TryDeleteInternal(root, hash, 0, key, out value);
         }
 
         public byte[] Find(ulong root, byte[] key)
         {
-            var hash = (uint) key.GetHashCode();
+            var hash = Hash(key);
             return FindInternal(root, hash, key);
         }
 
@@ -227,15 +231,14 @@ namespace Phorkus.Hestia.PersistentHashTrie
 
         private byte[] FindInternal(ulong root, uint hash, byte[] key)
         {
-            IHashTrieNode rootNode = null;
             for (var height = 0; height < 7; ++height)
             {
                 if (root == 0) return null;
-                rootNode = GetNodeById(root);
+                var rootNode = GetNodeById(root);
                 root = rootNode.GetChildByHash(HashFragment(hash, height));
             }
 
-            return (rootNode as LeafNode)?.Find(key);
+            return (GetNodeById(root) as LeafNode)?.Find(key);
         }
     }
 }

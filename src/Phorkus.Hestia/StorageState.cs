@@ -16,6 +16,14 @@
             _initialVersion = repositoryManager.LatestVersion;
         }
 
+        internal StorageState(RepositoryManager repositoryManager, ulong version)
+        {
+            _repositoryManager = repositoryManager;
+            _mapManager = repositoryManager.MapManager;
+            CurrentVersion = version;
+            _initialVersion = repositoryManager.LatestVersion;
+        }
+
         public ulong CurrentVersion { get; private set; }
 
         public byte[] Get(byte[] key)
@@ -56,14 +64,14 @@
         public ulong Commit()
         {
             _mapManager.Checkpoint(CurrentVersion);
-            _repositoryManager.TerminateTransaction(CurrentVersion);
+            _repositoryManager.SetState(CurrentVersion);
             return CurrentVersion;
         }
 
         public ulong Cancel()
         {
             _mapManager.ClearCaches();
-            _repositoryManager.TerminateTransaction(_initialVersion);
+            _repositoryManager.SetState(_initialVersion);
             return _initialVersion;
         }
     }

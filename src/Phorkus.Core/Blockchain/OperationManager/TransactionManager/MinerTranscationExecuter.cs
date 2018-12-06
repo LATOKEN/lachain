@@ -1,10 +1,11 @@
-﻿using Phorkus.Proto;
+﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
-    public class MinerTranscationPersister : ITransactionPersister
+    public class MinerTranscationExecuter : ITransactionExecuter
     {
-        public OperatingError Execute(Block block, Transaction transaction)
+        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             return OperatingError.Ok;
         }

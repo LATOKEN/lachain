@@ -1,4 +1,5 @@
-﻿using Phorkus.Proto;
+﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Utility;
@@ -6,21 +7,18 @@ using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
-    public class IssueTransactionPersister : ITransactionPersister
+    public class IssueTransactionExecuter : ITransactionExecuter
     {
         private readonly IAssetRepository _assetRepository;
-        private readonly IBalanceRepository _balanceRepository;
         
-        public IssueTransactionPersister(
-            IAssetRepository assetRepository,
-            IBalanceRepository balanceRepository)
+        public IssueTransactionExecuter(IAssetRepository assetRepository)
         {
             _assetRepository = assetRepository;
-            _balanceRepository = balanceRepository;
         }
         
-        public OperatingError Execute(Block block, Transaction transaction)
+        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
+            var balances = snapshot.Balances;
             var result = Verify(transaction);
             if (result != OperatingError.Ok)
                 return result;
@@ -37,7 +35,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var to = issue.To;
             if (to is null || to.IsZero())
                 to = transaction.From;
-            _balanceRepository.AddBalance(to, issue.Asset, new Money(issue.Supply));
+            balances.AddBalance(to, issue.Asset, new Money(issue.Supply));
             return OperatingError.Ok;
         }
         

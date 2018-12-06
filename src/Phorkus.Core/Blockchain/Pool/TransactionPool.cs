@@ -45,7 +45,8 @@ namespace Phorkus.Core.Blockchain.Pool
             if (limit < 0)
                 limit = PeekLimit;
             var result = new List<SignedTransaction>();
-            for (var i = 0; i < Math.Min(_transactions.Count, limit); i++)
+            var txToPeek = Math.Min(_transactions.Count, limit);
+            for (var i = 0; i < txToPeek; i++)
             {
                 if (!_transactions.TryDequeue(out var transaction))
                     continue;

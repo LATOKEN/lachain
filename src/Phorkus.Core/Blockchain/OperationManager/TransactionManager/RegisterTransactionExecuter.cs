@@ -1,15 +1,16 @@
-﻿using Phorkus.Proto;
+﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
-    public class RegisterTransactionPersister : ITransactionPersister
+    public class RegisterTransactionExecuter : ITransactionExecuter
     {
         private readonly IMultisigVerifier _multisigVerifier;
         private readonly IAssetRepository _assetRepository;
 
-        public RegisterTransactionPersister(
+        public RegisterTransactionExecuter(
             IMultisigVerifier multisigVerifier,
             IAssetRepository assetRepository)
         {
@@ -17,7 +18,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _multisigVerifier = multisigVerifier;
         }
         
-        public OperatingError Execute(Block block, Transaction transaction)
+        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             /* don't execute invalid transactions */
             var result = Verify(transaction);

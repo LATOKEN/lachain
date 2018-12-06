@@ -1,10 +1,11 @@
-﻿using Phorkus.Proto;
+﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
-    public class WithdrawTransactionPersister : ITransactionPersister
+    public class WithdrawTransactionExecuter : ITransactionExecuter
     {
-        public OperatingError Execute(Block block, Transaction transaction)
+        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             throw new OperationNotSupportedException();
         }

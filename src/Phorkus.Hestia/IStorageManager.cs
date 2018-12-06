@@ -6,6 +6,8 @@ namespace Phorkus.Hestia
 
         byte[] Get(uint repository, ulong version, byte[] key);
 
-        IStorageState NewState(uint repository);
+        IStorageState GetLastState(uint repository);
+        IStorageState GetState(uint repository, ulong version);
+        void SetLastState(uint repositrory, IStorageState state);
     }
 }
