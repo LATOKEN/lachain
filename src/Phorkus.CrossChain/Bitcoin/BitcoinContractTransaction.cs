@@ -12,6 +12,8 @@ namespace Phorkus.CrossChain.Bitcoin
 
         public AddressFormat AddressFormat { get; set; }
 
+        public byte[] TransactionHash { get; }
+        
         public Money Value { get; }
         
         public ulong Timestamp { get; }

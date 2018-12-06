@@ -36,35 +36,36 @@ namespace Phorkus.Proto {
             "c3VwcGx5GAMgASgLMgguVUludDI1NhIQCghkZWNpbWFscxgEIAEoDRIXCgVv",
             "d25lchgFIAEoCzIILlVJbnQxNjASGAoGbWludGVyGAYgASgLMgguVUludDE2",
             "MCIrChBNaW5lclRyYW5zYWN0aW9uEhcKBW1pbmVyGAEgASgLMgguVUludDE2",
-            "MCKqAQoSRGVwb3NpdFRyYW5zYWN0aW9uEhYKBGZyb20YASABKAsyCC5VSW50",
+            "MCLEAQoSRGVwb3NpdFRyYW5zYWN0aW9uEhYKBGZyb20YASABKAsyCC5VSW50",
             "MTYwEigKD2Jsb2NrY2hhaW5fdHlwZRgCIAEoDjIPLkJsb2NrY2hhaW5UeXBl",
-            "EhcKBXZhbHVlGAMgASgLMgguVUludDI1NhImCg5hZGRyZXNzX2Zvcm1hdBgE",
-            "IAEoDjIOLkFkZHJlc3NGb3JtYXQSEQoJdGltZXN0YW1wGAUgASgEIhUKE1dp",
-            "dGhkcmF3VHJhbnNhY3Rpb24iuwEKEFRyYW5zYWN0aW9uU3RhdGUSMwoGc3Rh",
-            "dHVzGAEgASgOMiMuVHJhbnNhY3Rpb25TdGF0ZS5UcmFuc2FjdGlvblN0YXR1",
-            "cyJyChFUcmFuc2FjdGlvblN0YXR1cxIcChhUUkFOU0FDVElPTl9TVEFUVVNf",
-            "VEFLRU4QABIgChxUUkFOU0FDVElPTl9TVEFUVVNfQ09ORklSTUVEEAESHQoZ",
-            "VFJBTlNBQ1RJT05fU1RBVFVTX0ZBSUxFRBACIpIDCgtUcmFuc2FjdGlvbhIe",
-            "CgR0eXBlGAEgASgOMhAuVHJhbnNhY3Rpb25UeXBlEg8KB3ZlcnNpb24YAiAB",
-            "KA0SDQoFZmxhZ3MYAyABKAQSFgoEZnJvbRgEIAEoCzIILlVJbnQxNjASDQoF",
-            "bm9uY2UYBSABKAQSKAoIY29udHJhY3QYBiABKAsyFC5Db250cmFjdFRyYW5z",
-            "YWN0aW9uSAASIgoFaXNzdWUYByABKAsyES5Jc3N1ZVRyYW5zYWN0aW9uSAAS",
-            "JgoHcHVibGlzaBgIIAEoCzITLlB1Ymxpc2hUcmFuc2FjdGlvbkgAEigKCHJl",
-            "Z2lzdGVyGAkgASgLMhQuUmVnaXN0ZXJUcmFuc2FjdGlvbkgAEiIKBW1pbmVy",
-            "GAogASgLMhEuTWluZXJUcmFuc2FjdGlvbkgAEiYKB2RlcG9zaXQYCyABKAsy",
-            "Ey5EZXBvc2l0VHJhbnNhY3Rpb25IABIoCgh3aXRoZHJhdxgMIAEoCzIULldp",
-            "dGhkcmF3VHJhbnNhY3Rpb25IAEIGCgRkYXRhIm0KEVNpZ25lZFRyYW5zYWN0",
-            "aW9uEiEKC3RyYW5zYWN0aW9uGAEgASgLMgwuVHJhbnNhY3Rpb24SFgoEaGFz",
-            "aBgCIAEoCzIILlVJbnQyNTYSHQoJc2lnbmF0dXJlGAMgASgLMgouU2lnbmF0",
-            "dXJlKuIBCg9UcmFuc2FjdGlvblR5cGUSGgoWVFJBTlNBQ1RJT05fVFlQRV9N",
-            "SU5FUhAAEh0KGVRSQU5TQUNUSU9OX1RZUEVfUkVHSVNURVIQARIaChZUUkFO",
-            "U0FDVElPTl9UWVBFX0lTU1VFEAISHQoZVFJBTlNBQ1RJT05fVFlQRV9DT05U",
-            "UkFDVBADEhwKGFRSQU5TQUNUSU9OX1RZUEVfUFVCTElTSBAEEhwKGFRSQU5T",
-            "QUNUSU9OX1RZUEVfREVQT1NJVBAFEh0KGVRSQU5TQUNUSU9OX1RZUEVfV0lU",
-            "SERSQVcQBiosCg9UcmFuc2FjdGlvbkZsYWcSGQoVVFJBTlNBQ1RJT05fRkxB",
-            "R19OT05FEAAqKwoOQmxvY2tjaGFpblR5cGUSCwoHQklUQ09JThAAEgwKCEVU",
-            "SEVSRVVNEAEqKgoNQWRkcmVzc0Zvcm1hdBIMCghSSVBNRDE2MBAAEgsKB0VE",
-            "MjU1MTkQAUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "EhcKBXZhbHVlGAMgASgLMgguVUludDI1NhIYChB0cmFuc2FjdGlvbl9oYXNo",
+            "GAQgASgMEiYKDmFkZHJlc3NfZm9ybWF0GAUgASgOMg4uQWRkcmVzc0Zvcm1h",
+            "dBIRCgl0aW1lc3RhbXAYBiABKAQiFQoTV2l0aGRyYXdUcmFuc2FjdGlvbiK7",
+            "AQoQVHJhbnNhY3Rpb25TdGF0ZRIzCgZzdGF0dXMYASABKA4yIy5UcmFuc2Fj",
+            "dGlvblN0YXRlLlRyYW5zYWN0aW9uU3RhdHVzInIKEVRyYW5zYWN0aW9uU3Rh",
+            "dHVzEhwKGFRSQU5TQUNUSU9OX1NUQVRVU19UQUtFThAAEiAKHFRSQU5TQUNU",
+            "SU9OX1NUQVRVU19DT05GSVJNRUQQARIdChlUUkFOU0FDVElPTl9TVEFUVVNf",
+            "RkFJTEVEEAIikgMKC1RyYW5zYWN0aW9uEh4KBHR5cGUYASABKA4yEC5UcmFu",
+            "c2FjdGlvblR5cGUSDwoHdmVyc2lvbhgCIAEoDRINCgVmbGFncxgDIAEoBBIW",
+            "CgRmcm9tGAQgASgLMgguVUludDE2MBINCgVub25jZRgFIAEoBBIoCghjb250",
+            "cmFjdBgGIAEoCzIULkNvbnRyYWN0VHJhbnNhY3Rpb25IABIiCgVpc3N1ZRgH",
+            "IAEoCzIRLklzc3VlVHJhbnNhY3Rpb25IABImCgdwdWJsaXNoGAggASgLMhMu",
+            "UHVibGlzaFRyYW5zYWN0aW9uSAASKAoIcmVnaXN0ZXIYCSABKAsyFC5SZWdp",
+            "c3RlclRyYW5zYWN0aW9uSAASIgoFbWluZXIYCiABKAsyES5NaW5lclRyYW5z",
+            "YWN0aW9uSAASJgoHZGVwb3NpdBgLIAEoCzITLkRlcG9zaXRUcmFuc2FjdGlv",
+            "bkgAEigKCHdpdGhkcmF3GAwgASgLMhQuV2l0aGRyYXdUcmFuc2FjdGlvbkgA",
+            "QgYKBGRhdGEibQoRU2lnbmVkVHJhbnNhY3Rpb24SIQoLdHJhbnNhY3Rpb24Y",
+            "ASABKAsyDC5UcmFuc2FjdGlvbhIWCgRoYXNoGAIgASgLMgguVUludDI1NhId",
+            "CglzaWduYXR1cmUYAyABKAsyCi5TaWduYXR1cmUq4gEKD1RyYW5zYWN0aW9u",
+            "VHlwZRIaChZUUkFOU0FDVElPTl9UWVBFX01JTkVSEAASHQoZVFJBTlNBQ1RJ",
+            "T05fVFlQRV9SRUdJU1RFUhABEhoKFlRSQU5TQUNUSU9OX1RZUEVfSVNTVUUQ",
+            "AhIdChlUUkFOU0FDVElPTl9UWVBFX0NPTlRSQUNUEAMSHAoYVFJBTlNBQ1RJ",
+            "T05fVFlQRV9QVUJMSVNIEAQSHAoYVFJBTlNBQ1RJT05fVFlQRV9ERVBPU0lU",
+            "EAUSHQoZVFJBTlNBQ1RJT05fVFlQRV9XSVRIRFJBVxAGKiwKD1RyYW5zYWN0",
+            "aW9uRmxhZxIZChVUUkFOU0FDVElPTl9GTEFHX05PTkUQACorCg5CbG9ja2No",
+            "YWluVHlwZRILCgdCSVRDT0lOEAASDAoIRVRIRVJFVU0QASoqCg1BZGRyZXNz",
+            "Rm9ybWF0EgwKCFJJUE1EMTYwEAASCwoHRUQyNTUxORABQhCqAg1QaG9ya3Vz",
+            "LlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.AssetReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionFlag), typeof(global::Phorkus.Proto.BlockchainType), typeof(global::Phorkus.Proto.AddressFormat), }, new pbr::GeneratedClrTypeInfo[] {
@@ -73,7 +74,7 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PublishTransaction), global::Phorkus.Proto.PublishTransaction.Parser, new[]{ "Hash", "Script" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.RegisterTransaction), global::Phorkus.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner", "Minter" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MinerTransaction), global::Phorkus.Proto.MinerTransaction.Parser, new[]{ "Miner" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.DepositTransaction), global::Phorkus.Proto.DepositTransaction.Parser, new[]{ "From", "BlockchainType", "Value", "AddressFormat", "Timestamp" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.DepositTransaction), global::Phorkus.Proto.DepositTransaction.Parser, new[]{ "From", "BlockchainType", "Value", "TransactionHash", "AddressFormat", "Timestamp" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.WithdrawTransaction), global::Phorkus.Proto.WithdrawTransaction.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionState), global::Phorkus.Proto.TransactionState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.TransactionState.Types.TransactionStatus) }, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner", "Deposit", "Withdraw" }, new[]{ "Data" }, null, null),
@@ -1192,6 +1193,7 @@ namespace Phorkus.Proto {
       from_ = other.from_ != null ? other.from_.Clone() : null;
       blockchainType_ = other.blockchainType_;
       value_ = other.value_ != null ? other.value_.Clone() : null;
+      transactionHash_ = other.transactionHash_;
       addressFormat_ = other.addressFormat_;
       timestamp_ = other.timestamp_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -1235,8 +1237,19 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "transaction_hash" field.</summary>
+    public const int TransactionHashFieldNumber = 4;
+    private pb::ByteString transactionHash_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pb::ByteString TransactionHash {
+      get { return transactionHash_; }
+      set {
+        transactionHash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "address_format" field.</summary>
-    public const int AddressFormatFieldNumber = 4;
+    public const int AddressFormatFieldNumber = 5;
     private global::Phorkus.Proto.AddressFormat addressFormat_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.AddressFormat AddressFormat {
@@ -1247,7 +1260,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "timestamp" field.</summary>
-    public const int TimestampFieldNumber = 5;
+    public const int TimestampFieldNumber = 6;
     private ulong timestamp_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ulong Timestamp {
@@ -1273,6 +1286,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(From, other.From)) return false;
       if (BlockchainType != other.BlockchainType) return false;
       if (!object.Equals(Value, other.Value)) return false;
+      if (TransactionHash != other.TransactionHash) return false;
       if (AddressFormat != other.AddressFormat) return false;
       if (Timestamp != other.Timestamp) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -1284,6 +1298,7 @@ namespace Phorkus.Proto {
       if (from_ != null) hash ^= From.GetHashCode();
       if (BlockchainType != 0) hash ^= BlockchainType.GetHashCode();
       if (value_ != null) hash ^= Value.GetHashCode();
+      if (TransactionHash.Length != 0) hash ^= TransactionHash.GetHashCode();
       if (AddressFormat != 0) hash ^= AddressFormat.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (_unknownFields != null) {
@@ -1311,12 +1326,16 @@ namespace Phorkus.Proto {
         output.WriteRawTag(26);
         output.WriteMessage(Value);
       }
+      if (TransactionHash.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteBytes(TransactionHash);
+      }
       if (AddressFormat != 0) {
-        output.WriteRawTag(32);
+        output.WriteRawTag(40);
         output.WriteEnum((int) AddressFormat);
       }
       if (Timestamp != 0UL) {
-        output.WriteRawTag(40);
+        output.WriteRawTag(48);
         output.WriteUInt64(Timestamp);
       }
       if (_unknownFields != null) {
@@ -1335,6 +1354,9 @@ namespace Phorkus.Proto {
       }
       if (value_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Value);
+      }
+      if (TransactionHash.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(TransactionHash);
       }
       if (AddressFormat != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) AddressFormat);
@@ -1367,6 +1389,9 @@ namespace Phorkus.Proto {
           value_ = new global::Phorkus.Proto.UInt256();
         }
         Value.MergeFrom(other.Value);
+      }
+      if (other.TransactionHash.Length != 0) {
+        TransactionHash = other.TransactionHash;
       }
       if (other.AddressFormat != 0) {
         AddressFormat = other.AddressFormat;
@@ -1403,11 +1428,15 @@ namespace Phorkus.Proto {
             input.ReadMessage(value_);
             break;
           }
-          case 32: {
-            addressFormat_ = (global::Phorkus.Proto.AddressFormat) input.ReadEnum();
+          case 34: {
+            TransactionHash = input.ReadBytes();
             break;
           }
           case 40: {
+            addressFormat_ = (global::Phorkus.Proto.AddressFormat) input.ReadEnum();
+            break;
+          }
+          case 48: {
             Timestamp = input.ReadUInt64();
             break;
           }

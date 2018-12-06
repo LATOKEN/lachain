@@ -64,8 +64,9 @@ message DepositTransaction {
     UInt160 from = 1;
     BlockchainType blockchain_type = 2;
     UInt256 value = 3;
-    AddressFormat address_format = 4;
-    uint64 timestamp = 5;
+    bytes transaction_hash = 4;
+    AddressFormat address_format = 5;
+    uint64 timestamp = 6;
 }
 
 message WithdrawTransaction {

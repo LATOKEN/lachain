@@ -12,6 +12,8 @@ namespace Phorkus.CrossChain.Ethereum
 
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
+        public byte[] TransactionHash { get; }
+        
         public Money Value { get; }
         
         public ulong Timestamp { get; }

@@ -1,4 +1,5 @@
-﻿using Phorkus.Core.Blockchain.OperationManager;
+﻿using Google.Protobuf;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Utility;
@@ -16,7 +17,7 @@ namespace Phorkus.Core.Blockchain
             _transactionRepository = transactionRepository;
             _transactionManager = transactionManager;
         }
-        
+
         public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
@@ -37,7 +38,7 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
+
         public Transaction MinerTransaction(UInt160 from)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(@from);
@@ -56,18 +57,19 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
-        public Transaction DepositTransaction(UInt160 from, BlockchainType blockchainType, Money value, AddressFormat addressFormat,
-            ulong timestamp)
+
+        public Transaction DepositTransaction(UInt160 from, BlockchainType blockchainType, Money value,
+            byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(@from);
+            var nonce = _transactionRepository.GetTotalTransactionCount(from);
             var deposit = new DepositTransaction
             {
                 From = from,
                 BlockchainType = blockchainType,
                 Value = value.ToUInt256(),
                 AddressFormat = addressFormat,
-                Timestamp = timestamp
+                Timestamp = timestamp,
+                TransactionHash = ByteString.CopyFrom(transactionHash)
             };
             var tx = new Transaction
             {

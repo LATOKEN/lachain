@@ -77,6 +77,7 @@ namespace Phorkus.Core.CrossChain
             var tx = _transactionBuilder.DepositTransaction(recipient,
                 contractTransaction.BlockchainType,
                 contractTransaction.Value,
+                contractTransaction.TransactionHash,
                 contractTransaction.AddressFormat,
                 contractTransaction.Timestamp);
             var signedTx = _transactionManager.Sign(tx, _keyPair);

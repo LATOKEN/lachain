@@ -11,6 +11,8 @@ namespace Phorkus.CrossChain
         
         AddressFormat AddressFormat { get; }
 
+        byte[] TransactionHash { get; }
+        
         Money Value { get; }
 
         ulong Timestamp { get; }
