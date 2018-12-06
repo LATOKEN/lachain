@@ -18,10 +18,12 @@ namespace Phorkus.CrossChain.Ethereum
         
         public ulong Timestamp { get; }
         
-        public EthereumContractTransaction(byte[] from, BigInteger value)
+        public EthereumContractTransaction(byte[] from, BigInteger value, byte[] transactionHash, ulong timestamp)
         {
             From = from;
             Value = MoneyFormatter.FormatMoney(value, EthereumConfig.Decimals);
+            TransactionHash = transactionHash;
+            Timestamp = timestamp;
         }
     }
 }
