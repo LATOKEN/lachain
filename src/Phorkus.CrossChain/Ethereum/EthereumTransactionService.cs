@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Nethereum.Hex.HexTypes;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC;
 using Phorkus.Proto;
@@ -33,13 +34,14 @@ namespace Phorkus.CrossChain.Ethereum
                 return (ulong) getBlockHeight.Result.Value;
             }
         }
-        
+
         public BigInteger GetNonce(string address)
         {
             var getNonce = _ethApiService.Transactions.GetTransactionCount.SendRequestAsync(address);
             getNonce.Wait();
             if (getNonce.IsFaulted)
-                throw new BlockchainNotAvailableException($"Unable to calculate nonce for address ({address}) from Ethereum network");
+                throw new BlockchainNotAvailableException(
+                    $"Unable to calculate nonce for address ({address}) from Ethereum network");
             return getNonce.Result.Value;
         }
 
@@ -57,15 +59,15 @@ namespace Phorkus.CrossChain.Ethereum
             var getBalance = _ethApiService.GetBalance.SendRequestAsync(address);
             getBalance.Wait();
             if (getBalance.IsFaulted)
-                throw new BlockchainNotAvailableException($"Unable to fetch balance for address {address} from Ethereum network");
+                throw new BlockchainNotAvailableException(
+                    $"Unable to fetch balance for address {address} from Ethereum network");
             return getBalance.Result.Value;
         }
 
         public IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight)
         {
             var getTransactions =
-                _ethApiService.Blocks.GetBlockWithTransactionsByHash.SendRequestAsync(_ethApiService.Blocks
-                    .GetBlockNumber.ToString());
+                _ethApiService.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(blockHeight));
             getTransactions.Wait();
             if (getTransactions.IsFaulted)
                 throw new BlockchainNotAvailableException($"Unable to get tranasction at block ({blockHeight})");
@@ -77,12 +79,14 @@ namespace Phorkus.CrossChain.Ethereum
                 if (tx.To != address)
                     continue;
                 var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(tx.From),
-                    tx.Value.Value);
+                    tx.Value.Value, Utils.ConvertHexStringToByteArray(tx.TransactionHash.ToString()),
+                    (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.ToString()));
                 transactions.Add(ethereumTx);
             }
+
             return transactions;
         }
-        
+
         public byte[] BroadcastTransaction(ITransactionData transactionData)
         {
             var sendTransaction =
