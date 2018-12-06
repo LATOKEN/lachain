@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
-using NBitcoin.RPC;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC;
 

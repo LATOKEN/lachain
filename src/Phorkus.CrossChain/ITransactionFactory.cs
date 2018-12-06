@@ -7,6 +7,6 @@ namespace Phorkus.CrossChain
         IDataToSign CreateDataToSign(byte[] from, byte[] to, byte[] value);
 
         ITransactionData CreateRawTransaction(byte[] from, byte[] to, byte[] value,
-            IReadOnlyCollection<byte[]> signatures);
+            IEnumerable<byte[]> signatures);
     }
 }

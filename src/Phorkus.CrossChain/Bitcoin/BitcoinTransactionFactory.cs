@@ -8,28 +8,23 @@ namespace Phorkus.CrossChain.Bitcoin
     public class BitcoinTransactionFactory : ITransactionFactory
     {
         private readonly BitcoinTransactionService _bitcoinTransactionService;
-        
+
         internal BitcoinTransactionFactory()
         {
             _bitcoinTransactionService = new BitcoinTransactionService();
         }
-        
+
         private static string AppendSigPrefix(string signature)
         {
             string appendSig;
-            if ((signature[0] >= '8' && signature[0] <= '9') || (signature[0] >= 'a' && signature[0] <= 'f'))
-            {
+            if (signature[0] >= '8' && signature[0] <= '9' || signature[0] >= 'a' && signature[0] <= 'f')
                 appendSig = "00" + signature;
-            }
             else
-            {
                 appendSig = signature;
-            }
-
             return "02" + Utils.ConvertIntToReversedHex(appendSig.Length / 2, 1) + appendSig;
         }
 
-        public IDataToSign CreateDataToSign(byte[] @from, byte[] to, byte[] value)
+        public IDataToSign CreateDataToSign(byte[] from, byte[] to, byte[] value)
         {
             var longValue = Utils.ConvertHexToLong(Utils.ConvertByteArrayToString(value));
             var stringFrom = Utils.ConvertByteArrayToString(from);
@@ -38,7 +33,7 @@ namespace Phorkus.CrossChain.Bitcoin
             var outputs = _bitcoinTransactionService.GetOutputs(stringFrom, longValue);
             var prevAmount = outputs.Value;
             var inputSz = outputs.Key.Count;
-            var outputSz = 2;
+            const int outputSz = 2;
             var fromBtc = new BitcoinScriptAddress(stringFrom, NBitcoin.Network.Main);
             var toBtc = new BitcoinScriptAddress(stringTo, NBitcoin.Network.Main);
             var bitcoinTransactionData = new BitcoinTransactionData();
@@ -47,7 +42,7 @@ namespace Phorkus.CrossChain.Bitcoin
             var scriptPubKeyChange = toBtc.ScriptPubKey.ToString();
             var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz);
             var scriptCode = "1976a914"
-                             + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey)).ToString() + "88ac";
+                             + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey)) + "88ac";
             var prevOuts = "";
             foreach (var output in outputs.Key)
             {
@@ -81,7 +76,7 @@ namespace Phorkus.CrossChain.Bitcoin
         }
 
         public ITransactionData CreateRawTransaction(byte[] @from, byte[] to, byte[] value,
-            IReadOnlyCollection<byte[]> signatures)
+            IEnumerable<byte[]> signatures)
         {
             var longValue = Utils.ConvertHexToLong(Utils.ConvertByteArrayToString(value));
             var stringFrom = Utils.ConvertByteArrayToString(from);
@@ -90,7 +85,7 @@ namespace Phorkus.CrossChain.Bitcoin
             var outputs = _bitcoinTransactionService.GetOutputs(stringFrom, longValue);
             var prevAmount = outputs.Value;
             var inputSz = outputs.Key.Count;
-            var outputSz = 2;
+            const int outputSz = 2;
             // String publicKey = "02e5974f3e1e9599ff5af036b5d6057d80855e7182afb4c2fa1fe38bc6efb9072b";
             var fromBtc = new BitcoinScriptAddress(stringFrom, NBitcoin.Network.Main);
             var toBtc = new BitcoinScriptAddress(stringTo, NBitcoin.Network.Main);
@@ -99,7 +94,7 @@ namespace Phorkus.CrossChain.Bitcoin
             var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz);
             var prevOuts = "";
             var redeemScript =
-                "17160014" + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey)).ToString();
+                "17160014" + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey));
             foreach (var output in outputs.Key)
             {
                 prevOuts += Utils.ReverseHex(output.Hash.ToString())

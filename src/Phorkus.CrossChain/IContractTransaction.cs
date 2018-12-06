@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using Phorkus.Proto;
 
 namespace Phorkus.CrossChain
 {
