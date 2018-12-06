@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class BinaryUtils
     {

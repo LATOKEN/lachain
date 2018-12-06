@@ -1,4 +1,6 @@
-﻿namespace Phorkus.CrossChain
+﻿using Phorkus.Proto;
+
+namespace Phorkus.CrossChain
 {
     public interface ICrossChainManager
     {

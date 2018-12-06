@@ -14,6 +14,7 @@ using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Network.Grpc;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Network
 {
@@ -153,17 +154,28 @@ namespace Phorkus.Core.Network
                     Node = networkContext.LocalNode
                 };
                 var reply = remotePeer.BlockchainService.Handshake(handshake);
-                if (reply.Node == null || !reply.Node.IsValid())
+                if (reply.Node == null || !_IsValid(reply.Node))
                     return false;
                 remotePeer.Node = reply.Node;
                 remotePeer.IsKnown = true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return false;
             }
 
             return true;
+        }
+        
+        private static bool _IsValid(Node node)
+        {
+            if (string.IsNullOrEmpty(node.Address))
+                return false;
+            if (node.Port == 0)
+                return false;
+            if (string.IsNullOrEmpty(node.Agent))
+                return false;
+            return node.Nonce != 0;
         }
 
         public void Start()

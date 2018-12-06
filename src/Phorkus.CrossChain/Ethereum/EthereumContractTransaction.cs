@@ -1,4 +1,6 @@
 using System.Numerics;
+using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.CrossChain.Ethereum
 {
@@ -10,12 +12,16 @@ namespace Phorkus.CrossChain.Ethereum
 
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
-        public BigInteger Value { get; }
+        public byte[] TransactionHash { get; }
+        
+        public Money Value { get; }
+        
+        public ulong Timestamp { get; }
         
         public EthereumContractTransaction(byte[] from, BigInteger value)
         {
             From = from;
-            Value = value;
+            Value = MoneyFormatter.FormatMoney(value, EthereumConfig.Decimals);
         }
     }
 }

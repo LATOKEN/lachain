@@ -2,6 +2,7 @@
 using Phorkus.Core.Blockchain;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
+using Phorkus.Utility;
 
 namespace Phorkus.RocksDB.Repositories
 {

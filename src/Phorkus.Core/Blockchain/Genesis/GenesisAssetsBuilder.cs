@@ -5,6 +5,8 @@ using Phorkus.Core.Consensus;
 using Phorkus.Core.Config;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
+using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.Genesis
 {

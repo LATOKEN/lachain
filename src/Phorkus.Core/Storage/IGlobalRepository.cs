@@ -32,6 +32,10 @@ namespace Phorkus.Core.Storage
         
         ThresholdKey GetShare();
         
-        void AddChange(ThresholdKey thresholdKey);
+        void SetShare(ThresholdKey thresholdKey);
+
+        ulong GetBlockchainHeight(BlockchainType blockchainType);
+
+        ulong SetBlockchainHeight(BlockchainType blockchainType);
     }
 }

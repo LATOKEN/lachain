@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.CrossChain
 {
@@ -10,6 +11,10 @@ namespace Phorkus.CrossChain
         
         AddressFormat AddressFormat { get; }
 
-        BigInteger Value { get; }
+        byte[] TransactionHash { get; }
+        
+        Money Value { get; }
+
+        ulong Timestamp { get; }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using Google.Protobuf;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Utils
 {

@@ -6,6 +6,7 @@ using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Network.Grpc;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Network.Grpc
 {

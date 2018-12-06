@@ -6,6 +6,7 @@ using Phorkus.Core.Blockchain;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Consensus
 {

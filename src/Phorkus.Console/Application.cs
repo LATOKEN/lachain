@@ -15,6 +15,7 @@ using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Console
 {
@@ -52,7 +53,7 @@ namespace Phorkus.Console
             var blockRepository = _container.Resolve<IBlockRepository>();
             var assetRepository = _container.Resolve<IAssetRepository>();
             var crypto = _container.Resolve<ICrypto>();
-            var transactionFactory = _container.Resolve<ITransactionFactory>();
+            var transactionFactory = _container.Resolve<ITransactionBuilder>();
             var balanceRepository = _container.Resolve<IBalanceRepository>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();

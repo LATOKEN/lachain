@@ -12,5 +12,6 @@ namespace Phorkus.CrossChain.Bitcoin
         public const uint OutputBytes = 32;
         public const uint TxDataBytes = 120;
         public const string WitnessCode = "02";
+        public const int Decimals = 8;
     }
 }

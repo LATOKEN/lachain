@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class StringUtils
     {

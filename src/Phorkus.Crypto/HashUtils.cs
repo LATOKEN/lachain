@@ -44,6 +44,11 @@ namespace Phorkus.Crypto
         {
             return Ripemd160(message, 0, message.Length);
         }
+
+        public static byte[] Ed25519(this byte[] message)
+        {
+            throw new NotImplementedException();
+        }
         
         public static byte[] Murmur3(this byte[] message, uint seed)
         {

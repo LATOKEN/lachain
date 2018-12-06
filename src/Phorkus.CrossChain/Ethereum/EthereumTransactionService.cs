@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC;
+using Phorkus.Proto;
 
 namespace Phorkus.CrossChain.Ethereum
 {
@@ -11,9 +13,27 @@ namespace Phorkus.CrossChain.Ethereum
 
         internal EthereumTransactionService()
         {
-            _ethApiService = new EthApiService(new RpcClient(new System.Uri(EthereumConfig.RpcUri), null, null));
+            _ethApiService = new EthApiService(new RpcClient(new Uri(EthereumConfig.RpcUri)));
         }
 
+        public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
+
+        public ulong BlockGenerationTime { get; } = 15 * 1000;
+
+        public ulong CurrentBlockHeight
+        {
+            get
+            {
+                var getBlockHeight = _ethApiService.Blocks.GetBlockNumber.SendRequestAsync();
+                getBlockHeight.Wait();
+
+                if (getBlockHeight.IsFaulted)
+                    throw new BlockchainNotAvailableException($"Unable to determine current block height");
+
+                return (ulong) getBlockHeight.Result.Value;
+            }
+        }
+        
         public BigInteger GetNonce(string address)
         {
             var getNonce = _ethApiService.Transactions.GetTransactionCount.SendRequestAsync(address);
@@ -39,20 +59,6 @@ namespace Phorkus.CrossChain.Ethereum
             if (getBalance.IsFaulted)
                 throw new BlockchainNotAvailableException($"Unable to fetch balance for address {address} from Ethereum network");
             return getBalance.Result.Value;
-        }
-
-        public ulong CurrentBlockHeight
-        {
-            get
-            {
-                var getBlockHeight = _ethApiService.Blocks.GetBlockNumber.SendRequestAsync();
-                getBlockHeight.Wait();
-
-                if (getBlockHeight.IsFaulted)
-                    throw new BlockchainNotAvailableException($"Unable to determine current block height");
-
-                return (ulong) getBlockHeight.Result.Value;
-            }
         }
 
         public IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight)

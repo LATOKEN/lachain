@@ -7,6 +7,7 @@ using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain
 {

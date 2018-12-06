@@ -14,6 +14,7 @@ using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Consensus
 {
@@ -27,7 +28,7 @@ namespace Phorkus.Core.Consensus
         private readonly ITransactionPool _transactionPool;
         private readonly IBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
-        private readonly ITransactionFactory _transactionFactory;
+        private readonly ITransactionBuilder _transactionBuilder;
         private readonly ICrypto _crypto;
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
@@ -52,7 +53,7 @@ namespace Phorkus.Core.Consensus
             IBroadcaster broadcaster,
             ILogger<ConsensusManager> logger,
             IConfigManager configManager,
-            ITransactionFactory transactionFactory,
+            ITransactionBuilder transactionBuilder,
             ICrypto crypto,
             IBlockSynchronizer blockchainBlockSynchronizer,
             IConsensusService consensusService)
@@ -61,7 +62,7 @@ namespace Phorkus.Core.Consensus
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
             _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
-            _transactionFactory = transactionFactory ?? throw new ArgumentNullException(nameof(transactionFactory));
+            _transactionBuilder = transactionBuilder ?? throw new ArgumentNullException(nameof(transactionBuilder));
             _blockSynchronizer =
                 blockchainBlockSynchronizer ?? throw new ArgumentNullException(nameof(blockchainBlockSynchronizer));
             _consensusService = consensusService;
@@ -140,7 +141,7 @@ namespace Phorkus.Core.Consensus
                     // TODO: produce block
                     var blockBuilder = new BlockBuilder(_blockchainContext.CurrentBlockHeader.Header)
                         .WithTransactions(_transactionPool);
-                    var minerTx = _transactionFactory.MinerTransaction(
+                    var minerTx = _transactionBuilder.MinerTransaction(
                         _crypto.ComputeAddress(_context.KeyPair.PublicKey.Buffer.ToByteArray()).ToUInt160());
                     var signed = _transactionManager.Sign(minerTx, _keyPair);
                     var minerError = _transactionManager.Persist(signed);
