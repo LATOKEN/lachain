@@ -1,8 +1,6 @@
-﻿using Phorkus.Core.Blockchain;
-
-namespace Phorkus.Core.Storage
+﻿namespace Phorkus.Core.Blockchain.State
 {
-    public interface IStorageRepository
+    public interface IStorageSnapshot
     {
         /// <summary>
         /// Retrieves a StorageValue by its StorageKey
@@ -17,7 +15,7 @@ namespace Phorkus.Core.Storage
         /// <param name="key"></param>
         /// <param name="val"></param>
         /// <returns></returns>
-        void AddStorage(StorageKey key, StorageValue val);
+        void AddOrUpdateStorage(StorageKey key, StorageValue val);
         
         /// <summary>
         /// Deletes a StorageKey and its associated StorageValue

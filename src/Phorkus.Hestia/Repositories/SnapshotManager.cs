@@ -5,7 +5,7 @@ namespace Phorkus.Hestia.Repositories
     public abstract class SnapshotManager<TSnapshotInterface, TSnapshotType> 
         where TSnapshotType : class, TSnapshotInterface, ISnapshot
     {
-        private readonly IStorageManager _storageManager;
+        private readonly IPersistentStorageManager _persistentStorageManager;
         private TSnapshotType _lastApprovedSnapshot;
         private TSnapshotType _pendingSnapshot;
         protected abstract uint RepositoryId { get; }
@@ -15,10 +15,10 @@ namespace Phorkus.Hestia.Repositories
 
         protected abstract TSnapshotType SnaphotFromState(IStorageState state);
 
-        protected SnapshotManager(IStorageManager storageManager)
+        protected SnapshotManager(IPersistentStorageManager persistentStorageManager)
         {
-            _storageManager = storageManager;
-            _lastApprovedSnapshot = SnaphotFromState(_storageManager.GetLastState(RepositoryId)); 
+            _persistentStorageManager = persistentStorageManager;
+            _lastApprovedSnapshot = SnaphotFromState(_persistentStorageManager.GetLastState(RepositoryId)); 
             _pendingSnapshot = null;
         }
 
@@ -26,7 +26,7 @@ namespace Phorkus.Hestia.Repositories
         {
             if (PendingSnapshot != null)
                 throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
-            _pendingSnapshot = SnaphotFromState(_storageManager.GetState(RepositoryId, _lastApprovedSnapshot.Version));
+            _pendingSnapshot = SnaphotFromState(_persistentStorageManager.GetState(RepositoryId, _lastApprovedSnapshot.Version));
             return PendingSnapshot;
         }
 

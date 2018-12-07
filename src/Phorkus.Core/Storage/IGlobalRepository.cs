@@ -28,7 +28,7 @@ namespace Phorkus.Core.Storage
         /// <param name="height">Total / current block header height</param>
         void SetTotalBlockHeaderHeight(ulong height);
 
-        bool IsGenesisBlockExists();
+        bool GenesisBlockExists();
         
         ThresholdKey GetShare();
         

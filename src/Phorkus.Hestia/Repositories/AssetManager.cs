@@ -5,7 +5,7 @@ namespace Phorkus.Hestia.Repositories
 {
     public class AssetManager : SnapshotManager<IAssetSnapshot, AssetSnapshot>, ISnapshotManager<IAssetSnapshot>
     {
-        public AssetManager(IStorageManager storageManager) : base(storageManager)
+        public AssetManager(IPersistentStorageManager persistentStorageManager) : base(persistentStorageManager)
         {
         }
 

@@ -41,7 +41,7 @@ namespace Phorkus.RocksDB.Repositories
             });
         }
 
-        public bool IsGenesisBlockExists()
+        public bool GenesisBlockExists()
         {
             return _GetGlobal() != null;
         }
