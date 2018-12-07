@@ -28,16 +28,16 @@ namespace Phorkus.HermesTest
         {
             var participants = new Dictionary<PublicKey, int>
             {
-                { ToPublicKey(HexUtil.hexToBytes("02affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5")), 1 },
-                { ToPublicKey(HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a")), 2 },
-                { ToPublicKey(HexUtil.hexToBytes("038871c219368549f7765f94c0b7b3046612f08e626771e98e235f4abb7ae363b9")), 3 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7360")), 4 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a635616f14d731231")), 5 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686fd734322")), 6 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7363")), 7 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364")), 8 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7365")), 9 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7366")), 10 }
+                { ToPublicKey(HexUtil.hexToBytes("02affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5")), 0 },
+                { ToPublicKey(HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a")), 1 },
+                { ToPublicKey(HexUtil.hexToBytes("038871c219368549f7765f94c0b7b3046612f08e626771e98e235f4abb7ae363b9")), 2 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7360")), 3 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a635616f14d731231")), 4 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686fd734322")), 5 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7363")), 6 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364")), 7 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7365")), 8 },
+                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7366")), 9 }
             };
 
             var myKey = ToPublicKey(
@@ -49,62 +49,58 @@ namespace Phorkus.HermesTest
             
             Console.WriteLine("Initializing protocol");
             
-            
-            // инициализация параметров протокола для каждого участника
-            for (var i = 0; i < participants.Count; i++)
-                protos[i].Initialize();
-
-            Console.WriteLine("Generating shares");
-            
-            // генерация каждым участником протокола своей части ключа - share
-            var shares = new IReadOnlyCollection<BgwPublicParams>[participants.Count];
-            for (var i = 0; i < participants.Count; i++)
-                shares[i] = protos[i].GenerateShare();
-
-            var flippedShares = new BgwPublicParams[participants.Count][];
-            for (var i = 0; i < participants.Count; i++)
-                flippedShares[i] = new BgwPublicParams[participants.Count];
-            
-            for (var i = 0; i < participants.Count; i++)
-            {
-                var si = shares[i].ToArray();
-                for (var j = 0; j < si.Length; j++)
-                {
-                    flippedShares[i][j] = si[j];
-                }
-            }// todo 
-            
-            Console.WriteLine("Generating point");
-            
-            var points = new BGWNPoint[participants.Count];
-            for (var i = 0; i < participants.Count; i++)
-                points[i] = protos[i].GeneratePoint(flippedShares[i]);
-
-            BiprimalityTestResult biprimalityTestResult = null;
-            var round = 0;
-            while (true)
-            {
-                Console.WriteLine($"Testing biprimality {round}/10");
-                
-                var proofs = new QiTestForRound[participants.Count];
-                for (var i = 0; i < participants.Count; i++)
-                    proofs[i] = protos[i].GenerateProof(points);
-                
-                for (var i = 0; i < participants.Count; i++)
-                {
-                    var test = protos[i].ValidateProof(proofs);
-                    if (!test.passes)
-                        continue;
-                    biprimalityTestResult = test;
-                }
-                if (biprimalityTestResult != null)
-                    break;
-                ++round;
-                if (round >= 10)
-                    break;
-            }
-            
-            Console.WriteLine($"biprimalityTestResult: {biprimalityTestResult?.N}, " + biprimalityTestResult?.passes);
+//            
+//            // инициализация параметров протокола для каждого участника
+//            for (var i = 0; i < participants.Count; i++)
+//                protos[i].Initialize(null);
+//
+//            Console.WriteLine("Generating shares");
+//            
+//            // генерация каждым участником протокола своей части ключа - share
+//            var shares = new IReadOnlyCollection<BgwPublicParams>[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//                shares[i] = protos[i].GenerateShare();
+//            var flippedShares = new BgwPublicParams[participants.Count][];
+//            for (var i = 0; i < participants.Count; i++)
+//                flippedShares[i] = new BgwPublicParams[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//            {
+//                var si = shares[i].ToArray();
+//                for (var j = 0; j < si.Length; j++)
+//                    flippedShares[j][i] = si[j];
+//            }
+//            
+//            Console.WriteLine("Generating point");
+//            
+//            var points = new BGWNPoint[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//                points[i] = protos[i].GeneratePoint(flippedShares[i]);
+//
+//            BiprimalityTestResult biprimalityTestResult = null;
+//            var round = 0;
+//            while (true)
+//            {
+//                Console.WriteLine($"Testing biprimality {round}/10");
+//                
+//                var proofs = new QiTestForRound[participants.Count];
+//                for (var i = 0; i < participants.Count; i++)
+//                    proofs[i] = protos[i].GenerateProof(points);
+//                
+//                for (var i = 0; i < participants.Count; i++)
+//                {
+//                    var test = protos[i].ValidateProof(proofs);
+//                    if (!test.passes)
+//                        continue;
+//                    biprimalityTestResult = test;
+//                }
+//                if (biprimalityTestResult != null)
+//                    break;
+//                ++round;
+//                if (round >= 10)
+//                    break;
+//            }
+//            
+//            Console.WriteLine($"biprimalityTestResult: {biprimalityTestResult?.N}, " + biprimalityTestResult?.passes);
 //            if (biprimalityTestResult is null)
 //                throw new Exception("Unable to find valid biprimality test");
 

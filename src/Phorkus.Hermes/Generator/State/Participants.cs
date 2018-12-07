@@ -9,7 +9,7 @@ namespace Phorkus.Hermes.Generator.State
 
         public Participants(IDictionary<PublicKey, int> participants)
         {
-            this.participants = new Dictionary<PublicKey, int>(participants);
+            this.participants = new SortedDictionary<PublicKey, int>(participants);
         }
 
         /** @return the map containing the mapping between ActorRef's and id in the protocol*/

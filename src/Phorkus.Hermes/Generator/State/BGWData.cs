@@ -12,61 +12,54 @@ namespace Phorkus.Hermes.Generator.State
  */
     public class BGWData : Data<BGWData>
     {
-        
         /** Collection of the recieved shares of N*/
-        public IDictionary<int, BigInteger> Ns;
-        
+        public IDictionary<PublicKey, BigInteger> Ns;
+
         /** The BGW private parameters selected by the actor in the BGW protocol (p<sub>i</sub>, q<sub>i</sub>, ...)*/
         public BgwPrivateParams bgwPrivateParameters;
 
-        public IDictionary<int, BgwPublicParams> bgwPublicParameters;
+        public IDictionary<PublicKey, BgwPublicParams> bgwPublicParameters;
 
         private BGWData(IReadOnlyDictionary<PublicKey, int> participants,
             BgwPrivateParams bgwPrivateParameters,
-            IDictionary<int, BgwPublicParams> bgwPublicParameters,
-            IDictionary<int, BigInteger> Ns)
+            IDictionary<PublicKey, BgwPublicParams> bgwPublicParameters,
+            IDictionary<PublicKey, BigInteger> Ns)
             : base(participants)
         {
             this.bgwPrivateParameters = bgwPrivateParameters;
-            this.bgwPublicParameters = new Dictionary<int, BgwPublicParams>(bgwPublicParameters);
-            this.Ns = new Dictionary<int, BigInteger>(Ns);
+            this.bgwPublicParameters = bgwPublicParameters;
+            this.Ns = Ns;
         }
 
-        public static BGWData Init()
+        public static BGWData Init(IComparer<PublicKey> publicKeyComparer)
         {
-            return new BGWData(null,
-                null,
-                new Dictionary<int, BgwPublicParams>(),
-                new Dictionary<int, BigInteger>());
+            return new BGWData(null, null, new SortedDictionary<PublicKey, BgwPublicParams>(publicKeyComparer),
+                new SortedDictionary<PublicKey, BigInteger>(publicKeyComparer));
         }
 
-        public bool HasShareOf(IEnumerable<int> var)
+        public bool HasShareOf(IEnumerable<PublicKey> var)
         {
             return var.All(i => bgwPublicParameters.ContainsKey(i));
         }
 
-        public IEnumerable<KeyValuePair<int, BgwPublicParams>> shares()
+        public IEnumerable<KeyValuePair<PublicKey, BgwPublicParams>> shares()
         {
             return bgwPublicParameters;
         }
 
-        public bool hasNiOf(IEnumerable<int> isy)
+        public bool hasNiOf(IEnumerable<PublicKey> isy)
         {
             return isy.All(i => Ns.ContainsKey(i));
         }
 
-        public IEnumerable<KeyValuePair<int, BigInteger>> nis()
+        public IEnumerable<KeyValuePair<PublicKey, BigInteger>> nis()
         {
-            // return Ns.entrySet().stream();
             return Ns;
         }
 
         public override BGWData WithParticipants(IReadOnlyDictionary<PublicKey, int> participants)
         {
-            return new BGWData(participants,
-                bgwPrivateParameters,
-                bgwPublicParameters,
-                Ns);
+            return new BGWData(participants, bgwPrivateParameters, bgwPublicParameters, Ns);
         }
 
         public BGWData WithPrivateParameters(BgwPrivateParams param)
@@ -74,25 +67,20 @@ namespace Phorkus.Hermes.Generator.State
             return new BGWData(participants, param, bgwPublicParameters, Ns);
         }
 
-        public BGWData WithNewShare(BgwPublicParams share, int fromId)
+        public BGWData WithNewShare(BgwPublicParams share, PublicKey fromId)
         {
             if (bgwPublicParameters.ContainsKey(fromId))
                 return this;
-
-            IDictionary<int, BgwPublicParams> newMap =
-                new Dictionary<int, BgwPublicParams>(bgwPublicParameters);
-            newMap.Add(fromId, share);
-            return new BGWData(participants, bgwPrivateParameters, newMap, Ns);
+            bgwPublicParameters.Add(fromId, share);
+            return new BGWData(participants, bgwPrivateParameters, bgwPublicParameters, Ns);
         }
 
-        public BGWData withNewNi(BigInteger Ni, int fromId)
+        public BGWData withNewNi(BigInteger Ni, PublicKey fromId)
         {
             if (Ns.ContainsKey(fromId))
                 return this;
-
-            IDictionary<int, BigInteger> newNs = new Dictionary<int, BigInteger>(Ns);
-            newNs.Add(fromId, Ni);
-            return new BGWData(participants, bgwPrivateParameters, bgwPublicParameters, newNs);
+            Ns.Add(fromId, Ni);
+            return new BGWData(participants, bgwPrivateParameters, bgwPublicParameters, Ns);
         }
 
         // IDictionary<IActorRef, int> 

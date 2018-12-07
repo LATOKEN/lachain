@@ -1,4 +1,5 @@
 ﻿using Org.BouncyCastle.Math;
+using Phorkus.Hermes.Generator.State;
 
 namespace Phorkus.Hermes.Generator.Messages
 {
@@ -13,8 +14,7 @@ namespace Phorkus.Hermes.Generator.Messages
         /** The result of the Biprimality test. True if succeed, false if not.*/
         public bool passes;
 
-        public BiprimalityTestResult(BigInteger N,
-            BgwPrivateParams bgwPrivateParameters, bool passes)
+        public BiprimalityTestResult(BigInteger N, BgwPrivateParams bgwPrivateParameters, bool passes)
         {
             this.N = N;
             this.passes = passes;

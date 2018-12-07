@@ -148,8 +148,8 @@ namespace Phorkus.Hermes.Generator.State
             }
 
             IDictionary<int, BigInteger> newThetaMap = thetas != null
-                ? new Dictionary<int, BigInteger>(thetas)
-                : new Dictionary<int, BigInteger>();
+                ? new SortedDictionary<int, BigInteger>(thetas)
+                : new SortedDictionary<int, BigInteger>();
             newThetaMap.Add(j, theta);
             return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, newThetaMap, verificationKeys);
@@ -163,8 +163,8 @@ namespace Phorkus.Hermes.Generator.State
             }
 
             IDictionary<int, BigInteger> newVKMap = verificationKeys != null
-                ? new Dictionary<int, BigInteger>(verificationKeys)
-                : new Dictionary<int, BigInteger>();
+                ? new SortedDictionary<int, BigInteger>(verificationKeys)
+                : new SortedDictionary<int, BigInteger>();
             newVKMap.Add(j, newVerifKey);
             return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, newVKMap);

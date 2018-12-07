@@ -3,6 +3,7 @@ using Phorkus.Hermes.Crypto.Key;
 using Phorkus.Hermes.Generator;
 using Phorkus.Hermes.Generator.Messages;
 using Phorkus.Hermes.Generator.State;
+using Phorkus.Proto;
 
 namespace Phorkus.Hermes
 {
@@ -10,15 +11,15 @@ namespace Phorkus.Hermes
     {
         GeneratorState CurrentState { get; }
 
-        void Initialize();
+        void Initialize(byte[] seed);
 
-        IReadOnlyCollection<BgwPublicParams> GenerateShare();
+        IDictionary<PublicKey, BgwPublicParams> GenerateShare();
         
-        BGWNPoint GeneratePoint(IReadOnlyCollection<BgwPublicParams> shares);
+        BGWNPoint GeneratePoint(IDictionary<PublicKey, BgwPublicParams> shares);
 
-        QiTestForRound GenerateProof(IReadOnlyCollection<BGWNPoint> points);
+        QiTestForRound GenerateProof(IDictionary<PublicKey, BGWNPoint> points);
 
-        BiprimalityTestResult ValidateProof(IReadOnlyCollection<QiTestForRound> proofs);
+        BiprimalityTestResult ValidateProof(IDictionary<PublicKey, QiTestForRound> proofs);
 
         IReadOnlyCollection<KeysDerivationPublicParameters> GenerateDerivation(BiprimalityTestResult acceptedN);
 

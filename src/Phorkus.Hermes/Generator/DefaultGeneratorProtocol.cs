@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Phorkus.Hermes.Crypto.Key;
@@ -8,80 +9,21 @@ using Phorkus.Hermes.Generator.Messages;
 using Phorkus.Hermes.Generator.State;
 using Phorkus.Hermes.Math;
 using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.Hermes.Generator
 {
-    public class JavaRandom : Random
-    {
-        public JavaRandom(ulong seed)
-        {
-            this.seed = (seed ^ 0x5DEECE66DUL) & ((1UL << 48) - 1);
-        }
-
-        public override int Next()
-        {
-            return (int) NextBits(32);
-        }
-
-        public override int Next(int n)
-        {
-            if (n <= 0) throw new ArgumentException("n must be positive");
-
-            if ((n & -n) == n)  // i.e., n is a power of 2
-                return (int)((n * NextBits(31)) >> 31);
-
-            long bits, val;
-            do
-            {
-                bits = NextBits(31);
-                val = bits % (UInt32) n;
-            }
-            while (bits - val + (n - 1) < 0);
-
-            return (int) val;
-        }
-
-        public override int Next(int minValue, int maxValue)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void NextBytes(byte[] bytes)
-        {
-            for (int i = 0, len = bytes.Length; i < len; )
-            for (int rnd = Next(),
-                n = System.Math.Min(len - i, 32 / 8);
-                n-- > 0; rnd >>= 9)
-                bytes[i++] = (byte)rnd;
-        }
-
-        public override double NextDouble()
-        {
-            throw new NotImplementedException();
-        }
-        
-        protected uint NextBits(int bits)
-        {
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-
-            return (UInt32)(seed >> (48 - bits));
-        }
-
-        private UInt64 seed;
-    }
-    
     public class DefaultGeneratorProtocol : IGeneratorProtocol
     {
-        public static int N_PARTIES = 10; // Current implementation: works for 3 to 30 
-        public static int T_THRESHOLD = 4; // Should be less than n/2
         public static int KEY_SIZE = 128; // Tested up to 512
         public static int NUMBER_OF_ROUNDS = 10;
 
-        private readonly SecureRandom rand = new SecureRandom();
+        private readonly SecureRandom rand = new SecureRandom(
+            Encoding.ASCII.GetBytes("Hello World"));
 
         private IReadOnlyDictionary<PublicKey, int> participants;
         private PublicKey publicKey;
-        private ProtocolParameters protoParam;
+        private static ProtocolParameters protoParam;
         private BGWData bgwData;
         private BiprimalityTestData biprimalityTestData;
         private KeysDerivationData keysDerivationData;
@@ -95,15 +37,15 @@ namespace Phorkus.Hermes.Generator
 
         public GeneratorState CurrentState { get; private set; }
 
-        public void Initialize()
+        public void Initialize(byte[] seed)
         {
             CurrentState = GeneratorState.Initialization;
-            
-            protoParam = ProtocolParameters.gen(KEY_SIZE, N_PARTIES, T_THRESHOLD, new JavaRandom(123456ul));
+            if (protoParam is null)
+                protoParam = ProtocolParameters.gen(KEY_SIZE, participants.Count, participants.Count / 3, new SecureRandom(seed));
             Console.WriteLine("Pp=" + protoParam.P);
         }
 
-        public IReadOnlyCollection<BgwPublicParams> GenerateShare()
+        public IDictionary<PublicKey, BgwPublicParams> GenerateShare()
         {
             CurrentState = GeneratorState.GeneratingShare;
 
@@ -111,24 +53,25 @@ namespace Phorkus.Hermes.Generator
             var bgwPrivateParameters = BgwPrivateParams.genFor(participants[publicKey], protoParam, rand);
             var bgwSelfShare = BgwPublicParams.genFor(participants[publicKey], bgwPrivateParameters);
 
-            bgwData = BGWData.Init()
+            bgwData = BGWData.Init(new PublicKeyComparer())
                 .WithPrivateParameters(bgwPrivateParameters)
-                .WithNewShare(bgwSelfShare, participants[publicKey])
+                .WithNewShare(bgwSelfShare, publicKey)
                 .WithParticipants(participants);
 
-            var shares = participants.Select(p => BgwPublicParams.genFor(p.Value, bgwData.bgwPrivateParameters))
-                .ToList();
+            var shares = new SortedDictionary<PublicKey, BgwPublicParams>(new PublicKeyComparer());
+            foreach (var p in participants)
+                shares[p.Key] = BgwPublicParams.genFor(p.Value, bgwData.bgwPrivateParameters);
             return shares;
         }
 
-        public BGWNPoint GeneratePoint(IReadOnlyCollection<BgwPublicParams> shares)
+        public BGWNPoint GeneratePoint(IDictionary<PublicKey, BgwPublicParams> shares)
         {
             CurrentState = GeneratorState.CollectingShare;
 
-            for (var i = 0; i < shares.Count; i++)
-                bgwData = bgwData.WithNewShare(shares.ElementAt(i), i + 1);
+            foreach (var s in shares)
+                bgwData = bgwData.WithNewShare(s.Value, s.Key);
             
-            if (!bgwData.HasShareOf(participants.Values))
+            if (!bgwData.HasShareOf(participants.Keys))
                 throw new Exception("We havn't collected all required shares from other participants");
 
             var badActors = bgwData.shares()
@@ -136,7 +79,7 @@ namespace Phorkus.Hermes.Generator
                 .Select(e => e.Key); // Check the shares (not implemented yet)
             if (badActors.Any())
                 throw new Exception("There are bad actors that sent incorrect share");
-         
+            
             CurrentState = GeneratorState.GeneratingPoint;
             
             var sumPj = bgwData.shares().Select(e => e.Value.pij)
@@ -147,22 +90,26 @@ namespace Phorkus.Hermes.Generator
                 .Aggregate(BigInteger.Zero, (h1, h2) => h1.Add(h2));
             var Ni = sumPj.Multiply(sumQj).Add(sumHj).Mod(protoParam.P);
 
-            bgwData = bgwData.withNewNi(Ni, participants[publicKey]);
-            return new BGWNPoint(bgwData.Ns[participants[publicKey]]);
+            bgwData = bgwData.withNewNi(Ni, publicKey);
+            return new BGWNPoint(bgwData.Ns[publicKey]);
         }
 
-        public QiTestForRound GenerateProof(IReadOnlyCollection<BGWNPoint> points)
+        public QiTestForRound GenerateProof(IDictionary<PublicKey, BGWNPoint> points)
         {
             CurrentState = GeneratorState.CollectingPoint;
 
-            for (var i = 0; i < points.Count; i++)
-                bgwData = bgwData.withNewNi(points.ElementAt(i).point, i + 1);
-            if (!bgwData.hasNiOf(participants.Values))
+            foreach (var p in points)
+                bgwData = bgwData.withNewNi(p.Value.point, p.Key);
+            if (!bgwData.hasNiOf(participants.Keys))
                 throw new Exception("We havn't collected all required points from other participants");
 
             var Nis = bgwData.nis().Select(e => e.Value).ToList();
             var N = IntegersUtils.GetIntercept(Nis, protoParam.P);
 
+            Console.WriteLine("N= " + N);
+//            Console.WriteLine("N = " + N + "\n" + string.Join(" (+) ", Nis));
+//            Console.WriteLine(" - - - ");
+            
             candidateN = new CandidateN(N, bgwData.bgwPrivateParameters);
             
             CurrentState = GeneratorState.GeneratingProof;
@@ -178,21 +125,20 @@ namespace Phorkus.Hermes.Generator
 
             biprimalityTestData = biprimalityTestData
                 .withNewCandidateN(candidateN.N, candidateN.BgwPrivateParameters)
-                .withNewQi(Qi, participants[publicKey], biprimalityTestData.round);
+                .withNewQi(Qi, publicKey, biprimalityTestData.round);
             
             return new QiTestForRound(
-                biprimalityTestData.qiss(biprimalityTestData.round)[participants[publicKey]],
+                biprimalityTestData.qiss(biprimalityTestData.round)[publicKey],
                 biprimalityTestData.round);
         }
 
-        public BiprimalityTestResult ValidateProof(IReadOnlyCollection<QiTestForRound> proofs)
+        public BiprimalityTestResult ValidateProof(IDictionary<PublicKey, QiTestForRound> proofs)
         {
             CurrentState = GeneratorState.CollectingProof;
-
-            for (var i = 0; i < proofs.Count; i++)
-                biprimalityTestData =
-                    biprimalityTestData.withNewQi(proofs.ElementAt(i).Qi, i + 1, proofs.ElementAt(i).round);
-            if (!biprimalityTestData.hasQiOf(participants.Values, biprimalityTestData.round))
+            
+            foreach (var p in proofs)
+                biprimalityTestData = biprimalityTestData.withNewQi(p.Value.Qi, p.Key, p.Value.round);
+            if (!biprimalityTestData.hasQiOf(participants.Keys, biprimalityTestData.round))
                 throw new Exception("We havn't collected all proofs from other participants");
             
             CurrentState = GeneratorState.ValidatingProof;
@@ -200,16 +146,14 @@ namespace Phorkus.Hermes.Generator
             var check = biprimalityTestData.qis(biprimalityTestData.round)
                 .Select(qi =>
                 {
-                    if (qi.Key == 1)
+                    if (participants[qi.Key] == 1)
                         return qi.Value;
-                    Console.WriteLine("Qi: " + qi.Value);
-                    Console.WriteLine("N: " + biprimalityTestData.N);
                     return qi.Value.ModInverse(biprimalityTestData.N);
                 })
                 .Aggregate(BigInteger.One, (qi, qj) => qi.Multiply(qj))
                 .Mod(biprimalityTestData.N);
 
-            BigInteger minusOne = BigInteger.One.Negate().Mod(biprimalityTestData.N);
+            var minusOne = BigInteger.One.Negate().Mod(biprimalityTestData.N);
 
             if (check.Equals(minusOne) || check.Equals(BigInteger.One))
             {
@@ -223,19 +167,17 @@ namespace Phorkus.Hermes.Generator
                 }
 
                 // Resets N, BgwPrivateParameters, gprime, Qi and increments round counter for next round
-                BiprimalityTestData nextData = biprimalityTestData.forNextRound();
+                var nextData = biprimalityTestData.forNextRound();
 
-                BigInteger nextgp = getGp(nextData.N, nextData.round);
-                BigInteger nextQi = getQi(nextgp, nextData.N, nextData.bgwPrivateParameters.pi,
+                var nextgp = getGp(nextData.N, nextData.round);
+                var nextQi = getQi(nextgp, nextData.N, nextData.bgwPrivateParameters.pi,
                     nextData.bgwPrivateParameters.qi, participants[publicKey]);
 
-                biprimalityTestData = nextData.withNewQi(nextQi, participants[publicKey], nextData.round);
-            }
-            else
-            {
-                biprimalityTestData = BiprimalityTestData.init();
+                biprimalityTestData = nextData.withNewQi(nextQi, publicKey, nextData.round);
+                return null;
             }
             
+            biprimalityTestData = biprimalityTestData.forNextCandidate();
             return new BiprimalityTestResult(biprimalityTestData.N, biprimalityTestData.bgwPrivateParameters, false);
         }
 
