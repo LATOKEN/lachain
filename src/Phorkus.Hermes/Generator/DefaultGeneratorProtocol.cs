@@ -11,6 +11,65 @@ using Phorkus.Proto;
 
 namespace Phorkus.Hermes.Generator
 {
+    public class JavaRandom : Random
+    {
+        public JavaRandom(ulong seed)
+        {
+            this.seed = (seed ^ 0x5DEECE66DUL) & ((1UL << 48) - 1);
+        }
+
+        public override int Next()
+        {
+            return (int) NextBits(32);
+        }
+
+        public override int Next(int n)
+        {
+            if (n <= 0) throw new ArgumentException("n must be positive");
+
+            if ((n & -n) == n)  // i.e., n is a power of 2
+                return (int)((n * NextBits(31)) >> 31);
+
+            long bits, val;
+            do
+            {
+                bits = NextBits(31);
+                val = bits % (UInt32) n;
+            }
+            while (bits - val + (n - 1) < 0);
+
+            return (int) val;
+        }
+
+        public override int Next(int minValue, int maxValue)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void NextBytes(byte[] bytes)
+        {
+            for (int i = 0, len = bytes.Length; i < len; )
+            for (int rnd = Next(),
+                n = System.Math.Min(len - i, 32 / 8);
+                n-- > 0; rnd >>= 9)
+                bytes[i++] = (byte)rnd;
+        }
+
+        public override double NextDouble()
+        {
+            throw new NotImplementedException();
+        }
+        
+        protected uint NextBits(int bits)
+        {
+            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+
+            return (UInt32)(seed >> (48 - bits));
+        }
+
+        private UInt64 seed;
+    }
+    
     public class DefaultGeneratorProtocol : IGeneratorProtocol
     {
         public static int N_PARTIES = 10; // Current implementation: works for 3 to 30 
@@ -39,8 +98,8 @@ namespace Phorkus.Hermes.Generator
         public void Initialize()
         {
             CurrentState = GeneratorState.Initialization;
-
-            protoParam = ProtocolParameters.gen(KEY_SIZE, N_PARTIES, T_THRESHOLD, new SecureRandom());
+            
+            protoParam = ProtocolParameters.gen(KEY_SIZE, N_PARTIES, T_THRESHOLD, new JavaRandom(123456ul));
             Console.WriteLine("Pp=" + protoParam.P);
         }
 
@@ -172,7 +231,11 @@ namespace Phorkus.Hermes.Generator
 
                 biprimalityTestData = nextData.withNewQi(nextQi, participants[publicKey], nextData.round);
             }
-
+            else
+            {
+                biprimalityTestData = BiprimalityTestData.init();
+            }
+            
             return new BiprimalityTestResult(biprimalityTestData.N, biprimalityTestData.bgwPrivateParameters, false);
         }
 

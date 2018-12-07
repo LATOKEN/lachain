@@ -49,11 +49,14 @@ namespace Phorkus.HermesTest
             
             Console.WriteLine("Initializing protocol");
             
+            
+            // инициализация параметров протокола для каждого участника
             for (var i = 0; i < participants.Count; i++)
                 protos[i].Initialize();
 
             Console.WriteLine("Generating shares");
             
+            // генерация каждым участником протокола своей части ключа - share
             var shares = new IReadOnlyCollection<BgwPublicParams>[participants.Count];
             for (var i = 0; i < participants.Count; i++)
                 shares[i] = protos[i].GenerateShare();
@@ -67,9 +70,9 @@ namespace Phorkus.HermesTest
                 var si = shares[i].ToArray();
                 for (var j = 0; j < si.Length; j++)
                 {
-                    flippedShares[j][i] = si[j];
+                    flippedShares[i][j] = si[j];
                 }
-            }
+            }// todo 
             
             Console.WriteLine("Generating point");
             
@@ -78,7 +81,8 @@ namespace Phorkus.HermesTest
                 points[i] = protos[i].GeneratePoint(flippedShares[i]);
 
             BiprimalityTestResult biprimalityTestResult = null;
-            for (var round = 0; round < 10; round++)
+            var round = 0;
+            while (true)
             {
                 Console.WriteLine($"Testing biprimality {round}/10");
                 
@@ -88,62 +92,59 @@ namespace Phorkus.HermesTest
                 
                 for (var i = 0; i < participants.Count; i++)
                 {
-                    try
-                    {
-                        var test = protos[i].ValidateProof(proofs);
-                        if (!test.passes)
-                            continue;
-                        biprimalityTestResult = test;
-                    }
-                    catch (Exception)
-                    {
-                        // ignore
-                        break;
-                    }
+                    var test = protos[i].ValidateProof(proofs);
+                    if (!test.passes)
+                        continue;
+                    biprimalityTestResult = test;
                 }
                 if (biprimalityTestResult != null)
                     break;
+                ++round;
+                if (round >= 10)
+                    break;
             }
-            if (biprimalityTestResult is null)
-                throw new Exception("Unable to find valid biprimality test");
+            
+            Console.WriteLine($"biprimalityTestResult: {biprimalityTestResult?.N}, " + biprimalityTestResult?.passes);
+//            if (biprimalityTestResult is null)
+//                throw new Exception("Unable to find valid biprimality test");
 
-            Console.WriteLine("Generating derivations");
-            
-            var derivations = new IReadOnlyCollection<KeysDerivationPublicParameters>[participants.Count];
-            for (var i = 0; i < participants.Count; i++)
-                derivations[i] = protos[i].GenerateDerivation(biprimalityTestResult);
-            var flippedDerivation = new KeysDerivationPublicParameters[participants.Count][];
-            for (var i = 0; i < participants.Count; i++)
-                flippedDerivation[i] = new KeysDerivationPublicParameters[participants.Count];
-            
-            for (var i = 0; i < participants.Count; i++)
-            {
-                var si = derivations[i].ToArray();
-                for (var j = 0; j < si.Length; j++)
-                {
-                    flippedDerivation[j][i] = si[j];
-                }
-            }
-
-            Console.WriteLine("Generating thetas");
-            
-            var thetas = new ThetaPoint[participants.Count];
-            for (var i = 0; i < participants.Count; i++)
-                thetas[i] = protos[i].GenerateTheta(flippedDerivation[i]);
-
-            Console.WriteLine("Generating verification codes");
-            
-            var verificationKeys = new VerificationKey[participants.Count];
-            for (var i = 0; i < participants.Count; i++)
-                verificationKeys[i] = protos[i].GenerateVerification(thetas);
-
-            Console.WriteLine("Finalizing");
-            
-            for (var i = 0; i < participants.Count; i++)
-            {
-                var PrivateKey = protos[i].Finalize(verificationKeys);
-                Console.WriteLine("Private Key: " + HexUtil.bytesToHex(PrivateKey.toByteArray()));
-            }
+//            Console.WriteLine("Generating derivations");
+//            
+//            var derivations = new IReadOnlyCollection<KeysDerivationPublicParameters>[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//                derivations[i] = protos[i].GenerateDerivation(biprimalityTestResult);
+//            var flippedDerivation = new KeysDerivationPublicParameters[participants.Count][];
+//            for (var i = 0; i < participants.Count; i++)
+//                flippedDerivation[i] = new KeysDerivationPublicParameters[participants.Count];
+//            
+//            for (var i = 0; i < participants.Count; i++)
+//            {
+//                var si = derivations[i].ToArray();
+//                for (var j = 0; j < si.Length; j++)
+//                {
+//                    flippedDerivation[j][i] = si[j];
+//                }
+//            }
+//
+//            Console.WriteLine("Generating thetas");
+//            
+//            var thetas = new ThetaPoint[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//                thetas[i] = protos[i].GenerateTheta(flippedDerivation[i]);
+//
+//            Console.WriteLine("Generating verification codes");
+//            
+//            var verificationKeys = new VerificationKey[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//                verificationKeys[i] = protos[i].GenerateVerification(thetas);
+//
+//            Console.WriteLine("Finalizing");
+//            
+//            for (var i = 0; i < participants.Count; i++)
+//            {
+//                var PrivateKey = protos[i].Finalize(verificationKeys);
+//                Console.WriteLine("Private Key: " + HexUtil.bytesToHex(PrivateKey.toByteArray()));
+//            }
         }
     }
 }
