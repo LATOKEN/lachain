@@ -18,8 +18,7 @@ namespace Phorkus.Hermes.Generator
         public static int KEY_SIZE = 128; // Tested up to 512
         public static int NUMBER_OF_ROUNDS = 10;
 
-        private readonly SecureRandom rand = new SecureRandom(
-            Encoding.ASCII.GetBytes("Hello World"));
+        private readonly SecureRandom rand = new SecureRandom();
 
         private IReadOnlyDictionary<PublicKey, int> participants;
         private PublicKey publicKey;
@@ -106,7 +105,7 @@ namespace Phorkus.Hermes.Generator
             var Nis = bgwData.nis().Select(e => e.Value).ToList();
             var N = IntegersUtils.GetIntercept(Nis, protoParam.P);
 
-            Console.WriteLine("N= " + N);
+//            Console.WriteLine("N= " + N);
 //            Console.WriteLine("N = " + N + "\n" + string.Join(" (+) ", Nis));
 //            Console.WriteLine(" - - - ");
             

@@ -50,10 +50,15 @@ namespace HermesTestConsole
                 protos[p.Key].Initialize(seed);
             
             BiprimalityTestResult biprimalityTestResult = null;
+            int trie = 0;
             while (true)
             {
-                Console.WriteLine("Generating shares");
+//                Console.WriteLine("Generating shares");
 
+                Console.CursorLeft = 0;
+                Console.Write("Try: " + trie);
+                ++trie;
+                
                 var shares = new SortedDictionary<PublicKey, IDictionary<PublicKey, BgwPublicParams>>(new PublicKeyComparer());
                 foreach (var p in participants)
                     shares[p.Key] = protos[p.Key].GenerateShare();
@@ -70,17 +75,17 @@ namespace HermesTestConsole
                     flipped[p.Key] = dict;
                 }
                 
-                Console.WriteLine("Generating point");
+//                Console.WriteLine("Generating point");
             
                 var points = new SortedDictionary<PublicKey, BGWNPoint>(new PublicKeyComparer());
                 foreach (var p in participants)
                     points[p.Key] = protos[p.Key].GeneratePoint(shares[p.Key]);
                 
-                Console.WriteLine("---------------------------------------");
+//                Console.WriteLine("---------------------------------------");
                 var proofs = new SortedDictionary<PublicKey, QiTestForRound>(new PublicKeyComparer());
                 foreach (var p in participants)
                     proofs[p.Key] = protos[p.Key].GenerateProof(points);
-                Console.WriteLine("---------------------------------------");
+//                Console.WriteLine("---------------------------------------");
 
                 foreach (var p in participants)
                 {
@@ -91,7 +96,7 @@ namespace HermesTestConsole
                     biprimalityTestResult = test;
                 }
                 if (biprimalityTestResult != null)
-                    break;
+                    throw new Exception("SUCCESSS");
                 
 //                for (var i = 0; i < participants.Count; i++)
 //                {
