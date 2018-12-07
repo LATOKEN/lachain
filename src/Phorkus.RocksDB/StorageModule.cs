@@ -1,3 +1,4 @@
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.Storage;
@@ -12,11 +13,9 @@ namespace Phorkus.RocksDB
             /* global */
             containerBuilder.RegisterSingleton<IRocksDbContext, RocksDbContext>();
             /* repositories */
-            containerBuilder.RegisterSingleton<IAccountRepository, AccountRepository>();
             containerBuilder.RegisterSingleton<IBlockRepository, BlockRepository>();
             containerBuilder.RegisterSingleton<IContractRepository, ContractRepository>();
             containerBuilder.RegisterSingleton<IGlobalRepository, GlobalRepository>();
-            containerBuilder.RegisterSingleton<IStorageRepository, StorageRepository>();
             containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
         }
     }

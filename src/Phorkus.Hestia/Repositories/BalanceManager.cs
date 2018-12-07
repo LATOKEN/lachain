@@ -5,7 +5,7 @@ namespace Phorkus.Hestia.Repositories
 {
     public class BalanceManager : SnapshotManager<IBalanceSnapshot, BalanceSnapshot>, ISnapshotManager<IBalanceSnapshot>
     {
-        public BalanceManager(IStorageManager storageManager) : base(storageManager)
+        public BalanceManager(IPersistentStorageManager persistentStorageManager) : base(persistentStorageManager)
         {
         }
 

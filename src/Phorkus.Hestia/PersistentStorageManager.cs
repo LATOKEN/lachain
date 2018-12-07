@@ -7,12 +7,12 @@ using Phorkus.RocksDB;
 
 namespace Phorkus.Hestia
 {
-    public class StorageManager : IStorageManager
+    public class PersistentStorageManager : IPersistentStorageManager
     {
         private readonly IDictionary<uint, RepositoryManager> _repositoryManagers =
             new ConcurrentDictionary<uint, RepositoryManager>();
 
-        public StorageManager(IRocksDbContext rocksDbContext)
+        public PersistentStorageManager(IRocksDbContext rocksDbContext)
         {
             var dbContext = rocksDbContext;
             var versionIndexer = new VersionIndexer(dbContext);

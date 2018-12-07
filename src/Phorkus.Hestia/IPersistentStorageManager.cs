@@ -1,6 +1,6 @@
 namespace Phorkus.Hestia
 {
-    public interface IStorageManager
+    public interface IPersistentStorageManager
     {
         ulong LatestCommitedVersion(uint repository);
 

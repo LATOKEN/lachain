@@ -45,7 +45,7 @@ namespace Phorkus.Benchmark
         public void Start(string[] args)
         {
             var rocksDbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = new StorageManager(rocksDbContext);
+            var storageManager = new PersistentStorageManager(rocksDbContext);
 
             uint T = 100000, batches = 100;
             IDictionary<byte[], byte[]> blocks = new Dictionary<byte[], byte[]>();

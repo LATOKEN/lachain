@@ -12,7 +12,8 @@ namespace Phorkus.Hestia
         {
             containerBuilder.RegisterSingleton<ISnapshotManager<IBalanceSnapshot>, BalanceManager>();
             containerBuilder.RegisterSingleton<ISnapshotManager<IAssetSnapshot>, AssetManager>();
-            containerBuilder.RegisterSingleton<IStorageManager, StorageManager>();
+            containerBuilder.RegisterSingleton<ISnapshotManager<IStorageSnapshot>, StorageManager>();
+            containerBuilder.RegisterSingleton<IPersistentStorageManager, PersistentStorageManager>();
             containerBuilder.RegisterSingleton<IBlockchainStateManager, BlockchainStateManager>();
         }
     }
