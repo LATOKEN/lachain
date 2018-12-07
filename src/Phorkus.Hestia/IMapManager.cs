@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Hestia
+﻿using System.Collections.Generic;
+
+namespace Phorkus.Hestia
 {
     public interface IMapManager
     {
@@ -10,5 +12,9 @@
         ulong Delete(ulong root, byte[] key, out byte[] value);
         ulong TryDelete(ulong root, byte[] key, out byte[] value);
         byte[] Find(ulong root, byte[] key);
+
+        IEnumerable<byte[]> GetKeys(ulong root);
+        IEnumerable<byte[]> GetValues(ulong root);
+        IEnumerable<KeyValuePair<byte[], byte[]>> GetEntries(ulong root);
     }
 }

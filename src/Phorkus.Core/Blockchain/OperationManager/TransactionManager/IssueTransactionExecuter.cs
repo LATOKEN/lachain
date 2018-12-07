@@ -9,13 +9,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class IssueTransactionExecuter : ITransactionExecuter
     {
-        private readonly IAssetRepository _assetRepository;
-        
-        public IssueTransactionExecuter(IAssetRepository assetRepository)
+        public IssueTransactionExecuter()
         {
-            _assetRepository = assetRepository;
         }
-        
+
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             var balances = snapshot.Balances;
@@ -24,7 +21,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return result;
             var issue = transaction.Issue;
             /* special check for asset existence */
-            var asset = _assetRepository.GetAssetByHash(issue.Asset);
+            var asset = snapshot.Assets.GetAssetByHash(issue.Asset);
             if (asset is null)
                 return OperatingError.AssetNotFound;
             if (asset.Minter is null || asset.Minter.IsZero() || !asset.Minter.Equals(transaction.From))
@@ -38,7 +35,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             balances.AddBalance(to, issue.Asset, new Money(issue.Supply));
             return OperatingError.Ok;
         }
-        
+
         public OperatingError Verify(Transaction transaction)
         {
             if (transaction.Type != TransactionType.Issue)

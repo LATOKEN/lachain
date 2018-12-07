@@ -20,7 +20,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public TransactionManager(
             ITransactionRepository transactionRepository,
-            IAssetRepository assetRepository,
             IContractRepository contractRepository,
             ICrypto crypto,
             ITransactionVerifier transactionVerifier,
@@ -29,8 +28,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
                 {TransactionType.Miner, new MinerTranscationExecuter()},
-                {TransactionType.Register, new RegisterTransactionExecuter(multisigVerifier, assetRepository)},
-                {TransactionType.Issue, new IssueTransactionExecuter(assetRepository)},
+                {TransactionType.Register, new RegisterTransactionExecuter(multisigVerifier)},
+                {TransactionType.Issue, new IssueTransactionExecuter()},
                 {TransactionType.Contract, new ContractTransactionExecuter()},
                 {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
                 {TransactionType.Deposit, new DepositTransactionExecuter()},

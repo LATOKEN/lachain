@@ -1,13 +1,14 @@
 ﻿using Google.Protobuf;
 using Phorkus.Core.Blockchain.State;
+using Phorkus.Hestia.Repositories;
 using Phorkus.Proto;
 using Phorkus.RocksDB;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Hestia.Repositories
+namespace Phorkus.Hestia.State
 {
-    public class BalanceSnapshot : IBalanceSnapshot
+    public class BalanceSnapshot : IBalanceSnapshot, ISnapshot
     {
         private readonly IStorageState _state;
 
