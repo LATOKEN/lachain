@@ -6,7 +6,7 @@ namespace Phorkus.Core.Utils
 {
     public static class HashUtils
     {
-        public static UInt160 Tohash160(this byte[] buffer)
+        public static UInt160 ToHash160(this byte[] buffer)
         {
             return new UInt160
             {

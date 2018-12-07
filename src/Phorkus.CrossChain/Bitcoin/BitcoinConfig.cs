@@ -13,5 +13,6 @@ namespace Phorkus.CrossChain.Bitcoin
         public const uint TxDataBytes = 120;
         public const string WitnessCode = "02";
         public const int Decimals = 8;
+        public const int AddressLength = 40;
     }
 }

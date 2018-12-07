@@ -78,7 +78,12 @@ namespace Phorkus.CrossChain.Ethereum
             {
                 if (tx.To != address)
                     continue;
-                var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(tx.From),
+                var stringTx = tx.ToString();
+                var from = stringTx.Substring(
+                    tx.From.Length + tx.To.Length + tx.Nonce.HexValue.Length + tx.Gas.HexValue.Length +
+                    tx.GasPrice.HexValue.Length + tx.Value.HexValue.Length,
+                    stringTx.Length - EthereumConfig.SignatureLength).Substring(0, EthereumConfig.AddressLength);
+                var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(from),
                     tx.Value.Value, Utils.ConvertHexStringToByteArray(tx.TransactionHash.ToString()),
                     (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.ToString()));
                 transactions.Add(ethereumTx);

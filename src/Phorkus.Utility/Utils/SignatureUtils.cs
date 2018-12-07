@@ -6,10 +6,7 @@ namespace Phorkus.Utility.Utils
 {
     public static class SignatureUtils
     {
-        public static Signature Zero = new Signature
-        {
-            Buffer = ByteString.CopyFrom(new byte[65])
-        };
+        public static Signature Zero = new byte[65].ToSignature();
 
         public static bool IsZero(this Signature signature)
         {

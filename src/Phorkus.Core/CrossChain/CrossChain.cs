@@ -9,6 +9,7 @@ using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.CrossChain
 {
@@ -23,6 +24,8 @@ namespace Phorkus.Core.CrossChain
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionManager _transactionManager;
+        private readonly ICrypto _crypto;
+        private readonly IValidatorManager _validatorManager;
 
         private readonly BlockchainType[] _blockchainTypes =
         {
@@ -39,12 +42,16 @@ namespace Phorkus.Core.CrossChain
             IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
-            ITransactionManager transactionManager)
+            ITransactionManager transactionManager,
+            ICrypto crypto,
+            IValidatorManager validatorManager)
         {
             _globalRepository = globalRepository;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
+            _crypto = crypto;
+            _validatorManager = validatorManager;
         }
 
         private void _SynchronizeBlockchain(object state)
@@ -68,20 +75,25 @@ namespace Phorkus.Core.CrossChain
                     _CreateDepositTransaction(tx);
             }
         }
-        
+
         private void _CreateDepositTransaction(IContractTransaction contractTransaction)
         {
-            var tx = _transactionBuilder.DepositTransaction(
-                contractTransaction.From,
+            var address = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            /* only validators can create deposit transactions */
+            if (!_validatorManager.CheckValidator(_keyPair.PublicKey))
+                return;
+            var tx = _transactionBuilder.DepositTransaction(address,
+                contractTransaction.Recipient,
                 contractTransaction.BlockchainType,
                 contractTransaction.Value,
                 contractTransaction.TransactionHash,
                 contractTransaction.AddressFormat,
                 contractTransaction.Timestamp);
+            /* sign deposit transaction with validator's private key and put into transaction pool */
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
         }
-        
+
         public void Start(ThresholdKey thresholdKey, KeyPair keyPair)
         {
             _thresholdKey = thresholdKey ?? throw new ArgumentNullException(nameof(thresholdKey));

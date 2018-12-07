@@ -48,17 +48,38 @@ namespace Phorkus.CrossChain.Bitcoin
             var getBlock = _rpcClient.GetBlock(blockHeight);
             var scriptPubKey =
                 new BitcoinScriptAddress(Utils.ConvertByteArrayToString(recipient), NBitcoin.Network.Main)
-                    .ScriptPubKey;
+                    .ScriptPubKey.PaymentScript;
             var bitcoinContractTransactions = new List<BitcoinContractTransaction>();
             foreach (var tx in getBlock.Transactions)
             {
                 BigInteger totalValue = 0;
-                var addTx = false;
+                var addTx = false;                
                 var from = FromRedeemtoP2Sh(tx.Inputs.FirstOrDefault()?.ScriptSig.ToString());
+                var badTx = false;
+                foreach (var input in tx.Inputs)
+                {
+                    if (FromRedeemtoP2Sh(input.ScriptSig.ToString()) != from)
+                    {
+                        badTx = true;
+                        break;
+                    }
+                }
+                if (badTx)
+                    continue;
+                
                 foreach (var output in tx.Outputs)
                 {
+                    if (output.ScriptPubKey.IsUnspendable)
+                    {
+                        from = output.ScriptPubKey.ToString().Substring(4, BitcoinConfig.AddressLength);
+                    }
+                    var outputHex = output.ScriptPubKey.ToHex();
                     if (output.ScriptPubKey != scriptPubKey)
-                        continue;
+                    {
+                        addTx = false;
+                        break;
+                    }
+                        
                     totalValue += output.Value.Satoshi;
                     addTx = true;
                 }

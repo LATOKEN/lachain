@@ -21,9 +21,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         public TransactionManager(
             ITransactionRepository transactionRepository,
             IContractRepository contractRepository,
-            ICrypto crypto,
+            IValidatorManager validatorManager,
             ITransactionVerifier transactionVerifier,
-            IMultisigVerifier multisigVerifier)
+            IMultisigVerifier multisigVerifier,
+            ICrypto crypto)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
@@ -32,7 +33,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 {TransactionType.Issue, new IssueTransactionExecuter()},
                 {TransactionType.Contract, new ContractTransactionExecuter()},
                 {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
-                {TransactionType.Deposit, new DepositTransactionExecuter()},
+                {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
                 {TransactionType.Withdraw, new WithdrawTransactionExecuter()}
             };
             _transactionRepository =
@@ -118,7 +119,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             OnTransactionExecuted?.Invoke(this, signed);
             return OperatingError.Ok;
         }
-
+        
         public SignedTransaction Sign(Transaction transaction, KeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */

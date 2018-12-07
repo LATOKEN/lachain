@@ -32,7 +32,7 @@ namespace Phorkus.Hestia.State
             SubBalance(from, asset, value);
             AddBalance(to, asset, value);
         }
-
+        
         public Money AddBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var balance = GetBalance(owner, asset);
