@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Org.BouncyCastle.Asn1.Sec;
@@ -57,12 +55,12 @@ namespace Phorkus.CoreTest
             };
             var genesisAssetsBuilder = new GenesisAssetsBuilder(new ConfigManager("config.json"), new BouncyCastle());
             var genesisBuilder = new GenesisBuilder(genesisAssetsBuilder, new BouncyCastle(),
-                new TransactionManager(null, null, null, new BouncyCastle(), null, null));
+                new TransactionManager(null, null, null, null, null, new BouncyCastle()));
 
             var crypto = new BouncyCastle();
 
             var registerTx = genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(null);
-            var txManager = new TransactionManager(null, null, null, crypto, null, null);
+            var txManager = new TransactionManager(null, null, null, null, null, crypto);
 
             System.Console.Write("Signing transaction... ");
             var signed = txManager.Sign(registerTx, new KeyPair(privateKey.ToPrivateKey(), publicKey.ToPublicKey()));

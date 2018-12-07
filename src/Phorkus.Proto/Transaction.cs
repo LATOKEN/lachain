@@ -36,36 +36,36 @@ namespace Phorkus.Proto {
             "c3VwcGx5GAMgASgLMgguVUludDI1NhIQCghkZWNpbWFscxgEIAEoDRIXCgVv",
             "d25lchgFIAEoCzIILlVJbnQxNjASGAoGbWludGVyGAYgASgLMgguVUludDE2",
             "MCIrChBNaW5lclRyYW5zYWN0aW9uEhcKBW1pbmVyGAEgASgLMgguVUludDE2",
-            "MCLEAQoSRGVwb3NpdFRyYW5zYWN0aW9uEhYKBGZyb20YASABKAsyCC5VSW50",
-            "MTYwEigKD2Jsb2NrY2hhaW5fdHlwZRgCIAEoDjIPLkJsb2NrY2hhaW5UeXBl",
-            "EhcKBXZhbHVlGAMgASgLMgguVUludDI1NhIYChB0cmFuc2FjdGlvbl9oYXNo",
-            "GAQgASgMEiYKDmFkZHJlc3NfZm9ybWF0GAUgASgOMg4uQWRkcmVzc0Zvcm1h",
-            "dBIRCgl0aW1lc3RhbXAYBiABKAQiFQoTV2l0aGRyYXdUcmFuc2FjdGlvbiK7",
-            "AQoQVHJhbnNhY3Rpb25TdGF0ZRIzCgZzdGF0dXMYASABKA4yIy5UcmFuc2Fj",
-            "dGlvblN0YXRlLlRyYW5zYWN0aW9uU3RhdHVzInIKEVRyYW5zYWN0aW9uU3Rh",
-            "dHVzEhwKGFRSQU5TQUNUSU9OX1NUQVRVU19UQUtFThAAEiAKHFRSQU5TQUNU",
-            "SU9OX1NUQVRVU19DT05GSVJNRUQQARIdChlUUkFOU0FDVElPTl9TVEFUVVNf",
-            "RkFJTEVEEAIikgMKC1RyYW5zYWN0aW9uEh4KBHR5cGUYASABKA4yEC5UcmFu",
-            "c2FjdGlvblR5cGUSDwoHdmVyc2lvbhgCIAEoDRINCgVmbGFncxgDIAEoBBIW",
-            "CgRmcm9tGAQgASgLMgguVUludDE2MBINCgVub25jZRgFIAEoBBIoCghjb250",
-            "cmFjdBgGIAEoCzIULkNvbnRyYWN0VHJhbnNhY3Rpb25IABIiCgVpc3N1ZRgH",
-            "IAEoCzIRLklzc3VlVHJhbnNhY3Rpb25IABImCgdwdWJsaXNoGAggASgLMhMu",
-            "UHVibGlzaFRyYW5zYWN0aW9uSAASKAoIcmVnaXN0ZXIYCSABKAsyFC5SZWdp",
-            "c3RlclRyYW5zYWN0aW9uSAASIgoFbWluZXIYCiABKAsyES5NaW5lclRyYW5z",
-            "YWN0aW9uSAASJgoHZGVwb3NpdBgLIAEoCzITLkRlcG9zaXRUcmFuc2FjdGlv",
-            "bkgAEigKCHdpdGhkcmF3GAwgASgLMhQuV2l0aGRyYXdUcmFuc2FjdGlvbkgA",
-            "QgYKBGRhdGEibQoRU2lnbmVkVHJhbnNhY3Rpb24SIQoLdHJhbnNhY3Rpb24Y",
-            "ASABKAsyDC5UcmFuc2FjdGlvbhIWCgRoYXNoGAIgASgLMgguVUludDI1NhId",
-            "CglzaWduYXR1cmUYAyABKAsyCi5TaWduYXR1cmUq4gEKD1RyYW5zYWN0aW9u",
-            "VHlwZRIaChZUUkFOU0FDVElPTl9UWVBFX01JTkVSEAASHQoZVFJBTlNBQ1RJ",
-            "T05fVFlQRV9SRUdJU1RFUhABEhoKFlRSQU5TQUNUSU9OX1RZUEVfSVNTVUUQ",
-            "AhIdChlUUkFOU0FDVElPTl9UWVBFX0NPTlRSQUNUEAMSHAoYVFJBTlNBQ1RJ",
-            "T05fVFlQRV9QVUJMSVNIEAQSHAoYVFJBTlNBQ1RJT05fVFlQRV9ERVBPU0lU",
-            "EAUSHQoZVFJBTlNBQ1RJT05fVFlQRV9XSVRIRFJBVxAGKiwKD1RyYW5zYWN0",
-            "aW9uRmxhZxIZChVUUkFOU0FDVElPTl9GTEFHX05PTkUQACorCg5CbG9ja2No",
-            "YWluVHlwZRILCgdCSVRDT0lOEAASDAoIRVRIRVJFVU0QASoqCg1BZGRyZXNz",
-            "Rm9ybWF0EgwKCFJJUE1EMTYwEAASCwoHRUQyNTUxORABQhCqAg1QaG9ya3Vz",
-            "LlByb3RvYgZwcm90bzM="));
+            "MCLJAQoSRGVwb3NpdFRyYW5zYWN0aW9uEhsKCXJlY2lwaWVudBgBIAEoCzII",
+            "LlVJbnQxNjASKAoPYmxvY2tjaGFpbl90eXBlGAIgASgOMg8uQmxvY2tjaGFp",
+            "blR5cGUSFwoFdmFsdWUYAyABKAsyCC5VSW50MjU2EhgKEHRyYW5zYWN0aW9u",
+            "X2hhc2gYBCABKAwSJgoOYWRkcmVzc19mb3JtYXQYBSABKA4yDi5BZGRyZXNz",
+            "Rm9ybWF0EhEKCXRpbWVzdGFtcBgGIAEoBCIVChNXaXRoZHJhd1RyYW5zYWN0",
+            "aW9uIrsBChBUcmFuc2FjdGlvblN0YXRlEjMKBnN0YXR1cxgBIAEoDjIjLlRy",
+            "YW5zYWN0aW9uU3RhdGUuVHJhbnNhY3Rpb25TdGF0dXMicgoRVHJhbnNhY3Rp",
+            "b25TdGF0dXMSHAoYVFJBTlNBQ1RJT05fU1RBVFVTX1RBS0VOEAASIAocVFJB",
+            "TlNBQ1RJT05fU1RBVFVTX0NPTkZJUk1FRBABEh0KGVRSQU5TQUNUSU9OX1NU",
+            "QVRVU19GQUlMRUQQAiKSAwoLVHJhbnNhY3Rpb24SHgoEdHlwZRgBIAEoDjIQ",
+            "LlRyYW5zYWN0aW9uVHlwZRIPCgd2ZXJzaW9uGAIgASgNEg0KBWZsYWdzGAMg",
+            "ASgEEhYKBGZyb20YBCABKAsyCC5VSW50MTYwEg0KBW5vbmNlGAUgASgEEigK",
+            "CGNvbnRyYWN0GAYgASgLMhQuQ29udHJhY3RUcmFuc2FjdGlvbkgAEiIKBWlz",
+            "c3VlGAcgASgLMhEuSXNzdWVUcmFuc2FjdGlvbkgAEiYKB3B1Ymxpc2gYCCAB",
+            "KAsyEy5QdWJsaXNoVHJhbnNhY3Rpb25IABIoCghyZWdpc3RlchgJIAEoCzIU",
+            "LlJlZ2lzdGVyVHJhbnNhY3Rpb25IABIiCgVtaW5lchgKIAEoCzIRLk1pbmVy",
+            "VHJhbnNhY3Rpb25IABImCgdkZXBvc2l0GAsgASgLMhMuRGVwb3NpdFRyYW5z",
+            "YWN0aW9uSAASKAoId2l0aGRyYXcYDCABKAsyFC5XaXRoZHJhd1RyYW5zYWN0",
+            "aW9uSABCBgoEZGF0YSJtChFTaWduZWRUcmFuc2FjdGlvbhIhCgt0cmFuc2Fj",
+            "dGlvbhgBIAEoCzIMLlRyYW5zYWN0aW9uEhYKBGhhc2gYAiABKAsyCC5VSW50",
+            "MjU2Eh0KCXNpZ25hdHVyZRgDIAEoCzIKLlNpZ25hdHVyZSriAQoPVHJhbnNh",
+            "Y3Rpb25UeXBlEhoKFlRSQU5TQUNUSU9OX1RZUEVfTUlORVIQABIdChlUUkFO",
+            "U0FDVElPTl9UWVBFX1JFR0lTVEVSEAESGgoWVFJBTlNBQ1RJT05fVFlQRV9J",
+            "U1NVRRACEh0KGVRSQU5TQUNUSU9OX1RZUEVfQ09OVFJBQ1QQAxIcChhUUkFO",
+            "U0FDVElPTl9UWVBFX1BVQkxJU0gQBBIcChhUUkFOU0FDVElPTl9UWVBFX0RF",
+            "UE9TSVQQBRIdChlUUkFOU0FDVElPTl9UWVBFX1dJVEhEUkFXEAYqLAoPVHJh",
+            "bnNhY3Rpb25GbGFnEhkKFVRSQU5TQUNUSU9OX0ZMQUdfTk9ORRAAKisKDkJs",
+            "b2NrY2hhaW5UeXBlEgsKB0JJVENPSU4QABIMCghFVEhFUkVVTRABKioKDUFk",
+            "ZHJlc3NGb3JtYXQSDAoIUklQTUQxNjAQABILCgdFRDI1NTE5EAFCEKoCDVBo",
+            "b3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.AssetReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionFlag), typeof(global::Phorkus.Proto.BlockchainType), typeof(global::Phorkus.Proto.AddressFormat), }, new pbr::GeneratedClrTypeInfo[] {
@@ -74,7 +74,7 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PublishTransaction), global::Phorkus.Proto.PublishTransaction.Parser, new[]{ "Hash", "Script" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.RegisterTransaction), global::Phorkus.Proto.RegisterTransaction.Parser, new[]{ "Type", "Name", "Supply", "Decimals", "Owner", "Minter" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.MinerTransaction), global::Phorkus.Proto.MinerTransaction.Parser, new[]{ "Miner" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.DepositTransaction), global::Phorkus.Proto.DepositTransaction.Parser, new[]{ "From", "BlockchainType", "Value", "TransactionHash", "AddressFormat", "Timestamp" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.DepositTransaction), global::Phorkus.Proto.DepositTransaction.Parser, new[]{ "Recipient", "BlockchainType", "Value", "TransactionHash", "AddressFormat", "Timestamp" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.WithdrawTransaction), global::Phorkus.Proto.WithdrawTransaction.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionState), global::Phorkus.Proto.TransactionState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.TransactionState.Types.TransactionStatus) }, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "Version", "Flags", "From", "Nonce", "Contract", "Issue", "Publish", "Register", "Miner", "Deposit", "Withdraw" }, new[]{ "Data" }, null, null),
@@ -1190,7 +1190,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public DepositTransaction(DepositTransaction other) : this() {
-      from_ = other.from_ != null ? other.from_.Clone() : null;
+      recipient_ = other.recipient_ != null ? other.recipient_.Clone() : null;
       blockchainType_ = other.blockchainType_;
       value_ = other.value_ != null ? other.value_.Clone() : null;
       transactionHash_ = other.transactionHash_;
@@ -1204,14 +1204,14 @@ namespace Phorkus.Proto {
       return new DepositTransaction(this);
     }
 
-    /// <summary>Field number for the "from" field.</summary>
-    public const int FromFieldNumber = 1;
-    private global::Phorkus.Proto.UInt160 from_;
+    /// <summary>Field number for the "recipient" field.</summary>
+    public const int RecipientFieldNumber = 1;
+    private global::Phorkus.Proto.UInt160 recipient_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt160 From {
-      get { return from_; }
+    public global::Phorkus.Proto.UInt160 Recipient {
+      get { return recipient_; }
       set {
-        from_ = value;
+        recipient_ = value;
       }
     }
 
@@ -1283,7 +1283,7 @@ namespace Phorkus.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (!object.Equals(From, other.From)) return false;
+      if (!object.Equals(Recipient, other.Recipient)) return false;
       if (BlockchainType != other.BlockchainType) return false;
       if (!object.Equals(Value, other.Value)) return false;
       if (TransactionHash != other.TransactionHash) return false;
@@ -1295,7 +1295,7 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (from_ != null) hash ^= From.GetHashCode();
+      if (recipient_ != null) hash ^= Recipient.GetHashCode();
       if (BlockchainType != 0) hash ^= BlockchainType.GetHashCode();
       if (value_ != null) hash ^= Value.GetHashCode();
       if (TransactionHash.Length != 0) hash ^= TransactionHash.GetHashCode();
@@ -1314,9 +1314,9 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (from_ != null) {
+      if (recipient_ != null) {
         output.WriteRawTag(10);
-        output.WriteMessage(From);
+        output.WriteMessage(Recipient);
       }
       if (BlockchainType != 0) {
         output.WriteRawTag(16);
@@ -1346,8 +1346,8 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (from_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(From);
+      if (recipient_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Recipient);
       }
       if (BlockchainType != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) BlockchainType);
@@ -1375,11 +1375,11 @@ namespace Phorkus.Proto {
       if (other == null) {
         return;
       }
-      if (other.from_ != null) {
-        if (from_ == null) {
-          from_ = new global::Phorkus.Proto.UInt160();
+      if (other.recipient_ != null) {
+        if (recipient_ == null) {
+          recipient_ = new global::Phorkus.Proto.UInt160();
         }
-        From.MergeFrom(other.From);
+        Recipient.MergeFrom(other.Recipient);
       }
       if (other.BlockchainType != 0) {
         BlockchainType = other.BlockchainType;
@@ -1411,10 +1411,10 @@ namespace Phorkus.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            if (from_ == null) {
-              from_ = new global::Phorkus.Proto.UInt160();
+            if (recipient_ == null) {
+              recipient_ = new global::Phorkus.Proto.UInt160();
             }
-            input.ReadMessage(from_);
+            input.ReadMessage(recipient_);
             break;
           }
           case 16: {

@@ -4,6 +4,7 @@ using System.Threading;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
@@ -53,7 +54,6 @@ namespace Phorkus.Console
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
             var blockRepository = _container.Resolve<IBlockRepository>();
-            var assetRepository = _container.Resolve<IAssetRepository>();
             var crypto = _container.Resolve<ICrypto>();
             var transactionFactory = _container.Resolve<ITransactionBuilder>();
             var transactionManager = _container.Resolve<ITransactionManager>();
@@ -62,6 +62,7 @@ namespace Phorkus.Console
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var synchronizer = _container.Resolve<IBlockSynchronizer>();
             var thresholdManager = _container.Resolve<IThresholdManager>();
+            var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -87,7 +88,7 @@ namespace Phorkus.Console
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
             
-            var asset = assetRepository.GetAssetByName("LA");
+            var asset = blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("LA");
             
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();

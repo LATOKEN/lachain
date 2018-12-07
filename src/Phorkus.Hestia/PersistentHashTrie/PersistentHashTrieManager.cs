@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Org.BouncyCastle.Crypto.Tls;
 
 namespace Phorkus.Hestia.PersistentHashTrie
 {
@@ -86,6 +87,37 @@ namespace Phorkus.Hestia.PersistentHashTrie
         {
             var hash = Hash(key);
             return FindInternal(root, hash, key);
+        }
+
+        public IEnumerable<byte[]> GetKeys(ulong root)
+        {
+            return Traverse(root, 0).Select(pair => pair.Key);
+        }
+
+        public IEnumerable<byte[]> GetValues(ulong root)
+        {
+            return Traverse(root, 0).Select(pair => pair.Value);
+        }
+
+        public IEnumerable<KeyValuePair<byte[], byte[]>> GetEntries(ulong root)
+        {
+            return Traverse(root, 0);
+        }
+
+        private IEnumerable<KeyValuePair<byte[], byte[]>> Traverse(ulong root, int height)
+        {
+            if (height == 7)
+            {
+                if (root == 0) yield break;
+                foreach (var pair in (GetNodeById(root) as LeafNode).Pairs)
+                    yield return pair;
+                yield break;
+            }
+
+            if (root == 0) yield break;
+            foreach (var son in GetNodeById(root).Children)
+            foreach (var entry in Traverse(son, height + 1))
+                yield return entry;
         }
 
         private IHashTrieNode GetNodeById(ulong id)

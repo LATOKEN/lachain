@@ -3,6 +3,7 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -58,13 +59,13 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction DepositTransaction(UInt160 from, BlockchainType blockchainType, Money value,
+        public Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
             var deposit = new DepositTransaction
             {
-                From = from,
+                Recipient = recipient,
                 BlockchainType = blockchainType,
                 Value = value.ToUInt256(),
                 AddressFormat = addressFormat,

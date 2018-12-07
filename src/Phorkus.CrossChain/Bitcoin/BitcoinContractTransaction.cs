@@ -9,7 +9,7 @@ namespace Phorkus.CrossChain.Bitcoin
     {
         public BlockchainType BlockchainType { get; } = BlockchainType.Bitcoin;
 
-        public UInt160 From { get; set; }
+        public UInt160 Recipient { get; set; }
 
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
@@ -21,7 +21,7 @@ namespace Phorkus.CrossChain.Bitcoin
         
         public BitcoinContractTransaction(byte[] from, BigInteger value, byte[] transactionHash, ulong timestamp)
         {
-            From = from.ToUInt160();
+            Recipient = from.ToUInt160();
             Value = MoneyFormatter.FormatMoney(value, BitcoinConfig.Decimals);
             TransactionHash = transactionHash;
             Timestamp = timestamp;

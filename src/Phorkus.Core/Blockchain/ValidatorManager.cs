@@ -12,8 +12,13 @@ namespace Phorkus.Core.Blockchain
 {
     public class ValidatorManager : IValidatorManager
     {
-        public ValidatorManager(IConfigManager configManager)
+        private readonly ICrypto _crypto;
+        
+        public ValidatorManager(
+            IConfigManager configManager,
+            ICrypto crypto)
         {
+            _crypto = crypto;
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             if (config is null)
                 throw new ArgumentNullException(nameof(config));
@@ -38,6 +43,23 @@ namespace Phorkus.Core.Blockchain
                 ++index;
             }
             throw new Exception("Unable to determine validator's index");
+        }
+
+        public bool CheckValidator(UInt160 address)
+        {
+            foreach (var validator in Validators)
+            {
+                var validatorAddress = _crypto.ComputeAddress(validator.Buffer.ToByteArray());
+                if (validatorAddress.Equals(address))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool CheckValidator(PublicKey publicKey)
+        {
+            return Validators.Contains(publicKey);
         }
     }
 }

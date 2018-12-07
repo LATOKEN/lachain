@@ -1,13 +1,14 @@
 ﻿using Google.Protobuf;
 using Phorkus.Core.Blockchain.State;
+using Phorkus.Hestia.Repositories;
 using Phorkus.Proto;
 using Phorkus.RocksDB;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Hestia.Repositories
+namespace Phorkus.Hestia.State
 {
-    public class BalanceSnapshot : IBalanceSnapshot
+    public class BalanceSnapshot : IBalanceSnapshot, ISnapshot
     {
         private readonly IStorageState _state;
 
@@ -31,7 +32,7 @@ namespace Phorkus.Hestia.Repositories
             SubBalance(from, asset, value);
             AddBalance(to, asset, value);
         }
-
+        
         public Money AddBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var balance = GetBalance(owner, asset);

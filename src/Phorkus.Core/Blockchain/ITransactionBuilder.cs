@@ -9,6 +9,6 @@ namespace Phorkus.Core.Blockchain
         
         Transaction MinerTransaction(UInt160 from);
 
-        Transaction DepositTransaction(UInt160 from, BlockchainType blockchainType, Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);
+        Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);
     }
 }

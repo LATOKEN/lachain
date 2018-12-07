@@ -8,16 +8,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
     public class RegisterTransactionExecuter : ITransactionExecuter
     {
         private readonly IMultisigVerifier _multisigVerifier;
-        private readonly IAssetRepository _assetRepository;
 
-        public RegisterTransactionExecuter(
-            IMultisigVerifier multisigVerifier,
-            IAssetRepository assetRepository)
+        public RegisterTransactionExecuter(IMultisigVerifier multisigVerifier)
         {
-            _assetRepository = assetRepository;
             _multisigVerifier = multisigVerifier;
         }
-        
+
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             /* don't execute invalid transactions */
@@ -45,9 +41,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 Owner = registerTx.Owner,
                 Minter = minter
             };
-            return !_assetRepository.AddAsset(asset) ? OperatingError.AlreadyExists : OperatingError.Ok;
+            return !snapshot.Assets.AddAsset(asset) ? OperatingError.AlreadyExists : OperatingError.Ok;
         }
-        
+
         public OperatingError Verify(Transaction transaction)
         {
             /* transaction type should be register */

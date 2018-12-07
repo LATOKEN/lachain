@@ -1,46 +1,19 @@
-﻿using System;
-using Phorkus.Core.Blockchain.State;
+﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Hestia.State;
 
 namespace Phorkus.Hestia.Repositories
 {
-    public class BalanceManager : IBalanceManager
+    public class BalanceManager : SnapshotManager<IBalanceSnapshot, BalanceSnapshot>, ISnapshotManager<IBalanceSnapshot>
     {
-        private readonly IStorageManager _storageManager;
-        private const uint RepositoryId = (uint) RepositoryType.BalanceRepository;
-
-        public IBalanceSnapshot LastApprovedSnapshot { get; private set; }
-        public IBalanceSnapshot PendingSnapshot { get; private set; }
-
-        public BalanceManager(IStorageManager storageManager)
+        public BalanceManager(IStorageManager storageManager) : base(storageManager)
         {
-            _storageManager = storageManager;
-            LastApprovedSnapshot = new BalanceSnapshot(_storageManager.GetLastState(RepositoryId));
-            PendingSnapshot = null;
         }
 
-        public IBalanceSnapshot NewSnapshot()
-        {
-            if (PendingSnapshot != null)
-                throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
-            PendingSnapshot = new BalanceSnapshot(_storageManager.GetState(RepositoryId, LastApprovedSnapshot.Version));
-            return PendingSnapshot;
-        }
+        protected override uint RepositoryId { get; } = (uint) RepositoryType.BalanceRepository;
 
-        public void Approve()
+        protected override BalanceSnapshot SnaphotFromState(IStorageState state)
         {
-            LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
-            PendingSnapshot = null;
-        }
-
-        public void Rollback()
-        {
-            if (PendingSnapshot == null) throw new InvalidOperationException("Nothing to rollback");
-            PendingSnapshot = null;
-        }
-
-        public void CommitApproved()
-        {
-            LastApprovedSnapshot.Commit();
+            return new BalanceSnapshot(state);
         }
     }
 }

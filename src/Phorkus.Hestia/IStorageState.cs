@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Hestia
+﻿using System.Collections.Generic;
+
+namespace Phorkus.Hestia
 {
     public interface IStorageState
     {
@@ -10,6 +12,10 @@
         ulong Update(byte[] key, byte[] value);
         ulong Delete(byte[] key, out byte[] value);
         ulong TryDelete(byte[] key, out byte[] value);
+        
+        IEnumerable<byte[]> Keys { get; }
+        IEnumerable<byte[]> Values { get; }
+        IEnumerable<KeyValuePair<byte[], byte[]>> Entries { get; }
         
         ulong Commit();
         ulong Cancel();

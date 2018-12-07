@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Hestia
+﻿using System.Collections.Generic;
+
+namespace Phorkus.Hestia
 {
     class StorageState : IStorageState
     {
@@ -60,6 +62,10 @@
             CurrentVersion = _mapManager.TryDelete(CurrentVersion, key, out value);
             return CurrentVersion;
         }
+
+        public IEnumerable<byte[]> Keys => _mapManager.GetKeys(CurrentVersion);
+        public IEnumerable<byte[]> Values => _mapManager.GetValues(CurrentVersion);
+        public IEnumerable<KeyValuePair<byte[], byte[]>> Entries => _mapManager.GetEntries(CurrentVersion);
 
         public ulong Commit()
         {

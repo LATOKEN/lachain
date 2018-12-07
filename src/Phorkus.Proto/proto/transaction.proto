@@ -12,6 +12,7 @@ enum TransactionType {
     TRANSACTION_TYPE_PUBLISH = 4;
     TRANSACTION_TYPE_DEPOSIT = 5;
     TRANSACTION_TYPE_WITHDRAW = 6;
+    TRANSACTION_TYPE_CONFIRM = 7;
 }
 
 enum TransactionFlag {
@@ -61,7 +62,7 @@ message MinerTransaction {
 }
 
 message DepositTransaction {
-    UInt160 from = 1;
+    UInt160 recipient = 1;
     BlockchainType blockchain_type = 2;
     UInt256 value = 3;
     bytes transaction_hash = 4;
@@ -70,6 +71,7 @@ message DepositTransaction {
 }
 
 message WithdrawTransaction {
+     
 }
 
 message TransactionState {

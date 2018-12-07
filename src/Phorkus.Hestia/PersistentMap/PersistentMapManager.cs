@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace Phorkus.Hestia.PersistentMap
 {
-    public class PersistentMapManager : IMapManager
+    [Obsolete("This no longer inherits IMapManager and is obsolete")]
+    public class PersistentMapManager
     {
         private readonly PersistentMapStorageContext _storageContext;
         private readonly Random _random;
