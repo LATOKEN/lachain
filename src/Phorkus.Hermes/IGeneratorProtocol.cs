@@ -19,14 +19,14 @@ namespace Phorkus.Hermes
 
         QiTestForRound GenerateProof(IDictionary<PublicKey, BGWNPoint> points);
 
-        BiprimalityTestResult ValidateProof(IDictionary<PublicKey, QiTestForRound> proofs);
+        QiTestForRound ValidateProof(IDictionary<PublicKey, QiTestForRound> proofs, out BiprimalityTestResult biprimalityTestResult);
 
-        IReadOnlyCollection<KeysDerivationPublicParameters> GenerateDerivation(BiprimalityTestResult acceptedN);
+        IDictionary<PublicKey, KeysDerivationPublicParameters> GenerateDerivation(BiprimalityTestResult acceptedN);
 
-        ThetaPoint GenerateTheta(IReadOnlyCollection<KeysDerivationPublicParameters> derivations);
+        ThetaPoint GenerateTheta(IDictionary<PublicKey, KeysDerivationPublicParameters> derivations);
         
-        VerificationKey GenerateVerification(IReadOnlyCollection<ThetaPoint> thetas);
+        VerificationKey GenerateVerification(IDictionary<PublicKey, ThetaPoint> thetas);
         
-        PaillierPrivateThresholdKey Finalize(IReadOnlyCollection<VerificationKey> verificationKeys);
+        PaillierPrivateThresholdKey Finalize(IDictionary<PublicKey, VerificationKey> verificationKeys);
     }
 }

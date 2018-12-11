@@ -3,6 +3,7 @@ using System.Linq;
 using Org.BouncyCastle.Math;
 using Phorkus.Hermes.Generator.Messages;
 using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.Hermes.Generator.State
 {
@@ -27,12 +28,12 @@ namespace Phorkus.Hermes.Generator.State
         public readonly KeysDerivationPrivateParameters keysDerivationPrivateParameters;
 
         /** Collection of the shares of &Theta;' of all actors*/
-        public readonly IDictionary<int, BigInteger> thetas;
+        public readonly IDictionary<PublicKey, BigInteger> thetas;
 
         /** Collection of the verification keys of all actors*/
-        public readonly IDictionary<int, BigInteger> verificationKeys;
+        public readonly IDictionary<PublicKey, BigInteger> verificationKeys;
 
-        public readonly IDictionary<int, KeysDerivationPublicParameters> publicParameters1;
+        public readonly IDictionary<PublicKey, KeysDerivationPublicParameters> publicParameters1;
         
 
 
@@ -43,9 +44,9 @@ namespace Phorkus.Hermes.Generator.State
             BigInteger fi,
             BigInteger thetaprime,
             KeysDerivationPrivateParameters keysDerivationPrivateParameters,
-            IDictionary<int, KeysDerivationPublicParameters> publicParameters,
-            IDictionary<int, BigInteger> thetas,
-            IDictionary<int, BigInteger> verificationKeys) : base(participants)
+            IDictionary<PublicKey, KeysDerivationPublicParameters> publicParameters,
+            IDictionary<PublicKey, BigInteger> thetas,
+            IDictionary<PublicKey, BigInteger> verificationKeys) : base(participants)
         {
             this.N = N;
             this.DRpoint = Rpoint;
@@ -58,18 +59,18 @@ namespace Phorkus.Hermes.Generator.State
             this.verificationKeys = verificationKeys;
         }
 
-        public bool hasBetaiRiOf(IEnumerable<int> s)
+        public bool hasBetaiRiOf(IEnumerable<PublicKey> s)
         {
             return s.All(i => publicParameters1.ContainsKey(i));
         }
 
-        public bool hasThetaiOf(IEnumerable<int> s)
+        public bool hasThetaiOf(IEnumerable<PublicKey> s)
         {
             // return s.stream().allMatch(i => this.thetas.ContainsKey(i));
             return s.All(i => thetas.ContainsKey(i));
         }
 
-        public bool hasVerifKeyOf(IEnumerable<int> s)
+        public bool hasVerifKeyOf(IEnumerable<PublicKey> s)
         {
             // return s.stream().allMatch(i => this.verificationKeys.ContainsKey(i));
             return s.All(i => verificationKeys.ContainsKey(i));
@@ -78,7 +79,7 @@ namespace Phorkus.Hermes.Generator.State
         // public Stream<Entry<Integer, KeysDerivationPublicParameters>> publicParameters() {
         //     return this.publicParameters.entrySet().stream();
         // }
-        public IEnumerable<KeyValuePair<int, KeysDerivationPublicParameters>> publicParameters()
+        public IEnumerable<KeyValuePair<PublicKey, KeysDerivationPublicParameters>> publicParameters()
         {
             return publicParameters1;
         }
@@ -113,17 +114,15 @@ namespace Phorkus.Hermes.Generator.State
                 publicParameters1, thetas, verificationKeys);
         }
 
-        public KeysDerivationData withNewPublicParametersFor(int j,
+        public KeysDerivationData withNewPublicParametersFor(PublicKey publicKey,
             KeysDerivationPublicParameters keysDerivationPublicParameters)
         {
-            if (publicParameters1 != null && publicParameters1.ContainsKey(j))
-            {
+            if (publicParameters1 != null && publicParameters1.ContainsKey(publicKey))
                 return this;
-            }
 
-            var newBetasMap = publicParameters1;
+            var newBetasMap = publicParameters1 ?? new SortedDictionary<PublicKey, KeysDerivationPublicParameters>(new PublicKeyComparer());
 
-            newBetasMap.Add(j, keysDerivationPublicParameters);
+            newBetasMap.Add(publicKey, keysDerivationPublicParameters);
             return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 newBetasMap, thetas, verificationKeys);
         }
@@ -140,32 +139,24 @@ namespace Phorkus.Hermes.Generator.State
                 publicParameters1, thetas, verificationKeys);
         }
 
-        public KeysDerivationData withNewThetaFor(int j, BigInteger theta)
+        public KeysDerivationData withNewThetaFor(PublicKey publicKey, BigInteger theta)
         {
-            if (thetas != null && thetas.ContainsKey(j))
-            {
+            if (thetas != null && thetas.ContainsKey(publicKey))
                 return this;
-            }
 
-            IDictionary<int, BigInteger> newThetaMap = thetas != null
-                ? new SortedDictionary<int, BigInteger>(thetas)
-                : new SortedDictionary<int, BigInteger>();
-            newThetaMap.Add(j, theta);
+            var newThetaMap = thetas ?? new SortedDictionary<PublicKey, BigInteger>(new PublicKeyComparer());
+            newThetaMap.Add(publicKey, theta);
             return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, newThetaMap, verificationKeys);
         }
 
-        public KeysDerivationData withNewVerificationKeyFor(int j, BigInteger newVerifKey)
+        public KeysDerivationData withNewVerificationKeyFor(PublicKey publicKey, BigInteger newVerifKey)
         {
-            if (verificationKeys != null && verificationKeys.ContainsKey(j))
-            {
+            if (verificationKeys != null && verificationKeys.ContainsKey(publicKey))
                 return this;
-            }
 
-            IDictionary<int, BigInteger> newVKMap = verificationKeys != null
-                ? new SortedDictionary<int, BigInteger>(verificationKeys)
-                : new SortedDictionary<int, BigInteger>();
-            newVKMap.Add(j, newVerifKey);
+            var newVKMap = verificationKeys ?? new SortedDictionary<PublicKey, BigInteger>(new PublicKeyComparer());
+            newVKMap.Add(publicKey, newVerifKey);
             return new KeysDerivationData(participants, N, DRpoint, v, fi, thetaprime, keysDerivationPrivateParameters,
                 publicParameters1, thetas, newVKMap);
         }

@@ -49,6 +49,7 @@ namespace Phorkus.Hermes.Generator.State
 			if (random == null)
 				throw new ArgumentException("random cannot be null");
 
+			// implementation pp.3.1.2
 			var fact = k < 512 ? 4 : 1;
 			BigInteger np = BigInteger.ValueOf(n);
 			BigInteger three = BigInteger.ValueOf(3);

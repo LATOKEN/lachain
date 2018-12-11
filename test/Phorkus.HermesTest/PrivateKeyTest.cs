@@ -22,33 +22,73 @@ namespace Phorkus.HermesTest
                 Buffer = ByteString.CopyFrom(bytes)
             };
         }
-        
+
         [TestMethod]
         public void Test()
         {
             var participants = new Dictionary<PublicKey, int>
             {
-                { ToPublicKey(HexUtil.hexToBytes("02affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5")), 0 },
-                { ToPublicKey(HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a")), 1 },
-                { ToPublicKey(HexUtil.hexToBytes("038871c219368549f7765f94c0b7b3046612f08e626771e98e235f4abb7ae363b9")), 2 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7360")), 3 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a635616f14d731231")), 4 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686fd734322")), 5 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7363")), 6 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364")), 7 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7365")), 8 },
-                { ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7366")), 9 }
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("02affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5")),
+                    0
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a")),
+                    1
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("038871c219368549f7765f94c0b7b3046612f08e626771e98e235f4abb7ae363b9")),
+                    2
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7360")),
+                    3
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a635616f14d731231")),
+                    4
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686fd734322")),
+                    5
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7363")),
+                    6
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364")),
+                    7
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7365")),
+                    8
+                },
+                {
+                    ToPublicKey(
+                        HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7366")),
+                    9
+                }
             };
 
-            var myKey = ToPublicKey(
-                HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a"));
-
-            var protos = new IGeneratorProtocol[participants.Count];
-            for (var i = 0; i < participants.Count; i++)
-                protos[i] = new DefaultGeneratorProtocol(participants, myKey);
-            
-            Console.WriteLine("Initializing protocol");
-            
+//            var myKey = ToPublicKey(
+//                HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a"));
+//
+//            var protos = new IGeneratorProtocol[participants.Count];
+//            for (var i = 0; i < participants.Count; i++)
+//                protos[i] = new DefaultGeneratorProtocol(participants, myKey);
+//            
+//            Console.WriteLine("Initializing protocol");
+//            
 //            
 //            // инициализация параметров протокола для каждого участника
 //            for (var i = 0; i < participants.Count; i++)
@@ -103,7 +143,7 @@ namespace Phorkus.HermesTest
 //            Console.WriteLine($"biprimalityTestResult: {biprimalityTestResult?.N}, " + biprimalityTestResult?.passes);
 //            if (biprimalityTestResult is null)
 //                throw new Exception("Unable to find valid biprimality test");
-
+//
 //            Console.WriteLine("Generating derivations");
 //            
 //            var derivations = new IReadOnlyCollection<KeysDerivationPublicParameters>[participants.Count];
@@ -141,6 +181,7 @@ namespace Phorkus.HermesTest
 //                var PrivateKey = protos[i].Finalize(verificationKeys);
 //                Console.WriteLine("Private Key: " + HexUtil.bytesToHex(PrivateKey.toByteArray()));
 //            }
+//        }
         }
     }
 }
