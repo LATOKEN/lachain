@@ -40,10 +40,11 @@ namespace Phorkus.Hermes.Generator
             CurrentState = GeneratorState.Initialization;
             if (protoParam is null)
                 protoParam = ProtocolParameters.gen(KEY_SIZE, participants.Count, participants.Count / 3, new Random((int) TimeUtils.CurrentTimeMillis()));
-//            rand = SecureRandom.GetInstance("SHA1PRNG");
-//            rand.SetSeed(rand.GenerateSeed(64 * 1024));
-            Console.WriteLine("Seed: " + (GetHashCode() ^ BitConverter.ToInt32(seed, 0) ^ (int) TimeUtils.CurrentTimeMillis()));
-            rand = new Random(GetHashCode() ^ BitConverter.ToInt32(seed, 0) ^ (int) TimeUtils.CurrentTimeMillis());
+            var sr = SecureRandom.GetInstance("SHA1PRNG");
+            sr.SetSeed(sr.GenerateSeed(64 * 1024));
+            var sd = sr.NextInt();
+            Console.WriteLine("Seed: " + sd);
+            rand = new Random(sd);
             //Console.WriteLine("Pp=" + protoParam.P);
         }
         

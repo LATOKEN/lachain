@@ -34,11 +34,6 @@ namespace Phorkus.Networking
             _serverWorker.OnError += _HandleError;
         }
         
-        public IRemotePeer Connect(string address)
-        {
-            return Connect(PeerAddress.Parse(address));
-        }
-        
         public IRemotePeer Connect(PeerAddress address)
         {
             var client = new ClientWorker(address, null);
