@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using Google.Protobuf;
 using NBitcoin;
-using Org.BouncyCastle.Crypto.Agreement;
 using Phorkus.Hermes;
 using Phorkus.Hermes.Generator;
 using Phorkus.Hermes.Generator.Messages;
@@ -34,40 +32,45 @@ namespace HermesTestConsole
                 ToPublicKey(HexUtil.hexToBytes("0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a")),
                 ToPublicKey(HexUtil.hexToBytes("038871c219368549f7765f94c0b7b3046612f08e626771e98e235f4abb7ae363b9")),
                 ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7360")),
-                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a635616f14d731231")),
-                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686fd734322")),
-                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7363")),
-                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364")),
-                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7365")),
-                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7366"))
+//                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a635616f14d731231")),
+//                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686fd734322")),
+//                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7363")),
+//                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364")),
+//                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7365")),
+//                ToPublicKey(HexUtil.hexToBytes("03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7366"))
             }.OrderBy(pk => pk, new PublicKeyComparer()).ToArray();
             
-            var participants = new SortedDictionary<PublicKey, int>(new PublicKeyComparer());
-            for (var i = 0; i < publicKeys.Length; i++)
-                participants.Add(publicKeys[i], i + 1);
-            
-            var protos = new SortedDictionary<PublicKey, IGeneratorProtocol>(new PublicKeyComparer());
-            foreach (var p in participants)
-                protos[p.Key] = new DefaultGeneratorProtocol(participants, p.Key);
-            
-            Console.WriteLine("Initializing protocol");
-            
-            var seed = "0xbadcab1e".HexToBytes();
-            
-            foreach (var p in participants)
-                protos[p.Key].Initialize(seed);
-            
             BiprimalityTestResult biprimalityTestResult = null;
+
+            var protos = new SortedDictionary<PublicKey, IGeneratorProtocol>();
+            var participants = new SortedDictionary<PublicKey, int>();
             var proofs = new SortedDictionary<PublicKey, QiTestForRound>(new PublicKeyComparer());
+            
             int count = 0;
             while (true)
             {
                 Console.Write("Try: " + count);
                 Console.CursorLeft = 0;
-                ++count;
                 
                 if (biprimalityTestResult is null)
                 {
+                    if (count % 1000 == 0)
+                    {
+                        participants = new SortedDictionary<PublicKey, int>(new PublicKeyComparer());
+                        for (var i = 0; i < publicKeys.Length; i++)
+                            participants.Add(publicKeys[i], i + 1);
+            
+                        protos = new SortedDictionary<PublicKey, IGeneratorProtocol>(new PublicKeyComparer());
+                        foreach (var p in participants)
+                            protos[p.Key] = new DefaultGeneratorProtocol(participants, p.Key);
+                    
+                        var seed = "0xbadcab1e".HexToBytes();
+
+                        DefaultGeneratorProtocol.protoParam = null;
+                        foreach (var p in participants)
+                            protos[p.Key].Initialize(seed);
+                    }
+                    
                     var shares = new SortedDictionary<PublicKey, IDictionary<PublicKey, BgwPublicParams>>(new PublicKeyComparer());
                     foreach (var p in participants)
                     {
@@ -94,13 +97,18 @@ namespace HermesTestConsole
                     if (biprimalityTestResult == null)
                         continue;
                     if (biprimalityTestResult.passes)
+                    {
+                        Console.WriteLine($"Found valid N in {count} rounds");
                         Console.WriteLine($"Biprimality test passed: {biprimalityTestResult.N}");
+                    }
                     nextProofs[p.Key] = proof;
                 }
                 proofs = nextProofs;
                 
                 if (biprimalityTestResult != null && biprimalityTestResult.passes)
                     break;
+                
+                ++count;
           }
 
             Console.WriteLine("Generating derivations");

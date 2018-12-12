@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Phorkus.Hermes.Crypto.Key;
@@ -11,19 +9,19 @@ using Phorkus.Hermes.Generator.State;
 using Phorkus.Hermes.Math;
 using Phorkus.Proto;
 using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Hermes.Generator
 {
     public class DefaultGeneratorProtocol : IGeneratorProtocol
     {
-        public static int KEY_SIZE = 512; // Tested up to 512
+        public static int KEY_SIZE = 1024; // Tested up to 512
         public static int NUMBER_OF_ROUNDS = 10;
 
-        private readonly SecureRandom rand = new SecureRandom();
-
+        private Random rand;
         private IReadOnlyDictionary<PublicKey, int> participants;
         private PublicKey publicKey;
-        private static ProtocolParameters protoParam;
+        public static ProtocolParameters protoParam;
         private BGWData bgwData;
         private BiprimalityTestData biprimalityTestData;
         private KeysDerivationData keysDerivationData;
@@ -41,10 +39,13 @@ namespace Phorkus.Hermes.Generator
         {
             CurrentState = GeneratorState.Initialization;
             if (protoParam is null)
-                protoParam = ProtocolParameters.gen(KEY_SIZE, participants.Count, participants.Count / 3, new SecureRandom(seed));
+                protoParam = ProtocolParameters.gen(KEY_SIZE, participants.Count, participants.Count / 3, new Random((int) TimeUtils.CurrentTimeMillis()));
+//            rand = SecureRandom.GetInstance("SHA1PRNG");
+//            rand.SetSeed(rand.GenerateSeed(64 * 1024));
+            rand = new Random((int) TimeUtils.CurrentTimeMillis());
             //Console.WriteLine("Pp=" + protoParam.P);
         }
-
+        
         public IDictionary<PublicKey, BgwPublicParams> GenerateShare()
         {
             CurrentState = GeneratorState.GeneratingShare;
@@ -310,7 +311,7 @@ namespace Phorkus.Hermes.Generator
                 keys,
                 keysDerivationData.fi,
                 participants[publicKey],
-                rand.NextInt());
+                rand.Next());
             return privateKey;
         }
 
