@@ -14,7 +14,6 @@ namespace Phorkus.Core.Blockchain
         bool VerifyTransactionImmediately(SignedTransaction transaction);
         
         void Start();
-        
         void Stop();
     }
 }

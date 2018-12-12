@@ -6,6 +6,7 @@ using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.Threshold;
 
 namespace Phorkus.Core.DI.Modules
@@ -21,7 +22,7 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IMultisigVerifier, MultisigVerifier>();
             /* consensus */
-//            containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
+            containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
             /* gensis */
             containerBuilder.RegisterSingleton<IGenesisAssetsBuilder, GenesisAssetsBuilder>();
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();

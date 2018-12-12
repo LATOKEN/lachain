@@ -9,6 +9,8 @@ namespace Phorkus.Core.Blockchain
 
         uint Quorum { get; }
 
+        PublicKey GetPublicKey(uint validatorIndex);
+        
         uint GetValidatorIndex(PublicKey publicKey);
         
         bool CheckValidator(UInt160 address);

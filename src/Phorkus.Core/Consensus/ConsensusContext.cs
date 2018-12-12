@@ -131,7 +131,7 @@ namespace Phorkus.Core.Consensus
             };
         }
 
-        public ChangeViewRequest MakeChangeView()
+        public ChangeViewRequest MakeChangeViewRequest()
         {
             return new ChangeViewRequest
             {
@@ -140,6 +140,15 @@ namespace Phorkus.Core.Consensus
             };
         }
 
+        public ChangeViewReply MakeChangeViewReply()
+        {
+            return new ChangeViewReply
+            {
+                Validator = MakeValidator(),
+                ViewNumber = Validators[MyIndex].ExpectedViewNumber
+            };
+        }
+        
         public BlockPrepareRequest MakePrepareRequest(BlockWithTransactions block, Signature signature)
         {
             return new BlockPrepareRequest

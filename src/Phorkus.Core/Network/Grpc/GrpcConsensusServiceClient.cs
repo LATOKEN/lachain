@@ -1,5 +1,7 @@
-﻿using Google.Protobuf;
+﻿using System;
+using Google.Protobuf;
 using Grpc.Core;
+using Nethereum.Hex.HexConvertors.Extensions;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 
@@ -21,7 +23,16 @@ namespace Phorkus.Core.Network.Grpc
         
         public BlockPrepareReply PrepareBlock(BlockPrepareRequest request, KeyPair keyPair)
         {
-            return _client.PrepareBlock(request, _SignMessage(request, keyPair));
+            try
+            {
+                return _client.PrepareBlock(request, _SignMessage(request, keyPair));
+            }
+            catch (Exception e)
+            {
+                /* TODO: "replace with logger" */
+                Console.Error.WriteLine(e);
+            }
+            return default(BlockPrepareReply);
         }
 
         public ChangeViewReply ChangeView(ChangeViewRequest request, KeyPair keyPair)
@@ -34,7 +45,7 @@ namespace Phorkus.Core.Network.Grpc
             var signature = _crypto.Sign(message.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray());
             var metadata = new Metadata
             {
-                new Metadata.Entry("X-Signature", signature)
+                new Metadata.Entry("X-Signature", signature.ToHex())
             };
             return metadata;
         }

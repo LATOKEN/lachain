@@ -11,8 +11,8 @@ namespace Phorkus.Core.Consensus
 
         bool CanHandleConsensusMessage(Validator validator, IMessage message);
 
-        void OnBlockPrepareRequestReceived(BlockPrepareRequest blockPrepare);
+        BlockPrepareReply OnBlockPrepareReceived(BlockPrepareRequest blockPrepare);
 
-        void OnChangeViewReceived(ChangeViewRequest changeView);
+        ChangeViewReply OnChangeViewReceived(ChangeViewRequest changeView);
     }
 }

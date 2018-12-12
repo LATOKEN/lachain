@@ -13,6 +13,7 @@ namespace Phorkus.Core.Network
 
         private readonly IBlockchainContext _blockchainContext;
         private readonly NetworkConfig _networkConfig;
+        private readonly IValidatorManager _validatorManager;
         
         public Node LocalNode => new Node
         {
@@ -23,13 +24,28 @@ namespace Phorkus.Core.Network
             Address = "localhost",
             Nonce = (uint) new Random().Next(1 << 30),
             BlockHeight = _blockchainContext.CurrentBlockHeaderHeight,
-            Agent = "Phorkus-v0.0"
+            Agent = "Phorkus-v0.0-dev"
         };
         
-        public NetworkContext(IConfigManager configManager, IBlockchainContext blockchainContext)
+        public NetworkContext(
+            IBlockchainContext blockchainContext,
+            IConfigManager configManager,
+            IValidatorManager validatorManager)
         {
             _blockchainContext = blockchainContext;
+            _validatorManager = validatorManager;
             _networkConfig = configManager.GetConfig<NetworkConfig>("network");
+        }
+        
+        public IRemotePeer GetPeerByPublicKey(PublicKey publicKey)
+        {
+            var validatorIndex = _validatorManager.GetValidatorIndex(publicKey);
+            if (_networkConfig.Peers.Length <= validatorIndex)
+                return null;
+            var address = PeerAddress.Parse(_networkConfig.Peers[validatorIndex]);
+            if (!ActivePeers.ContainsKey(address))
+                return null;
+            return ActivePeers[address];
         }
     }
 }

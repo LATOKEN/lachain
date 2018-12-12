@@ -56,16 +56,17 @@ namespace Phorkus.Proto {
             "YWN0aW9uSAASKAoId2l0aGRyYXcYDCABKAsyFC5XaXRoZHJhd1RyYW5zYWN0",
             "aW9uSABCBgoEZGF0YSJtChFTaWduZWRUcmFuc2FjdGlvbhIhCgt0cmFuc2Fj",
             "dGlvbhgBIAEoCzIMLlRyYW5zYWN0aW9uEhYKBGhhc2gYAiABKAsyCC5VSW50",
-            "MjU2Eh0KCXNpZ25hdHVyZRgDIAEoCzIKLlNpZ25hdHVyZSriAQoPVHJhbnNh",
+            "MjU2Eh0KCXNpZ25hdHVyZRgDIAEoCzIKLlNpZ25hdHVyZSqAAgoPVHJhbnNh",
             "Y3Rpb25UeXBlEhoKFlRSQU5TQUNUSU9OX1RZUEVfTUlORVIQABIdChlUUkFO",
             "U0FDVElPTl9UWVBFX1JFR0lTVEVSEAESGgoWVFJBTlNBQ1RJT05fVFlQRV9J",
             "U1NVRRACEh0KGVRSQU5TQUNUSU9OX1RZUEVfQ09OVFJBQ1QQAxIcChhUUkFO",
             "U0FDVElPTl9UWVBFX1BVQkxJU0gQBBIcChhUUkFOU0FDVElPTl9UWVBFX0RF",
-            "UE9TSVQQBRIdChlUUkFOU0FDVElPTl9UWVBFX1dJVEhEUkFXEAYqLAoPVHJh",
-            "bnNhY3Rpb25GbGFnEhkKFVRSQU5TQUNUSU9OX0ZMQUdfTk9ORRAAKisKDkJs",
-            "b2NrY2hhaW5UeXBlEgsKB0JJVENPSU4QABIMCghFVEhFUkVVTRABKioKDUFk",
-            "ZHJlc3NGb3JtYXQSDAoIUklQTUQxNjAQABILCgdFRDI1NTE5EAFCEKoCDVBo",
-            "b3JrdXMuUHJvdG9iBnByb3RvMw=="));
+            "UE9TSVQQBRIdChlUUkFOU0FDVElPTl9UWVBFX1dJVEhEUkFXEAYSHAoYVFJB",
+            "TlNBQ1RJT05fVFlQRV9DT05GSVJNEAcqLAoPVHJhbnNhY3Rpb25GbGFnEhkK",
+            "FVRSQU5TQUNUSU9OX0ZMQUdfTk9ORRAAKisKDkJsb2NrY2hhaW5UeXBlEgsK",
+            "B0JJVENPSU4QABIMCghFVEhFUkVVTRABKioKDUFkZHJlc3NGb3JtYXQSDAoI",
+            "UklQTUQxNjAQABILCgdFRDI1NTE5EAFCEKoCDVBob3JrdXMuUHJvdG9iBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.AssetReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionFlag), typeof(global::Phorkus.Proto.BlockchainType), typeof(global::Phorkus.Proto.AddressFormat), }, new pbr::GeneratedClrTypeInfo[] {
@@ -93,6 +94,7 @@ namespace Phorkus.Proto {
     [pbr::OriginalName("TRANSACTION_TYPE_PUBLISH")] Publish = 4,
     [pbr::OriginalName("TRANSACTION_TYPE_DEPOSIT")] Deposit = 5,
     [pbr::OriginalName("TRANSACTION_TYPE_WITHDRAW")] Withdraw = 6,
+    [pbr::OriginalName("TRANSACTION_TYPE_CONFIRM")] Confirm = 7,
   }
 
   public enum TransactionFlag {

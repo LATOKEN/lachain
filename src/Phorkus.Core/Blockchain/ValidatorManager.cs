@@ -33,6 +33,11 @@ namespace Phorkus.Core.Blockchain
 
         public uint Quorum => (uint) (Validators.Count * 2 / 3);
 
+        public PublicKey GetPublicKey(uint validatorIndex)
+        {
+            return Validators.ElementAt((int) validatorIndex);
+        }
+
         public uint GetValidatorIndex(PublicKey publicKey)
         {
             var index = 0u;

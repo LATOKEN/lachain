@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Network
+namespace Phorkus.Networking
 {
     public interface INetworkContext
     {

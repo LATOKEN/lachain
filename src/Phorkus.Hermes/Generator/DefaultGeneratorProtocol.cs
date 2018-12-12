@@ -42,7 +42,8 @@ namespace Phorkus.Hermes.Generator
                 protoParam = ProtocolParameters.gen(KEY_SIZE, participants.Count, participants.Count / 3, new Random((int) TimeUtils.CurrentTimeMillis()));
 //            rand = SecureRandom.GetInstance("SHA1PRNG");
 //            rand.SetSeed(rand.GenerateSeed(64 * 1024));
-            rand = new Random((int) TimeUtils.CurrentTimeMillis());
+            Console.WriteLine("Seed: " + (GetHashCode() ^ BitConverter.ToInt32(seed, 0) ^ (int) TimeUtils.CurrentTimeMillis()));
+            rand = new Random(GetHashCode() ^ BitConverter.ToInt32(seed, 0) ^ (int) TimeUtils.CurrentTimeMillis());
             //Console.WriteLine("Pp=" + protoParam.P);
         }
         

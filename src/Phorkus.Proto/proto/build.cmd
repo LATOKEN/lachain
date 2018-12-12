@@ -15,6 +15,7 @@ protoc --csharp_out .. message.proto
 protoc --csharp_out .. multisig.proto
 protoc --csharp_out .. node.proto
 protoc --csharp_out .. transaction.proto
+protoc --csharp_out .. networking.proto
 
 cd ..
 mkdir Grpc

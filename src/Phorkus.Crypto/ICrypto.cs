@@ -12,14 +12,6 @@ namespace Phorkus.Crypto
         /// <param name="pubkey">Public Key</param>
         /// <returns>Bool</returns>
         bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey);
-        
-        /// <summary>
-        /// Verifies signature from recovered public key
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="signature"></param>
-        /// <returns></returns>
-        bool VerifySignature(byte[] message, byte[] signature);
 
         /// <summary>
         /// Sign sha256 Message (secp256r1)

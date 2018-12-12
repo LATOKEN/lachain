@@ -73,14 +73,6 @@ namespace Phorkus.Crypto
             return signer.VerifySignature(signature);
         }
 
-        public bool VerifySignature(byte[] message, byte[] signature)
-        {
-            var publicKey = RecoverSignature(message, signature);
-            if (publicKey is null)
-                return false;
-            return VerifySignature(message, signature, publicKey);
-        }
-
         public byte[] Sign(byte[] message, byte[] prikey)
         {
             var priv = new ECPrivateKeyParameters("ECDSA", new BigInteger(1, prikey), Domain);

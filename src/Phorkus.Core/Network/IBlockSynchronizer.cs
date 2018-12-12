@@ -13,6 +13,8 @@ namespace Phorkus.Core.Network
         void HandleBlockFromPeer(Block block, IRemotePeer remotePeer);
 
         void HandlePeerHasBlocks(ulong blockHeight);
+
+        bool DownloadTransactions(IBlockchainService blockchainService, IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
         
         void Start();
     }

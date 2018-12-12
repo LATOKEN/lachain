@@ -11,7 +11,6 @@ using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Network;
 using Phorkus.Proto;
-using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Utility.Utils;
@@ -26,14 +25,15 @@ namespace Phorkus.Core.Consensus
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ITransactionPool _transactionPool;
-        private readonly IBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ICrypto _crypto;
+        private readonly ConsensusBroadcaster _consensusBroadcaster;
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
-        private readonly IConsensusService _consensusService;
         private readonly IBlockSynchronizer _blockSynchronizer;
+        private readonly INetworkContext _networkContext;
+        private readonly IValidatorManager _validatorManager;
 
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
@@ -50,34 +50,35 @@ namespace Phorkus.Core.Consensus
             ITransactionManager transactionManager,
             IBlockchainContext blockchainContext,
             ITransactionPool transactionPool,
-            IBroadcaster broadcaster,
             ILogger<ConsensusManager> logger,
             IConfigManager configManager,
             ITransactionBuilder transactionBuilder,
             ICrypto crypto,
             IBlockSynchronizer blockchainBlockSynchronizer,
-            IConsensusService consensusService)
+            IValidatorManager validatorManager,
+            INetworkContext networkContext)
         {
+            _consensusBroadcaster = new ConsensusBroadcaster(
+                validatorManager ?? throw new ArgumentNullException(nameof(validatorManager)),
+                networkContext ?? throw new ArgumentNullException(nameof(networkContext)));
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
+            _validatorManager = validatorManager;
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
             _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _transactionBuilder = transactionBuilder ?? throw new ArgumentNullException(nameof(transactionBuilder));
-            _blockSynchronizer =
-                blockchainBlockSynchronizer ?? throw new ArgumentNullException(nameof(blockchainBlockSynchronizer));
-            _consensusService = consensusService;
+            _blockSynchronizer = blockchainBlockSynchronizer ??
+                                 throw new ArgumentNullException(nameof(blockchainBlockSynchronizer));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
-            _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
-
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            _networkContext = networkContext;
             _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _random = new SecureRandom();
             _stopped = true;
             _gotNewBlock = false;
-
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
 
@@ -90,7 +91,6 @@ namespace Phorkus.Core.Consensus
                     _gotNewBlock = true;
             }
         }
-
 
         public void Stop()
         {
@@ -137,8 +137,7 @@ namespace Phorkus.Core.Consensus
                     var timeToAwait = _timePerBlock - (DateTime.UtcNow - _context.LastBlockRecieved);
                     if (timeToAwait.TotalSeconds > 0)
                         Thread.Sleep(timeToAwait);
-
-                    // TODO: produce block
+                    
                     var blockBuilder = new BlockBuilder(_blockchainContext.CurrentBlockHeader.Header)
                         .WithTransactions(_transactionPool);
                     var minerTx = _transactionBuilder.MinerTransaction(
@@ -171,17 +170,20 @@ namespace Phorkus.Core.Consensus
                         OnSignatureAcquired(_context.MyIndex, signature);
                     }
 
-                    /* TODO: "get prepare replies from validators" */
-                    _broadcaster.ConsensusService.PrepareBlock(
+                    var replies = _consensusBroadcaster.PrepareBlock(
                         _context.MakePrepareRequest(blockWithTransactions, _context.MyState.BlockSignature), _keyPair);
-                    _logger.LogInformation("Sent prepare request");
-//                    -- code for handling prepare reponse --
-//                    if (_context.Validators[message.ValidatorIndex].BlockSignature != null) return;
-//                    _logger.LogInformation(
-//                        $"{nameof(OnPrepareResponseReceived)}: height={message.BlockIndex} view={message.ViewNumber} " +
-//                        $"index={message.ValidatorIndex}"
-//                    );
-//                    OnSignatureAcquired(message.ValidatorIndex, message.PrepareResponse.Signature);
+                    foreach (var reply in replies)
+                    {
+                        if (_context.Validators[reply.Value.Validator.ValidatorIndex].BlockSignature != null)
+                            return;
+                        OnSignatureAcquired(reply.Value.Validator.ValidatorIndex, reply.Value.Signature);
+                    }
+
+                    if (!IsQuorumReached())
+                    {
+                        RequestChangeView();
+                        continue;
+                    }
                 }
                 else
                 {
@@ -199,26 +201,22 @@ namespace Phorkus.Core.Consensus
                 }
 
                 // Regardless of our role, here we must collect transactions, signatures and assemble block
-                var txsGot =
-                    _blockSynchronizer.WaitForTransactions(_context.CurrentProposal.TransactionHashes,
-                        _timePerBlock);
-                if (txsGot != _context.CurrentProposal.TransactionHashes.Length)
+                var minerPeer =
+                    _networkContext.GetPeerByPublicKey(_validatorManager.GetPublicKey((uint) _context.PrimaryIndex));
+                if (minerPeer is null)
                 {
-                    _logger.LogWarning(
-                        $"Cannot retrieve all transactions in time, got only {txsGot} of {_context.CurrentProposal.TransactionHashes.Length}, aborting");
                     RequestChangeView();
                     continue;
                 }
-
-                // When all transaction are collected and validated, we are able to sign block
-                _logger.LogInformation("Sent prepare response");
-
-                var mySignature = _blockManager.Sign(_context.GetProposedHeader(), _context.KeyPair);
-                /* TODO: "try to manage block prepare responses here" */
-//                SignAndBroadcast(_context.MakePrepareResponse(mySignature));
-
-                _context.State |= ConsensusState.SignatureSent;
-                OnSignatureAcquired(_context.MyIndex, mySignature);
+                var txsGot = _blockSynchronizer.DownloadTransactions(minerPeer.BlockchainService,
+                    _context.CurrentProposal.TransactionHashes, _timePerBlock);
+                if (!txsGot)
+                {
+                    _logger.LogWarning(
+                        $"Cannot retrieve all transactions in time, unable to fetch {_context.CurrentProposal.TransactionHashes.Length} txs, aborting");
+                    RequestChangeView();
+                    continue;
+                }
 
                 lock (_quorumSignaturesAcquired)
                 {
@@ -263,7 +261,17 @@ namespace Phorkus.Core.Consensus
         public void Start()
         {
             _logger.LogInformation("Starting consensus");
-            Task.Factory.StartNew(_TaskWorker);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    _TaskWorker();
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine(e);
+                }
+            }, TaskCreationOptions.LongRunning);
         }
 
         private void InitializeConsensus(byte viewNumber)
@@ -353,7 +361,7 @@ namespace Phorkus.Core.Consensus
             return true;
         }
 
-        public void OnBlockPrepareRequestReceived(BlockPrepareRequest blockPrepare)
+        public BlockPrepareReply OnBlockPrepareReceived(BlockPrepareRequest blockPrepare)
         {
             var validator = blockPrepare.Validator;
 
@@ -362,7 +370,7 @@ namespace Phorkus.Core.Consensus
                 _logger.LogDebug(
                     $"Ignoring prepare request from validator={validator.ValidatorIndex}: we are changing view"
                 );
-                return;
+                return default(BlockPrepareReply);
             }
 
             if (_context.State.HasFlag(ConsensusState.RequestReceived))
@@ -370,7 +378,7 @@ namespace Phorkus.Core.Consensus
                 _logger.LogDebug(
                     $"Ignoring prepare request from validator={validator.ValidatorIndex}: we are already prepared"
                 );
-                return;
+                return default(BlockPrepareReply);
             }
 
             if (validator.ValidatorIndex != _context.PrimaryIndex)
@@ -378,11 +386,11 @@ namespace Phorkus.Core.Consensus
                 _logger.LogDebug(
                     $"Ignoring prepare request from validator={validator.ValidatorIndex}: validator is not primary"
                 );
-                return;
+                return default(BlockPrepareReply);
             }
 
             _logger.LogInformation(
-                $"{nameof(OnBlockPrepareRequestReceived)}: height={validator.BlockIndex} view={validator.ViewNumber} " +
+                $"{nameof(OnBlockPrepareReceived)}: height={validator.BlockIndex} view={validator.ViewNumber} " +
                 $"index={validator.ValidatorIndex} tx={blockPrepare.TransactionHashes.Count}"
             );
             if (!_context.State.HasFlag(ConsensusState.Backup))
@@ -390,7 +398,7 @@ namespace Phorkus.Core.Consensus
                 _logger.LogDebug(
                     $"Ignoring prepare request from validator={validator.ValidatorIndex}: were are primary"
                 );
-                return;
+                return default(BlockPrepareReply);
             }
 
             /* TODO: block timestamping policy
@@ -422,7 +430,7 @@ namespace Phorkus.Core.Consensus
                     $"Ignoring prepare request from validator={validator.ValidatorIndex}: " +
                     "request signature is invalid"
                 );
-                return;
+                return default(BlockPrepareReply);
             }
 
             _context.State |= ConsensusState.RequestReceived;
@@ -436,9 +444,32 @@ namespace Phorkus.Core.Consensus
             {
                 Monitor.PulseAll(_prepareRequestReceived);
             }
+
+            // Regardless of our role, here we must collect transactions, signatures and assemble block
+            var minerPeer =
+                _networkContext.GetPeerByPublicKey(_validatorManager.GetPublicKey((uint) _context.PrimaryIndex));
+            if (minerPeer is null)
+            {
+                RequestChangeView();
+                return default(BlockPrepareReply);
+            }
+            var txsGot = _blockSynchronizer.DownloadTransactions(minerPeer.BlockchainService,
+                _context.CurrentProposal.TransactionHashes, _timePerBlock);
+            if (!txsGot)
+            {
+                _logger.LogWarning(
+                    $"Cannot retrieve all transactions in time, unable to fetch {_context.CurrentProposal.TransactionHashes.Length} txs, aborting");
+                RequestChangeView();
+                return default(BlockPrepareReply);
+            }
+
+            var mySignature = _blockManager.Sign(_context.GetProposedHeader(), _context.KeyPair);
+            _context.State |= ConsensusState.SignatureSent;
+            OnSignatureAcquired(_context.MyIndex, mySignature);
+            return _context.MakePrepareResponse(mySignature);
         }
 
-        public void OnChangeViewReceived(ChangeViewRequest changeView)
+        public ChangeViewReply OnChangeViewReceived(ChangeViewRequest changeView)
         {
             var validator = changeView.Validator;
             if (changeView.NewViewNumber <= _context.Validators[validator.ValidatorIndex].ExpectedViewNumber)
@@ -448,14 +479,16 @@ namespace Phorkus.Core.Consensus
                     $"since new_view={changeView.NewViewNumber} and " +
                     $"last_view={_context.Validators[validator.ValidatorIndex].ExpectedViewNumber}"
                 );
-                return;
+                return default(ChangeViewReply);
             }
+
             _logger.LogInformation(
                 $"{nameof(OnChangeViewReceived)}: height={validator.BlockIndex} view={validator.ViewNumber} " +
                 $"index={validator.ValidatorIndex} nv={changeView.NewViewNumber}"
             );
             _context.Validators[validator.ValidatorIndex].ExpectedViewNumber = (byte) changeView.NewViewNumber;
             CheckExpectedView();
+            return _context.MakeChangeViewReply();
         }
 
         private void OnSignatureAcquired(long validatorIndex, Signature signature)
@@ -486,7 +519,7 @@ namespace Phorkus.Core.Consensus
                 $"nv={_context.MyState.ExpectedViewNumber} state={_context.State}"
             );
             /* TODO: "handle responses from clients" */
-            _broadcaster.ConsensusService.ChangeView(_context.MakeChangeView(), _keyPair);
+            _consensusBroadcaster.ChangeView(_context.MakeChangeViewRequest(), _keyPair);
             CheckExpectedView();
         }
 

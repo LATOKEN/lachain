@@ -5,12 +5,13 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Timers;
 using Grpc.Core;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.Network.Grpc;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Threshold;
-using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Network.Grpc;
 using Phorkus.Proto;
@@ -44,9 +45,11 @@ namespace Phorkus.Core.Network
             IBlockRepository blockRepository,
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager,
-            ICrypto crypto,
             IThresholdManager thresholdManager,
-            INetworkContext networkContext)
+            INetworkContext networkContext,
+            IConsensusManager consensusManager,
+            IValidatorManager validatorManager,
+            ICrypto crypto)
         {
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
 
@@ -57,7 +60,7 @@ namespace Phorkus.Core.Network
                     ThresholdService.BindService(new GrpcThresholdServiceServer(thresholdManager, crypto)),
                     BlockchainService.BindService(new GrpcBlockchainServiceServer(networkContext, transactionRepository,
                         blockRepository, blockSynchronizer)),
-                    ConsensusService.BindService(new GrpcConsensusServiceServer(null, crypto))
+                    ConsensusService.BindService(new GrpcConsensusServiceServer(consensusManager, crypto, validatorManager))
                 },
                 Ports = {new ServerPort("0.0.0.0", networkConfig.Port, ServerCredentials.Insecure)}
             };

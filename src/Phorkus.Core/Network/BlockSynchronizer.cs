@@ -103,6 +103,26 @@ namespace Phorkus.Core.Network
             }
         }
 
+        public bool DownloadTransactions(IBlockchainService blockchainService, IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
+        {
+            var dontHave = _HaveTransactions(transactionHashes);
+            if (dontHave.Count == 0)
+                return true;
+            var txs = blockchainService.GetTransactionsByHashes(dontHave).ToArray();
+            if (txs.Length != dontHave.Count)
+                return false;
+            foreach (var tx in txs)
+                _transactionVerifier.VerifyTransaction(tx);
+            foreach (var tx in txs)
+            {
+                var result = _transactionManager.Persist(tx);
+                if (result == OperatingError.Ok)
+                    continue;
+                Console.WriteLine($"Unable to persist transaction {tx.Hash}, cuz error {result}");
+            }
+            return true;
+        }
+
         private IEnumerable<Block> _DownloadTransactions(IEnumerable<UInt256> blockHashes, IRemotePeer peer)
         {
             var validBlocks = new List<Block>();

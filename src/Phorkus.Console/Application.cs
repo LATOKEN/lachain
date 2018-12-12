@@ -58,9 +58,9 @@ namespace Phorkus.Console
             var transactionFactory = _container.Resolve<ITransactionBuilder>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
-//            var consensusManager = _container.Resolve<IConsensusManager>();
+            var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
-            var synchronizer = _container.Resolve<IBlockSynchronizer>();
+            var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
             var thresholdManager = _container.Resolve<IThresholdManager>();
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             
@@ -101,12 +101,12 @@ namespace Phorkus.Console
 //            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
             
-            //networkManager.Start();
+            networkManager.Start();
             transactionVerifier.Start();
-//            consensusManager.Start();
-//            synchronizer.Start();
+            consensusManager.Start();
+            blockSynchronizer.Start();
             
-            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
+//            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

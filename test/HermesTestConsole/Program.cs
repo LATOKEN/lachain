@@ -54,7 +54,7 @@ namespace HermesTestConsole
                 
                 if (biprimalityTestResult is null)
                 {
-                    if (count % 1000 == 0)
+                    if (count % 100000 == 0)
                     {
                         participants = new SortedDictionary<PublicKey, int>(new PublicKeyComparer());
                         for (var i = 0; i < publicKeys.Length; i++)
@@ -65,7 +65,7 @@ namespace HermesTestConsole
                             protos[p.Key] = new DefaultGeneratorProtocol(participants, p.Key);
                     
                         var seed = "0xbadcab1e".HexToBytes();
-
+                        
                         DefaultGeneratorProtocol.protoParam = null;
                         foreach (var p in participants)
                             protos[p.Key].Initialize(seed);
