@@ -37,12 +37,16 @@ namespace Phorkus.Hermes.Generator
 
         public void Initialize(byte[] seed)
         {
+            int myIndex = BitConverter.ToInt32(seed, 0);
+            var seeds = new[] {571629117, -2117186700, 922194118, -444824217};
+
             CurrentState = GeneratorState.Initialization;
             if (protoParam is null)
                 protoParam = ProtocolParameters.gen(KEY_SIZE, participants.Count, participants.Count / 3, new Random((int) TimeUtils.CurrentTimeMillis()));
             var sr = SecureRandom.GetInstance("SHA1PRNG");
             sr.SetSeed(sr.GenerateSeed(64 * 1024));
             var sd = sr.NextInt();
+            sd = seeds[myIndex - 1]; 
             Console.WriteLine("Seed: " + sd);
             rand = new Random(sd);
             //Console.WriteLine("Pp=" + protoParam.P);
