@@ -27,7 +27,6 @@ namespace NetworkTestConsole
         private static void _Thread(string privateKey, ushort port)
         {
             var keyPair = new KeyPair(privateKey.HexToBytes().ToPrivateKey(), new BouncyCastle());
-            var messageFactory = new MessageFactory(keyPair, new BouncyCastle());
             var networkConfig = new NetworkConfig
             {
                 Magic = 123,
@@ -41,7 +40,7 @@ namespace NetworkTestConsole
                 MaxPeers = 10
             };
             var prog = new Program();
-            var networkManager = new NetworkManager(networkConfig, prog, messageFactory, new BouncyCastle(), keyPair.PublicKey);
+            var networkManager = new NetworkManager(networkConfig, prog, new BouncyCastle(), keyPair);
             var thradName = Thread.CurrentThread.ManagedThreadId;
             networkManager.OnClientConnected += peer =>
             {

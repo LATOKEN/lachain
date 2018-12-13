@@ -37,15 +37,14 @@ namespace Phorkus.Networking
         public NetworkManager(
             NetworkConfig networkConfig,
             IMessageHandler messageHandler,
-            MessageFactory messageFactory,
             ICrypto crypto,
-            PublicKey publicKey)
+            KeyPair keyPair)
         {
             _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
-            _messageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
             _crypto = crypto;
             if (networkConfig is null)
                 throw new ArgumentNullException(nameof(networkConfig));
+            _messageFactory = new MessageFactory(keyPair, crypto);
             _serverWorker = new ServerWorker(networkConfig);
 
             _serverWorker.OnOpen += _HandleOpen;
@@ -58,7 +57,7 @@ namespace Phorkus.Networking
                 Version = 0,
                 Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 Address = $"tcp://192.168.88.154:{networkConfig.Port}",
-                PublicKey = publicKey,
+                PublicKey = keyPair.PublicKey,
                 Nonce = (uint) new Random().Next(1 << 30),
                 BlockHeight = 0,
                 Agent = "Phorkus-v0.0-dev"
