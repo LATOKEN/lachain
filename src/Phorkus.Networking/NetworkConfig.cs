@@ -8,7 +8,7 @@ namespace Phorkus.Networking
         public uint Magic { get; set; }
 
         [JsonProperty("address")]
-        public string Address { get; set; } = "localhost";
+        public string Address { get; set; } = "0.0.0.0";
 
         [JsonProperty("port")]
         public ushort Port { get; set; }

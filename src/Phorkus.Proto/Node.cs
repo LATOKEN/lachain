@@ -25,14 +25,14 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cgpub2RlLnByb3RvGg1kZWZhdWx0LnByb3RvIo8BCgROb2RlEg8KB3ZlcnNp",
-            "b24YASABKA0SEQoJdGltZXN0YW1wGAIgASgEEhAKCHNlcnZpY2VzGAMgASgE",
-            "EgwKBHBvcnQYBCABKA0SDwoHYWRkcmVzcxgFIAEoCRINCgVub25jZRgGIAEo",
-            "DRIUCgxibG9ja19oZWlnaHQYByABKAQSDQoFYWdlbnQYCCABKAlCEKoCDVBo",
+            "b24YASABKA0SEQoJdGltZXN0YW1wGAIgASgEEg8KB2FkZHJlc3MYAyABKAkS",
+            "HgoKcHVibGljX2tleRgEIAEoCzIKLlB1YmxpY0tleRINCgVub25jZRgFIAEo",
+            "DRIUCgxibG9ja19oZWlnaHQYBiABKAQSDQoFYWdlbnQYByABKAlCEKoCDVBo",
             "b3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Node), global::Phorkus.Proto.Node.Parser, new[]{ "Version", "Timestamp", "Services", "Port", "Address", "Nonce", "BlockHeight", "Agent" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Node), global::Phorkus.Proto.Node.Parser, new[]{ "Version", "Timestamp", "Address", "PublicKey", "Nonce", "BlockHeight", "Agent" }, null, null, null)
           }));
     }
     #endregion
@@ -66,9 +66,8 @@ namespace Phorkus.Proto {
     public Node(Node other) : this() {
       version_ = other.version_;
       timestamp_ = other.timestamp_;
-      services_ = other.services_;
-      port_ = other.port_;
       address_ = other.address_;
+      publicKey_ = other.publicKey_ != null ? other.publicKey_.Clone() : null;
       nonce_ = other.nonce_;
       blockHeight_ = other.blockHeight_;
       agent_ = other.agent_;
@@ -102,30 +101,8 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "services" field.</summary>
-    public const int ServicesFieldNumber = 3;
-    private ulong services_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong Services {
-      get { return services_; }
-      set {
-        services_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "port" field.</summary>
-    public const int PortFieldNumber = 4;
-    private uint port_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Port {
-      get { return port_; }
-      set {
-        port_ = value;
-      }
-    }
-
     /// <summary>Field number for the "address" field.</summary>
-    public const int AddressFieldNumber = 5;
+    public const int AddressFieldNumber = 3;
     private string address_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Address {
@@ -135,8 +112,19 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "public_key" field.</summary>
+    public const int PublicKeyFieldNumber = 4;
+    private global::Phorkus.Proto.PublicKey publicKey_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.PublicKey PublicKey {
+      get { return publicKey_; }
+      set {
+        publicKey_ = value;
+      }
+    }
+
     /// <summary>Field number for the "nonce" field.</summary>
-    public const int NonceFieldNumber = 6;
+    public const int NonceFieldNumber = 5;
     private uint nonce_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public uint Nonce {
@@ -147,7 +135,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "block_height" field.</summary>
-    public const int BlockHeightFieldNumber = 7;
+    public const int BlockHeightFieldNumber = 6;
     private ulong blockHeight_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ulong BlockHeight {
@@ -158,7 +146,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "agent" field.</summary>
-    public const int AgentFieldNumber = 8;
+    public const int AgentFieldNumber = 7;
     private string agent_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Agent {
@@ -183,9 +171,8 @@ namespace Phorkus.Proto {
       }
       if (Version != other.Version) return false;
       if (Timestamp != other.Timestamp) return false;
-      if (Services != other.Services) return false;
-      if (Port != other.Port) return false;
       if (Address != other.Address) return false;
+      if (!object.Equals(PublicKey, other.PublicKey)) return false;
       if (Nonce != other.Nonce) return false;
       if (BlockHeight != other.BlockHeight) return false;
       if (Agent != other.Agent) return false;
@@ -197,9 +184,8 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (Version != 0) hash ^= Version.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
-      if (Services != 0UL) hash ^= Services.GetHashCode();
-      if (Port != 0) hash ^= Port.GetHashCode();
       if (Address.Length != 0) hash ^= Address.GetHashCode();
+      if (publicKey_ != null) hash ^= PublicKey.GetHashCode();
       if (Nonce != 0) hash ^= Nonce.GetHashCode();
       if (BlockHeight != 0UL) hash ^= BlockHeight.GetHashCode();
       if (Agent.Length != 0) hash ^= Agent.GetHashCode();
@@ -224,28 +210,24 @@ namespace Phorkus.Proto {
         output.WriteRawTag(16);
         output.WriteUInt64(Timestamp);
       }
-      if (Services != 0UL) {
-        output.WriteRawTag(24);
-        output.WriteUInt64(Services);
-      }
-      if (Port != 0) {
-        output.WriteRawTag(32);
-        output.WriteUInt32(Port);
-      }
       if (Address.Length != 0) {
-        output.WriteRawTag(42);
+        output.WriteRawTag(26);
         output.WriteString(Address);
       }
+      if (publicKey_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(PublicKey);
+      }
       if (Nonce != 0) {
-        output.WriteRawTag(48);
+        output.WriteRawTag(40);
         output.WriteUInt32(Nonce);
       }
       if (BlockHeight != 0UL) {
-        output.WriteRawTag(56);
+        output.WriteRawTag(48);
         output.WriteUInt64(BlockHeight);
       }
       if (Agent.Length != 0) {
-        output.WriteRawTag(66);
+        output.WriteRawTag(58);
         output.WriteString(Agent);
       }
       if (_unknownFields != null) {
@@ -262,14 +244,11 @@ namespace Phorkus.Proto {
       if (Timestamp != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
-      if (Services != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Services);
-      }
-      if (Port != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Port);
-      }
       if (Address.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Address);
+      }
+      if (publicKey_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PublicKey);
       }
       if (Nonce != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Nonce);
@@ -297,14 +276,14 @@ namespace Phorkus.Proto {
       if (other.Timestamp != 0UL) {
         Timestamp = other.Timestamp;
       }
-      if (other.Services != 0UL) {
-        Services = other.Services;
-      }
-      if (other.Port != 0) {
-        Port = other.Port;
-      }
       if (other.Address.Length != 0) {
         Address = other.Address;
+      }
+      if (other.publicKey_ != null) {
+        if (publicKey_ == null) {
+          publicKey_ = new global::Phorkus.Proto.PublicKey();
+        }
+        PublicKey.MergeFrom(other.PublicKey);
       }
       if (other.Nonce != 0) {
         Nonce = other.Nonce;
@@ -334,27 +313,26 @@ namespace Phorkus.Proto {
             Timestamp = input.ReadUInt64();
             break;
           }
-          case 24: {
-            Services = input.ReadUInt64();
-            break;
-          }
-          case 32: {
-            Port = input.ReadUInt32();
-            break;
-          }
-          case 42: {
+          case 26: {
             Address = input.ReadString();
             break;
           }
-          case 48: {
+          case 34: {
+            if (publicKey_ == null) {
+              publicKey_ = new global::Phorkus.Proto.PublicKey();
+            }
+            input.ReadMessage(publicKey_);
+            break;
+          }
+          case 40: {
             Nonce = input.ReadUInt32();
             break;
           }
-          case 56: {
+          case 48: {
             BlockHeight = input.ReadUInt64();
             break;
           }
-          case 66: {
+          case 58: {
             Agent = input.ReadString();
             break;
           }

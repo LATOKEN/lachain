@@ -16,7 +16,6 @@ namespace Phorkus.Networking
         
         DateTime Connected { get; }
 
-        void Send<T>(IMessage<T> message)
-            where T : IMessage<T>;
+        void Send(NetworkMessage message);
     }
 }

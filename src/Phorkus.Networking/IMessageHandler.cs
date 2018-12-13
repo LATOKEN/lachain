@@ -4,13 +4,11 @@ namespace Phorkus.Networking
 {
     public interface IMessageHandler
     {
-        void HandshakeRequest(HandshakeRequest request);
-        void HandshakeReply(HandshakeReply reply);
-        void GetBlocksByHashesRequest(GetBlocksByHashesRequest request);
-        void GetBlocksByHashesReply(GetBlocksByHashesReply reply);
-        void GetBlocksByHeightRangeRequest(GetBlocksByHeightRangeRequest request);
-        void GetBlocksByHeightRangeReply(GetBlocksByHeightRangeReply reply);
-        void GetTransactionsByHashesRequest(GetTransactionsByHashesRequest request);
-        void GetTransactionsByHashesReply(GetTransactionsByHashesReply reply);
+        void GetBlocksByHashesRequest(MessageEnvelope envelope, GetBlocksByHashesRequest request);
+        void GetBlocksByHashesReply(MessageEnvelope envelope, GetBlocksByHashesReply reply);
+        void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request);
+        void GetBlocksByHeightRangeReply(MessageEnvelope envelope, GetBlocksByHeightRangeReply reply);
+        void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request);
+        void GetTransactionsByHashesReply(MessageEnvelope envelope, GetTransactionsByHashesReply reply);
     }
 }

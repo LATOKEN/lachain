@@ -19,9 +19,7 @@ namespace Phorkus.Core.Network
         {
             Version = 0,
             Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            Services = 0,
-            Port = _networkConfig.Port,
-            Address = "localhost",
+            Address = $"tcp://192.168.88.154:{_networkConfig.Port}",
             Nonce = (uint) new Random().Next(1 << 30),
             BlockHeight = _blockchainContext.CurrentBlockHeaderHeight,
             Agent = "Phorkus-v0.0-dev"

@@ -7,8 +7,6 @@ namespace Phorkus.Networking
 {
     public class ServerWorker
     {
-        public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
-        
         public delegate void OnOpenDelegate(string endpoint);
         public event OnOpenDelegate OnOpen;
 
@@ -22,8 +20,7 @@ namespace Phorkus.Networking
         public event OnErrorDelegate OnError;
         
         private readonly NetworkConfig _networkConfig;
-
-        private readonly object _shouldClose = new object();
+        
         private bool _isActive;
         
         public ServerWorker(NetworkConfig networkConfig)
@@ -34,7 +31,7 @@ namespace Phorkus.Networking
         private void _Worker()
         {
             using (var context = new ZContext())
-            using (var socket = new ZSocket(context, ZSocketType.REP))
+            using (var socket = new ZSocket(context, ZSocketType.PAIR))
             {
                 var endpoint = $"tcp://{_networkConfig.Address}:{_networkConfig.Port}";
                 socket.Bind(endpoint);
@@ -49,19 +46,17 @@ namespace Phorkus.Networking
                         continue;
                     }
                     var buffer = frame.Read();
-                    if (buffer != null && buffer.Length > 0)
+                    if (buffer == null || buffer.Length <= 0)
+                        continue;
+                    try
                     {
-                        try
-                        {
-                            OnMessage?.Invoke(buffer);
-                        }
-                        catch (Exception e)
-                        {
-                            OnError?.Invoke(e.Message);
-                        }
+                        OnMessage?.Invoke(buffer);
                     }
-                    lock (_shouldClose)
-                        Monitor.Wait(_shouldClose, PollInterval);
+                    catch (Exception e)
+                    {
+                        Console.Error.WriteLine(e);
+                        OnError?.Invoke(e.Message);
+                    }
                 }
                 OnClose?.Invoke(endpoint);
             }
@@ -88,11 +83,7 @@ namespace Phorkus.Networking
         {
             if (_isActive)
                 throw new Exception("Server hasn't been started yet");
-            lock (_shouldClose)
-            {
-                _isActive = false;
-                Monitor.PulseAll(_shouldClose);
-            }
+            _isActive = false;
         }
     }
 }

@@ -41,7 +41,7 @@ namespace Phorkus.Proto {
             "b24iQAooR2V0VHJhbnNhY3Rpb25IYXNoZXNCeUJsb2NrSGVpZ2h0UmVxdWVz",
             "dBIUCgxibG9ja19oZWlnaHQYASABKAQiTgomR2V0VHJhbnNhY3Rpb25IYXNo",
             "ZXNCeUJsb2NrSGVpZ2h0UmVwbHkSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAEg",
-            "AygLMgguVUludDI1NiKrBAoOTmV0d29ya01lc3NhZ2USLgoRaGFuZHNoYWtl",
+            "AygLMgguVUludDI1NiLKBAoOTmV0d29ya01lc3NhZ2USLgoRaGFuZHNoYWtl",
             "X3JlcXVlc3QYASABKAsyES5IYW5kc2hha2VSZXF1ZXN0SAASKgoPaGFuZHNo",
             "YWtlX3JlcGx5GAIgASgLMg8uSGFuZHNoYWtlUmVwbHlIABJBChxnZXRfYmxv",
             "Y2tzX2J5X2hhc2hlc19yZXF1ZXN0GAMgASgLMhkuR2V0QmxvY2tzQnlIYXNo",
@@ -53,8 +53,8 @@ namespace Phorkus.Proto {
             "ABJNCiJnZXRfdHJhbnNhY3Rpb25zX2J5X2hhc2hlc19yZXF1ZXN0GAcgASgL",
             "Mh8uR2V0VHJhbnNhY3Rpb25zQnlIYXNoZXNSZXF1ZXN0SAASSQogZ2V0X3Ry",
             "YW5zYWN0aW9uc19ieV9oYXNoZXNfcmVwbHkYCCABKAsyHS5HZXRUcmFuc2Fj",
-            "dGlvbnNCeUhhc2hlc1JlcGx5SABCCQoHbWVzc2FnZUIQqgINUGhvcmt1cy5Q",
-            "cm90b2IGcHJvdG8z"));
+            "dGlvbnNCeUhhc2hlc1JlcGx5SAASHQoJc2lnbmF0dXJlGGQgASgLMgouU2ln",
+            "bmF0dXJlQgkKB21lc3NhZ2VCEKoCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -70,7 +70,7 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsByHashesReply), global::Phorkus.Proto.GetTransactionsByHashesReply.Parser, new[]{ "Transactions" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest), global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest.Parser, new[]{ "BlockHeight" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply), global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply.Parser, new[]{ "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "HandshakeRequest", "HandshakeReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply" }, new[]{ "Message" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "HandshakeRequest", "HandshakeReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "Signature" }, new[]{ "Message" }, null, null)
           }));
     }
     #endregion
@@ -1642,6 +1642,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public NetworkMessage(NetworkMessage other) : this() {
+      signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       switch (other.MessageCase) {
         case MessageOneofCase.HandshakeRequest:
           HandshakeRequest = other.HandshakeRequest.Clone();
@@ -1765,6 +1766,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "signature" field.</summary>
+    public const int SignatureFieldNumber = 100;
+    private global::Phorkus.Proto.Signature signature_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.Signature Signature {
+      get { return signature_; }
+      set {
+        signature_ = value;
+      }
+    }
+
     private object message_;
     /// <summary>Enum of possible cases for the "message" oneof.</summary>
     public enum MessageOneofCase {
@@ -1811,6 +1823,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(GetBlocksByHeightRangeReply, other.GetBlocksByHeightRangeReply)) return false;
       if (!object.Equals(GetTransactionsByHashesRequest, other.GetTransactionsByHashesRequest)) return false;
       if (!object.Equals(GetTransactionsByHashesReply, other.GetTransactionsByHashesReply)) return false;
+      if (!object.Equals(Signature, other.Signature)) return false;
       if (MessageCase != other.MessageCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1826,6 +1839,7 @@ namespace Phorkus.Proto {
       if (messageCase_ == MessageOneofCase.GetBlocksByHeightRangeReply) hash ^= GetBlocksByHeightRangeReply.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesRequest) hash ^= GetTransactionsByHashesRequest.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) hash ^= GetTransactionsByHashesReply.GetHashCode();
+      if (signature_ != null) hash ^= Signature.GetHashCode();
       hash ^= (int) messageCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1872,6 +1886,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(66);
         output.WriteMessage(GetTransactionsByHashesReply);
       }
+      if (signature_ != null) {
+        output.WriteRawTag(162, 6);
+        output.WriteMessage(Signature);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1904,6 +1922,9 @@ namespace Phorkus.Proto {
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(GetTransactionsByHashesReply);
       }
+      if (signature_ != null) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(Signature);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1914,6 +1935,12 @@ namespace Phorkus.Proto {
     public void MergeFrom(NetworkMessage other) {
       if (other == null) {
         return;
+      }
+      if (other.signature_ != null) {
+        if (signature_ == null) {
+          signature_ = new global::Phorkus.Proto.Signature();
+        }
+        Signature.MergeFrom(other.Signature);
       }
       switch (other.MessageCase) {
         case MessageOneofCase.HandshakeRequest:
@@ -2047,6 +2074,13 @@ namespace Phorkus.Proto {
             }
             input.ReadMessage(subBuilder);
             GetTransactionsByHashesReply = subBuilder;
+            break;
+          }
+          case 802: {
+            if (signature_ == null) {
+              signature_ = new global::Phorkus.Proto.Signature();
+            }
+            input.ReadMessage(signature_);
             break;
           }
         }

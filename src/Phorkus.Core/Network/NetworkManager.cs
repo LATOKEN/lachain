@@ -174,8 +174,6 @@ namespace Phorkus.Core.Network
         {
             if (string.IsNullOrEmpty(node.Address))
                 return false;
-            if (node.Port == 0)
-                return false;
             if (string.IsNullOrEmpty(node.Agent))
                 return false;
             return node.Nonce != 0;

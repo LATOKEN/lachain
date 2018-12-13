@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Phorkus.Proto;
 using ZeroMQ;
+using ZeroMQ.lib;
 
 namespace Phorkus.Networking
 {
@@ -39,9 +41,8 @@ namespace Phorkus.Networking
         
         private readonly object _queueNotEmpty = new object();
         private readonly object _shouldClose = new object();
-
-        public void Send<T>(IMessage<T> message)
-            where T : IMessage<T>
+        
+        public void Send(NetworkMessage message)
         {
             lock (_queueNotEmpty)
             {
@@ -53,7 +54,7 @@ namespace Phorkus.Networking
         private void _Worker()
         {
             using (var context = new ZContext())
-            using (var socket = new ZSocket(context, ZSocketType.REQ))
+            using (var socket = new ZSocket(context, ZSocketType.PAIR))
             {
                 var endpoint = $"tcp://{Address.Host}:{Address.Port}";
                 socket.Connect(endpoint);
@@ -66,17 +67,23 @@ namespace Phorkus.Networking
                     {
                         while (_messageQueue.Count == 0)
                             Monitor.Wait(_queueNotEmpty);
-                        message = _messageQueue.Peek();
+                        message = _messageQueue.Dequeue();
                     }
                     if (message is null)
                         continue;
-                    socket.SendFrame(new ZFrame(message.ToByteArray()), out var error);
-                    if (Equals(error, ZError.None))
+                    ZError error;
+                    do
                     {
-                        OnSent?.Invoke(this, message);
-                        continue;
+                        var sent = socket.SendFrame(new ZFrame(message.ToByteArray()), ZSocketFlags.DontWait, out error);
+                        if (sent)
+                            break;
+                    } while (Equals(error, ZError.EAGAIN));
+                    if (!Equals(error, ZError.None))
+                    {
+                        OnError?.Invoke(this, $"Unable to send message, got error ({error})");
+                        break;
                     }
-                    OnError?.Invoke(this, $"Unable to send message, got error ({error})");
+                    OnSent?.Invoke(this, message);
                 }
                 socket.Disconnect(endpoint);
                 OnClose?.Invoke(this, endpoint);
@@ -87,7 +94,6 @@ namespace Phorkus.Networking
         {
             if (IsConnected)
                 throw new Exception("Client has already been started");
-            
             Task.Factory.StartNew(() =>
             {
                 try
