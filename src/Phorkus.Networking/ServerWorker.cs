@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using ZeroMQ;
+using NetMQ;
+using NetMQ.Sockets;
 
 namespace Phorkus.Networking
 {
@@ -30,29 +30,23 @@ namespace Phorkus.Networking
 
         private void _Worker()
         {
-            using (var context = new ZContext())
-            using (var socket = new ZSocket(context, ZSocketType.PULL))
+            var endpoint = $"tcp://{_networkConfig.Address}:{_networkConfig.Port}";
+            using (var socket = new PullSocket())
             {
-                var endpoint = $"tcp://{_networkConfig.Address}:{_networkConfig.Port}";
                 socket.Bind(endpoint);
                 IsActive = true;
                 OnOpen?.Invoke(endpoint);
                 while (IsActive)
                 {
-                    var frame = socket.ReceiveFrame(out var error);
-                    if (!Equals(error, ZError.None))
-                    {
-                        OnError?.Invoke("Unable to receive frame, got error (" + error + ")");
+                    if (!socket.TryReceiveFrameBytes(out var buffer))
                         continue;
-                    }
-                    var buffer = frame.Read();
                     if (buffer == null || buffer.Length <= 0)
                         continue;
                     Task.Factory.StartNew(() =>
                     {
                         try
                         {
-                            OnMessage?.Invoke(buffer);   
+                            OnMessage?.Invoke(buffer);
                         }
                         catch (Exception e)
                         {

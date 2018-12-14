@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using NetMQ;
+using NetMQ.Sockets;
 using Phorkus.Proto;
-using ZeroMQ;
 
 namespace Phorkus.Networking
 {
@@ -51,8 +52,7 @@ namespace Phorkus.Networking
 
         private void _Worker()
         {
-            using (var context = new ZContext())
-            using (var socket = new ZSocket(context, ZSocketType.PUSH))
+            using (var socket = new PushSocket())
             {
                 var endpoint = $"tcp://{Address.Host}:{Address.Port}";
                 socket.Connect(endpoint);
@@ -69,13 +69,8 @@ namespace Phorkus.Networking
                     }
                     if (message is null)
                         continue;
-                    socket.SendFrame(new ZFrame(message.ToByteArray()), ZSocketFlags.DontWait, out var error);
-                    if (!Equals(error, ZError.None))
-                    {
-                        OnError?.Invoke(this, $"Unable to send message, got error ({error})");
-                        continue;
-                    }
-                    OnSent?.Invoke(this, message);
+                    if (socket.TrySendFrame(message.ToByteArray()))
+                        OnSent?.Invoke(this, message);
                 }
                 socket.Disconnect(endpoint);
                 OnClose?.Invoke(this, endpoint);
