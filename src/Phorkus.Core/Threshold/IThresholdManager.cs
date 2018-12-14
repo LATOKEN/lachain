@@ -1,5 +1,4 @@
 ﻿using Phorkus.Crypto;
-using Phorkus.Network.Grpc;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Threshold
@@ -10,6 +9,6 @@ namespace Phorkus.Core.Threshold
         
         byte[] SignData(KeyPair keyPair, string curveType, byte[] message);
 
-        ThresholdMessage HandleThresholdMessage(ThresholdMessage thresholdMessage, PublicKey publicKey);
+        ThresholdRequest HandleThresholdMessage(ThresholdRequest thresholdMessage, PublicKey publicKey);
     }
 }

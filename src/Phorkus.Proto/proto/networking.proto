@@ -55,6 +55,10 @@ message GetTransactionHashesByBlockHeightReply {
     repeated UInt256 transaction_hashes = 1;
 }
 
+message ThresholdRequest {
+    bytes message = 1;
+}
+
 message NetworkMessage {
     uint32 magic = 1;
     oneof message {
@@ -66,6 +70,7 @@ message NetworkMessage {
         GetBlocksByHeightRangeReply get_blocks_by_height_range_reply = 15;
         GetTransactionsByHashesRequest get_transactions_by_hashes_request = 16;
         GetTransactionsByHashesReply get_transactions_by_hashes_reply = 17;
+        ThresholdRequest threshold_request = 18;
     }
     Signature signature = 100;
 }

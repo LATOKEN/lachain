@@ -40,21 +40,23 @@ namespace Phorkus.Proto {
             "aW9ucxgBIAMoCzISLlNpZ25lZFRyYW5zYWN0aW9uIkAKKEdldFRyYW5zYWN0",
             "aW9uSGFzaGVzQnlCbG9ja0hlaWdodFJlcXVlc3QSFAoMYmxvY2tfaGVpZ2h0",
             "GAEgASgEIk4KJkdldFRyYW5zYWN0aW9uSGFzaGVzQnlCbG9ja0hlaWdodFJl",
-            "cGx5EiQKEnRyYW5zYWN0aW9uX2hhc2hlcxgBIAMoCzIILlVJbnQyNTYi2QQK",
-            "Dk5ldHdvcmtNZXNzYWdlEg0KBW1hZ2ljGAEgASgNEi4KEWhhbmRzaGFrZV9y",
-            "ZXF1ZXN0GAogASgLMhEuSGFuZHNoYWtlUmVxdWVzdEgAEioKD2hhbmRzaGFr",
-            "ZV9yZXBseRgLIAEoCzIPLkhhbmRzaGFrZVJlcGx5SAASQQocZ2V0X2Jsb2Nr",
-            "c19ieV9oYXNoZXNfcmVxdWVzdBgMIAEoCzIZLkdldEJsb2Nrc0J5SGFzaGVz",
-            "UmVxdWVzdEgAEj0KGmdldF9ibG9ja3NfYnlfaGFzaGVzX3JlcGx5GA0gASgL",
-            "MhcuR2V0QmxvY2tzQnlIYXNoZXNSZXBseUgAEkwKImdldF9ibG9ja3NfYnlf",
-            "aGVpZ2h0X3JhbmdlX3JlcXVlc3QYDiABKAsyHi5HZXRCbG9ja3NCeUhlaWdo",
-            "dFJhbmdlUmVxdWVzdEgAEkgKIGdldF9ibG9ja3NfYnlfaGVpZ2h0X3Jhbmdl",
-            "X3JlcGx5GA8gASgLMhwuR2V0QmxvY2tzQnlIZWlnaHRSYW5nZVJlcGx5SAAS",
-            "TQoiZ2V0X3RyYW5zYWN0aW9uc19ieV9oYXNoZXNfcmVxdWVzdBgQIAEoCzIf",
-            "LkdldFRyYW5zYWN0aW9uc0J5SGFzaGVzUmVxdWVzdEgAEkkKIGdldF90cmFu",
-            "c2FjdGlvbnNfYnlfaGFzaGVzX3JlcGx5GBEgASgLMh0uR2V0VHJhbnNhY3Rp",
-            "b25zQnlIYXNoZXNSZXBseUgAEh0KCXNpZ25hdHVyZRhkIAEoCzIKLlNpZ25h",
-            "dHVyZUIJCgdtZXNzYWdlQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "cGx5EiQKEnRyYW5zYWN0aW9uX2hhc2hlcxgBIAMoCzIILlVJbnQyNTYiIwoQ",
+            "VGhyZXNob2xkUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIokFCg5OZXR3b3Jr",
+            "TWVzc2FnZRINCgVtYWdpYxgBIAEoDRIuChFoYW5kc2hha2VfcmVxdWVzdBgK",
+            "IAEoCzIRLkhhbmRzaGFrZVJlcXVlc3RIABIqCg9oYW5kc2hha2VfcmVwbHkY",
+            "CyABKAsyDy5IYW5kc2hha2VSZXBseUgAEkEKHGdldF9ibG9ja3NfYnlfaGFz",
+            "aGVzX3JlcXVlc3QYDCABKAsyGS5HZXRCbG9ja3NCeUhhc2hlc1JlcXVlc3RI",
+            "ABI9ChpnZXRfYmxvY2tzX2J5X2hhc2hlc19yZXBseRgNIAEoCzIXLkdldEJs",
+            "b2Nrc0J5SGFzaGVzUmVwbHlIABJMCiJnZXRfYmxvY2tzX2J5X2hlaWdodF9y",
+            "YW5nZV9yZXF1ZXN0GA4gASgLMh4uR2V0QmxvY2tzQnlIZWlnaHRSYW5nZVJl",
+            "cXVlc3RIABJICiBnZXRfYmxvY2tzX2J5X2hlaWdodF9yYW5nZV9yZXBseRgP",
+            "IAEoCzIcLkdldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VSZXBseUgAEk0KImdldF90",
+            "cmFuc2FjdGlvbnNfYnlfaGFzaGVzX3JlcXVlc3QYECABKAsyHy5HZXRUcmFu",
+            "c2FjdGlvbnNCeUhhc2hlc1JlcXVlc3RIABJJCiBnZXRfdHJhbnNhY3Rpb25z",
+            "X2J5X2hhc2hlc19yZXBseRgRIAEoCzIdLkdldFRyYW5zYWN0aW9uc0J5SGFz",
+            "aGVzUmVwbHlIABIuChF0aHJlc2hvbGRfcmVxdWVzdBgSIAEoCzIRLlRocmVz",
+            "aG9sZFJlcXVlc3RIABIdCglzaWduYXR1cmUYZCABKAsyCi5TaWduYXR1cmVC",
+            "CQoHbWVzc2FnZUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -70,7 +72,8 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsByHashesReply), global::Phorkus.Proto.GetTransactionsByHashesReply.Parser, new[]{ "Transactions" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest), global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest.Parser, new[]{ "BlockHeight" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply), global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply.Parser, new[]{ "TransactionHashes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "Magic", "HandshakeRequest", "HandshakeReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "Signature" }, new[]{ "Message" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ThresholdRequest), global::Phorkus.Proto.ThresholdRequest.Parser, new[]{ "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "Magic", "HandshakeRequest", "HandshakeReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "ThresholdRequest", "Signature" }, new[]{ "Message" }, null, null)
           }));
     }
     #endregion
@@ -1617,6 +1620,135 @@ namespace Phorkus.Proto {
 
   }
 
+  public sealed partial class ThresholdRequest : pb::IMessage<ThresholdRequest> {
+    private static readonly pb::MessageParser<ThresholdRequest> _parser = new pb::MessageParser<ThresholdRequest>(() => new ThresholdRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ThresholdRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[12]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ThresholdRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ThresholdRequest(ThresholdRequest other) : this() {
+      message_ = other.message_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ThresholdRequest Clone() {
+      return new ThresholdRequest(this);
+    }
+
+    /// <summary>Field number for the "message" field.</summary>
+    public const int MessageFieldNumber = 1;
+    private pb::ByteString message_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pb::ByteString Message {
+      get { return message_; }
+      set {
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ThresholdRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ThresholdRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Message != other.Message) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Message.Length != 0) hash ^= Message.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Message.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteBytes(Message);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Message.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Message);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ThresholdRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Message.Length != 0) {
+        Message = other.Message;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Message = input.ReadBytes();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class NetworkMessage : pb::IMessage<NetworkMessage> {
     private static readonly pb::MessageParser<NetworkMessage> _parser = new pb::MessageParser<NetworkMessage>(() => new NetworkMessage());
     private pb::UnknownFieldSet _unknownFields;
@@ -1625,7 +1757,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1668,6 +1800,9 @@ namespace Phorkus.Proto {
           break;
         case MessageOneofCase.GetTransactionsByHashesReply:
           GetTransactionsByHashesReply = other.GetTransactionsByHashesReply.Clone();
+          break;
+        case MessageOneofCase.ThresholdRequest:
+          ThresholdRequest = other.ThresholdRequest.Clone();
           break;
       }
 
@@ -1778,6 +1913,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "threshold_request" field.</summary>
+    public const int ThresholdRequestFieldNumber = 18;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.ThresholdRequest ThresholdRequest {
+      get { return messageCase_ == MessageOneofCase.ThresholdRequest ? (global::Phorkus.Proto.ThresholdRequest) message_ : null; }
+      set {
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.ThresholdRequest;
+      }
+    }
+
     /// <summary>Field number for the "signature" field.</summary>
     public const int SignatureFieldNumber = 100;
     private global::Phorkus.Proto.Signature signature_;
@@ -1801,6 +1947,7 @@ namespace Phorkus.Proto {
       GetBlocksByHeightRangeReply = 15,
       GetTransactionsByHashesRequest = 16,
       GetTransactionsByHashesReply = 17,
+      ThresholdRequest = 18,
     }
     private MessageOneofCase messageCase_ = MessageOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1836,6 +1983,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(GetBlocksByHeightRangeReply, other.GetBlocksByHeightRangeReply)) return false;
       if (!object.Equals(GetTransactionsByHashesRequest, other.GetTransactionsByHashesRequest)) return false;
       if (!object.Equals(GetTransactionsByHashesReply, other.GetTransactionsByHashesReply)) return false;
+      if (!object.Equals(ThresholdRequest, other.ThresholdRequest)) return false;
       if (!object.Equals(Signature, other.Signature)) return false;
       if (MessageCase != other.MessageCase) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -1853,6 +2001,7 @@ namespace Phorkus.Proto {
       if (messageCase_ == MessageOneofCase.GetBlocksByHeightRangeReply) hash ^= GetBlocksByHeightRangeReply.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesRequest) hash ^= GetTransactionsByHashesRequest.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) hash ^= GetTransactionsByHashesReply.GetHashCode();
+      if (messageCase_ == MessageOneofCase.ThresholdRequest) hash ^= ThresholdRequest.GetHashCode();
       if (signature_ != null) hash ^= Signature.GetHashCode();
       hash ^= (int) messageCase_;
       if (_unknownFields != null) {
@@ -1904,6 +2053,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(138, 1);
         output.WriteMessage(GetTransactionsByHashesReply);
       }
+      if (messageCase_ == MessageOneofCase.ThresholdRequest) {
+        output.WriteRawTag(146, 1);
+        output.WriteMessage(ThresholdRequest);
+      }
       if (signature_ != null) {
         output.WriteRawTag(162, 6);
         output.WriteMessage(Signature);
@@ -1942,6 +2095,9 @@ namespace Phorkus.Proto {
       }
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(GetTransactionsByHashesReply);
+      }
+      if (messageCase_ == MessageOneofCase.ThresholdRequest) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(ThresholdRequest);
       }
       if (signature_ != null) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(Signature);
@@ -2014,6 +2170,12 @@ namespace Phorkus.Proto {
             GetTransactionsByHashesReply = new global::Phorkus.Proto.GetTransactionsByHashesReply();
           }
           GetTransactionsByHashesReply.MergeFrom(other.GetTransactionsByHashesReply);
+          break;
+        case MessageOneofCase.ThresholdRequest:
+          if (ThresholdRequest == null) {
+            ThresholdRequest = new global::Phorkus.Proto.ThresholdRequest();
+          }
+          ThresholdRequest.MergeFrom(other.ThresholdRequest);
           break;
       }
 
@@ -2102,6 +2264,15 @@ namespace Phorkus.Proto {
             }
             input.ReadMessage(subBuilder);
             GetTransactionsByHashesReply = subBuilder;
+            break;
+          }
+          case 146: {
+            global::Phorkus.Proto.ThresholdRequest subBuilder = new global::Phorkus.Proto.ThresholdRequest();
+            if (messageCase_ == MessageOneofCase.ThresholdRequest) {
+              subBuilder.MergeFrom(ThresholdRequest);
+            }
+            input.ReadMessage(subBuilder);
+            ThresholdRequest = subBuilder;
             break;
           }
           case 802: {

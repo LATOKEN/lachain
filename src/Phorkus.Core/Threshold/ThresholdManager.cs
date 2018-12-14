@@ -13,7 +13,6 @@ using Phorkus.Hermes.Crypto;
 using Phorkus.Hermes.Crypto.Key;
 using Phorkus.Hermes.Signer;
 using Phorkus.Logger;
-using Phorkus.Network.Grpc;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -142,7 +141,7 @@ namespace Phorkus.Core.Threshold
             return result;
         }
 
-        public ThresholdMessage HandleThresholdMessage(ThresholdMessage thresholdMessage, PublicKey publicKey)
+        public ThresholdRequest HandleThresholdMessage(ThresholdRequest thresholdMessage, PublicKey publicKey)
         {
             var validatorIndex = _validatorManager.GetValidatorIndex(publicKey);
 
@@ -164,7 +163,7 @@ namespace Phorkus.Core.Threshold
                 }
             }
 
-            return new ThresholdMessage
+            return new ThresholdRequest
             {
                 Message = ByteString.CopyFrom(bytes)
             };

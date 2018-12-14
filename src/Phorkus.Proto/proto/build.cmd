@@ -15,9 +15,9 @@ protoc --csharp_out ../ node.proto
 protoc --csharp_out ../ transaction.proto
 protoc --csharp_out ../ networking.proto
 
-cd ..
-mkdir Grpc
-cd proto
+rem cd ..
+rem mkdir Grpc
+rem cd proto
 
 rem protoc --csharp_out ../Grpc -I . -I ./grpc blockchain_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=%PLUGIN%
 rem protoc --csharp_out ../Grpc -I . -I ./grpc consensus_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=%PLUGIN%
