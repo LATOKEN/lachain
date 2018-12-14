@@ -67,14 +67,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* check next block index */
             var currentBlockHeader = _globalRepository.GetTotalBlockHeight();
             if (!_IsGenesisBlock(block) && currentBlockHeader + 1 != block.Header.Index)
-                return OperatingError.SequenceMismatched;
+                return OperatingError.InvalidNonce;
             var exists = _blockRepository.GetBlockByHeight(block.Header.Index);
             if (exists != null)
                 return OperatingError.BlockAlreadyExists;
             /* check prev block hash */
             var latestBlock = _blockRepository.GetBlockByHeight(currentBlockHeader);
             if (latestBlock != null && !block.Header.PrevBlockHash.Equals(latestBlock.Hash))
-                return OperatingError.SequenceMismatched;
+                return OperatingError.PrevBlockHashMismatched;
             /* verify block signatures */
             error = VerifySignatures(block);
             if (error != OperatingError.Ok)

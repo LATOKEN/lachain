@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace Phorkus.Core.Network
         private readonly INetworkManager _networkManager;
         
         private readonly IDictionary<IRemotePeer, ulong> _peerHeights
-            = new Dictionary<IRemotePeer, ulong>();
+            = new ConcurrentDictionary<IRemotePeer, ulong>();
         
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
@@ -86,7 +87,7 @@ namespace Phorkus.Core.Network
         public void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout)
         {
             var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
-            if (block.Header.Index <= myHeight)
+            if (block.Header.Index != myHeight + 1)
                 return;
             /* if we don't have transactions from block than request it */
             var haveNotTxs = _HaveTransactions(block);

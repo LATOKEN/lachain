@@ -12,7 +12,7 @@
         DoubleSpend,
         InvalidTransaction,
         AlreadyExists,
-        SequenceMismatched,
+        PrevBlockHashMismatched,
         InvalidBlock,
         QuorumNotReached,
         InvalidState,
