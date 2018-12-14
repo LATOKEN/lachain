@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Google.Protobuf;
-using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.RocksDB

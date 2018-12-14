@@ -101,9 +101,6 @@ namespace Phorkus.Networking
                     _clientWorkers.Remove(address);
                 }
             };
-            remotePeer.OnSent += (worker, message) =>
-            {
-            };
             remotePeer.OnError += (worker, message) =>
             {
                 Console.Error.WriteLine("Error: " + message);
@@ -138,7 +135,7 @@ namespace Phorkus.Networking
                 Buffer = ByteString.CopyFrom(rawPublicKey)
             };
             if (!_authorizedKeys.Contains(publicKey))
-                throw new Exception("This node hasn't been authorized");
+                throw new Exception("This node hasn't been authorized (" + rawPublicKey.ToHex() + ")");
             var envelope = new MessageEnvelope
             {
                 MessageFactory = _messageFactory,
@@ -249,7 +246,7 @@ namespace Phorkus.Networking
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                Console.Error.WriteLine(e.Message);
             }
         }
 

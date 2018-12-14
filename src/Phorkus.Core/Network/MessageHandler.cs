@@ -47,14 +47,9 @@ namespace Phorkus.Core.Network
         {
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
-            {
-                lock (this)
-                {
-                    _blockSynchronizer.HandleBlockFromPeer(block, envelope.RemotePeer, TimeSpan.FromSeconds(5));
-                }
-            }
+                _blockSynchronizer.HandleBlockFromPeer(block, envelope.RemotePeer, TimeSpan.FromSeconds(5));
         }
-
+        
         public void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request)
         {
             var blockHashes = _blockRepository.GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)

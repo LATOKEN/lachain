@@ -97,7 +97,7 @@ namespace Phorkus.Console
             
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
-            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
+            System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
 //            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
 //            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
