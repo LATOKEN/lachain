@@ -18,11 +18,6 @@ message ChangeViewRequest {
     uint32 new_view_number = 2;
 }
 
-//message ChangeViewReply {
-//    Validator validator = 1;
-//    uint32 view_number = 2;
-//}
-
 message BlockPrepareRequest {
     Validator validator = 1;
     uint64 nonce = 2;
@@ -36,35 +31,3 @@ message BlockPrepareReply {
     Validator validator = 1;
     Signature signature = 2;
 }
-
-///* TODO: "this code should be refactored" */
-//message ConsensusChangeView {
-//    uint32 new_view_number = 1;
-//}
-//message ConsensusPrepareRequest {
-//    uint64 nonce = 1;
-//    repeated UInt256 transaction_hashes = 2;
-//    Transaction miner_transaction = 3;
-//    Signature signature = 4;
-//    uint64 timestamp = 5;
-//}
-//message ConsensusPrepareResponse {
-//    Signature signature = 1;
-//}
-//message ConsensusPayload {
-//    uint32 version = 1;
-//    UInt256 prev_hash = 2;
-//    uint64 block_index = 3;
-//    uint32 validator_index = 4;
-//    uint64 timestamp = 5;
-//    uint32 view_number = 6;
-//    oneof message {
-//        ConsensusChangeView change_view = 8;
-//        ConsensusPrepareRequest prepare_request = 9;
-//        ConsensusPrepareResponse prepare_response = 10;
-//    }
-//}
-//message ConsensusMessage {   
-//    ConsensusPayload payload = 1;
-//    Signature signature = 2;
-//}

@@ -66,7 +66,7 @@ namespace Phorkus.Core.Consensus
             var block = new Block
             {
                 Header = header,
-                TransactionHashes = { CurrentProposal.TransactionHashes },
+                TransactionHashes = {CurrentProposal.TransactionHashes},
                 Hash = header.ToHash256(),
                 Multisig = new MultiSig()
             };
@@ -131,46 +131,46 @@ namespace Phorkus.Core.Consensus
             };
         }
 
-        public ChangeViewRequest MakeChangeViewRequest()
+        public ConsensusMessage MakeChangeViewRequest()
         {
-            return new ChangeViewRequest
+            return new ConsensusMessage
             {
-                Validator = MakeValidator(),
-                NewViewNumber = Validators[MyIndex].ExpectedViewNumber
-            };
-        }
-
-        public ChangeViewReply MakeChangeViewReply()
-        {
-            return new ChangeViewReply
-            {
-                Validator = MakeValidator(),
-                ViewNumber = Validators[MyIndex].ExpectedViewNumber
-            };
-        }
-        
-        public BlockPrepareRequest MakePrepareRequest(BlockWithTransactions block, Signature signature)
-        {
-            return new BlockPrepareRequest
-            {
-                Validator = MakeValidator(),
-                Nonce = block.Block.Header.Nonce,
-                TransactionHashes =
+                ChangeViewRequest = new ChangeViewRequest
                 {
-                    block.Transactions.Select(tx => tx.Hash)
-                },
-                MinerTransaction = block.Transactions.First().Transaction,
-                Signature = signature,
-                Timestamp = block.Block.Header.Timestamp
+                    Validator = MakeValidator(),
+                    NewViewNumber = Validators[MyIndex].ExpectedViewNumber
+                }
             };
         }
 
-        public BlockPrepareReply MakePrepareResponse(Signature signature)
+        public ConsensusMessage MakePrepareRequest(BlockWithTransactions block, Signature signature)
         {
-            return new BlockPrepareReply
+            return new ConsensusMessage
             {
-                Validator = MakeValidator(),
-                Signature = signature
+                BlockPrepareRequest = new BlockPrepareRequest
+                {
+                    Validator = MakeValidator(),
+                    Nonce = block.Block.Header.Nonce,
+                    TransactionHashes =
+                    {
+                        block.Transactions.Select(tx => tx.Hash)
+                    },
+                    MinerTransaction = block.Transactions.First().Transaction,
+                    Signature = signature,
+                    Timestamp = block.Block.Header.Timestamp
+                }
+            };
+        }
+
+        public ConsensusMessage MakePrepareResponse(Signature signature)
+        {
+            return new ConsensusMessage
+            {
+                BlockPrepareReply = new BlockPrepareReply
+                {
+                    Validator = MakeValidator(),
+                    Signature = signature
+                }
             };
         }
 

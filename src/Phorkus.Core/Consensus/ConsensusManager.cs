@@ -31,6 +31,7 @@ namespace Phorkus.Core.Consensus
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
         private readonly IBlockSynchronizer _blockchainSynchronizer;
+        private readonly MessageFactory _messageFactory;
 
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
@@ -64,6 +65,7 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
+            _messageFactory = new MessageFactory(_keyPair, _crypto);
 
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
             _context = new ConsensusContext(_keyPair,
@@ -71,7 +73,7 @@ namespace Phorkus.Core.Consensus
             _random = new SecureRandom();
             _stopped = true;
             _gotNewBlock = false;
-
+            
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
 
@@ -519,20 +521,9 @@ namespace Phorkus.Core.Consensus
             return true;
         }
 
-        private void SignAndBroadcast(ConsensusPayload payload)
+        private void SignAndBroadcast(ConsensusMessage payload)
         {
-            var message = new ConsensusMessage
-            {
-                Payload = payload,
-                Signature = _crypto
-                    .Sign(payload.ToHash256().ToByteArray(), _context.KeyPair.PrivateKey.Buffer.ToByteArray())
-                    .ToSignature()
-            };
-            _broadcaster.Broadcast(new Message
-            {
-                Type = MessageType.ConsensusMessage,
-                ConsensusMessage = message
-            });
+            _broadcaster.Broadcast(_messageFactory.ConsensusMessage(payload));
         }
     }
 }

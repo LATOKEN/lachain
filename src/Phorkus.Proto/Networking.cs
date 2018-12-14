@@ -25,40 +25,46 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBuZXR3b3JraW5nLnByb3RvGg1kZWZhdWx0LnByb3RvGhF0cmFuc2FjdGlv",
-            "bi5wcm90bxoLYmxvY2sucHJvdG8aCm5vZGUucHJvdG8iJwoQSGFuZHNoYWtl",
-            "UmVxdWVzdBITCgRub2RlGAEgASgLMgUuTm9kZSIlCg5IYW5kc2hha2VSZXBs",
-            "eRITCgRub2RlGAEgASgLMgUuTm9kZSIgCgtQaW5nUmVxdWVzdBIRCgl0aW1l",
-            "c3RhbXAYASABKAQiHgoJUGluZ1JlcGx5EhEKCXRpbWVzdGFtcBgBIAEoBCI6",
-            "ChhHZXRCbG9ja3NCeUhhc2hlc1JlcXVlc3QSHgoMYmxvY2tfaGFzaGVzGAEg",
-            "AygLMgguVUludDI1NiIwChZHZXRCbG9ja3NCeUhhc2hlc1JlcGx5EhYKBmJs",
-            "b2NrcxgBIAMoCzIGLkJsb2NrIkcKHUdldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VS",
-            "ZXF1ZXN0EhMKC2Zyb21faGVpZ2h0GAEgASgEEhEKCXRvX2hlaWdodBgCIAEo",
-            "BCI9ChtHZXRCbG9ja3NCeUhlaWdodFJhbmdlUmVwbHkSHgoMYmxvY2tfaGFz",
-            "aGVzGAEgAygLMgguVUludDI1NiJGCh5HZXRUcmFuc2FjdGlvbnNCeUhhc2hl",
-            "c1JlcXVlc3QSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAEgAygLMgguVUludDI1",
-            "NiJIChxHZXRUcmFuc2FjdGlvbnNCeUhhc2hlc1JlcGx5EigKDHRyYW5zYWN0",
-            "aW9ucxgBIAMoCzISLlNpZ25lZFRyYW5zYWN0aW9uIkAKKEdldFRyYW5zYWN0",
-            "aW9uSGFzaGVzQnlCbG9ja0hlaWdodFJlcXVlc3QSFAoMYmxvY2tfaGVpZ2h0",
-            "GAEgASgEIk4KJkdldFRyYW5zYWN0aW9uSGFzaGVzQnlCbG9ja0hlaWdodFJl",
-            "cGx5EiQKEnRyYW5zYWN0aW9uX2hhc2hlcxgBIAMoCzIILlVJbnQyNTYiIwoQ",
-            "VGhyZXNob2xkUmVxdWVzdBIPCgdtZXNzYWdlGAEgASgMIokFCg5OZXR3b3Jr",
-            "TWVzc2FnZRINCgVtYWdpYxgBIAEoDRIuChFoYW5kc2hha2VfcmVxdWVzdBgK",
-            "IAEoCzIRLkhhbmRzaGFrZVJlcXVlc3RIABIqCg9oYW5kc2hha2VfcmVwbHkY",
-            "CyABKAsyDy5IYW5kc2hha2VSZXBseUgAEkEKHGdldF9ibG9ja3NfYnlfaGFz",
-            "aGVzX3JlcXVlc3QYDCABKAsyGS5HZXRCbG9ja3NCeUhhc2hlc1JlcXVlc3RI",
-            "ABI9ChpnZXRfYmxvY2tzX2J5X2hhc2hlc19yZXBseRgNIAEoCzIXLkdldEJs",
-            "b2Nrc0J5SGFzaGVzUmVwbHlIABJMCiJnZXRfYmxvY2tzX2J5X2hlaWdodF9y",
-            "YW5nZV9yZXF1ZXN0GA4gASgLMh4uR2V0QmxvY2tzQnlIZWlnaHRSYW5nZVJl",
-            "cXVlc3RIABJICiBnZXRfYmxvY2tzX2J5X2hlaWdodF9yYW5nZV9yZXBseRgP",
-            "IAEoCzIcLkdldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VSZXBseUgAEk0KImdldF90",
-            "cmFuc2FjdGlvbnNfYnlfaGFzaGVzX3JlcXVlc3QYECABKAsyHy5HZXRUcmFu",
-            "c2FjdGlvbnNCeUhhc2hlc1JlcXVlc3RIABJJCiBnZXRfdHJhbnNhY3Rpb25z",
-            "X2J5X2hhc2hlc19yZXBseRgRIAEoCzIdLkdldFRyYW5zYWN0aW9uc0J5SGFz",
-            "aGVzUmVwbHlIABIuChF0aHJlc2hvbGRfcmVxdWVzdBgSIAEoCzIRLlRocmVz",
-            "aG9sZFJlcXVlc3RIABIdCglzaWduYXR1cmUYZCABKAsyCi5TaWduYXR1cmVC",
-            "CQoHbWVzc2FnZUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "bi5wcm90bxoLYmxvY2sucHJvdG8aCm5vZGUucHJvdG8aD2NvbnNlbnN1cy5w",
+            "cm90byInChBIYW5kc2hha2VSZXF1ZXN0EhMKBG5vZGUYASABKAsyBS5Ob2Rl",
+            "IiUKDkhhbmRzaGFrZVJlcGx5EhMKBG5vZGUYASABKAsyBS5Ob2RlIiAKC1Bp",
+            "bmdSZXF1ZXN0EhEKCXRpbWVzdGFtcBgBIAEoBCIeCglQaW5nUmVwbHkSEQoJ",
+            "dGltZXN0YW1wGAEgASgEIjoKGEdldEJsb2Nrc0J5SGFzaGVzUmVxdWVzdBIe",
+            "CgxibG9ja19oYXNoZXMYASADKAsyCC5VSW50MjU2IjAKFkdldEJsb2Nrc0J5",
+            "SGFzaGVzUmVwbHkSFgoGYmxvY2tzGAEgAygLMgYuQmxvY2siRwodR2V0Qmxv",
+            "Y2tzQnlIZWlnaHRSYW5nZVJlcXVlc3QSEwoLZnJvbV9oZWlnaHQYASABKAQS",
+            "EQoJdG9faGVpZ2h0GAIgASgEIj0KG0dldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VS",
+            "ZXBseRIeCgxibG9ja19oYXNoZXMYASADKAsyCC5VSW50MjU2IkYKHkdldFRy",
+            "YW5zYWN0aW9uc0J5SGFzaGVzUmVxdWVzdBIkChJ0cmFuc2FjdGlvbl9oYXNo",
+            "ZXMYASADKAsyCC5VSW50MjU2IkgKHEdldFRyYW5zYWN0aW9uc0J5SGFzaGVz",
+            "UmVwbHkSKAoMdHJhbnNhY3Rpb25zGAEgAygLMhIuU2lnbmVkVHJhbnNhY3Rp",
+            "b24iQAooR2V0VHJhbnNhY3Rpb25IYXNoZXNCeUJsb2NrSGVpZ2h0UmVxdWVz",
+            "dBIUCgxibG9ja19oZWlnaHQYASABKAQiTgomR2V0VHJhbnNhY3Rpb25IYXNo",
+            "ZXNCeUJsb2NrSGVpZ2h0UmVwbHkSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAEg",
+            "AygLMgguVUludDI1NiIjChBUaHJlc2hvbGRSZXF1ZXN0Eg8KB21lc3NhZ2UY",
+            "ASABKAwiugEKEENvbnNlbnN1c01lc3NhZ2USMQoTY2hhbmdlX3ZpZXdfcmVx",
+            "dWVzdBgBIAEoCzISLkNoYW5nZVZpZXdSZXF1ZXN0SAASNQoVYmxvY2tfcHJl",
+            "cGFyZV9yZXF1ZXN0GAIgASgLMhQuQmxvY2tQcmVwYXJlUmVxdWVzdEgAEjEK",
+            "E2Jsb2NrX3ByZXBhcmVfcmVwbHkYAyABKAsyEi5CbG9ja1ByZXBhcmVSZXBs",
+            "eUgAQgkKB3BheWxvYWQiuQUKDk5ldHdvcmtNZXNzYWdlEg0KBW1hZ2ljGAEg",
+            "ASgNEi4KEWhhbmRzaGFrZV9yZXF1ZXN0GAogASgLMhEuSGFuZHNoYWtlUmVx",
+            "dWVzdEgAEioKD2hhbmRzaGFrZV9yZXBseRgLIAEoCzIPLkhhbmRzaGFrZVJl",
+            "cGx5SAASQQocZ2V0X2Jsb2Nrc19ieV9oYXNoZXNfcmVxdWVzdBgMIAEoCzIZ",
+            "LkdldEJsb2Nrc0J5SGFzaGVzUmVxdWVzdEgAEj0KGmdldF9ibG9ja3NfYnlf",
+            "aGFzaGVzX3JlcGx5GA0gASgLMhcuR2V0QmxvY2tzQnlIYXNoZXNSZXBseUgA",
+            "EkwKImdldF9ibG9ja3NfYnlfaGVpZ2h0X3JhbmdlX3JlcXVlc3QYDiABKAsy",
+            "Hi5HZXRCbG9ja3NCeUhlaWdodFJhbmdlUmVxdWVzdEgAEkgKIGdldF9ibG9j",
+            "a3NfYnlfaGVpZ2h0X3JhbmdlX3JlcGx5GA8gASgLMhwuR2V0QmxvY2tzQnlI",
+            "ZWlnaHRSYW5nZVJlcGx5SAASTQoiZ2V0X3RyYW5zYWN0aW9uc19ieV9oYXNo",
+            "ZXNfcmVxdWVzdBgQIAEoCzIfLkdldFRyYW5zYWN0aW9uc0J5SGFzaGVzUmVx",
+            "dWVzdEgAEkkKIGdldF90cmFuc2FjdGlvbnNfYnlfaGFzaGVzX3JlcGx5GBEg",
+            "ASgLMh0uR2V0VHJhbnNhY3Rpb25zQnlIYXNoZXNSZXBseUgAEi4KEXRocmVz",
+            "aG9sZF9yZXF1ZXN0GBIgASgLMhEuVGhyZXNob2xkUmVxdWVzdEgAEi4KEWNv",
+            "bnNlbnN1c19tZXNzYWdlGBMgASgLMhEuQ29uc2Vuc3VzTWVzc2FnZUgAEh0K",
+            "CXNpZ25hdHVyZRhkIAEoCzIKLlNpZ25hdHVyZUIJCgdtZXNzYWdlQhCqAg1Q",
+            "aG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeRequest), global::Phorkus.Proto.HandshakeRequest.Parser, new[]{ "Node" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.HandshakeReply), global::Phorkus.Proto.HandshakeReply.Parser, new[]{ "Node" }, null, null, null),
@@ -73,7 +79,8 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest), global::Phorkus.Proto.GetTransactionHashesByBlockHeightRequest.Parser, new[]{ "BlockHeight" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply), global::Phorkus.Proto.GetTransactionHashesByBlockHeightReply.Parser, new[]{ "TransactionHashes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ThresholdRequest), global::Phorkus.Proto.ThresholdRequest.Parser, new[]{ "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "Magic", "HandshakeRequest", "HandshakeReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "ThresholdRequest", "Signature" }, new[]{ "Message" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "ChangeViewRequest", "BlockPrepareRequest", "BlockPrepareReply" }, new[]{ "Payload" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "Magic", "HandshakeRequest", "HandshakeReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "ThresholdRequest", "ConsensusMessage", "Signature" }, new[]{ "Message" }, null, null)
           }));
     }
     #endregion
@@ -1749,6 +1756,249 @@ namespace Phorkus.Proto {
 
   }
 
+  public sealed partial class ConsensusMessage : pb::IMessage<ConsensusMessage> {
+    private static readonly pb::MessageParser<ConsensusMessage> _parser = new pb::MessageParser<ConsensusMessage>(() => new ConsensusMessage());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ConsensusMessage> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[13]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConsensusMessage() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConsensusMessage(ConsensusMessage other) : this() {
+      switch (other.PayloadCase) {
+        case PayloadOneofCase.ChangeViewRequest:
+          ChangeViewRequest = other.ChangeViewRequest.Clone();
+          break;
+        case PayloadOneofCase.BlockPrepareRequest:
+          BlockPrepareRequest = other.BlockPrepareRequest.Clone();
+          break;
+        case PayloadOneofCase.BlockPrepareReply:
+          BlockPrepareReply = other.BlockPrepareReply.Clone();
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConsensusMessage Clone() {
+      return new ConsensusMessage(this);
+    }
+
+    /// <summary>Field number for the "change_view_request" field.</summary>
+    public const int ChangeViewRequestFieldNumber = 1;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.ChangeViewRequest ChangeViewRequest {
+      get { return payloadCase_ == PayloadOneofCase.ChangeViewRequest ? (global::Phorkus.Proto.ChangeViewRequest) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.ChangeViewRequest;
+      }
+    }
+
+    /// <summary>Field number for the "block_prepare_request" field.</summary>
+    public const int BlockPrepareRequestFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.BlockPrepareRequest BlockPrepareRequest {
+      get { return payloadCase_ == PayloadOneofCase.BlockPrepareRequest ? (global::Phorkus.Proto.BlockPrepareRequest) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.BlockPrepareRequest;
+      }
+    }
+
+    /// <summary>Field number for the "block_prepare_reply" field.</summary>
+    public const int BlockPrepareReplyFieldNumber = 3;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.BlockPrepareReply BlockPrepareReply {
+      get { return payloadCase_ == PayloadOneofCase.BlockPrepareReply ? (global::Phorkus.Proto.BlockPrepareReply) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.BlockPrepareReply;
+      }
+    }
+
+    private object payload_;
+    /// <summary>Enum of possible cases for the "payload" oneof.</summary>
+    public enum PayloadOneofCase {
+      None = 0,
+      ChangeViewRequest = 1,
+      BlockPrepareRequest = 2,
+      BlockPrepareReply = 3,
+    }
+    private PayloadOneofCase payloadCase_ = PayloadOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public PayloadOneofCase PayloadCase {
+      get { return payloadCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void ClearPayload() {
+      payloadCase_ = PayloadOneofCase.None;
+      payload_ = null;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ConsensusMessage);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ConsensusMessage other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(ChangeViewRequest, other.ChangeViewRequest)) return false;
+      if (!object.Equals(BlockPrepareRequest, other.BlockPrepareRequest)) return false;
+      if (!object.Equals(BlockPrepareReply, other.BlockPrepareReply)) return false;
+      if (PayloadCase != other.PayloadCase) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (payloadCase_ == PayloadOneofCase.ChangeViewRequest) hash ^= ChangeViewRequest.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.BlockPrepareRequest) hash ^= BlockPrepareRequest.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.BlockPrepareReply) hash ^= BlockPrepareReply.GetHashCode();
+      hash ^= (int) payloadCase_;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (payloadCase_ == PayloadOneofCase.ChangeViewRequest) {
+        output.WriteRawTag(10);
+        output.WriteMessage(ChangeViewRequest);
+      }
+      if (payloadCase_ == PayloadOneofCase.BlockPrepareRequest) {
+        output.WriteRawTag(18);
+        output.WriteMessage(BlockPrepareRequest);
+      }
+      if (payloadCase_ == PayloadOneofCase.BlockPrepareReply) {
+        output.WriteRawTag(26);
+        output.WriteMessage(BlockPrepareReply);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (payloadCase_ == PayloadOneofCase.ChangeViewRequest) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ChangeViewRequest);
+      }
+      if (payloadCase_ == PayloadOneofCase.BlockPrepareRequest) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlockPrepareRequest);
+      }
+      if (payloadCase_ == PayloadOneofCase.BlockPrepareReply) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlockPrepareReply);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ConsensusMessage other) {
+      if (other == null) {
+        return;
+      }
+      switch (other.PayloadCase) {
+        case PayloadOneofCase.ChangeViewRequest:
+          if (ChangeViewRequest == null) {
+            ChangeViewRequest = new global::Phorkus.Proto.ChangeViewRequest();
+          }
+          ChangeViewRequest.MergeFrom(other.ChangeViewRequest);
+          break;
+        case PayloadOneofCase.BlockPrepareRequest:
+          if (BlockPrepareRequest == null) {
+            BlockPrepareRequest = new global::Phorkus.Proto.BlockPrepareRequest();
+          }
+          BlockPrepareRequest.MergeFrom(other.BlockPrepareRequest);
+          break;
+        case PayloadOneofCase.BlockPrepareReply:
+          if (BlockPrepareReply == null) {
+            BlockPrepareReply = new global::Phorkus.Proto.BlockPrepareReply();
+          }
+          BlockPrepareReply.MergeFrom(other.BlockPrepareReply);
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            global::Phorkus.Proto.ChangeViewRequest subBuilder = new global::Phorkus.Proto.ChangeViewRequest();
+            if (payloadCase_ == PayloadOneofCase.ChangeViewRequest) {
+              subBuilder.MergeFrom(ChangeViewRequest);
+            }
+            input.ReadMessage(subBuilder);
+            ChangeViewRequest = subBuilder;
+            break;
+          }
+          case 18: {
+            global::Phorkus.Proto.BlockPrepareRequest subBuilder = new global::Phorkus.Proto.BlockPrepareRequest();
+            if (payloadCase_ == PayloadOneofCase.BlockPrepareRequest) {
+              subBuilder.MergeFrom(BlockPrepareRequest);
+            }
+            input.ReadMessage(subBuilder);
+            BlockPrepareRequest = subBuilder;
+            break;
+          }
+          case 26: {
+            global::Phorkus.Proto.BlockPrepareReply subBuilder = new global::Phorkus.Proto.BlockPrepareReply();
+            if (payloadCase_ == PayloadOneofCase.BlockPrepareReply) {
+              subBuilder.MergeFrom(BlockPrepareReply);
+            }
+            input.ReadMessage(subBuilder);
+            BlockPrepareReply = subBuilder;
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class NetworkMessage : pb::IMessage<NetworkMessage> {
     private static readonly pb::MessageParser<NetworkMessage> _parser = new pb::MessageParser<NetworkMessage>(() => new NetworkMessage());
     private pb::UnknownFieldSet _unknownFields;
@@ -1757,7 +2007,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1803,6 +2053,9 @@ namespace Phorkus.Proto {
           break;
         case MessageOneofCase.ThresholdRequest:
           ThresholdRequest = other.ThresholdRequest.Clone();
+          break;
+        case MessageOneofCase.ConsensusMessage:
+          ConsensusMessage = other.ConsensusMessage.Clone();
           break;
       }
 
@@ -1924,6 +2177,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "consensus_message" field.</summary>
+    public const int ConsensusMessageFieldNumber = 19;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.ConsensusMessage ConsensusMessage {
+      get { return messageCase_ == MessageOneofCase.ConsensusMessage ? (global::Phorkus.Proto.ConsensusMessage) message_ : null; }
+      set {
+        message_ = value;
+        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.ConsensusMessage;
+      }
+    }
+
     /// <summary>Field number for the "signature" field.</summary>
     public const int SignatureFieldNumber = 100;
     private global::Phorkus.Proto.Signature signature_;
@@ -1948,6 +2212,7 @@ namespace Phorkus.Proto {
       GetTransactionsByHashesRequest = 16,
       GetTransactionsByHashesReply = 17,
       ThresholdRequest = 18,
+      ConsensusMessage = 19,
     }
     private MessageOneofCase messageCase_ = MessageOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1984,6 +2249,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(GetTransactionsByHashesRequest, other.GetTransactionsByHashesRequest)) return false;
       if (!object.Equals(GetTransactionsByHashesReply, other.GetTransactionsByHashesReply)) return false;
       if (!object.Equals(ThresholdRequest, other.ThresholdRequest)) return false;
+      if (!object.Equals(ConsensusMessage, other.ConsensusMessage)) return false;
       if (!object.Equals(Signature, other.Signature)) return false;
       if (MessageCase != other.MessageCase) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -2002,6 +2268,7 @@ namespace Phorkus.Proto {
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesRequest) hash ^= GetTransactionsByHashesRequest.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) hash ^= GetTransactionsByHashesReply.GetHashCode();
       if (messageCase_ == MessageOneofCase.ThresholdRequest) hash ^= ThresholdRequest.GetHashCode();
+      if (messageCase_ == MessageOneofCase.ConsensusMessage) hash ^= ConsensusMessage.GetHashCode();
       if (signature_ != null) hash ^= Signature.GetHashCode();
       hash ^= (int) messageCase_;
       if (_unknownFields != null) {
@@ -2057,6 +2324,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(146, 1);
         output.WriteMessage(ThresholdRequest);
       }
+      if (messageCase_ == MessageOneofCase.ConsensusMessage) {
+        output.WriteRawTag(154, 1);
+        output.WriteMessage(ConsensusMessage);
+      }
       if (signature_ != null) {
         output.WriteRawTag(162, 6);
         output.WriteMessage(Signature);
@@ -2098,6 +2369,9 @@ namespace Phorkus.Proto {
       }
       if (messageCase_ == MessageOneofCase.ThresholdRequest) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(ThresholdRequest);
+      }
+      if (messageCase_ == MessageOneofCase.ConsensusMessage) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(ConsensusMessage);
       }
       if (signature_ != null) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(Signature);
@@ -2176,6 +2450,12 @@ namespace Phorkus.Proto {
             ThresholdRequest = new global::Phorkus.Proto.ThresholdRequest();
           }
           ThresholdRequest.MergeFrom(other.ThresholdRequest);
+          break;
+        case MessageOneofCase.ConsensusMessage:
+          if (ConsensusMessage == null) {
+            ConsensusMessage = new global::Phorkus.Proto.ConsensusMessage();
+          }
+          ConsensusMessage.MergeFrom(other.ConsensusMessage);
           break;
       }
 
@@ -2273,6 +2553,15 @@ namespace Phorkus.Proto {
             }
             input.ReadMessage(subBuilder);
             ThresholdRequest = subBuilder;
+            break;
+          }
+          case 154: {
+            global::Phorkus.Proto.ConsensusMessage subBuilder = new global::Phorkus.Proto.ConsensusMessage();
+            if (messageCase_ == MessageOneofCase.ConsensusMessage) {
+              subBuilder.MergeFrom(ConsensusMessage);
+            }
+            input.ReadMessage(subBuilder);
+            ConsensusMessage = subBuilder;
             break;
           }
           case 802: {
