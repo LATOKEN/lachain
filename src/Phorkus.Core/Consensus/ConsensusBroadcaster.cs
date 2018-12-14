@@ -2,6 +2,7 @@
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Network;
 using Phorkus.Crypto;
+using Phorkus.Networking;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Consensus

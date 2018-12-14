@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Phorkus.Networking;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Network
@@ -14,7 +15,7 @@ namespace Phorkus.Core.Network
 
         void HandlePeerHasBlocks(ulong blockHeight);
 
-        bool DownloadTransactions(IBlockchainService blockchainService, IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
+//        bool DownloadTransactions(IBlockchainService blockchainService, IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
         
         void Start();
     }

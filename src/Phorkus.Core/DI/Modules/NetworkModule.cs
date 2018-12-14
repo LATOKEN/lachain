@@ -1,5 +1,6 @@
 using Phorkus.Core.Config;
 using Phorkus.Core.Network;
+using Phorkus.Networking;
 
 namespace Phorkus.Core.DI.Modules
 {
@@ -8,8 +9,6 @@ namespace Phorkus.Core.DI.Modules
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             containerBuilder.RegisterSingleton<INetworkManager, NetworkManager>();
-            containerBuilder.RegisterSingleton<INetworkContext, NetworkContext>();
-            containerBuilder.RegisterSingleton<IBroadcaster, DefaultBroadcaster>();
             containerBuilder.RegisterSingleton<IBlockSynchronizer, BlockSynchronizer>();
         }
     }

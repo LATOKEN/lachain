@@ -13,6 +13,7 @@ using Phorkus.Core.Network;
 using Phorkus.Proto;
 using Phorkus.Crypto;
 using Phorkus.Logger;
+using Phorkus.Networking;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Consensus

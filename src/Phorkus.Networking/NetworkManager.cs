@@ -8,14 +8,11 @@ using Phorkus.Utility.Utils;
 
 namespace Phorkus.Networking
 {
-    public class NetworkManager : IBroadcaster, INetworkContext
+    public class NetworkManager : INetworkManager, IBroadcaster, INetworkContext
     {
-        public delegate void OnClientConnectedDelegate(IRemotePeer remotePeer);
         public event OnClientConnectedDelegate OnClientConnected;
-
-        public delegate void OnClientClosedDelegate(IRemotePeer remotePeer);
         public event OnClientClosedDelegate OnClientClosed;
-
+        
         public ConcurrentDictionary<PeerAddress, IRemotePeer> ActivePeers { get; }
         public Node LocalNode { get; }
 
@@ -66,7 +63,7 @@ namespace Phorkus.Networking
 
         public IRemotePeer GetPeerByPublicKey(PublicKey publicKey)
         {
-            throw new NotImplementedException();
+            return _publicKeyToRemotePeer.TryGetValue(publicKey, out var peer) ? peer : null;
         }
 
         public bool IsConnected(PeerAddress address)
