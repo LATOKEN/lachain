@@ -18,10 +18,10 @@ message ChangeViewRequest {
     uint32 new_view_number = 2;
 }
 
-message ChangeViewReply {
-    Validator validator = 1;
-    uint32 view_number = 2;
-}
+//message ChangeViewReply {
+//    Validator validator = 1;
+//    uint32 view_number = 2;
+//}
 
 message BlockPrepareRequest {
     Validator validator = 1;

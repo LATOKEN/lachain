@@ -50,7 +50,6 @@ namespace Phorkus.Console
 
         public void Start(string[] args)
         {
-            var networkManager = _container.Resolve<INetworkManager>();
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
@@ -102,7 +101,6 @@ namespace Phorkus.Console
 //            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
             
-            networkManager.Start();
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();

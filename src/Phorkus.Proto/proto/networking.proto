@@ -4,7 +4,6 @@ option csharp_namespace = "Phorkus.Proto";
 import "default.proto";
 import "transaction.proto";
 import "block.proto";
-import "consensus.proto";
 import "node.proto";
 
 message HandshakeRequest {

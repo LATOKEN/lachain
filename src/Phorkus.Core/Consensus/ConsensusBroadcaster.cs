@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Core.Blockchain;
-using Phorkus.Core.Network;
 using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;

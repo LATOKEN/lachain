@@ -20,7 +20,7 @@ namespace Phorkus.Core.Consensus
 
         public byte ViewNumber;
         public DateTime LastBlockRecieved;
-        public long MyIndex;
+        public int MyIndex;
         public readonly KeyPair KeyPair;
         public uint SignaturesAcquired;
 

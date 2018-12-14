@@ -30,21 +30,18 @@ namespace Phorkus.Proto {
             "D3ZhbGlkYXRvcl9pbmRleBgEIAEoDRIRCgl0aW1lc3RhbXAYBSABKAQSEwoL",
             "dmlld19udW1iZXIYBiABKA0iSwoRQ2hhbmdlVmlld1JlcXVlc3QSHQoJdmFs",
             "aWRhdG9yGAEgASgLMgouVmFsaWRhdG9yEhcKD25ld192aWV3X251bWJlchgC",
-            "IAEoDSJFCg9DaGFuZ2VWaWV3UmVwbHkSHQoJdmFsaWRhdG9yGAEgASgLMgou",
-            "VmFsaWRhdG9yEhMKC3ZpZXdfbnVtYmVyGAIgASgNIsQBChNCbG9ja1ByZXBh",
-            "cmVSZXF1ZXN0Eh0KCXZhbGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchINCgVu",
-            "b25jZRgCIAEoBBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMYAyADKAsyCC5VSW50",
-            "MjU2EicKEW1pbmVyX3RyYW5zYWN0aW9uGAQgASgLMgwuVHJhbnNhY3Rpb24S",
-            "EQoJdGltZXN0YW1wGAUgASgEEh0KCXNpZ25hdHVyZRgGIAEoCzIKLlNpZ25h",
-            "dHVyZSJRChFCbG9ja1ByZXBhcmVSZXBseRIdCgl2YWxpZGF0b3IYASABKAsy",
-            "Ci5WYWxpZGF0b3ISHQoJc2lnbmF0dXJlGAIgASgLMgouU2lnbmF0dXJlQhCq",
-            "Ag1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "IAEoDSLEAQoTQmxvY2tQcmVwYXJlUmVxdWVzdBIdCgl2YWxpZGF0b3IYASAB",
+            "KAsyCi5WYWxpZGF0b3ISDQoFbm9uY2UYAiABKAQSJAoSdHJhbnNhY3Rpb25f",
+            "aGFzaGVzGAMgAygLMgguVUludDI1NhInChFtaW5lcl90cmFuc2FjdGlvbhgE",
+            "IAEoCzIMLlRyYW5zYWN0aW9uEhEKCXRpbWVzdGFtcBgFIAEoBBIdCglzaWdu",
+            "YXR1cmUYBiABKAsyCi5TaWduYXR1cmUiUQoRQmxvY2tQcmVwYXJlUmVwbHkS",
+            "HQoJdmFsaWRhdG9yGAEgASgLMgouVmFsaWRhdG9yEh0KCXNpZ25hdHVyZRgC",
+            "IAEoCzIKLlNpZ25hdHVyZUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Validator), global::Phorkus.Proto.Validator.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ChangeViewRequest), global::Phorkus.Proto.ChangeViewRequest.Parser, new[]{ "Validator", "NewViewNumber" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ChangeViewReply), global::Phorkus.Proto.ChangeViewReply.Parser, new[]{ "Validator", "ViewNumber" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockPrepareRequest), global::Phorkus.Proto.BlockPrepareRequest.Parser, new[]{ "Validator", "Nonce", "TransactionHashes", "MinerTransaction", "Timestamp", "Signature" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockPrepareReply), global::Phorkus.Proto.BlockPrepareReply.Parser, new[]{ "Validator", "Signature" }, null, null, null)
           }));
@@ -491,169 +488,6 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class ChangeViewReply : pb::IMessage<ChangeViewReply> {
-    private static readonly pb::MessageParser<ChangeViewReply> _parser = new pb::MessageParser<ChangeViewReply>(() => new ChangeViewReply());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ChangeViewReply> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[2]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ChangeViewReply() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ChangeViewReply(ChangeViewReply other) : this() {
-      validator_ = other.validator_ != null ? other.validator_.Clone() : null;
-      viewNumber_ = other.viewNumber_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ChangeViewReply Clone() {
-      return new ChangeViewReply(this);
-    }
-
-    /// <summary>Field number for the "validator" field.</summary>
-    public const int ValidatorFieldNumber = 1;
-    private global::Phorkus.Proto.Validator validator_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.Validator Validator {
-      get { return validator_; }
-      set {
-        validator_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "view_number" field.</summary>
-    public const int ViewNumberFieldNumber = 2;
-    private uint viewNumber_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint ViewNumber {
-      get { return viewNumber_; }
-      set {
-        viewNumber_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as ChangeViewReply);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ChangeViewReply other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (!object.Equals(Validator, other.Validator)) return false;
-      if (ViewNumber != other.ViewNumber) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (validator_ != null) hash ^= Validator.GetHashCode();
-      if (ViewNumber != 0) hash ^= ViewNumber.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (validator_ != null) {
-        output.WriteRawTag(10);
-        output.WriteMessage(Validator);
-      }
-      if (ViewNumber != 0) {
-        output.WriteRawTag(16);
-        output.WriteUInt32(ViewNumber);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (validator_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Validator);
-      }
-      if (ViewNumber != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ViewNumber);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ChangeViewReply other) {
-      if (other == null) {
-        return;
-      }
-      if (other.validator_ != null) {
-        if (validator_ == null) {
-          validator_ = new global::Phorkus.Proto.Validator();
-        }
-        Validator.MergeFrom(other.Validator);
-      }
-      if (other.ViewNumber != 0) {
-        ViewNumber = other.ViewNumber;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            if (validator_ == null) {
-              validator_ = new global::Phorkus.Proto.Validator();
-            }
-            input.ReadMessage(validator_);
-            break;
-          }
-          case 16: {
-            ViewNumber = input.ReadUInt32();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
   public sealed partial class BlockPrepareRequest : pb::IMessage<BlockPrepareRequest> {
     private static readonly pb::MessageParser<BlockPrepareRequest> _parser = new pb::MessageParser<BlockPrepareRequest>(() => new BlockPrepareRequest());
     private pb::UnknownFieldSet _unknownFields;
@@ -662,7 +496,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -941,7 +775,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
