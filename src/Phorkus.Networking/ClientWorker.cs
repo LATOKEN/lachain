@@ -38,7 +38,7 @@ namespace Phorkus.Networking
             = new Queue<NetworkMessage>();
         
         private readonly object _queueNotEmpty = new object();
-        private readonly object _shouldClose = new object();
+        private readonly object _workerClosed = new object();        
         
         public void Send(NetworkMessage message)
         {
@@ -52,7 +52,7 @@ namespace Phorkus.Networking
         private void _Worker()
         {
             using (var context = new ZContext())
-            using (var socket = new ZSocket(context, ZSocketType.PAIR))
+            using (var socket = new ZSocket(context, ZSocketType.PUSH))
             {
                 var endpoint = $"tcp://{Address.Host}:{Address.Port}";
                 socket.Connect(endpoint);
@@ -69,7 +69,7 @@ namespace Phorkus.Networking
                     }
                     if (message is null)
                         continue;
-                    socket.SendFrame(new ZFrame(message.ToByteArray()), out var error);
+                    socket.SendFrame(new ZFrame(message.ToByteArray()), ZSocketFlags.DontWait, out var error);
                     if (!Equals(error, ZError.None))
                     {
                         OnError?.Invoke(this, $"Unable to send message, got error ({error})");
@@ -79,13 +79,18 @@ namespace Phorkus.Networking
                 }
                 socket.Disconnect(endpoint);
                 OnClose?.Invoke(this, endpoint);
+                lock (_workerClosed)
+                {
+                    IsConnected = false;
+                    Monitor.PulseAll(_workerClosed);
+                }
             }
         }
 
         public void Start()
         {
             if (IsConnected)
-                return;
+                throw new Exception("Client worker has already been started");
             Task.Factory.StartNew(() =>
             {
                 try
@@ -101,10 +106,11 @@ namespace Phorkus.Networking
         
         public void Stop()
         {
-            lock (_shouldClose)
+            lock (_workerClosed)
             {
                 IsConnected = false;
-                Monitor.PulseAll(_shouldClose);
+                while (IsConnected)
+                    Monitor.Wait(_workerClosed);
             }
         }
     }

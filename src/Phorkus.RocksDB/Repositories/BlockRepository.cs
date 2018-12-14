@@ -53,7 +53,7 @@ namespace Phorkus.RocksDB.Repositories
         public IEnumerable<Block> GetBlocksByHeightRange(ulong height, ulong count)
         {
             var result = new List<Block>();
-            for (var i = height; i <= height + count; i++)
+            for (var i = height; i < height + count; i++)
             {
                 var block = _GetBlockByHeight(i);
                 if (block is null)

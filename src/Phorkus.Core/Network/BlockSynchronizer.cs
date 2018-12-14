@@ -142,6 +142,7 @@ namespace Phorkus.Core.Network
                 return;
 
             var peers = _peerHeights.Where(entry => entry.Value == maxHeight).Select(entry => entry.Key);
+            
             foreach (var peer in peers)
                 peer.Send(messageFactory.GetBlocksByHeightRangeRequest(myHeight + 1, maxHeight));
             

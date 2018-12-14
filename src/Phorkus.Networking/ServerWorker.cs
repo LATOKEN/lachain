@@ -31,7 +31,7 @@ namespace Phorkus.Networking
         private void _Worker()
         {
             using (var context = new ZContext())
-            using (var socket = new ZSocket(context, ZSocketType.PAIR))
+            using (var socket = new ZSocket(context, ZSocketType.PULL))
             {
                 var endpoint = $"tcp://{_networkConfig.Address}:{_networkConfig.Port}";
                 socket.Bind(endpoint);
@@ -43,7 +43,7 @@ namespace Phorkus.Networking
                     if (!Equals(error, ZError.None))
                     {
                         OnError?.Invoke("Unable to receive frame, got error (" + error + ")");
-                        break;
+                        continue;
                     }
                     var buffer = frame.Read();
                     if (buffer == null || buffer.Length <= 0)

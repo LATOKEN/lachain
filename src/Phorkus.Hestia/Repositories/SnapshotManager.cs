@@ -38,7 +38,8 @@ namespace Phorkus.Hestia.Repositories
 
         public void Rollback()
         {
-            if (PendingSnapshot == null) throw new InvalidOperationException("Nothing to rollback");
+            if (PendingSnapshot == null)
+                throw new InvalidOperationException("Nothing to rollback");
             _pendingSnapshot = null;
         }
 

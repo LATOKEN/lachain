@@ -31,9 +31,6 @@ namespace Phorkus.Networking
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
 
-        private readonly IDictionary<PublicKey, IRemotePeer> _publicKeyToRemotePeer =
-            new Dictionary<PublicKey, IRemotePeer>();
-
         private readonly ISet<PublicKey> _authorizedKeys = new HashSet<PublicKey>();
         
         private readonly ICrypto _crypto;
@@ -49,15 +46,21 @@ namespace Phorkus.Networking
 
         public IRemotePeer GetPeerByPublicKey(PublicKey publicKey)
         {
-            return _publicKeyToRemotePeer.TryGetValue(publicKey, out var peer) ? peer : null;
+            foreach (var worker in _clientWorkers)
+            {
+                if (worker.Value.Node is null)
+                    continue;
+                var pk = worker.Value.Node.PublicKey;
+                if (pk.Equals(publicKey))
+                    return worker.Value;
+            }
+            throw new Exception("Unable to resolve peer by public key");
         }
 
         public bool IsConnected(PeerAddress address)
         {
             return _clientWorkers.ContainsKey(address);
         }
-
-        private IDictionary<PeerAddress, ClientWorker> _toConnect = new Dictionary<PeerAddress, ClientWorker>();
         
         private readonly object _hasPeersToConnect = new object();
         
@@ -65,18 +68,18 @@ namespace Phorkus.Networking
         {
             lock (_hasPeersToConnect)
             {
-                if (_clientWorkers.TryGetValue(address, out var peer))
-                    return peer;
-                peer = new ClientWorker(address, null);
-                _toConnect.Add(address, peer);
+                if (_clientWorkers.TryGetValue(address, out var worker))
+                    return worker;
+                worker = new ClientWorker(address, null);
+                _clientWorkers.Add(address, worker);
                 Monitor.PulseAll(_hasPeersToConnect);
-                return peer;
+                return worker;
             }
         }
 
         private void _ConnectToNode(PeerAddress address)
         {
-            if (!_toConnect.TryGetValue(address, out var remotePeer))
+            if (!_clientWorkers.TryGetValue(address, out var remotePeer))
                 return;
             remotePeer.OnOpen += (worker, endpoint) =>
             {
@@ -85,7 +88,6 @@ namespace Phorkus.Networking
                     if (_clientWorkers.ContainsKey(address))
                         return;
                     OnClientConnected?.Invoke(worker);
-                    _publicKeyToRemotePeer.Add(address.PublicKey, worker);
                     _clientWorkers.Add(address, worker);
                 }
             };
@@ -96,7 +98,6 @@ namespace Phorkus.Networking
                     if (!_clientWorkers.ContainsKey(address))
                         return;
                     OnClientClosed?.Invoke(worker);
-                    _publicKeyToRemotePeer.Remove(address.PublicKey);
                     _clientWorkers.Remove(address);
                 }
             };
@@ -107,8 +108,11 @@ namespace Phorkus.Networking
             {
                 Console.Error.WriteLine("Error: " + message);
             };
+            if (_authorizedKeys.Contains(address.PublicKey))
+                return;
             remotePeer.Send(_messageFactory.HandshakeRequest(LocalNode));
-            remotePeer.Start();
+            if (!remotePeer.IsConnected)
+                remotePeer.Start();
         }
 
         public void Broadcast(NetworkMessage networkMessage)
@@ -135,13 +139,11 @@ namespace Phorkus.Networking
             };
             if (!_authorizedKeys.Contains(publicKey))
                 throw new Exception("This node hasn't been authorized");
-            if (!_publicKeyToRemotePeer.TryGetValue(publicKey, out var remotePeer))
-                throw new Exception("Unable to resolve remote peer by public key");
             var envelope = new MessageEnvelope
             {
                 MessageFactory = _messageFactory,
                 PublicKey = publicKey,
-                RemotePeer = remotePeer,
+                RemotePeer = GetPeerByPublicKey(publicKey),
                 Signature = signature
             };
             return envelope;
@@ -176,8 +178,7 @@ namespace Phorkus.Networking
             if (_authorizedKeys.Contains(publicKey))
                 return;
             Console.WriteLine("Authorized: " + publicKey.Buffer.ToHex());
-            if (_publicKeyToRemotePeer.TryGetValue(publicKey, out var remotePeer))
-                remotePeer.Node = reply.Node;
+            _clientWorkers[PeerAddress.FromNode(reply.Node)].Node = reply.Node;
             _authorizedKeys.Add(publicKey);
         }
 
@@ -296,10 +297,19 @@ namespace Phorkus.Networking
                 lock (_hasPeersToConnect)
                 {
                     Monitor.Wait(_hasPeersToConnect, TimeSpan.FromSeconds(5));
-                    if (!_toConnect.Any())
+                    if (!_clientWorkers.Any())
                         continue;
-                    foreach (var entry in _toConnect)
-                        _ConnectToNode(entry.Key);
+                    foreach (var entry in _clientWorkers)
+                    {
+                        try
+                        {
+                            _ConnectToNode(entry.Key);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.Error.WriteLine(e);
+                        }
+                    }
                 }
             }
         }

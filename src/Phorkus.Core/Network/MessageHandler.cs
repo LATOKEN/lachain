@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Phorkus.Core.Storage;
+using Phorkus.Core.Utils;
 using Phorkus.Networking;
 using Phorkus.Proto;
 
@@ -27,7 +28,6 @@ namespace Phorkus.Core.Network
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
         {
-            Console.WriteLine("My Height (" + envelope.RemotePeer.Address + "): " + _globalRepository.GetTotalBlockHeight());
             var reply = envelope.MessageFactory.PingReply(request.Timestamp, _globalRepository.GetTotalBlockHeight());
             envelope.RemotePeer.Send(reply);
         }
@@ -45,13 +45,14 @@ namespace Phorkus.Core.Network
 
         public void GetBlocksByHashesReply(MessageEnvelope envelope, GetBlocksByHashesReply reply)
         {
-            foreach (var block in reply.Blocks)
+            var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
+            foreach (var block in orderedBlocks)
                 _blockSynchronizer.HandleBlockFromPeer(block, envelope.RemotePeer, TimeSpan.FromSeconds(5));
         }
 
         public void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request)
         {
-            var blockHashes = _blockRepository.GetBlocksByHeightRange(request.FromHeight, request.ToHeight)
+            var blockHashes = _blockRepository.GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
             envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHeightRangeReply(blockHashes));
         }

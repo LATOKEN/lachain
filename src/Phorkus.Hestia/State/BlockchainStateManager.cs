@@ -45,7 +45,8 @@ namespace Phorkus.Hestia.State
 
         public void Rollback()
         {
-            if (PendingSnapshot != null) throw new InvalidOperationException("Nothing to rollback");
+            if (PendingSnapshot == null)
+                throw new InvalidOperationException("Nothing to rollback");
             _balanceManager.Rollback();
             _assetManager.Rollback();
             PendingSnapshot = null;
