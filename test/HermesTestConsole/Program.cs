@@ -68,7 +68,7 @@ namespace HermesTestConsole
                         
                         DefaultGeneratorProtocol.protoParam = null;
                         foreach (var p in participants)
-                            protos[p.Key].Initialize(seed);
+                            protos[p.Key].Initialize(BitConverter.GetBytes(p.Value));
                     }
                     
                     var shares = new SortedDictionary<PublicKey, IDictionary<PublicKey, BgwPublicParams>>(new PublicKeyComparer());

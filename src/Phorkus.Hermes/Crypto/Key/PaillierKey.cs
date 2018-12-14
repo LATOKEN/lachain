@@ -82,7 +82,7 @@ public class PaillierKey {
 	protected int k=0;
 	
 	/** Maximum number of bits allowed for keysize. */
-	protected static int MAX_KEY_SIZE = 2048;
+	protected static int MAX_KEY_SIZE = 4096;
 	
 	/*
 	 * 
