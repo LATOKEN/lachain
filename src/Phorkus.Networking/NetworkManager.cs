@@ -1,6 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Google.Protobuf;
 using Phorkus.Crypto;
 using Phorkus.Proto;
@@ -8,57 +10,41 @@ using Phorkus.Utility.Utils;
 
 namespace Phorkus.Networking
 {
-    public class NetworkManager : INetworkManager, IBroadcaster, INetworkContext
+    public class NetworkManager : INetworkManager, INetworkBroadcaster, INetworkContext
     {
         public event OnClientConnectedDelegate OnClientConnected;
         public event OnClientClosedDelegate OnClientClosed;
-        
-        public ConcurrentDictionary<PeerAddress, IRemotePeer> ActivePeers { get; }
-        public Node LocalNode { get; }
+
+        public IDictionary<PeerAddress, IRemotePeer> ActivePeers
+        {
+            get
+            {
+                return _clientWorkers.Where(entry => entry.Value.Node != null && _authorizedKeys.Contains(entry.Value.Node.PublicKey))
+                    .ToDictionary(entry => entry.Value.Address, entry => entry.Value as IRemotePeer);
+            }
+        }
+
+        public Node LocalNode { get; set; }
+
+        public IMessageFactory MessageFactory => _messageFactory;
 
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
-
-        private readonly IDictionary<PublicKey, Node> _activeNodes = new Dictionary<PublicKey, Node>();
 
         private readonly IDictionary<PublicKey, IRemotePeer> _publicKeyToRemotePeer =
             new Dictionary<PublicKey, IRemotePeer>();
 
         private readonly ISet<PublicKey> _authorizedKeys = new HashSet<PublicKey>();
-
-        private readonly IMessageHandler _messageHandler;
-        private readonly ServerWorker _serverWorker;
-        private readonly MessageFactory _messageFactory;
+        
         private readonly ICrypto _crypto;
 
-        public NetworkManager(
-            NetworkConfig networkConfig,
-            IMessageHandler messageHandler,
-            ICrypto crypto,
-            KeyPair keyPair)
+        private MessageFactory _messageFactory;
+        private ServerWorker _serverWorker;
+        private IMessageHandler _messageHandler;
+
+        public NetworkManager(ICrypto crypto)
         {
-            _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
             _crypto = crypto;
-            if (networkConfig is null)
-                throw new ArgumentNullException(nameof(networkConfig));
-            _messageFactory = new MessageFactory(keyPair, crypto);
-            _serverWorker = new ServerWorker(networkConfig);
-
-            _serverWorker.OnOpen += _HandleOpen;
-            _serverWorker.OnMessage += _HandleMessage;
-            _serverWorker.OnClose += _HandleClose;
-            _serverWorker.OnError += _HandleError;
-
-            LocalNode = new Node
-            {
-                Version = 0,
-                Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Address = $"tcp://192.168.88.154:{networkConfig.Port}",
-                PublicKey = keyPair.PublicKey,
-                Nonce = (uint) new Random().Next(1 << 30),
-                BlockHeight = 0,
-                Agent = "Phorkus-v0.0-dev"
-            };
         }
 
         public IRemotePeer GetPeerByPublicKey(PublicKey publicKey)
@@ -71,14 +57,28 @@ namespace Phorkus.Networking
             return _clientWorkers.ContainsKey(address);
         }
 
+        private IDictionary<PeerAddress, ClientWorker> _toConnect = new Dictionary<PeerAddress, ClientWorker>();
+        
+        private readonly object _hasPeersToConnect = new object();
+        
         public IRemotePeer Connect(PeerAddress address)
         {
-            if (_clientWorkers.TryGetValue(address, out var peer))
+            lock (_hasPeersToConnect)
+            {
+                if (_clientWorkers.TryGetValue(address, out var peer))
+                    return peer;
+                peer = new ClientWorker(address, null);
+                _toConnect.Add(address, peer);
+                Monitor.PulseAll(_hasPeersToConnect);
                 return peer;
-            if (_publicKeyToRemotePeer.TryGetValue(address.PublicKey, out var clientWorker))
-                return clientWorker;
-            var client = new ClientWorker(address, null);
-            client.OnOpen += (worker, endpoint) =>
+            }
+        }
+
+        private void _ConnectToNode(PeerAddress address)
+        {
+            if (!_toConnect.TryGetValue(address, out var remotePeer))
+                return;
+            remotePeer.OnOpen += (worker, endpoint) =>
             {
                 lock (_clientWorkers)
                 {
@@ -87,10 +87,9 @@ namespace Phorkus.Networking
                     OnClientConnected?.Invoke(worker);
                     _publicKeyToRemotePeer.Add(address.PublicKey, worker);
                     _clientWorkers.Add(address, worker);
-                    worker.Send(_messageFactory.HandshakeRequest(LocalNode));
                 }
             };
-            client.OnClose += (worker, endpoint) =>
+            remotePeer.OnClose += (worker, endpoint) =>
             {
                 lock (_clientWorkers)
                 {
@@ -101,15 +100,21 @@ namespace Phorkus.Networking
                     _clientWorkers.Remove(address);
                 }
             };
-            client.OnError += (worker, message) => { Console.Error.WriteLine("Error: " + message); };
-            client.Start();
-            return client;
+            remotePeer.OnSent += (worker, message) =>
+            {
+            };
+            remotePeer.OnError += (worker, message) =>
+            {
+                Console.Error.WriteLine("Error: " + message);
+            };
+            remotePeer.Send(_messageFactory.HandshakeRequest(LocalNode));
+            remotePeer.Start();
         }
 
-        public void Broadcast<T>(IMessage<T> message)
-            where T : IMessage<T>
+        public void Broadcast(NetworkMessage networkMessage)
         {
-            throw new NotImplementedException();
+            foreach (var peer in ActivePeers)
+                peer.Value.Send(networkMessage);
         }
 
         private void _HandleOpen(string message)
@@ -154,8 +159,9 @@ namespace Phorkus.Networking
                 throw new Exception("Unable to verify message using public key specified");
             var address = PeerAddress.FromNode(request.Node);
             var peer = _clientWorkers.TryGetValue(address, out var clientWorker)
-                ? clientWorker : Connect(address);
-            peer.Send(_messageFactory.HandshakeReply(LocalNode));            
+                ? clientWorker
+                : Connect(address);
+            peer.Send(_messageFactory.HandshakeReply(LocalNode));
         }
 
         private void _HandshakeReply(Signature signature, HandshakeReply reply)
@@ -170,14 +176,13 @@ namespace Phorkus.Networking
             if (_authorizedKeys.Contains(publicKey))
                 return;
             Console.WriteLine("Authorized: " + publicKey.Buffer.ToHex());
+            if (_publicKeyToRemotePeer.TryGetValue(publicKey, out var remotePeer))
+                remotePeer.Node = reply.Node;
             _authorizedKeys.Add(publicKey);
         }
 
-        private void _HandleMessage(byte[] buffer)
+        private void _HandleMessageUnsafe(NetworkMessage message)
         {
-            var message = NetworkMessage.Parser.ParseFrom(buffer);
-            if (message is null)
-                return;
             switch (message.MessageCase)
             {
                 case NetworkMessage.MessageOneofCase.HandshakeRequest:
@@ -185,6 +190,16 @@ namespace Phorkus.Networking
                     break;
                 case NetworkMessage.MessageOneofCase.HandshakeReply:
                     _HandshakeReply(message.Signature, message.HandshakeReply);
+                    break;
+                case NetworkMessage.MessageOneofCase.PingRequest:
+                    _messageHandler.PingRequest(
+                        _BuildEnvelope(message.PingRequest, message.Signature),
+                        message.PingRequest);
+                    break;
+                case NetworkMessage.MessageOneofCase.PingReply:
+                    _messageHandler.PingReply(
+                        _BuildEnvelope(message.PingReply, message.Signature),
+                        message.PingReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesRequest:
                     _messageHandler.GetBlocksByHashesRequest(
@@ -217,8 +232,23 @@ namespace Phorkus.Networking
                         message.GetTransactionsByHashesReply);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(buffer),
+                    throw new ArgumentOutOfRangeException(nameof(message),
                         "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
+            }
+        }
+
+        private void _HandleMessage(byte[] buffer)
+        {
+            var message = NetworkMessage.Parser.ParseFrom(buffer);
+            if (message is null)
+                return;
+            try
+            {
+                _HandleMessageUnsafe(message);
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e);
             }
         }
 
@@ -231,9 +261,47 @@ namespace Phorkus.Networking
             Console.Error.WriteLine(message);
         }
 
-        public void Start()
+        public void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler)
         {
+            _messageHandler = messageHandler;
+            if (networkConfig is null)
+                throw new ArgumentNullException(nameof(networkConfig));
+            _messageFactory = new MessageFactory(keyPair, _crypto);
+            _serverWorker = new ServerWorker(networkConfig);
+            LocalNode = new Node
+            {
+                Version = 0,
+                Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Address = $"tcp://192.168.88.154:{networkConfig.Port}",
+                PublicKey = keyPair.PublicKey,
+                Nonce = (uint) new Random().Next(1 << 30),
+                BlockHeight = 0,
+                Agent = "Phorkus-v0.0-dev"
+            };
+            _serverWorker.OnOpen += _HandleOpen;
+            _serverWorker.OnMessage += _HandleMessage;
+            _serverWorker.OnClose += _HandleClose;
+            _serverWorker.OnError += _HandleError;
             _serverWorker.Start();
+            Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
+            foreach (var peer in networkConfig.Peers)
+                Connect(PeerAddress.Parse(peer));
+        }
+
+        private void _ConnectWorker()
+        {
+            var thread = Thread.CurrentThread;
+            while (thread.IsAlive)
+            {
+                lock (_hasPeersToConnect)
+                {
+                    Monitor.Wait(_hasPeersToConnect, TimeSpan.FromSeconds(5));
+                    if (!_toConnect.Any())
+                        continue;
+                    foreach (var entry in _toConnect)
+                        _ConnectToNode(entry.Key);
+                }
+            }
         }
 
         public void Stop()

@@ -2,6 +2,7 @@
 using Phorkus.Core.Config;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
+using Phorkus.Hestia;
 using Phorkus.Logger;
 using Phorkus.RocksDB;
 
@@ -22,6 +23,7 @@ namespace Phorkus.Faker
             containerBuilder.RegisterModule<CryptographyModule>();
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
+            containerBuilder.RegisterModule<PersistentStorageModule>();
             containerBuilder.RegisterModule<StorageModule>();
 
             var container = containerBuilder.Build();

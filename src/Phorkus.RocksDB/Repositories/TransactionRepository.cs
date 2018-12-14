@@ -28,9 +28,6 @@ namespace Phorkus.RocksDB.Repositories
             /* write transaction to storage */
             var prefixTx = EntryPrefix.TransactionByHash.BuildPrefix(transaction.Hash);
             _rocksDbContext.Save(prefixTx, transaction.ToByteArray());
-            /* write latest transaction hash by from */
-            var prefixHash = EntryPrefix.TransactionLatestByFrom.BuildPrefix(transaction.Transaction.From);
-            _rocksDbContext.Save(prefixHash, transaction.Hash.ToByteArray());
         }
         
         public TransactionState ChangeTransactionState(UInt256 txHash, TransactionState txState)
@@ -72,6 +69,13 @@ namespace Phorkus.RocksDB.Repositories
                 return null;
             var hash = UInt256.Parser.ParseFrom(rawHash);
             return GetTransactionByHash(hash);
+        }
+        
+        public void CommitTransaction(SignedTransaction signedTransaction)
+        {
+            /* write latest transaction hash by from */
+            var prefixHash = EntryPrefix.TransactionLatestByFrom.BuildPrefix(signedTransaction.Transaction.From);
+            _rocksDbContext.Save(prefixHash, signedTransaction.Hash.ToByteArray());
         }
 
         public uint GetTotalTransactionCount(UInt160 from)

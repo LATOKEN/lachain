@@ -63,6 +63,8 @@ namespace Phorkus.Console
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
             var thresholdManager = _container.Resolve<IThresholdManager>();
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
+            var networkManager = _container.Resolve<INetworkManager>();
+            var messageHandler = _container.Resolve<IMessageHandler>();
             
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -100,7 +102,9 @@ namespace Phorkus.Console
 //            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
 //            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
-            
+
+            var networkConfig = configManager.GetConfig<NetworkConfig>("network");
+            networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();

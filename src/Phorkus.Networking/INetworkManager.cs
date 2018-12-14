@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Networking
+﻿using Phorkus.Crypto;
+
+namespace Phorkus.Networking
 {
     public delegate void OnClientConnectedDelegate(IRemotePeer remotePeer);
     public delegate void OnClientClosedDelegate(IRemotePeer remotePeer);
@@ -8,11 +10,13 @@
         event OnClientConnectedDelegate OnClientConnected;
         event OnClientClosedDelegate OnClientClosed;
 
+        IMessageFactory MessageFactory { get; }
+        
         bool IsConnected(PeerAddress address);
 
         IRemotePeer Connect(PeerAddress address);
 
-        void Start();
+        void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler);
 
         void Stop();
     }

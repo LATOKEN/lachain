@@ -17,10 +17,12 @@ message HandshakeReply {
 
 message PingRequest {
     uint64 timestamp = 1;
+    uint64 block_height = 2;
 }
 
 message PingReply {
     uint64 timestamp = 1;
+    uint64 block_height = 2;
 }
 
 message GetBlocksByHashesRequest {
@@ -48,14 +50,6 @@ message GetTransactionsByHashesReply {
     repeated SignedTransaction transactions = 1;
 }
 
-message GetTransactionHashesByBlockHeightRequest {
-    uint64 block_height = 1;
-}
-
-message GetTransactionHashesByBlockHeightReply {
-    repeated UInt256 transaction_hashes = 1;
-}
-
 message ThresholdRequest {
     bytes message = 1;
 }
@@ -73,14 +67,16 @@ message NetworkMessage {
     oneof message {
         HandshakeRequest handshake_request = 10;
         HandshakeReply handshake_reply = 11;
-        GetBlocksByHashesRequest get_blocks_by_hashes_request = 12;
-        GetBlocksByHashesReply get_blocks_by_hashes_reply = 13;
-        GetBlocksByHeightRangeRequest get_blocks_by_height_range_request = 14;
-        GetBlocksByHeightRangeReply get_blocks_by_height_range_reply = 15;
-        GetTransactionsByHashesRequest get_transactions_by_hashes_request = 16;
-        GetTransactionsByHashesReply get_transactions_by_hashes_reply = 17;
-        ThresholdRequest threshold_request = 18;
-        ConsensusMessage consensus_message = 19;
+        PingRequest ping_request = 12;
+        PingReply ping_reply = 13;
+        GetBlocksByHashesRequest get_blocks_by_hashes_request = 14;
+        GetBlocksByHashesReply get_blocks_by_hashes_reply = 15;
+        GetBlocksByHeightRangeRequest get_blocks_by_height_range_request = 16;
+        GetBlocksByHeightRangeReply get_blocks_by_height_range_reply = 17;
+        GetTransactionsByHashesRequest get_transactions_by_hashes_request = 18;
+        GetTransactionsByHashesReply get_transactions_by_hashes_reply = 19;
+        ThresholdRequest threshold_request = 20;
+        ConsensusMessage consensus_message = 21;
     }
     Signature signature = 100;
 }

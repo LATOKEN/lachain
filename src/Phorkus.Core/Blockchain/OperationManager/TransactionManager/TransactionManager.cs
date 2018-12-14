@@ -64,9 +64,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             /* check transaction with this hash in database */
             if (_transactionRepository.ContainsTransactionByHash(transaction.Hash))
                 return OperatingError.Ok;
-            var latestTx = _transactionRepository.GetLatestTransactionByFrom(transaction.Transaction.From);
-            if (latestTx != null && transaction.Transaction.Nonce != latestTx.Transaction.Nonce + 1)
-                return OperatingError.InvalidNonce;
             /* verify transaction signature */
             var sigVerifyError = VerifySignature(transaction);
             if (sigVerifyError != OperatingError.Ok)
@@ -97,6 +94,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var signed = _transactionRepository.GetTransactionByHash(txHash);
             if (signed is null)
                 return OperatingError.TransactionLost;
+            var latestTx = _transactionRepository.GetLatestTransactionByFrom(signed.Transaction.From);
+            if (latestTx != null && latestTx.Transaction.Nonce != 0 && signed.Transaction.Nonce != latestTx.Transaction.Nonce + 1)
+                return OperatingError.InvalidNonce;
             /*var state = _transactionRepository.GetTransactionState(txHash);
             if (state != null && state.Status == TransactionState.Types.TransactionStatus.Confirmed)
                 return OperatingError.InvalidState;*/
@@ -112,11 +112,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 OnTransactionFailed?.Invoke(this, signed);
                 return result;
             }
-
             /* finalize transaction state */
             _transactionRepository.ChangeTransactionState(txHash,
                 new TransactionState {Status = TransactionState.Types.TransactionStatus.Confirmed});
             OnTransactionExecuted?.Invoke(this, signed);
+            /* commit new transaction nonce */
+            _transactionRepository.CommitTransaction(signed);
             return OperatingError.Ok;
         }
         

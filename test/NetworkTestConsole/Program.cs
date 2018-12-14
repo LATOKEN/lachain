@@ -40,14 +40,14 @@ namespace NetworkTestConsole
                 MaxPeers = 10
             };
             var prog = new Program();
-            var networkManager = new NetworkManager(networkConfig, prog, new BouncyCastle(), keyPair);
+            var networkManager = new NetworkManager(new BouncyCastle());
             var thradName = Thread.CurrentThread.ManagedThreadId;
             networkManager.OnClientConnected += peer =>
             {
                 Console.WriteLine(thradName + ", " + port + ", connected: " + peer.Address);
             };
             networkManager.OnClientClosed += peer => Console.WriteLine(port + ", closed: " + peer.Address);
-            networkManager.Start();
+            networkManager.Start(networkConfig, keyPair, prog);
             while (true)
             {
                 foreach (var peer in networkConfig.Peers)
@@ -59,6 +59,16 @@ namespace NetworkTestConsole
                 Thread.Sleep(5000);
                 break;
             }
+        }
+
+        public void PingRequest(MessageEnvelope envelope, PingRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PingReply(MessageEnvelope envelope, PingReply reply)
+        {
+            throw new NotImplementedException();
         }
 
         public void GetBlocksByHashesRequest(MessageEnvelope envelope, GetBlocksByHashesRequest request)

@@ -27,6 +27,8 @@ namespace Phorkus.Core.Storage
         bool ContainsTransactionByHash(UInt256 txHash);
         
         SignedTransaction GetLatestTransactionByFrom(UInt160 from);
+
+        void CommitTransaction(SignedTransaction signedTransaction);
         
         uint GetTotalTransactionCount(UInt160 from);
     }

@@ -24,7 +24,7 @@ namespace Phorkus.Core.Consensus
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ITransactionPool _transactionPool;
-        private readonly IBroadcaster _broadcaster;
+        private readonly INetworkBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ICrypto _crypto;
@@ -47,7 +47,7 @@ namespace Phorkus.Core.Consensus
             ITransactionManager transactionManager,
             IBlockchainContext blockchainContext,
             ITransactionPool transactionPool,
-            IBroadcaster broadcaster,
+            INetworkBroadcaster broadcaster,
             ILogger<ConsensusManager> logger,
             IConfigManager configManager,
             ITransactionBuilder transactionFactory,

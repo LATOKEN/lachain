@@ -1,7 +1,7 @@
 {
   "network": {
     "magic": 56754,
-    "port": 5050,
+    "port": 5051,
     "peers": [
     ],
     "forceIPv6": false,

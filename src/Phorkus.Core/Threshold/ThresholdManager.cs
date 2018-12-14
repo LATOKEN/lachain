@@ -41,13 +41,11 @@ namespace Phorkus.Core.Threshold
             IGlobalRepository globalRepository,
             ICrypto crypto,
             IValidatorManager validatorManager,
-            INetworkContext networkContext,
             ILogger<IThresholdManager> logger)
         {
             _globalRepository = globalRepository;
             _crypto = crypto;
             _validatorManager = validatorManager;
-            _networkContext = networkContext;
             _logger = logger;
             _messagePerValidator = new byte[validatorManager.Validators.Count + 1][][];
         }

@@ -5,14 +5,17 @@ using System.Threading;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.DI;
-using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Faker
 {
@@ -33,13 +36,13 @@ namespace Phorkus.Faker
             var blockchainContext = container.Resolve<IBlockchainContext>();
             var configManager = container.Resolve<IConfigManager>();
             var blockRepository = container.Resolve<IBlockRepository>();
-            var assetRepository = container.Resolve<IAssetRepository>();
             var crypto = container.Resolve<ICrypto>();
-            var transactionFactory = container.Resolve<ITransactionFactory>();
-            var balanceRepository = container.Resolve<IBalanceRepository>();
+            var transactionFactory = container.Resolve<ITransactionBuilder>();
             var transactionManager = container.Resolve<ITransactionManager>();
             var blockManager = container.Resolve<IBlockManager>();
             var networkManager = container.Resolve<INetworkManager>();
+            var stateManager = container.Resolve<IBlockchainStateManager>();
+            var messageHandler = container.Resolve<IMessageHandler>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -65,6 +68,9 @@ namespace Phorkus.Faker
                 Console.WriteLine($" + - {s.Buffer.ToHex()}");
             Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
 
+            var balanceRepository = stateManager.LastApprovedSnapshot.Balances;
+            var assetRepository = stateManager.LastApprovedSnapshot.Assets;
+            
             var asset = assetRepository.GetAssetByName("LA");
 
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
@@ -88,7 +94,7 @@ namespace Phorkus.Faker
                 keyPair.PublicKey
             };
             
-            networkManager.Start();
+            networkManager.Start(configManager.GetConfig<NetworkConfig>("network"), keyPair, messageHandler);
             
             Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

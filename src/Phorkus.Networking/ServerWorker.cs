@@ -20,9 +20,9 @@ namespace Phorkus.Networking
         public event OnErrorDelegate OnError;
         
         private readonly NetworkConfig _networkConfig;
-        
-        private bool _isActive;
-        
+
+        public bool IsActive { get; set; }
+
         public ServerWorker(NetworkConfig networkConfig)
         {
             _networkConfig = networkConfig ?? throw new ArgumentNullException(nameof(networkConfig));
@@ -35,36 +35,39 @@ namespace Phorkus.Networking
             {
                 var endpoint = $"tcp://{_networkConfig.Address}:{_networkConfig.Port}";
                 socket.Bind(endpoint);
-                _isActive = true;
+                IsActive = true;
                 OnOpen?.Invoke(endpoint);
-                while (_isActive)
+                while (IsActive)
                 {
                     var frame = socket.ReceiveFrame(out var error);
                     if (!Equals(error, ZError.None))
                     {
                         OnError?.Invoke("Unable to receive frame, got error (" + error + ")");
-                        continue;
+                        break;
                     }
                     var buffer = frame.Read();
                     if (buffer == null || buffer.Length <= 0)
                         continue;
-                    try
+                    Task.Factory.StartNew(() =>
                     {
-                        OnMessage?.Invoke(buffer);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.Error.WriteLine(e);
-                        OnError?.Invoke(e.Message);
-                    }
+                        try
+                        {
+                            OnMessage?.Invoke(buffer);   
+                        }
+                        catch (Exception e)
+                        {
+                            OnError?.Invoke(e.Message);
+                        }
+                    });
                 }
                 OnClose?.Invoke(endpoint);
+                IsActive = false;
             }
         }
         
         public void Start()
         {
-            if (_isActive)
+            if (IsActive)
                 throw new Exception("Server has already been started");
             Task.Factory.StartNew(() =>
             {
@@ -81,9 +84,9 @@ namespace Phorkus.Networking
 
         public void Stop()
         {
-            if (_isActive)
+            if (IsActive)
                 throw new Exception("Server hasn't been started yet");
-            _isActive = false;
+            IsActive = false;
         }
     }
 }

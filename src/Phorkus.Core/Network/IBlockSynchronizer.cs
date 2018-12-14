@@ -7,15 +7,15 @@ namespace Phorkus.Core.Network
 {
     public interface IBlockSynchronizer
     {
-        uint HandleTransactionsFromPeer(IEnumerable<SignedTransaction> transactions, IRemotePeer remotePeer);
-        
         uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
         
-        void HandleBlockFromPeer(Block block, IRemotePeer remotePeer);
+        uint HandleTransactionsFromPeer(IEnumerable<SignedTransaction> transactions, IRemotePeer remotePeer);
 
-        void HandlePeerHasBlocks(ulong blockHeight);
+        uint WaitForBlocks(IEnumerable<UInt256> blockHashes, TimeSpan timeout);
+        
+        void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout);
 
-//        bool DownloadTransactions(IBlockchainService blockchainService, IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
+        void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer);
         
         void Start();
     }
