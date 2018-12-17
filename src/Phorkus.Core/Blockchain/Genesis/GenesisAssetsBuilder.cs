@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Org.BouncyCastle.Asn1;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Config;
 using Phorkus.Proto;
@@ -13,7 +14,7 @@ namespace Phorkus.Core.Blockchain.Genesis
     {
         private readonly ICrypto _crypto;
         private readonly IEnumerable<string> _validators;
-        
+
         public GenesisAssetsBuilder(IConfigManager configManager, ICrypto crypto)
         {
             _crypto = crypto;
@@ -43,6 +44,30 @@ namespace Phorkus.Core.Blockchain.Genesis
             };
             return tx;
         }
+
+
+        public Transaction BuildPlatformTokenRegisterTransaction(UInt160 owner, string platformToken, uint supply,
+            uint precision)
+        {
+            var tx = new Transaction
+            {
+                Type = TransactionType.Register,
+                Version = 0,
+                Flags = (ulong) TransactionFlag.None,
+                From = UInt160Utils.Zero,
+                Register = new RegisterTransaction
+                {
+                    Type = AssetType.Platform,
+                    Name = platformToken,
+                    Supply = Money.FromDecimal(supply).ToUInt256(),
+                    Decimals = precision,
+                    Owner = owner
+                },
+                Nonce = 0
+            };
+            return tx;
+        }
+
 
         public Transaction BuildGenesisMinerTransaction()
         {
@@ -89,6 +114,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 var publicKey = validator.HexToBytes().ToPublicKey();
                 txs.Add(BuildGenesisTokenIssue(publicKey, value, asset));
             }
+
             return txs;
         }
     }

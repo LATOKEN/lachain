@@ -85,7 +85,7 @@ namespace Phorkus.CrossChain.Ethereum
                     stringTx.Length - EthereumConfig.SignatureLength).Substring(0, EthereumConfig.AddressLength);
                 var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(from),
                     tx.Value.Value, Utils.ConvertHexStringToByteArray(tx.TransactionHash.ToString()),
-                    (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.ToString()));
+                    (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.HexValue));
                 transactions.Add(ethereumTx);
             }
 

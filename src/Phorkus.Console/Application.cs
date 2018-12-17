@@ -6,6 +6,7 @@ using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
+using Phorkus.Core.CrossChain;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
@@ -13,6 +14,7 @@ using Phorkus.Core.Network;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
+using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Hestia;
 using Phorkus.Logger;
@@ -32,7 +34,7 @@ namespace Phorkus.Console
             {
                 System.Console.Error.WriteLine(exception);
             };
-            
+
             var containerBuilder = new SimpleInjectorContainerBuilder(
                 new ConfigManager("config.json"));
 
@@ -44,6 +46,7 @@ namespace Phorkus.Console
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
             containerBuilder.RegisterModule<PersistentStorageModule>();
+            containerBuilder.RegisterModule<CrosschainModule>();
 
             _container = containerBuilder.Build();
         }
@@ -65,10 +68,11 @@ namespace Phorkus.Console
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
-            
+            var crosschain = _container.Resolve<ICrossChain>();
+
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            
+
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
             System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToHex());
@@ -89,12 +93,12 @@ namespace Phorkus.Console
             foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-            
+
             var asset = blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("LA");
-            
+
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
-            
+
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
@@ -103,12 +107,17 @@ namespace Phorkus.Console
 //            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
 
+            System.Console.WriteLine("BTC hash: " +
+                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("BTC").Hash);
+            System.Console.WriteLine("ETH hash: " +
+                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("ETH").Hash);
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
+            crosschain.Start();
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
-            
+
 //            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;

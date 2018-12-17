@@ -40,6 +40,8 @@ namespace Phorkus.Core.Blockchain.Genesis
             var address = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             
             var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
+            var btc = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "BTC", 21000000, 8);
+            var eth = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "ETH", (uint)1e9, 18);
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
 
             var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
@@ -55,7 +57,9 @@ namespace Phorkus.Core.Blockchain.Genesis
                 /* first transaction is always a miner transaction */
                 minerTransaction,
                 /* creates NEO */
-                governingToken
+                governingToken,
+                btc,
+                eth
             };
             var genesisTransactions = txsBefore.Concat(tokenDistribution).ToArray();
             
