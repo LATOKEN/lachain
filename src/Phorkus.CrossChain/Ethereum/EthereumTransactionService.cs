@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using NBitcoin;
 using Nethereum.Hex.HexTypes;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC;
@@ -73,22 +74,21 @@ namespace Phorkus.CrossChain.Ethereum
                 throw new BlockchainNotAvailableException($"Unable to get tranasction at block ({blockHeight})");
 
             var address = Utils.ConvertByteArrayToString(recipient);
+            Console.Out.Write("Address: " + address + '\n');
             var transactions = new List<EthereumContractTransaction>();
             foreach (var tx in getTransactions.Result.Transactions)
             {
-                if (tx.To != address)
+                Console.Out.Write("To: " + tx.To + '\n');
+                if (tx.To.Substring(2) != address)
                     continue;
-                var stringTx = tx.ToString();
-                var from = stringTx.Substring(
-                    tx.From.Length + tx.To.Length + tx.Nonce.HexValue.Length + tx.Gas.HexValue.Length +
-                    tx.GasPrice.HexValue.Length + tx.Value.HexValue.Length,
-                    stringTx.Length - EthereumConfig.SignatureLength).Substring(0, EthereumConfig.AddressLength);
+                var from = tx.Input.Substring(2, EthereumConfig.AddressLength);
+                Console.Out.Write(from + '\n');
                 var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(from),
-                    tx.Value.Value, Utils.ConvertHexStringToByteArray(tx.TransactionHash.ToString()),
+                    tx.Value.Value, Utils.ConvertHexStringToByteArray(tx.TransactionHash),
                     (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.HexValue));
                 transactions.Add(ethereumTx);
             }
-
+            Console.Out.Write("Length: " + transactions.Count + '\n');
             return transactions;
         }
 

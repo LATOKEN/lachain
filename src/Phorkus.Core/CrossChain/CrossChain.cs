@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
@@ -17,6 +19,9 @@ namespace Phorkus.Core.CrossChain
     public class CrossChain : ICrossChain
     {
         private readonly ICrossChainManager _crossChainManager = new CrossChainManager();
+
+        private readonly ConcurrentDictionary<BlockchainType, ulong> _lastBlocks =
+            new ConcurrentDictionary<BlockchainType, ulong>();
 
         private readonly IDictionary<BlockchainType, Timer> _synchronizeTimers
             = new Dictionary<BlockchainType, Timer>();
@@ -53,28 +58,38 @@ namespace Phorkus.Core.CrossChain
             _transactionManager = transactionManager;
             _crypto = crypto;
             _validatorManager = validatorManager;
+
+            _lastBlocks.GetOrAdd(BlockchainType.Bitcoin,
+                _crossChainManager.GetTransactionService(BlockchainType.Bitcoin).CurrentBlockHeight);
+            _lastBlocks.GetOrAdd(BlockchainType.Ethereum,
+                _crossChainManager.GetTransactionService(BlockchainType.Ethereum).CurrentBlockHeight);
         }
 
         private void _SynchronizeBlockchain(object state)
         {
             if (!(state is BlockchainType blockchainType))
                 return;
-            var transactionService = _crossChainManager.GetTransactionService(blockchainType);
             /* check blockchain's block height */
-            var currentHeight = _globalRepository.GetBlockchainHeight(blockchainType);
-            var blockchainHeight = transactionService.CurrentBlockHeight;
-            if (currentHeight >= blockchainHeight)
+            var transactionService = _crossChainManager.GetTransactionService(blockchainType);
+            var currentHeight = transactionService.CurrentBlockHeight;
+            var lastHeight = currentHeight;
+            if (!_lastBlocks.TryGetValue(blockchainType, out lastHeight) || lastHeight >= currentHeight)
                 return;
+            
             /* determine and encode our public key */
             var rawPublicKey = _thresholdKey.PublicKey.Buffer.ToByteArray();
-            var address = AddressEncoder.EncodeAddress(transactionService.AddressFormat, rawPublicKey);
-            /* try get transactions */
-            for (var height = currentHeight; height <= blockchainHeight; height++)
+            // var rawPublicKey = _keyPair.PublicKey.Buffer.ToByteArray();
+            /* incorrect address computation */
+            var address = AddressEncoder.EncodeAddress(transactionService.AddressFormat, rawPublicKey); 
+            for (; lastHeight < currentHeight; ++lastHeight)
             {
-                var txs = transactionService.GetTransactionsAtBlock(address, height);
+                /* try get transactions */
+                var txs = transactionService.GetTransactionsAtBlock(address, lastHeight);
                 foreach (var tx in txs)
                     _CreateDepositTransaction(tx);
             }
+
+            _lastBlocks.AddOrReplace(blockchainType, lastHeight);
         }
 
         private void _CreateDepositTransaction(IContractTransaction contractTransaction)

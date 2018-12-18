@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -21,7 +22,8 @@ namespace Phorkus.CrossChain.Bitcoin
         internal BitcoinTransactionService()
         {
             _importedAddresses = new Collection<string>();
-            _rpcClient = new RPCClient(NBitcoin.Network.Main);
+            var credentials = new NetworkCredential("user", "password");
+            _rpcClient = new RPCClient(credentials, "127.0.0.1", NBitcoin.Network.Main);
         }
 
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
@@ -44,7 +46,7 @@ namespace Phorkus.CrossChain.Bitcoin
 
         private IEnumerable<IContractTransaction> _GetTransactionsAtBlockUnsafe(byte[] recipient, ulong blockHeight)
         {
-            // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses needs to be cached.
+            // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses need to be cached.
             var getBlock = _rpcClient.GetBlock(blockHeight);
             var scriptPubKey =
                 new BitcoinScriptAddress(Utils.ConvertByteArrayToString(recipient), NBitcoin.Network.Main)
@@ -114,15 +116,8 @@ namespace Phorkus.CrossChain.Bitcoin
         {
             if (updateFee)
             {
-                var estimateFee = _rpcClient.EstimateSmartFeeAsync(1);
-                estimateFee.Wait();
-                if (estimateFee.IsFaulted)
-                {
-                    throw new RPCException(RPCErrorCode.RPC_CLIENT_NOT_CONNECTED,
-                        "Bad request", RPCResponse.Load(Stream.Null));
-                }
-
-                _satoshiPerByte = (long) (estimateFee.Result.FeeRate.SatoshiPerByte * (decimal) 1e8);
+                var estimateFee = _rpcClient.EstimateSmartFee(1);
+                _satoshiPerByte = (long) (estimateFee.FeeRate.SatoshiPerByte * (decimal) 1e8);
             }
 
             return _satoshiPerByte * _CalcBytes(inputsNum, outputsNum);
@@ -130,7 +125,7 @@ namespace Phorkus.CrossChain.Bitcoin
 
         internal KeyValuePair<List<OutPoint>, long> GetOutputs(string address, long value)
         {
-            // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses needs to be cached.
+            // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses need to be cached.
             if (!_importedAddresses.Contains(address))
             {
                 _rpcClient.ImportAddress(new BitcoinScriptAddress(address, NBitcoin.Network.Main));

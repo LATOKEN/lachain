@@ -19,6 +19,7 @@ using Phorkus.Crypto;
 using Phorkus.Hestia;
 using Phorkus.Logger;
 using Phorkus.Networking;
+using Phorkus.Proto;
 using Phorkus.RocksDB;
 using Phorkus.Utility.Utils;
 
@@ -46,7 +47,6 @@ namespace Phorkus.Console
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
             containerBuilder.RegisterModule<PersistentStorageModule>();
-            containerBuilder.RegisterModule<CrosschainModule>();
 
             _container = containerBuilder.Build();
         }
@@ -68,7 +68,7 @@ namespace Phorkus.Console
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
-            var crosschain = _container.Resolve<ICrossChain>();
+            var crossChain = _container.Resolve<ICrossChain>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -93,6 +93,10 @@ namespace Phorkus.Console
             foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
+            System.Console.WriteLine("BTC hash: " +
+                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("BTC").Hash);
+            System.Console.WriteLine("ETH hash: " +
+                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("ETH").Hash);
 
             var asset = blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("LA");
 
@@ -107,12 +111,8 @@ namespace Phorkus.Console
 //            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
             System.Console.WriteLine("-------------------------------");
 
-            System.Console.WriteLine("BTC hash: " +
-                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("BTC").Hash);
-            System.Console.WriteLine("ETH hash: " +
-                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("ETH").Hash);
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            crosschain.Start();
+            crossChain.Start(new ThresholdKey(), keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();

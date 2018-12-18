@@ -7,6 +7,7 @@ using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
+using Phorkus.Core.CrossChain;
 using Phorkus.Core.Threshold;
 
 namespace Phorkus.Core.DI.Modules
@@ -32,6 +33,7 @@ namespace Phorkus.Core.DI.Modules
             /* pool */
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
             containerBuilder.RegisterSingleton<IThresholdManager, ThresholdManager>();
+            containerBuilder.RegisterSingleton<ICrossChain, CrossChain.CrossChain>();
         }
     }
 }

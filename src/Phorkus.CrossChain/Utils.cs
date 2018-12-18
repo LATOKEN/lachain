@@ -1,5 +1,7 @@
 using System;
+using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Phorkus.CrossChain
@@ -39,7 +41,7 @@ namespace Phorkus.CrossChain
 
         public static string ConvertByteArrayToString(byte[] bytes)
         {
-            var hex = new StringBuilder(bytes.Length << 1);
+            var hex = new StringBuilder(bytes.Length * 2);
             foreach (var b in bytes)
             {
                 hex.AppendFormat("{0:x2}", b);
@@ -84,12 +86,18 @@ namespace Phorkus.CrossChain
                 throw new ArgumentException(string.Format(CultureInfo.InvariantCulture,
                     "The binary key cannot have an odd number of digits: {0}", hexString));
             }
-            
-            var data = new byte[hexString.Length >> 1];
+            if (hexString.Substring(0, 2) == "0x")
+            {
+                hexString = hexString.Substring(2);
+            }
+            var data = new byte[hexString.Length / 2];
             for (var index = 0; index < data.Length; index++)
             {
-                var byteValue = hexString.Substring(index << 1, 2);
-                data[index] = byte.Parse(byteValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                var byteValue = hexString.Substring(index * 2, 2);
+                // var firstByte = byteValue[0] >= 'a' && byteValue[0] <= 'f' ? byteValue[1] - 'a' + 10 : byteValue[1] - '0';
+                
+                // var secondByte = byteValue[0] >= 'a' && byteValue[0] <= 'f' ? byteValue[1] - 'a' + 10 : byteValue[1] - '0';
+                data[index] = byte.Parse(byteValue.ToUpper(), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             }
 
             return data;
