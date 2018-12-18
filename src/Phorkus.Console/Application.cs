@@ -5,6 +5,7 @@ using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.State;
+using Phorkus.Core.CLI;
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
@@ -17,6 +18,7 @@ using Phorkus.Crypto;
 using Phorkus.Hestia;
 using Phorkus.Logger;
 using Phorkus.Networking;
+using Phorkus.Proto;
 using Phorkus.RocksDB;
 using Phorkus.Utility.Utils;
 
@@ -65,10 +67,11 @@ namespace Phorkus.Console
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
-            
+            var cli = _container.Resolve<ICLI>();
+           
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            
+            var thresholdKey = new ThresholdKey();
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
             System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToHex());
@@ -108,6 +111,7 @@ namespace Phorkus.Console
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
+            cli.Start(thresholdKey, keyPair);
             
 //            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
