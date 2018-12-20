@@ -1,5 +1,3 @@
-.idea/
-**/bin/*
-**/obj/*
-*.sln
-Dockerfile
+**/bin
+**/obj
+**/logs

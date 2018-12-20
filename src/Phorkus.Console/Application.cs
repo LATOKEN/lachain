@@ -68,7 +68,7 @@ namespace Phorkus.Console
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
-            var crossChain = _container.Resolve<ICrossChain>();
+//            var crossChain = _container.Resolve<ICrossChain>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -112,7 +112,7 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            crossChain.Start(new ThresholdKey(), keyPair);
+//            crossChain.Start(new ThresholdKey(), keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();

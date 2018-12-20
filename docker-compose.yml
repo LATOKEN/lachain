@@ -1,0 +1,37 @@
+version: '2.4'
+services:
+  node1:
+    build:
+      context: ./
+      args:
+        CONFIG: src/Phorkus.Console/config1.json
+      dockerfile: Dockerfile
+    ports:
+    - "5051:5050"
+
+  node2:
+    build:
+      context: ./
+      args:
+        CONFIG: src/Phorkus.Console/config2.json
+      dockerfile: Dockerfile
+    ports:
+    - "5052:5050"
+
+  node3:
+    build:
+      context: ./
+      args:
+        CONFIG: src/Phorkus.Console/config3.json
+      dockerfile: Dockerfile
+    ports:
+    - "5053:5050"
+
+  node4:
+    build:
+      context: ./
+      args:
+        CONFIG: src/Phorkus.Console/config4.json
+      dockerfile: Dockerfile
+    ports:
+    - "5054:5050"

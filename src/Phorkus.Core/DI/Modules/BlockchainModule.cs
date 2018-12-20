@@ -33,7 +33,6 @@ namespace Phorkus.Core.DI.Modules
             /* pool */
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
             containerBuilder.RegisterSingleton<IThresholdManager, ThresholdManager>();
-            containerBuilder.RegisterSingleton<ICrossChain, CrossChain.CrossChain>();
         }
     }
 }

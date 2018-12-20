@@ -1,19 +1,14 @@
-FROM microsoft/dotnet:sdk
-RUN apt update && apt install -y apt-transport-https libsnappy-dev
-RUN ln -s /lib/x86_64-linux-gnu/libdl.so.2 /lib/x86_64-linux-gnu/libdl.so
+FROM microsoft/dotnet:sdk as build-env
 WORKDIR /phorkus
-
-COPY Phorkus.RocksDB/*.csproj ./Phorkus.RocksDB/
-COPY Phorkus.Logger/*.csproj ./Phorkus.Logger/
-COPY Phorkus.Core/*.csproj ./Phorkus.Core/
-COPY Phorkus.Console/*.csproj ./Phorkus.Console/
-
+COPY src/ ./
 WORKDIR /phorkus/Phorkus.Console
 RUN dotnet restore
+RUN dotnet publish -c Release -o out
 
+FROM microsoft/dotnet:aspnetcore-runtime
+RUN apt update && apt install -y libc6-dev libsnappy-dev
 WORKDIR /phorkus
-COPY . ./
-
-WORKDIR /phorkus/Phorkus.Console
-RUN dotnet build -c Release -o build
-ENTRYPOINT ["dotnet", "build/Phorkus.Console.dll"]
+COPY --from=build-env /phorkus/Phorkus.Console/out .
+ARG CONFIG=src/Phorkus.Console/config.json
+COPY ${CONFIG} ./config.json
+ENTRYPOINT ["dotnet", "Phorkus.Console.dll"]

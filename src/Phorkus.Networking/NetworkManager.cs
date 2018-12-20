@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using NetMQ;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -246,7 +247,7 @@ namespace Phorkus.Networking
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e);
             }
         }
 
@@ -270,7 +271,7 @@ namespace Phorkus.Networking
             {
                 Version = 0,
                 Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Address = $"tcp://192.168.88.154:{networkConfig.Port}",
+                Address = $"{networkConfig.MyHost}:{networkConfig.Port}",
                 PublicKey = keyPair.PublicKey,
                 Nonce = (uint) new Random().Next(1 << 30),
                 BlockHeight = 0,
