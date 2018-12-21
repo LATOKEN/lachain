@@ -21,17 +21,15 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (error != OperatingError.Ok)
                 return error;
             var confirm = transaction.Confirm;
-            if (!confirm.Value.IsZero())
+            var assetName = confirm.BlockchainType == BlockchainType.Bitcoin
+                ? snapshot.Assets.GetAssetByName("BTC").Hash
+                : snapshot.Assets.GetAssetByName("ETH").Hash;
+            var supply = snapshot.Assets.GetAssetSupplyByHash(assetName);
+            if (!confirm.Value.IsZero() && supply >= new Money(confirm.Value))
             {
-                var assetName = confirm.BlockchainType == BlockchainType.Bitcoin
-                    ? snapshot.Assets.GetAssetByName("BTC").Hash
-                    : snapshot.Assets.GetAssetByName("ETH").Hash;
-                var newSupply = new Money(snapshot.Assets.GetAssetByHash(assetName).Supply) + new Money(confirm.Value);
-                snapshot.Assets.GetAssetByHash(assetName).Supply = newSupply.ToUInt256();
-                balances.TransferBalance(transaction.From, confirm.Recipient,
-                    confirm.BlockchainType == BlockchainType.Bitcoin
-                        ? snapshot.Assets.GetAssetByName("BTC").Hash
-                        : snapshot.Assets.GetAssetByName("ETH").Hash, new Money(confirm.Value));
+                balances.SubWithdrawingBalance(transaction.From, assetName, new Money(confirm.Value));
+                snapshot.Assets.SubSupply(assetName, new Money(confirm.Value));
+                balances.AddBalance(confirm.Recipient, assetName, new Money(confirm.Value));
             }
 
             /* TODO: "invoke smart-contract code here" */

@@ -59,7 +59,8 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
+        public Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
+            Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
@@ -83,10 +84,10 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
-       /* 
-        public Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
-            byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
+
+
+        public Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
+            Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
             var withdraw = new WithdrawTransaction
@@ -109,10 +110,10 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
-        
-        public Transaction ConfirmTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
-            byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
+
+
+        public Transaction ConfirmTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
+            Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
             var confirm = new ConfirmTransaction
@@ -134,6 +135,6 @@ namespace Phorkus.Core.Blockchain
                 Confirm = confirm
             };
             return tx;
-        }*/
+        }
     }
 }

@@ -8,10 +8,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
     public class WithdrawTransactionExecuter : ITransactionExecuter
     {
         private readonly IValidatorManager _validatorManager;
+        private readonly IWithdrawalManager _withdrawalManager;
 
-        public WithdrawTransactionExecuter(IValidatorManager validatorManager)
+        public WithdrawTransactionExecuter(IValidatorManager validatorManager, IWithdrawalManager withdrawalManager)
         {
             _validatorManager = validatorManager;
+            _withdrawalManager = withdrawalManager;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
@@ -21,17 +23,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (error != OperatingError.Ok)
                 return error;
             var withdraw = transaction.Withdraw;
-            if (!withdraw.Value.IsZero())
+            var assetName = withdraw.BlockchainType == BlockchainType.Bitcoin
+                ? snapshot.Assets.GetAssetByName("BTC").Hash
+                : snapshot.Assets.GetAssetByName("ETH").Hash;
+            var supply = snapshot.Assets.GetAssetSupplyByHash(assetName);
+            if (!withdraw.Value.IsZero() && supply >= new Money(withdraw.Value))
             {
-                var assetName = withdraw.BlockchainType == BlockchainType.Bitcoin
-                    ? snapshot.Assets.GetAssetByName("BTC").Hash
-                    : snapshot.Assets.GetAssetByName("ETH").Hash;
-                var newSupply = new Money(snapshot.Assets.GetAssetByHash(assetName).Supply) + new Money(withdraw.Value);
-                snapshot.Assets.GetAssetByHash(assetName).Supply = newSupply.ToUInt256();
-                balances.TransferBalance(transaction.From, withdraw.Recipient,
-                    withdraw.BlockchainType == BlockchainType.Bitcoin
-                        ? snapshot.Assets.GetAssetByName("BTC").Hash
-                        : snapshot.Assets.GetAssetByName("ETH").Hash, new Money(withdraw.Value));
+                _withdrawalManager.AddWithdrawal(transaction);
+                balances.AddWithdrawingBalance(transaction.From, assetName, new Money(withdraw.Value));
             }
 
             /* TODO: "invoke smart-contract code here" */

@@ -24,6 +24,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             IValidatorManager validatorManager,
             ITransactionVerifier transactionVerifier,
             IMultisigVerifier multisigVerifier,
+            IWithdrawalManager withdrawalManager,
             ICrypto crypto)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
@@ -34,7 +35,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 {TransactionType.Contract, new ContractTransactionExecuter()},
                 {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
                 {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
-                {TransactionType.Withdraw, new WithdrawTransactionExecuter(validatorManager),
+                {TransactionType.Withdraw, new WithdrawTransactionExecuter(validatorManager, withdrawalManager)},
                 {TransactionType.Confirm, new ConfirmTransactionExecuter(validatorManager)}
             };
             _transactionRepository =

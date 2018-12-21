@@ -26,12 +26,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 var assetName = deposit.BlockchainType == BlockchainType.Bitcoin
                     ? snapshot.Assets.GetAssetByName("BTC").Hash
                     : snapshot.Assets.GetAssetByName("ETH").Hash;
-                var newSupply = new Money(snapshot.Assets.GetAssetByHash(assetName).Supply) + new Money(deposit.Value);
-                snapshot.Assets.GetAssetByHash(assetName).Supply = newSupply.ToUInt256();
-                balances.TransferBalance(transaction.From, deposit.Recipient,
-                    deposit.BlockchainType == BlockchainType.Bitcoin
-                        ? snapshot.Assets.GetAssetByName("BTC").Hash
-                        : snapshot.Assets.GetAssetByName("ETH").Hash, new Money(deposit.Value));
+                snapshot.Assets.AddSupply(assetName, new Money(deposit.Value));
+                balances.TransferBalance(transaction.From, deposit.Recipient, assetName, new Money(deposit.Value));
             }
 
             /* TODO: "invoke smart-contract code here" */

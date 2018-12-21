@@ -9,6 +9,7 @@ using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.CrossChain;
 using Phorkus.Core.Threshold;
+using Phorkus.CrossChain;
 
 namespace Phorkus.Core.DI.Modules
 {
@@ -28,7 +29,10 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IGenesisAssetsBuilder, GenesisAssetsBuilder>();
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();
             /* operation manager */
+            containerBuilder.RegisterSingleton<ICrossChain, CrossChain.CrossChain>();
+            containerBuilder.RegisterSingleton<ICrossChainManager, CrossChainManager>();
             containerBuilder.RegisterSingleton<ITransactionManager, TransactionManager>();
+            containerBuilder.RegisterSingleton<IWithdrawalManager, WithdrawalManager>();
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
             /* pool */
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();

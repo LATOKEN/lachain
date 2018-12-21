@@ -17,7 +17,8 @@ namespace Phorkus.CrossChain.Ethereum
         {
             _ethApiService = new EthApiService(new RpcClient(new Uri(EthereumConfig.RpcUri)));
         }
-
+        public EllipticCurveType EllipticCurveType { get; }
+        
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
         public ulong BlockGenerationTime { get; } = 15 * 1000;

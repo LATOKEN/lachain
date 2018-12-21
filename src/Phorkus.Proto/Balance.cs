@@ -24,14 +24,14 @@ namespace Phorkus.Proto {
     static BalanceReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg1iYWxhbmNlLnByb3RvGg1kZWZhdWx0LnByb3RvIlcKB0JhbGFuY2USGQoH",
+            "Cg1iYWxhbmNlLnByb3RvGg1kZWZhdWx0LnByb3RvInkKB0JhbGFuY2USGQoH",
             "YWRkcmVzcxgBIAEoCzIILlVJbnQxNjASFwoFYXNzZXQYAiABKAsyCC5VSW50",
-            "MTYwEhgKBmFtb3VudBgDIAEoCzIILlVJbnQyNTZCEKoCDVBob3JrdXMuUHJv",
-            "dG9iBnByb3RvMw=="));
+            "MTYwEhsKCWF2YWlsYWJsZRgDIAEoCzIILlVJbnQyNTYSHQoLd2l0aGRyYXdp",
+            "bmcYBCABKAsyCC5VSW50MjU2QhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Balance), global::Phorkus.Proto.Balance.Parser, new[]{ "Address", "Asset", "Amount" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Balance), global::Phorkus.Proto.Balance.Parser, new[]{ "Address", "Asset", "Available", "Withdrawing" }, null, null, null)
           }));
     }
     #endregion
@@ -65,7 +65,8 @@ namespace Phorkus.Proto {
     public Balance(Balance other) : this() {
       address_ = other.address_ != null ? other.address_.Clone() : null;
       asset_ = other.asset_ != null ? other.asset_.Clone() : null;
-      amount_ = other.amount_ != null ? other.amount_.Clone() : null;
+      available_ = other.available_ != null ? other.available_.Clone() : null;
+      withdrawing_ = other.withdrawing_ != null ? other.withdrawing_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -96,14 +97,25 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "amount" field.</summary>
-    public const int AmountFieldNumber = 3;
-    private global::Phorkus.Proto.UInt256 amount_;
+    /// <summary>Field number for the "available" field.</summary>
+    public const int AvailableFieldNumber = 3;
+    private global::Phorkus.Proto.UInt256 available_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt256 Amount {
-      get { return amount_; }
+    public global::Phorkus.Proto.UInt256 Available {
+      get { return available_; }
       set {
-        amount_ = value;
+        available_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "withdrawing" field.</summary>
+    public const int WithdrawingFieldNumber = 4;
+    private global::Phorkus.Proto.UInt256 withdrawing_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt256 Withdrawing {
+      get { return withdrawing_; }
+      set {
+        withdrawing_ = value;
       }
     }
 
@@ -122,7 +134,8 @@ namespace Phorkus.Proto {
       }
       if (!object.Equals(Address, other.Address)) return false;
       if (!object.Equals(Asset, other.Asset)) return false;
-      if (!object.Equals(Amount, other.Amount)) return false;
+      if (!object.Equals(Available, other.Available)) return false;
+      if (!object.Equals(Withdrawing, other.Withdrawing)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -131,7 +144,8 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (address_ != null) hash ^= Address.GetHashCode();
       if (asset_ != null) hash ^= Asset.GetHashCode();
-      if (amount_ != null) hash ^= Amount.GetHashCode();
+      if (available_ != null) hash ^= Available.GetHashCode();
+      if (withdrawing_ != null) hash ^= Withdrawing.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -153,9 +167,13 @@ namespace Phorkus.Proto {
         output.WriteRawTag(18);
         output.WriteMessage(Asset);
       }
-      if (amount_ != null) {
+      if (available_ != null) {
         output.WriteRawTag(26);
-        output.WriteMessage(Amount);
+        output.WriteMessage(Available);
+      }
+      if (withdrawing_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(Withdrawing);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -171,8 +189,11 @@ namespace Phorkus.Proto {
       if (asset_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Asset);
       }
-      if (amount_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Amount);
+      if (available_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Available);
+      }
+      if (withdrawing_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Withdrawing);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -197,11 +218,17 @@ namespace Phorkus.Proto {
         }
         Asset.MergeFrom(other.Asset);
       }
-      if (other.amount_ != null) {
-        if (amount_ == null) {
-          amount_ = new global::Phorkus.Proto.UInt256();
+      if (other.available_ != null) {
+        if (available_ == null) {
+          available_ = new global::Phorkus.Proto.UInt256();
         }
-        Amount.MergeFrom(other.Amount);
+        Available.MergeFrom(other.Available);
+      }
+      if (other.withdrawing_ != null) {
+        if (withdrawing_ == null) {
+          withdrawing_ = new global::Phorkus.Proto.UInt256();
+        }
+        Withdrawing.MergeFrom(other.Withdrawing);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -229,10 +256,17 @@ namespace Phorkus.Proto {
             break;
           }
           case 26: {
-            if (amount_ == null) {
-              amount_ = new global::Phorkus.Proto.UInt256();
+            if (available_ == null) {
+              available_ = new global::Phorkus.Proto.UInt256();
             }
-            input.ReadMessage(amount_);
+            input.ReadMessage(available_);
+            break;
+          }
+          case 34: {
+            if (withdrawing_ == null) {
+              withdrawing_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(withdrawing_);
             break;
           }
         }

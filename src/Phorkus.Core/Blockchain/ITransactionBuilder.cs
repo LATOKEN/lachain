@@ -11,11 +11,11 @@ namespace Phorkus.Core.Blockchain
 
         Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);
-/*
+
         Transaction ConfirmTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);
 
         Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
-            byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);*/
+            byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);
     }
 }

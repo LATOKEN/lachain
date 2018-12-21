@@ -6,6 +6,8 @@ using Phorkus.Core.Blockchain.State;
 using Phorkus.Hestia.Repositories;
 using Phorkus.Proto;
 using Phorkus.RocksDB;
+using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Hestia.State
 {
@@ -65,6 +67,42 @@ namespace Phorkus.Hestia.State
             var result = Asset.Parser.ParseFrom(raw);
             return result;
         }
+        
+        
+        public Money GetAssetSupplyByHash(UInt160 assetHash)
+        {
+            var key = EntryPrefix.AssetSupplyByHash.BuildPrefix(assetHash);
+            var value = _state.Get(key);
+            var supply = value != null ? UInt256.Parser.ParseFrom(value): UInt256Utils.Zero;
+            return new Money(supply);
+        }
+        
+        
+        public Money AddSupply(UInt160 asset, Money value)
+        {
+            var supply = GetAssetSupplyByHash(asset);
+            supply += value;
+            ChangeSupply(asset, supply);
+            return supply;
+        }
+
+        public Money SubSupply(UInt160 asset, Money value)
+        {
+            var supply = GetAssetSupplyByHash(asset);
+            supply -= value;
+            ChangeSupply(asset, supply);
+            return supply;
+        }
+        
+        
+
+        private void ChangeSupply(UInt160 asset, Money amount)
+        {
+            var key = EntryPrefix.AssetSupplyByHash.BuildPrefix(asset);
+            var value = amount.ToUInt256().ToByteArray();
+            _state.AddOrUpdate(key, value);
+        }
+
 
         public Asset GetAssetByName(string assetName)
         {

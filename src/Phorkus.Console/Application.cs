@@ -66,8 +66,10 @@ namespace Phorkus.Console
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
             var thresholdManager = _container.Resolve<IThresholdManager>();
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
+            var crossChainManager = _container.Resolve<ICrossChainManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
+            var withdrawalManager = _container.Resolve<IWithdrawalManager>();
 //            var crossChain = _container.Resolve<ICrossChain>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -117,6 +119,7 @@ namespace Phorkus.Console
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
+            withdrawalManager.Start(new ThresholdKey(), keyPair);
 
 //            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
