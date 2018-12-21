@@ -22,7 +22,7 @@ namespace NetworkTestConsole
             {
                 Thread.Sleep(1000);
             }
-        }
+        } 
         
         private static void _Thread(string privateKey, ushort port)
         {
@@ -97,6 +97,11 @@ namespace NetworkTestConsole
         }
 
         public void GetTransactionsByHashesReply(MessageEnvelope envelope, GetTransactionsByHashesReply reply)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ConsensusMessage(MessageEnvelope buildEnvelope, ConsensusMessage message)
         {
             throw new NotImplementedException();
         }

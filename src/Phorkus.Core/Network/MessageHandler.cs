@@ -1,7 +1,8 @@
 using System;
 using System.Linq;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.Storage;
-using Phorkus.Core.Utils;
+using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
 
@@ -13,17 +14,24 @@ namespace Phorkus.Core.Network
         private readonly ITransactionRepository _transactionRepository;
         private readonly IBlockRepository _blockRepository;
         private readonly IGlobalRepository _globalRepository;
+        private readonly IConsensusManager _consensusManager;
+        private readonly ILogger<MessageHandler> _logger;
+
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
             ITransactionRepository transactionRepository,
             IBlockRepository blockRepository,
-            IGlobalRepository globalRepository)
+            IGlobalRepository globalRepository,
+            IConsensusManager consensusManager, 
+            ILogger<MessageHandler> logger)
         {
             _blockSynchronizer = blockSynchronizer;
             _transactionRepository = transactionRepository;
             _blockRepository = blockRepository;
             _globalRepository = globalRepository;
+            _consensusManager = consensusManager;
+            _logger = logger;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -49,10 +57,11 @@ namespace Phorkus.Core.Network
             foreach (var block in orderedBlocks)
                 _blockSynchronizer.HandleBlockFromPeer(block, envelope.RemotePeer, TimeSpan.FromSeconds(5));
         }
-        
+
         public void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request)
         {
-            var blockHashes = _blockRepository.GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
+            var blockHashes = _blockRepository
+                .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
             envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHeightRangeReply(blockHashes));
         }
@@ -67,10 +76,29 @@ namespace Phorkus.Core.Network
             var txs = _transactionRepository.GetTransactionsByHashes(request.TransactionHashes);
             envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
         }
-    
+
         public void GetTransactionsByHashesReply(MessageEnvelope envelope, GetTransactionsByHashesReply reply)
         {
             _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, envelope.RemotePeer);
+        }
+
+        public void ConsensusMessage(MessageEnvelope buildEnvelope, ConsensusMessage message)
+        {
+            switch (message.PayloadCase)
+            {
+                case Proto.ConsensusMessage.PayloadOneofCase.BlockPrepareRequest:
+                    _consensusManager.OnPrepareRequestReceived(message.BlockPrepareRequest);
+                    break;
+                case Proto.ConsensusMessage.PayloadOneofCase.BlockPrepareReply:
+                    _consensusManager.OnPrepareResponseReceived(message.BlockPrepareReply);
+                    break;
+                case Proto.ConsensusMessage.PayloadOneofCase.ChangeViewRequest:
+                    _consensusManager.OnChangeViewReceived(message.ChangeViewRequest);
+                    break;
+                default:
+                    _logger.LogWarning("Ignored unknown consensus payload of type " + message.PayloadCase);
+                    break;
+            }
         }
     }
 }

@@ -10,8 +10,4 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Grpc" />
-    <Folder Include="proto\grpc" />
-  </ItemGroup>
 </Project>
