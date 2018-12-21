@@ -20,7 +20,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
-            var confirm = transaction.Deposit;
+            var confirm = transaction.Confirm;
             if (!confirm.Value.IsZero())
             {
                 var assetName = confirm.BlockchainType == BlockchainType.Bitcoin
