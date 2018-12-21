@@ -40,8 +40,8 @@ namespace Phorkus.Core.Blockchain.Genesis
             var address = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             
             var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
-            var btc = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "BTC", 21000000, 8);
-            var eth = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "ETH", (uint)1e9, 18);
+            var btc = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "BTC", 0, 8);
+            var eth = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "ETH", 0, 18);
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
 
             var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,

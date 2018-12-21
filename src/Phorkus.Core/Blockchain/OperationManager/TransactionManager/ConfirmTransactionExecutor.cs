@@ -1,15 +1,15 @@
-﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
-    public class DepositTransactionExecuter : ITransactionExecuter
+    public class ConfirmTransactionExecuter : ITransactionExecuter
     {
         private readonly IValidatorManager _validatorManager;
 
-        public DepositTransactionExecuter(IValidatorManager validatorManager)
+        public ConfirmTransactionExecuter(IValidatorManager validatorManager)
         {
             _validatorManager = validatorManager;
         }
@@ -20,18 +20,18 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
-            var deposit = transaction.Deposit;
-            if (!deposit.Value.IsZero())
+            var confirm = transaction.Deposit;
+            if (!confirm.Value.IsZero())
             {
-                var assetName = deposit.BlockchainType == BlockchainType.Bitcoin
+                var assetName = confirm.BlockchainType == BlockchainType.Bitcoin
                     ? snapshot.Assets.GetAssetByName("BTC").Hash
                     : snapshot.Assets.GetAssetByName("ETH").Hash;
-                var newSupply = new Money(snapshot.Assets.GetAssetByHash(assetName).Supply) + new Money(deposit.Value);
+                var newSupply = new Money(snapshot.Assets.GetAssetByHash(assetName).Supply) + new Money(confirm.Value);
                 snapshot.Assets.GetAssetByHash(assetName).Supply = newSupply.ToUInt256();
-                balances.TransferBalance(transaction.From, deposit.Recipient,
-                    deposit.BlockchainType == BlockchainType.Bitcoin
+                balances.TransferBalance(transaction.From, confirm.Recipient,
+                    confirm.BlockchainType == BlockchainType.Bitcoin
                         ? snapshot.Assets.GetAssetByName("BTC").Hash
-                        : snapshot.Assets.GetAssetByName("ETH").Hash, new Money(deposit.Value));
+                        : snapshot.Assets.GetAssetByName("ETH").Hash, new Money(confirm.Value));
             }
 
             /* TODO: "invoke smart-contract code here" */
@@ -40,20 +40,20 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Verify(Transaction transaction)
         {
-            if (transaction.Type != TransactionType.Deposit)
+            if (transaction.Type != TransactionType.Confirm)
                 return OperatingError.InvalidTransaction;
-            var deposit = transaction.Deposit;
-            if (deposit?.BlockchainType is null)
+            var confirm = transaction.Deposit;
+            if (confirm?.BlockchainType is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.TransactionHash is null)
+            if (confirm?.TransactionHash is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.Timestamp is null)
+            if (confirm?.Timestamp is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.AddressFormat is null)
+            if (confirm?.AddressFormat is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit.Recipient is null)
+            if (confirm.Recipient is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit.Value is null)
+            if (confirm.Value is null)
                 return OperatingError.InvalidTransaction;
             if (!_validatorManager.CheckValidator(transaction.From))
             {

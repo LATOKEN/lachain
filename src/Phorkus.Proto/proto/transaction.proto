@@ -70,8 +70,23 @@ message DepositTransaction {
     uint64 timestamp = 6;
 }
 
+message ConfirmTransaction {
+    UInt160 recipient = 1;
+    BlockchainType blockchain_type = 2;
+    UInt256 value = 3;
+    bytes transaction_hash = 4;
+    AddressFormat address_format = 5;
+    uint64 timestamp = 6;
+
+}
+
 message WithdrawTransaction {
-     
+    UInt160 recipient = 1;
+    BlockchainType blockchain_type = 2;
+    UInt256 value = 3;
+    bytes transaction_hash = 4;
+    AddressFormat address_format = 5;
+    uint64 timestamp = 6;
 }
 
 message TransactionState {
@@ -97,6 +112,7 @@ message Transaction {
         MinerTransaction miner = 10;
         DepositTransaction deposit = 11;
         WithdrawTransaction withdraw = 12;
+        ConfirmTransaction confirm = 13;
     }
 }
 
