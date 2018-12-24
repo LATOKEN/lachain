@@ -7,7 +7,7 @@ namespace Phorkus.Core.Consensus
         void Start();
         void Stop();
         void OnChangeViewReceived(ChangeViewRequest changeViewRequest);
-        void OnPrepareResponseReceived(BlockPrepareRequest prepareResponse);
+        void OnPrepareResponseReceived(BlockPrepareReply prepareResponse);
         void OnPrepareRequestReceived(BlockPrepareRequest prepareRequest);
     }
 }

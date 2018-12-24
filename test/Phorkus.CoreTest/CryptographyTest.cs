@@ -1,9 +1,11 @@
 using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Org.BouncyCastle.Asn1.Sec;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Config;
+using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Proto;
@@ -53,7 +55,11 @@ namespace Phorkus.CoreTest
             {
                 "0x02103a7f7dd016558597f7960d27c516a4394fd968b9e65155eb4b013e4040406e"
             };
-            var genesisAssetsBuilder = new GenesisAssetsBuilder(new ConfigManager("config.json"), new BouncyCastle());
+            var configManager = new ConfigManager("config.json");
+            var bouncyCastle = new BouncyCastle();
+
+            var validatorManager = new ValidatorManager(configManager, bouncyCastle);
+            var genesisAssetsBuilder = new GenesisAssetsBuilder(validatorManager, null, new BouncyCastle());
             var genesisBuilder = new GenesisBuilder(genesisAssetsBuilder, new BouncyCastle(),
                 new TransactionManager(null, null, null, null, null, null, new BouncyCastle()));
 

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using NBitcoin;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;

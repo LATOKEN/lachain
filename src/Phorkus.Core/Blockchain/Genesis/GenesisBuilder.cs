@@ -39,9 +39,9 @@ namespace Phorkus.Core.Blockchain.Genesis
 
             var address = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             
-            var governingToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
-            var btc = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "BTC", 0, 8);
-            var eth = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "ETH", 0, 18);
+            var btcToken = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "BTC", 21000000, 8);
+            var ethToken = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "ETH", (uint)1e9, 18);
+            var laToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
             var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
 
             var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
@@ -49,7 +49,7 @@ namespace Phorkus.Core.Blockchain.Genesis
 
             /* distribute tokens (1 million for each holder) */
             var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(
-                Money.FromDecimal(1_000_000m), governingToken.Register.ToHash160()
+                Money.FromDecimal(1_000_000m), laToken.Register.ToHash160()
             );
 
             var txsBefore = new[]
@@ -57,9 +57,9 @@ namespace Phorkus.Core.Blockchain.Genesis
                 /* first transaction is always a miner transaction */
                 minerTransaction,
                 /* creates NEO */
-                governingToken,
-                btc,
-                eth
+                laToken,
+                btcToken,
+                ethToken
             };
             var genesisTransactions = txsBefore.Concat(tokenDistribution).ToArray();
             

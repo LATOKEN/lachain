@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin.Protocol;
 using Org.BouncyCastle.Security;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -65,9 +64,9 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
-            _messageFactory = new MessageFactory(_keyPair, _crypto);
 
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            _messageFactory = new MessageFactory(_keyPair, _crypto);
             _context = new ConsensusContext(_keyPair,
                 config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
             _random = new SecureRandom();
@@ -103,6 +102,7 @@ namespace Phorkus.Core.Consensus
             }
 
             _stopped = false;
+            Thread.Sleep(5000);
 
             while (!_stopped)
             {
@@ -115,7 +115,7 @@ namespace Phorkus.Core.Consensus
                         while (!CanChangeView(out viewNumber))
                         {
                             // TODO: manage timeouts
-                            var timeToWait = TimeUtils.Multiply(_timePerBlock, _context.MyState.ExpectedViewNumber);
+                            var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 << _context.MyState.ExpectedViewNumber);
                             if (!Monitor.Wait(_changeViewApproved, timeToWait))
                             {
                                 RequestChangeView();
@@ -130,9 +130,11 @@ namespace Phorkus.Core.Consensus
                 if (_context.Role.HasFlag(ConsensusState.Primary))
                 {
                     // if we are primary, wait until block must be produced
-                    var timeToAwait = _timePerBlock - (DateTime.UtcNow - _context.LastBlockRecieved);
+                    var timeToAwait = _timePerBlock - (DateTime.UtcNow - _context.LastBlockRecieved) - TimeSpan.FromSeconds(1);
+                    _logger.LogTrace("Waiting " + timeToAwait.TotalMilliseconds + "ms until we can produce block");
                     if (timeToAwait.TotalSeconds > 0)
                         Thread.Sleep(timeToAwait);
+                    _logger.LogTrace("Wait completed");
 
                     // TODO: produce block
                     var address = _crypto.ComputeAddress(_context.KeyPair.PublicKey.Buffer.ToByteArray());
@@ -178,7 +180,7 @@ namespace Phorkus.Core.Consensus
                     lock (_prepareRequestReceived)
                     {
                         // TODO: manage timeouts
-                        var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
+                        var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 << _context.MyState.ExpectedViewNumber);
                         if (!Monitor.Wait(_prepareRequestReceived, timeToWait))
                         {
                             RequestChangeView();
@@ -213,7 +215,7 @@ namespace Phorkus.Core.Consensus
                     while (!IsQuorumReached())
                     {
                         // TODO: manage timeouts
-                        var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 + _context.MyState.ExpectedViewNumber);
+                        var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 << _context.MyState.ExpectedViewNumber);
                         if (Monitor.Wait(_quorumSignaturesAcquired, timeToWait))
                             continue;
                         _logger.LogWarning("Cannot retrieve all signatures in time, aborting");
@@ -242,7 +244,6 @@ namespace Phorkus.Core.Consensus
                 else
                     _logger.LogWarning($"Block hasn't been persisted: {block.Hash}, cuz error {result}");
 
-                _logger.LogInformation($"Block persist completed: {block.Hash}");
                 _context.LastBlockRecieved = DateTime.UtcNow;
                 InitializeConsensus(0);
             }
@@ -362,7 +363,7 @@ namespace Phorkus.Core.Consensus
             }
         }
 
-        public void OnPrepareResponseReceived(BlockPrepareRequest prepareResponse)
+        public void OnPrepareResponseReceived(BlockPrepareReply prepareResponse)
         {
             if (!CheckPayload(prepareResponse.Validator, false)) return;
             if (_context.Validators[prepareResponse.Validator.ValidatorIndex].BlockSignature != null) return;

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Org.BouncyCastle.Asn1;
-using Phorkus.Core.Consensus;
-using Phorkus.Core.Config;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Phorkus.Proto;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -12,62 +9,31 @@ namespace Phorkus.Core.Blockchain.Genesis
 {
     public class GenesisAssetsBuilder : IGenesisAssetsBuilder
     {
+        private readonly IValidatorManager _validatorManager;
+        private readonly ITransactionBuilder _transactionBuilder;
         private readonly ICrypto _crypto;
-        private readonly IEnumerable<string> _validators;
 
-        public GenesisAssetsBuilder(IConfigManager configManager, ICrypto crypto)
+        public GenesisAssetsBuilder(
+            IValidatorManager validatorManager,
+            ITransactionBuilder transactionBuilder,
+            ICrypto crypto)
         {
+            _transactionBuilder = transactionBuilder;
             _crypto = crypto;
-            var config = configManager.GetConfig<ConsensusConfig>("consensus");
-            if (config is null)
-                throw new ArgumentNullException(nameof(configManager), "Unable to resolve consensus configuration");
-            _validators = config.ValidatorsKeys;
+            _validatorManager = validatorManager;            
         }
 
         public Transaction BuildGoverningTokenRegisterTransaction(UInt160 owner)
         {
-            var tx = new Transaction
-            {
-                Type = TransactionType.Register,
-                Version = 0,
-                Flags = (ulong) TransactionFlag.None,
-                From = UInt160Utils.Zero,
-                Register = new RegisterTransaction
-                {
-                    Type = AssetType.Governing,
-                    Name = "LA",
-                    Supply = Money.FromDecimal(100_000_000m).ToUInt256(),
-                    Decimals = 18,
-                    Owner = owner
-                },
-                Nonce = 0
-            };
-            return tx;
+            return _transactionBuilder.RegisterTransaction(AssetType.Governing, "LA", Money.FromDecimal(100_000_000m),
+                18, owner);
         }
 
-
-        public Transaction BuildPlatformTokenRegisterTransaction(UInt160 owner, string platformToken, uint supply,
+        public Transaction BuildPlatformTokenRegisterTransaction(UInt160 owner, string name, uint supply,
             uint precision)
         {
-            var tx = new Transaction
-            {
-                Type = TransactionType.Register,
-                Version = 0,
-                Flags = (ulong) TransactionFlag.None,
-                From = UInt160Utils.Zero,
-                Register = new RegisterTransaction
-                {
-                    Type = AssetType.Platform,
-                    Name = platformToken,
-                    Supply = Money.FromDecimal(supply).ToUInt256(),
-                    Decimals = precision,
-                    Owner = owner
-                },
-                Nonce = 0
-            };
-            return tx;
+            return _transactionBuilder.RegisterTransaction(AssetType.Platform, name, Money.Zero, precision, owner);
         }
-
 
         public Transaction BuildGenesisMinerTransaction()
         {
@@ -108,13 +74,8 @@ namespace Phorkus.Core.Blockchain.Genesis
         public IEnumerable<Transaction> IssueTransactionsToOwners(Money value, params UInt160[] assets)
         {
             var txs = new List<Transaction>();
-            foreach (var validator in _validators)
-            foreach (var asset in assets)
-            {
-                var publicKey = validator.HexToBytes().ToPublicKey();
-                txs.Add(BuildGenesisTokenIssue(publicKey, value, asset));
-            }
-
+            foreach (var validator in _validatorManager.Validators)
+                txs.AddRange(assets.Select(asset => BuildGenesisTokenIssue(validator, value, asset)));
             return txs;
         }
     }

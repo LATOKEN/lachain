@@ -28,7 +28,7 @@ namespace Phorkus.Core.Consensus
         public readonly ObservedValidatorState[] Validators;
 
         public uint ValidatorCount => (uint) Validators.Length;
-        public uint Quorum => 2; //ValidatorCount - (ValidatorCount - 1) / 3;
+        public uint Quorum => ValidatorCount - (ValidatorCount - 1) / 3;
 
         public long PrimaryIndex =>
             ((long) (BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount + ValidatorCount) % ValidatorCount;

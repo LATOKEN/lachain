@@ -7,7 +7,8 @@ services:
         CONFIG: src/Phorkus.Console/config1.json
       dockerfile: Dockerfile
     ports:
-    - "5051:5050"
+    - "5051:5051"
+    network_mode: "host"
 
   node2:
     build:
@@ -16,7 +17,12 @@ services:
         CONFIG: src/Phorkus.Console/config2.json
       dockerfile: Dockerfile
     ports:
-    - "5052:5050"
+    - "5052:5052"
+    network_mode: "host"
+    depends_on:
+      - node1
+      - node3
+      - node4
 
   node3:
     build:
@@ -25,7 +31,8 @@ services:
         CONFIG: src/Phorkus.Console/config3.json
       dockerfile: Dockerfile
     ports:
-    - "5053:5050"
+    - "5053:5053"
+    network_mode: "host"
 
   node4:
     build:
@@ -34,4 +41,5 @@ services:
         CONFIG: src/Phorkus.Console/config4.json
       dockerfile: Dockerfile
     ports:
-    - "5054:5050"
+    - "5054:5054"
+    network_mode: "host"

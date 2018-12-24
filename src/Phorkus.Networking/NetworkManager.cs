@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using NetMQ;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -116,7 +115,9 @@ namespace Phorkus.Networking
         public void Broadcast(NetworkMessage networkMessage)
         {
             foreach (var peer in ActivePeers)
+            {
                 peer.Value.Send(networkMessage);
+            }
         }
 
         private void _HandleOpen(string message)
@@ -229,6 +230,12 @@ namespace Phorkus.Networking
                     _messageHandler.GetTransactionsByHashesReply(
                         _BuildEnvelope(message.GetTransactionsByHashesReply, message.Signature),
                         message.GetTransactionsByHashesReply);
+                    break;
+                case NetworkMessage.MessageOneofCase.ConsensusMessage:
+                    _messageHandler.ConsensusMessage(
+                        _BuildEnvelope(message.ConsensusMessage, message.Signature),
+                        message.ConsensusMessage
+                    );
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),

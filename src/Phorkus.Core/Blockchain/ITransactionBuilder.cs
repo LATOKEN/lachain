@@ -5,6 +5,8 @@ namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionBuilder
     {
+        Transaction RegisterTransaction(AssetType type, string name, Money supply, uint decimals, UInt160 owner);
+        
         Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value);
 
         Transaction MinerTransaction(UInt160 from);
