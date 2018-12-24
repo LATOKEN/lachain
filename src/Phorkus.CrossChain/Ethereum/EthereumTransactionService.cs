@@ -103,5 +103,10 @@ namespace Phorkus.CrossChain.Ethereum
             var txHash = sendTransaction.Result;
             return Utils.ConvertHexStringToByteArray(txHash);
         }
+        
+        public byte[] GenerateAddress(PublicKey publicKey)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

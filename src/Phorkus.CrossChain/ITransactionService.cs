@@ -14,5 +14,7 @@ namespace Phorkus.CrossChain
         IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight);
         
         byte[] BroadcastTransaction(ITransactionData transactionData);
+
+        byte[] GenerateAddress(PublicKey publicKey);
     }
 }

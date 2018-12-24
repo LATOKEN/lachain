@@ -1,11 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Numerics;
-using NBitcoin.RPC;
-using Nethereum.JsonRpc.Client;
 using Nethereum.RLP;
-using Nethereum.RPC;
 
 namespace Phorkus.CrossChain.Ethereum
 {
@@ -17,7 +12,7 @@ namespace Phorkus.CrossChain.Ethereum
         {
             _ethereumTransactionService = new EthereumTransactionService();
         }
-
+        
         public IDataToSign CreateDataToSign(byte[] from, byte[] to, byte[] value)
         {
             var stringFrom = Utils.ConvertByteArrayToString(from);
