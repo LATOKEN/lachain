@@ -70,17 +70,16 @@ message DepositTransaction {
     uint64 timestamp = 6;
 }
 
-message ConfirmTransaction {
+message WithdrawTransaction {
     UInt160 recipient = 1;
     BlockchainType blockchain_type = 2;
     UInt256 value = 3;
     bytes transaction_hash = 4;
     AddressFormat address_format = 5;
     uint64 timestamp = 6;
-
 }
 
-message WithdrawTransaction {
+message ConfirmTransaction {
     UInt160 recipient = 1;
     BlockchainType blockchain_type = 2;
     UInt256 value = 3;

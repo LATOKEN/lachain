@@ -82,8 +82,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 }
             }
         }
-
-
+        
         public void Start(ThresholdKey thresholdKey, KeyPair keyPair)
         {
             _thresholdKey = thresholdKey;
