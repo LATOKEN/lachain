@@ -53,11 +53,22 @@ namespace Phorkus.Core.Network
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
         {
             var txHashes = transactionHashes as UInt256[] ?? transactionHashes.ToArray();
-            var lostTxs = _HaveTransactions(txHashes);
+            var lostTxs = _GetMissingTransactions(txHashes);
             _networkBroadcaster.Broadcast(_networkManager.MessageFactory.GetTransactionsByHashesRequest(lostTxs));
-            lock (_peerHasTransactions)
-                Monitor.Wait(_peerHasTransactions, timeout);
-            return (uint) (txHashes.Length - (uint) _HaveTransactions(txHashes).Count);
+            var endWait = DateTime.UtcNow.Add(timeout);
+            while (_GetMissingTransactions(txHashes).Count != 0)
+            {
+                lock (_peerHasTransactions)
+                {
+                    var timeToWait = endWait.Subtract(DateTime.Now);
+                    if (timeToWait.TotalMilliseconds < 0)
+                        timeToWait = TimeSpan.Zero;
+                    Monitor.Wait(_peerHasTransactions, timeToWait);
+                }
+
+                if (DateTime.UtcNow.CompareTo(endWait) > 0) break;
+            }
+            return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
         
         public uint HandleTransactionsFromPeer(IEnumerable<SignedTransaction> transactions, IRemotePeer remotePeer)
@@ -89,7 +100,7 @@ namespace Phorkus.Core.Network
             if (block.Header.Index != myHeight + 1)
                 return;
             /* if we don't have transactions from block than request it */
-            var haveNotTxs = _HaveTransactions(block);
+            var haveNotTxs = _GetMissingTransactions(block);
             if (haveNotTxs.Count > 0)
             {
                 var totalFound = WaitForTransactions(block.TransactionHashes, timeout);
@@ -171,7 +182,7 @@ namespace Phorkus.Core.Network
             }, TaskCreationOptions.LongRunning);
         }
 
-        private List<UInt256> _HaveTransactions(IEnumerable<UInt256> txHashes)
+        private List<UInt256> _GetMissingTransactions(IEnumerable<UInt256> txHashes)
         {
             var list = new List<UInt256>();
             foreach (var hash in txHashes)
@@ -185,9 +196,9 @@ namespace Phorkus.Core.Network
             return list;
         }
 
-        private List<UInt256> _HaveTransactions(Block block)
+        private List<UInt256> _GetMissingTransactions(Block block)
         {
-            return _HaveTransactions(block.TransactionHashes);
+            return _GetMissingTransactions(block.TransactionHashes);
         }
     }
 }

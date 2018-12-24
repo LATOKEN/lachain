@@ -1,8 +1,22 @@
 FROM microsoft/dotnet:sdk as build-env
 WORKDIR /phorkus
-COPY src/ ./
+COPY src/Phorkus.Console/Phorkus.Console.csproj ./Phorkus.Console/
+COPY src/Phorkus.Core/Phorkus.Core.csproj ./Phorkus.Core/
+COPY src/Phorkus.CrossChain/Phorkus.CrossChain.csproj ./Phorkus.CrossChain/
+COPY src/Phorkus.Crypto/Phorkus.Crypto.csproj ./Phorkus.Crypto/
+COPY src/Phorkus.Hermes/Phorkus.Hermes.csproj ./Phorkus.Hermes/
+COPY src/Phorkus.Hestia/Phorkus.Hestia.csproj ./Phorkus.Hestia/
+COPY src/Phorkus.Logger/Phorkus.Logger.csproj ./Phorkus.Logger/
+COPY src/Phorkus.Networking/Phorkus.Networking.csproj ./Phorkus.Networking/
+COPY src/Phorkus.Proto/Phorkus.Proto.csproj ./Phorkus.Proto/
+COPY src/Phorkus.RocksDB/Phorkus.RocksDB.csproj ./Phorkus.RocksDB/
+COPY src/Phorkus.Utility/Phorkus.Utility.csproj ./Phorkus.Utility/
+COPY src/Phorkus.VM/Phorkus.VM.csproj ./Phorkus.VM/
 WORKDIR /phorkus/Phorkus.Console
 RUN dotnet restore
+WORKDIR /phorkus
+COPY src/ ./
+WORKDIR /phorkus/Phorkus.Console
 RUN dotnet publish -c Release -o out
 
 FROM microsoft/dotnet:aspnetcore-runtime

@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
@@ -59,6 +60,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return tx;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Persist(SignedTransaction transaction)
         {
             /* check transaction with this hash in database */
@@ -89,6 +91,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Execute(Block block, UInt256 txHash, IBlockchainSnapshot snapshot)
         {
             var signed = _transactionRepository.GetTransactionByHash(txHash);
