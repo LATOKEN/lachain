@@ -5,7 +5,6 @@ using System.Threading;
 using NBitcoin;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.CrossChain;

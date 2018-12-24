@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
-using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain.Pool
+namespace Phorkus.Core.Blockchain
 {
     public class BlockBuilder
     {

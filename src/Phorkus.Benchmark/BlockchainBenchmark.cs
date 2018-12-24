@@ -1,7 +1,6 @@
 ﻿using System;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;

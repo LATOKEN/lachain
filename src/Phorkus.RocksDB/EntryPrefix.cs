@@ -21,5 +21,7 @@
         StorageVersionIndex = 0x0601,
         PersistentTreeMap = 0x0602,
         PersistentHashMap = 0x0603,
+        
+        WithdrawalByHash = 0x0701,
     }
 }

@@ -5,7 +5,7 @@ using System.Linq;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Blockchain.Pool
+namespace Phorkus.Core.Blockchain
 {
     public class TransactionPool : ITransactionPool
     {

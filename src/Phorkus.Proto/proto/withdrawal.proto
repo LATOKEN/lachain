@@ -1,0 +1,10 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Proto";
+import "default.proto";
+
+enum WithdrawalState {
+    WITHDRAWAL_STATE_UNKNOWN = 0;
+}
+
+message Withdrawal {
+}
