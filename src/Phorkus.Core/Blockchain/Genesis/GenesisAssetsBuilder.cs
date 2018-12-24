@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Org.BouncyCastle.Asn1;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Config;
 using Phorkus.Proto;

@@ -7,9 +7,8 @@ namespace Phorkus.VM
     {
         public void Step(State state)
         {
-            var opcode = state.GetCurrentInstruction();
-            var instructionInfo = GetInstructionInfo(opcode);
-            switch ((Opcode) opcode)
+            var opcode = (Opcode) state.GetCurrentInstruction();
+            switch (opcode)
             {
                 case Opcode.Stop:
                     break;
@@ -256,9 +255,8 @@ namespace Phorkus.VM
                 case Opcode.Push31:
                 case Opcode.Push32:
                     state.Step();
-                    var pushNumber = opcode - (int) Opcode.Push1 + 1;
+                    var pushNumber = (int) opcode - (int) Opcode.Push1 + 1;
                     var data = state.Sweep(pushNumber);
-
                     state.StackPush(data);
                     break;
                 case Opcode.Dup1:
@@ -332,9 +330,9 @@ namespace Phorkus.VM
         }
 
 
-        public OpcodeDesc GetInstructionInfo(byte opcode)
+        public OpcodeDesc GetInstructionInfo(Opcode opcode)
         {
-            return OpcodeDesc.Opcodes[(Opcode) opcode];
+            return OpcodeDesc.Opcodes[opcode];
         }
     }
 }

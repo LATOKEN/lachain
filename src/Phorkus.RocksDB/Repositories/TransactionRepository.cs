@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using NBitcoin;
 using Phorkus.Proto;
-using Phorkus.Core.Storage;
+using ITransactionRepository = Phorkus.Core.Storage.ITransactionRepository;
 
 namespace Phorkus.RocksDB.Repositories
 {
@@ -51,7 +52,7 @@ namespace Phorkus.RocksDB.Repositories
 
         public IEnumerable<SignedTransaction> GetTransactionsByHashes(IEnumerable<UInt256> txHashes)
         {
-            return txHashes.Select(GetTransactionByHash).ToList();
+            return txHashes.Select(GetTransactionByHash).Where(tx => tx != null);
         }
 
         public bool ContainsTransactionByHash(UInt256 txHash)
