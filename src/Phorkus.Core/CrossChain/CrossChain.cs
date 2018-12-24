@@ -5,7 +5,6 @@ using System.Threading;
 using NBitcoin;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
@@ -71,15 +70,10 @@ namespace Phorkus.Core.CrossChain
             /* check blockchain's block height */
             var transactionService = _crossChainManager.GetTransactionService(blockchainType);
             var currentHeight = transactionService.CurrentBlockHeight;
-            var lastHeight = currentHeight;
-            if (!_lastBlocks.TryGetValue(blockchainType, out lastHeight) || lastHeight >= currentHeight)
+            if (!_lastBlocks.TryGetValue(blockchainType, out var lastHeight) || lastHeight >= currentHeight)
                 return;
-            
             /* determine and encode our public key */
-            var rawPublicKey = _thresholdKey.PublicKey.Buffer.ToByteArray();
-            // var rawPublicKey = _keyPair.PublicKey.Buffer.ToByteArray();
-            /* incorrect address computation */
-            var address = AddressEncoder.EncodeAddress(transactionService.AddressFormat, rawPublicKey); 
+            var address = transactionService.GenerateAddress(_thresholdKey.PublicKey); 
             for (; lastHeight < currentHeight; ++lastHeight)
             {
                 /* try get transactions */

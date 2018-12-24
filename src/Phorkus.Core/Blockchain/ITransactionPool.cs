@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Blockchain.Pool
+namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionPool
     {

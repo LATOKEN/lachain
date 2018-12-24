@@ -2,6 +2,6 @@
 {
     public interface ITransactionBroadcaster
     {
-        void BroadcastTransaction(ITransactionData transactionData);
+        void BroadcastTransaction(RawTransaction rawTransaction);
     }
 }

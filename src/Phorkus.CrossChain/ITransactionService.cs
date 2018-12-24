@@ -13,6 +13,8 @@ namespace Phorkus.CrossChain
 
         IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight);
         
-        byte[] BroadcastTransaction(ITransactionData transactionData);
+        byte[] BroadcastTransaction(RawTransaction rawTransaction);
+
+        byte[] GenerateAddress(PublicKey publicKey);
     }
 }

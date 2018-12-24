@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Org.BouncyCastle.Security;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.Network;
 using Phorkus.Proto;

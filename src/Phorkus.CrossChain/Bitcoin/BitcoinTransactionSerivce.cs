@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Numerics;
@@ -23,7 +22,7 @@ namespace Phorkus.CrossChain.Bitcoin
         {
             _importedAddresses = new Collection<string>();
             var credentials = new NetworkCredential("user", "password");
-            _rpcClient = new RPCClient(credentials, "127.0.0.1", NBitcoin.Network.Main);
+            _rpcClient = new RPCClient(credentials, "127.0.0.1", Network.Main);
         }
 
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
@@ -55,33 +54,35 @@ namespace Phorkus.CrossChain.Bitcoin
             foreach (var tx in getBlock.Transactions)
             {
                 BigInteger totalValue = 0;
-                var addTx = false;                
-                var from = FromRedeemtoP2Sh(tx.Inputs.FirstOrDefault()?.ScriptSig.ToString());
+                var addTx = false;
+                var from = FromRedeemToP2Sh(tx.Inputs.FirstOrDefault()?.ScriptSig.ToString());
                 var badTx = false;
                 foreach (var input in tx.Inputs)
                 {
-                    if (FromRedeemtoP2Sh(input.ScriptSig.ToString()) != from)
+                    if (FromRedeemToP2Sh(input.ScriptSig.ToString()) != from)
                     {
                         badTx = true;
                         break;
                     }
                 }
+
                 if (badTx)
                     continue;
-                
+
                 foreach (var output in tx.Outputs)
                 {
                     if (output.ScriptPubKey.IsUnspendable)
                     {
                         from = output.ScriptPubKey.ToString().Substring(4, BitcoinConfig.AddressLength);
                     }
+
                     var outputHex = output.ScriptPubKey.ToHex();
                     if (output.ScriptPubKey != scriptPubKey)
                     {
                         addTx = false;
                         break;
                     }
-                        
+
                     totalValue += output.Value.Satoshi;
                     addTx = true;
                 }
@@ -97,14 +98,18 @@ namespace Phorkus.CrossChain.Bitcoin
             return bitcoinContractTransactions;
         }
 
-        public byte[] BroadcastTransaction(ITransactionData transactionData)
+        public byte[] BroadcastTransaction(RawTransaction rawTransaction)
         {
-            var sendRawTransaction = _rpcClient.SendRawTransaction(transactionData.RawTransaction);
+            var sendRawTransaction = _rpcClient.SendRawTransaction(rawTransaction.TransactionData);
             if (sendRawTransaction is null)
                 throw new BlockchainNotAvailableException("Unable to send transaction to Bitcoin network");
             return sendRawTransaction.ToBytes();
         }
 
+        public byte[] GenerateAddress(PublicKey publicKey)
+        {
+            throw new System.NotImplementedException();
+        }
 
         private static long _CalcBytes(int inputsNum, int outputsNum)
         {
@@ -114,12 +119,10 @@ namespace Phorkus.CrossChain.Bitcoin
 
         internal long _GetFee(int inputsNum, int outputsNum, bool updateFee)
         {
-            if (updateFee)
-            {
-                var estimateFee = _rpcClient.EstimateSmartFee(1);
-                _satoshiPerByte = (long) (estimateFee.FeeRate.SatoshiPerByte * (decimal) 1e8);
-            }
-
+            if (!updateFee)
+                return _satoshiPerByte * _CalcBytes(inputsNum, outputsNum);
+            var estimateFee = _rpcClient.EstimateSmartFee(1);
+            _satoshiPerByte = (long) (estimateFee.FeeRate.SatoshiPerByte * (decimal) 1e8);
             return _satoshiPerByte * _CalcBytes(inputsNum, outputsNum);
         }
 
@@ -128,7 +131,7 @@ namespace Phorkus.CrossChain.Bitcoin
             // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses need to be cached.
             if (!_importedAddresses.Contains(address))
             {
-                _rpcClient.ImportAddress(new BitcoinScriptAddress(address, NBitcoin.Network.Main));
+                _rpcClient.ImportAddress(new BitcoinScriptAddress(address, Network.Main));
                 _importedAddresses.Add(address);
             }
 
@@ -149,7 +152,7 @@ namespace Phorkus.CrossChain.Bitcoin
             return new KeyValuePair<List<OutPoint>, long>(outputs, accumulateValue);
         }
 
-        private static string FromRedeemtoP2Sh(string redeemScript)
+        private static string FromRedeemToP2Sh(string redeemScript)
         {
             return Hashes.Hash160(Hashes.Hash256(Utils.ConvertHexStringToByteArray("0014" + redeemScript.Substring(6)))
                 .ToBytes()).ToString();
