@@ -79,8 +79,8 @@ namespace Phorkus.Faker
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Block generation interval: " + _blockInterval);
             Console.WriteLine("Txs in block: " + _blockTxs);

@@ -24,5 +24,6 @@
         BlockAlreadyExists,
         AlreadySigned,
         InvalidMerkeRoot,
+        UnknownAsset
     }
 }

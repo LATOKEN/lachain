@@ -85,16 +85,16 @@ namespace Phorkus.Benchmark
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
 
             _BenchTxProcessing(transactionBuilder, blockchainContext, transactionManager, blockManager,
                 blockchainManager, keyPair, asset);
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
             
             _BenchOneTxInBlock(transactionBuilder, blockchainContext, transactionManager, blockManager,
@@ -104,8 +104,8 @@ namespace Phorkus.Benchmark
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
         }
 

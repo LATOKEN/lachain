@@ -16,23 +16,19 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            var balances = snapshot.Balances;
+            var balanceRepository = snapshot.Balances;
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
             var confirm = transaction.Confirm;
-            var assetName = confirm.BlockchainType == BlockchainType.Bitcoin
-                ? snapshot.Assets.GetAssetByName("BTC").Hash
-                : snapshot.Assets.GetAssetByName("ETH").Hash;
-            var supply = snapshot.Assets.GetAssetSupplyByHash(assetName);
-            if (!confirm.Value.IsZero() && supply >= new Money(confirm.Value))
-            {
-                balances.SubWithdrawingBalance(transaction.From, assetName, new Money(confirm.Value));
-                snapshot.Assets.SubSupply(assetName, new Money(confirm.Value));
-                balances.AddBalance(confirm.Recipient, assetName, new Money(confirm.Value));
-            }
-
-            /* TODO: "invoke smart-contract code here" */
+            var asset = snapshot.Assets.GetAssetByHash(confirm.AssetHash);
+            if (asset is null)
+                return OperatingError.UnknownAsset;
+            var assetHash = asset.Hash;
+            if (confirm.Value.IsZero() || asset.Supply.ToMoney() < new Money(confirm.Value))
+                return OperatingError.Ok;
+            balanceRepository.SubWithdrawingBalance(transaction.From, assetHash, new Money(confirm.Value));
+            balanceRepository.AddAvailableBalance(confirm.Recipient, assetHash, new Money(confirm.Value));
             return OperatingError.Ok;
         }
 
@@ -49,15 +45,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.InvalidTransaction;
             if (confirm?.AddressFormat is null)
                 return OperatingError.InvalidTransaction;
-            if (confirm.Recipient is null)
+            if (confirm?.Recipient is null)
                 return OperatingError.InvalidTransaction;
-            if (confirm.Value is null)
+            if (confirm?.Value is null)
+                return OperatingError.InvalidTransaction;
+            if (confirm?.AssetHash is null)
                 return OperatingError.InvalidTransaction;
             if (!_validatorManager.CheckValidator(transaction.From))
-            {
                 return OperatingError.InvalidTransaction;
-            }
-
             throw new OperationNotSupportedException();
         }
     }

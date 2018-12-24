@@ -136,7 +136,7 @@ namespace Phorkus.Console
                 if (prettyName.Length < 3)
                     prettyName = $"{prettyName} ";
                 System.Console.WriteLine(
-                    $"Balance of {prettyName} {address.Buffer.ToHex().Substring(0, 4)}: {balanceSnapshot.GetBalance(address, assetSnapshot.GetAssetByName(assetName)?.Hash)}");
+                    $"Balance of {prettyName} {address.Buffer.ToHex().Substring(0, 4)}: {balanceSnapshot.GetAvailableBalance(address, assetSnapshot.GetAssetByName(assetName)?.Hash)}");
             }
         }
 

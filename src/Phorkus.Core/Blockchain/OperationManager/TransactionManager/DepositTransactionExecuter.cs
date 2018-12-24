@@ -21,16 +21,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (error != OperatingError.Ok)
                 return error;
             var deposit = transaction.Deposit;
-            if (!deposit.Value.IsZero())
-            {
-                var assetName = deposit.BlockchainType == BlockchainType.Bitcoin
-                    ? snapshot.Assets.GetAssetByName("BTC").Hash
-                    : snapshot.Assets.GetAssetByName("ETH").Hash;
-                snapshot.Assets.AddSupply(assetName, new Money(deposit.Value));
-                balances.TransferBalance(transaction.From, deposit.Recipient, assetName, new Money(deposit.Value));
-            }
-
-            /* TODO: "invoke smart-contract code here" */
+            if (deposit.Value.IsZero())
+                return OperatingError.Ok;
+            var assetHash = deposit.AssetHash;
+            balances.AddAvailableBalance(deposit.Recipient, assetHash, new Money(deposit.Value));
             return OperatingError.Ok;
         }
 
@@ -47,15 +41,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.InvalidTransaction;
             if (deposit?.AddressFormat is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit.Recipient is null)
+            if (deposit?.Recipient is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit.Value is null)
+            if (deposit?.Value is null)
+                return OperatingError.InvalidTransaction;
+            if (deposit?.AssetHash is null)
                 return OperatingError.InvalidTransaction;
             if (!_validatorManager.CheckValidator(transaction.From))
-            {
                 return OperatingError.InvalidTransaction;
-            }
-
             throw new OperationNotSupportedException();
         }
     }

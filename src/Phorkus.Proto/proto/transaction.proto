@@ -68,6 +68,7 @@ message DepositTransaction {
     bytes transaction_hash = 4;
     AddressFormat address_format = 5;
     uint64 timestamp = 6;
+    UInt160 asset_hash = 7;
 }
 
 message WithdrawTransaction {
@@ -77,6 +78,7 @@ message WithdrawTransaction {
     bytes transaction_hash = 4;
     AddressFormat address_format = 5;
     uint64 timestamp = 6;
+    UInt160 asset_hash = 7;
 }
 
 message ConfirmTransaction {
@@ -86,6 +88,7 @@ message ConfirmTransaction {
     bytes transaction_hash = 4;
     AddressFormat address_format = 5;
     uint64 timestamp = 6;
+    UInt160 asset_hash = 7;
 }
 
 message TransactionState {
