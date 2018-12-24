@@ -2,6 +2,7 @@
 using Phorkus.Proto;
 using Phorkus.Core.Storage;
 using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -12,6 +13,29 @@ namespace Phorkus.Core.Blockchain
         public TransactionBuilder(ITransactionRepository transactionRepository)
         {
             _transactionRepository = transactionRepository;
+        }
+
+        public Transaction RegisterTransaction(AssetType type, string name, Money supply, uint decimals, UInt160 owner)
+        {
+            var nonce = _transactionRepository.GetTotalTransactionCount(UInt160Utils.Zero);
+            var registerTx = new RegisterTransaction
+            {
+                Type = type,
+                Name = name,
+                Supply = supply.ToUInt256(),
+                Decimals = decimals,
+                Owner = owner
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Register,
+                Version = 0,
+                Flags = (ulong) TransactionFlag.None,
+                From = UInt160Utils.Zero,
+                Register = registerTx,
+                Nonce = nonce
+            };
+            return tx;
         }
 
         public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)

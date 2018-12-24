@@ -68,7 +68,10 @@ namespace Phorkus.Hestia.State
 
         public Asset GetAssetByName(string assetName)
         {
-            return GetAssetByHash(_GetHashByName(assetName));
+            var assetHash = _GetHashByName(assetName);
+            if (assetHash is null)
+                return null;
+            return GetAssetByHash(assetHash);
         }
 
         public bool AddAsset(Asset asset)

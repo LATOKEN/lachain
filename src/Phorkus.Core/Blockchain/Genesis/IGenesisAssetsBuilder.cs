@@ -8,7 +8,7 @@ namespace Phorkus.Core.Blockchain.Genesis
     {
         Transaction BuildGoverningTokenRegisterTransaction(UInt160 owner);
 
-        Transaction BuildPlatformTokenRegisterTransaction(UInt160 owner, string platformToken, uint supply,
+        Transaction BuildPlatformTokenRegisterTransaction(UInt160 owner, string name, uint supply,
             uint precision);
 
         Transaction BuildGenesisMinerTransaction();

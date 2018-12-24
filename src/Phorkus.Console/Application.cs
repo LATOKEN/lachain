@@ -58,17 +58,16 @@ namespace Phorkus.Console
             var configManager = _container.Resolve<IConfigManager>();
             var blockRepository = _container.Resolve<IBlockRepository>();
             var crypto = _container.Resolve<ICrypto>();
-            var transactionFactory = _container.Resolve<ITransactionBuilder>();
-            var transactionManager = _container.Resolve<ITransactionManager>();
-            var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
-            var thresholdManager = _container.Resolve<IThresholdManager>();
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
 //            var crossChain = _container.Resolve<ICrossChain>();
+
+            var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
+            var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -93,13 +92,11 @@ namespace Phorkus.Console
             foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-            System.Console.WriteLine("BTC hash: " +
-                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("BTC").Hash);
-            System.Console.WriteLine("ETH hash: " +
-                                     blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("ETH").Hash);
-
-            var asset = blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("LA");
-
+            var assetNames = assetRepository.GetAssetNames().ToArray();
+            System.Console.WriteLine($" + genesis assets: {assetNames.Length}");
+            foreach (var assetName in assetNames)
+                System.Console.WriteLine($" + - {assetName}: {assetRepository.GetAssetByName(assetName)?.Hash}");
+            
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
@@ -107,22 +104,37 @@ namespace Phorkus.Console
             System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
-//            System.Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetBalance(address1, asset.Hash));
-//            System.Console.WriteLine("Balance of LA 0x6b: " + balanceRepository.GetBalance(address2, asset.Hash));
+
+            _TraceBalances(assetRepository, balanceRepository, address1);
+            System.Console.WriteLine("-------------------------------");
+            _TraceBalances(assetRepository, balanceRepository, address2);
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-//            crossChain.Start(new ThresholdKey(), keyPair);
+            //crossChain.Start(new ThresholdKey(), keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
 
-//            var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
+            //var thresholdManager = _container.Resolve<IThresholdManager>();
+            //var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)
                 Thread.Sleep(1000);
+        }
+
+        private void _TraceBalances(IAssetSnapshot assetSnapshot, IBalanceSnapshot balanceSnapshot, UInt160 address)
+        {
+            foreach (var assetName in assetSnapshot.GetAssetNames())
+            {
+                var prettyName = assetName;
+                if (prettyName.Length < 3)
+                    prettyName = $"{prettyName} ";
+                System.Console.WriteLine(
+                    $"Balance of {prettyName} {address.Buffer.ToHex().Substring(0, 4)}: {balanceSnapshot.GetBalance(address, assetSnapshot.GetAssetByName(assetName)?.Hash)}");
+            }
         }
 
         private bool _interrupt;

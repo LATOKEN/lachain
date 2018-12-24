@@ -28,10 +28,9 @@ namespace Phorkus.Proto {
             "aBgBIAEoCzIILlVJbnQxNjASGAoEdHlwZRgCIAEoDjIKLkFzc2V0VHlwZRIM",
             "CgRuYW1lGAMgASgJEhgKBnN1cHBseRgEIAEoCzIILlVJbnQyNTYSFwoFbGlt",
             "aXQYBSABKAsyCC5VSW50MjU2EhAKCGRlY2ltYWxzGAYgASgNEhcKBW93bmVy",
-            "GAcgASgLMgguVUludDE2MBIYCgZtaW50ZXIYCCABKAsyCC5VSW50MTYwKlUK",
-            "CUFzc2V0VHlwZRIYChRBU1NFVF9UWVBFX0dPVkVSTklORxAAEhUKEUFTU0VU",
-            "X1RZUEVfQ1VTVE9NEAESFwoTQVNTRVRfVFlQRV9QTEFURk9STRACQhCqAg1Q",
-            "aG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "GAcgASgLMgguVUludDE2MBIYCgZtaW50ZXIYCCABKAsyCC5VSW50MTYwKj4K",
+            "CUFzc2V0VHlwZRIYChRBU1NFVF9UWVBFX0dPVkVSTklORxAAEhcKE0FTU0VU",
+            "X1RZUEVfUExBVEZPUk0QAkIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.AssetType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -44,7 +43,6 @@ namespace Phorkus.Proto {
   #region Enums
   public enum AssetType {
     [pbr::OriginalName("ASSET_TYPE_GOVERNING")] Governing = 0,
-    [pbr::OriginalName("ASSET_TYPE_CUSTOM")] Custom = 1,
     [pbr::OriginalName("ASSET_TYPE_PLATFORM")] Platform = 2,
   }
 

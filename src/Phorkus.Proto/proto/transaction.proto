@@ -71,7 +71,6 @@ message DepositTransaction {
 }
 
 message WithdrawTransaction {
-     
 }
 
 message TransactionState {
