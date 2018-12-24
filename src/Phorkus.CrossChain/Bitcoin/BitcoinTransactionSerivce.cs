@@ -98,9 +98,9 @@ namespace Phorkus.CrossChain.Bitcoin
             return bitcoinContractTransactions;
         }
 
-        public byte[] BroadcastTransaction(ITransactionData transactionData)
+        public byte[] BroadcastTransaction(RawTransaction rawTransaction)
         {
-            var sendRawTransaction = _rpcClient.SendRawTransaction(transactionData.RawTransaction);
+            var sendRawTransaction = _rpcClient.SendRawTransaction(rawTransaction.TransactionData);
             if (sendRawTransaction is null)
                 throw new BlockchainNotAvailableException("Unable to send transaction to Bitcoin network");
             return sendRawTransaction.ToBytes();

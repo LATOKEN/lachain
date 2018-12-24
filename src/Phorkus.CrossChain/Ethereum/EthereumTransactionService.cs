@@ -92,11 +92,11 @@ namespace Phorkus.CrossChain.Ethereum
             return transactions;
         }
 
-        public byte[] BroadcastTransaction(ITransactionData transactionData)
+        public byte[] BroadcastTransaction(RawTransaction rawTransaction)
         {
             var sendTransaction =
                 _ethApiService.Transactions.SendRawTransaction.SendRequestAsync(
-                    Utils.ConvertByteArrayToString(transactionData.RawTransaction));
+                    Utils.ConvertByteArrayToString(rawTransaction.TransactionData));
             sendTransaction.Wait();
             if (sendTransaction.IsFaulted)
                 throw new BlockchainNotAvailableException("Unable to broadcast transaction to Ethereum network");

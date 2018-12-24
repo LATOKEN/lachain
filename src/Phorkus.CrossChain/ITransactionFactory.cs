@@ -4,9 +4,9 @@ namespace Phorkus.CrossChain
 {
     public interface ITransactionFactory
     {
-        IDataToSign CreateDataToSign(byte[] from, byte[] to, byte[] value);
+        IReadOnlyCollection<DataToSign> CreateDataToSign(byte[] from, byte[] to, byte[] value);
 
-        ITransactionData CreateRawTransaction(byte[] from, byte[] to, byte[] value,
+        RawTransaction CreateRawTransaction(byte[] from, byte[] to, byte[] value,
             IEnumerable<byte[]> signatures);
     }
 }

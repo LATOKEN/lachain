@@ -24,7 +24,7 @@ namespace Phorkus.CrossChain.Bitcoin
             return "02" + Utils.ConvertIntToReversedHex(appendSig.Length / 2, 1) + appendSig;
         }
 
-        public IDataToSign CreateDataToSign(byte[] from, byte[] to, byte[] value)
+        public IReadOnlyCollection<DataToSign> CreateDataToSign(byte[] from, byte[] to, byte[] value)
         {
             var longValue = Utils.ConvertHexToLong(Utils.ConvertByteArrayToString(value));
             var stringFrom = Utils.ConvertByteArrayToString(from);
@@ -34,10 +34,8 @@ namespace Phorkus.CrossChain.Bitcoin
             var prevAmount = outputs.Value;
             var inputSz = outputs.Key.Count;
             const int outputSz = 2;
-            var fromBtc = new BitcoinScriptAddress(stringFrom, NBitcoin.Network.Main);
-            var toBtc = new BitcoinScriptAddress(stringTo, NBitcoin.Network.Main);
-            var bitcoinTransactionData = new BitcoinTransactionData();
-            bitcoinTransactionData.RawTransaction = new byte[0];
+            var fromBtc = new BitcoinScriptAddress(stringFrom, Network.Main);
+            var toBtc = new BitcoinScriptAddress(stringTo, Network.Main);
             var scriptPubKeyValue = fromBtc.ScriptPubKey.ToString();
             var scriptPubKeyChange = toBtc.ScriptPubKey.ToString();
             var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz, false);
@@ -59,23 +57,25 @@ namespace Phorkus.CrossChain.Bitcoin
                 scriptPubKeyChange)).ToBytes()).ToString();
             var hashedSeq = Hashes.Hash256(Hashes.Hash256(
                 Utils.ConvertHexStringToByteArray(BitcoinConfig.Sequence)).ToBytes()).ToString();
-            var bitcoinDataToSign = new BitcoinDataToSign();
-            bitcoinDataToSign.EllipticCurveType = EllipticCurveType.Secp256K1;
-            bitcoinDataToSign.DataToSign = new[]
+            var txHash = Hashes.Hash256(Hashes.Hash256(Utils.ConvertHexStringToByteArray(
+                    BitcoinConfig.Version + hashedPrevOuts + hashedSeq
+                    + prevOuts + scriptCode
+                    + Utils.ConvertLongToReversedHex(
+                        prevAmount) + BitcoinConfig.Sequence + hashedOuts
+                    + BitcoinConfig.LockTime + BitcoinConfig.HashType)).ToBytes())
+                .ToBytes();
+            var dataToSign = new DataToSign
             {
-                Hashes.Hash256(Hashes.Hash256(Utils.ConvertHexStringToByteArray(
-                        BitcoinConfig.Version + hashedPrevOuts + hashedSeq
-                        + prevOuts + scriptCode
-                        + Utils.ConvertLongToReversedHex(
-                            prevAmount) + BitcoinConfig.Sequence + hashedOuts
-                        + BitcoinConfig.LockTime + BitcoinConfig.HashType)).ToBytes())
-                    .ToBytes()
+                EllipticCurveType = EllipticCurveType.Secp256K1,
+                TransactionHash = txHash
             };
-
-            return bitcoinDataToSign;
+            return new[]
+            {
+                dataToSign
+            };
         }
 
-        public ITransactionData CreateRawTransaction(byte[] @from, byte[] to, byte[] value,
+        public RawTransaction CreateRawTransaction(byte[] @from, byte[] to, byte[] value,
             IEnumerable<byte[]> signatures)
         {
             var longValue = Utils.ConvertHexToLong(Utils.ConvertByteArrayToString(value));
@@ -106,30 +106,32 @@ namespace Phorkus.CrossChain.Bitcoin
             var signature = Utils.ConvertByteArrayToString(signatures.FirstOrDefault());
             var r = AppendSigPrefix(signature.Substring(0, 64));
             var s = AppendSigPrefix(signature.Substring(64, 64));
-            var bitcoinTransactionData = new BitcoinTransactionData();
-            bitcoinTransactionData.RawTransaction = Utils.ConvertHexStringToByteArray(
-                BitcoinConfig.Version + BitcoinConfig.Marker + BitcoinConfig.Flag
-                + Utils.ConvertIntToReversedHex(
-                    inputSz, 1) + prevOuts
-                + Utils.ConvertIntToReversedHex(
-                    outputSz, 1)
-                + Utils.ConvertLongToReversedHex(
-                    longValue)
-                + Utils.ConvertIntToReversedHex(
-                    scriptPubKeyValue.Length / 2,
-                    1)
-                + scriptPubKeyValue
-                + Utils.ConvertLongToReversedHex(
-                    change)
-                + Utils.ConvertIntToReversedHex(
-                    scriptPubKeyChange.Length / 2,
-                    1)
-                + scriptPubKeyChange + BitcoinConfig.WitnessCode
-                + Utils.ConvertIntToReversedHex(
-                    r.Length / 2 + s.Length / 2 +
-                    stringPublicKey.Length / 2 + 1, 1)
-                + r + s + BitcoinConfig.HashType + stringPublicKey +
-                BitcoinConfig.LockTime);
+            var bitcoinTransactionData = new RawTransaction
+            {
+                TransactionData = Utils.ConvertHexStringToByteArray(
+                    BitcoinConfig.Version + BitcoinConfig.Marker + BitcoinConfig.Flag
+                    + Utils.ConvertIntToReversedHex(
+                        inputSz, 1) + prevOuts
+                    + Utils.ConvertIntToReversedHex(
+                        outputSz, 1)
+                    + Utils.ConvertLongToReversedHex(
+                        longValue)
+                    + Utils.ConvertIntToReversedHex(
+                        scriptPubKeyValue.Length / 2,
+                        1)
+                    + scriptPubKeyValue
+                    + Utils.ConvertLongToReversedHex(
+                        change)
+                    + Utils.ConvertIntToReversedHex(
+                        scriptPubKeyChange.Length / 2,
+                        1)
+                    + scriptPubKeyChange + BitcoinConfig.WitnessCode
+                    + Utils.ConvertIntToReversedHex(
+                        r.Length / 2 + s.Length / 2 +
+                        stringPublicKey.Length / 2 + 1, 1)
+                    + r + s + BitcoinConfig.HashType + stringPublicKey +
+                    BitcoinConfig.LockTime)
+            };
             return bitcoinTransactionData;
         }
     }
