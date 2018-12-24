@@ -16,6 +16,7 @@ namespace Phorkus.Core.Consensus
         public void Reset()
         {
             BlockSignature = null;
+            ExpectedViewNumber = 0;
         }
     }
 }

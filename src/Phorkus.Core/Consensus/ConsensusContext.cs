@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
+using Org.BouncyCastle.Bcpg;
 using Phorkus.Core.Blockchain;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
@@ -34,7 +35,7 @@ namespace Phorkus.Core.Consensus
             ((long) (BlockIndex - ViewNumber + ValidatorCount) % ValidatorCount + ValidatorCount) % ValidatorCount;
 
         public ConsensusState Role => MyIndex == PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup;
-        public ObservedValidatorState MyState => MyIndex == -1 ? null : Validators[MyIndex];
+        public ObservedValidatorState MyState => MyIndex < 0 || MyIndex >= Validators.Length ? null : Validators[MyIndex];
 
         public ConsensusContext(KeyPair keyPair, IReadOnlyList<PublicKey> validators)
         {
@@ -114,8 +115,8 @@ namespace Phorkus.Core.Consensus
             ViewNumber = view;
             CurrentProposal = null;
             SignaturesAcquired = 0;
-            if (MyIndex >= 0)
-                Validators[MyIndex].ExpectedViewNumber = view;
+            if (MyState != null)
+                MyState.ExpectedViewNumber = view;
         }
 
         private Validator MakeValidator()
