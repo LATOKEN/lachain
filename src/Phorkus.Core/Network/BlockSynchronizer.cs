@@ -19,7 +19,6 @@ namespace Phorkus.Core.Network
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ILogger<IBlockSynchronizer> _logger;
-        private readonly ITransactionVerifier _transactionVerifier;
         private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
@@ -35,7 +34,6 @@ namespace Phorkus.Core.Network
             IBlockManager blockManager,
             IBlockchainContext blockchainContext,
             ILogger<IBlockSynchronizer> logger,
-            ITransactionVerifier transactionVerifier,
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager)
@@ -47,7 +45,6 @@ namespace Phorkus.Core.Network
             _networkContext = networkContext;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
-            _transactionVerifier = transactionVerifier;
         }
 
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
