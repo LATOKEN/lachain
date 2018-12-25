@@ -5,7 +5,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 {
     public interface IWithdrawalManager
     {
-        void ConfirmWithdrawal(KeyPair keyPair, ulong nonce);
+        void TryApproveWithdrawal(KeyPair keyPair, ulong nonce);
 
         void ExecuteWithdrawal(ThresholdKey thresholdKey, KeyPair keyPair, ulong nonce);
         

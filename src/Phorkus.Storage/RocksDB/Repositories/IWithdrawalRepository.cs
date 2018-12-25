@@ -30,7 +30,9 @@ namespace Phorkus.Storage.RocksDB.Repositories
         
         Withdrawal ChangeWithdrawalState(UInt256 withdrawalHash, WithdrawalState withdrawalState);
 
-        bool ApproveWithdrawal(UInt256 withdrawalHash, byte[] rawTransaction, byte[] transactionHash);
+        bool ConfirmWithdrawal(UInt256 withdrawalHash, byte[] rawTransaction, byte[] transactionHash);
+        
+        bool ApproveWithdrawal(UInt256 withdrawalHash);
         
         Withdrawal GetWithdrawalByNonceAndDelete(ulong nonce);
 
