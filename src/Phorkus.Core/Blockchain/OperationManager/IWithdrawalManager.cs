@@ -9,10 +9,15 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         OperatingError Verify(Withdrawal withdrawal);
 
-        void ConfirmWithdrawal(Withdrawal withdrawal, byte[] transactionHash, KeyPair keyPair);
-        
+        void ConfirmWithdrawal(KeyPair keyPair, ulong nonce);
+
+        void ExecuteWithdrawal(ThresholdKey thresholdKey, KeyPair keyPair, ulong nonce);
+
+        ulong CurrentNoncePending { get; }
+        ulong CurrentNonceSent { get; }
+        /*
         void Start(ThresholdKey thresholdKey, KeyPair keyPair);
 
-        void Stop();
+        void Stop();*/
     }
 }

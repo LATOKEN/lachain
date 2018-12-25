@@ -16,6 +16,7 @@ namespace Phorkus.RocksDB
             containerBuilder.RegisterSingleton<IContractRepository, ContractRepository>();
             containerBuilder.RegisterSingleton<IGlobalRepository, GlobalRepository>();
             containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
+            containerBuilder.RegisterSingleton<IWithdrawalRepository, WithdrawalRepository>();
         }
     }
 }

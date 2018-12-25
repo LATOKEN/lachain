@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Numerics;
+using Google.Protobuf;
 using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.RPC;
@@ -30,6 +31,8 @@ namespace Phorkus.CrossChain.Bitcoin
         public ulong BlockGenerationTime { get; } = 10 * 60 * 1000;
 
         public ulong CurrentBlockHeight => (ulong) _rpcClient.GetBlockCount();
+
+        public ulong TxConfirmation { get; } = 6;
 
         public IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight)
         {
@@ -106,9 +109,20 @@ namespace Phorkus.CrossChain.Bitcoin
             return sendRawTransaction.ToBytes();
         }
 
+        public bool CheckTransactionIsConfirmed(byte[] txHash)
+        {
+            var getRawTransactionInfo =
+                _rpcClient.GetRawTransactionInfo(uint256.Parse(Utils.ConvertByteArrayToString(txHash)));
+            return getRawTransactionInfo != null && getRawTransactionInfo.Confirmations >= TxConfirmation;
+        }
+
         public byte[] GenerateAddress(PublicKey publicKey)
         {
-            throw new System.NotImplementedException();
+            return Utils.ConvertHexStringToByteArray("05" + Hashes.Hash160(Hashes
+                                                         .Hash256(Utils.ConvertHexStringToByteArray(
+                                                             "0014" + Hashes.Hash160(Hashes
+                                                                 .Hash256(publicKey.ToByteArray()).ToBytes())))
+                                                         .ToBytes()));
         }
 
         private static long _CalcBytes(int inputsNum, int outputsNum)

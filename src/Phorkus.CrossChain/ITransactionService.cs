@@ -16,5 +16,9 @@ namespace Phorkus.CrossChain
         byte[] BroadcastTransaction(RawTransaction rawTransaction);
 
         byte[] GenerateAddress(PublicKey publicKey);
+
+        bool CheckTransactionIsConfirmed(byte[] txHash);
+        
+        ulong TxConfirmation { get; }
     }
 }

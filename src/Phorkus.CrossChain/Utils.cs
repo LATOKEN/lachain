@@ -47,6 +47,18 @@ namespace Phorkus.CrossChain
 
             return hex.ToString();
         }
+        
+        public static string ConvertByteArrayToZeroPaddedString(byte[] bytes)
+        {
+            var hex = new StringBuilder(bytes.Length * 2);
+            foreach (var b in bytes)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+
+            return "0x" + hex.ToString();
+        }
+
 
         public static string AppendZero(string hex)
         {
