@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
@@ -48,6 +47,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         public event EventHandler<Block> OnBlockPersisted;
         public event EventHandler<Block> OnBlockSigned;
 
+        public Block GetByHeight(ulong blockHeight)
+        {
+            return _blockRepository.GetBlockByHeight(blockHeight);
+        }
+        
         public Block GetByHash(UInt256 blockHash)
         {
             return _blockRepository.GetBlockByHash(blockHash);

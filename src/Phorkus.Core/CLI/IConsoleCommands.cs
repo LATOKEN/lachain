@@ -2,7 +2,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Core.CLI
 {
-    public interface ICLICommands
+    public interface IConsoleCommands
     {
         SignedTransaction GetTransaction(string[] arguments);
         

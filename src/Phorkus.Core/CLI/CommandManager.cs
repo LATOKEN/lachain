@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Crypto;
@@ -12,7 +13,7 @@ using Phorkus.Storage.State;
 
 namespace Phorkus.Core.CLI
 {
-    public class CLI : ICLI
+    public class CommandManager : ICommandManager
     {
         private readonly IGlobalRepository _globalRepository;
         private readonly IValidatorManager _validatorManager;
@@ -22,12 +23,12 @@ namespace Phorkus.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainStateManager _blockchainStateManager;
         private readonly ICrypto _crypto;
-        private readonly ILogger<ICLI> _logger;
-        private ICLICommands _cliCommands;
+        private readonly ILogger<ICommandManager> _logger;
+        private IConsoleCommands _consoleCommands;
 
         public bool IsWorking { get; set; }
 
-        public CLI(
+        public CommandManager(
             IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
@@ -36,7 +37,7 @@ namespace Phorkus.Core.CLI
             IBlockManager blockManager,
             IValidatorManager validatorManager,
             IBlockchainStateManager blockchainStateManager,
-            ILogger<ICLI> logger)
+            ILogger<ICommandManager> logger)
         {
             _blockManager = blockManager;
             _globalRepository = globalRepository;
@@ -51,7 +52,7 @@ namespace Phorkus.Core.CLI
 
         private void _Worker(ThresholdKey thresholdKey, KeyPair keyPair)
         {
-            _cliCommands = new CLICommands(_globalRepository, _transactionBuilder, _transactionPool,
+            _consoleCommands = new ConsoleCommands(_globalRepository, _transactionBuilder, _transactionPool,
                 _transactionManager, _blockManager, _validatorManager, _blockchainStateManager,
                 keyPair);
             while (true)
@@ -65,22 +66,20 @@ namespace Phorkus.Core.CLI
                     var arguments = argumentsTrash.Where(argument => argument != " ").ToList();
                     if (arguments.Count == 0)
                         continue;
-                    var theCommand = _cliCommands.GetType().GetMethod(arguments[0]);
+                    var theCommand = _consoleCommands.GetType()
+                        .GetMethods().FirstOrDefault(method => method.Name.ToLower().Contains(arguments[0].ToLower()));
                     if (theCommand == null)
                         continue;
                     try
                     {
-                        // ReSharper disable once CoVariantArrayConversion
-                        var result = theCommand.Invoke(_cliCommands, arguments.ToArray());
+                        var result = theCommand.Invoke(_consoleCommands, new object[] { arguments.ToArray() });
                         if (result == null)
                         {
                             _logger.LogError("Wrong arguments!\n");
                             Console.Out.Write("null\n");
+                            return;
                         }
-                        else
-                        {
-                            Console.Out.Write(result.ToString() + '\n');
-                        }
+                        Console.Out.Write(result.ToString() + '\n');
                     }
                     catch (Exception e)
                     {

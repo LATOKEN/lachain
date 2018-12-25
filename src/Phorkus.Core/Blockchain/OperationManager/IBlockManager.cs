@@ -9,6 +9,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
         event EventHandler<Block> OnBlockPersisted;
         event EventHandler<Block> OnBlockSigned;
         
+        Block GetByHeight(ulong blockHeight);
+        
         Block GetByHash(UInt256 blockHash);
         
         OperatingError Persist(Block block);

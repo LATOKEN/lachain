@@ -21,7 +21,7 @@ namespace Phorkus.Core.DI.Modules
             
             
             
-            containerBuilder.RegisterSingleton<ICLI, CLI.CLI>();
+            containerBuilder.RegisterSingleton<ICommandManager, CLI.CommandManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();

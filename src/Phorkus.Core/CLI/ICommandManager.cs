@@ -3,7 +3,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Core.CLI
 {
-    public interface ICLI
+    public interface ICommandManager
     {
         void Start(ThresholdKey thresholdKey, KeyPair keyPair);
 

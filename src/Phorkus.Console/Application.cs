@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.CLI;
 using Phorkus.Core.Config;
 using Phorkus.Core.CrossChain;
 using Phorkus.Core.DI;
@@ -65,13 +66,13 @@ namespace Phorkus.Console
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
             var transactionManager = _container.Resolve<ITransactionManager>();
-            var crossChainManager = _container.Resolve<ICrossChainManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
+            var crossChain = _container.Resolve<ICrossChain>();
             var withdrawalManager = _container.Resolve<IWithdrawalManager>();
             var thresholdManager = _container.Resolve<IThresholdManager>();
-
-            var crossChain = _container.Resolve<ICrossChain>();
+            var commandManager = _container.Resolve<ICommandManager>();
+            var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
             var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
@@ -121,28 +122,27 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            crossChain.Start(thresholdKey, keyPair);
+            //crossChain.Start(thresholdKey, keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
             withdrawalManager.Start(thresholdKey, keyPair);
+            commandManager.Start(thresholdKey, keyPair);
 
             // var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
-            Thread.Sleep(200000);
-            // var transactionService = crossChainManager.GetTransactionService(BlockchainType.Ethereum);
-            Transaction transaction = new Transaction();
-            transaction.Withdraw.Recipient = "0db604794551f5c12e4ffb2d8d4620db5ac2813d".HexToUInt160();
-            transaction.Withdraw.Timestamp = (ulong) new DateTimeOffset().ToUnixTimeMilliseconds();
-            transaction.Withdraw.Value = "100000000000000000".HexToUInt256();
-            transaction.Withdraw.AddressFormat = AddressFormat.Ripmd160;
-            transaction.Withdraw.BlockchainType = BlockchainType.Ethereum;
-            transaction.From = crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToUInt160();
-            transaction.Version = 0;
-            transaction.Type = TransactionType.Withdraw;
-
+            
+            /*var transaction = transactionBuilder.WithdrawTransaction(
+                from: crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToUInt160(),
+                recipient: "0x0db604794551f5c12e4ffb2d8d4620db5ac2813d".HexToUInt160(),
+                blockchainType: BlockchainType.Ethereum,
+                value: "100000000000000000".HexToUInt256().ToMoney(),
+                transactionHash: null,
+                addressFormat: AddressFormat.Ripmd160,
+                timestamp: 0
+            );
             var signedTransaction = transactionManager.Sign(transaction, keyPair);
-            transactionPool.Add(signedTransaction);
+            transactionPool.Add(signedTransaction);*/
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             while (!_interrupt)

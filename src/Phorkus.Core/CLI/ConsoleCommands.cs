@@ -10,7 +10,7 @@ using Phorkus.Storage.State;
 
 namespace Phorkus.Core.CLI
 {
-    public class CLICommands : ICLICommands
+    public class ConsoleCommands : IConsoleCommands
     {
         private const uint AddressLength = 20;
         private const uint TxLength = 32;
@@ -24,7 +24,7 @@ namespace Phorkus.Core.CLI
         private readonly IBlockchainStateManager _blockchainStateManager;
         private readonly KeyPair _keyPair;
 
-        public CLICommands(
+        public ConsoleCommands(
             IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
@@ -54,7 +54,9 @@ namespace Phorkus.Core.CLI
 
         private static string EraseHexPrefix(string hexString)
         {
-            return hexString.Substring(0, 2) == "0x" ? hexString.Substring(2) : hexString;
+            if (hexString.StartsWith("0x"))
+                hexString = hexString.Substring(2);
+            return hexString;
         }
 
         /*
@@ -77,12 +79,12 @@ namespace Phorkus.Core.CLI
         */
         public Block GetBlock(string[] arguments)
         {
-            if (arguments.Length != 2 || arguments[1].Length != TxLength)
+            if (arguments.Length != 2)
                 return null;
-            arguments[1] = EraseHexPrefix(arguments[1]);
-            return !IsValidHexString(arguments[1])
-                ? null
-                : _blockManager.GetByHash(HexUtils.HexToUInt256(arguments[1]));
+            var value = EraseHexPrefix(arguments[1]);
+            if (ulong.TryParse(value, out var blockHeight))
+                return _blockManager.GetByHeight(blockHeight);
+            return _blockManager.GetByHash(arguments[1].HexToUInt256());
         }
 
         /*
