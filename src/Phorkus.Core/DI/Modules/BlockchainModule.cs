@@ -1,4 +1,5 @@
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.CLI;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.BlockManager;
@@ -17,6 +18,10 @@ namespace Phorkus.Core.DI.Modules
         {
             /* global */
             containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
+            
+            
+            
+            containerBuilder.RegisterSingleton<ICLI, CLI.CLI>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
