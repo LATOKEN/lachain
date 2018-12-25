@@ -78,7 +78,8 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
+        public Transaction DepositTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
+            Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
@@ -99,6 +100,58 @@ namespace Phorkus.Core.Blockchain
                 From = from,
                 Nonce = nonce,
                 Deposit = deposit
+            };
+            return tx;
+        }
+
+
+        public Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
+            Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
+        {
+            var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
+            var withdraw = new WithdrawTransaction
+            {
+                Recipient = recipient,
+                BlockchainType = blockchainType,
+                Value = value.ToUInt256(),
+                AddressFormat = addressFormat,
+                Timestamp = timestamp,
+                TransactionHash = ByteString.CopyFrom(transactionHash)
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Withdraw,
+                Version = 0,
+                Flags = 0,
+                From = from,
+                Nonce = nonce,
+                Withdraw = withdraw
+            };
+            return tx;
+        }
+
+
+        public Transaction ConfirmTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
+            Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
+        {
+            var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
+            var confirm = new ConfirmTransaction
+            {
+                Recipient = recipient,
+                BlockchainType = blockchainType,
+                Value = value.ToUInt256(),
+                AddressFormat = addressFormat,
+                Timestamp = timestamp,
+                TransactionHash = ByteString.CopyFrom(transactionHash)
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Deposit,
+                Version = 0,
+                Flags = 0,
+                From = from,
+                Nonce = nonce,
+                Confirm = confirm
             };
             return tx;
         }

@@ -8,6 +8,7 @@
         AssetHashByName = 0x0202,
         AssetHashes = 0x0203,
         AssetNames = 0x0204,
+        AssetSupplyByHash = 0x0205,
         
         BlockByHash = 0x0301,
         BlockHashByHeight = 0x0302,
@@ -17,6 +18,7 @@
         TransactionStateByHash = 0x0403,
         
         BalanceByOwnerAndAsset = 0x0501,
+        WithdrawingBalanceByOwnerAndAsset = 0x0511,
         
         StorageVersionIndex = 0x0601,
         PersistentTreeMap = 0x0602,

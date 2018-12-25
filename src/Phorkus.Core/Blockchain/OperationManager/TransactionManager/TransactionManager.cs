@@ -35,7 +35,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 {TransactionType.Contract, new ContractTransactionExecuter()},
                 {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
                 {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
-                {TransactionType.Withdraw, new WithdrawTransactionExecuter()}
+                {TransactionType.Withdraw, new WithdrawTransactionExecuter(validatorManager)},
+                {TransactionType.Confirm, new ConfirmTransactionExecuter(validatorManager)}
             };
             _transactionRepository =
                 transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));

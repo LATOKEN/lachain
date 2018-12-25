@@ -62,8 +62,10 @@ namespace Phorkus.Console
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
             var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
+            var crossChainManager = _container.Resolve<ICrossChainManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
+            var withdrawalManager = _container.Resolve<IWithdrawalManager>();
 //            var crossChain = _container.Resolve<ICrossChain>();
 
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
@@ -116,6 +118,7 @@ namespace Phorkus.Console
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
+            withdrawalManager.Start(new ThresholdKey(), keyPair);
 
             //var thresholdManager = _container.Resolve<IThresholdManager>();
             //var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
@@ -133,7 +136,7 @@ namespace Phorkus.Console
                 if (prettyName.Length < 3)
                     prettyName = $"{prettyName} ";
                 System.Console.WriteLine(
-                    $"Balance of {prettyName} {address.Buffer.ToHex().Substring(0, 4)}: {balanceSnapshot.GetBalance(address, assetSnapshot.GetAssetByName(assetName)?.Hash)}");
+                    $"Balance of {prettyName} {address.Buffer.ToHex().Substring(0, 4)}: {balanceSnapshot.GetAvailableBalance(address, assetSnapshot.GetAssetByName(assetName)?.Hash)}");
             }
         }
 

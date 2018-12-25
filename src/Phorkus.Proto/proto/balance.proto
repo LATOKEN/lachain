@@ -5,5 +5,6 @@ import "default.proto";
 message Balance {
     UInt160 address = 1;
     UInt160 asset = 2;
-    UInt256 amount = 3;
+    UInt256 available = 3;
+    UInt256 withdrawing = 4;
 }

@@ -13,7 +13,7 @@ namespace Phorkus.CrossChain.Bitcoin
         {
             _bitcoinTransactionService = new BitcoinTransactionService();
         }
-
+        
         private static string AppendSigPrefix(string signature)
         {
             string appendSig;

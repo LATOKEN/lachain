@@ -22,7 +22,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return error;
             var contract = transaction.Contract;
             if (!contract.Value.IsZero())
-                balances.TransferBalance(transaction.From, contract.To, contract.Asset, new Money(contract.Value));
+                balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset, new Money(contract.Value));
             /* TODO: "invoke smart-contract code here" */
             return OperatingError.Ok;
         }

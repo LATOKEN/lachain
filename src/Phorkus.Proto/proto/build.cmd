@@ -14,6 +14,7 @@ protoc --csharp_out ../ multisig.proto
 protoc --csharp_out ../ node.proto
 protoc --csharp_out ../ transaction.proto
 protoc --csharp_out ../ networking.proto
+protoc --csharp_out ../ withdrawal.proto
 
 rem cd ..
 rem mkdir Grpc

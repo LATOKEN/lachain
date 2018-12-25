@@ -1,51 +1,55 @@
-﻿using Phorkus.Core.Blockchain.State;
+using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
-    public class DepositTransactionExecuter : ITransactionExecuter
+    public class ConfirmTransactionExecuter : ITransactionExecuter
     {
         private readonly IValidatorManager _validatorManager;
 
-        public DepositTransactionExecuter(IValidatorManager validatorManager)
+        public ConfirmTransactionExecuter(IValidatorManager validatorManager)
         {
             _validatorManager = validatorManager;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            var balances = snapshot.Balances;
+            var balanceRepository = snapshot.Balances;
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
-            var deposit = transaction.Deposit;
-            if (deposit.Value.IsZero())
+            var confirm = transaction.Confirm;
+            var asset = snapshot.Assets.GetAssetByHash(confirm.AssetHash);
+            if (asset is null)
+                return OperatingError.UnknownAsset;
+            var assetHash = asset.Hash;
+            if (confirm.Value.IsZero() || asset.Supply.ToMoney() < new Money(confirm.Value))
                 return OperatingError.Ok;
-            var assetHash = deposit.AssetHash;
-            balances.AddAvailableBalance(deposit.Recipient, assetHash, new Money(deposit.Value));
+            balanceRepository.SubWithdrawingBalance(transaction.From, assetHash, new Money(confirm.Value));
+            balanceRepository.AddAvailableBalance(confirm.Recipient, assetHash, new Money(confirm.Value));
             return OperatingError.Ok;
         }
 
         public OperatingError Verify(Transaction transaction)
         {
-            if (transaction.Type != TransactionType.Deposit)
+            if (transaction.Type != TransactionType.Confirm)
                 return OperatingError.InvalidTransaction;
-            var deposit = transaction.Deposit;
-            if (deposit?.BlockchainType is null)
+            var confirm = transaction.Deposit;
+            if (confirm?.BlockchainType is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.TransactionHash is null)
+            if (confirm?.TransactionHash is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.Timestamp is null)
+            if (confirm?.Timestamp is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.AddressFormat is null)
+            if (confirm?.AddressFormat is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.Recipient is null)
+            if (confirm?.Recipient is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.Value is null)
+            if (confirm?.Value is null)
                 return OperatingError.InvalidTransaction;
-            if (deposit?.AssetHash is null)
+            if (confirm?.AssetHash is null)
                 return OperatingError.InvalidTransaction;
             if (!_validatorManager.CheckValidator(transaction.From))
                 return OperatingError.InvalidTransaction;

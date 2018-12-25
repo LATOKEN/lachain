@@ -1,7 +1,5 @@
 ﻿using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
-using Phorkus.Core.Storage;
-using Phorkus.Core.Utils;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
@@ -32,7 +30,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var to = issue.To;
             if (to is null || to.IsZero())
                 to = transaction.From;
-            balances.AddBalance(to, issue.Asset, new Money(issue.Supply));
+            balances.AddAvailableBalance(to, issue.Asset, new Money(issue.Supply));
             return OperatingError.Ok;
         }
 

@@ -200,11 +200,12 @@ namespace Phorkus.Utility
         {
             return new Money(x._value + y._value);
         }
-
+        
         public static Money operator -(Money x, Money y)
         {
-            return new Money(x._value - y._value);
+            return new Money(x._value + y._value);
         }
+
 
         public static Money operator -(Money value)
         {
