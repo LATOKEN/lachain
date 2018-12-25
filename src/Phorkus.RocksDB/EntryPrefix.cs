@@ -25,5 +25,7 @@
         PersistentHashMap = 0x0603,
         
         WithdrawalByHash = 0x0701,
+        WithdrawalByNonce = 0x0702,
+        WithdrawalByStateNonce = 0x0703,
     }
 }

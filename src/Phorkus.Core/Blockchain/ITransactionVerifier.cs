@@ -1,4 +1,5 @@
 ﻿using System;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain
@@ -12,6 +13,7 @@ namespace Phorkus.Core.Blockchain
 
         bool VerifyTransactionImmediately(SignedTransaction transaction, PublicKey publicKey);
         bool VerifyTransactionImmediately(SignedTransaction transaction);
+        OperatingError Verify(Transaction transaction);
         
         void Start();
         void Stop();

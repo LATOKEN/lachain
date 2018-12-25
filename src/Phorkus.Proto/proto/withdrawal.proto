@@ -2,7 +2,6 @@ syntax = "proto3";
 option csharp_namespace = "Phorkus.Proto";
 
 import "default.proto";
-import "transaction.proto";
 
 enum WithdrawalState {
     WITHDRAWAL_STATE_UNKNOWN = 0;
@@ -16,4 +15,6 @@ message Withdrawal {
     WithdrawalState state = 2;
     bytes original_transaction = 3;
     bytes original_hash = 4;
+    uint64 nonce = 5;
+    uint64 timestamp = 6;
 }

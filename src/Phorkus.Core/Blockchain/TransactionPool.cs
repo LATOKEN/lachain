@@ -12,31 +12,31 @@ namespace Phorkus.Core.Blockchain
         public const int PeekLimit = 1000;
 
         private readonly ITransactionVerifier _transactionVerifier;
-        private readonly ITransactionManager _transactionManager;
+        // private readonly ITransactionManager _transactionManager;
         
-        /*private readonly ConcurrentDictionary<UInt256, SignedTransaction> _transactions
-            = new ConcurrentDictionary<UInt256, SignedTransaction>();*/
+        private readonly ConcurrentDictionary<UInt256, SignedTransaction> _transactions
+            = new ConcurrentDictionary<UInt256, SignedTransaction>();
         
-        private readonly ConcurrentQueue<SignedTransaction> _transactions
+        private readonly ConcurrentQueue<SignedTransaction> _transactionsQueue
             = new ConcurrentQueue<SignedTransaction>();
 
         public TransactionPool(
-            ITransactionVerifier transactionVerifier,
-            ITransactionManager transactionManager)
+            ITransactionVerifier transactionVerifier/*,
+            ITransactionManager transactionManager*/)
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
+            // _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
         }
 
-        public IReadOnlyDictionary<UInt256, SignedTransaction> Transactions => _transactions.ToDictionary(tx => tx.Hash);
+        public IReadOnlyDictionary<UInt256, SignedTransaction> Transactions => _transactions;
         
         public bool Add(SignedTransaction transaction)
         {
-            /*var result = _transactionManager.Verify(transaction.Transaction);
+            var result = _transactionVerifier.Verify(transaction.Transaction);
             if (result != OperatingError.Ok)
                 return false;
-            _transactions[transaction.Hash] = transaction;*/
-            _transactions.Enqueue(transaction);
+            _transactions[transaction.Hash] = transaction;
+            _transactionsQueue.Enqueue(transaction);
             return true;
         }
 
@@ -45,10 +45,10 @@ namespace Phorkus.Core.Blockchain
             if (limit < 0)
                 limit = PeekLimit;
             var result = new List<SignedTransaction>();
-            var txToPeek = Math.Min(_transactions.Count, limit);
+            var txToPeek = Math.Min(_transactionsQueue.Count, limit);
             for (var i = 0; i < txToPeek; i++)
             {
-                if (!_transactions.TryDequeue(out var transaction))
+                if (!_transactionsQueue.TryDequeue(out var transaction))
                     continue;
                 result.Add(transaction);
             }
@@ -62,12 +62,12 @@ namespace Phorkus.Core.Blockchain
 
         public void Delete(UInt256 transactionHash)
         {
-            /*_transactions.TryRemove(transactionHash, out _);*/
+            _transactions.TryRemove(transactionHash, out _);
         }
 
         public void Clear()
         {
-            /*_transactions.Clear();*/
+            _transactions.Clear();
         }
     }
 }

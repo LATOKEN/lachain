@@ -24,18 +24,19 @@ namespace Phorkus.Proto {
     static WithdrawalReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChB3aXRoZHJhd2FsLnByb3RvGg1kZWZhdWx0LnByb3RvGhF0cmFuc2FjdGlv",
-            "bi5wcm90byKGAQoKV2l0aGRyYXdhbBIiChB0cmFuc2FjdGlvbl9oYXNoGAEg",
-            "ASgLMgguVUludDI1NhIfCgVzdGF0ZRgCIAEoDjIQLldpdGhkcmF3YWxTdGF0",
-            "ZRIcChRvcmlnaW5hbF90cmFuc2FjdGlvbhgDIAEoDBIVCg1vcmlnaW5hbF9o",
-            "YXNoGAQgASgMKooBCg9XaXRoZHJhd2FsU3RhdGUSHAoYV0lUSERSQVdBTF9T",
-            "VEFURV9VTktOT1dOEAASHwobV0lUSERSQVdBTF9TVEFURV9SRUdJU1RFUkVE",
-            "EAESGQoVV0lUSERSQVdBTF9TVEFURV9TRU5UEAISHQoZV0lUSERSQVdBTF9T",
-            "VEFURV9BUFBST1ZFRBADQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "ChB3aXRoZHJhd2FsLnByb3RvGg1kZWZhdWx0LnByb3RvIqgBCgpXaXRoZHJh",
+            "d2FsEiIKEHRyYW5zYWN0aW9uX2hhc2gYASABKAsyCC5VSW50MjU2Eh8KBXN0",
+            "YXRlGAIgASgOMhAuV2l0aGRyYXdhbFN0YXRlEhwKFG9yaWdpbmFsX3RyYW5z",
+            "YWN0aW9uGAMgASgMEhUKDW9yaWdpbmFsX2hhc2gYBCABKAwSDQoFbm9uY2UY",
+            "BSABKAQSEQoJdGltZXN0YW1wGAYgASgEKooBCg9XaXRoZHJhd2FsU3RhdGUS",
+            "HAoYV0lUSERSQVdBTF9TVEFURV9VTktOT1dOEAASHwobV0lUSERSQVdBTF9T",
+            "VEFURV9SRUdJU1RFUkVEEAESGQoVV0lUSERSQVdBTF9TVEFURV9TRU5UEAIS",
+            "HQoZV0lUSERSQVdBTF9TVEFURV9BUFBST1ZFRBADQhCqAg1QaG9ya3VzLlBy",
+            "b3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.WithdrawalState), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Withdrawal), global::Phorkus.Proto.Withdrawal.Parser, new[]{ "TransactionHash", "State", "OriginalTransaction", "OriginalHash" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Withdrawal), global::Phorkus.Proto.Withdrawal.Parser, new[]{ "TransactionHash", "State", "OriginalTransaction", "OriginalHash", "Nonce", "Timestamp" }, null, null, null)
           }));
     }
     #endregion
@@ -81,6 +82,8 @@ namespace Phorkus.Proto {
       state_ = other.state_;
       originalTransaction_ = other.originalTransaction_;
       originalHash_ = other.originalHash_;
+      nonce_ = other.nonce_;
+      timestamp_ = other.timestamp_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -133,6 +136,28 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "nonce" field.</summary>
+    public const int NonceFieldNumber = 5;
+    private ulong nonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Nonce {
+      get { return nonce_; }
+      set {
+        nonce_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 6;
+    private ulong timestamp_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Timestamp {
+      get { return timestamp_; }
+      set {
+        timestamp_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Withdrawal);
@@ -150,6 +175,8 @@ namespace Phorkus.Proto {
       if (State != other.State) return false;
       if (OriginalTransaction != other.OriginalTransaction) return false;
       if (OriginalHash != other.OriginalHash) return false;
+      if (Nonce != other.Nonce) return false;
+      if (Timestamp != other.Timestamp) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -160,6 +187,8 @@ namespace Phorkus.Proto {
       if (State != 0) hash ^= State.GetHashCode();
       if (OriginalTransaction.Length != 0) hash ^= OriginalTransaction.GetHashCode();
       if (OriginalHash.Length != 0) hash ^= OriginalHash.GetHashCode();
+      if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
+      if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -189,6 +218,14 @@ namespace Phorkus.Proto {
         output.WriteRawTag(34);
         output.WriteBytes(OriginalHash);
       }
+      if (Nonce != 0UL) {
+        output.WriteRawTag(40);
+        output.WriteUInt64(Nonce);
+      }
+      if (Timestamp != 0UL) {
+        output.WriteRawTag(48);
+        output.WriteUInt64(Timestamp);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -208,6 +245,12 @@ namespace Phorkus.Proto {
       }
       if (OriginalHash.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(OriginalHash);
+      }
+      if (Nonce != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
+      }
+      if (Timestamp != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -234,6 +277,12 @@ namespace Phorkus.Proto {
       }
       if (other.OriginalHash.Length != 0) {
         OriginalHash = other.OriginalHash;
+      }
+      if (other.Nonce != 0UL) {
+        Nonce = other.Nonce;
+      }
+      if (other.Timestamp != 0UL) {
+        Timestamp = other.Timestamp;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -263,6 +312,14 @@ namespace Phorkus.Proto {
           }
           case 34: {
             OriginalHash = input.ReadBytes();
+            break;
+          }
+          case 40: {
+            Nonce = input.ReadUInt64();
+            break;
+          }
+          case 48: {
+            Timestamp = input.ReadUInt64();
             break;
           }
         }

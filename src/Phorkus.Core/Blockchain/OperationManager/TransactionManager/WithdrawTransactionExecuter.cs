@@ -7,10 +7,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
     public class WithdrawTransactionExecuter : ITransactionExecuter
     {
         private readonly IValidatorManager _validatorManager;
+        private readonly IWithdrawalManager _withdrawalManager;
 
-        public WithdrawTransactionExecuter(IValidatorManager validatorManager)
+        public WithdrawTransactionExecuter(IValidatorManager validatorManager, IWithdrawalManager withdrawalManager)
         {
             _validatorManager = validatorManager;
+            _withdrawalManager = withdrawalManager;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
@@ -21,6 +23,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return error;
             var assetHash = transaction.Withdraw.AssetHash;
             balances.AddWithdrawingBalance(transaction.From, assetHash, new Money(transaction.Withdraw.Value));
+            _withdrawalManager.CreateWithdrawal(transaction);
             return OperatingError.Ok;
         }
 

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
+using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
@@ -21,15 +24,33 @@ namespace Phorkus.Core.Blockchain
 
         private readonly Queue<SignedTransaction> _transactionQueue
             = new Queue<SignedTransaction>();
+        
+        private readonly IReadOnlyDictionary<TransactionType, ITransactionExecuter> _transactionPersisters;
+        
 
         private readonly object _queueNotEmpty = new object();
 
         public TransactionVerifier(
+            IContractRepository contractRepository,
+            IValidatorManager validatorManager,
+            IMultisigVerifier multisigVerifier,
             ILogger<ITransactionVerifier> logger,
             ICrypto crypto)
         {
             _crypto = crypto;
             _logger = logger;
+            
+        
+            _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
+            {
+                {TransactionType.Miner, new MinerTranscationExecuter()},
+                {TransactionType.Register, new RegisterTransactionExecuter(multisigVerifier)},
+                {TransactionType.Issue, new IssueTransactionExecuter()},
+                {TransactionType.Contract, new ContractTransactionExecuter()},
+                {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
+                {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
+                {TransactionType.Confirm, new ConfirmTransactionExecuter(validatorManager)}
+            };
         }
 
         public event EventHandler<SignedTransaction> OnTransactionVerified;
@@ -68,6 +89,18 @@ namespace Phorkus.Core.Blockchain
             }
 
             return true;
+        }
+
+        public OperatingError Verify(Transaction transaction)
+        {
+            /* validate default transaction attributes */
+            if (transaction.Version != 0)
+                return OperatingError.UnsupportedVersion;
+            /* verify transaction via persister */
+            var persister = _transactionPersisters[transaction.Type];
+            if (persister == null)
+                return OperatingError.UnsupportedTransaction;
+            return persister.Verify(transaction);
         }
 
         public bool VerifyTransactionImmediately(SignedTransaction transaction)

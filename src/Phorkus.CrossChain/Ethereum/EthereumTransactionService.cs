@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Google.Protobuf;
 using NBitcoin;
 using Nethereum.Hex.HexTypes;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC;
+using Nethereum.Util;
 using Phorkus.Proto;
 
 namespace Phorkus.CrossChain.Ethereum
@@ -12,16 +14,20 @@ namespace Phorkus.CrossChain.Ethereum
     public class EthereumTransactionService : ITransactionService
     {
         private readonly EthApiService _ethApiService;
+        private readonly Sha3Keccack _sha3Keccack = new Sha3Keccack();
 
         internal EthereumTransactionService()
         {
             _ethApiService = new EthApiService(new RpcClient(new Uri(EthereumConfig.RpcUri)));
         }
+
         public EllipticCurveType EllipticCurveType { get; }
-        
+
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
         public ulong BlockGenerationTime { get; } = 15 * 1000;
+        
+        public ulong TxConfirmation { get; } = 12;
 
         public ulong CurrentBlockHeight
         {
@@ -89,6 +95,7 @@ namespace Phorkus.CrossChain.Ethereum
                     (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.HexValue));
                 transactions.Add(ethereumTx);
             }
+
             Console.Out.Write("Length: " + transactions.Count + '\n');
             return transactions;
         }
@@ -104,10 +111,27 @@ namespace Phorkus.CrossChain.Ethereum
             var txHash = sendTransaction.Result;
             return Utils.ConvertHexStringToByteArray(txHash);
         }
-        
+
+
+        public bool CheckTransactionIsConfirmed(byte[] txHash)
+        {
+            var getTransactionReceipt =
+                _ethApiService.Transactions.GetTransactionReceipt.SendRequestAsync(
+                    Utils.ConvertByteArrayToZeroPaddedString(txHash));
+            getTransactionReceipt.Wait();
+            return !getTransactionReceipt.IsFaulted && getTransactionReceipt.Result.BlockNumber.Value > 0;
+        }
+
+
         public byte[] GenerateAddress(PublicKey publicKey)
         {
-            throw new NotImplementedException();
+            var temp = _sha3Keccack.CalculateHash(publicKey.ToByteArray());
+            if (temp.Length > EthereumConfig.AddressLength)
+            {
+                temp = temp.Slice(temp.Length - EthereumConfig.AddressLength);
+            }
+
+            return temp;
         }
     }
 }
