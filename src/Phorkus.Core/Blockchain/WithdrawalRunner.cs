@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
-using Phorkus.Core.Storage;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 
 namespace Phorkus.Core.Blockchain
 {

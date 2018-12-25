@@ -4,8 +4,8 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.BlockManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Proto;
-using Phorkus.Core.Storage;
 using Phorkus.Crypto;
+using Phorkus.Storage.RocksDB.Repositories;
 
 namespace Phorkus.Core.Blockchain
 {

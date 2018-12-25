@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
 using Phorkus.Core.Consensus;
-using Phorkus.Core.Storage;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 
 namespace Phorkus.Core.Network
 {

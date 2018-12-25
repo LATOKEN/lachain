@@ -6,8 +6,8 @@ using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Utils;
-using Phorkus.Hestia;
-using Phorkus.RocksDB;
+using Phorkus.Storage;
+using Phorkus.Storage.RocksDB;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Benchmark

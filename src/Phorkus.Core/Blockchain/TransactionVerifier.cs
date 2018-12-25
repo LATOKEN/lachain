@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
-using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain

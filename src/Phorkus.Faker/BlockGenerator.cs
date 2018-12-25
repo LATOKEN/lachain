@@ -4,15 +4,15 @@ using System.Linq;
 using System.Threading;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.DI;
-using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
