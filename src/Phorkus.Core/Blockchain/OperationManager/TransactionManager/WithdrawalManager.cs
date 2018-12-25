@@ -25,9 +25,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         private readonly IThresholdManager _thresholdManager;
         private readonly IWithdrawalRepository _withdrawalRepository;
         private readonly ILogger<IWithdrawalManager> _logger;
-        
+
         private volatile bool _stopped = true;
-        
+
         public WithdrawalManager(
             ICrossChainManager crossChainManager,
             ITransactionBuilder transactionBuilder,
@@ -58,11 +58,13 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 _logger.LogWarning($"Unable to find withdrawal by nonce ({nonce}) for execution");
                 return;
             }
+
             if (withdrawal.State != WithdrawalState.Sent)
             {
                 _logger.LogWarning($"You can't execute withdrawals with not sent state, found ({withdrawal.State})");
                 return;
             }
+
             /* try to fetch transaction from database storage */
             var transaction = _transactionRepository.GetTransactionByHash(withdrawal.TransactionHash)?.Transaction;
             if (transaction is null)
@@ -71,7 +73,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var transactionService = _crossChainManager.GetTransactionService(transaction.Withdraw.BlockchainType);
             if (!transactionService.IsTransactionConfirmed(withdrawal.OriginalHash.ToByteArray()))
                 return;
-            
+
             /* TODO: "stop! you can't wait here for block confirmation!" 
             var awaitTime = withdrawal.Timestamp + transactionService.BlockGenerationTime * transactionService.TxConfirmation;
             Thread.Sleep(TimeSpan.FromMilliseconds(new DateTimeOffset().ToUnixTimeMilliseconds() - (long) awaitTime));*.
@@ -97,6 +99,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                     $"Couldn't send confirm transaction transaction ({withdrawTx.TransactionHash.ToByteArray()}) to transaction pool");
                 return;
             }
+
             _withdrawalRepository.ApproveWithdrawal(withdrawal.TransactionHash);
         }
 
@@ -108,12 +111,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 _logger.LogWarning($"Unable to find withdrawal by nonce ({nonce}) for execution");
                 return;
             }
+
             if (withdrawal.State != WithdrawalState.Registered)
             {
-                _logger.LogWarning($"You can't execute withdrawals with not registered state, found ({withdrawal.State})");
+                _logger.LogWarning(
+                    $"You can't execute withdrawals with not registered state, found ({withdrawal.State})");
                 return;
             }
-            
+
             var transaction = _transactionRepository.GetTransactionByHash(withdrawal.TransactionHash)
                 .Transaction;
             var withdrawTx = transaction.Withdraw;
@@ -122,8 +127,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var transactionService = _crossChainManager.GetTransactionService(transaction.Withdraw.BlockchainType);
 
             var publicAddress = transactionService.GenerateAddress(thresholdKey.PublicKey);
-            var dataToSign = transactionFactory.CreateDataToSign(publicAddress, withdrawTx.Recipient.ToByteArray(), withdrawTx.Value.ToByteArray());
-            
+            var dataToSign = transactionFactory.CreateDataToSign(publicAddress, withdrawTx.Recipient.ToByteArray(),
+                withdrawTx.Value.ToByteArray());
+
             var signatures = new List<byte[]>();
             foreach (var data in dataToSign)
             {
@@ -134,58 +140,59 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                     _logger.LogError($"Unable to sign data for withdraw ({withdrawal.TransactionHash})");
                     continue;
                 }
+
                 signatures.Add(signature);
             }
-            
+
             var rawTransaction = transactionFactory.CreateRawTransaction(
                 transaction.From.ToByteArray(),
                 transaction.Withdraw.Recipient.ToByteArray(),
                 transaction.Withdraw.Value.ToByteArray(),
                 signatures);
-            
+
             var transactionHash = transactionService.BroadcastTransaction(rawTransaction);
             if (transactionHash == null)
                 return;
-            
+
             _withdrawalRepository.ConfirmWithdrawal(
                 withdrawal.TransactionHash,
                 rawTransaction.TransactionData,
                 transactionHash);
         }
-        
+
         private void _ExecuteWorker(ThresholdKey thresholdKey, KeyPair keyPair)
         {
             while (!_stopped)
             {
                 Thread.Sleep(1_000);
-                
+
                 var approved = _withdrawalRepository.GetApprovedWithdrawalNonce();
                 var current = _withdrawalRepository.GetCurrentWithdrawalNonce();
-                
+
                 if (current >= approved)
                     continue;
-                
+
                 for (var i = approved; i <= current; i++)
                     ExecuteWithdrawal(thresholdKey, keyPair, i);
             }
         }
-        
+
         private void _ConfirmWorker(KeyPair keyPair)
         {
             while (!_stopped)
             {
                 Thread.Sleep(10_000);
-                
+
                 var approved = _withdrawalRepository.GetApprovedWithdrawalNonce();
                 var current = _withdrawalRepository.GetCurrentWithdrawalNonce();
-                
+
                 if (current >= approved)
                     continue;
-                
+
                 TryApproveWithdrawal(keyPair, current);
             }
         }
-        
+
         public void Start(ThresholdKey thresholdKey, KeyPair keyPair)
         {
             Task.Factory.StartNew(() =>
@@ -199,7 +206,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                     _logger.LogError($"Failed to start withdrawal manager: {e}");
                 }
             }, TaskCreationOptions.LongRunning);
-            
+
             Task.Factory.StartNew(() =>
             {
                 try

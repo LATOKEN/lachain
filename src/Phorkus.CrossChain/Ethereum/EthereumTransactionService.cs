@@ -79,22 +79,22 @@ namespace Phorkus.CrossChain.Ethereum
                 throw new BlockchainNotAvailableException($"Unable to get tranasction at block ({blockHeight})");
 
             var address = Utils.ConvertByteArrayToString(recipient);
-            Console.Out.Write("Address: " + address + '\n');
+            // Console.Out.Write("Address: " + address + '\n');
             var transactions = new List<EthereumContractTransaction>();
             foreach (var tx in getTransactions.Result.Transactions)
             {
-                Console.Out.Write("To: " + tx.To + '\n');
+                // Console.Out.Write("To: " + tx.To + '\n');
                 if (tx.To.Substring(2) != address)
                     continue;
                 var from = tx.Input.Substring(2, EthereumConfig.AddressLength);
-                Console.Out.Write(from + '\n');
+                // Console.Out.Write(from + '\n');
                 var ethereumTx = new EthereumContractTransaction(Utils.ConvertHexStringToByteArray(from),
                     tx.Value.Value, Utils.ConvertHexStringToByteArray(tx.TransactionHash),
                     (ulong) Utils.ConvertHexToLong(getTransactions.Result.Timestamp.HexValue));
                 transactions.Add(ethereumTx);
             }
 
-            Console.Out.Write("Length: " + transactions.Count + '\n');
+            // Console.Out.Write("Length: " + transactions.Count + '\n');
             return transactions;
         }
 
@@ -117,9 +117,10 @@ namespace Phorkus.CrossChain.Ethereum
                 _ethApiService.Transactions.GetTransactionReceipt.SendRequestAsync(
                     Utils.ConvertByteArrayToZeroPaddedString(txHash));
             getTransactionReceipt.Wait();
-            return !getTransactionReceipt.IsFaulted && CurrentBlockHeight - getTransactionReceipt.Result.BlockNumber.Value > TxConfirmation;
+            return !getTransactionReceipt.IsFaulted &&
+                   CurrentBlockHeight - getTransactionReceipt.Result.BlockNumber.Value >= TxConfirmation;
         }
-        
+
         public byte[] GenerateAddress(PublicKey publicKey)
         {
             var temp = _sha3Keccack.CalculateHash(publicKey.ToByteArray());

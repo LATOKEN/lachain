@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,7 +14,9 @@ namespace Phorkus.CrossChain.Bitcoin
 {
     public class BitcoinTransactionService : ITransactionService
     {
-        private readonly Collection<string> _importedAddresses;
+        private readonly ConcurrentDictionary<string, bool> _importedAddresses =
+            new ConcurrentDictionary<string, bool>();
+
         private readonly RPCClient _rpcClient;
         private long _satoshiPerByte;
 
@@ -21,7 +24,6 @@ namespace Phorkus.CrossChain.Bitcoin
 
         internal BitcoinTransactionService()
         {
-            _importedAddresses = new Collection<string>();
             var credentials = new NetworkCredential("user", "password");
             _rpcClient = new RPCClient(credentials, "127.0.0.1", Network.Main);
         }
@@ -48,7 +50,6 @@ namespace Phorkus.CrossChain.Bitcoin
 
         private IEnumerable<IContractTransaction> _GetTransactionsAtBlockUnsafe(byte[] recipient, ulong blockHeight)
         {
-            // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses need to be cached.
             var getBlock = _rpcClient.GetBlock(blockHeight);
             var scriptPubKey =
                 new BitcoinScriptAddress(Utils.ConvertByteArrayToString(recipient), NBitcoin.Network.Main)
@@ -76,7 +77,15 @@ namespace Phorkus.CrossChain.Bitcoin
                 {
                     if (output.ScriptPubKey.IsUnspendable)
                     {
-                        from = output.ScriptPubKey.ToString().Substring(4, BitcoinConfig.AddressLength);
+                        // check OP_RETURN PUSH(DATA) format
+                        if (output.ScriptPubKey.ToHex().Substring(0, 2) != "6A" ||
+                            output.ScriptPubKey.ToHex().Substring(2, 2).CompareTo("4B") > 0 ||
+                            output.ScriptPubKey.ToHex().Substring(2, 2).CompareTo("01") < 0)
+                        {
+                            continue;
+                        }
+
+                        from = output.ScriptPubKey.ToHex().Substring(4, BitcoinConfig.AddressLength);
                     }
 
                     var outputHex = output.ScriptPubKey.ToHex();
@@ -135,7 +144,7 @@ namespace Phorkus.CrossChain.Bitcoin
         {
             if (!updateFee)
                 return _satoshiPerByte * _CalcBytes(inputsNum, outputsNum);
-            var estimateFee = _rpcClient.EstimateSmartFee(1);
+            var estimateFee = _rpcClient.EstimateSmartFee((int) CurrentBlockHeight);
             _satoshiPerByte = (long) (estimateFee.FeeRate.SatoshiPerByte * (decimal) 1e8);
             return _satoshiPerByte * _CalcBytes(inputsNum, outputsNum);
         }
@@ -143,10 +152,10 @@ namespace Phorkus.CrossChain.Bitcoin
         internal KeyValuePair<List<OutPoint>, long> GetOutputs(string address, long value)
         {
             // ImportAddress is a heavy rpc call that rescans whole blockchain, addresses need to be cached.
-            if (!_importedAddresses.Contains(address))
+            if (!_importedAddresses.ContainsKey(address))
             {
                 _rpcClient.ImportAddress(new BitcoinScriptAddress(address, Network.Main));
-                _importedAddresses.Add(address);
+                _importedAddresses.TryAdd(address, true);
             }
 
             var listUnspent = _rpcClient.ListUnspent();

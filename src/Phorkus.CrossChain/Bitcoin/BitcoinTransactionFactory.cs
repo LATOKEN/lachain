@@ -36,8 +36,8 @@ namespace Phorkus.CrossChain.Bitcoin
             const int outputSz = 2;
             var fromBtc = new BitcoinScriptAddress(stringFrom, Network.Main);
             var toBtc = new BitcoinScriptAddress(stringTo, Network.Main);
-            var scriptPubKeyValue = fromBtc.ScriptPubKey.ToString();
-            var scriptPubKeyChange = toBtc.ScriptPubKey.ToString();
+            var scriptPubKeyValue = fromBtc.ScriptPubKey.ToHex();
+            var scriptPubKeyChange = toBtc.ScriptPubKey.ToHex();
             var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz, false);
             var scriptCode = "1976a914"
                              + Hashes.Hash160(Utils.ConvertHexStringToByteArray(stringPublicKey)) + "88ac";
@@ -89,8 +89,8 @@ namespace Phorkus.CrossChain.Bitcoin
             // String publicKey = "02e5974f3e1e9599ff5af036b5d6057d80855e7182afb4c2fa1fe38bc6efb9072b";
             var fromBtc = new BitcoinScriptAddress(stringFrom, NBitcoin.Network.Main);
             var toBtc = new BitcoinScriptAddress(stringTo, NBitcoin.Network.Main);
-            var scriptPubKeyValue = fromBtc.ScriptPubKey.ToString();
-            var scriptPubKeyChange = toBtc.ScriptPubKey.ToString();
+            var scriptPubKeyValue = fromBtc.ScriptPubKey.ToHex();
+            var scriptPubKeyChange = toBtc.ScriptPubKey.ToHex();
             var change = prevAmount - _bitcoinTransactionService._GetFee(inputSz, outputSz, false);
             var prevOuts = "";
             var redeemScript =
