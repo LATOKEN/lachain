@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
-using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
-using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
+using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.BlockManager

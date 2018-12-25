@@ -1,6 +1,6 @@
-﻿using Phorkus.Core.Blockchain.State;
-using Phorkus.Proto;
-using Phorkus.Core.Storage;
+﻿using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.State;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {

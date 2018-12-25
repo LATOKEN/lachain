@@ -1,7 +1,7 @@
 using Phorkus.Core.Config;
-using Phorkus.Core.DI;
+using Phorkus.Logger;
 
-namespace Phorkus.Logger
+namespace Phorkus.Core.DI.Modules
 {
     public class LoggingModule : IModule
     {

@@ -5,11 +5,11 @@ using System.Threading;
 using NBitcoin;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.CrossChain

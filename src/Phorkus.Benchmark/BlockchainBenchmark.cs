@@ -1,19 +1,17 @@
 ﻿using System;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.State;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
-using Phorkus.Core.Storage;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
-using Phorkus.Hestia;
 using Phorkus.Logger;
 using Phorkus.Proto;
-using Phorkus.RocksDB;
+using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
@@ -35,7 +33,6 @@ namespace Phorkus.Benchmark
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
-            containerBuilder.RegisterModule<PersistentStorageModule>();
 
             _container = containerBuilder.Build();
         }

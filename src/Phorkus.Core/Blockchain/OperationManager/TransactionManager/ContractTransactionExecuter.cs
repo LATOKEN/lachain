@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
+using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 

@@ -1,6 +1,6 @@
 ﻿using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Core.Storage;
+using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 

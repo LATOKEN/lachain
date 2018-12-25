@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using Phorkus.Core.Storage;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager

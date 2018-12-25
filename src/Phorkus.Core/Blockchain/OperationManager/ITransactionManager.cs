@@ -1,6 +1,6 @@
 ﻿using System;
-using Phorkus.Core.Blockchain.State;
 using Phorkus.Proto;
+using Phorkus.Storage.State;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
