@@ -49,7 +49,9 @@ namespace Phorkus.Storage.RocksDB.Repositories
             var currentNonce = GetCurrentWithdrawalNonce();
             if (withdrawal.Nonce == 0)
                 withdrawal.Nonce = currentNonce;
-            else if (currentNonce != withdrawal.Nonce)
+            else if (currentNonce + 1 != withdrawal.Nonce)
+                return false;
+            if (withdrawal.State != WithdrawalState.Registered)
                 return false;
             /* write Withdrawal to storage */
             var prefixTx = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawal.TransactionHash);
@@ -74,21 +76,35 @@ namespace Phorkus.Storage.RocksDB.Repositories
             return withdrawal;
         }
 
-        public bool ApproveWithdrawal(UInt256 withdrawalHash, byte[] rawTransaction, byte[] transactionHash)
+        public bool ConfirmWithdrawal(UInt256 withdrawalHash, byte[] rawTransaction, byte[] transactionHash)
         {
             /* try to find withdrawal */
             var withdrawal = GetWithdrawalByHash(withdrawalHash);
-            if (withdrawal is null)
+            if (withdrawal is null || withdrawal.State != WithdrawalState.Registered)
+                return false;
+            /* change approve fields */
+            withdrawal.Timestamp = (ulong) new DateTimeOffset().ToUnixTimeMilliseconds();
+            withdrawal.State = WithdrawalState.Sent;
+            withdrawal.OriginalTransaction = ByteString.CopyFrom(rawTransaction);
+            withdrawal.OriginalHash = ByteString.CopyFrom(transactionHash);
+            /* write new withdrawal */
+            var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
+            _rocksDbContext.Save(prefix, withdrawal.ToByteArray());
+            return true;            
+        }
+
+        public bool ApproveWithdrawal(UInt256 withdrawalHash)
+        {
+            /* try to find withdrawal */
+            var withdrawal = GetWithdrawalByHash(withdrawalHash);
+            if (withdrawal is null || withdrawal.State != WithdrawalState.Sent)
                 return false;
             /* validate withdrawal nonce */
             var approvedNonce = GetApprovedWithdrawalNonce();
             if (withdrawal.Nonce != approvedNonce + 1)
                 return false;
             /* change approve fields */
-            withdrawal.Timestamp = (ulong) new DateTimeOffset().ToUnixTimeMilliseconds();
             withdrawal.State = WithdrawalState.Approved;
-            withdrawal.OriginalTransaction = ByteString.CopyFrom(rawTransaction);
-            withdrawal.OriginalHash = ByteString.CopyFrom(transactionHash);
             /* write new withdrawal */
             var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
             _rocksDbContext.Save(prefix, withdrawal.ToByteArray());

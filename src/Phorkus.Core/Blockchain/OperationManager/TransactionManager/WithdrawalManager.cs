@@ -6,6 +6,7 @@ using Google.Protobuf;
 using Phorkus.Core.Threshold;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
+using Phorkus.Hermes.Signer;
 using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Storage.RocksDB.Repositories;
@@ -49,7 +50,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _logger = logger;
         }
 
-        public void ConfirmWithdrawal(KeyPair keyPair, ulong nonce)
+        public void TryApproveWithdrawal(KeyPair keyPair, ulong nonce)
         {
             var withdrawal = _withdrawalRepository.GetWithdrawalByNonce(nonce);
             if (withdrawal is null)
@@ -96,7 +97,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                     $"Couldn't send confirm transaction transaction ({withdrawTx.TransactionHash.ToByteArray()}) to transaction pool");
                 return;
             }
-            _withdrawalRepository.ChangeWithdrawalState(withdrawal.TransactionHash, WithdrawalState.Approved);
+            _withdrawalRepository.ApproveWithdrawal(withdrawal.TransactionHash);
         }
 
         public void ExecuteWithdrawal(ThresholdKey thresholdKey, KeyPair keyPair, ulong nonce)
@@ -135,7 +136,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 }
                 signatures.Add(signature);
             }
-
+            
             var rawTransaction = transactionFactory.CreateRawTransaction(
                 transaction.From.ToByteArray(),
                 transaction.Withdraw.Recipient.ToByteArray(),
@@ -145,8 +146,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var transactionHash = transactionService.BroadcastTransaction(rawTransaction);
             if (transactionHash == null)
                 return;
-
-            _withdrawalRepository.ApproveWithdrawal(withdrawal.TransactionHash, rawTransaction.TransactionData,
+            
+            _withdrawalRepository.ConfirmWithdrawal(
+                withdrawal.TransactionHash,
+                rawTransaction.TransactionData,
                 transactionHash);
         }
         
@@ -161,8 +164,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 
                 if (current >= approved)
                     continue;
-
-                ExecuteWithdrawal(thresholdKey, keyPair, current);                
+                
+                for (var i = approved; i <= current; i++)
+                    ExecuteWithdrawal(thresholdKey, keyPair, i);
             }
         }
         
@@ -178,7 +182,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 if (current >= approved)
                     continue;
                 
-                ConfirmWithdrawal(keyPair, current);
+                TryApproveWithdrawal(keyPair, current);
             }
         }
         
