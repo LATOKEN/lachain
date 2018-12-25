@@ -56,11 +56,6 @@ namespace Phorkus.Core.CrossChain
             _transactionManager = transactionManager;
             _crypto = crypto;
             _validatorManager = validatorManager;
-
-            _lastBlocks.GetOrAdd(BlockchainType.Bitcoin,
-                _crossChainManager.GetTransactionService(BlockchainType.Bitcoin).CurrentBlockHeight);
-            _lastBlocks.GetOrAdd(BlockchainType.Ethereum,
-                _crossChainManager.GetTransactionService(BlockchainType.Ethereum).CurrentBlockHeight);
         }
 
         private void _SynchronizeBlockchain(object state)
@@ -108,6 +103,11 @@ namespace Phorkus.Core.CrossChain
             _thresholdKey = thresholdKey ?? throw new ArgumentNullException(nameof(thresholdKey));
             _keyPair = keyPair ?? throw new ArgumentNullException(nameof(keyPair));
 
+            _lastBlocks.GetOrAdd(BlockchainType.Bitcoin,
+                _crossChainManager.GetTransactionService(BlockchainType.Bitcoin).CurrentBlockHeight);
+            _lastBlocks.GetOrAdd(BlockchainType.Ethereum,
+                _crossChainManager.GetTransactionService(BlockchainType.Ethereum).CurrentBlockHeight);
+            
             foreach (var blockchainType in _blockchainTypes)
             {
                 if (_synchronizeTimers.ContainsKey(blockchainType))

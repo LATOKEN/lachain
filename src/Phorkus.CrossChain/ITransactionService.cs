@@ -8,16 +8,16 @@ namespace Phorkus.CrossChain
         AddressFormat AddressFormat { get; }
         
         ulong BlockGenerationTime { get; }
-        
-        ulong CurrentBlockHeight { get; }
 
+        ulong CurrentBlockHeight { get; }
+        
         IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight);
         
         byte[] BroadcastTransaction(RawTransaction rawTransaction);
 
         byte[] GenerateAddress(PublicKey publicKey);
 
-        bool CheckTransactionIsConfirmed(byte[] txHash);
+        bool IsTransactionConfirmed(byte[] txHash);
         
         ulong TxConfirmation { get; }
     }

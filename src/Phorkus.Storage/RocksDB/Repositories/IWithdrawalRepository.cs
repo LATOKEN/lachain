@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Phorkus.Proto;
 
 namespace Phorkus.Storage.RocksDB.Repositories
@@ -12,35 +11,31 @@ namespace Phorkus.Storage.RocksDB.Repositories
         /// <returns>Withdrawal with the specified id / hash</returns>
         Withdrawal GetWithdrawalByHash(UInt256 withdrawalHash);
         
+        bool ContainsWithdrawalByHash(UInt256 withdrawalHash);
+        
+        /// <summary>
+        /// Retreives a withdrawal by nonce
+        /// </summary>
+        /// <param name="nonce">Nonce for withdrawal</param>
+        /// <returns></returns>
+        Withdrawal GetWithdrawalByNonce(ulong nonce);
+        
+        bool ContainsWithdrawalByNonce(ulong nonce);
+        
         /// <summary>
         /// Adds a transaction to the repository
         /// </summary>
         /// <param name="withdrawal">Withdrawal to add</param>
-        void AddWithdrawal(Withdrawal withdrawal);
+        bool AddWithdrawal(Withdrawal withdrawal);
         
-        /// <summary>
-        /// Removes a withdrawal from the repository
-        /// </summary>
-        /// <param name="withdrawal">Withdrawal to remove</param>
-        void RemoveWithdrawal(Withdrawal withdrawal);
+        Withdrawal ChangeWithdrawalState(UInt256 withdrawalHash, WithdrawalState withdrawalState);
 
-        void AddWithdrawalState(Withdrawal withdrawal);
+        bool ApproveWithdrawal(UInt256 withdrawalHash, byte[] rawTransaction, byte[] transactionHash);
         
-        Withdrawal GetWithdrawalByStateNonce(WithdrawalState withdrawalState, ulong nonce);
-        
-
-        WithdrawalState ChangeWithdrawalState(UInt256 withdrawalHash, WithdrawalState withdrawalState);
-        Withdrawal ChangeWithdrawal(UInt256 withdrawalHash, Withdrawal withdrawal);
-
-        WithdrawalState GetWithdrawalState(UInt256 withdrawalHash);
-        
-        IEnumerable<Withdrawal> GetWithdrawalsByHashes(IEnumerable<UInt256> withdrawalHashes);
-        IEnumerable<Withdrawal> GetWithdrawalsByNonces(IEnumerable<ulong> nonces);
-
-        Withdrawal GetWithdrawalByNonce(ulong nonce);
-
-        bool ContainsWithdrawalByHash(UInt256 withdrawalHash);
-
         Withdrawal GetWithdrawalByNonceAndDelete(ulong nonce);
+
+        ulong GetCurrentWithdrawalNonce();
+
+        ulong GetApprovedWithdrawalNonce();
     }
 }

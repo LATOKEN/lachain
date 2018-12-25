@@ -30,7 +30,6 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<ICrossChain, CrossChain.CrossChain>();
             containerBuilder.RegisterSingleton<ICrossChainManager, CrossChainManager>();
             containerBuilder.RegisterSingleton<ITransactionManager, TransactionManager>();
-            containerBuilder.RegisterSingleton<IWithdrawalRunner, WithdrawalRunner>();
             containerBuilder.RegisterSingleton<IWithdrawalManager, WithdrawalManager>();
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
             /* pool */

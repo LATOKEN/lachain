@@ -109,7 +109,7 @@ namespace Phorkus.CrossChain.Bitcoin
             return sendRawTransaction.ToBytes();
         }
 
-        public bool CheckTransactionIsConfirmed(byte[] txHash)
+        public bool IsTransactionConfirmed(byte[] txHash)
         {
             var getRawTransactionInfo =
                 _rpcClient.GetRawTransactionInfo(uint256.Parse(Utils.ConvertByteArrayToString(txHash)));

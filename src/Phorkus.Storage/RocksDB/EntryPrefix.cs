@@ -27,5 +27,6 @@
         WithdrawalByHash = 0x0701,
         WithdrawalByNonce = 0x0702,
         WithdrawalByStateNonce = 0x0703,
+        WithdrawalNonce = 0x0704
     }
 }

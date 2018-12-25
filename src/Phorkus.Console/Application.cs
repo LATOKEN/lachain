@@ -17,6 +17,8 @@ using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Storage;
+using Phorkus.Storage.RocksDB;
 using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
@@ -62,16 +64,18 @@ namespace Phorkus.Console
             var crossChainManager = _container.Resolve<ICrossChainManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
-            var withdrawalRunner = _container.Resolve<IWithdrawalRunner>();
-            var crossChain = _container.Resolve<ICrossChain>();
-            var thresholdManager = _container.Resolve<IThresholdManager>();
-
+            var withdrawalManager = _container.Resolve<IWithdrawalManager>();
+//            var crossChain = _container.Resolve<ICrossChain>();
+            
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
             var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
+            var storageConfig = configManager.GetConfig<StorageConfig>("storage");
+            
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            var thresholdKey = thresholdManager.GeneratePrivateKey();
+            var thresholdKey = new ThresholdKey();
+            
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
             System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToHex());
@@ -111,7 +115,7 @@ namespace Phorkus.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            // crossChain.Start(thresholdKey, keyPair);
+            //crossChain.Start(new ThresholdKey(), keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();
