@@ -24,19 +24,21 @@ namespace Phorkus.Proto {
     static WithdrawalReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChB3aXRoZHJhd2FsLnByb3RvGg1kZWZhdWx0LnByb3RvIqgBCgpXaXRoZHJh",
-            "d2FsEiIKEHRyYW5zYWN0aW9uX2hhc2gYASABKAsyCC5VSW50MjU2Eh8KBXN0",
-            "YXRlGAIgASgOMhAuV2l0aGRyYXdhbFN0YXRlEhwKFG9yaWdpbmFsX3RyYW5z",
-            "YWN0aW9uGAMgASgMEhUKDW9yaWdpbmFsX2hhc2gYBCABKAwSDQoFbm9uY2UY",
-            "BSABKAQSEQoJdGltZXN0YW1wGAYgASgEKooBCg9XaXRoZHJhd2FsU3RhdGUS",
-            "HAoYV0lUSERSQVdBTF9TVEFURV9VTktOT1dOEAASHwobV0lUSERSQVdBTF9T",
-            "VEFURV9SRUdJU1RFUkVEEAESGQoVV0lUSERSQVdBTF9TVEFURV9TRU5UEAIS",
-            "HQoZV0lUSERSQVdBTF9TVEFURV9BUFBST1ZFRBADQhCqAg1QaG9ya3VzLlBy",
-            "b3RvYgZwcm90bzM="));
+            "ChB3aXRoZHJhd2FsLnByb3RvGg1kZWZhdWx0LnByb3RvIkEKEEdsb2JhbFdp",
+            "dGhkcmF3YWwSFgoOYXBwcm92ZWRfbm9uY2UYASABKAQSFQoNY3VycmVudF9u",
+            "b25jZRgCIAEoBCKoAQoKV2l0aGRyYXdhbBIiChB0cmFuc2FjdGlvbl9oYXNo",
+            "GAEgASgLMgguVUludDI1NhIRCgl0aW1lc3RhbXAYAiABKAQSDQoFbm9uY2UY",
+            "AyABKAQSHwoFc3RhdGUYBCABKA4yEC5XaXRoZHJhd2FsU3RhdGUSHAoUb3Jp",
+            "Z2luYWxfdHJhbnNhY3Rpb24YBSABKAwSFQoNb3JpZ2luYWxfaGFzaBgGIAEo",
+            "DCqKAQoPV2l0aGRyYXdhbFN0YXRlEhwKGFdJVEhEUkFXQUxfU1RBVEVfVU5L",
+            "Tk9XThAAEh8KG1dJVEhEUkFXQUxfU1RBVEVfUkVHSVNURVJFRBABEhkKFVdJ",
+            "VEhEUkFXQUxfU1RBVEVfU0VOVBACEh0KGVdJVEhEUkFXQUxfU1RBVEVfQVBQ",
+            "Uk9WRUQQA0IQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.WithdrawalState), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Withdrawal), global::Phorkus.Proto.Withdrawal.Parser, new[]{ "TransactionHash", "State", "OriginalTransaction", "OriginalHash", "Nonce", "Timestamp" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GlobalWithdrawal), global::Phorkus.Proto.GlobalWithdrawal.Parser, new[]{ "ApprovedNonce", "CurrentNonce" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Withdrawal), global::Phorkus.Proto.Withdrawal.Parser, new[]{ "TransactionHash", "Timestamp", "Nonce", "State", "OriginalTransaction", "OriginalHash" }, null, null, null)
           }));
     }
     #endregion
@@ -53,6 +55,163 @@ namespace Phorkus.Proto {
   #endregion
 
   #region Messages
+  public sealed partial class GlobalWithdrawal : pb::IMessage<GlobalWithdrawal> {
+    private static readonly pb::MessageParser<GlobalWithdrawal> _parser = new pb::MessageParser<GlobalWithdrawal>(() => new GlobalWithdrawal());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GlobalWithdrawal> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.WithdrawalReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GlobalWithdrawal() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GlobalWithdrawal(GlobalWithdrawal other) : this() {
+      approvedNonce_ = other.approvedNonce_;
+      currentNonce_ = other.currentNonce_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GlobalWithdrawal Clone() {
+      return new GlobalWithdrawal(this);
+    }
+
+    /// <summary>Field number for the "approved_nonce" field.</summary>
+    public const int ApprovedNonceFieldNumber = 1;
+    private ulong approvedNonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong ApprovedNonce {
+      get { return approvedNonce_; }
+      set {
+        approvedNonce_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "current_nonce" field.</summary>
+    public const int CurrentNonceFieldNumber = 2;
+    private ulong currentNonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong CurrentNonce {
+      get { return currentNonce_; }
+      set {
+        currentNonce_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as GlobalWithdrawal);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(GlobalWithdrawal other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (ApprovedNonce != other.ApprovedNonce) return false;
+      if (CurrentNonce != other.CurrentNonce) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ApprovedNonce != 0UL) hash ^= ApprovedNonce.GetHashCode();
+      if (CurrentNonce != 0UL) hash ^= CurrentNonce.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (ApprovedNonce != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(ApprovedNonce);
+      }
+      if (CurrentNonce != 0UL) {
+        output.WriteRawTag(16);
+        output.WriteUInt64(CurrentNonce);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (ApprovedNonce != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(ApprovedNonce);
+      }
+      if (CurrentNonce != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(CurrentNonce);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(GlobalWithdrawal other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ApprovedNonce != 0UL) {
+        ApprovedNonce = other.ApprovedNonce;
+      }
+      if (other.CurrentNonce != 0UL) {
+        CurrentNonce = other.CurrentNonce;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            ApprovedNonce = input.ReadUInt64();
+            break;
+          }
+          case 16: {
+            CurrentNonce = input.ReadUInt64();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class Withdrawal : pb::IMessage<Withdrawal> {
     private static readonly pb::MessageParser<Withdrawal> _parser = new pb::MessageParser<Withdrawal>(() => new Withdrawal());
     private pb::UnknownFieldSet _unknownFields;
@@ -61,7 +220,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.WithdrawalReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Phorkus.Proto.WithdrawalReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -79,11 +238,11 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Withdrawal(Withdrawal other) : this() {
       transactionHash_ = other.transactionHash_ != null ? other.transactionHash_.Clone() : null;
+      timestamp_ = other.timestamp_;
+      nonce_ = other.nonce_;
       state_ = other.state_;
       originalTransaction_ = other.originalTransaction_;
       originalHash_ = other.originalHash_;
-      nonce_ = other.nonce_;
-      timestamp_ = other.timestamp_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -103,8 +262,30 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "timestamp" field.</summary>
+    public const int TimestampFieldNumber = 2;
+    private ulong timestamp_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Timestamp {
+      get { return timestamp_; }
+      set {
+        timestamp_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "nonce" field.</summary>
+    public const int NonceFieldNumber = 3;
+    private ulong nonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Nonce {
+      get { return nonce_; }
+      set {
+        nonce_ = value;
+      }
+    }
+
     /// <summary>Field number for the "state" field.</summary>
-    public const int StateFieldNumber = 2;
+    public const int StateFieldNumber = 4;
     private global::Phorkus.Proto.WithdrawalState state_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.WithdrawalState State {
@@ -115,7 +296,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "original_transaction" field.</summary>
-    public const int OriginalTransactionFieldNumber = 3;
+    public const int OriginalTransactionFieldNumber = 5;
     private pb::ByteString originalTransaction_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pb::ByteString OriginalTransaction {
@@ -126,35 +307,13 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "original_hash" field.</summary>
-    public const int OriginalHashFieldNumber = 4;
+    public const int OriginalHashFieldNumber = 6;
     private pb::ByteString originalHash_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pb::ByteString OriginalHash {
       get { return originalHash_; }
       set {
         originalHash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "nonce" field.</summary>
-    public const int NonceFieldNumber = 5;
-    private ulong nonce_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong Nonce {
-      get { return nonce_; }
-      set {
-        nonce_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "timestamp" field.</summary>
-    public const int TimestampFieldNumber = 6;
-    private ulong timestamp_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong Timestamp {
-      get { return timestamp_; }
-      set {
-        timestamp_ = value;
       }
     }
 
@@ -172,11 +331,11 @@ namespace Phorkus.Proto {
         return true;
       }
       if (!object.Equals(TransactionHash, other.TransactionHash)) return false;
+      if (Timestamp != other.Timestamp) return false;
+      if (Nonce != other.Nonce) return false;
       if (State != other.State) return false;
       if (OriginalTransaction != other.OriginalTransaction) return false;
       if (OriginalHash != other.OriginalHash) return false;
-      if (Nonce != other.Nonce) return false;
-      if (Timestamp != other.Timestamp) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -184,11 +343,11 @@ namespace Phorkus.Proto {
     public override int GetHashCode() {
       int hash = 1;
       if (transactionHash_ != null) hash ^= TransactionHash.GetHashCode();
+      if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
+      if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
       if (State != 0) hash ^= State.GetHashCode();
       if (OriginalTransaction.Length != 0) hash ^= OriginalTransaction.GetHashCode();
       if (OriginalHash.Length != 0) hash ^= OriginalHash.GetHashCode();
-      if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
-      if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -206,25 +365,25 @@ namespace Phorkus.Proto {
         output.WriteRawTag(10);
         output.WriteMessage(TransactionHash);
       }
-      if (State != 0) {
+      if (Timestamp != 0UL) {
         output.WriteRawTag(16);
+        output.WriteUInt64(Timestamp);
+      }
+      if (Nonce != 0UL) {
+        output.WriteRawTag(24);
+        output.WriteUInt64(Nonce);
+      }
+      if (State != 0) {
+        output.WriteRawTag(32);
         output.WriteEnum((int) State);
       }
       if (OriginalTransaction.Length != 0) {
-        output.WriteRawTag(26);
+        output.WriteRawTag(42);
         output.WriteBytes(OriginalTransaction);
       }
       if (OriginalHash.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(50);
         output.WriteBytes(OriginalHash);
-      }
-      if (Nonce != 0UL) {
-        output.WriteRawTag(40);
-        output.WriteUInt64(Nonce);
-      }
-      if (Timestamp != 0UL) {
-        output.WriteRawTag(48);
-        output.WriteUInt64(Timestamp);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -237,6 +396,12 @@ namespace Phorkus.Proto {
       if (transactionHash_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(TransactionHash);
       }
+      if (Timestamp != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
+      }
+      if (Nonce != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
+      }
       if (State != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) State);
       }
@@ -245,12 +410,6 @@ namespace Phorkus.Proto {
       }
       if (OriginalHash.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(OriginalHash);
-      }
-      if (Nonce != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
-      }
-      if (Timestamp != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -269,6 +428,12 @@ namespace Phorkus.Proto {
         }
         TransactionHash.MergeFrom(other.TransactionHash);
       }
+      if (other.Timestamp != 0UL) {
+        Timestamp = other.Timestamp;
+      }
+      if (other.Nonce != 0UL) {
+        Nonce = other.Nonce;
+      }
       if (other.State != 0) {
         State = other.State;
       }
@@ -277,12 +442,6 @@ namespace Phorkus.Proto {
       }
       if (other.OriginalHash.Length != 0) {
         OriginalHash = other.OriginalHash;
-      }
-      if (other.Nonce != 0UL) {
-        Nonce = other.Nonce;
-      }
-      if (other.Timestamp != 0UL) {
-        Timestamp = other.Timestamp;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -303,23 +462,23 @@ namespace Phorkus.Proto {
             break;
           }
           case 16: {
-            state_ = (global::Phorkus.Proto.WithdrawalState) input.ReadEnum();
+            Timestamp = input.ReadUInt64();
             break;
           }
-          case 26: {
-            OriginalTransaction = input.ReadBytes();
-            break;
-          }
-          case 34: {
-            OriginalHash = input.ReadBytes();
-            break;
-          }
-          case 40: {
+          case 24: {
             Nonce = input.ReadUInt64();
             break;
           }
-          case 48: {
-            Timestamp = input.ReadUInt64();
+          case 32: {
+            state_ = (global::Phorkus.Proto.WithdrawalState) input.ReadEnum();
+            break;
+          }
+          case 42: {
+            OriginalTransaction = input.ReadBytes();
+            break;
+          }
+          case 50: {
+            OriginalHash = input.ReadBytes();
             break;
           }
         }

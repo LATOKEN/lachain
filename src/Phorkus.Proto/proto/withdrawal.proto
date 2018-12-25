@@ -10,11 +10,16 @@ enum WithdrawalState {
     WITHDRAWAL_STATE_APPROVED = 3;
 }
 
+message GlobalWithdrawal {
+    uint64 approved_nonce = 1;
+    uint64 current_nonce = 2;
+}
+
 message Withdrawal {
     UInt256 transaction_hash = 1;
-    WithdrawalState state = 2;
-    bytes original_transaction = 3;
-    bytes original_hash = 4;
-    uint64 nonce = 5;
-    uint64 timestamp = 6;
+    uint64 timestamp = 2;
+    uint64 nonce = 3;
+    WithdrawalState state = 4;
+    bytes original_transaction = 5;
+    bytes original_hash = 6;
 }

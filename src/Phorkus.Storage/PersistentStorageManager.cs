@@ -11,20 +11,19 @@ namespace Phorkus.Storage
     {
         private readonly IDictionary<uint, RepositoryManager> _repositoryManagers =
             new ConcurrentDictionary<uint, RepositoryManager>();
-
+        
         public PersistentStorageManager(IRocksDbContext rocksDbContext)
         {
-            var dbContext = rocksDbContext;
-            var versionIndexer = new VersionIndexer(dbContext);
+            var versionIndexer = new VersionIndexer(rocksDbContext);
             var versionFactory = new VersionFactory(versionIndexer.GetVersion(0));
             foreach (var repository in Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>())
             {
                 _repositoryManagers[(uint) repository] = new RepositoryManager(
-                    (uint) repository, dbContext, versionFactory, versionIndexer
+                    (uint) repository, rocksDbContext, versionFactory, versionIndexer
                 );
             }
         }
-
+        
         public ulong LatestCommitedVersion(uint repository)
         {
             return _repositoryManagers[repository].LatestVersion;

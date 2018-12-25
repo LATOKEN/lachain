@@ -22,74 +22,6 @@ namespace Phorkus.Storage.RocksDB.Repositories
             return raw == null ? null : Withdrawal.Parser.ParseFrom(raw);
         }
 
-        public void RemoveWithdrawal(Withdrawal withdrawal)
-        {
-            var prefixTx = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawal.TransactionHash);
-            _rocksDbContext.Delete(prefixTx);
-        }
-
-        public void AddWithdrawal(Withdrawal withdrawal)
-        {
-            /* write Withdrawal to storage */
-            var prefixTx = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawal.TransactionHash);
-            _rocksDbContext.Save(prefixTx, withdrawal.ToByteArray());
-            var prefixNonce = EntryPrefix.WithdrawalByNonce.BuildPrefix(withdrawal.Nonce);
-            _rocksDbContext.Save(prefixNonce, withdrawal.TransactionHash.ToByteArray());
-        }
-        
-        public void AddWithdrawalState(Withdrawal withdrawal)
-        {
-            var prefixState =
-                EntryPrefix.WithdrawalByStateNonce.BuildPrefix(withdrawal.State.ToString() + withdrawal.Nonce);
-            _rocksDbContext.Save(prefixState, withdrawal.TransactionHash.ToByteArray());
-        }
-
-        public WithdrawalState ChangeWithdrawalState(UInt256 withdrawalHash, WithdrawalState withdrawalState)
-        {
-            if (withdrawalHash is null)
-                throw new ArgumentNullException(nameof(withdrawalHash));
-            var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
-            var withdrawal = GetWithdrawalByHash(withdrawalHash);
-            if (withdrawal == null)
-            {
-                return WithdrawalState.Unknown;
-            }
-
-            var oldState = withdrawal.State;
-            withdrawal.State = withdrawalState;
-            _rocksDbContext.Save(prefix, withdrawal.ToByteArray());
-            return oldState;
-        }
-
-        public Withdrawal ChangeWithdrawal(UInt256 withdrawalHash, Withdrawal withdrawal)
-        {
-            if (withdrawalHash is null)
-                throw new ArgumentNullException(nameof(withdrawalHash));
-            var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
-            var oldWithdrawal = GetWithdrawalByHash(withdrawalHash);
-            _rocksDbContext.Save(prefix, withdrawal.ToByteArray());
-            return oldWithdrawal;
-        }
-
-        public WithdrawalState GetWithdrawalState(UInt256 withdrawalHash)
-        {
-            if (withdrawalHash is null)
-                throw new ArgumentNullException(nameof(withdrawalHash));
-            var withdrawal = GetWithdrawalByHash(withdrawalHash);
-            return withdrawal != null ? withdrawal.State : WithdrawalState.Unknown;
-        }
-
-        public IEnumerable<Withdrawal> GetWithdrawalsByNonces(IEnumerable<ulong> nonces)
-        {
-            return nonces.Select(GetWithdrawalByNonce).Where(withdrawal => withdrawal != null);
-        }
-
-
-        public IEnumerable<Withdrawal> GetWithdrawalsByHashes(IEnumerable<UInt256> withdrawalHashes)
-        {
-            return withdrawalHashes.Select(GetWithdrawalByHash).Where(withdrawal => withdrawal != null);
-        }
-
         public bool ContainsWithdrawalByHash(UInt256 withdrawalHash)
         {
             var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
@@ -103,12 +35,66 @@ namespace Phorkus.Storage.RocksDB.Repositories
             var raw = _rocksDbContext.Get(prefix);
             return raw == null ? null : Withdrawal.Parser.ParseFrom(raw);
         }
-
-        public Withdrawal GetWithdrawalByStateNonce(WithdrawalState withdrawalState, ulong nonce)
+        
+        public bool ContainsWithdrawalByNonce(ulong nonce)
         {
-            var prefix = EntryPrefix.WithdrawalByStateNonce.BuildPrefix(withdrawalState.ToString() + nonce);
+            var prefix = EntryPrefix.WithdrawalByNonce.BuildPrefix(nonce);
             var raw = _rocksDbContext.Get(prefix);
-            return raw == null ? null : Withdrawal.Parser.ParseFrom(raw);
+            return raw != null;
+        }
+        
+        public bool AddWithdrawal(Withdrawal withdrawal)
+        {
+            /* validate withdrawal nonce */
+            var currentNonce = GetCurrentWithdrawalNonce();
+            if (withdrawal.Nonce == 0)
+                withdrawal.Nonce = currentNonce;
+            else if (currentNonce != withdrawal.Nonce)
+                return false;
+            /* write Withdrawal to storage */
+            var prefixTx = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawal.TransactionHash);
+            _rocksDbContext.Save(prefixTx, withdrawal.ToByteArray());
+            var prefixNonce = EntryPrefix.WithdrawalByNonce.BuildPrefix(withdrawal.Nonce);
+            _rocksDbContext.Save(prefixNonce, withdrawal.TransactionHash.ToByteArray());
+            /* update withdrawal nonce */
+            SetCurrentWithdrawalNonce(withdrawal.Nonce);
+            return true;
+        }
+
+        public Withdrawal ChangeWithdrawalState(UInt256 withdrawalHash, WithdrawalState withdrawalState)
+        {
+            if (withdrawalHash is null)
+                throw new ArgumentNullException(nameof(withdrawalHash));
+            var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
+            var withdrawal = GetWithdrawalByHash(withdrawalHash);
+            if (withdrawal is null)
+                return null;
+            withdrawal.State = withdrawalState;
+            _rocksDbContext.Save(prefix, withdrawal.ToByteArray());
+            return withdrawal;
+        }
+
+        public bool ApproveWithdrawal(UInt256 withdrawalHash, byte[] rawTransaction, byte[] transactionHash)
+        {
+            /* try to find withdrawal */
+            var withdrawal = GetWithdrawalByHash(withdrawalHash);
+            if (withdrawal is null)
+                return false;
+            /* validate withdrawal nonce */
+            var approvedNonce = GetApprovedWithdrawalNonce();
+            if (withdrawal.Nonce != approvedNonce + 1)
+                return false;
+            /* change approve fields */
+            withdrawal.Timestamp = (ulong) new DateTimeOffset().ToUnixTimeMilliseconds();
+            withdrawal.State = WithdrawalState.Approved;
+            withdrawal.OriginalTransaction = ByteString.CopyFrom(rawTransaction);
+            withdrawal.OriginalHash = ByteString.CopyFrom(transactionHash);
+            /* write new withdrawal */
+            var prefix = EntryPrefix.WithdrawalByHash.BuildPrefix(withdrawalHash);
+            _rocksDbContext.Save(prefix, withdrawal.ToByteArray());
+            /* update approved withdrawal nonce */
+            SetApprovedWithdrawalNonce(withdrawal.Nonce);
+            return true;
         }
 
         public Withdrawal GetWithdrawalByNonceAndDelete(ulong nonce)
@@ -117,6 +103,40 @@ namespace Phorkus.Storage.RocksDB.Repositories
             var raw = _rocksDbContext.Get(prefix);
             _rocksDbContext.Delete(prefix);
             return raw == null ? null : Withdrawal.Parser.ParseFrom(raw);
+        }
+
+        public ulong GetCurrentWithdrawalNonce()
+        {
+            var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
+            var raw = _rocksDbContext.Get(prefix);
+            var global = GlobalWithdrawal.Parser.ParseFrom(raw);
+            return global?.CurrentNonce ?? 0UL;
+        }
+
+        public ulong GetApprovedWithdrawalNonce()
+        {
+            var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
+            var raw = _rocksDbContext.Get(prefix);
+            var global = GlobalWithdrawal.Parser.ParseFrom(raw);
+            return global?.ApprovedNonce ?? 0UL;
+        }
+
+        private void SetCurrentWithdrawalNonce(ulong currentNonce)
+        {
+            var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
+            var raw = _rocksDbContext.Get(prefix);
+            var global = GlobalWithdrawal.Parser.ParseFrom(raw) ?? new GlobalWithdrawal();
+            global.CurrentNonce = currentNonce;
+            _rocksDbContext.Save(prefix, global.ToByteArray());
+        }
+        
+        private void SetApprovedWithdrawalNonce(ulong approvedNonce)
+        {
+            var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
+            var raw = _rocksDbContext.Get(prefix);
+            var global = GlobalWithdrawal.Parser.ParseFrom(raw) ?? new GlobalWithdrawal();
+            global.ApprovedNonce = approvedNonce;
+            _rocksDbContext.Save(prefix, global.ToByteArray());
         }
     }
 }

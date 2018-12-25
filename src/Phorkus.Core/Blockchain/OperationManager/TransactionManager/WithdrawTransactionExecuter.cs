@@ -1,4 +1,7 @@
-﻿using Phorkus.Proto;
+﻿using System;
+using Phorkus.Core.Utils;
+using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 
@@ -6,25 +9,37 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class WithdrawTransactionExecuter : ITransactionExecuter
     {
+        private readonly IWithdrawalRepository _withdrawalRepository;        
         private readonly IValidatorManager _validatorManager;
-        private readonly IWithdrawalManager _withdrawalManager;
-
-        public WithdrawTransactionExecuter(IValidatorManager validatorManager, IWithdrawalManager withdrawalManager)
+        
+        public WithdrawTransactionExecuter(
+            IValidatorManager validatorManager,
+            IWithdrawalRepository withdrawalRepository)
         {
             _validatorManager = validatorManager;
-            _withdrawalManager = withdrawalManager;
+            _withdrawalRepository = withdrawalRepository;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
+            /* verify transaction before execution */
             var balances = snapshot.Balances;
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
             var assetHash = transaction.Withdraw.AssetHash;
+            /* block user balances for withdrawal */
+            balances.SubAvailableBalance(transaction.From, assetHash, new Money(transaction.Withdraw.Value));
             balances.AddWithdrawingBalance(transaction.From, assetHash, new Money(transaction.Withdraw.Value));
-            _withdrawalManager.CreateWithdrawal(transaction);
-            return OperatingError.Ok;
+            /* register new withdrawal in queue */
+            var withdrawal = new Withdrawal
+            {
+                TransactionHash = transaction.ToHash256(),
+                OriginalHash = transaction.Withdraw.TransactionHash,
+                State = WithdrawalState.Registered,
+                Timestamp = (ulong) new DateTimeOffset().ToUnixTimeMilliseconds()
+            };
+            return !_withdrawalRepository.AddWithdrawal(withdrawal) ? OperatingError.WithdrawalFailed : OperatingError.Ok;
         }
 
         public OperatingError Verify(Transaction transaction)

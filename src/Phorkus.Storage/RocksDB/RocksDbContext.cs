@@ -9,16 +9,11 @@ namespace Phorkus.Storage.RocksDB
     {
         private RocksDb _rocksDb;
 
-        public void Open(StorageConfig storageConfig)
+        public RocksDbContext()
         {
             var options = new DbOptions().SetCreateIfMissing();
-            _rocksDb = RocksDb.Open(options, storageConfig.Path);
-        }
-
-        public void Close()
-        {
-            _ThrowIfNotInitialized();
-            _rocksDb = null;
+            /* TODO: "yeah, fix me please" */
+            _rocksDb = RocksDb.Open(options, "ChainPhorkus");
         }
 
         public byte[] Get(byte[] key)

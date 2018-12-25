@@ -21,12 +21,10 @@ namespace Phorkus.CrossChain.Ethereum
             _ethApiService = new EthApiService(new RpcClient(new Uri(EthereumConfig.RpcUri)));
         }
 
-        public EllipticCurveType EllipticCurveType { get; }
-
         public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
 
         public ulong BlockGenerationTime { get; } = 15 * 1000;
-        
+
         public ulong TxConfirmation { get; } = 12;
 
         public ulong CurrentBlockHeight
@@ -113,16 +111,15 @@ namespace Phorkus.CrossChain.Ethereum
         }
 
 
-        public bool CheckTransactionIsConfirmed(byte[] txHash)
+        public bool IsTransactionConfirmed(byte[] txHash)
         {
             var getTransactionReceipt =
                 _ethApiService.Transactions.GetTransactionReceipt.SendRequestAsync(
                     Utils.ConvertByteArrayToZeroPaddedString(txHash));
             getTransactionReceipt.Wait();
-            return !getTransactionReceipt.IsFaulted && getTransactionReceipt.Result.BlockNumber.Value > 0;
+            return !getTransactionReceipt.IsFaulted && CurrentBlockHeight - getTransactionReceipt.Result.BlockNumber.Value > TxConfirmation;
         }
-
-
+        
         public byte[] GenerateAddress(PublicKey publicKey)
         {
             var temp = _sha3Keccack.CalculateHash(publicKey.ToByteArray());
