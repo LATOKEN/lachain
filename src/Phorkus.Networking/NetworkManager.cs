@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace Phorkus.Networking
         {
             get
             {
-                return _clientWorkers.Where(entry => entry.Value.Node != null && _authorizedKeys.Contains(entry.Value.Node.PublicKey))
+                return _clientWorkers.Where(entry => entry.Value.Node != null && _authorizedKeys.Keys.Contains(entry.Value.Node.PublicKey))
                     .ToDictionary(entry => entry.Value.Address, entry => entry.Value as IRemotePeer);
             }
         }
@@ -31,7 +32,7 @@ namespace Phorkus.Networking
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
 
-        private readonly ISet<PublicKey> _authorizedKeys = new HashSet<PublicKey>();
+        private readonly ConcurrentDictionary<PublicKey, bool> _authorizedKeys = new ConcurrentDictionary<PublicKey, bool>();
         
         private readonly ICrypto _crypto;
 
@@ -105,7 +106,7 @@ namespace Phorkus.Networking
             {
                 Console.Error.WriteLine("Error: " + message);
             };
-            if (_authorizedKeys.Contains(address.PublicKey))
+            if (_authorizedKeys.Keys.Contains(address.PublicKey))
                 return;
             remotePeer.Send(_messageFactory.HandshakeRequest(LocalNode));
             if (!remotePeer.IsConnected)
@@ -136,7 +137,7 @@ namespace Phorkus.Networking
             {
                 Buffer = ByteString.CopyFrom(rawPublicKey)
             };
-            if (!_authorizedKeys.Contains(publicKey))
+            if (!_authorizedKeys.Keys.Contains(publicKey))
                 throw new Exception("This node hasn't been authorized (" + rawPublicKey.ToHex() + ")");
             var envelope = new MessageEnvelope
             {
@@ -174,11 +175,11 @@ namespace Phorkus.Networking
             if (!isValid)
                 throw new Exception("Unable to verify message using public key specified");
             var publicKey = reply.Node.PublicKey;
-            if (_authorizedKeys.Contains(publicKey))
+            if (_authorizedKeys.Keys.Contains(publicKey))
                 return;
             Console.WriteLine("Authorized: " + publicKey.Buffer.ToHex());
             _clientWorkers[PeerAddress.FromNode(reply.Node)].Node = reply.Node;
-            _authorizedKeys.Add(publicKey);
+            _authorizedKeys.TryAdd(publicKey, true);
         }
 
         private void _HandleMessageUnsafe(NetworkMessage message)
