@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
@@ -89,7 +90,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 if (_transactionManager.GetByHash(txHash) is null)
                     return OperatingError.TransactionLost;
             }
-
+            
             foreach (var txHash in block.TransactionHashes)
             {
                 var snapshot = _blockchainStateManager.NewSnapshot();
@@ -98,7 +99,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 {
                     _blockchainStateManager.Approve();
                     continue;
-                }                    
+                }
                 /* TODO: "we need block synchronization on transaction lost for example" */
                 _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()}, {result}");
                 /* TODO: "mark transaction as failed to execute here or something else" */
@@ -108,7 +109,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* write block to database */
             _blockRepository.AddBlock(block);
             _blockchainStateManager.CommitApproved();
-            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash}");
+            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count}");
             var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
             if (block.Header.Index > currentHeaderHeight)
                 _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
@@ -146,11 +147,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 return OperatingError.InvalidBlock;
             if (block.Header.Index != 0 && header.PrevBlockHash.IsZero())
                 return OperatingError.InvalidBlock;
-            if (header.MerkleRoot is null || header.MerkleRoot.IsZero())
-                return OperatingError.InvalidBlock;
-            if (!MerkleTree.ComputeRoot(block.TransactionHashes).Equals(header.MerkleRoot))
+            if (header.MerkleRoot is null)
+                return OperatingError.InvalidMerkeRoot;
+            var merkleRoot = MerkleTree.ComputeRoot(block.TransactionHashes) ?? UInt256Utils.Zero;
+            if (!merkleRoot.Equals(header.MerkleRoot))
                 return OperatingError.InvalidMerkeRoot;
             if (header.Timestamp == 0)
+                return OperatingError.InvalidBlock;
+            if (header.Validator is null)
                 return OperatingError.InvalidBlock;
             return OperatingError.Ok;
         }

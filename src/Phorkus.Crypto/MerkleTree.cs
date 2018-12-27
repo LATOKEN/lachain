@@ -185,7 +185,7 @@ namespace Phorkus.Crypto
         public static UInt256 ComputeRoot(IReadOnlyCollection<UInt256> hashes)
         {
             if (hashes == null || hashes.Count == 0)
-                throw new ArgumentException(nameof(hashes));
+                return null;
             if (hashes.Count == 1)
                 return hashes.First();
             var tree = new MerkleTree(hashes);

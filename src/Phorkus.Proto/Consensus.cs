@@ -30,19 +30,19 @@ namespace Phorkus.Proto {
             "D3ZhbGlkYXRvcl9pbmRleBgEIAEoDRIRCgl0aW1lc3RhbXAYBSABKAQSEwoL",
             "dmlld19udW1iZXIYBiABKA0iSwoRQ2hhbmdlVmlld1JlcXVlc3QSHQoJdmFs",
             "aWRhdG9yGAEgASgLMgouVmFsaWRhdG9yEhcKD25ld192aWV3X251bWJlchgC",
-            "IAEoDSLEAQoTQmxvY2tQcmVwYXJlUmVxdWVzdBIdCgl2YWxpZGF0b3IYASAB",
+            "IAEoDSKbAQoTQmxvY2tQcmVwYXJlUmVxdWVzdBIdCgl2YWxpZGF0b3IYASAB",
             "KAsyCi5WYWxpZGF0b3ISDQoFbm9uY2UYAiABKAQSJAoSdHJhbnNhY3Rpb25f",
-            "aGFzaGVzGAMgAygLMgguVUludDI1NhInChFtaW5lcl90cmFuc2FjdGlvbhgE",
-            "IAEoCzIMLlRyYW5zYWN0aW9uEhEKCXRpbWVzdGFtcBgFIAEoBBIdCglzaWdu",
-            "YXR1cmUYBiABKAsyCi5TaWduYXR1cmUiUQoRQmxvY2tQcmVwYXJlUmVwbHkS",
-            "HQoJdmFsaWRhdG9yGAEgASgLMgouVmFsaWRhdG9yEh0KCXNpZ25hdHVyZRgC",
-            "IAEoCzIKLlNpZ25hdHVyZUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "aGFzaGVzGAMgAygLMgguVUludDI1NhIRCgl0aW1lc3RhbXAYBSABKAQSHQoJ",
+            "c2lnbmF0dXJlGAYgASgLMgouU2lnbmF0dXJlIlEKEUJsb2NrUHJlcGFyZVJl",
+            "cGx5Eh0KCXZhbGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchIdCglzaWduYXR1",
+            "cmUYAiABKAsyCi5TaWduYXR1cmVCEKoCDVBob3JrdXMuUHJvdG9iBnByb3Rv",
+            "Mw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Validator), global::Phorkus.Proto.Validator.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ChangeViewRequest), global::Phorkus.Proto.ChangeViewRequest.Parser, new[]{ "Validator", "NewViewNumber" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockPrepareRequest), global::Phorkus.Proto.BlockPrepareRequest.Parser, new[]{ "Validator", "Nonce", "TransactionHashes", "MinerTransaction", "Timestamp", "Signature" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockPrepareRequest), global::Phorkus.Proto.BlockPrepareRequest.Parser, new[]{ "Validator", "Nonce", "TransactionHashes", "Timestamp", "Signature" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockPrepareReply), global::Phorkus.Proto.BlockPrepareReply.Parser, new[]{ "Validator", "Signature" }, null, null, null)
           }));
     }
@@ -516,7 +516,6 @@ namespace Phorkus.Proto {
       validator_ = other.validator_ != null ? other.validator_.Clone() : null;
       nonce_ = other.nonce_;
       transactionHashes_ = other.transactionHashes_.Clone();
-      minerTransaction_ = other.minerTransaction_ != null ? other.minerTransaction_.Clone() : null;
       timestamp_ = other.timestamp_;
       signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -559,17 +558,6 @@ namespace Phorkus.Proto {
       get { return transactionHashes_; }
     }
 
-    /// <summary>Field number for the "miner_transaction" field.</summary>
-    public const int MinerTransactionFieldNumber = 4;
-    private global::Phorkus.Proto.Transaction minerTransaction_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.Transaction MinerTransaction {
-      get { return minerTransaction_; }
-      set {
-        minerTransaction_ = value;
-      }
-    }
-
     /// <summary>Field number for the "timestamp" field.</summary>
     public const int TimestampFieldNumber = 5;
     private ulong timestamp_;
@@ -608,7 +596,6 @@ namespace Phorkus.Proto {
       if (!object.Equals(Validator, other.Validator)) return false;
       if (Nonce != other.Nonce) return false;
       if(!transactionHashes_.Equals(other.transactionHashes_)) return false;
-      if (!object.Equals(MinerTransaction, other.MinerTransaction)) return false;
       if (Timestamp != other.Timestamp) return false;
       if (!object.Equals(Signature, other.Signature)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -620,7 +607,6 @@ namespace Phorkus.Proto {
       if (validator_ != null) hash ^= Validator.GetHashCode();
       if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
       hash ^= transactionHashes_.GetHashCode();
-      if (minerTransaction_ != null) hash ^= MinerTransaction.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (signature_ != null) hash ^= Signature.GetHashCode();
       if (_unknownFields != null) {
@@ -645,10 +631,6 @@ namespace Phorkus.Proto {
         output.WriteUInt64(Nonce);
       }
       transactionHashes_.WriteTo(output, _repeated_transactionHashes_codec);
-      if (minerTransaction_ != null) {
-        output.WriteRawTag(34);
-        output.WriteMessage(MinerTransaction);
-      }
       if (Timestamp != 0UL) {
         output.WriteRawTag(40);
         output.WriteUInt64(Timestamp);
@@ -672,9 +654,6 @@ namespace Phorkus.Proto {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
       }
       size += transactionHashes_.CalculateSize(_repeated_transactionHashes_codec);
-      if (minerTransaction_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(MinerTransaction);
-      }
       if (Timestamp != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
@@ -702,12 +681,6 @@ namespace Phorkus.Proto {
         Nonce = other.Nonce;
       }
       transactionHashes_.Add(other.transactionHashes_);
-      if (other.minerTransaction_ != null) {
-        if (minerTransaction_ == null) {
-          minerTransaction_ = new global::Phorkus.Proto.Transaction();
-        }
-        MinerTransaction.MergeFrom(other.MinerTransaction);
-      }
       if (other.Timestamp != 0UL) {
         Timestamp = other.Timestamp;
       }
@@ -741,13 +714,6 @@ namespace Phorkus.Proto {
           }
           case 26: {
             transactionHashes_.AddEntriesFrom(input, _repeated_transactionHashes_codec);
-            break;
-          }
-          case 34: {
-            if (minerTransaction_ == null) {
-              minerTransaction_ = new global::Phorkus.Proto.Transaction();
-            }
-            input.ReadMessage(minerTransaction_);
             break;
           }
           case 40: {

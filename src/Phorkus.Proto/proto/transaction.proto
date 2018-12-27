@@ -57,10 +57,6 @@ message RegisterTransaction {
     UInt160 minter = 6;
 }
 
-message MinerTransaction {
-    UInt160 miner = 1;
-}
-
 message DepositTransaction {
     UInt160 recipient = 1;
     BlockchainType blockchain_type = 2;
@@ -111,7 +107,6 @@ message Transaction {
         IssueTransaction issue = 7;
         PublishTransaction publish = 8;
         RegisterTransaction register = 9;
-        MinerTransaction miner = 10;
         DepositTransaction deposit = 11;
         WithdrawTransaction withdraw = 12;
         ConfirmTransaction confirm = 13;

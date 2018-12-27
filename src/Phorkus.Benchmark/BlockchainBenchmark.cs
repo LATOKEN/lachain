@@ -162,7 +162,7 @@ namespace Phorkus.Benchmark
                     var latestBlock = blockchainContext.CurrentBlock;
                     if (i > 0)
                         latestBlock = blocks[i - 1].Block;
-                    var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                    var blockWithTxs = new BlockBuilder(latestBlock.Header, keyPair.PublicKey)
                         .WithTransactions(txs)
                         .Build(123456);
                     var block = blockWithTxs.Block;
@@ -216,7 +216,7 @@ namespace Phorkus.Benchmark
                     transactionBuilder.TransferTransaction(address1, address2, asset.Hash, Money.FromDecimal(1.2m));
                 var signed = transactionSigner.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
-                var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                var blockWithTxs = new BlockBuilder(latestBlock.Header, keyPair.PublicKey)
                     .WithTransactions(new[] {signed})
                     .Build(123456);
                 var block = blockWithTxs.Block;

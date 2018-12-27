@@ -14,11 +14,12 @@ namespace Phorkus.Core.Blockchain
         
         private IReadOnlyCollection<SignedTransaction> _transactions;
         private MultiSig _multiSig;
-        private SignedTransaction _minerTransaction;
+        private PublicKey _blockValidator;
 
-        public BlockBuilder(BlockHeader prevBlock)
+        public BlockBuilder(BlockHeader prevBlock, PublicKey blockValidator)
         {
             _prevBlock = prevBlock;
+            _blockValidator = blockValidator;
         }
 
         public BlockBuilder WithTransactions(IReadOnlyCollection<SignedTransaction> transactions)
@@ -56,18 +57,10 @@ namespace Phorkus.Core.Blockchain
                 _multiSig.Validators.Add(publicKey);
             return this;
         }
-
-        public BlockBuilder WithMiner(SignedTransaction minerTransaction)
-        {
-            _minerTransaction = minerTransaction;
-            return this;
-        }
         
         public BlockWithTransactions Build(ulong nonce)
         {
             var txs = _transactions;
-            if (_minerTransaction != null)
-                txs = new[] {_minerTransaction}.Concat(txs).ToArray();
             var merkeRoot = UInt256Utils.Zero;
             if (txs.Count > 0)
                 merkeRoot = MerkleTree.ComputeRoot(txs.Select(tx => tx.Hash).ToArray());
@@ -78,6 +71,7 @@ namespace Phorkus.Core.Blockchain
                 MerkleRoot = merkeRoot,
                 Timestamp = TimeUtils.CurrentTimeMillis() / 1000,
                 Index = _prevBlock?.Index + 1 ?? 0,
+                Validator = _blockValidator,
                 Nonce = nonce
             };
             var block = new Block

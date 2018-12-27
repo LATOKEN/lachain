@@ -2,8 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
+using Phorkus.Storage.RocksDB.Repositories;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -12,7 +14,7 @@ namespace Phorkus.Core.Blockchain
         public const int PeekLimit = 1000;
 
         private readonly ITransactionVerifier _transactionVerifier;
-        // private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionRepository _transactionRepository;
         
         private readonly ConcurrentDictionary<UInt256, SignedTransaction> _transactions
             = new ConcurrentDictionary<UInt256, SignedTransaction>();
@@ -21,15 +23,16 @@ namespace Phorkus.Core.Blockchain
             = new ConcurrentQueue<SignedTransaction>();
 
         public TransactionPool(
-            ITransactionVerifier transactionVerifier/*,
-            ITransactionManager transactionManager*/)
+            ITransactionVerifier transactionVerifier,
+            ITransactionRepository transactionRepository)
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            // _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
+            _transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
         }
 
         public IReadOnlyDictionary<UInt256, SignedTransaction> Transactions => _transactions;
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Add(SignedTransaction transaction)
         {
             var result = _transactionVerifier.Verify(transaction.Transaction);
@@ -37,9 +40,12 @@ namespace Phorkus.Core.Blockchain
                 return false;
             _transactions[transaction.Hash] = transaction;
             _transactionsQueue.Enqueue(transaction);
+            if (!_transactionRepository.ContainsTransactionByHash(transaction.Hash))
+                _transactionRepository.AddTransaction(transaction);
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<SignedTransaction> Peek(int limit = -1)
         {
             if (limit < 0)
@@ -55,16 +61,19 @@ namespace Phorkus.Core.Blockchain
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public uint Size()
         {
             return (uint) _transactions.Count;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Delete(UInt256 transactionHash)
         {
             _transactions.TryRemove(transactionHash, out _);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Clear()
         {
             _transactions.Clear();

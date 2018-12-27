@@ -111,7 +111,7 @@ namespace Phorkus.Faker
                 }
                 var txs = unsignedTxs.AsParallel().Select(tx => transactionManager.Sign(tx, keyPair)).ToList();
                 
-                var builder = new BlockBuilder(blockchainContext.CurrentBlockHeader.Header)
+                var builder = new BlockBuilder(blockchainContext.CurrentBlockHeader.Header, keyPair.PublicKey)
                     .WithMultisig(validators)
                     .WithTransactions(txs);
                 var block = builder.Build(0);

@@ -22,7 +22,6 @@ message BlockPrepareRequest {
     Validator validator = 1;
     uint64 nonce = 2;
     repeated UInt256 transaction_hashes = 3;
-    Transaction miner_transaction = 4;
     uint64 timestamp = 5;
     Signature signature = 6;
 }

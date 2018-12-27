@@ -43,10 +43,6 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Version = 0,
                 Flags = (ulong) TransactionFlag.None,
                 From = UInt160Utils.Zero,
-                Miner = new MinerTransaction
-                {
-                    Miner = UInt160Utils.Zero
-                },
                 Nonce = 0
             };
             return tx;

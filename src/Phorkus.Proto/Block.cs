@@ -25,20 +25,21 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgtibG9jay5wcm90bxoNZGVmYXVsdC5wcm90bxoObXVsdGlzaWcucHJvdG8i",
-            "kQEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
+            "sAEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
             "a19oYXNoGAIgASgLMgguVUludDI1NhIdCgttZXJrbGVfcm9vdBgDIAEoCzII",
-            "LlVJbnQyNTYSEQoJdGltZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEg0K",
-            "BW5vbmNlGAYgASgEIoABCgVCbG9jaxIcCgZoZWFkZXIYASABKAsyDC5CbG9j",
-            "a0hlYWRlchIWCgRoYXNoGAIgASgLMgguVUludDI1NhIkChJ0cmFuc2FjdGlv",
-            "bl9oYXNoZXMYBCADKAsyCC5VSW50MjU2EhsKCG11bHRpc2lnGAMgASgLMgku",
-            "TXVsdGlTaWcieAoKQmxvY2tTdGF0ZRInCgZzdGF0dXMYASABKA4yFy5CbG9j",
-            "a1N0YXRlLkJsb2NrU3RhdHVzIkEKC0Jsb2NrU3RhdHVzEhYKEkJMT0NLX1NU",
-            "QVRVU19SRUFEWRAAEhoKFkJMT0NLX1NUQVRVU19DT05GSVJNRUQQAUIQqgIN",
-            "UGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "LlVJbnQyNTYSEQoJdGltZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEh0K",
+            "CXZhbGlkYXRvchgHIAEoCzIKLlB1YmxpY0tleRINCgVub25jZRgGIAEoBCKA",
+            "AQoFQmxvY2sSHAoGaGVhZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISFgoEaGFz",
+            "aBgCIAEoCzIILlVJbnQyNTYSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygL",
+            "MgguVUludDI1NhIbCghtdWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnIngKCkJs",
+            "b2NrU3RhdGUSJwoGc3RhdHVzGAEgASgOMhcuQmxvY2tTdGF0ZS5CbG9ja1N0",
+            "YXR1cyJBCgtCbG9ja1N0YXR1cxIWChJCTE9DS19TVEFUVVNfUkVBRFkQABIa",
+            "ChZCTE9DS19TVEFUVVNfQ09ORklSTUVEEAFCEKoCDVBob3JrdXMuUHJvdG9i",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Nonce" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Validator", "Nonce" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockState), global::Phorkus.Proto.BlockState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.BlockState.Types.BlockStatus) }, null)
           }));
@@ -77,6 +78,7 @@ namespace Phorkus.Proto {
       merkleRoot_ = other.merkleRoot_ != null ? other.merkleRoot_.Clone() : null;
       timestamp_ = other.timestamp_;
       index_ = other.index_;
+      validator_ = other.validator_ != null ? other.validator_.Clone() : null;
       nonce_ = other.nonce_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -141,6 +143,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "validator" field.</summary>
+    public const int ValidatorFieldNumber = 7;
+    private global::Phorkus.Proto.PublicKey validator_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.PublicKey Validator {
+      get { return validator_; }
+      set {
+        validator_ = value;
+      }
+    }
+
     /// <summary>Field number for the "nonce" field.</summary>
     public const int NonceFieldNumber = 6;
     private ulong nonce_;
@@ -170,6 +183,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(MerkleRoot, other.MerkleRoot)) return false;
       if (Timestamp != other.Timestamp) return false;
       if (Index != other.Index) return false;
+      if (!object.Equals(Validator, other.Validator)) return false;
       if (Nonce != other.Nonce) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -182,6 +196,7 @@ namespace Phorkus.Proto {
       if (merkleRoot_ != null) hash ^= MerkleRoot.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (Index != 0UL) hash ^= Index.GetHashCode();
+      if (validator_ != null) hash ^= Validator.GetHashCode();
       if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -220,6 +235,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(48);
         output.WriteUInt64(Nonce);
       }
+      if (validator_ != null) {
+        output.WriteRawTag(58);
+        output.WriteMessage(Validator);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -242,6 +261,9 @@ namespace Phorkus.Proto {
       }
       if (Index != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Index);
+      }
+      if (validator_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Validator);
       }
       if (Nonce != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
@@ -277,6 +299,12 @@ namespace Phorkus.Proto {
       }
       if (other.Index != 0UL) {
         Index = other.Index;
+      }
+      if (other.validator_ != null) {
+        if (validator_ == null) {
+          validator_ = new global::Phorkus.Proto.PublicKey();
+        }
+        Validator.MergeFrom(other.Validator);
       }
       if (other.Nonce != 0UL) {
         Nonce = other.Nonce;
@@ -320,6 +348,13 @@ namespace Phorkus.Proto {
           }
           case 48: {
             Nonce = input.ReadUInt64();
+            break;
+          }
+          case 58: {
+            if (validator_ == null) {
+              validator_ = new global::Phorkus.Proto.PublicKey();
+            }
+            input.ReadMessage(validator_);
             break;
           }
         }

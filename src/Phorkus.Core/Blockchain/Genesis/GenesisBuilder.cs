@@ -27,6 +27,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             _genesisAssetsBuilder = genesisAssetsBuilder;
             _crypto = crypto;
             _transactionManager = transactionManager;
+            /* TODO: "replace this private key with encrypted private key with threshold paillier cryptosystem" */
             _keyPair = new KeyPair("8a04748ce6329cf899cee3f3e0f4720d1a6d917a9183a11b323315de2ffbf84d".HexToBytes().ToPrivateKey(), crypto);
         }
 
@@ -78,9 +79,10 @@ namespace Phorkus.Core.Blockchain.Genesis
             {
                 Version = 0,
                 PrevBlockHash = UInt256Utils.Zero,
-                MerkleRoot = MerkleTree.ComputeRoot(txHashes),
+                MerkleRoot = MerkleTree.ComputeRoot(txHashes) ?? UInt256Utils.Zero,
                 Timestamp = (ulong) genesisTimestamp.Seconds,
                 Index = 0,
+                Validator = _keyPair.PublicKey,
                 Nonce = GenesisConsensusData
             };
             

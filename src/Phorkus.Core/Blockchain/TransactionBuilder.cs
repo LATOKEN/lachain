@@ -39,7 +39,6 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-
         public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, Money fee,
             byte[] script)
         {
@@ -81,25 +80,6 @@ namespace Phorkus.Core.Blockchain
                 From = from,
                 Nonce = nonce,
                 Contract = contractTx
-            };
-            return tx;
-        }
-
-        public Transaction MinerTransaction(UInt160 from)
-        {
-            var nonce = _transactionRepository.GetTotalTransactionCount(@from);
-            var miner = new MinerTransaction
-            {
-                Miner = from
-            };
-            var tx = new Transaction
-            {
-                Type = TransactionType.Miner,
-                Version = 0,
-                Flags = 0,
-                From = from,
-                Nonce = nonce,
-                Miner = miner
             };
             return tx;
         }

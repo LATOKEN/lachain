@@ -134,25 +134,11 @@ namespace Phorkus.Core.Consensus
                     if (timeToAwait.TotalSeconds > 0)
                         Thread.Sleep(timeToAwait);
                     _logger.LogTrace("Wait completed");
-
-                    // TODO: produce block
-                    var address = _crypto.ComputeAddress(_context.KeyPair.PublicKey.Buffer.ToByteArray());
-                    var from = address.ToUInt160();
-                    var minerTx = _transactionBuilder.MinerTransaction(from);
-                    var signed = _transactionManager.Sign(minerTx, _keyPair);
-                    var minerError = _transactionManager.Persist(signed);
-                    if (minerError != OperatingError.Ok)
-                    {
-                        _logger.LogError(
-                            $"Unable to persis miner transaction (it is very bad), cuz error {minerError}");
-                        RequestChangeView();
-                        continue;
-                    }
-
-                    var blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlockHeader.Header)
-                        .WithTransactions(_transactionPool).WithMiner(signed).Build((ulong) _random.Next());
-
-                    _logger.LogInformation($"Produced block with hash {blockWithTransactions.Block.Hash}");
+                    
+                    var blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlockHeader.Header, _keyPair.PublicKey)
+                        .WithTransactions(_transactionPool).Build((ulong) _random.Next());
+                    
+                    _logger.LogTrace($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
                     _context.CurrentProposal = new ConsensusProposal
                     {
@@ -171,7 +157,7 @@ namespace Phorkus.Core.Consensus
 
                     SignAndBroadcast(
                         _context.MakePrepareRequest(blockWithTransactions, _context.MyState.BlockSignature));
-                    _logger.LogInformation("Sent prepare request");
+                    _logger.LogTrace("Sent prepare request");
                 }
                 else
                 {
@@ -201,7 +187,7 @@ namespace Phorkus.Core.Consensus
                 }
 
                 // When all transaction are collected and validated, we are able to sign block
-                _logger.LogInformation("Send prepare response");
+                _logger.LogTrace("Send prepare response");
 
                 var mySignature = _blockManager.Sign(_context.GetProposedHeader(), _context.KeyPair);
                 SignAndBroadcast(_context.MakePrepareResponse(mySignature));
@@ -226,20 +212,20 @@ namespace Phorkus.Core.Consensus
                 if (_context.State.HasFlag(ConsensusState.ViewChanging))
                     continue;
 
-                _logger.LogInformation(
+                _logger.LogTrace(
                     $"Collected sinatures={_context.SignaturesAcquired}, quorum={_context.Quorum}"
                 );
                 // TODO: check multisig one last time
 
                 var block = _context.GetProposedBlock();
 
-                _logger.LogInformation($"Block approved by consensus: {block.Hash}");
+                _logger.LogTrace($"Block approved by consensus: {block.Hash}");
 
                 _context.State |= ConsensusState.BlockSent;
 
                 var result = _blockManager.Persist(block);
                 if (result == OperatingError.Ok)
-                    _logger.LogInformation($"Block persist completed: {block.Hash}");
+                    _logger.LogTrace($"Block persist completed: {block.Hash}");
                 else
                     _logger.LogWarning($"Block hasn't been persisted: {block.Hash}, cuz error {result}");
 
@@ -250,7 +236,7 @@ namespace Phorkus.Core.Consensus
 
         public void Start()
         {
-            _logger.LogInformation("Starting consensus");
+            _logger.LogTrace("Starting consensus");
             Task.Factory.StartNew(() =>
             {
                 try
@@ -272,7 +258,7 @@ namespace Phorkus.Core.Consensus
             else
                 _context.ChangeView(viewNumber);
             if (_context.MyIndex < 0) return;
-            _logger.LogInformation(
+            _logger.LogTrace(
                 $"Initialized consensus: height={_context.BlockIndex} view={viewNumber} " +
                 $"my_index={_context.MyIndex} role={_context.Role}"
             );
@@ -314,7 +300,7 @@ namespace Phorkus.Core.Consensus
                 return;
             }
 
-            _logger.LogInformation(
+            _logger.LogTrace(
                 $"{nameof(OnPrepareRequestReceived)}: height={prepareRequest.Validator.BlockIndex} " +
                 $"view={prepareRequest.Validator.ViewNumber}  index={validatorIndex} " +
                 $"tx={prepareRequest.TransactionHashes.Count}"
@@ -362,7 +348,7 @@ namespace Phorkus.Core.Consensus
             _context.State |= ConsensusState.RequestReceived;
 
             OnSignatureAcquired(validatorIndex, prepareRequest.Signature);
-            _logger.LogInformation(
+            _logger.LogTrace(
                 $"Prepare request from validator={validatorIndex} accepted, requesting missing transactions"
             );
 
@@ -376,7 +362,7 @@ namespace Phorkus.Core.Consensus
         {
             if (!CheckPayload(prepareResponse.Validator, false)) return;
             if (_context.Validators[prepareResponse.Validator.ValidatorIndex].BlockSignature != null) return;
-            _logger.LogInformation(
+            _logger.LogTrace(
                 $"{nameof(OnPrepareResponseReceived)}: height={prepareResponse.Validator.BlockIndex} view={prepareResponse.Validator.ViewNumber} " +
                 $"index={prepareResponse.Validator.ValidatorIndex}"
             );
@@ -389,7 +375,7 @@ namespace Phorkus.Core.Consensus
             if (changeViewRequest.NewViewNumber <=
                 _context.Validators[changeViewRequest.Validator.ValidatorIndex].ExpectedViewNumber)
             {
-                _logger.LogInformation(
+                _logger.LogTrace(
                     $"Ignoring ChangeView payload from validator={changeViewRequest.Validator.ValidatorIndex} " +
                     $"view={changeViewRequest.Validator.ViewNumber} " +
                     $"since new_view={changeViewRequest.NewViewNumber} and " +
@@ -398,7 +384,7 @@ namespace Phorkus.Core.Consensus
                 return;
             }
 
-            _logger.LogInformation(
+            _logger.LogTrace(
                 $"{nameof(OnChangeViewReceived)}: height={changeViewRequest.Validator.BlockIndex} " +
                 $"view={changeViewRequest.Validator.ViewNumber} " +
                 $"index={changeViewRequest.Validator.ValidatorIndex} nv={changeViewRequest.NewViewNumber}"
@@ -431,7 +417,7 @@ namespace Phorkus.Core.Consensus
         {
             _context.State |= ConsensusState.ViewChanging;
             _context.MyState.ExpectedViewNumber++;
-            _logger.LogInformation(
+            _logger.LogTrace(
                 $"request change view: height={_context.BlockIndex} view={_context.ViewNumber} " +
                 $"nv={_context.MyState.ExpectedViewNumber} state={_context.State}"
             );

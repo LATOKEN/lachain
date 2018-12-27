@@ -53,9 +53,10 @@ namespace Phorkus.Core.Consensus
             {
                 Version = Version,
                 PrevBlockHash = PreviousBlockHash,
-                MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes),
+                MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes) ?? UInt256Utils.Zero,
                 Timestamp = CurrentProposal.Timestamp,
                 Index = BlockIndex,
+                Validator = KeyPair.PublicKey,
                 Nonce = CurrentProposal.Nonce
             };
             return result;
@@ -103,9 +104,7 @@ namespace Phorkus.Core.Consensus
             {
                 Validators[i].Reset();
                 if (Validators[i].PublicKey.Equals(KeyPair?.PublicKey))
-                {
                     MyIndex = i;
-                }
             }
         }
 
@@ -146,20 +145,18 @@ namespace Phorkus.Core.Consensus
 
         public ConsensusMessage MakePrepareRequest(BlockWithTransactions block, Signature signature)
         {
+            var blockPrepareRequest = new BlockPrepareRequest
+            {
+                Validator = MakeValidator(),
+                Nonce = block.Block.Header.Nonce,
+                Signature = signature,
+                Timestamp = block.Block.Header.Timestamp
+            };
+            if (block.Transactions.Count > 0)
+                blockPrepareRequest.TransactionHashes.AddRange(block.Block.TransactionHashes);
             return new ConsensusMessage
             {
-                BlockPrepareRequest = new BlockPrepareRequest
-                {
-                    Validator = MakeValidator(),
-                    Nonce = block.Block.Header.Nonce,
-                    TransactionHashes =
-                    {
-                        block.Transactions.Select(tx => tx.Hash)
-                    },
-                    MinerTransaction = block.Transactions.First().Transaction,
-                    Signature = signature,
-                    Timestamp = block.Block.Header.Timestamp
-                }
+                BlockPrepareRequest = blockPrepareRequest 
             };
         }
 
