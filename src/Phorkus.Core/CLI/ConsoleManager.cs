@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,44 +56,41 @@ namespace Phorkus.Core.CLI
             _consoleCommands = new ConsoleCommands(_globalRepository, _transactionBuilder, _transactionPool,
                 _transactionManager, _blockManager, _validatorManager, _blockchainStateManager,
                 _crypto, keyPair);
-            while (true)
+            try
             {
+                Console.Write(" > ");
+                var command = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(command))
+                    return;
+                var argumentsTrash = command.Split(' ');
+                var arguments = argumentsTrash.Where(argument => argument != " ").ToList();
+                if (arguments.Count == 0)
+                    return;
+                var theCommand = _consoleCommands.GetType()
+                    .GetMethods().FirstOrDefault(method => method.Name.ToLower().Contains(arguments[0].ToLower()));
+                if (theCommand == null)
+                    return;
                 try
                 {
-                    Console.Write(" > ");
-                    var command = Console.ReadLine();
-                    if (string.IsNullOrWhiteSpace(command))
-                        continue;
-                    var argumentsTrash = command.Split(' ');
-                    var arguments = argumentsTrash.Where(argument => argument != " ").ToList();
-                    if (arguments.Count == 0)
-                        continue;
-                    var theCommand = _consoleCommands.GetType()
-                        .GetMethods().FirstOrDefault(method => method.Name.ToLower().Contains(arguments[0].ToLower()));
-                    if (theCommand == null)
-                        continue;
-                    try
+                    var result = theCommand.Invoke(_consoleCommands, new object[] { arguments.ToArray() });
+                    if (result == null)
                     {
-                        var result = theCommand.Invoke(_consoleCommands, new object[] { arguments.ToArray() });
-                        if (result == null)
-                        {
-                            _logger.LogError("Wrong arguments!\n");
-                            Console.Out.Write("null\n");
-                            continue;
-                        }
-                        Console.Out.Write(result.ToString() + '\n');
+                        _logger.LogError("Wrong arguments!\n");
+                        Console.Out.Write("null\n");
+                        return;
                     }
-                    catch (Exception e)
-                    {
-                        Console.Error.WriteLine(e);
-                        _logger.LogError("Incorrect cli method call!\n");
-                    }
+                    Console.Out.Write(result.ToString() + '\n');
                 }
                 catch (Exception e)
                 {
                     Console.Error.WriteLine(e);
                     _logger.LogError("Incorrect cli method call!\n");
                 }
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e);
+                _logger.LogError("Incorrect cli method call!\n");
             }
         }
 
@@ -105,7 +103,6 @@ namespace Phorkus.Core.CLI
                     var thread = Thread.CurrentThread;
                     while (thread.IsAlive)
                     {
-                        Thread.Sleep(3000);
                         _Worker(thresholdKey, keyPair);
                     }
                 }
