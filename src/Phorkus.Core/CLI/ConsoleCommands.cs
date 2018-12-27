@@ -21,6 +21,7 @@ namespace Phorkus.Core.CLI
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
+        private readonly ICrypto _crypto;
         private readonly IBlockchainStateManager _blockchainStateManager;
         private readonly KeyPair _keyPair;
 
@@ -32,6 +33,7 @@ namespace Phorkus.Core.CLI
             IBlockManager blockManager,
             IValidatorManager validatorManager,
             IBlockchainStateManager blockchainStateManager,
+            ICrypto crypto,
             KeyPair keyPair)
         {
             _blockManager = blockManager;
@@ -41,6 +43,7 @@ namespace Phorkus.Core.CLI
             _transactionManager = transactionManager;
             _validatorManager = validatorManager;
             _blockchainStateManager = blockchainStateManager;
+            _crypto = crypto;
             _keyPair = keyPair;
         }
 
@@ -129,22 +132,46 @@ namespace Phorkus.Core.CLI
             var block = _blockManager.GetByHash(arguments[1].HexToUInt256());
             return _blockManager.Sign(block.Header, _keyPair);
         }
-
+        
+     
+        
         /*
-     public Signature SignTransaction(string[] arguments)
-     {
-         if (arguments.Length != 2 || arguments[1].Length != TxLength)
-         {
-             return null;
-         }
+         * SendTransaction
+         * from, UInt160,
+         * to, UInt160,
+         * assetName, string
+         * value, UInt256,
+         * fee, UInt256
+        */
+        public SignedTransaction SendTransaction(string[] arguments)
+        {
+            var from = HexUtils.HexToUInt160(arguments[1]);
+            var to = HexUtils.HexToUInt160(arguments[2]);
+            var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
+            var value = HexUtils.HexToUInt256(arguments[4]);
+            var fee = HexUtils.HexToUInt256(arguments[5]);
+            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
+            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            _transactionPool.Add(signedTx);
+            return signedTx;
+        }
 
-         arguments[1] = EraseHexPrefix(arguments[1]);
-         if (!IsValidHexString(arguments[1]))
+     /*
+         public Signature SignTransaction(string[] arguments)
          {
-             return null;
-         }
-         Block block =_transactionPool.GetByHash(HexUtils.HexToUInt256(arguments[1]));
-         return _blockManager.Sign(block.Header, _keyPair);
-     }*/
+             if (arguments.Length != 2 || arguments[1].Length != TxLength)
+             {
+                 return null;
+             }
+    
+             arguments[1] = EraseHexPrefix(arguments[1]);
+             if (!IsValidHexString(arguments[1]))
+             {
+                 return null;
+             }
+
+             Block block = _transactionPool.GetByHash(HexUtils.HexToUInt256(arguments[1]));
+             return _blockManager.Sign(block.Header, _keyPair);
+         }*/
     }
 }

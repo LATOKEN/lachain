@@ -54,7 +54,7 @@ namespace Phorkus.Core.CLI
         {
             _consoleCommands = new ConsoleCommands(_globalRepository, _transactionBuilder, _transactionPool,
                 _transactionManager, _blockManager, _validatorManager, _blockchainStateManager,
-                keyPair);
+                _crypto, keyPair);
             while (true)
             {
                 try

@@ -13,24 +13,99 @@ namespace Phorkus.VM
                 case Opcode.Stop:
                     break;
                 case Opcode.Add:
+                    var addBytes1 = state.StackPop();
+                    var addBytes2 = state.StackPop();
+                    //check endianism
+                    var addB2 = new BigInteger(addBytes2);
+                    addB2 = addB2 + new BigInteger(addBytes1);
+
+                    state.StackPush(addB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Mul:
+                    var mulBytes1 = state.StackPop();
+                    var mulBytes2 = state.StackPop();
+                    //check endianism
+                    var mulB2 = new BigInteger(mulBytes2);
+                    mulB2 = mulB2 + new BigInteger(mulBytes1);
+
+                    state.StackPush(mulB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Sub:
+                    var subBytes1 = state.StackPop();
+                    var subBytes2 = state.StackPop();
+                    //check endianism
+                    var subB2 = new BigInteger(subBytes2);
+                    subB2 = subB2 - new BigInteger(subBytes1);
+
+                    state.StackPush(subB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Div:
+                    
+                    var divBytes1 = state.StackPop();
+                    var divBytes2 = state.StackPop();
+                    //check endianism
+                    var divB2 = new BigInteger(divBytes2);
+                    divB2 = divB2 / new BigInteger(divBytes1);
+
+                    state.StackPush(divB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Sdiv:
                     break;
                 case Opcode.Mod:
+                    var modBytes1 = state.StackPop();
+                    var modBytes2 = state.StackPop();
+                    //check endianism
+                    var modB2 = new BigInteger(modBytes2);
+                    modB2 = modB2 % new BigInteger(modBytes1);
+
+                    state.StackPush(modB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Smod:
+                    var smodBytes1 = state.StackPop();
+                    var smodBytes2 = state.StackPop();
+                    //check endianism
+                    var smodB2 = new BigInteger(smodBytes2);
+                    smodB2 = smodB2 % new BigInteger(smodBytes1);
+
+                    state.StackPush(smodB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Addmod:
+                    var addModBytes1 = state.StackPop();
+                    var addModBytes2 = state.StackPop();
+                    var addModBytes3 = state.StackPop();
+                    //check endianism
+                    var addModB3 = new BigInteger(addModBytes3);
+                    addModB3 = (addModB3 + new BigInteger(addModBytes2)) % new BigInteger(addModBytes1);
+
+                    state.StackPush(addModB3.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Mulmod:
+                    var mulModBytes1 = state.StackPop();
+                    var mulModBytes2 = state.StackPop();
+                    var mulModBytes3 = state.StackPop();
+                    //check endianism
+                    var mulModB3 = new BigInteger(mulModBytes3);
+                    mulModB3 = (mulModB3 * new BigInteger(mulModBytes2)) % new BigInteger(mulModBytes1);
+
+                    state.StackPush(mulModB3.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Exp:
+                    var expBytes1 = state.StackPop();
+                    var expBytes2 = state.StackPop();
+                    //check endianism
+                    var expB2 = new BigInteger(expBytes2);
+                    expB2 = BigInteger.Pow(expB2, (int) new BigInteger(expBytes1));
+
+                    state.StackPush(expB2.ToByteArray());
+                    state.Step();
                     break;
                 case Opcode.Signextend:
                     break;

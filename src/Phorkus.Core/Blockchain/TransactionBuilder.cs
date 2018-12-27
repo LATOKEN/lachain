@@ -1,4 +1,5 @@
-﻿using Google.Protobuf;
+﻿using System.Globalization;
+using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Utility;
@@ -37,7 +38,31 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-
+        
+        
+        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, UInt256 value, UInt256 fee, byte[] script)
+        {
+            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var contractTx = new ContractTransaction
+            {
+                Asset = asset.Hash,
+                To = to,
+                Value = value,
+                Script = script.ToUInt160().ToByteString(),
+                Fee = fee
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Contract,
+                Version = 0,
+                Flags = (ulong) TransactionFlag.None,
+                From = from,
+                Contract = contractTx,
+                Nonce = nonce
+            };
+            return tx;
+        }
+        
         public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
