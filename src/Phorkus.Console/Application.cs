@@ -131,7 +131,7 @@ namespace Phorkus.Console
             blockSynchronizer.Start();
             withdrawalManager.Start(thresholdKey, keyPair);
             commandManager.Start(thresholdKey, keyPair);
-
+            
             // var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
             
             /*var transaction = transactionBuilder.WithdrawTransaction(

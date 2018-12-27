@@ -371,7 +371,8 @@ namespace Phorkus.Core.Consensus
         
         public void OnChangeViewReceived(ChangeViewRequest changeViewRequest)
         {
-            if (!CheckPayload(changeViewRequest.Validator, false)) return;
+            if (!CheckPayload(changeViewRequest.Validator, true))
+                return;
             if (changeViewRequest.NewViewNumber <=
                 _context.Validators[changeViewRequest.Validator.ValidatorIndex].ExpectedViewNumber)
             {
