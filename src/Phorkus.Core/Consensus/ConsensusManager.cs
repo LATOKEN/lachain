@@ -30,6 +30,7 @@ namespace Phorkus.Core.Consensus
         private readonly KeyPair _keyPair;
         private readonly IBlockSynchronizer _blockchainSynchronizer;
         private readonly MessageFactory _messageFactory;
+        private readonly IValidatorManager _validatorManager;
 
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
@@ -50,9 +51,11 @@ namespace Phorkus.Core.Consensus
             IConfigManager configManager,
             ITransactionBuilder transactionFactory,
             ICrypto crypto,
-            IBlockSynchronizer blockchainSynchronizer)
+            IBlockSynchronizer blockchainSynchronizer,
+            IValidatorManager validatorManager)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
+            
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
             _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
@@ -62,12 +65,12 @@ namespace Phorkus.Core.Consensus
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _validatorManager = validatorManager ?? throw new ArgumentNullException(nameof(validatorManager));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
 
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
             _messageFactory = new MessageFactory(_keyPair, _crypto);
-            _context = new ConsensusContext(_keyPair,
-                config.ValidatorsKeys.Select(key => key.HexToBytes().ToPublicKey()).ToList());
+            _context = new ConsensusContext(_keyPair, _validatorManager.Validators.ToList());
             _random = new SecureRandom();
             _stopped = true;
             _gotNewBlock = false;
@@ -332,7 +335,7 @@ namespace Phorkus.Core.Consensus
                 Timestamp = prepareRequest.Timestamp,
                 Nonce = prepareRequest.Nonce
             };
-
+            
             var header = _context.GetProposedHeader();
             var sigVerified = _blockManager.VerifySignature(header, prepareRequest.Signature,
                 _context.Validators[validatorIndex].PublicKey);
