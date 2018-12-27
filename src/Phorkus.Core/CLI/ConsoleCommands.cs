@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
@@ -165,6 +166,28 @@ namespace Phorkus.Core.CLI
                 return null;
             var block = _blockManager.GetByHash(arguments[1].HexToUInt256());
             return _blockManager.Sign(block.Header, _keyPair);
+        }
+
+        public string SignTransaction(string[] arguments)
+        {
+            var from = arguments[1].HexToUInt160();
+            var to = arguments[2].HexToUInt160();
+            var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
+            var value = arguments[4].HexToUInt256();
+            var fee = arguments[5].HexToUInt256();
+            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
+            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            return signedTx.ToByteArray().ToHex();
+        }
+
+        public string SendRawTransaction(string[] arguments)
+        {
+            if (arguments.Length != 2)
+                return null;
+            var rawTx = arguments[1].HexToBytes();
+            var tx = SignedTransaction.Parser.ParseFrom(rawTx);
+            _transactionPool.Add(tx);
+            return tx.Hash.ToHex();
         }
         
         /*
