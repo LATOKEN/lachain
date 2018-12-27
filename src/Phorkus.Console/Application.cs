@@ -71,7 +71,7 @@ namespace Phorkus.Console
             var crossChain = _container.Resolve<ICrossChain>();
             var withdrawalManager = _container.Resolve<IWithdrawalManager>();
             var thresholdManager = _container.Resolve<IThresholdManager>();
-            var commandManager = _container.Resolve<ICommandManager>();
+            var commandManager = _container.Resolve<IConsoleManager>();
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;

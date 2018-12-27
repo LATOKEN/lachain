@@ -13,7 +13,7 @@ using Phorkus.Storage.State;
 
 namespace Phorkus.Core.CLI
 {
-    public class CommandManager : ICommandManager
+    public class ConsoleManager : IConsoleManager
     {
         private readonly IGlobalRepository _globalRepository;
         private readonly IValidatorManager _validatorManager;
@@ -23,12 +23,12 @@ namespace Phorkus.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainStateManager _blockchainStateManager;
         private readonly ICrypto _crypto;
-        private readonly ILogger<ICommandManager> _logger;
+        private readonly ILogger<IConsoleManager> _logger;
         private IConsoleCommands _consoleCommands;
 
         public bool IsWorking { get; set; }
 
-        public CommandManager(
+        public ConsoleManager(
             IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
@@ -37,7 +37,7 @@ namespace Phorkus.Core.CLI
             IBlockManager blockManager,
             IValidatorManager validatorManager,
             IBlockchainStateManager blockchainStateManager,
-            ILogger<ICommandManager> logger)
+            ILogger<IConsoleManager> logger)
         {
             _blockManager = blockManager;
             _globalRepository = globalRepository;
@@ -59,8 +59,9 @@ namespace Phorkus.Core.CLI
             {
                 try
                 {
+                    Console.Write(" > ");
                     var command = Console.ReadLine();
-                    if (command == null)
+                    if (string.IsNullOrWhiteSpace(command))
                         continue;
                     var argumentsTrash = command.Split(' ');
                     var arguments = argumentsTrash.Where(argument => argument != " ").ToList();
@@ -77,7 +78,7 @@ namespace Phorkus.Core.CLI
                         {
                             _logger.LogError("Wrong arguments!\n");
                             Console.Out.Write("null\n");
-                            return;
+                            continue;
                         }
                         Console.Out.Write(result.ToString() + '\n');
                     }
@@ -104,8 +105,8 @@ namespace Phorkus.Core.CLI
                     var thread = Thread.CurrentThread;
                     while (thread.IsAlive)
                     {
+                        Thread.Sleep(3000);
                         _Worker(thresholdKey, keyPair);
-                        Thread.Sleep(5000);
                     }
                 }
                 catch (Exception e)

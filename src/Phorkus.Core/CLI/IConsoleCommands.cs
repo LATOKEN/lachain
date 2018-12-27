@@ -1,4 +1,5 @@
 using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.Core.CLI
 {
@@ -8,7 +9,9 @@ namespace Phorkus.Core.CLI
         
         Block GetBlock(string[] arguments);
         
-        UInt256 GetBalance(string[] arguments);
+        string GetBalances(string[] arguments);
+        
+        Money GetBalance(string[] arguments);
 
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Core.Blockchain;
@@ -7,6 +8,9 @@ using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Storage.State;
+using Phorkus.Utility;
+using Phorkus.Utility.Utils;
+using HexUtils = Phorkus.Core.Utils.HexUtils;
 
 namespace Phorkus.Core.CLI
 {
@@ -73,7 +77,7 @@ namespace Phorkus.Core.CLI
             arguments[1] = EraseHexPrefix(arguments[1]);
             return !IsValidHexString(arguments[1])
                 ? null
-                : _transactionManager.GetByHash(HexUtils.HexToUInt256(arguments[1]));
+                : _transactionManager.GetByHash(arguments[1].HexToUInt256());
         }
 
         /*
@@ -90,14 +94,36 @@ namespace Phorkus.Core.CLI
             return _blockManager.GetByHash(arguments[1].HexToUInt256());
         }
 
+        public string GetBalances(string[] arguments)
+        {
+            if (arguments.Length != 2)
+                return null;
+            arguments[1] = EraseHexPrefix(arguments[1]);
+            if (!IsValidHexString(arguments[1]))
+                return null;
+            var assetNames = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetNames();
+            var result = "Balances:";
+            foreach (var assetName in assetNames)
+            {
+                var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(assetName);
+                if (asset is null)
+                    continue;
+                var balance =
+                    _blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(
+                        arguments[1].HexToUInt160(), asset.Hash);
+                result += $"\n - {assetName}: {balance}";
+            }
+            return result;
+        }
+
         /*
          * GetBalance
          * address, UInt160
          * asset, UInt160
         */
-        public UInt256 GetBalance(string[] arguments)
+        public Money GetBalance(string[] arguments)
         {
-            if (arguments.Length != 3 || arguments[1].Length != AddressLength)
+            if (arguments.Length != 3)
                 return null;
             arguments[1] = EraseHexPrefix(arguments[1]);
             if (!IsValidHexString(arguments[1]))
@@ -106,9 +132,19 @@ namespace Phorkus.Core.CLI
             if (asset == null)
                 return null;
             return _blockchainStateManager.LastApprovedSnapshot.Balances
-                .GetAvailableBalance(arguments[1].HexToUInt160(), asset.Hash).ToUInt256();
+                .GetAvailableBalance(arguments[1].HexToUInt160(), asset.Hash);
         }
-
+        
+        public string Help(string[] arguments)
+        {
+            var methods = GetType().GetMethods().Select(m =>
+            {
+                var args = m.GetParameters().Select(arg => $"{arg.ParameterType.Name} {arg.Name}");
+                return $" - {m.Name.ToLower()}: {string.Join(", ", args)}";
+            });
+            return "Commands:\n" + string.Join("\n", methods);
+        }
+        
         /*
          * GetTransactionPool
         */
@@ -132,8 +168,6 @@ namespace Phorkus.Core.CLI
             var block = _blockManager.GetByHash(arguments[1].HexToUInt256());
             return _blockManager.Sign(block.Header, _keyPair);
         }
-        
-     
         
         /*
          * SendTransaction
