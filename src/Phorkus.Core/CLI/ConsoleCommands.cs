@@ -72,8 +72,6 @@ namespace Phorkus.Core.CLI
         */
         public SignedTransaction GetTransaction(string[] arguments)
         {
-            if (arguments.Length != 2 || arguments[1].Length != TxLength)
-                return null;
             arguments[1] = EraseHexPrefix(arguments[1]);
             return !IsValidHexString(arguments[1])
                 ? null
@@ -179,11 +177,11 @@ namespace Phorkus.Core.CLI
         */
         public SignedTransaction SendTransaction(string[] arguments)
         {
-            var from = HexUtils.HexToUInt160(arguments[1]);
-            var to = HexUtils.HexToUInt160(arguments[2]);
+            var from = arguments[1].HexToUInt160();
+            var to = arguments[2].HexToUInt160();
             var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
-            var value = HexUtils.HexToUInt256(arguments[4]);
-            var fee = HexUtils.HexToUInt256(arguments[5]);
+            var value = arguments[4].HexToUInt256();
+            var fee = arguments[5].HexToUInt256();
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);

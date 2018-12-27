@@ -125,7 +125,7 @@ namespace Phorkus.Console
             //crossChain.Start(thresholdKey, keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
-            consensusManager.Start();
+            //consensusManager.Start();
             blockSynchronizer.Start();
             withdrawalManager.Start(thresholdKey, keyPair);
             commandManager.Start(thresholdKey, keyPair);

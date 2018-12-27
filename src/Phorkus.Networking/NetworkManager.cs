@@ -2,6 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -31,14 +34,13 @@ namespace Phorkus.Networking
 
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
-
         private readonly ConcurrentDictionary<PublicKey, bool> _authorizedKeys = new ConcurrentDictionary<PublicKey, bool>();
-        
         private readonly ICrypto _crypto;
 
         private MessageFactory _messageFactory;
         private ServerWorker _serverWorker;
         private IMessageHandler _messageHandler;
+        private NetworkConfig _networkConfig;
 
         public NetworkManager(ICrypto crypto)
         {
@@ -65,12 +67,39 @@ namespace Phorkus.Networking
         
         private readonly object _hasPeersToConnect = new object();
         
+        private bool _SelfConnect(IPAddress ipAddress)
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            if (host.AddressList.Contains(ipAddress))
+                return true;
+            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (var ni in networkInterfaces)
+            {
+                if (ni.NetworkInterfaceType != NetworkInterfaceType.Wireless80211 &&
+                    ni.NetworkInterfaceType != NetworkInterfaceType.Ethernet)
+                {
+                    continue;
+                }
+                foreach (var ip in ni.GetIPProperties().UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+                    if (!ip.Address.Equals(ipAddress))
+                        continue;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         public IRemotePeer Connect(PeerAddress address)
         {
             lock (_hasPeersToConnect)
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
                     return worker;
+                if (_SelfConnect(IPAddress.Parse(address.Host)) && _networkConfig.Port == address.Port)
+                    return null;
                 worker = new ClientWorker(address, null);
                 _clientWorkers.Add(address, worker);
                 Monitor.PulseAll(_hasPeersToConnect);
@@ -130,6 +159,7 @@ namespace Phorkus.Networking
             if (signature is null)
                 throw new ArgumentNullException(nameof(signature));
             var bytes = message.ToByteArray();
+            /* TODO: "we can cache public key to avoid recovers" */
             var rawPublicKey = _crypto.RecoverSignature(bytes, signature.Buffer.ToByteArray());
             if (rawPublicKey == null)
                 throw new Exception("Unable to recover public key from signature");
@@ -163,7 +193,7 @@ namespace Phorkus.Networking
             var peer = _clientWorkers.TryGetValue(address, out var clientWorker)
                 ? clientWorker
                 : Connect(address);
-            peer.Send(_messageFactory.HandshakeReply(LocalNode));
+            peer?.Send(_messageFactory.HandshakeReply(LocalNode));
         }
 
         private void _HandshakeReply(Signature signature, HandshakeReply reply)
@@ -271,8 +301,7 @@ namespace Phorkus.Networking
         public void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler)
         {
             _messageHandler = messageHandler;
-            if (networkConfig is null)
-                throw new ArgumentNullException(nameof(networkConfig));
+            _networkConfig = networkConfig ?? throw new ArgumentNullException(nameof(networkConfig));
             _messageFactory = new MessageFactory(keyPair, _crypto);
             _serverWorker = new ServerWorker(networkConfig);
             LocalNode = new Node
