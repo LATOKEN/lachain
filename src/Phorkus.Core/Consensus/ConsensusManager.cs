@@ -251,7 +251,17 @@ namespace Phorkus.Core.Consensus
         public void Start()
         {
             _logger.LogInformation("Starting consensus");
-            Task.Factory.StartNew(_TaskWorker);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    _TaskWorker();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"Failed to start consens worker: {e}");
+                }
+            });
         }
 
         private void InitializeConsensus(byte viewNumber)
