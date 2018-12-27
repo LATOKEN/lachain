@@ -11,7 +11,6 @@ using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
-using HexUtils = Phorkus.Core.Utils.HexUtils;
 
 namespace Phorkus.Core.CLI
 {
@@ -19,7 +18,7 @@ namespace Phorkus.Core.CLI
     {
         private const uint AddressLength = 20;
         private const uint TxLength = 32;
-        
+
         private readonly IGlobalRepository _globalRepository;
         private readonly IValidatorManager _validatorManager;
         private readonly ITransactionPool _transactionPool;
@@ -74,9 +73,31 @@ namespace Phorkus.Core.CLI
         public string GetTransaction(string[] arguments)
         {
             arguments[1] = EraseHexPrefix(arguments[1]);
-            return !IsValidHexString(arguments[1])
-                ? null
-                : _transactionManager.GetByHash(arguments[1].HexToUInt256()).ToByteArray().ToString();
+            if (!IsValidHexString(arguments[1]))
+            {
+                return null;
+            }
+
+            var tx = _transactionManager.GetByHash(arguments[1].HexToUInt256());
+            return ProtoUtils.ParsedObject(tx);
+            /*
+            var type = tx.Transaction.Type;
+            var txType = tx.Transaction.GetType().GetField(type.ToString());
+            var txByType = txType.GetValue(tx.Transaction);
+            var value = (UInt256) txByType.GetType().GetField("Value").GetValue(txByType);
+            var to = (UInt160) txByType.GetType().GetField("To").GetValue(txByType);
+            if (type != TransactionType.Contract)
+            {
+                to = (UInt160) txByType.GetType().GetField("Recipient").GetValue(txByType);
+            }
+            if (type == Tra)
+            var assetName = (Asset) txByType.GetType().GetField("Asset").GetValue(txByType);
+            var 
+            return
+                $"Hash: {tx.Hash.ToHex()}\n" +
+                $"Signature: {tx.Signature.ToByteArray()}\n" +
+                $"Type: {tx.Transaction.Type}\n" +
+                $"Nonce: {tx.Transaction.Nonce}\n" + value == null ? $"Value: {value.ToString()} : "";*/
         }
 
         /*
@@ -88,9 +109,9 @@ namespace Phorkus.Core.CLI
             if (arguments.Length != 2)
                 return null;
             var value = EraseHexPrefix(arguments[1]);
-            if (ulong.TryParse(value, out var blockHeight))
-                return _blockManager.GetByHeight(blockHeight).ToByteArray().ToString();
-            return _blockManager.GetByHash(arguments[1].HexToUInt256()).ToByteArray().ToString();
+            return ulong.TryParse(value, out var blockHeight)
+                ? ProtoUtils.ParsedObject(_blockManager.GetByHeight(blockHeight))
+                : ProtoUtils.ParsedObject(_blockManager.GetByHash(arguments[1].HexToUInt256()));
         }
 
         public string GetBalances(string[] arguments)
@@ -112,6 +133,7 @@ namespace Phorkus.Core.CLI
                         arguments[1].HexToUInt160(), asset.Hash);
                 result += $"\n - {assetName}: {balance}";
             }
+
             return result;
         }
 
@@ -133,7 +155,7 @@ namespace Phorkus.Core.CLI
             return _blockchainStateManager.LastApprovedSnapshot.Balances
                 .GetAvailableBalance(arguments[1].HexToUInt160(), asset.Hash);
         }
-        
+
         public string Help(string[] arguments)
         {
             var methods = GetType().GetMethods().Select(m =>
@@ -143,7 +165,7 @@ namespace Phorkus.Core.CLI
             });
             return "Commands:\n" + string.Join("\n", methods);
         }
-        
+
         /*
          * GetTransactionPool
         */
@@ -173,11 +195,11 @@ namespace Phorkus.Core.CLI
             var from = arguments[1].HexToUInt160();
             var to = arguments[2].HexToUInt160();
             var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
-            var value = arguments[4].HexToUInt256();
-            var fee = arguments[5].HexToUInt256();
+            var value = Money.Parse(arguments[4]);
+            var fee = Money.Parse(arguments[5]);
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
-            return signedTx.ToByteArray().ToHex();
+            return signedTx.Signature.ToString();
         }
 
         public string SendRawTransaction(string[] arguments)
@@ -189,7 +211,7 @@ namespace Phorkus.Core.CLI
             _transactionPool.Add(tx);
             return tx.Hash.ToHex();
         }
-        
+
         /*
          * SendTransaction
          * from, UInt160,
@@ -203,13 +225,12 @@ namespace Phorkus.Core.CLI
             var from = arguments[1].HexToUInt160();
             var to = arguments[2].HexToUInt160();
             var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
-            var value = arguments[4].HexToUInt256();
-            var fee = arguments[5].HexToUInt256();
+            var value = Money.Parse(arguments[4]);
+            var fee = Money.Parse(arguments[5]);
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }
-
     }
 }

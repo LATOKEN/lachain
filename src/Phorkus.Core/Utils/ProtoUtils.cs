@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Google.Protobuf;
@@ -24,6 +25,20 @@ namespace Phorkus.Core.Utils
                 return stream.ToArray();
             }
         }
+        
+        public static string ParsedObject(object obj)
+        {
+            var parsedObject = "";
+            foreach(PropertyDescriptor descriptor in TypeDescriptor.GetProperties(obj))
+            {
+                var name = descriptor.Name;
+                var value = descriptor.GetValue(obj);
+                parsedObject += $"{name} : {value}";
+            }
+
+            return parsedObject;
+        }
+
 
         public static ICollection<T> ToMessageArray<T>(this byte[] buffer, ulong limit = ulong.MaxValue)
             where T : IMessage<T>, new()

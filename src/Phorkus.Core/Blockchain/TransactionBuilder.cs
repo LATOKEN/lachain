@@ -38,18 +38,19 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
-        
-        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, UInt256 value, UInt256 fee, byte[] script)
+
+
+        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, Money fee,
+            byte[] script)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
             var contractTx = new ContractTransaction
             {
                 Asset = asset.Hash,
                 To = to,
-                Value = value,
-                Script = script.ToUInt160().ToByteString(),
-                Fee = fee
+                Value = value.ToUInt256(),
+                Script = script == null ? new UInt160().ToByteString() : script.ToUInt160().ToByteString(),
+                Fee = fee.ToUInt256()
             };
             var tx = new Transaction
             {
@@ -62,7 +63,7 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
+
         public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
