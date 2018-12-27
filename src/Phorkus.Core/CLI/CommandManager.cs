@@ -77,7 +77,7 @@ namespace Phorkus.Core.CLI
                         {
                             _logger.LogError("Wrong arguments!\n");
                             Console.Out.Write("null\n");
-                            return;
+                            continue;
                         }
                         Console.Out.Write(result.ToString() + '\n');
                     }
