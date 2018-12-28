@@ -1,4 +1,4 @@
-﻿namespace Phorkus.GRPC
+﻿namespace Phorkus.Core.RPC
 {
     public class RpcManager : IRpcManager
     {

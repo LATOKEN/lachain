@@ -1,0 +1,16 @@
+syntax = "proto3";
+option csharp_namespace = "Phorkus.Rpc";
+
+import "block.proto";
+
+message GetBlockByHeightRequest {
+    uint64 block_height = 1;
+}
+
+message GetBlockByHeightReply {
+    Block block = 1;
+}
+
+service BlockchainService {
+    rpc GetBlockByHeight(GetBlockByHeightRequest) returns(GetBlockByHeightReply);   
+}
