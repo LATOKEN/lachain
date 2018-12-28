@@ -110,6 +110,9 @@ namespace Phorkus.Console
             
             // sendtransaction 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 10.50 0.0001
             
+            // getbalance 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576
+            // getbalance 0x6bc32575acb8754886dc283c2c8ac54b1bd93195
+            
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 

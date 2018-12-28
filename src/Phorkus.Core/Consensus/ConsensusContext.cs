@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
+using NBitcoin;
 using Org.BouncyCastle.Bcpg;
 using Phorkus.Core.Blockchain;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Utility.Utils;
+using Block = Phorkus.Proto.Block;
+using BlockHeader = Phorkus.Proto.BlockHeader;
 
 namespace Phorkus.Core.Consensus
 {
@@ -177,8 +180,8 @@ namespace Phorkus.Core.Consensus
         {
             CurrentProposal = new ConsensusProposal
             {
-                TransactionHashes = block.Transactions.Select(t => t.Hash).ToArray(),
-                Transactions = block.Transactions.ToDictionary(transaction => transaction.Hash)
+                TransactionHashes = block.Transactions.Distinct().Select(t => t.Hash).ToArray(),
+                Transactions = block.Transactions.Distinct().ToDictionary(transaction => transaction.Hash)
             };
         }
     }
