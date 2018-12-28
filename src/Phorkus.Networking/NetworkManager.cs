@@ -207,7 +207,6 @@ namespace Phorkus.Networking
             var publicKey = reply.Node.PublicKey;
             if (_authorizedKeys.Keys.Contains(publicKey))
                 return;
-            Console.WriteLine("Authorized: " + publicKey.Buffer.ToHex());
             _clientWorkers[PeerAddress.FromNode(reply.Node)].Node = reply.Node;
             _authorizedKeys.TryAdd(publicKey, true);
         }

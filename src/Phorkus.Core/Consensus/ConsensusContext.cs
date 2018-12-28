@@ -48,7 +48,8 @@ namespace Phorkus.Core.Consensus
 
         public BlockHeader GetProposedHeader()
         {
-            if (CurrentProposal?.TransactionHashes == null) return null;
+            if (CurrentProposal?.TransactionHashes == null)
+                return null;
             var result = new BlockHeader
             {
                 Version = Version,
@@ -56,7 +57,7 @@ namespace Phorkus.Core.Consensus
                 MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes) ?? UInt256Utils.Zero,
                 Timestamp = CurrentProposal.Timestamp,
                 Index = BlockIndex,
-                Validator = KeyPair.PublicKey,
+                Validator = Validators[PrimaryIndex].PublicKey,
                 Nonce = CurrentProposal.Nonce
             };
             return result;

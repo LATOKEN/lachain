@@ -337,6 +337,14 @@ namespace Phorkus.Core.Consensus
             };
             
             var header = _context.GetProposedHeader();
+            
+            foreach (var validator in _context.Validators)
+            {
+                var sigver = _blockManager.VerifySignature(header, prepareRequest.Signature,
+                    _context.Validators[validatorIndex].PublicKey);
+                Console.WriteLine($" - {validator.PublicKey.Buffer.ToHex()}: {sigver}");
+            }
+            
             var sigVerified = _blockManager.VerifySignature(header, prepareRequest.Signature,
                 _context.Validators[validatorIndex].PublicKey);
             if (sigVerified != OperatingError.Ok)
