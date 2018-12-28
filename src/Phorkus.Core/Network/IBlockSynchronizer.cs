@@ -16,6 +16,8 @@ namespace Phorkus.Core.Network
         void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout);
 
         void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer);
+
+        bool IsSynchronizingWith(IEnumerable<PublicKey> peers);
         
         void Start();
     }

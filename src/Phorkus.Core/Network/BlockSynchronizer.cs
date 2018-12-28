@@ -128,7 +128,26 @@ namespace Phorkus.Core.Network
                 Monitor.PulseAll(_peerHasBlocks);
             }
         }
-        
+
+        public bool IsSynchronizingWith(IEnumerable<PublicKey> peers)
+        {
+            var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
+            if (myHeight > _networkContext.LocalNode.BlockHeight)
+                _networkContext.LocalNode.BlockHeight = myHeight;
+            if (_networkContext.ActivePeers.Values.Count == 0)
+                return true;
+            var messageFactory = _networkManager.MessageFactory;
+            _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
+            lock (_peerHasBlocks)
+                Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
+            if (_peerHeights.Count == 0)
+                return true;
+            var arrayOfPeers = peers.ToArray();
+            var validatorPeers = _peerHeights.Where(entry => arrayOfPeers.Contains(entry.Key.Node.PublicKey));
+            var maxHeight = validatorPeers.Max(v => v.Value);
+            return myHeight < maxHeight;
+        }
+
         private void _Worker()
         {
             var myHeight = _blockchainContext.CurrentBlockHeaderHeight;

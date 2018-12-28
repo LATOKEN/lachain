@@ -109,12 +109,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* write block to database */
             _blockRepository.AddBlock(block);
             _blockchainStateManager.CommitApproved();
-            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count}");
             var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
             if (block.Header.Index > currentHeaderHeight)
                 _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
             _globalRepository.SetTotalBlockHeight(block.Header.Index);
-            /*logger.LogInformation($"Changed current block height to {block.Header.Index}");*/
+            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count}");
+            OnBlockPersisted?.Invoke(this, block);
             return OperatingError.Ok;
         }
 

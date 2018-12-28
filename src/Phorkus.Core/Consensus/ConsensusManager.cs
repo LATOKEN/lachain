@@ -83,7 +83,7 @@ namespace Phorkus.Core.Consensus
             lock (this)
             {
                 _context.LastBlockRecieved = DateTime.UtcNow;
-                if (_context.State.HasFlag(ConsensusState.ViewChanging))
+                if (_context.State.HasFlag(ConsensusState.ViewChanging))                
                     _gotNewBlock = true;
             }
         }
@@ -238,11 +238,15 @@ namespace Phorkus.Core.Consensus
 
         public void Start()
         {
-            _logger.LogDebug("Starting consensus");
             Task.Factory.StartNew(() =>
             {
                 try
                 {
+                    Thread.Sleep(1000);
+                    while (_blockchainSynchronizer.IsSynchronizingWith(_validatorManager.Validators))
+                        Thread.Sleep(1000);
+                    _logger.LogDebug("Starting consensus");
+                    Thread.Sleep(1000);
                     _TaskWorker();
                 }
                 catch (Exception e)
@@ -266,12 +270,9 @@ namespace Phorkus.Core.Consensus
             );
 
             if (!_context.Role.HasFlag(ConsensusState.Primary))
-            {
                 _context.State |= ConsensusState.Backup;
-                return;
-            }
-
-            _context.State |= ConsensusState.Primary;
+            else
+                _context.State |= ConsensusState.Primary;
         }
 
         public void OnPrepareRequestReceived(BlockPrepareRequest prepareRequest)
