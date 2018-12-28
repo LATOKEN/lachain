@@ -76,7 +76,7 @@ namespace Phorkus.Core.Network
                 var error = _transactionManager.Persist(tx);
                 if (error != OperatingError.Ok)
                 {
-                    _logger.LogWarning($"Unable to persist transaction, cuz ({error})");
+                    _logger.LogWarning($"Unable to persist transaction ({error})");
                     continue;
                 }
                 persisted++;

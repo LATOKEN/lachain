@@ -108,7 +108,8 @@ namespace Phorkus.Console
             foreach (var assetName in assetNames)
                 System.Console.WriteLine($" + - {assetName}: {assetRepository.GetAssetByName(assetName)?.Hash}");
             
-            // sendtransaction 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 10.50 0.0001
+            // sendtransaction 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 100000.999 0.0001
+            // sendtransaction 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 LA 100000.999 0.0001
             
             // getbalance 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576
             // getbalance 0x6bc32575acb8754886dc283c2c8ac54b1bd93195
