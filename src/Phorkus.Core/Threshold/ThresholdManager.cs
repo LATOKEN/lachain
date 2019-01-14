@@ -14,7 +14,7 @@ using Phorkus.Hermes.Signer;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Threshold

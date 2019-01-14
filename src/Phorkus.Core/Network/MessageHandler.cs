@@ -4,7 +4,7 @@ using Phorkus.Core.Consensus;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 
 namespace Phorkus.Core.Network
 {

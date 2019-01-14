@@ -1,6 +1,6 @@
 ﻿namespace Phorkus.Storage.State
 {
-    class BlockchainSnapshot : IBlockchainSnapshot
+    public class BlockchainSnapshot : IBlockchainSnapshot
     {
         public BlockchainSnapshot(IBalanceSnapshot balances, IAssetSnapshot assets)
         {

@@ -7,6 +7,8 @@ namespace Phorkus.Core.Blockchain
     {
         IReadOnlyDictionary<UInt256, SignedTransaction> Transactions { get; }
 
+        void Restore();
+        
         bool Add(SignedTransaction transaction);
         
         IReadOnlyCollection<SignedTransaction> Peek(int limit = -1);

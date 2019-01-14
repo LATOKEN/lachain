@@ -11,7 +11,7 @@ using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -40,7 +40,7 @@ namespace Phorkus.Faker
             var transactionManager = container.Resolve<ITransactionManager>();
             var blockManager = container.Resolve<IBlockManager>();
             var networkManager = container.Resolve<INetworkManager>();
-            var stateManager = container.Resolve<IBlockchainStateManager>();
+            var stateManager = container.Resolve<IStateManager>();
             var messageHandler = container.Resolve<IMessageHandler>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -53,7 +53,7 @@ namespace Phorkus.Faker
                 "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToHex());
             Console.WriteLine("-------------------------------");
 
-            if (blockchainManager.TryBuildGenesisBlock(keyPair))
+            if (blockchainManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
             var genesisBlock = blockRepository.GetBlockByHeight(0);

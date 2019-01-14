@@ -11,6 +11,8 @@ namespace Phorkus.CrossChain
 
         ulong CurrentBlockHeight { get; }
         
+        ulong TxConfirmation { get; }
+        
         IEnumerable<IContractTransaction> GetTransactionsAtBlock(byte[] recipient, ulong blockHeight);
         
         byte[] BroadcastTransaction(RawTransaction rawTransaction);
@@ -18,7 +20,5 @@ namespace Phorkus.CrossChain
         byte[] GenerateAddress(PublicKey publicKey);
 
         bool IsTransactionConfirmed(byte[] txHash);
-        
-        ulong TxConfirmation { get; }
     }
 }

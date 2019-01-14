@@ -9,7 +9,7 @@ using Phorkus.Core.Utils;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.CrossChain

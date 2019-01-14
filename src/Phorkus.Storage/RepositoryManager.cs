@@ -1,6 +1,6 @@
-﻿using Phorkus.Storage.PersistentHashTrie;
-using Phorkus.Storage.Repositories;
-using Phorkus.Storage.RocksDB;
+﻿using Phorkus.Storage.Repositories;
+using Phorkus.Storage.State;
+using Phorkus.Storage.Trie;
 
 namespace Phorkus.Storage
 {
@@ -8,21 +8,22 @@ namespace Phorkus.Storage
     {
         private readonly uint _repositoryId;
         private readonly VersionFactory _versionFactory;
-        private readonly VersionIndexer _versionIndexer;
-        public readonly IMapManager MapManager;
+        private readonly VersionRepository _versionRepository;
+        public readonly ITrieMap TrieMap;
         public ulong LatestVersion { get; private set; }
         
         public RepositoryManager(
-            uint repositoryId, IRocksDbContext dbContext,
-            VersionFactory versionFactory, VersionIndexer versionIndexer
-        )
+            uint repositoryId,
+            IRocksDbContext dbContext,
+            VersionFactory versionFactory,
+            VersionRepository versionRepository)
         {
             _repositoryId = repositoryId;
             _versionFactory = versionFactory;
-            _versionIndexer = versionIndexer;
-            var storageContext = new PersistentHashTrieStorageContext(dbContext);
-            MapManager = new PersistentHashTrieManager(storageContext, versionFactory);
-            LatestVersion = _versionIndexer.GetVersion(_repositoryId);
+            _versionRepository = versionRepository;
+            var storageContext = new NodeRepository(dbContext);
+            TrieMap = new TrieHashMap(storageContext, versionFactory);
+            LatestVersion = _versionRepository.GetVersion(_repositoryId);
         }
 
         public IStorageState GetLastState()
@@ -38,8 +39,8 @@ namespace Phorkus.Storage
         internal void SetState(ulong version)
         {
             LatestVersion = version;
-            _versionIndexer.SetVersion(_repositoryId, LatestVersion);
-            _versionIndexer.SetVersion((uint) RepositoryType.MetadataRepository, _versionFactory.CurrentVersion + 1);
+            _versionRepository.SetVersion(_repositoryId, LatestVersion);
+            _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1);
         }
     }
 }

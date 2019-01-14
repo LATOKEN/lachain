@@ -3,7 +3,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Storage.State
 {
-    public interface IAssetSnapshot
+    public interface IAssetSnapshot : ISnapshot
     {
         Asset GetAssetByHash(UInt160 assetHash);
         

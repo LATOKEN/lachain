@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -14,15 +13,11 @@ using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
-using Phorkus.CrossChain;
-using Phorkus.CrossChain.Ethereum;
 using Phorkus.Crypto;
-using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage;
-using Phorkus.Storage.RocksDB;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
@@ -63,7 +58,7 @@ namespace Phorkus.Console
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
-            var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
+            var blockchainStateManager = _container.Resolve<IStateManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var networkManager = _container.Resolve<INetworkManager>();
@@ -90,7 +85,7 @@ namespace Phorkus.Console
                 "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToHex());
             System.Console.WriteLine("-------------------------------");
 
-            if (blockchainManager.TryBuildGenesisBlock(keyPair))
+            if (blockchainManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
 
             var genesisBlock = blockRepository.GetBlockByHeight(0);

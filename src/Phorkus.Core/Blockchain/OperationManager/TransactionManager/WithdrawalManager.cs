@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -9,7 +10,7 @@ using Phorkus.Crypto;
 using Phorkus.Hermes.Signer;
 using Phorkus.Logger;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
@@ -50,19 +51,20 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             _logger = logger;
         }
 
-        public void TryApproveWithdrawal(KeyPair keyPair, ulong nonce)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryApproveWithdrawal(KeyPair keyPair, ulong nonce)
         {
             var withdrawal = _withdrawalRepository.GetWithdrawalByNonce(nonce);
             if (withdrawal is null)
             {
                 _logger.LogWarning($"Unable to find withdrawal by nonce ({nonce}) for execution");
-                return;
+                return false;
             }
 
             if (withdrawal.State != WithdrawalState.Sent)
             {
                 _logger.LogWarning($"You can't execute withdrawals with not sent state, found ({withdrawal.State})");
-                return;
+                return false;
             }
 
             /* try to fetch transaction from database storage */
@@ -72,7 +74,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             /* check transaction confirmation in blockchain */
             var transactionService = _crossChainManager.GetTransactionService(transaction.Withdraw.BlockchainType);
             if (!transactionService.IsTransactionConfirmed(withdrawal.OriginalHash.ToByteArray()))
-                return;
+                return false;
 
             /* TODO: "stop! you can't wait here for block confirmation!" 
             var awaitTime = withdrawal.Timestamp + transactionService.BlockGenerationTime * transactionService.TxConfirmation;
@@ -90,19 +92,21 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 withdrawTx.Timestamp);
             /* only validators can sign confirm transactions */
             if (!_validatorManager.CheckValidator(keyPair.PublicKey))
-                return;
+                return false;
             /* sign transaction with validator's private key */
             var signedTransaction = _transactionSigner.Sign(confirmTransaction, keyPair);
             if (!_transactionPool.Add(signedTransaction))
             {
                 _logger.LogWarning(
                     $"Couldn't send confirm transaction transaction ({withdrawTx.TransactionHash.ToByteArray()}) to transaction pool");
-                return;
+                return false;
             }
 
             _withdrawalRepository.ApproveWithdrawal(withdrawal.TransactionHash);
+            return true;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void ExecuteWithdrawal(ThresholdKey thresholdKey, KeyPair keyPair, ulong nonce)
         {
             var withdrawal = _withdrawalRepository.GetWithdrawalByNonce(nonce);
@@ -195,6 +199,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public void Start(ThresholdKey thresholdKey, KeyPair keyPair)
         {
+            if (thresholdKey is null)
+                throw new ArgumentNullException(nameof(thresholdKey));
+            if (keyPair is null)
+                throw new ArgumentNullException(nameof(keyPair));
+            
             Task.Factory.StartNew(() =>
             {
                 try

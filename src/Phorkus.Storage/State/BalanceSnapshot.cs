@@ -1,17 +1,15 @@
 ﻿using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
-using Phorkus.Storage.RocksDB;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Storage.State
 {
-    public class BalanceSnapshot : IBalanceSnapshot, ISnapshot
+    public class BalanceSnapshot : IBalanceSnapshot
     {
         private readonly IStorageState _state;
 
-        internal BalanceSnapshot(IStorageState state)
+        public BalanceSnapshot(IStorageState state)
         {
             _state = state;
         }

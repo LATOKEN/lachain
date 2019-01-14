@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
@@ -122,7 +122,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 new TransactionState {Status = TransactionState.Types.TransactionStatus.Confirmed});
             OnTransactionExecuted?.Invoke(this, signed);
             /* commit new transaction nonce */
-            _transactionRepository.CommitTransaction(signed);
+            _transactionRepository.CommitTransaction(signed, block.Hash);
             return OperatingError.Ok;
         }
         

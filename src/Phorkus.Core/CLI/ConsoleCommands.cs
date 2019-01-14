@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
@@ -7,7 +6,7 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -26,7 +25,7 @@ namespace Phorkus.Core.CLI
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly ICrypto _crypto;
-        private readonly IBlockchainStateManager _blockchainStateManager;
+        private readonly IStateManager _stateManager;
         private readonly KeyPair _keyPair;
 
         public ConsoleCommands(
@@ -36,7 +35,7 @@ namespace Phorkus.Core.CLI
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             IValidatorManager validatorManager,
-            IBlockchainStateManager blockchainStateManager,
+            IStateManager stateManager,
             ICrypto crypto,
             KeyPair keyPair)
         {
@@ -46,7 +45,7 @@ namespace Phorkus.Core.CLI
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _validatorManager = validatorManager;
-            _blockchainStateManager = blockchainStateManager;
+            _stateManager = stateManager;
             _crypto = crypto;
             _keyPair = keyPair;
         }
@@ -121,15 +120,15 @@ namespace Phorkus.Core.CLI
             arguments[1] = EraseHexPrefix(arguments[1]);
             if (!IsValidHexString(arguments[1]))
                 return null;
-            var assetNames = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetNames();
+            var assetNames = _stateManager.LastApprovedSnapshot.Assets.GetAssetNames();
             var result = "Balances:";
             foreach (var assetName in assetNames)
             {
-                var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(assetName);
+                var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(assetName);
                 if (asset is null)
                     continue;
                 var balance =
-                    _blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(
+                    _stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(
                         arguments[1].HexToUInt160(), asset.Hash);
                 result += $"\n - {assetName}: {balance}";
             }
@@ -149,10 +148,10 @@ namespace Phorkus.Core.CLI
             arguments[1] = EraseHexPrefix(arguments[1]);
             if (!IsValidHexString(arguments[1]))
                 return null;
-            var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
+            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
             if (asset == null)
                 return null;
-            return _blockchainStateManager.LastApprovedSnapshot.Balances
+            return _stateManager.LastApprovedSnapshot.Balances
                 .GetAvailableBalance(arguments[1].HexToUInt160(), asset.Hash);
         }
 
@@ -194,7 +193,7 @@ namespace Phorkus.Core.CLI
         {
             var from = arguments[1].HexToUInt160();
             var to = arguments[2].HexToUInt160();
-            var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
+            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
             var value = Money.Parse(arguments[4]);
             var fee = Money.Parse(arguments[5]);
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
@@ -224,7 +223,7 @@ namespace Phorkus.Core.CLI
         {
             var from = arguments[1].HexToUInt160();
             var to = arguments[2].HexToUInt160();
-            var asset = _blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
+            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
             var value = Money.Parse(arguments[4]);
             var fee = Money.Parse(arguments[5]);
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);

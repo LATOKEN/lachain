@@ -39,7 +39,7 @@ namespace Phorkus.Core.Consensus
         private bool _gotNewBlock;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
 
         public ConsensusManager(
             IBlockManager blockManager,
@@ -251,7 +251,7 @@ namespace Phorkus.Core.Consensus
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"Failed to start consens worker: {e}");
+                    _logger.LogError($"Failed to start consensus worker: {e}");
                 }
             });
         }

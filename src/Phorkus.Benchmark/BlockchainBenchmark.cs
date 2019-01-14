@@ -8,9 +8,8 @@ using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
-using Phorkus.Logger;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -47,7 +46,7 @@ namespace Phorkus.Benchmark
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
-            var blockchainStateManager = _container.Resolve<IBlockchainStateManager>();
+            var blockchainStateManager = _container.Resolve<IStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -59,7 +58,7 @@ namespace Phorkus.Benchmark
                 "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToHex());
             Console.WriteLine("-------------------------------");
 
-            if (blockchainManager.TryBuildGenesisBlock(keyPair))
+            if (blockchainManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
             var genesisBlock = blockRepository.GetBlockByHeight(0);

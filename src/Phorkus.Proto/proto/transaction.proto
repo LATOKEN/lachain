@@ -117,4 +117,5 @@ message SignedTransaction {
     Transaction transaction = 1;
     UInt256 hash = 2;
     Signature signature = 3;
+    UInt256 block = 4;
 }

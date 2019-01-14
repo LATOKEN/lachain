@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 

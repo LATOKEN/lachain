@@ -1,8 +1,6 @@
 using Phorkus.Core.Config;
 using Phorkus.Storage;
 using Phorkus.Storage.Repositories;
-using Phorkus.Storage.RocksDB;
-using Phorkus.Storage.RocksDB.Repositories;
 using Phorkus.Storage.State;
 
 namespace Phorkus.Core.DI.Modules
@@ -12,10 +10,8 @@ namespace Phorkus.Core.DI.Modules
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             /* HMAT */
-            containerBuilder.RegisterSingleton<ISnapshotManager<IBalanceSnapshot>, BalanceManager>();
-            containerBuilder.RegisterSingleton<ISnapshotManager<IAssetSnapshot>, AssetManager>();
-            containerBuilder.RegisterSingleton<IPersistentStorageManager, PersistentStorageManager>();
-            containerBuilder.RegisterSingleton<IBlockchainStateManager, BlockchainStateManager>();
+            containerBuilder.RegisterSingleton<IStorageManager, StorageManager>();
+            containerBuilder.RegisterSingleton<IStateManager, StateManager>();
             /* global */
             containerBuilder.RegisterSingleton<IRocksDbContext, RocksDbContext>();
             /* repositories */

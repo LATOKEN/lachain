@@ -3,7 +3,7 @@ using Phorkus.Utility;
 
 namespace Phorkus.Storage.State
 {
-    public interface IBalanceSnapshot
+    public interface IBalanceSnapshot : ISnapshot
     {
         Money GetAvailableBalance(UInt160 owner, UInt160 asset);
         void SetAvailableBalance(UInt160 owner, UInt160 asset, Money value);

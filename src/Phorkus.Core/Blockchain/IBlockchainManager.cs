@@ -6,7 +6,7 @@ namespace Phorkus.Core.Blockchain
 {
     public interface IBlockchainManager
     {
-        bool TryBuildGenesisBlock(KeyPair keyPair);
+        bool TryBuildGenesisBlock();
 
         void PersistBlockManually(Block block, IEnumerable<SignedTransaction> transactions);
     }

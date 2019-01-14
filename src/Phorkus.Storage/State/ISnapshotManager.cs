@@ -2,11 +2,25 @@
 {
     public interface ISnapshotManager<out T>
     {
-        T NewSnapshot();
+        T CurrentSnapshot { get; }
         T LastApprovedSnapshot { get; }
         T PendingSnapshot{ get; }
+        
+        T NewSnapshot();
+        
+        /// <summary>
+        /// Approve snapshot
+        /// </summary>
         void Approve();
+        
+        /// <summary>
+        /// Rollback snapshot
+        /// </summary>
         void Rollback();
-        void CommitApproved();
+        
+        /// <summary>
+        /// Commit already approved snapshot
+        /// </summary>
+        void Commit();
     }
 }

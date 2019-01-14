@@ -135,7 +135,12 @@ namespace Phorkus.Core.Network
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
             if (_networkContext.ActivePeers.Values.Count == 0)
-                return true;
+            {
+                /* if we dont have peers for 1 second than we don't need them */
+                var diff = TimeUtils.CurrentTimeMillis() - lastActiveTime;
+                return diff <= 1000;
+            }
+            lastActiveTime = TimeUtils.CurrentTimeMillis();
             var messageFactory = _networkManager.MessageFactory;
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
@@ -148,6 +153,8 @@ namespace Phorkus.Core.Network
             return myHeight < maxHeight;
         }
 
+        private ulong lastActiveTime = TimeUtils.CurrentTimeMillis();
+        
         private void _Worker()
         {
             var myHeight = _blockchainContext.CurrentBlockHeaderHeight;

@@ -3,24 +3,21 @@ using System.Linq;
 using System.Text;
 using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
-using Phorkus.Storage.RocksDB;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Storage.State
 {
-    public class AssetSnapshot : IAssetSnapshot, ISnapshot
+    public class AssetSnapshot : IAssetSnapshot
     {
         private readonly IStorageState _state;
 
-        internal AssetSnapshot(IStorageState state)
+        public AssetSnapshot(IStorageState state)
         {
             _state = state;
         }
 
         public ulong Version => _state.CurrentVersion;
-
 
         public void Commit()
         {
@@ -66,17 +63,15 @@ namespace Phorkus.Storage.State
             var result = Asset.Parser.ParseFrom(raw);
             return result;
         }
-        
-        
+
         public Money GetAssetSupplyByHash(UInt160 assetHash)
         {
             var key = EntryPrefix.AssetSupplyByHash.BuildPrefix(assetHash);
             var value = _state.Get(key);
-            var supply = value != null ? UInt256.Parser.ParseFrom(value): UInt256Utils.Zero;
+            var supply = value != null ? UInt256.Parser.ParseFrom(value) : UInt256Utils.Zero;
             return new Money(supply);
         }
-        
-        
+
         public Money AddSupply(UInt160 asset, Money value)
         {
             var supply = GetAssetSupplyByHash(asset);
@@ -92,8 +87,6 @@ namespace Phorkus.Storage.State
             ChangeSupply(asset, supply);
             return supply;
         }
-        
-        
 
         private void ChangeSupply(UInt160 asset, Money amount)
         {
@@ -101,7 +94,6 @@ namespace Phorkus.Storage.State
             var value = amount.ToUInt256().ToByteArray();
             _state.AddOrUpdate(key, value);
         }
-
 
         public Asset GetAssetByName(string assetName)
         {

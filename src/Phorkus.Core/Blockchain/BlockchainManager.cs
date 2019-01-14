@@ -5,7 +5,7 @@ using Phorkus.Core.Blockchain.OperationManager.BlockManager;
 using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Proto;
 using Phorkus.Crypto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -37,7 +37,7 @@ namespace Phorkus.Core.Blockchain
             _globalRepository = globalRepository;
         }
         
-        public bool TryBuildGenesisBlock(KeyPair keyPair)
+        public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
             if (CurrentBlockHeader != null)

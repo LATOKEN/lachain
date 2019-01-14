@@ -1,7 +1,7 @@
 ﻿using System;
 using Phorkus.Core.Utils;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 

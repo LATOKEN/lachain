@@ -5,9 +5,7 @@ using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
-using Phorkus.Core.Utils;
 using Phorkus.Storage;
-using Phorkus.Storage.RocksDB;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Benchmark
@@ -45,7 +43,7 @@ namespace Phorkus.Benchmark
         public void Start(string[] args)
         {
             var rocksDbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = new PersistentStorageManager(rocksDbContext);
+            var storageManager = new StorageManager(rocksDbContext);
 
             uint T = 100000, batches = 100;
             IDictionary<byte[], byte[]> blocks = new Dictionary<byte[], byte[]>();

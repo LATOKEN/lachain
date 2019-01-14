@@ -9,7 +9,7 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
-using Phorkus.Storage.RocksDB.Repositories;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 
 namespace Phorkus.Core.CLI
@@ -22,7 +22,7 @@ namespace Phorkus.Core.CLI
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly IBlockchainStateManager _blockchainStateManager;
+        private readonly IStateManager _stateManager;
         private readonly ICrypto _crypto;
         private readonly ILogger<IConsoleManager> _logger;
         private IConsoleCommands _consoleCommands;
@@ -37,7 +37,7 @@ namespace Phorkus.Core.CLI
             ICrypto crypto,
             IBlockManager blockManager,
             IValidatorManager validatorManager,
-            IBlockchainStateManager blockchainStateManager,
+            IStateManager stateManager,
             ILogger<IConsoleManager> logger)
         {
             _blockManager = blockManager;
@@ -47,14 +47,14 @@ namespace Phorkus.Core.CLI
             _transactionManager = transactionManager;
             _crypto = crypto;
             _validatorManager = validatorManager;
-            _blockchainStateManager = blockchainStateManager;
+            _stateManager = stateManager;
             _logger = logger;
         }
 
         private void _Worker(ThresholdKey thresholdKey, KeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(_globalRepository, _transactionBuilder, _transactionPool,
-                _transactionManager, _blockManager, _validatorManager, _blockchainStateManager,
+                _transactionManager, _blockManager, _validatorManager, _stateManager,
                 _crypto, keyPair);
             try
             {
