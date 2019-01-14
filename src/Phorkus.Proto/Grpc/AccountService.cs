@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Phorkus.Rpc {
+namespace Phorkus.Proto.Grpc {
 
   /// <summary>Holder for reflection information generated from account_service.proto</summary>
   public static partial class AccountServiceReflection {
@@ -24,8 +24,8 @@ namespace Phorkus.Rpc {
     static AccountServiceReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChVhY2NvdW50X3NlcnZpY2UucHJvdG8yEAoOQWNjb3VudFNlcnZpY2VCDqoC",
-            "C1Bob3JrdXMuUnBjYgZwcm90bzM="));
+            "ChVhY2NvdW50X3NlcnZpY2UucHJvdG8yEAoOQWNjb3VudFNlcnZpY2VCFaoC",
+            "ElBob3JrdXMuUHJvdG8uR3JwY2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null));

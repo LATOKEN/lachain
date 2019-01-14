@@ -1,4 +1,3 @@
-using Phorkus.Proto;
 using Phorkus.Utility;
 
 namespace Phorkus.Core.CLI

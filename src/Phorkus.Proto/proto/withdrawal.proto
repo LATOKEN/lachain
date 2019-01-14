@@ -10,7 +10,7 @@ enum WithdrawalState {
     WITHDRAWAL_STATE_APPROVED = 3;
 }
 
-message GlobalWithdrawal {
+message WithdrawalQueueConfig {
     uint64 approved_nonce = 1;
     uint64 current_nonce = 2;
 }

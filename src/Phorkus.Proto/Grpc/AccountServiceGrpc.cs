@@ -7,7 +7,7 @@
 
 using grpc = global::Grpc.Core;
 
-namespace Phorkus.Rpc {
+namespace Phorkus.Proto.Grpc {
   public static partial class AccountService
   {
     static readonly string __ServiceName = "AccountService";
@@ -16,7 +16,7 @@ namespace Phorkus.Rpc {
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::Phorkus.Rpc.AccountServiceReflection.Descriptor.Services[0]; }
+      get { return global::Phorkus.Proto.Grpc.AccountServiceReflection.Descriptor.Services[0]; }
     }
 
     /// <summary>Base class for server-side implementations of AccountService</summary>

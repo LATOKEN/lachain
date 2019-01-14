@@ -1,8 +1,9 @@
 syntax = "proto3";
-option csharp_namespace = "Phorkus.Rpc";
+option csharp_namespace = "Phorkus.Proto.Grpc";
 
 import "block.proto";
 import "transaction.proto";
+import "default.proto";
 
 message GetBlockByHeightRequest {
     uint64 block_height = 1;

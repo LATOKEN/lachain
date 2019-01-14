@@ -24,20 +24,20 @@ namespace Phorkus.Proto {
     static WithdrawalReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChB3aXRoZHJhd2FsLnByb3RvGg1kZWZhdWx0LnByb3RvIkEKEEdsb2JhbFdp",
-            "dGhkcmF3YWwSFgoOYXBwcm92ZWRfbm9uY2UYASABKAQSFQoNY3VycmVudF9u",
-            "b25jZRgCIAEoBCKoAQoKV2l0aGRyYXdhbBIiChB0cmFuc2FjdGlvbl9oYXNo",
-            "GAEgASgLMgguVUludDI1NhIRCgl0aW1lc3RhbXAYAiABKAQSDQoFbm9uY2UY",
-            "AyABKAQSHwoFc3RhdGUYBCABKA4yEC5XaXRoZHJhd2FsU3RhdGUSHAoUb3Jp",
-            "Z2luYWxfdHJhbnNhY3Rpb24YBSABKAwSFQoNb3JpZ2luYWxfaGFzaBgGIAEo",
-            "DCqKAQoPV2l0aGRyYXdhbFN0YXRlEhwKGFdJVEhEUkFXQUxfU1RBVEVfVU5L",
-            "Tk9XThAAEh8KG1dJVEhEUkFXQUxfU1RBVEVfUkVHSVNURVJFRBABEhkKFVdJ",
-            "VEhEUkFXQUxfU1RBVEVfU0VOVBACEh0KGVdJVEhEUkFXQUxfU1RBVEVfQVBQ",
-            "Uk9WRUQQA0IQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "ChB3aXRoZHJhd2FsLnByb3RvGg1kZWZhdWx0LnByb3RvIkYKFVdpdGhkcmF3",
+            "YWxRdWV1ZUNvbmZpZxIWCg5hcHByb3ZlZF9ub25jZRgBIAEoBBIVCg1jdXJy",
+            "ZW50X25vbmNlGAIgASgEIqgBCgpXaXRoZHJhd2FsEiIKEHRyYW5zYWN0aW9u",
+            "X2hhc2gYASABKAsyCC5VSW50MjU2EhEKCXRpbWVzdGFtcBgCIAEoBBINCgVu",
+            "b25jZRgDIAEoBBIfCgVzdGF0ZRgEIAEoDjIQLldpdGhkcmF3YWxTdGF0ZRIc",
+            "ChRvcmlnaW5hbF90cmFuc2FjdGlvbhgFIAEoDBIVCg1vcmlnaW5hbF9oYXNo",
+            "GAYgASgMKooBCg9XaXRoZHJhd2FsU3RhdGUSHAoYV0lUSERSQVdBTF9TVEFU",
+            "RV9VTktOT1dOEAASHwobV0lUSERSQVdBTF9TVEFURV9SRUdJU1RFUkVEEAES",
+            "GQoVV0lUSERSQVdBTF9TVEFURV9TRU5UEAISHQoZV0lUSERSQVdBTF9TVEFU",
+            "RV9BUFBST1ZFRBADQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.WithdrawalState), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GlobalWithdrawal), global::Phorkus.Proto.GlobalWithdrawal.Parser, new[]{ "ApprovedNonce", "CurrentNonce" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.WithdrawalQueueConfig), global::Phorkus.Proto.WithdrawalQueueConfig.Parser, new[]{ "ApprovedNonce", "CurrentNonce" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Withdrawal), global::Phorkus.Proto.Withdrawal.Parser, new[]{ "TransactionHash", "Timestamp", "Nonce", "State", "OriginalTransaction", "OriginalHash" }, null, null, null)
           }));
     }
@@ -55,11 +55,11 @@ namespace Phorkus.Proto {
   #endregion
 
   #region Messages
-  public sealed partial class GlobalWithdrawal : pb::IMessage<GlobalWithdrawal> {
-    private static readonly pb::MessageParser<GlobalWithdrawal> _parser = new pb::MessageParser<GlobalWithdrawal>(() => new GlobalWithdrawal());
+  public sealed partial class WithdrawalQueueConfig : pb::IMessage<WithdrawalQueueConfig> {
+    private static readonly pb::MessageParser<WithdrawalQueueConfig> _parser = new pb::MessageParser<WithdrawalQueueConfig>(() => new WithdrawalQueueConfig());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<GlobalWithdrawal> Parser { get { return _parser; } }
+    public static pb::MessageParser<WithdrawalQueueConfig> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -72,22 +72,22 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GlobalWithdrawal() {
+    public WithdrawalQueueConfig() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GlobalWithdrawal(GlobalWithdrawal other) : this() {
+    public WithdrawalQueueConfig(WithdrawalQueueConfig other) : this() {
       approvedNonce_ = other.approvedNonce_;
       currentNonce_ = other.currentNonce_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public GlobalWithdrawal Clone() {
-      return new GlobalWithdrawal(this);
+    public WithdrawalQueueConfig Clone() {
+      return new WithdrawalQueueConfig(this);
     }
 
     /// <summary>Field number for the "approved_nonce" field.</summary>
@@ -114,11 +114,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as GlobalWithdrawal);
+      return Equals(other as WithdrawalQueueConfig);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(GlobalWithdrawal other) {
+    public bool Equals(WithdrawalQueueConfig other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -177,7 +177,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(GlobalWithdrawal other) {
+    public void MergeFrom(WithdrawalQueueConfig other) {
       if (other == null) {
         return;
       }

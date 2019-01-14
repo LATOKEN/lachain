@@ -20,6 +20,7 @@ else
 	PLUGIN=~/.nuget/packages/grpc.tools/1.17.0/tools/linux_x64/grpc_csharp_plugin
 fi
 
-#protoc --csharp_out ../Grpc -I . -I ./grpc blockchain_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc="${PLUGIN}"
-#protoc --csharp_out ../Grpc -I . -I ./grpc consensus_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc="${PLUGIN}"
-#protoc --csharp_out ../Grpc -I . -I ./grpc threshold_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc="${PLUGIN}"
+mkdir -p ../Grpc
+
+protoc --csharp_out ../Grpc -I . -I ./grpc account_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=$PLUGIN
+protoc --csharp_out ../Grpc -I . -I ./grpc blockchain_service.proto --grpc_out ../Grpc --plugin=protoc-gen-grpc=$PLUGIN

@@ -125,7 +125,7 @@ namespace Phorkus.Storage.RocksDB.Repositories
         {
             var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
             var raw = _rocksDbContext.Get(prefix);
-            var global = GlobalWithdrawal.Parser.ParseFrom(raw);
+            var global = WithdrawalQueueConfig.Parser.ParseFrom(raw);
             return global?.CurrentNonce ?? 0UL;
         }
 
@@ -133,7 +133,7 @@ namespace Phorkus.Storage.RocksDB.Repositories
         {
             var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
             var raw = _rocksDbContext.Get(prefix);
-            var global = GlobalWithdrawal.Parser.ParseFrom(raw);
+            var global = WithdrawalQueueConfig.Parser.ParseFrom(raw);
             return global?.ApprovedNonce ?? 0UL;
         }
 
@@ -141,7 +141,7 @@ namespace Phorkus.Storage.RocksDB.Repositories
         {
             var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
             var raw = _rocksDbContext.Get(prefix);
-            var global = GlobalWithdrawal.Parser.ParseFrom(raw) ?? new GlobalWithdrawal();
+            var global = WithdrawalQueueConfig.Parser.ParseFrom(raw) ?? new WithdrawalQueueConfig();
             global.CurrentNonce = currentNonce;
             _rocksDbContext.Save(prefix, global.ToByteArray());
         }
@@ -150,7 +150,7 @@ namespace Phorkus.Storage.RocksDB.Repositories
         {
             var prefix = EntryPrefix.WithdrawalNonce.BuildPrefix();
             var raw = _rocksDbContext.Get(prefix);
-            var global = GlobalWithdrawal.Parser.ParseFrom(raw) ?? new GlobalWithdrawal();
+            var global = WithdrawalQueueConfig.Parser.ParseFrom(raw) ?? new WithdrawalQueueConfig();
             global.ApprovedNonce = approvedNonce;
             _rocksDbContext.Save(prefix, global.ToByteArray());
         }
