@@ -82,7 +82,7 @@ namespace Phorkus.Core.Network
             _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, envelope.RemotePeer);
         }
 
-        public void ConsensusMessage(MessageEnvelope buildEnvelope, ConsensusMessage message)
+        public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
             switch (message.PayloadCase)
             {

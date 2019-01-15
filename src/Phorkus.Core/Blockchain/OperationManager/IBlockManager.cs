@@ -1,6 +1,7 @@
 ﻿using System;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
@@ -22,5 +23,9 @@ namespace Phorkus.Core.Blockchain.OperationManager
         OperatingError VerifySignatures(Block block);
         
         OperatingError Verify(Block block);
+
+        Money CalcEstimatedFee(UInt256 blockHash);
+        
+        Money CalcEstimatedFee();
     }
 }

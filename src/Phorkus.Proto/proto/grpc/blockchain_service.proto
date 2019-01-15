@@ -8,7 +8,6 @@ import "default.proto";
 message GetBlockByHeightRequest {
     uint64 block_height = 1;
 }
-
 message GetBlockByHeightReply {
     Block block = 1;
 }
@@ -16,7 +15,6 @@ message GetBlockByHeightReply {
 message GetBlockByHashRequest {
     UInt256 block_hash = 1;
 }
-
 message GetBlockByHashReply {
     Block block = 1;
 }
@@ -24,7 +22,6 @@ message GetBlockByHashReply {
 message GetTransactionByHashRequest {
     UInt256 transaction_hash = 1;
 }
-
 message GetTransactionByHashReply {
     Transaction transaction = 1;
 }

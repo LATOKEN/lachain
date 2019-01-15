@@ -13,7 +13,6 @@ namespace Phorkus.Core.Blockchain
 
         bool VerifyTransactionImmediately(SignedTransaction transaction, PublicKey publicKey);
         bool VerifyTransactionImmediately(SignedTransaction transaction);
-        OperatingError Verify(Transaction transaction);
         
         void Start();
         void Stop();

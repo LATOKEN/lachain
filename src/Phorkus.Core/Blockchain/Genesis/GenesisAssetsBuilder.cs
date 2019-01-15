@@ -40,9 +40,8 @@ namespace Phorkus.Core.Blockchain.Genesis
             var tx = new Transaction
             {
                 Type = TransactionType.Miner,
-                Version = 0,
-                Flags = (ulong) TransactionFlag.None,
                 From = UInt160Utils.Zero,
+                Fee = UInt256Utils.Zero,
                 Nonce = 0
             };
             return tx;
@@ -53,8 +52,6 @@ namespace Phorkus.Core.Blockchain.Genesis
             var tx = new Transaction
             {
                 Type = TransactionType.Issue,
-                Version = 0,
-                Flags = (ulong) TransactionFlag.None,
                 From = UInt160Utils.Zero,
                 Issue = new IssueTransaction
                 {
@@ -62,6 +59,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                     Supply = supply.ToUInt256(),
                     To = _crypto.ComputeAddress(owner.Buffer.ToByteArray()).ToUInt160()
                 },
+                Fee = UInt256Utils.Zero,
                 Nonce = 0
             };
             return tx;

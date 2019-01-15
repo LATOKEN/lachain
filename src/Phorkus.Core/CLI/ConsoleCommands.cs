@@ -196,7 +196,7 @@ namespace Phorkus.Core.CLI
             var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
             var value = Money.Parse(arguments[4]);
             var fee = Money.Parse(arguments[5]);
-            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
+            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
         }
@@ -226,7 +226,7 @@ namespace Phorkus.Core.CLI
             var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
             var value = Money.Parse(arguments[4]);
             var fee = Money.Parse(arguments[5]);
-            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, fee, null);
+            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();

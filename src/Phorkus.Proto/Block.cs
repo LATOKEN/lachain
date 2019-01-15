@@ -28,19 +28,19 @@ namespace Phorkus.Proto {
             "sAEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
             "a19oYXNoGAIgASgLMgguVUludDI1NhIdCgttZXJrbGVfcm9vdBgDIAEoCzII",
             "LlVJbnQyNTYSEQoJdGltZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEh0K",
-            "CXZhbGlkYXRvchgHIAEoCzIKLlB1YmxpY0tleRINCgVub25jZRgGIAEoBCKA",
+            "CXZhbGlkYXRvchgHIAEoCzIKLlB1YmxpY0tleRINCgVub25jZRgGIAEoBCKf",
             "AQoFQmxvY2sSHAoGaGVhZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISFgoEaGFz",
             "aBgCIAEoCzIILlVJbnQyNTYSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygL",
-            "MgguVUludDI1NhIbCghtdWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnIngKCkJs",
-            "b2NrU3RhdGUSJwoGc3RhdHVzGAEgASgOMhcuQmxvY2tTdGF0ZS5CbG9ja1N0",
-            "YXR1cyJBCgtCbG9ja1N0YXR1cxIWChJCTE9DS19TVEFUVVNfUkVBRFkQABIa",
-            "ChZCTE9DS19TVEFUVVNfQ09ORklSTUVEEAFCEKoCDVBob3JrdXMuUHJvdG9i",
-            "BnByb3RvMw=="));
+            "MgguVUludDI1NhIbCghtdWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnEh0KC2F2",
+            "ZXJhZ2VfZmVlGAUgASgLMgguVUludDI1NiJ4CgpCbG9ja1N0YXRlEicKBnN0",
+            "YXR1cxgBIAEoDjIXLkJsb2NrU3RhdGUuQmxvY2tTdGF0dXMiQQoLQmxvY2tT",
+            "dGF0dXMSFgoSQkxPQ0tfU1RBVFVTX1JFQURZEAASGgoWQkxPQ0tfU1RBVFVT",
+            "X0NPTkZJUk1FRBABQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Validator", "Nonce" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig", "AverageFee" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockState), global::Phorkus.Proto.BlockState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.BlockState.Types.BlockStatus) }, null)
           }));
     }
@@ -392,6 +392,7 @@ namespace Phorkus.Proto {
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
       transactionHashes_ = other.transactionHashes_.Clone();
       multisig_ = other.multisig_ != null ? other.multisig_.Clone() : null;
+      averageFee_ = other.averageFee_ != null ? other.averageFee_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -443,6 +444,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "average_fee" field.</summary>
+    public const int AverageFeeFieldNumber = 5;
+    private global::Phorkus.Proto.UInt256 averageFee_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt256 AverageFee {
+      get { return averageFee_; }
+      set {
+        averageFee_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Block);
@@ -460,6 +472,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(Hash, other.Hash)) return false;
       if(!transactionHashes_.Equals(other.transactionHashes_)) return false;
       if (!object.Equals(Multisig, other.Multisig)) return false;
+      if (!object.Equals(AverageFee, other.AverageFee)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -470,6 +483,7 @@ namespace Phorkus.Proto {
       if (hash_ != null) hash ^= Hash.GetHashCode();
       hash ^= transactionHashes_.GetHashCode();
       if (multisig_ != null) hash ^= Multisig.GetHashCode();
+      if (averageFee_ != null) hash ^= AverageFee.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -496,6 +510,10 @@ namespace Phorkus.Proto {
         output.WriteMessage(Multisig);
       }
       transactionHashes_.WriteTo(output, _repeated_transactionHashes_codec);
+      if (averageFee_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(AverageFee);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -513,6 +531,9 @@ namespace Phorkus.Proto {
       size += transactionHashes_.CalculateSize(_repeated_transactionHashes_codec);
       if (multisig_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Multisig);
+      }
+      if (averageFee_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(AverageFee);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -543,6 +564,12 @@ namespace Phorkus.Proto {
           multisig_ = new global::Phorkus.Proto.MultiSig();
         }
         Multisig.MergeFrom(other.Multisig);
+      }
+      if (other.averageFee_ != null) {
+        if (averageFee_ == null) {
+          averageFee_ = new global::Phorkus.Proto.UInt256();
+        }
+        AverageFee.MergeFrom(other.AverageFee);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -578,6 +605,13 @@ namespace Phorkus.Proto {
           }
           case 34: {
             transactionHashes_.AddEntriesFrom(input, _repeated_transactionHashes_codec);
+            break;
+          }
+          case 42: {
+            if (averageFee_ == null) {
+              averageFee_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(averageFee_);
             break;
           }
         }

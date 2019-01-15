@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -48,9 +49,11 @@ namespace Phorkus.Utility
         public override string ToString()
         {
             var str = _value.ToString();
-            if (_value != BigInteger.Zero)
+            if (_value == BigInteger.Zero)
+                return str;
+            if (str.Length - DecimalDigits > 0)
                 return str.Substring(0, str.Length - DecimalDigits) + "." + str.Substring(str.Length - DecimalDigits);
-            return str;
+            return "0." + string.Join("", Enumerable.Repeat("0", DecimalDigits - str.Length)) + str;
         }
 
         public int CompareTo(Money other)

@@ -126,6 +126,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public SignedTransaction Sign(Transaction transaction, KeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
@@ -145,6 +146,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return signed;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(SignedTransaction transaction, PublicKey publicKey)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
@@ -155,6 +157,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(SignedTransaction transaction)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
@@ -165,11 +168,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Verify(Transaction transaction)
         {
             /* validate default transaction attributes */
-            if (transaction.Version != 0)
-                return OperatingError.UnsupportedVersion;
+            if (transaction.Fee is null)
+                return OperatingError.InvalidTransaction;
             /* verify transaction via persister */
             var persister = _transactionPersisters[transaction.Type];
             if (persister == null)
@@ -177,6 +181,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             return persister.Verify(transaction);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public uint CalcNextTxNonce(UInt160 from)
         {
             return _transactionRepository.GetTotalTransactionCount(from);

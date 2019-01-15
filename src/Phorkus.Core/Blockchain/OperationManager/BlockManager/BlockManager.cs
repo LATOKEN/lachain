@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
-using Phorkus.Logger;
 using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
+using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
@@ -20,7 +23,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private readonly IValidatorManager _validatorManager;
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IMultisigVerifier _multisigVerifier;
-        private readonly ILogger<IBlockManager> _logger;
+        private readonly Logger.ILogger<IBlockManager> _logger;
         private readonly IStateManager _stateManager;
 
         public BlockManager(
@@ -30,8 +33,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             ICrypto crypto,
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
-            IMultisigVerifier multisigVerifier,
-            ILogger<IBlockManager> logger,
+            IMultisigVerifier multisigVerifier, Logger.ILogger<IBlockManager> logger,
             IStateManager stateManager)
         {
             _globalRepository = globalRepository;
@@ -65,6 +67,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
         public OperatingError Persist(Block block)
         {
+            var startTime = TimeUtils.CurrentTimeMillis();
             /* verify next block */
             var error = Verify(block);
             if (error != OperatingError.Ok)
@@ -90,30 +93,40 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 if (_transactionManager.GetByHash(txHash) is null)
                     return OperatingError.TransactionLost;
             }
-            
+            var validatorAddress = _crypto.ComputeAddress(block.Header.Validator.Buffer.ToByteArray()).ToUInt160();
+            /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
+                var tx = _transactionManager.GetByHash(txHash);
+                /* TODO: "change fee calculation logic" */
+                var feeSnapshot = _stateManager.NewSnapshot();
+                var asset = feeSnapshot.Assets.GetAssetByName("LA");
+                if (asset != null && block.Header.Index > 0)
+                    feeSnapshot.Balances.TransferAvailableBalance(tx.Transaction.From, validatorAddress, asset.Hash, tx.Transaction.Fee.ToMoney());
+                _stateManager.Approve();
+                /* execute transaction */
                 var snapshot = _stateManager.NewSnapshot();
                 var result = _transactionManager.Execute(block, txHash, snapshot);
                 if (result == OperatingError.Ok)
                 {
                     _stateManager.Approve();
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug($"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({_transactionManager.GetByHash(txHash).Transaction.Nonce})");
                     continue;
                 }
-                /* TODO: "we need block synchronization on transaction lost for example" */
-                _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()}, {result}");
-                /* TODO: "mark transaction as failed to execute here or something else" */
-                _stateManager.Rollback();
+                _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({tx?.Transaction?.Nonce}, excepted {_transactionManager.CalcNextTxNonce(tx?.Transaction?.From)}), {result}");
+                _stateManager.Rollback();                
             }
-
+            block.AverageFee = _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
             /* write block to database */
             _blockRepository.AddBlock(block);
             _stateManager.Commit();
-            var currentHeaderHeight = _globalRepository.GetTotalBlockHeaderHeight();
+            var currentHeaderHeight = _globalRepository.GetTotalBlockHeight();
             if (block.Header.Index > currentHeaderHeight)
                 _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
             _globalRepository.SetTotalBlockHeight(block.Header.Index);
-            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count}");
+            var elapsedTime = TimeUtils.CurrentTimeMillis() - startTime;
+            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {elapsedTime} ms");
             OnBlockPersisted?.Invoke(this, block);
             return OperatingError.Ok;
         }
@@ -157,6 +170,38 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             if (header.Validator is null)
                 return OperatingError.InvalidBlock;
             return OperatingError.Ok;
+        }
+
+        public Money CalcEstimatedFee(UInt256 blockHash)
+        {
+            var block = _blockRepository.GetBlockByHash(blockHash);
+            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+        }
+
+        public Money CalcEstimatedFee()
+        {
+            var currentHeight = _globalRepository.GetTotalBlockHeight();
+            var block = _blockRepository.GetBlockByHeight(currentHeight);
+            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+        }
+        
+        private Money _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
+        {
+            var arrayOfHashes = txHashes as UInt256[] ?? txHashes.ToArray();
+            if (arrayOfHashes.Length == 0)
+                return Money.Zero;
+            var sum = Money.Zero;
+            foreach (var txHash in arrayOfHashes)
+            {
+                var tx = _transactionManager.GetByHash(txHash);
+                if (tx is null)
+                {
+                    _logger.LogWarning($"Unable to calculate fee, transaction lost ({txHash})");
+                    return Money.Zero;
+                }
+                sum += tx.Transaction.Fee.ToMoney();
+            }
+            return sum / arrayOfHashes.Length;
         }
     }
 }

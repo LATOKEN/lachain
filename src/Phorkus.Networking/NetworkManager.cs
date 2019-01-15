@@ -67,8 +67,11 @@ namespace Phorkus.Networking
         
         private readonly object _hasPeersToConnect = new object();
         
-        private bool _SelfConnect(IPAddress ipAddress)
+        private bool _IsSelfConnect(IPAddress ipAddress)
         {
+            var localHost = new IPAddress(0x0100007f);
+            if (ipAddress.Equals(localHost))
+                return true;
             var host = Dns.GetHostEntry(Dns.GetHostName());
             if (host.AddressList.Contains(ipAddress))
                 return true;
@@ -82,6 +85,7 @@ namespace Phorkus.Networking
                 }
                 foreach (var ip in ni.GetIPProperties().UnicastAddresses)
                 {
+                    Console.WriteLine(ip.Address);
                     if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
                         continue;
                     if (!ip.Address.Equals(ipAddress))
@@ -98,7 +102,7 @@ namespace Phorkus.Networking
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
                     return worker;
-                if (_SelfConnect(IPAddress.Parse(address.Host)) && _networkConfig.Port == address.Port)
+                if (_IsSelfConnect(IPAddress.Parse(address.Host)) && _networkConfig.Port == address.Port)
                     return null;
                 worker = new ClientWorker(address, null);
                 _clientWorkers.Add(address, worker);
@@ -207,7 +211,10 @@ namespace Phorkus.Networking
             var publicKey = reply.Node.PublicKey;
             if (_authorizedKeys.Keys.Contains(publicKey))
                 return;
-            _clientWorkers[PeerAddress.FromNode(reply.Node)].Node = reply.Node;
+            var address = PeerAddress.FromNode(reply.Node);
+            if (!_clientWorkers.ContainsKey(address))
+                return;
+            _clientWorkers[address].Node = reply.Node;
             _authorizedKeys.TryAdd(publicKey, true);
         }
 

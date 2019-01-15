@@ -1,4 +1,5 @@
-﻿using Phorkus.Proto;
+﻿using System;
+using Phorkus.Proto;
 
 namespace Phorkus.Storage.Repositories
 {
@@ -20,12 +21,14 @@ namespace Phorkus.Storage.Repositories
         /// Retrieves the total / current block header height
         /// </summary>
         /// <returns>Total / current block header height</returns>
+        [Obsolete]
         ulong GetTotalBlockHeaderHeight();
 
         /// <summary>
         /// Set the total/ current block header height
         /// </summary>
         /// <param name="height">Total / current block header height</param>
+        [Obsolete]
         void SetTotalBlockHeaderHeight(ulong height);
 
         bool GenesisBlockExists();

@@ -12,6 +12,6 @@ namespace Phorkus.Networking
         void GetBlocksByHeightRangeReply(MessageEnvelope envelope, GetBlocksByHeightRangeReply reply);
         void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request);
         void GetTransactionsByHashesReply(MessageEnvelope envelope, GetTransactionsByHashesReply reply);
-        void ConsensusMessage(MessageEnvelope buildEnvelope, ConsensusMessage message);
+        void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message);
     }
 }

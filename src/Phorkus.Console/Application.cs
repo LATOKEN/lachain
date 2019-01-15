@@ -19,6 +19,7 @@ using Phorkus.Proto;
 using Phorkus.Storage;
 using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
+using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Console
@@ -68,6 +69,7 @@ namespace Phorkus.Console
             var thresholdManager = _container.Resolve<IThresholdManager>();
             var commandManager = _container.Resolve<IConsoleManager>();
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
+            var blockManager = _container.Resolve<IBlockManager>();
             
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
             var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
@@ -145,10 +147,33 @@ namespace Phorkus.Console
             var signedTransaction = transactionManager.Sign(transaction, keyPair);
             transactionPool.Add(signedTransaction);*/
 
+            Thread.Sleep(10_000);
+            
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
+
+            if (consensusConfig.PrivateKey.Equals("d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"))
+            {
+                _dirtyNonce = transactionManager.CalcNextTxNonce(address1);
+                var rand = new Random();
+                while (!_interrupt)
+                {
+                    var raw = transactionBuilder.TransferTransaction(address1, address2, "LA",
+                        Money.FromDecimal(0.0000001m));
+                    lock (typeof(Application))
+                        raw.Nonce = _dirtyNonce++;
+                    var tx = transactionManager.Sign(raw, keyPair);
+                    transactionPool.Add(tx);
+                    if (rand.Next() % 100 == 0)
+                        System.Console.WriteLine($"Tx pool size: {transactionPool.Size()}");
+                    Thread.Sleep(1);
+                }                
+            }
+            
             while (!_interrupt)
                 Thread.Sleep(1000);
         }
+        
+        private static ulong _dirtyNonce;
 
         private void _TraceBalances(IAssetSnapshot assetSnapshot, IBalanceSnapshot balanceSnapshot, UInt160 address)
         {

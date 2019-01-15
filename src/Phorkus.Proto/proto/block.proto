@@ -19,6 +19,7 @@ message Block {
     UInt256 hash = 2;
     repeated UInt256 transaction_hashes = 4;
     MultiSig multisig = 3;
+    UInt256 average_fee = 5;
 }
 
 message BlockState {

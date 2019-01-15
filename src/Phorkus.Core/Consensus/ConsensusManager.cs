@@ -39,7 +39,7 @@ namespace Phorkus.Core.Consensus
         private bool _gotNewBlock;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(5);
 
         public ConsensusManager(
             IBlockManager blockManager,
@@ -137,7 +137,7 @@ namespace Phorkus.Core.Consensus
                         Thread.Sleep(timeToAwait);
                     _logger.LogDebug("Wait completed");
                     
-                    var blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlockHeader.Header, _keyPair.PublicKey)
+                    var blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlock.Header, _keyPair.PublicKey)
                         .WithTransactions(_transactionPool).Build((ulong) _random.Next());
                     
                     _logger.LogDebug($"Produced block with hash {blockWithTransactions.Block.Hash}");
@@ -229,7 +229,7 @@ namespace Phorkus.Core.Consensus
                 if (result == OperatingError.Ok)
                     _logger.LogDebug($"Block persist completed: {block.Hash}");
                 else
-                    _logger.LogWarning($"Block hasn't been persisted: {block.Hash}, cuz error {result}");
+                    _logger.LogWarning($"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
 
                 _context.LastBlockRecieved = DateTime.UtcNow;
                 InitializeConsensus(0);
@@ -500,12 +500,12 @@ namespace Phorkus.Core.Consensus
                 return false;
             }
 
-            if (_blockchainContext.CurrentBlockHeader.Header.Index + 1 < validator.BlockIndex)
+            if (_blockchainContext.CurrentBlock.Header.Index + 1 < validator.BlockIndex)
             {
                 _logger.LogWarning(
                     $"Cannot handle consensus payload from validator={validator.ValidatorIndex} " +
                     $"at height={validator.BlockIndex}, since " +
-                    $"local height={_blockchainContext.CurrentBlockHeader.Header.Index}"
+                    $"local height={_blockchainContext.CurrentBlock.Header.Index}"
                 );
                 return false;
             }

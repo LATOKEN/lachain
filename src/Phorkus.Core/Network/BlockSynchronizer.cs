@@ -93,7 +93,7 @@ namespace Phorkus.Core.Network
         
         public void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout)
         {
-            var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
+            var myHeight = _blockchainContext.CurrentBlockHeight;
             if (block.Header.Index != myHeight + 1)
                 return;
             /* if we don't have transactions from block than request it */
@@ -131,7 +131,7 @@ namespace Phorkus.Core.Network
 
         public bool IsSynchronizingWith(IEnumerable<PublicKey> peers)
         {
-            var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
+            var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
             if (_networkContext.ActivePeers.Values.Count == 0)
@@ -157,7 +157,7 @@ namespace Phorkus.Core.Network
         
         private void _Worker()
         {
-            var myHeight = _blockchainContext.CurrentBlockHeaderHeight;
+            var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
             

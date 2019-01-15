@@ -15,7 +15,7 @@ namespace Phorkus.Networking
     public class PeerAddress : IEquatable<PeerAddress>
     {
         private static readonly Regex IpEndPointPattern =
-            new Regex(@"^(?<proto>\w+)://(?<address>[^/]+)/?:(?<port>\d+)@(?<publicKey>(0x)?[0-9a-f]{66})$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            new Regex(@"^(?<proto>\w+)://(?<publicKey>(0x)?[0-9a-f]{66}@)?(?<address>[^/]+)/?:(?<port>\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         
         public Protocol Protocol { get; set; }
 
@@ -27,7 +27,27 @@ namespace Phorkus.Networking
 
         public static PeerAddress FromNode(Node node)
         {
-            return Parse($"{node.Address}@{node.PublicKey.Buffer.ToHex()}");
+            var publicKeyHex = node.PublicKey.Buffer.ToHex();
+            if (publicKeyHex.StartsWith("0x"))
+                publicKeyHex = publicKeyHex.Substring(2);
+            var match = IpEndPointPattern.Match(node.Address);
+            if (!match.Groups["proto"].Success)
+                throw new ArgumentNullException(nameof(node.Address), "Unable to parse protocol from URL (" + node.Address + ")");
+            if (!Enum.TryParse<Protocol>(match.Groups["proto"].ToString(), true, out var proto))
+                throw new ArgumentOutOfRangeException(nameof(node.Address), "Unable to resolve protocol specified (" + match.Groups["proto"] +") from URL");
+            if (!match.Groups["address"].Success)
+                throw new ArgumentNullException(nameof(node.Address), "Unable to parse address from URL (" + node.Address + ")");
+            var address = match.Groups["address"].ToString();
+            if (!match.Groups["port"].Success)
+                throw new ArgumentNullException(nameof(node.Address), "Unable to parse port from URL (" + node.Address + ")");
+            var port = match.Groups["port"].ToString();
+            return new PeerAddress
+            {
+                Protocol = proto,
+                Host = address,
+                Port = int.Parse(port),
+                PublicKey = publicKeyHex.HexToBytes().ToPublicKey()
+            };
         }
         
         public static PeerAddress Parse(string value)
@@ -46,6 +66,8 @@ namespace Phorkus.Networking
             if (!match.Groups["publicKey"].Success)
                 throw new ArgumentNullException(nameof(value), "Unable to parse public key from URL (" + value + ")");
             var pk = match.Groups["publicKey"].ToString();
+            if (pk.EndsWith("@"))
+                pk = pk.Substring(0, pk.Length - 1);
             return new PeerAddress
             {
                 Protocol = proto,
@@ -59,7 +81,7 @@ namespace Phorkus.Networking
         {
             return $"{Protocol.ToString().ToLower()}://{Host}:{Port}@{PublicKey.Buffer.ToHex().Substring(2)}";
         }
-
+        
         public override int GetHashCode()
         {
             unchecked
