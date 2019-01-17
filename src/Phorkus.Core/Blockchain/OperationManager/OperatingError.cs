@@ -25,6 +25,8 @@
         AlreadySigned,
         InvalidMerkeRoot,
         UnknownAsset,
-        WithdrawalFailed
+        WithdrawalFailed,
+        ContractFailed,
+        ContractNotFound,
     }
 }

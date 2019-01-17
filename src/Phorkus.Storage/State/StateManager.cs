@@ -11,15 +11,18 @@ namespace Phorkus.Storage.State
 
         private readonly ISnapshotManager<IBalanceSnapshot> _balanceManager;
         private readonly ISnapshotManager<IAssetSnapshot> _assetManager;
+        private readonly ISnapshotManager<IContractSnapshot> _contractManager;
 
         public StateManager(IStorageManager storageManager)
         {
             _balanceManager = new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager, (uint) RepositoryType.BalanceRepository);
             _assetManager = new SnapshotManager<IAssetSnapshot, AssetSnapshot>(storageManager, (uint) RepositoryType.AssetRepository);
+            _contractManager = new SnapshotManager<IContractSnapshot, ContractSnapshot>(storageManager, (uint) RepositoryType.ContractRepository);
             
             LastApprovedSnapshot = new BlockchainSnapshot(
                 _balanceManager.LastApprovedSnapshot,
-                _assetManager.LastApprovedSnapshot
+                _assetManager.LastApprovedSnapshot,
+                _contractManager.LastApprovedSnapshot
             );
         }
         
@@ -29,7 +32,8 @@ namespace Phorkus.Storage.State
                 throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
             PendingSnapshot = new BlockchainSnapshot(
                 _balanceManager.NewSnapshot(),
-                _assetManager.NewSnapshot()
+                _assetManager.NewSnapshot(),
+                _contractManager.NewSnapshot()
             );
             return PendingSnapshot;
         }
@@ -38,6 +42,7 @@ namespace Phorkus.Storage.State
         {
             _balanceManager.Approve();
             _assetManager.Approve();
+            _contractManager.Approve();
             LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
             PendingSnapshot = null;
         }
@@ -48,6 +53,7 @@ namespace Phorkus.Storage.State
                 throw new InvalidOperationException("Nothing to rollback");
             _balanceManager.Rollback();
             _assetManager.Rollback();
+            _contractManager.Rollback();
             PendingSnapshot = null;
         }
 
@@ -55,6 +61,7 @@ namespace Phorkus.Storage.State
         {
             _balanceManager.Commit();
             _assetManager.Commit();
+            _contractManager.Commit();
         }
     }
 }

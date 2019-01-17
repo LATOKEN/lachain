@@ -2,6 +2,10 @@ syntax = "proto3";
 option csharp_namespace = "Phorkus.Proto";
 import "default.proto";
 
+enum ContractVersion {
+    CONTRACT_VERSION_WASM = 0;
+}
+
 enum ContractType {
     CONTRACT_TYPE_SIGNATURE = 0;
     CONTRACT_TYPE_BOOLEAN = 1;
@@ -31,5 +35,16 @@ message ContractABI {
 message Contract {
     UInt160 hash = 1;
     repeated ContractABI abi = 2;
-    bytes script = 3;
+    bytes wasm = 3;
+    ContractVersion version = 4;
+}
+
+message ContractGlobal {
+    uint32 total_contracts = 1;
+}
+
+message Invocation {
+    UInt160 contract_hash = 1;
+    string method_name = 2;
+    repeated bytes params = 3;
 }

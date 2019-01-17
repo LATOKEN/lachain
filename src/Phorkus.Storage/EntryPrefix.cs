@@ -28,6 +28,9 @@
         WithdrawalByHash = 0x0701,
         WithdrawalByNonce = 0x0702,
         WithdrawalByStateNonce = 0x0703,
-        WithdrawalNonce = 0x0704
+        WithdrawalNonce = 0x0704,
+        
+        ContractByHash = 0x0801,
+        ContractCountByFrom = 0x0802
     }
 }

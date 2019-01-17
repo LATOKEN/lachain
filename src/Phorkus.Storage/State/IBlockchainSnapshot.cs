@@ -4,5 +4,6 @@
     {
         IBalanceSnapshot Balances { get; }
         IAssetSnapshot Assets { get; }
+        IContractSnapshot Contracts { get; }
     }
 }

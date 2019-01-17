@@ -16,7 +16,6 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IRocksDbContext, RocksDbContext>();
             /* repositories */
             containerBuilder.RegisterSingleton<IBlockRepository, BlockRepository>();
-            containerBuilder.RegisterSingleton<IContractRepository, ContractRepository>();
             containerBuilder.RegisterSingleton<IGlobalRepository, GlobalRepository>();
             containerBuilder.RegisterSingleton<ITransactionRepository, TransactionRepository>();
             containerBuilder.RegisterSingleton<IWithdrawalRepository, WithdrawalRepository>();

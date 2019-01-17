@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
+using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
@@ -21,11 +22,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public TransactionManager(
             ITransactionRepository transactionRepository,
-            IContractRepository contractRepository,
             IValidatorManager validatorManager,
             ITransactionVerifier transactionVerifier,
             IMultisigVerifier multisigVerifier,
             IWithdrawalRepository withdrawalRepository,
+            IVirtualMachine virtualMachine,
             ICrypto crypto)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
@@ -33,8 +34,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 {TransactionType.Miner, new MinerTranscationExecuter()},
                 {TransactionType.Register, new RegisterTransactionExecuter(multisigVerifier)},
                 {TransactionType.Issue, new IssueTransactionExecuter()},
-                {TransactionType.Contract, new ContractTransactionExecuter()},
-                {TransactionType.Publish, new PublishTransactionExecuter(contractRepository)},
+                {TransactionType.Contract, new ContractTransactionExecuter(virtualMachine)},
                 {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
                 {TransactionType.Withdraw, new WithdrawTransactionExecuter(validatorManager, withdrawalRepository)},
                 {TransactionType.Confirm, new ConfirmTransactionExecuter(validatorManager)}

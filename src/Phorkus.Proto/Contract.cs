@@ -27,29 +27,40 @@ namespace Phorkus.Proto {
             "Cg5jb250cmFjdC5wcm90bxoNZGVmYXVsdC5wcm90byKOAQoLQ29udHJhY3RB",
             "QkkSDgoGbWV0aG9kGAEgASgJEgwKBGhhc2gYAiABKAwSHAoFaW5wdXQYAyAD",
             "KA4yDS5Db250cmFjdFR5cGUSHQoGb3V0cHV0GAQgASgOMg0uQ29udHJhY3RU",
-            "eXBlEiQKCW1vZGlmaWVycxgFIAMoDjIRLkNvbnRyYWN0TW9kaWZpZXIiTQoI",
+            "eXBlEiQKCW1vZGlmaWVycxgFIAMoDjIRLkNvbnRyYWN0TW9kaWZpZXIibgoI",
             "Q29udHJhY3QSFgoEaGFzaBgBIAEoCzIILlVJbnQxNjASGQoDYWJpGAIgAygL",
-            "MgwuQ29udHJhY3RBQkkSDgoGc2NyaXB0GAMgASgMKsMCCgxDb250cmFjdFR5",
-            "cGUSGwoXQ09OVFJBQ1RfVFlQRV9TSUdOQVRVUkUQABIZChVDT05UUkFDVF9U",
-            "WVBFX0JPT0xFQU4QARIZChVDT05UUkFDVF9UWVBFX0lOVEVHRVIQAhIZChVD",
-            "T05UUkFDVF9UWVBFX0hBU0gxNjAQAxIZChVDT05UUkFDVF9UWVBFX0hBU0gy",
-            "NTYQBBIcChhDT05UUkFDVF9UWVBFX0JZVEVfQVJSQVkQBRIcChhDT05UUkFD",
-            "VF9UWVBFX1BVQkxJQ19LRVkQBhIYChRDT05UUkFDVF9UWVBFX1NUUklORxAH",
-            "EhcKE0NPTlRSQUNUX1RZUEVfQVJSQVkQCBIjCh9DT05UUkFDVF9UWVBFX0lO",
-            "VEVST1BfSU5URVJGQUNFEAkSFgoSQ09OVFJBQ1RfVFlQRV9WT0lEEAoqMQoQ",
-            "Q29udHJhY3RNb2RpZmllchIdChlDT05UUkFDVF9NT0RJRklFUl9QQVlBQkxF",
-            "EABCEKoCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
+            "MgwuQ29udHJhY3RBQkkSDAoEd2FzbRgDIAEoDBIhCgd2ZXJzaW9uGAQgASgO",
+            "MhAuQ29udHJhY3RWZXJzaW9uIikKDkNvbnRyYWN0R2xvYmFsEhcKD3RvdGFs",
+            "X2NvbnRyYWN0cxgBIAEoDSJSCgpJbnZvY2F0aW9uEh8KDWNvbnRyYWN0X2hh",
+            "c2gYASABKAsyCC5VSW50MTYwEhMKC21ldGhvZF9uYW1lGAIgASgJEg4KBnBh",
+            "cmFtcxgDIAMoDCosCg9Db250cmFjdFZlcnNpb24SGQoVQ09OVFJBQ1RfVkVS",
+            "U0lPTl9XQVNNEAAqwwIKDENvbnRyYWN0VHlwZRIbChdDT05UUkFDVF9UWVBF",
+            "X1NJR05BVFVSRRAAEhkKFUNPTlRSQUNUX1RZUEVfQk9PTEVBThABEhkKFUNP",
+            "TlRSQUNUX1RZUEVfSU5URUdFUhACEhkKFUNPTlRSQUNUX1RZUEVfSEFTSDE2",
+            "MBADEhkKFUNPTlRSQUNUX1RZUEVfSEFTSDI1NhAEEhwKGENPTlRSQUNUX1RZ",
+            "UEVfQllURV9BUlJBWRAFEhwKGENPTlRSQUNUX1RZUEVfUFVCTElDX0tFWRAG",
+            "EhgKFENPTlRSQUNUX1RZUEVfU1RSSU5HEAcSFwoTQ09OVFJBQ1RfVFlQRV9B",
+            "UlJBWRAIEiMKH0NPTlRSQUNUX1RZUEVfSU5URVJPUF9JTlRFUkZBQ0UQCRIW",
+            "ChJDT05UUkFDVF9UWVBFX1ZPSUQQCioxChBDb250cmFjdE1vZGlmaWVyEh0K",
+            "GUNPTlRSQUNUX01PRElGSUVSX1BBWUFCTEUQAEIQqgINUGhvcmt1cy5Qcm90",
+            "b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractVersion), typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractABI), global::Phorkus.Proto.ContractABI.Parser, new[]{ "Method", "Hash", "Input", "Output", "Modifiers" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Script" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Wasm", "Version" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractGlobal), global::Phorkus.Proto.ContractGlobal.Parser, new[]{ "TotalContracts" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Invocation), global::Phorkus.Proto.Invocation.Parser, new[]{ "ContractHash", "MethodName", "Params" }, null, null, null)
           }));
     }
     #endregion
 
   }
   #region Enums
+  public enum ContractVersion {
+    [pbr::OriginalName("CONTRACT_VERSION_WASM")] Wasm = 0,
+  }
+
   public enum ContractType {
     [pbr::OriginalName("CONTRACT_TYPE_SIGNATURE")] Signature = 0,
     [pbr::OriginalName("CONTRACT_TYPE_BOOLEAN")] Boolean = 1,
@@ -325,7 +336,8 @@ namespace Phorkus.Proto {
     public Contract(Contract other) : this() {
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
       abi_ = other.abi_.Clone();
-      script_ = other.script_;
+      wasm_ = other.wasm_;
+      version_ = other.version_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -355,14 +367,25 @@ namespace Phorkus.Proto {
       get { return abi_; }
     }
 
-    /// <summary>Field number for the "script" field.</summary>
-    public const int ScriptFieldNumber = 3;
-    private pb::ByteString script_ = pb::ByteString.Empty;
+    /// <summary>Field number for the "wasm" field.</summary>
+    public const int WasmFieldNumber = 3;
+    private pb::ByteString wasm_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Script {
-      get { return script_; }
+    public pb::ByteString Wasm {
+      get { return wasm_; }
       set {
-        script_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        wasm_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "version" field.</summary>
+    public const int VersionFieldNumber = 4;
+    private global::Phorkus.Proto.ContractVersion version_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.ContractVersion Version {
+      get { return version_; }
+      set {
+        version_ = value;
       }
     }
 
@@ -381,7 +404,8 @@ namespace Phorkus.Proto {
       }
       if (!object.Equals(Hash, other.Hash)) return false;
       if(!abi_.Equals(other.abi_)) return false;
-      if (Script != other.Script) return false;
+      if (Wasm != other.Wasm) return false;
+      if (Version != other.Version) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -390,7 +414,8 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (hash_ != null) hash ^= Hash.GetHashCode();
       hash ^= abi_.GetHashCode();
-      if (Script.Length != 0) hash ^= Script.GetHashCode();
+      if (Wasm.Length != 0) hash ^= Wasm.GetHashCode();
+      if (Version != 0) hash ^= Version.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -409,9 +434,13 @@ namespace Phorkus.Proto {
         output.WriteMessage(Hash);
       }
       abi_.WriteTo(output, _repeated_abi_codec);
-      if (Script.Length != 0) {
+      if (Wasm.Length != 0) {
         output.WriteRawTag(26);
-        output.WriteBytes(Script);
+        output.WriteBytes(Wasm);
+      }
+      if (Version != 0) {
+        output.WriteRawTag(32);
+        output.WriteEnum((int) Version);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -425,8 +454,11 @@ namespace Phorkus.Proto {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Hash);
       }
       size += abi_.CalculateSize(_repeated_abi_codec);
-      if (Script.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Script);
+      if (Wasm.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Wasm);
+      }
+      if (Version != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Version);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -446,8 +478,11 @@ namespace Phorkus.Proto {
         Hash.MergeFrom(other.Hash);
       }
       abi_.Add(other.abi_);
-      if (other.Script.Length != 0) {
-        Script = other.Script;
+      if (other.Wasm.Length != 0) {
+        Wasm = other.Wasm;
+      }
+      if (other.Version != 0) {
+        Version = other.Version;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -472,7 +507,323 @@ namespace Phorkus.Proto {
             break;
           }
           case 26: {
-            Script = input.ReadBytes();
+            Wasm = input.ReadBytes();
+            break;
+          }
+          case 32: {
+            version_ = (global::Phorkus.Proto.ContractVersion) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class ContractGlobal : pb::IMessage<ContractGlobal> {
+    private static readonly pb::MessageParser<ContractGlobal> _parser = new pb::MessageParser<ContractGlobal>(() => new ContractGlobal());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ContractGlobal> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ContractGlobal() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ContractGlobal(ContractGlobal other) : this() {
+      totalContracts_ = other.totalContracts_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ContractGlobal Clone() {
+      return new ContractGlobal(this);
+    }
+
+    /// <summary>Field number for the "total_contracts" field.</summary>
+    public const int TotalContractsFieldNumber = 1;
+    private uint totalContracts_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public uint TotalContracts {
+      get { return totalContracts_; }
+      set {
+        totalContracts_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ContractGlobal);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ContractGlobal other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (TotalContracts != other.TotalContracts) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (TotalContracts != 0) hash ^= TotalContracts.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (TotalContracts != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(TotalContracts);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (TotalContracts != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(TotalContracts);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ContractGlobal other) {
+      if (other == null) {
+        return;
+      }
+      if (other.TotalContracts != 0) {
+        TotalContracts = other.TotalContracts;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            TotalContracts = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class Invocation : pb::IMessage<Invocation> {
+    private static readonly pb::MessageParser<Invocation> _parser = new pb::MessageParser<Invocation>(() => new Invocation());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<Invocation> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[3]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Invocation() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Invocation(Invocation other) : this() {
+      contractHash_ = other.contractHash_ != null ? other.contractHash_.Clone() : null;
+      methodName_ = other.methodName_;
+      params_ = other.params_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Invocation Clone() {
+      return new Invocation(this);
+    }
+
+    /// <summary>Field number for the "contract_hash" field.</summary>
+    public const int ContractHashFieldNumber = 1;
+    private global::Phorkus.Proto.UInt160 contractHash_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt160 ContractHash {
+      get { return contractHash_; }
+      set {
+        contractHash_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "method_name" field.</summary>
+    public const int MethodNameFieldNumber = 2;
+    private string methodName_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string MethodName {
+      get { return methodName_; }
+      set {
+        methodName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "params" field.</summary>
+    public const int ParamsFieldNumber = 3;
+    private static readonly pb::FieldCodec<pb::ByteString> _repeated_params_codec
+        = pb::FieldCodec.ForBytes(26);
+    private readonly pbc::RepeatedField<pb::ByteString> params_ = new pbc::RepeatedField<pb::ByteString>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<pb::ByteString> Params {
+      get { return params_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as Invocation);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(Invocation other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(ContractHash, other.ContractHash)) return false;
+      if (MethodName != other.MethodName) return false;
+      if(!params_.Equals(other.params_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (contractHash_ != null) hash ^= ContractHash.GetHashCode();
+      if (MethodName.Length != 0) hash ^= MethodName.GetHashCode();
+      hash ^= params_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (contractHash_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(ContractHash);
+      }
+      if (MethodName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(MethodName);
+      }
+      params_.WriteTo(output, _repeated_params_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (contractHash_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ContractHash);
+      }
+      if (MethodName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(MethodName);
+      }
+      size += params_.CalculateSize(_repeated_params_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(Invocation other) {
+      if (other == null) {
+        return;
+      }
+      if (other.contractHash_ != null) {
+        if (contractHash_ == null) {
+          contractHash_ = new global::Phorkus.Proto.UInt160();
+        }
+        ContractHash.MergeFrom(other.ContractHash);
+      }
+      if (other.MethodName.Length != 0) {
+        MethodName = other.MethodName;
+      }
+      params_.Add(other.params_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (contractHash_ == null) {
+              contractHash_ = new global::Phorkus.Proto.UInt160();
+            }
+            input.ReadMessage(contractHash_);
+            break;
+          }
+          case 18: {
+            MethodName = input.ReadString();
+            break;
+          }
+          case 26: {
+            params_.AddEntriesFrom(input, _repeated_params_codec);
             break;
           }
         }

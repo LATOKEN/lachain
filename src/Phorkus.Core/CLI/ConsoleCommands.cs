@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
+using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;
@@ -27,6 +29,7 @@ namespace Phorkus.Core.CLI
         private readonly ICrypto _crypto;
         private readonly IStateManager _stateManager;
         private readonly KeyPair _keyPair;
+        private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
             IGlobalRepository globalRepository,
@@ -36,6 +39,7 @@ namespace Phorkus.Core.CLI
             IBlockManager blockManager,
             IValidatorManager validatorManager,
             IStateManager stateManager,
+            IVirtualMachine virtualMachine,
             ICrypto crypto,
             KeyPair keyPair)
         {
@@ -48,6 +52,7 @@ namespace Phorkus.Core.CLI
             _stateManager = stateManager;
             _crypto = crypto;
             _keyPair = keyPair;
+            _virtualMachine = virtualMachine;
         }
 
         private static bool IsValidHexString(IEnumerable<char> hexString)
@@ -154,6 +159,53 @@ namespace Phorkus.Core.CLI
             return _stateManager.LastApprovedSnapshot.Balances
                 .GetAvailableBalance(arguments[1].HexToUInt160(), asset.Hash);
         }
+        
+        public string DeployContract(string[] arguments)
+        {
+            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[1]);
+            var value = Money.Parse(arguments[2]);
+            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var nonce = _stateManager.LastApprovedSnapshot.Contracts.GetTotalContractsByFrom(from);
+            var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).ToHash160();
+            var contract = new Contract
+            {
+                Hash = hash,
+                /* TODO: "we don't support ABI now" */
+                Abi = {  },
+                Version = ContractVersion.Wasm,
+                Wasm = ByteString.CopyFrom(arguments[3].HexToBytes())
+            };
+            if (!_virtualMachine.VerifyContract(contract))
+                return "Unable to validate smart-contract code";
+            Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
+            var tx = _transactionBuilder.ContractTransaction(from, UInt160Utils.Zero, asset, value, contract);
+            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            _transactionPool.Add(signedTx);
+            return signedTx.Hash.Buffer.ToHex();
+        }
+        
+        public string CallContract(string[] arguments)
+        {
+            var contractHash = arguments[1].HexToUInt160();
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            
+            var invocation = new Invocation
+            {
+                ContractHash = contractHash,
+                MethodName = arguments[2],
+                Params = { }
+            };
+            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
+            var result = _virtualMachine.InvokeContract(contract, invocation);
+            return result ? "Contract has been successfully executed" : "Contract execution failed";
+        }
+
+        public string InvokeContract(string[] arguments)
+        {
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(arguments[1].HexToUInt160());
+            
+            throw new System.NotImplementedException();
+        }
 
         public string Help(string[] arguments)
         {
@@ -191,11 +243,11 @@ namespace Phorkus.Core.CLI
 
         public string SignTransaction(string[] arguments)
         {
-            var from = arguments[1].HexToUInt160();
-            var to = arguments[2].HexToUInt160();
-            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
-            var value = Money.Parse(arguments[4]);
-            var fee = Money.Parse(arguments[5]);
+            var to = arguments[1].HexToUInt160();
+            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
+            var value = Money.Parse(arguments[3]);
+            var fee = Money.Parse(arguments[4]);
+            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
@@ -221,11 +273,11 @@ namespace Phorkus.Core.CLI
         */
         public string SendTransaction(string[] arguments)
         {
-            var from = arguments[1].HexToUInt160();
-            var to = arguments[2].HexToUInt160();
-            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[3]);
-            var value = Money.Parse(arguments[4]);
-            var fee = Money.Parse(arguments[5]);
+            var to = arguments[1].HexToUInt160();
+            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
+            var value = Money.Parse(arguments[3]);
+            var fee = Money.Parse(arguments[4]);
+            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, null);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);

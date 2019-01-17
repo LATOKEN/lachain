@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain

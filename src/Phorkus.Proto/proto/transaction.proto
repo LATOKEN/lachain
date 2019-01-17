@@ -3,13 +3,13 @@ option csharp_namespace = "Phorkus.Proto";
 
 import "default.proto";
 import "asset.proto";
+import "contract.proto";
 
 enum TransactionType {
     TRANSACTION_TYPE_MINER = 0;
     TRANSACTION_TYPE_REGISTER = 1;
     TRANSACTION_TYPE_ISSUE = 2;
     TRANSACTION_TYPE_CONTRACT = 3;
-    TRANSACTION_TYPE_PUBLISH = 4;
     TRANSACTION_TYPE_DEPOSIT = 5;
     TRANSACTION_TYPE_WITHDRAW = 6;
     TRANSACTION_TYPE_CONFIRM = 7;
@@ -33,18 +33,14 @@ message ContractTransaction {
     UInt160 asset = 1;
     UInt160 to = 2;
     UInt256 value = 3;
-    bytes script = 4;
+    Invocation invocation = 4;
+    Contract contract = 5;
 }
 
 message IssueTransaction {
     UInt160 asset = 1;
     UInt256 supply = 2;
     UInt160 to = 3;
-}
-
-message PublishTransaction {
-    UInt160 hash = 1;
-    bytes script = 2;
 }
 
 message RegisterTransaction {
@@ -102,7 +98,6 @@ message Transaction {
     oneof data {
         ContractTransaction contract = 6;
         IssueTransaction issue = 7;
-        PublishTransaction publish = 8;
         RegisterTransaction register = 9;
         DepositTransaction deposit = 11;
         WithdrawTransaction withdraw = 12;

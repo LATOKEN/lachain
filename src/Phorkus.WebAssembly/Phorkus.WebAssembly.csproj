@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <LangVersion>7</LangVersion>
+    <TargetFramework>netstandard1.7</TargetFramework>
+    <AssemblyName>Phorkus.WebAssembly</AssemblyName>
+    <RootNamespace>Phorkus.WebAssembly</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Reflection" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.6.0-preview.18571.3" />
+  </ItemGroup>
+</Project>

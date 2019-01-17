@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Org.BouncyCastle.Crypto.Digests;
 
@@ -31,18 +33,19 @@ namespace Phorkus.Crypto
             return Encoding.ASCII.GetBytes(message).Ripemd160();
         }
         
-        public static byte[] Ripemd160(this byte[] message, int offset, int count)
+        public static byte[] Ripemd160(this IEnumerable<byte> message, int offset, int count)
         {
             var hash = new RipeMD160Digest();
-            hash.BlockUpdate(message, offset, count);
+            hash.BlockUpdate(message.ToArray(), offset, count);
             var result = new byte[20];
             hash.DoFinal(result, 0);
             return result;
         }
 
-        public static byte[] Ripemd160(this byte[] message)
+        public static byte[] Ripemd160(this IEnumerable<byte> message)
         {
-            return Ripemd160(message, 0, message.Length);
+            var messageArray = message.ToArray();
+            return Ripemd160(messageArray, 0, messageArray.Length);
         }
 
         public static byte[] Ed25519(this byte[] message)

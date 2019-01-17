@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Phorkus.Core.Blockchain;
@@ -13,6 +14,7 @@ using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
+using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;
@@ -21,6 +23,7 @@ using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
+using Phorkus.WebAssembly;
 
 namespace Phorkus.Console
 {
@@ -70,6 +73,7 @@ namespace Phorkus.Console
             var commandManager = _container.Resolve<IConsoleManager>();
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             var blockManager = _container.Resolve<IBlockManager>();
+            var virtualMachine = _container.Resolve<IVirtualMachine>();
             
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
             var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
@@ -151,23 +155,23 @@ namespace Phorkus.Console
             
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 
-            if (consensusConfig.PrivateKey.Equals("d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"))
-            {
-                _dirtyNonce = transactionManager.CalcNextTxNonce(address1);
-                var rand = new Random();
-                while (!_interrupt)
-                {
-                    var raw = transactionBuilder.TransferTransaction(address1, address2, "LA",
-                        Money.FromDecimal(0.0000001m));
-                    lock (typeof(Application))
-                        raw.Nonce = _dirtyNonce++;
-                    var tx = transactionManager.Sign(raw, keyPair);
-                    transactionPool.Add(tx);
-                    if (rand.Next() % 100 == 0)
-                        System.Console.WriteLine($"Tx pool size: {transactionPool.Size()}");
-                    Thread.Sleep(1);
-                }                
-            }
+//            if (consensusConfig.PrivateKey.Equals("d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"))
+//            {
+//                _dirtyNonce = transactionManager.CalcNextTxNonce(address1);
+//                var rand = new Random();
+//                while (!_interrupt)
+//                {
+//                    var raw = transactionBuilder.TransferTransaction(address1, address2, "LA",
+//                        Money.FromDecimal(0.0000001m));
+//                    lock (typeof(Application))
+//                        raw.Nonce = _dirtyNonce++;
+//                    var tx = transactionManager.Sign(raw, keyPair);
+//                    transactionPool.Add(tx);
+//                    if (rand.Next() % 100 == 0)
+//                        System.Console.WriteLine($"Tx pool size: {transactionPool.Size()}");
+//                    Thread.Sleep(1);
+//                }                
+//            }
             
             while (!_interrupt)
                 Thread.Sleep(1000);

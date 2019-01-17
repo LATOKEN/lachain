@@ -22,5 +22,10 @@ namespace Phorkus.Core.CLI
         
         Money GetBalance(string[] arguments);
 
+        string DeployContract(string[] arguments);
+
+        string CallContract(string[] arguments);
+        
+        string InvokeContract(string[] arguments);
     }
 }

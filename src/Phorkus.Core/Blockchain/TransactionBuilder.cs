@@ -51,7 +51,7 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, byte[] script)
+        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, Contract contract)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
             var contractTx = new ContractTransaction
@@ -59,7 +59,7 @@ namespace Phorkus.Core.Blockchain
                 Asset = asset.Hash,
                 To = to,
                 Value = value.ToUInt256(),
-                Script = script == null ? new UInt160().ToByteString() : script.ToUInt160().ToByteString(),
+                Contract = contract,
             };
             var tx = new Transaction
             {

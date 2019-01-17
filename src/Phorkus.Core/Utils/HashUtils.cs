@@ -1,4 +1,5 @@
-﻿using Google.Protobuf;
+﻿using System.Collections.Generic;
+using Google.Protobuf;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 
@@ -24,7 +25,7 @@ namespace Phorkus.Core.Utils
             };
         }
         
-        public static UInt160 ToHash160(this byte[] buffer)
+        public static UInt160 ToHash160(this IEnumerable<byte> buffer)
         {
             return new UInt160
             {

@@ -1,32 +1,56 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Phorkus.Proto;
-using Phorkus.Core.Utils;
+﻿using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
+using Phorkus.Core.VM;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class ContractTransactionExecuter : ITransactionExecuter
     {
-        public ContractTransactionExecuter()
+        private readonly IVirtualMachine _virtualMachine;
+        
+        public ContractTransactionExecuter(IVirtualMachine virtualMachine)
         {
+            _virtualMachine = virtualMachine;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            var balances = snapshot.Balances;
+            /* TODO: "verify contract nonce here" */
+            /* validate transaction before execution */
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
             var contract = transaction.Contract;
+            /* try to transfer funds from sender to recipient */
             if (!contract.Value.IsZero())
-                balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset, new Money(contract.Value));
-            /* TODO: "invoke smart-contract code here" */
+                snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset, new Money(contract.Value));
+            /* if we have contract block than register contract */
+            if (contract.Contract != null)
+                return _RegisterContract(transaction.From, contract.Contract, snapshot);
+            /* if we have invocation block than invoke contract method */
+            if (contract.Invocation != null)
+                return _InvokeContract(contract.Invocation, snapshot);
+            return OperatingError.Ok;
+        }
+        
+        private OperatingError _RegisterContract(UInt160 from, Contract contract, IBlockchainSnapshot snapshot)
+        {
+            if (contract is null)
+                return OperatingError.Ok;
+            snapshot.Contracts.AddContract(from, contract);
             return OperatingError.Ok;
         }
 
+        private OperatingError _InvokeContract(Invocation invocation, IBlockchainSnapshot snapshot)
+        {
+            var contract = snapshot.Contracts.GetContractByHash(invocation.ContractHash);
+            if (contract is null)
+                return OperatingError.ContractNotFound;
+            return !_virtualMachine.InvokeContract(contract, invocation) ? OperatingError.ContractFailed : OperatingError.Ok;
+        }
+        
         public OperatingError Verify(Transaction transaction)
         {
             if (transaction.Type != TransactionType.Contract)
@@ -38,15 +62,37 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.InvalidTransaction;
             if (contract.Value is null)
                 return OperatingError.InvalidTransaction;
-            return _VerifyScript(contract.Script);
+            if (contract.Contract != null && contract.Invocation != null)
+                return OperatingError.InvalidTransaction;
+            /* TODO: "validate contract hash here" */
+            var result = _VerifyContract(contract.Contract);
+            if (result != OperatingError.Ok)
+                return result;
+            result = _VerifyInvocation(contract.Invocation);
+            return result;
         }
 
-        private static OperatingError _VerifyScript(IEnumerable<byte> script)
+        private static OperatingError _VerifyContract(Contract contract)
         {
-            if (script is null || !script.Any())
+            if (contract is null)
                 return OperatingError.Ok;
+            if (contract.Version != ContractVersion.Wasm)
+                return OperatingError.InvalidTransaction;
+            if (contract.Wasm is null || contract.Wasm.IsEmpty)
+                return OperatingError.InvalidTransaction;
             /* TODO: "validate opcodes here" */
-            return OperatingError.InvalidTransaction;
+            return OperatingError.Ok;
+        }
+
+        private static OperatingError _VerifyInvocation(Invocation invocation)
+        {
+            if (invocation is null)
+                return OperatingError.Ok;
+            if (string.IsNullOrWhiteSpace(invocation.MethodName))
+                return OperatingError.InvalidTransaction;
+            if (invocation.ContractHash is null)
+                return OperatingError.InvalidTransaction;
+            return OperatingError.Ok;
         }
     }
 }
