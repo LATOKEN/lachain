@@ -1,10 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Instructions;
 using Phorkus.WebAssembly.Runtime;
 
-namespace Phorkus.VirtualMachineTest.Instructions
+namespace Phorkus.WebAssemblyTest.Instructions
 {
 	/// <summary>
 	/// Tests the <see cref="GrowMemory"/> instruction.

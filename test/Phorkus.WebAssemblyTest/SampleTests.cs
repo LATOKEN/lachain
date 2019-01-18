@@ -1,11 +1,9 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Verifies proper functionality when handling small externally-generate WASM sources.

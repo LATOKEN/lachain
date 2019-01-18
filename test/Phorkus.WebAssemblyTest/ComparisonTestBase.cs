@@ -1,7 +1,7 @@
 ﻿
 using Phorkus.WebAssembly;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Many comparison tests can use this template to host the test.

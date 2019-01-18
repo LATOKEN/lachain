@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Provides diverse sample data values.

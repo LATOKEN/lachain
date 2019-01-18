@@ -1,9 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Instructions;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Tests the <see cref="Data"/> class for proper behaviors.

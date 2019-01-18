@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	static class SystemReflectionExtensions
 	{

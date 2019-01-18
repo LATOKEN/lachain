@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Phorkus.Hermes;
-using Phorkus.Hermes.Generator;
-using Phorkus.Hermes.Generator.Messages;
-using Phorkus.Hermes.Generator.State;
-using Phorkus.Hermes.Signer;
+using Phorkus.Party.Signer;
 using Phorkus.Proto;
 
 namespace Phorkus.HermesTest

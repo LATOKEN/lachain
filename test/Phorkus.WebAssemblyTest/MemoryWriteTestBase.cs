@@ -1,8 +1,7 @@
-﻿
-using Phorkus.WebAssembly;
+﻿using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Runtime;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
     /// <summary>
     /// This class simplifies building of memory-writing tests.

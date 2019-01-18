@@ -3,13 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Instructions;
 using Type = Phorkus.WebAssembly.Type;
 using ValueType = Phorkus.WebAssembly.ValueType;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Tests the <see cref="Module"/> class.

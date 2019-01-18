@@ -18,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Proto", "src\Phorku
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.WebAssembly", "src\Phorkus.WebAssembly\Phorkus.WebAssembly.csproj", "{3A734C93-F849-44BB-9C43-C041DB7E62C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Hermes", "src\Phorkus.Hermes\Phorkus.Hermes.csproj", "{EC3AB4A6-B59B-40F9-9F4A-73E56078836D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Party", "src\Phorkus.Party\Phorkus.Party.csproj", "{EC3AB4A6-B59B-40F9-9F4A-73E56078836D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phorkus.Crypto", "src\Phorkus.Crypto\Phorkus.Crypto.csproj", "{86FF3593-9F7B-4EA4-A9B6-9A0B0B781A71}"
 EndProject

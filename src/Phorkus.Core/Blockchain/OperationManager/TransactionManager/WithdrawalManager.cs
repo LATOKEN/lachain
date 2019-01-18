@@ -7,7 +7,6 @@ using Google.Protobuf;
 using Phorkus.Core.Threshold;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
-using Phorkus.Hermes.Signer;
 using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;

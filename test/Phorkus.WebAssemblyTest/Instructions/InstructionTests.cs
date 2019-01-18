@@ -1,10 +1,9 @@
 ﻿using System.Linq;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 
-namespace Phorkus.VirtualMachineTest.Instructions
+namespace Phorkus.WebAssemblyTest.Instructions
 {
 	/// <summary>
 	/// Tests <see cref="Instruction"/> inheritors for proper behavior

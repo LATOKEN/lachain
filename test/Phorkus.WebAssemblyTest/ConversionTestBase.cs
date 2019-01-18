@@ -1,7 +1,7 @@
 ﻿
 using Phorkus.WebAssembly;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Tests of conversion instructions can use this template to host the test.

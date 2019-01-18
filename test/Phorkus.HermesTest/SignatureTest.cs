@@ -6,10 +6,10 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Utilities;
-using Phorkus.Hermes.Crypto;
-using Phorkus.Hermes.Crypto.Key;
-using Phorkus.Hermes.Signer;
-using Phorkus.Hermes.Signer.Messages;
+using Phorkus.Party.Crypto;
+using Phorkus.Party.Crypto.Key;
+using Phorkus.Party.Signer;
+using Phorkus.Party.Signer.Messages;
 
 namespace Phorkus.HermesTest
 {

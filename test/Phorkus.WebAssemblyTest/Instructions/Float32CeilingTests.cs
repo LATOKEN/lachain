@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phorkus.WebAssembly.Instructions;
 
-namespace Phorkus.VirtualMachineTest.Instructions
+namespace Phorkus.WebAssemblyTest.Instructions
 {
 	/// <summary>
 	/// Tests the <see cref="Float32Ceiling"/> instruction.

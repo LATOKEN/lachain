@@ -2,14 +2,13 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Instructions;
 using Module = Phorkus.WebAssembly.Module;
 using Type = Phorkus.WebAssembly.Type;
 using ValueType = Phorkus.WebAssembly.ValueType;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Tests basic functionality of <see cref="RuntimeImport"/> when used with <see cref="Compile"/>.

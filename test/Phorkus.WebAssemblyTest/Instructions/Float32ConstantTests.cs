@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phorkus.WebAssembly.Instructions;
 using ValueType = Phorkus.WebAssembly.ValueType;
 
-namespace Phorkus.VirtualMachineTest.Instructions
+namespace Phorkus.WebAssemblyTest.Instructions
 {
 	/// <summary>
 	/// Tests the <see cref="Float32Constant"/> instruction.

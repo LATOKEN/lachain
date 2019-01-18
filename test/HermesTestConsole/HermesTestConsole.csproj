@@ -5,6 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Phorkus.Core\Phorkus.Core.csproj" />
-    <ProjectReference Include="..\..\src\Phorkus.Hermes\Phorkus.Hermes.csproj" />
+    <ProjectReference Include="..\..\src\Phorkus.Party\Phorkus.Party.csproj" />
   </ItemGroup>
 </Project>

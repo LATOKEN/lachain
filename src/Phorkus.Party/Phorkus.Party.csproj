@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Phorkus.Party</AssemblyName>
+    <RootNamespace>Phorkus.Party</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Phorkus.Crypto\Phorkus.Crypto.csproj" />
+    <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
+    <ProjectReference Include="..\Phorkus.Utility\Phorkus.Utility.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle" Version="1.8.4" />
+  </ItemGroup>
+</Project>

@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Instructions;
 using Phorkus.WebAssembly.Runtime;
 using Type = Phorkus.WebAssembly.Type;
 using ValueType = Phorkus.WebAssembly.ValueType;
 
-namespace Phorkus.VirtualMachineTest
+namespace Phorkus.WebAssemblyTest
 {
 	/// <summary>
 	/// Validates basic features of the <see cref="Compile"/> class.
