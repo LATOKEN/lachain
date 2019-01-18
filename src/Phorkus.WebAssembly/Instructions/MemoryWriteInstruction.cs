@@ -49,7 +49,7 @@ namespace Phorkus.WebAssembly.Instructions
 					typeof(uint), //Address
 					this.Type.ToSystemType(), //Value
 					typeof(uint), //Offset
-					context.ExportsBuilder.AsType(),
+					context.ExportsBuilder, 
 				}
 				);
 			var il = builder.GetILGenerator();

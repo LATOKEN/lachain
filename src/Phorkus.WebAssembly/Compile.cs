@@ -219,7 +219,7 @@ namespace Phorkus.WebAssembly
 				}
 			}
 
-			var exports = exportsBuilder.AsType();
+			var exports = (System.Type) exportsBuilder;
 			var importedFunctions = 0;
 			MethodInfo[] internalFunctions = null;
 			Indirect[] functionElements = null;

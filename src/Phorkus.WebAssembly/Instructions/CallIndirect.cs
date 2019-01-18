@@ -111,7 +111,7 @@ namespace Phorkus.WebAssembly.Instructions
 			context.Emit(OpCodes.Ldloc, context.IndirectPointerLocal.LocalIndex);
 			context.EmitCalli(
 				signature.ReturnTypes.Length == 0 ? typeof(void) : signature.ReturnTypes[0],
-				signature.ParameterTypes.Concat(new[] { context.ExportsBuilder.AsType() }).ToArray(
+				signature.ParameterTypes.Concat(new[] { context.ExportsBuilder as System.Type }).ToArray(
 				));
 		}
 	}

@@ -85,7 +85,7 @@ namespace Phorkus.WebAssembly
 			this.generator = il = indirectBuilder.DefineTypeInitializer().GetILGenerator();
 			
 			Instructions.Int32Constant.Emit(this, functionElements.Length);
-			il.Emit(OpCodes.Newarr, indirectBuilder.AsType());
+			il.Emit(OpCodes.Newarr, indirectBuilder);
 
 			for (var i = 0; i < functionElements.Length; i++)
 			{
@@ -95,7 +95,7 @@ namespace Phorkus.WebAssembly
 				Instructions.Int32Constant.Emit(this, checked((int)fe.type));
 				il.Emit(OpCodes.Ldftn, fe.function);
 				il.Emit(OpCodes.Newobj, indirectConstructorBuilder);
-				il.Emit(OpCodes.Stelem, indirectBuilder.AsType());
+				il.Emit(OpCodes.Stelem, indirectBuilder);
 			}
 
 			il.Emit(OpCodes.Stsfld, indirectLocationsFieldBuilder);
@@ -114,12 +114,12 @@ namespace Phorkus.WebAssembly
 				);
 
 			il = indirectGetFunctionPointer.GetILGenerator();
-			var value = il.DeclareLocal(indirectBuilder.AsType());
+			var value = il.DeclareLocal(indirectBuilder);
 			var indexOutOfRange = il.DeclareLocal(typeof(IndexOutOfRangeException));
 			var endTry = il.BeginExceptionBlock();
 			il.Emit(OpCodes.Ldsfld, indirectLocationsFieldBuilder);
 			il.Emit(OpCodes.Ldarg_0);
-			il.Emit(OpCodes.Ldelem, indirectBuilder.AsType());
+			il.Emit(OpCodes.Ldelem, indirectBuilder);
 			il.Emit(OpCodes.Stloc_0);
 			il.Emit(OpCodes.Leave_S, endTry);
 

@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -33,7 +34,7 @@ namespace Phorkus.VirtualMachineTest
 		[TestMethod]
 		public void Sample_Issue7()
 		{
-			using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
+			using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Phorkus.WebAssemblyTest.Samples.Issue7.wasm"))
 			{
 				var compiled = Compile.FromBinary<dynamic>(stream,
 					new RuntimeImport[] {
