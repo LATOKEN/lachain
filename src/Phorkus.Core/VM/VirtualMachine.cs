@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Phorkus.Proto;
 using Phorkus.WebAssembly;
@@ -9,6 +10,8 @@ namespace Phorkus.Core.VM
     
     public class VirtualMachine : IVirtualMachine
     {
+        private IEnumerable<FunctionImport> _functionImports;
+        
         public bool VerifyContract(Contract contract)
         {
             var contractCode = contract.Wasm.ToByteArray();
@@ -37,13 +40,20 @@ namespace Phorkus.Core.VM
                 return false;
             }
         }
+
+        private IEnumerable<FunctionImport> GetFunctionImports()
+        {
+            if (_functionImports != null)
+                return _functionImports;
+            _functionImports = new EthereumExternalHandler().GetFunctionImports();
+            return _functionImports;
+        }
         
         private bool _InvokeContractUnsafe(Contract contract, Invocation invocation)
         {
             if (contract.Version != ContractVersion.Wasm)
-                return false;
-            
-            using (var invocationContext = _CompileWasm<dynamic>(contract.Wasm.ToByteArray())())
+                return false;            
+            using (var invocationContext = _CompileWasm<dynamic>(contract.Wasm.ToByteArray(), GetFunctionImports())())
             {
                 if (!(invocationContext.Exports.GetType() is Type type))
                     return false;
@@ -56,11 +66,11 @@ namespace Phorkus.Core.VM
             return true;
         }
         
-        private Func<Instance<T>> _CompileWasm<T>(byte[] buffer)
+        private Func<Instance<T>> _CompileWasm<T>(byte[] buffer, IEnumerable<RuntimeImport> imports = null)
             where T : class
         {
             using (var stream = new MemoryStream(buffer, 0, buffer.Length, false))
-                return Compile.FromBinary<T>(stream);
+                return Compile.FromBinary<T>(stream, imports);
         }
     }
 }

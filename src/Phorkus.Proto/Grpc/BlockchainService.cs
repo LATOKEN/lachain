@@ -31,14 +31,15 @@ namespace Phorkus.Proto.Grpc {
             "Y2tCeUhhc2hSZXF1ZXN0EhwKCmJsb2NrX2hhc2gYASABKAsyCC5VSW50MjU2",
             "IiwKE0dldEJsb2NrQnlIYXNoUmVwbHkSFQoFYmxvY2sYASABKAsyBi5CbG9j",
             "ayJBChtHZXRUcmFuc2FjdGlvbkJ5SGFzaFJlcXVlc3QSIgoQdHJhbnNhY3Rp",
-            "b25faGFzaBgBIAEoCzIILlVJbnQyNTYiPgoZR2V0VHJhbnNhY3Rpb25CeUhh",
-            "c2hSZXBseRIhCgt0cmFuc2FjdGlvbhgBIAEoCzIMLlRyYW5zYWN0aW9uMusB",
-            "ChFCbG9ja2NoYWluU2VydmljZRJEChBHZXRCbG9ja0J5SGVpZ2h0EhguR2V0",
-            "QmxvY2tCeUhlaWdodFJlcXVlc3QaFi5HZXRCbG9ja0J5SGVpZ2h0UmVwbHkS",
-            "PgoOR2V0QmxvY2tCeUhhc2gSFi5HZXRCbG9ja0J5SGFzaFJlcXVlc3QaFC5H",
-            "ZXRCbG9ja0J5SGFzaFJlcGx5ElAKFEdldFRyYW5zYWN0aW9uQnlIYXNoEhwu",
-            "R2V0VHJhbnNhY3Rpb25CeUhhc2hSZXF1ZXN0GhouR2V0VHJhbnNhY3Rpb25C",
-            "eUhhc2hSZXBseUIVqgISUGhvcmt1cy5Qcm90by5HcnBjYgZwcm90bzM="));
+            "b25faGFzaBgBIAEoCzIILlVJbnQyNTYiRAoZR2V0VHJhbnNhY3Rpb25CeUhh",
+            "c2hSZXBseRInCgt0cmFuc2FjdGlvbhgBIAEoCzISLlNpZ25lZFRyYW5zYWN0",
+            "aW9uMusBChFCbG9ja2NoYWluU2VydmljZRJEChBHZXRCbG9ja0J5SGVpZ2h0",
+            "EhguR2V0QmxvY2tCeUhlaWdodFJlcXVlc3QaFi5HZXRCbG9ja0J5SGVpZ2h0",
+            "UmVwbHkSPgoOR2V0QmxvY2tCeUhhc2gSFi5HZXRCbG9ja0J5SGFzaFJlcXVl",
+            "c3QaFC5HZXRCbG9ja0J5SGFzaFJlcGx5ElAKFEdldFRyYW5zYWN0aW9uQnlI",
+            "YXNoEhwuR2V0VHJhbnNhY3Rpb25CeUhhc2hSZXF1ZXN0GhouR2V0VHJhbnNh",
+            "Y3Rpb25CeUhhc2hSZXBseUIVqgISUGhvcmt1cy5Qcm90by5HcnBjYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -759,9 +760,9 @@ namespace Phorkus.Proto.Grpc {
 
     /// <summary>Field number for the "transaction" field.</summary>
     public const int TransactionFieldNumber = 1;
-    private global::Phorkus.Proto.Transaction transaction_;
+    private global::Phorkus.Proto.SignedTransaction transaction_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.Transaction Transaction {
+    public global::Phorkus.Proto.SignedTransaction Transaction {
       get { return transaction_; }
       set {
         transaction_ = value;
@@ -830,7 +831,7 @@ namespace Phorkus.Proto.Grpc {
       }
       if (other.transaction_ != null) {
         if (transaction_ == null) {
-          transaction_ = new global::Phorkus.Proto.Transaction();
+          transaction_ = new global::Phorkus.Proto.SignedTransaction();
         }
         Transaction.MergeFrom(other.Transaction);
       }
@@ -847,7 +848,7 @@ namespace Phorkus.Proto.Grpc {
             break;
           case 10: {
             if (transaction_ == null) {
-              transaction_ = new global::Phorkus.Proto.Transaction();
+              transaction_ = new global::Phorkus.Proto.SignedTransaction();
             }
             input.ReadMessage(transaction_);
             break;

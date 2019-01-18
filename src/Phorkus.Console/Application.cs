@@ -12,6 +12,7 @@ using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
+using Phorkus.Core.RPC;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
@@ -74,6 +75,7 @@ namespace Phorkus.Console
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             var blockManager = _container.Resolve<IBlockManager>();
             var virtualMachine = _container.Resolve<IVirtualMachine>();
+            var rpcManager = _container.Resolve<IRpcManager>();
             
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
             var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
@@ -136,6 +138,7 @@ namespace Phorkus.Console
             blockSynchronizer.Start();
             withdrawalManager.Start(thresholdKey, keyPair);
             commandManager.Start(thresholdKey, keyPair);
+            rpcManager.Start();
             
             // var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
             

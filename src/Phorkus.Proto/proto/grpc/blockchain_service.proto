@@ -23,7 +23,7 @@ message GetTransactionByHashRequest {
     UInt256 transaction_hash = 1;
 }
 message GetTransactionByHashReply {
-    Transaction transaction = 1;
+    SignedTransaction transaction = 1;
 }
 
 service BlockchainService {

@@ -7,6 +7,7 @@ using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.CrossChain;
+using Phorkus.Core.RPC;
 using Phorkus.Core.Threshold;
 using Phorkus.Core.VM;
 using Phorkus.CrossChain;
@@ -19,7 +20,6 @@ namespace Phorkus.Core.DI.Modules
         {
             /* global */
             containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
-            
             containerBuilder.RegisterSingleton<IConsoleManager, ConsoleManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
@@ -39,6 +39,8 @@ namespace Phorkus.Core.DI.Modules
             /* pool */
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
             containerBuilder.RegisterSingleton<IThresholdManager, ThresholdManager>();
+            /* rpc */
+            containerBuilder.RegisterSingleton<IRpcManager, RpcManager>();
             /* vm */
             containerBuilder.RegisterSingleton<IVirtualMachine, VM.VirtualMachine>();
         }
