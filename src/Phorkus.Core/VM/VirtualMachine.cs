@@ -60,11 +60,7 @@ namespace Phorkus.Core.VM
             where T : class
         {
             using (var stream = new MemoryStream(buffer, 0, buffer.Length, false))
-            {
-//                var reader = new BinaryReader(stream);
-//                var magic = reader.ReadUInt32();
                 return Compile.FromBinary<T>(stream);
-            }
         }
     }
 }
