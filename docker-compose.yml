@@ -6,6 +6,8 @@ services:
       args:
         CONFIG: src/Phorkus.Console/config1.json
       dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
     ports:
     - "5051:5051"
     network_mode: "host"
@@ -16,13 +18,11 @@ services:
       args:
         CONFIG: src/Phorkus.Console/config2.json
       dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
     ports:
     - "5052:5052"
     network_mode: "host"
-    depends_on:
-      - node1
-      - node3
-      - node4
 
   node3:
     build:
@@ -30,6 +30,8 @@ services:
       args:
         CONFIG: src/Phorkus.Console/config3.json
       dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
     ports:
     - "5053:5053"
     network_mode: "host"
@@ -40,6 +42,8 @@ services:
       args:
         CONFIG: src/Phorkus.Console/config4.json
       dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
     ports:
     - "5054:5054"
     network_mode: "host"
