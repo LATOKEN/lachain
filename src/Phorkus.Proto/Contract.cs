@@ -33,16 +33,17 @@ namespace Phorkus.Proto {
             "c2lvbiIpCg5Db250cmFjdEdsb2JhbBIXCg90b3RhbF9jb250cmFjdHMYASAB",
             "KA0iUgoKSW52b2NhdGlvbhIfCg1jb250cmFjdF9oYXNoGAEgASgLMgguVUlu",
             "dDE2MBITCgttZXRob2RfbmFtZRgCIAEoCRIOCgZwYXJhbXMYAyADKAwqLAoP",
-            "Q29udHJhY3RWZXJzaW9uEhkKFUNPTlRSQUNUX1ZFUlNJT05fV0FTTRAAKrYC",
+            "Q29udHJhY3RWZXJzaW9uEhkKFUNPTlRSQUNUX1ZFUlNJT05fV0FTTRAAKs8C",
             "CgxDb250cmFjdFR5cGUSGwoXQ09OVFJBQ1RfVFlQRV9TSUdOQVRVUkUQABIZ",
             "ChVDT05UUkFDVF9UWVBFX0JPT0xFQU4QARIZChVDT05UUkFDVF9UWVBFX0lO",
-            "VEVHRVIQAhIWChJDT05UUkFDVF9UWVBFX0xPTkcQAxIZChVDT05UUkFDVF9U",
-            "WVBFX0hBU0gxNjAQBBIZChVDT05UUkFDVF9UWVBFX0hBU0gyNTYQBRIcChhD",
-            "T05UUkFDVF9UWVBFX0JZVEVfQVJSQVkQBhIcChhDT05UUkFDVF9UWVBFX1BV",
-            "QkxJQ19LRVkQBxIYChRDT05UUkFDVF9UWVBFX1NUUklORxAIEhcKE0NPTlRS",
-            "QUNUX1RZUEVfQVJSQVkQCRIWChJDT05UUkFDVF9UWVBFX1ZPSUQQCioxChBD",
-            "b250cmFjdE1vZGlmaWVyEh0KGUNPTlRSQUNUX01PRElGSUVSX1BBWUFCTEUQ",
-            "AEIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "VEVHRVIQAhIWChJDT05UUkFDVF9UWVBFX0xPTkcQAxIYChRDT05UUkFDVF9U",
+            "WVBFX0lOVDE2MBAEEhgKFENPTlRSQUNUX1RZUEVfSU5UMjU2EAUSHAoYQ09O",
+            "VFJBQ1RfVFlQRV9CWVRFX0FSUkFZEAYSHAoYQ09OVFJBQ1RfVFlQRV9QVUJM",
+            "SUNfS0VZEAcSGAoUQ09OVFJBQ1RfVFlQRV9TVFJJTkcQCBIXChNDT05UUkFD",
+            "VF9UWVBFX0FSUkFZEAkSGQoVQ09OVFJBQ1RfVFlQRV9BRERSRVNTEAoSFgoS",
+            "Q09OVFJBQ1RfVFlQRV9WT0lEEAsqMQoQQ29udHJhY3RNb2RpZmllchIdChlD",
+            "T05UUkFDVF9NT0RJRklFUl9QQVlBQkxFEABCEKoCDVBob3JrdXMuUHJvdG9i",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractVersion), typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
@@ -65,13 +66,14 @@ namespace Phorkus.Proto {
     [pbr::OriginalName("CONTRACT_TYPE_BOOLEAN")] Boolean = 1,
     [pbr::OriginalName("CONTRACT_TYPE_INTEGER")] Integer = 2,
     [pbr::OriginalName("CONTRACT_TYPE_LONG")] Long = 3,
-    [pbr::OriginalName("CONTRACT_TYPE_HASH160")] Hash160 = 4,
-    [pbr::OriginalName("CONTRACT_TYPE_HASH256")] Hash256 = 5,
+    [pbr::OriginalName("CONTRACT_TYPE_INT160")] Int160 = 4,
+    [pbr::OriginalName("CONTRACT_TYPE_INT256")] Int256 = 5,
     [pbr::OriginalName("CONTRACT_TYPE_BYTE_ARRAY")] ByteArray = 6,
     [pbr::OriginalName("CONTRACT_TYPE_PUBLIC_KEY")] PublicKey = 7,
     [pbr::OriginalName("CONTRACT_TYPE_STRING")] String = 8,
     [pbr::OriginalName("CONTRACT_TYPE_ARRAY")] Array = 9,
-    [pbr::OriginalName("CONTRACT_TYPE_VOID")] Void = 10,
+    [pbr::OriginalName("CONTRACT_TYPE_ADDRESS")] Address = 10,
+    [pbr::OriginalName("CONTRACT_TYPE_VOID")] Void = 11,
   }
 
   public enum ContractModifier {

@@ -18,6 +18,8 @@ namespace Phorkus.Proto.Grpc {
     static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetBlockByHashReply> __Marshaller_GetBlockByHashReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetBlockByHashReply.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetTransactionByHashRequest> __Marshaller_GetTransactionByHashRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetTransactionByHashRequest.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetTransactionByHashReply> __Marshaller_GetTransactionByHashReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetTransactionByHashReply.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetBlockStatRequest> __Marshaller_GetBlockStatRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetBlockStatRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetBlockStatReply> __Marshaller_GetBlockStatReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetBlockStatReply.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Phorkus.Proto.Grpc.GetBlockByHeightRequest, global::Phorkus.Proto.Grpc.GetBlockByHeightReply> __Method_GetBlockByHeight = new grpc::Method<global::Phorkus.Proto.Grpc.GetBlockByHeightRequest, global::Phorkus.Proto.Grpc.GetBlockByHeightReply>(
         grpc::MethodType.Unary,
@@ -40,6 +42,13 @@ namespace Phorkus.Proto.Grpc {
         __Marshaller_GetTransactionByHashRequest,
         __Marshaller_GetTransactionByHashReply);
 
+    static readonly grpc::Method<global::Phorkus.Proto.Grpc.GetBlockStatRequest, global::Phorkus.Proto.Grpc.GetBlockStatReply> __Method_GetBlockStat = new grpc::Method<global::Phorkus.Proto.Grpc.GetBlockStatRequest, global::Phorkus.Proto.Grpc.GetBlockStatReply>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetBlockStat",
+        __Marshaller_GetBlockStatRequest,
+        __Marshaller_GetBlockStatReply);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -60,6 +69,11 @@ namespace Phorkus.Proto.Grpc {
       }
 
       public virtual global::System.Threading.Tasks.Task<global::Phorkus.Proto.Grpc.GetTransactionByHashReply> GetTransactionByHash(global::Phorkus.Proto.Grpc.GetTransactionByHashRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      public virtual global::System.Threading.Tasks.Task<global::Phorkus.Proto.Grpc.GetBlockStatReply> GetBlockStat(global::Phorkus.Proto.Grpc.GetBlockStatRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -137,6 +151,22 @@ namespace Phorkus.Proto.Grpc {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetTransactionByHash, null, options, request);
       }
+      public virtual global::Phorkus.Proto.Grpc.GetBlockStatReply GetBlockStat(global::Phorkus.Proto.Grpc.GetBlockStatRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetBlockStat(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Phorkus.Proto.Grpc.GetBlockStatReply GetBlockStat(global::Phorkus.Proto.Grpc.GetBlockStatRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetBlockStat, null, options, request);
+      }
+      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.GetBlockStatReply> GetBlockStatAsync(global::Phorkus.Proto.Grpc.GetBlockStatRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetBlockStatAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.GetBlockStatReply> GetBlockStatAsync(global::Phorkus.Proto.Grpc.GetBlockStatRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetBlockStat, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override BlockchainServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
@@ -151,7 +181,8 @@ namespace Phorkus.Proto.Grpc {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_GetBlockByHeight, serviceImpl.GetBlockByHeight)
           .AddMethod(__Method_GetBlockByHash, serviceImpl.GetBlockByHash)
-          .AddMethod(__Method_GetTransactionByHash, serviceImpl.GetTransactionByHash).Build();
+          .AddMethod(__Method_GetTransactionByHash, serviceImpl.GetTransactionByHash)
+          .AddMethod(__Method_GetBlockStat, serviceImpl.GetBlockStat).Build();
     }
 
     /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
@@ -163,6 +194,7 @@ namespace Phorkus.Proto.Grpc {
       serviceBinder.AddMethod(__Method_GetBlockByHeight, serviceImpl.GetBlockByHeight);
       serviceBinder.AddMethod(__Method_GetBlockByHash, serviceImpl.GetBlockByHash);
       serviceBinder.AddMethod(__Method_GetTransactionByHash, serviceImpl.GetTransactionByHash);
+      serviceBinder.AddMethod(__Method_GetBlockStat, serviceImpl.GetBlockStat);
     }
 
   }

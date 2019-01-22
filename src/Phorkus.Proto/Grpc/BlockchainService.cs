@@ -33,13 +33,15 @@ namespace Phorkus.Proto.Grpc {
             "ayJBChtHZXRUcmFuc2FjdGlvbkJ5SGFzaFJlcXVlc3QSIgoQdHJhbnNhY3Rp",
             "b25faGFzaBgBIAEoCzIILlVJbnQyNTYiRAoZR2V0VHJhbnNhY3Rpb25CeUhh",
             "c2hSZXBseRInCgt0cmFuc2FjdGlvbhgBIAEoCzISLlNpZ25lZFRyYW5zYWN0",
-            "aW9uMusBChFCbG9ja2NoYWluU2VydmljZRJEChBHZXRCbG9ja0J5SGVpZ2h0",
-            "EhguR2V0QmxvY2tCeUhlaWdodFJlcXVlc3QaFi5HZXRCbG9ja0J5SGVpZ2h0",
-            "UmVwbHkSPgoOR2V0QmxvY2tCeUhhc2gSFi5HZXRCbG9ja0J5SGFzaFJlcXVl",
-            "c3QaFC5HZXRCbG9ja0J5SGFzaFJlcGx5ElAKFEdldFRyYW5zYWN0aW9uQnlI",
-            "YXNoEhwuR2V0VHJhbnNhY3Rpb25CeUhhc2hSZXF1ZXN0GhouR2V0VHJhbnNh",
-            "Y3Rpb25CeUhhc2hSZXBseUIVqgISUGhvcmt1cy5Qcm90by5HcnBjYgZwcm90",
-            "bzM="));
+            "aW9uIhUKE0dldEJsb2NrU3RhdFJlcXVlc3QiKwoRR2V0QmxvY2tTdGF0UmVw",
+            "bHkSFgoOY3VycmVudF9oZWlnaHQYASABKAQypQIKEUJsb2NrY2hhaW5TZXJ2",
+            "aWNlEkQKEEdldEJsb2NrQnlIZWlnaHQSGC5HZXRCbG9ja0J5SGVpZ2h0UmVx",
+            "dWVzdBoWLkdldEJsb2NrQnlIZWlnaHRSZXBseRI+Cg5HZXRCbG9ja0J5SGFz",
+            "aBIWLkdldEJsb2NrQnlIYXNoUmVxdWVzdBoULkdldEJsb2NrQnlIYXNoUmVw",
+            "bHkSUAoUR2V0VHJhbnNhY3Rpb25CeUhhc2gSHC5HZXRUcmFuc2FjdGlvbkJ5",
+            "SGFzaFJlcXVlc3QaGi5HZXRUcmFuc2FjdGlvbkJ5SGFzaFJlcGx5EjgKDEdl",
+            "dEJsb2NrU3RhdBIULkdldEJsb2NrU3RhdFJlcXVlc3QaEi5HZXRCbG9ja1N0",
+            "YXRSZXBseUIVqgISUGhvcmt1cy5Qcm90by5HcnBjYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -48,7 +50,9 @@ namespace Phorkus.Proto.Grpc {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetBlockByHashRequest), global::Phorkus.Proto.Grpc.GetBlockByHashRequest.Parser, new[]{ "BlockHash" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetBlockByHashReply), global::Phorkus.Proto.Grpc.GetBlockByHashReply.Parser, new[]{ "Block" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetTransactionByHashRequest), global::Phorkus.Proto.Grpc.GetTransactionByHashRequest.Parser, new[]{ "TransactionHash" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetTransactionByHashReply), global::Phorkus.Proto.Grpc.GetTransactionByHashReply.Parser, new[]{ "Transaction" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetTransactionByHashReply), global::Phorkus.Proto.Grpc.GetTransactionByHashReply.Parser, new[]{ "Transaction" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetBlockStatRequest), global::Phorkus.Proto.Grpc.GetBlockStatRequest.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetBlockStatReply), global::Phorkus.Proto.Grpc.GetBlockStatReply.Parser, new[]{ "CurrentHeight" }, null, null, null)
           }));
     }
     #endregion
@@ -851,6 +855,236 @@ namespace Phorkus.Proto.Grpc {
               transaction_ = new global::Phorkus.Proto.SignedTransaction();
             }
             input.ReadMessage(transaction_);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class GetBlockStatRequest : pb::IMessage<GetBlockStatRequest> {
+    private static readonly pb::MessageParser<GetBlockStatRequest> _parser = new pb::MessageParser<GetBlockStatRequest>(() => new GetBlockStatRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GetBlockStatRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.Grpc.BlockchainServiceReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlockStatRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlockStatRequest(GetBlockStatRequest other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlockStatRequest Clone() {
+      return new GetBlockStatRequest(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as GetBlockStatRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(GetBlockStatRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(GetBlockStatRequest other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class GetBlockStatReply : pb::IMessage<GetBlockStatReply> {
+    private static readonly pb::MessageParser<GetBlockStatReply> _parser = new pb::MessageParser<GetBlockStatReply>(() => new GetBlockStatReply());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<GetBlockStatReply> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.Grpc.BlockchainServiceReflection.Descriptor.MessageTypes[7]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlockStatReply() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlockStatReply(GetBlockStatReply other) : this() {
+      currentHeight_ = other.currentHeight_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public GetBlockStatReply Clone() {
+      return new GetBlockStatReply(this);
+    }
+
+    /// <summary>Field number for the "current_height" field.</summary>
+    public const int CurrentHeightFieldNumber = 1;
+    private ulong currentHeight_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong CurrentHeight {
+      get { return currentHeight_; }
+      set {
+        currentHeight_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as GetBlockStatReply);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(GetBlockStatReply other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (CurrentHeight != other.CurrentHeight) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (CurrentHeight != 0UL) hash ^= CurrentHeight.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (CurrentHeight != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(CurrentHeight);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (CurrentHeight != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(CurrentHeight);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(GetBlockStatReply other) {
+      if (other == null) {
+        return;
+      }
+      if (other.CurrentHeight != 0UL) {
+        CurrentHeight = other.CurrentHeight;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            CurrentHeight = input.ReadUInt64();
             break;
           }
         }

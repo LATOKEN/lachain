@@ -1,5 +1,6 @@
 syntax = "proto3";
 option csharp_namespace = "Phorkus.Proto.Grpc";
+option java_package = "com.latoken.proto";
 
 import "block.proto";
 import "transaction.proto";
@@ -26,8 +27,15 @@ message GetTransactionByHashReply {
     SignedTransaction transaction = 1;
 }
 
+message GetBlockStatRequest {
+}
+message GetBlockStatReply {
+    uint64 current_height = 1;
+}
+
 service BlockchainService {
     rpc GetBlockByHeight(GetBlockByHeightRequest) returns(GetBlockByHeightReply);   
     rpc GetBlockByHash(GetBlockByHashRequest) returns(GetBlockByHashReply);
     rpc GetTransactionByHash(GetTransactionByHashRequest) returns(GetTransactionByHashReply);
+    rpc GetBlockStat(GetBlockStatRequest) returns(GetBlockStatReply);
 }

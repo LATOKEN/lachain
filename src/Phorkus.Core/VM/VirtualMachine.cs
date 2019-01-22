@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Google.Protobuf;
-using Microsoft.Extensions.Options;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 
 namespace Phorkus.Core.VM
@@ -91,9 +91,17 @@ namespace Phorkus.Core.VM
                 switch (type)
                 {
                     case ContractType.Signature:
+                        result.AddRange(_ParseSignature(values[valueOffset]));
+                        break;
                     case ContractType.Boolean:
-                    case ContractType.Hash160:
-                    case ContractType.Hash256:
+                        result.Add(_ParseBoolean(values[valueOffset]));
+                        break;
+                    case ContractType.Int160:
+                        result.AddRange(_ParseInt160(values[valueOffset]));
+                        break;
+                    case ContractType.Int256:
+                        result.AddRange(_ParseInt256(values[valueOffset]));
+                        break;
                     case ContractType.ByteArray:
                     case ContractType.PublicKey:
                     case ContractType.String:
@@ -113,14 +121,58 @@ namespace Phorkus.Core.VM
             }
             return result.ToArray();
         }
-        
-        private int _ParseInteger(ByteString value)
+
+        private object[] _ParseSignature(ByteString value)
         {
+            if (value.Length != 65)
+                throw new ArgumentOutOfRangeException(nameof(value), "Signature value must contains 65 bytes");
+            var bytes = value.ToByteArray();
+            var result = new object[9];
+            for (var i = 0; i < result.Length; i++)
+                result[i] = BitConverter.ToInt64(bytes, i * 8);
+            return result;
+        }
+
+        private object[] _ParseInt160(ByteString value)
+        {
+            if (value.Length != 20)
+                throw new ArgumentOutOfRangeException(nameof(value), "UInt160 value must contains 20 bytes");
+            var bytes = value.ToByteArray();
+            var result = new object[3];
+            for (var i = 0; i < result.Length; i++)
+                result[i] = BitConverter.ToInt64(bytes, i * 8);
+            return result;
+        }
+        
+        private object[] _ParseInt256(ByteString value)
+        {
+            if (value.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(value), "UInt256 value must contains 32 bytes");
+            var bytes = value.ToByteArray();
+            var result = new object[4];
+            for (var i = 0; i < result.Length; i++)
+                result[i] = BitConverter.ToInt64(bytes, i * 8);
+            return result;
+        }
+        
+        private object _ParseBoolean(ByteString value)
+        {
+            if (value.Length != 1)
+                throw new ArgumentOutOfRangeException(nameof(value), "Boolean value must contains 1 byte");
+            return BitConverter.ToBoolean(value.ToByteArray(), 0);
+        }
+        
+        private object _ParseInteger(ByteString value)
+        {
+            if (value.Length != 4)
+                throw new ArgumentOutOfRangeException(nameof(value), "Integer value must contains 4 bytes");
             return BitConverter.ToInt32(value.ToByteArray(), 0);
         }
         
-        private long _ParseLong(ByteString value)
+        private object _ParseLong(ByteString value)
         {
+            if (value.Length != 8)
+                throw new ArgumentOutOfRangeException(nameof(value), "Long value must contains 8 bytes");
             return BitConverter.ToInt64(value.ToByteArray(), 0);
         }
 

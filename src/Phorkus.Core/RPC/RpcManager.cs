@@ -1,5 +1,6 @@
 ﻿using System;
 using Grpc.Core;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Proto.Grpc;
@@ -10,15 +11,18 @@ namespace Phorkus.Core.RPC
     {
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
+        private readonly IBlockchainContext _blockchainContext;
         private readonly IConfigManager _configManager;
 
         public RpcManager(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
+            IBlockchainContext blockchainContext,
             IConfigManager configManager)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
+            _blockchainContext = blockchainContext;
             _configManager = configManager;
         }
 
@@ -32,7 +36,7 @@ namespace Phorkus.Core.RPC
             {
                 Services =
                 {
-                    BlockchainService.BindService(new GRPC.BlockchainService(_transactionManager, _blockManager))
+                    BlockchainService.BindService(new GRPC.BlockchainService(_transactionManager, _blockManager, _blockchainContext))
                 },
                 Ports =
                 {

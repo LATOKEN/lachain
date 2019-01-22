@@ -54,7 +54,7 @@ namespace Phorkus.Benchmark
             };
             const int tries = 100;
             var invocations = new Invocation[tries];
-            for (int i = 0; i < tries; i++)
+            for (var i = 0; i < tries; i++)
                 invocations[i] = new Invocation
                 {
                     ContractHash = UInt160Utils.Zero,
