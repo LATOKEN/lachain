@@ -45,7 +45,8 @@ namespace Phorkus.Benchmark
             var rocksDbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = new StorageManager(rocksDbContext);
 
-            uint T = 100000, batches = 100;
+            const uint T = 100000;
+            const uint batches = 100;
             IDictionary<byte[], byte[]> blocks = new Dictionary<byte[], byte[]>();
 
             var state = storageManager.GetLastState(1);

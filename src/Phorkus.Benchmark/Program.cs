@@ -10,8 +10,9 @@ namespace Phorkus.Benchmark
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("Usage: dotnet Phorkus.Benchmark.dll <storage/blockchain>");
-                return;
+                args = new string[] { "virtualmachine" };
+//                Console.WriteLine("Usage: dotnet Phorkus.Benchmark.dll <storage/blockchain>");
+//                return;
             }
 
             var bench = args[0];
@@ -23,6 +24,9 @@ namespace Phorkus.Benchmark
                     break;
                 case "storage":
                     app = new StorageBenchmark();
+                    break;
+                case "virtualmachine":
+                    app = new VirtualMachineBenchmark();
                     break;
                 default:
                     throw new Exception("Invalid benchmark type");

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using NetMQ;
 using NetMQ.Sockets;
 
-namespace Phorkus.Networking
+namespace Phorkus.Networking.ZeroMQ
 {
     public class ServerWorker
     {

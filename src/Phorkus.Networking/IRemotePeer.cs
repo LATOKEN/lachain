@@ -1,5 +1,4 @@
 ﻿using System;
-using Google.Protobuf;
 using Phorkus.Proto;
 
 namespace Phorkus.Networking

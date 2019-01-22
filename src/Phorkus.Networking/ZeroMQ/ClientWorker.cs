@@ -7,7 +7,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using Phorkus.Proto;
 
-namespace Phorkus.Networking
+namespace Phorkus.Networking.ZeroMQ
 {
     public class ClientWorker : IRemotePeer
     {

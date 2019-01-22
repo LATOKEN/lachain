@@ -24,30 +24,29 @@ namespace Phorkus.Proto {
     static ContractReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg5jb250cmFjdC5wcm90bxoNZGVmYXVsdC5wcm90byKOAQoLQ29udHJhY3RB",
-            "QkkSDgoGbWV0aG9kGAEgASgJEgwKBGhhc2gYAiABKAwSHAoFaW5wdXQYAyAD",
-            "KA4yDS5Db250cmFjdFR5cGUSHQoGb3V0cHV0GAQgASgOMg0uQ29udHJhY3RU",
-            "eXBlEiQKCW1vZGlmaWVycxgFIAMoDjIRLkNvbnRyYWN0TW9kaWZpZXIibgoI",
-            "Q29udHJhY3QSFgoEaGFzaBgBIAEoCzIILlVJbnQxNjASGQoDYWJpGAIgAygL",
-            "MgwuQ29udHJhY3RBQkkSDAoEd2FzbRgDIAEoDBIhCgd2ZXJzaW9uGAQgASgO",
-            "MhAuQ29udHJhY3RWZXJzaW9uIikKDkNvbnRyYWN0R2xvYmFsEhcKD3RvdGFs",
-            "X2NvbnRyYWN0cxgBIAEoDSJSCgpJbnZvY2F0aW9uEh8KDWNvbnRyYWN0X2hh",
-            "c2gYASABKAsyCC5VSW50MTYwEhMKC21ldGhvZF9uYW1lGAIgASgJEg4KBnBh",
-            "cmFtcxgDIAMoDCosCg9Db250cmFjdFZlcnNpb24SGQoVQ09OVFJBQ1RfVkVS",
-            "U0lPTl9XQVNNEAAqwwIKDENvbnRyYWN0VHlwZRIbChdDT05UUkFDVF9UWVBF",
-            "X1NJR05BVFVSRRAAEhkKFUNPTlRSQUNUX1RZUEVfQk9PTEVBThABEhkKFUNP",
-            "TlRSQUNUX1RZUEVfSU5URUdFUhACEhkKFUNPTlRSQUNUX1RZUEVfSEFTSDE2",
-            "MBADEhkKFUNPTlRSQUNUX1RZUEVfSEFTSDI1NhAEEhwKGENPTlRSQUNUX1RZ",
-            "UEVfQllURV9BUlJBWRAFEhwKGENPTlRSQUNUX1RZUEVfUFVCTElDX0tFWRAG",
-            "EhgKFENPTlRSQUNUX1RZUEVfU1RSSU5HEAcSFwoTQ09OVFJBQ1RfVFlQRV9B",
-            "UlJBWRAIEiMKH0NPTlRSQUNUX1RZUEVfSU5URVJPUF9JTlRFUkZBQ0UQCRIW",
-            "ChJDT05UUkFDVF9UWVBFX1ZPSUQQCioxChBDb250cmFjdE1vZGlmaWVyEh0K",
-            "GUNPTlRSQUNUX01PRElGSUVSX1BBWUFCTEUQAEIQqgINUGhvcmt1cy5Qcm90",
-            "b2IGcHJvdG8z"));
+            "Cg5jb250cmFjdC5wcm90bxoNZGVmYXVsdC5wcm90byKAAQoLQ29udHJhY3RB",
+            "QkkSDgoGbWV0aG9kGAEgASgJEhwKBWlucHV0GAIgAygOMg0uQ29udHJhY3RU",
+            "eXBlEh0KBm91dHB1dBgDIAEoDjINLkNvbnRyYWN0VHlwZRIkCgltb2RpZmll",
+            "cnMYBCADKA4yES5Db250cmFjdE1vZGlmaWVyIm4KCENvbnRyYWN0EhYKBGhh",
+            "c2gYASABKAsyCC5VSW50MTYwEhkKA2FiaRgCIAMoCzIMLkNvbnRyYWN0QUJJ",
+            "EgwKBHdhc20YAyABKAwSIQoHdmVyc2lvbhgEIAEoDjIQLkNvbnRyYWN0VmVy",
+            "c2lvbiIpCg5Db250cmFjdEdsb2JhbBIXCg90b3RhbF9jb250cmFjdHMYASAB",
+            "KA0iUgoKSW52b2NhdGlvbhIfCg1jb250cmFjdF9oYXNoGAEgASgLMgguVUlu",
+            "dDE2MBITCgttZXRob2RfbmFtZRgCIAEoCRIOCgZwYXJhbXMYAyADKAwqLAoP",
+            "Q29udHJhY3RWZXJzaW9uEhkKFUNPTlRSQUNUX1ZFUlNJT05fV0FTTRAAKrYC",
+            "CgxDb250cmFjdFR5cGUSGwoXQ09OVFJBQ1RfVFlQRV9TSUdOQVRVUkUQABIZ",
+            "ChVDT05UUkFDVF9UWVBFX0JPT0xFQU4QARIZChVDT05UUkFDVF9UWVBFX0lO",
+            "VEVHRVIQAhIWChJDT05UUkFDVF9UWVBFX0xPTkcQAxIZChVDT05UUkFDVF9U",
+            "WVBFX0hBU0gxNjAQBBIZChVDT05UUkFDVF9UWVBFX0hBU0gyNTYQBRIcChhD",
+            "T05UUkFDVF9UWVBFX0JZVEVfQVJSQVkQBhIcChhDT05UUkFDVF9UWVBFX1BV",
+            "QkxJQ19LRVkQBxIYChRDT05UUkFDVF9UWVBFX1NUUklORxAIEhcKE0NPTlRS",
+            "QUNUX1RZUEVfQVJSQVkQCRIWChJDT05UUkFDVF9UWVBFX1ZPSUQQCioxChBD",
+            "b250cmFjdE1vZGlmaWVyEh0KGUNPTlRSQUNUX01PRElGSUVSX1BBWUFCTEUQ",
+            "AEIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractVersion), typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractABI), global::Phorkus.Proto.ContractABI.Parser, new[]{ "Method", "Hash", "Input", "Output", "Modifiers" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractABI), global::Phorkus.Proto.ContractABI.Parser, new[]{ "Method", "Input", "Output", "Modifiers" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Wasm", "Version" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractGlobal), global::Phorkus.Proto.ContractGlobal.Parser, new[]{ "TotalContracts" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Invocation), global::Phorkus.Proto.Invocation.Parser, new[]{ "ContractHash", "MethodName", "Params" }, null, null, null)
@@ -65,13 +64,13 @@ namespace Phorkus.Proto {
     [pbr::OriginalName("CONTRACT_TYPE_SIGNATURE")] Signature = 0,
     [pbr::OriginalName("CONTRACT_TYPE_BOOLEAN")] Boolean = 1,
     [pbr::OriginalName("CONTRACT_TYPE_INTEGER")] Integer = 2,
-    [pbr::OriginalName("CONTRACT_TYPE_HASH160")] Hash160 = 3,
-    [pbr::OriginalName("CONTRACT_TYPE_HASH256")] Hash256 = 4,
-    [pbr::OriginalName("CONTRACT_TYPE_BYTE_ARRAY")] ByteArray = 5,
-    [pbr::OriginalName("CONTRACT_TYPE_PUBLIC_KEY")] PublicKey = 6,
-    [pbr::OriginalName("CONTRACT_TYPE_STRING")] String = 7,
-    [pbr::OriginalName("CONTRACT_TYPE_ARRAY")] Array = 8,
-    [pbr::OriginalName("CONTRACT_TYPE_INTEROP_INTERFACE")] InteropInterface = 9,
+    [pbr::OriginalName("CONTRACT_TYPE_LONG")] Long = 3,
+    [pbr::OriginalName("CONTRACT_TYPE_HASH160")] Hash160 = 4,
+    [pbr::OriginalName("CONTRACT_TYPE_HASH256")] Hash256 = 5,
+    [pbr::OriginalName("CONTRACT_TYPE_BYTE_ARRAY")] ByteArray = 6,
+    [pbr::OriginalName("CONTRACT_TYPE_PUBLIC_KEY")] PublicKey = 7,
+    [pbr::OriginalName("CONTRACT_TYPE_STRING")] String = 8,
+    [pbr::OriginalName("CONTRACT_TYPE_ARRAY")] Array = 9,
     [pbr::OriginalName("CONTRACT_TYPE_VOID")] Void = 10,
   }
 
@@ -108,7 +107,6 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ContractABI(ContractABI other) : this() {
       method_ = other.method_;
-      hash_ = other.hash_;
       input_ = other.input_.Clone();
       output_ = other.output_;
       modifiers_ = other.modifiers_.Clone();
@@ -131,21 +129,10 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "hash" field.</summary>
-    public const int HashFieldNumber = 2;
-    private pb::ByteString hash_ = pb::ByteString.Empty;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Hash {
-      get { return hash_; }
-      set {
-        hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
     /// <summary>Field number for the "input" field.</summary>
-    public const int InputFieldNumber = 3;
+    public const int InputFieldNumber = 2;
     private static readonly pb::FieldCodec<global::Phorkus.Proto.ContractType> _repeated_input_codec
-        = pb::FieldCodec.ForEnum(26, x => (int) x, x => (global::Phorkus.Proto.ContractType) x);
+        = pb::FieldCodec.ForEnum(18, x => (int) x, x => (global::Phorkus.Proto.ContractType) x);
     private readonly pbc::RepeatedField<global::Phorkus.Proto.ContractType> input_ = new pbc::RepeatedField<global::Phorkus.Proto.ContractType>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Phorkus.Proto.ContractType> Input {
@@ -153,7 +140,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "output" field.</summary>
-    public const int OutputFieldNumber = 4;
+    public const int OutputFieldNumber = 3;
     private global::Phorkus.Proto.ContractType output_ = 0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.ContractType Output {
@@ -164,9 +151,9 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "modifiers" field.</summary>
-    public const int ModifiersFieldNumber = 5;
+    public const int ModifiersFieldNumber = 4;
     private static readonly pb::FieldCodec<global::Phorkus.Proto.ContractModifier> _repeated_modifiers_codec
-        = pb::FieldCodec.ForEnum(42, x => (int) x, x => (global::Phorkus.Proto.ContractModifier) x);
+        = pb::FieldCodec.ForEnum(34, x => (int) x, x => (global::Phorkus.Proto.ContractModifier) x);
     private readonly pbc::RepeatedField<global::Phorkus.Proto.ContractModifier> modifiers_ = new pbc::RepeatedField<global::Phorkus.Proto.ContractModifier>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Phorkus.Proto.ContractModifier> Modifiers {
@@ -187,7 +174,6 @@ namespace Phorkus.Proto {
         return true;
       }
       if (Method != other.Method) return false;
-      if (Hash != other.Hash) return false;
       if(!input_.Equals(other.input_)) return false;
       if (Output != other.Output) return false;
       if(!modifiers_.Equals(other.modifiers_)) return false;
@@ -198,7 +184,6 @@ namespace Phorkus.Proto {
     public override int GetHashCode() {
       int hash = 1;
       if (Method.Length != 0) hash ^= Method.GetHashCode();
-      if (Hash.Length != 0) hash ^= Hash.GetHashCode();
       hash ^= input_.GetHashCode();
       if (Output != 0) hash ^= Output.GetHashCode();
       hash ^= modifiers_.GetHashCode();
@@ -219,13 +204,9 @@ namespace Phorkus.Proto {
         output.WriteRawTag(10);
         output.WriteString(Method);
       }
-      if (Hash.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteBytes(Hash);
-      }
       input_.WriteTo(output, _repeated_input_codec);
       if (Output != 0) {
-        output.WriteRawTag(32);
+        output.WriteRawTag(24);
         output.WriteEnum((int) Output);
       }
       modifiers_.WriteTo(output, _repeated_modifiers_codec);
@@ -239,9 +220,6 @@ namespace Phorkus.Proto {
       int size = 0;
       if (Method.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Method);
-      }
-      if (Hash.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Hash);
       }
       size += input_.CalculateSize(_repeated_input_codec);
       if (Output != 0) {
@@ -261,9 +239,6 @@ namespace Phorkus.Proto {
       }
       if (other.Method.Length != 0) {
         Method = other.Method;
-      }
-      if (other.Hash.Length != 0) {
-        Hash = other.Hash;
       }
       input_.Add(other.input_);
       if (other.Output != 0) {
@@ -285,21 +260,17 @@ namespace Phorkus.Proto {
             Method = input.ReadString();
             break;
           }
-          case 18: {
-            Hash = input.ReadBytes();
-            break;
-          }
-          case 26:
-          case 24: {
+          case 18:
+          case 16: {
             input_.AddEntriesFrom(input, _repeated_input_codec);
             break;
           }
-          case 32: {
+          case 24: {
             output_ = (global::Phorkus.Proto.ContractType) input.ReadEnum();
             break;
           }
-          case 42:
-          case 40: {
+          case 34:
+          case 32: {
             modifiers_.AddEntriesFrom(input, _repeated_modifiers_codec);
             break;
           }

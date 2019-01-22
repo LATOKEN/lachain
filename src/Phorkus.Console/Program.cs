@@ -1,7 +1,4 @@
-﻿using Phorkus.Proto;
-using Phorkus.Core.Utils;
-
-namespace Phorkus.Console
+﻿namespace Phorkus.Console
 {
     class Program
     {

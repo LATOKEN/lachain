@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Phorkus.Crypto;
+using Phorkus.Networking.ZeroMQ;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 

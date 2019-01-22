@@ -20,8 +20,8 @@ namespace Phorkus.Faker
 {
     public class BlockGenerator
     {
-        private uint _blockInterval;
-        private uint _blockTxs;
+        private readonly uint _blockInterval;
+        private readonly uint _blockTxs;
 
         public BlockGenerator(uint blockInterval, uint blockTxs)
         {

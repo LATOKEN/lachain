@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using Phorkus.Core.Blockchain;
@@ -22,9 +21,7 @@ using Phorkus.Proto;
 using Phorkus.Storage;
 using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
-using Phorkus.Utility;
 using Phorkus.Utility.Utils;
-using Phorkus.WebAssembly;
 
 namespace Phorkus.Console
 {
@@ -153,8 +150,6 @@ namespace Phorkus.Console
             );
             var signedTransaction = transactionManager.Sign(transaction, keyPair);
             transactionPool.Add(signedTransaction);*/
-
-            Thread.Sleep(10_000);
             
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 

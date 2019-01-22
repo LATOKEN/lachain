@@ -208,7 +208,7 @@ namespace Phorkus.HermesTest
             currentTime = CurrentTimeMillis();
             Console.WriteLine("R6 took " + (currentTime - checkpoint) + " ms");
             checkpoint = currentTime;
-           
+            
             List<DSASignature> signatures = new List<DSASignature>();
             for (int i = 0; i < n; ++i)
             {
