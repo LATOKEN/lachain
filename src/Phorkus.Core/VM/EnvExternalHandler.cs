@@ -11,6 +11,14 @@ namespace Phorkus.Core.VM
         {
             return 0;
         }
+
+        public static int Handler_Env_Call(
+            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset
+        )
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            return 0;
+        }
         
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
