@@ -191,13 +191,14 @@ namespace Phorkus.Core.CLI
             
             var invocation = new Invocation
             {
-                ContractHash = contractHash,
+                ContractAddress = contractHash,
                 MethodName = arguments[2],
-                Params = { }
+                Input = ByteString.Empty,
+                Sender = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160(),
             };
             Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
             var result = _virtualMachine.InvokeContract(contract, invocation);
-            return result ? "Contract has been successfully executed" : "Contract execution failed";
+            return result == ExecutionStatus.OK ? "Contract has been successfully executed" : "Contract execution failed";
         }
 
         public string InvokeContract(string[] arguments)

@@ -24,21 +24,20 @@ namespace Phorkus.Proto {
     static ConsensusReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg9jb25zZW5zdXMucHJvdG8aDWRlZmF1bHQucHJvdG8aEXRyYW5zYWN0aW9u",
-            "LnByb3RvIo8BCglWYWxpZGF0b3ISDwoHdmVyc2lvbhgBIAEoDRIbCglwcmV2",
-            "X2hhc2gYAiABKAsyCC5VSW50MjU2EhMKC2Jsb2NrX2luZGV4GAMgASgEEhcK",
-            "D3ZhbGlkYXRvcl9pbmRleBgEIAEoDRIRCgl0aW1lc3RhbXAYBSABKAQSEwoL",
-            "dmlld19udW1iZXIYBiABKA0iSwoRQ2hhbmdlVmlld1JlcXVlc3QSHQoJdmFs",
-            "aWRhdG9yGAEgASgLMgouVmFsaWRhdG9yEhcKD25ld192aWV3X251bWJlchgC",
-            "IAEoDSKbAQoTQmxvY2tQcmVwYXJlUmVxdWVzdBIdCgl2YWxpZGF0b3IYASAB",
-            "KAsyCi5WYWxpZGF0b3ISDQoFbm9uY2UYAiABKAQSJAoSdHJhbnNhY3Rpb25f",
-            "aGFzaGVzGAMgAygLMgguVUludDI1NhIRCgl0aW1lc3RhbXAYBSABKAQSHQoJ",
-            "c2lnbmF0dXJlGAYgASgLMgouU2lnbmF0dXJlIlEKEUJsb2NrUHJlcGFyZVJl",
-            "cGx5Eh0KCXZhbGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchIdCglzaWduYXR1",
-            "cmUYAiABKAsyCi5TaWduYXR1cmVCEKoCDVBob3JrdXMuUHJvdG9iBnByb3Rv",
-            "Mw=="));
+            "Cg9jb25zZW5zdXMucHJvdG8aDWRlZmF1bHQucHJvdG8ijwEKCVZhbGlkYXRv",
+            "chIPCgd2ZXJzaW9uGAEgASgNEhsKCXByZXZfaGFzaBgCIAEoCzIILlVJbnQy",
+            "NTYSEwoLYmxvY2tfaW5kZXgYAyABKAQSFwoPdmFsaWRhdG9yX2luZGV4GAQg",
+            "ASgNEhEKCXRpbWVzdGFtcBgFIAEoBBITCgt2aWV3X251bWJlchgGIAEoDSJL",
+            "ChFDaGFuZ2VWaWV3UmVxdWVzdBIdCgl2YWxpZGF0b3IYASABKAsyCi5WYWxp",
+            "ZGF0b3ISFwoPbmV3X3ZpZXdfbnVtYmVyGAIgASgNIpsBChNCbG9ja1ByZXBh",
+            "cmVSZXF1ZXN0Eh0KCXZhbGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchINCgVu",
+            "b25jZRgCIAEoBBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMYAyADKAsyCC5VSW50",
+            "MjU2EhEKCXRpbWVzdGFtcBgFIAEoBBIdCglzaWduYXR1cmUYBiABKAsyCi5T",
+            "aWduYXR1cmUiUQoRQmxvY2tQcmVwYXJlUmVwbHkSHQoJdmFsaWRhdG9yGAEg",
+            "ASgLMgouVmFsaWRhdG9yEh0KCXNpZ25hdHVyZRgCIAEoCzIKLlNpZ25hdHVy",
+            "ZUIQqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Validator), global::Phorkus.Proto.Validator.Parser, new[]{ "Version", "PrevHash", "BlockIndex", "ValidatorIndex", "Timestamp", "ViewNumber" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ChangeViewRequest), global::Phorkus.Proto.ChangeViewRequest.Parser, new[]{ "Validator", "NewViewNumber" }, null, null, null),

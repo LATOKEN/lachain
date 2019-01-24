@@ -41,7 +41,8 @@ namespace Phorkus.Proto.Grpc {
             "bHkSUAoUR2V0VHJhbnNhY3Rpb25CeUhhc2gSHC5HZXRUcmFuc2FjdGlvbkJ5",
             "SGFzaFJlcXVlc3QaGi5HZXRUcmFuc2FjdGlvbkJ5SGFzaFJlcGx5EjgKDEdl",
             "dEJsb2NrU3RhdBIULkdldEJsb2NrU3RhdFJlcXVlc3QaEi5HZXRCbG9ja1N0",
-            "YXRSZXBseUIVqgISUGhvcmt1cy5Qcm90by5HcnBjYgZwcm90bzM="));
+            "YXRSZXBseUIoChFjb20ubGF0b2tlbi5wcm90b6oCElBob3JrdXMuUHJvdG8u",
+            "R3JwY2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {

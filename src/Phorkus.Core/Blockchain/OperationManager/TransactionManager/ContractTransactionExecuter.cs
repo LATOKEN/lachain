@@ -45,10 +45,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         private OperatingError _InvokeContract(Invocation invocation, IBlockchainSnapshot snapshot)
         {
-            var contract = snapshot.Contracts.GetContractByHash(invocation.ContractHash);
+            var contract = snapshot.Contracts.GetContractByHash(invocation.ContractAddress);
             if (contract is null)
                 return OperatingError.ContractNotFound;
-            return !_virtualMachine.InvokeContract(contract, invocation) ? OperatingError.ContractFailed : OperatingError.Ok;
+            return _virtualMachine.InvokeContract(contract, invocation) != ExecutionStatus.OK ? OperatingError.ContractFailed : OperatingError.Ok;
         }
         
         public OperatingError Verify(Transaction transaction)
@@ -90,7 +90,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.Ok;
             if (string.IsNullOrWhiteSpace(invocation.MethodName))
                 return OperatingError.InvalidTransaction;
-            if (invocation.ContractHash is null)
+            if (invocation.ContractAddress is null)
                 return OperatingError.InvalidTransaction;
             return OperatingError.Ok;
         }

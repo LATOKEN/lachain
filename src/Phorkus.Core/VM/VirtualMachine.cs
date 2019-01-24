@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
-using System.Linq;
-using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 
 namespace Phorkus.Core.VM
 {
-    using Type = System.Type;
-
     public class VirtualMachine : IVirtualMachine
     {
-        public static Stack<VMExecutionFrame> ExecutionFrames { get; } = new Stack<VMExecutionFrame>();
+        public static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
 
         // TODO: protection from multiple instantiation
 
@@ -35,7 +29,7 @@ namespace Phorkus.Core.VM
             return false;
         }
 
-        public bool InvokeContract(Contract contract, Invocation invocation)
+        public ExecutionStatus InvokeContract(Contract contract, Invocation invocation)
         {
             try
             {
@@ -44,38 +38,21 @@ namespace Phorkus.Core.VM
             catch (Exception e)
             {
                 Console.Error.WriteLine(e);
-                return false;
+                return ExecutionStatus.UNKNOWN_ERROR;
             }
         }
 
-        private static bool _InvokeContractUnsafe(Contract contract, Invocation invocation)
+        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, Invocation invocation)
         {
             if (ExecutionFrames.Count != 0)
-                return false;
+                return ExecutionStatus.VM_CORRUPTION;
             if (contract.Version != ContractVersion.Wasm)
-                return false;
-            ContractABI methodAbi = null;
-            foreach (var abi in contract.Abi)
-            {
-                if (!abi.Method.Equals(invocation.MethodName))
-                    continue;
-                methodAbi = abi;
-                break;
-            }
-
-            if (methodAbi is null)
-                return false;
+                return ExecutionStatus.INCOMPATIBLE_CODE;
             
-            var rootFrame = VMExecutionFrame.FromInvocation(contract.Wasm.ToByteArray(), invocation, new DefaultBlockchainInterface());
+            var status = ExecutionFrame.FromInvocation(contract.Wasm.ToByteArray(), invocation, new DefaultBlockchainInterface(), out var rootFrame);
+            if (status != ExecutionStatus.OK) return status;
             ExecutionFrames.Push(rootFrame);
-            if (!(rootFrame.InvocationContext.Exports.GetType() is Type type))
-                return false;
-            var method = type.GetMethod(invocation.MethodName);
-            if (method is null)
-                return false;
-            var result = method.Invoke(rootFrame.InvocationContext.Exports, new object[]{});
-            Console.WriteLine("Contract result is: " + result);
-            return true;
+            return rootFrame.Execute();
         }
     }
 }

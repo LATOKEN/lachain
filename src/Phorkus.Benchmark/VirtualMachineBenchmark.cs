@@ -50,16 +50,16 @@ namespace Phorkus.Benchmark
                     }
                 },
                 Version = ContractVersion.Wasm,
-                Wasm = ByteString.CopyFrom("0061736d0100000001060160017f017f030201000404017000000503010001071602066d656d6f7279020009666163746f7269616c00000a38013601017e024020004101480d0042b9e00021010340200120017e428794ebdc038221012000417f6a22000d000b2001a70f0b41b9e0000b".HexToBytes())
+                Wasm = ByteString.CopyFrom("0061736d0100000001120360057f7f7f7f7f017f60017f017f600000020c0103656e760463616c6c000003030201020404017000000503010001072303066d656d6f727902000a6765745f6f6666736574000109666163746f7269616c00020a3a020a00200041027441106a0b2d01017f410041effdb6f57d360210410010012200410041004100200010001a2000410041004100200010001a0b".HexToBytes())
             };
             const int tries = 5;
             var invocations = new Invocation[tries];
             for (var i = 0; i < tries; i++)
                 invocations[i] = new Invocation
                 {
-                    ContractHash = UInt160Utils.Zero,
+                    ContractAddress = UInt160Utils.Zero,
                     MethodName = "factorial",
-                    Params = { ByteString.CopyFrom(BitConverter.GetBytes(0xfffffff - i)) }
+                    Input = ByteString.CopyFrom(BitConverter.GetBytes(0xfffffff - i))
                 };
             var currentTime = TimeUtils.CurrentTimeMillis();
             for (var i = 0; i < tries; i++)
@@ -70,7 +70,7 @@ namespace Phorkus.Benchmark
                     Console.WriteLine("First call: " + (curT - currentTime) + "ms");
                     currentTime = curT;
                 }
-                if (!virtualMachine.InvokeContract(contract, invocations[i]))
+                if (virtualMachine.InvokeContract(contract, invocations[i]) != ExecutionStatus.OK)
                     break;
             }
             var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
