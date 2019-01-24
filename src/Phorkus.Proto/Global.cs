@@ -25,8 +25,8 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgxnbG9iYWwucHJvdG8iOwoGR2xvYmFsEhsKE2Jsb2NrX2hlYWRlcl9oZWln",
-            "aHQYASABKAQSFAoMYmxvY2tfaGVpZ2h0GAIgASgEQhCqAg1QaG9ya3VzLlBy",
-            "b3RvYgZwcm90bzM="));
+            "aHQYASABKAQSFAoMYmxvY2tfaGVpZ2h0GAIgASgEQiMKEWNvbS5sYXRva2Vu",
+            "LnByb3RvqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {

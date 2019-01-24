@@ -73,8 +73,8 @@ namespace Phorkus.Proto {
             "U0FDVElPTl9UWVBFX0NPTkZJUk0QByosCg9UcmFuc2FjdGlvbkZsYWcSGQoV",
             "VFJBTlNBQ1RJT05fRkxBR19OT05FEAAqKwoOQmxvY2tjaGFpblR5cGUSCwoH",
             "QklUQ09JThAAEgwKCEVUSEVSRVVNEAEqKgoNQWRkcmVzc0Zvcm1hdBIMCghS",
-            "SVBNRDE2MBAAEgsKB0VEMjU1MTkQAUIQqgINUGhvcmt1cy5Qcm90b2IGcHJv",
-            "dG8z"));
+            "SVBNRDE2MBAAEgsKB0VEMjU1MTkQAUIjChFjb20ubGF0b2tlbi5wcm90b6oC",
+            "DVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.AssetReflection.Descriptor, global::Phorkus.Proto.ContractReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionFlag), typeof(global::Phorkus.Proto.BlockchainType), typeof(global::Phorkus.Proto.AddressFormat), }, new pbr::GeneratedClrTypeInfo[] {

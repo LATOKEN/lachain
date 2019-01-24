@@ -30,8 +30,8 @@ namespace Phorkus.Proto {
             "cmVzaG9sZEtleRIgCgtwcml2YXRlX2tleRgBIAEoCzILLlByaXZhdGVLZXkS",
             "HgoKdmFsaWRhdG9ycxgCIAMoCzIKLlB1YmxpY0tleRIeCgpwdWJsaWNfa2V5",
             "GAMgASgLMgouUHVibGljS2V5EiIKDXByaXZhdGVfc2hhcmUYBCABKAsyCy5Q",
-            "cml2YXRlS2V5IhsKCVNpZ25hdHVyZRIOCgZidWZmZXIYASABKAxCEKoCDVBo",
-            "b3JrdXMuUHJvdG9iBnByb3RvMw=="));
+            "cml2YXRlS2V5IhsKCVNpZ25hdHVyZRIOCgZidWZmZXIYASABKAxCIwoRY29t",
+            "LmxhdG9rZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {

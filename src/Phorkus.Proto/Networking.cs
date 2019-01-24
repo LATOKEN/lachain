@@ -61,7 +61,8 @@ namespace Phorkus.Proto {
             "ZXBseUgAEi4KEXRocmVzaG9sZF9yZXF1ZXN0GBQgASgLMhEuVGhyZXNob2xk",
             "UmVxdWVzdEgAEi4KEWNvbnNlbnN1c19tZXNzYWdlGBUgASgLMhEuQ29uc2Vu",
             "c3VzTWVzc2FnZUgAEh0KCXNpZ25hdHVyZRhkIAEoCzIKLlNpZ25hdHVyZUIJ",
-            "CgdtZXNzYWdlQhCqAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "CgdtZXNzYWdlQiMKEWNvbS5sYXRva2VuLnByb3RvqgINUGhvcmt1cy5Qcm90",
+            "b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
