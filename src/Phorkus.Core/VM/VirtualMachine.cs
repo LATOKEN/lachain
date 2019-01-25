@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Phorkus.Proto;
+using Phorkus.Storage.State;
 using Phorkus.WebAssembly;
 
 namespace Phorkus.Core.VM
@@ -9,6 +10,12 @@ namespace Phorkus.Core.VM
     public class VirtualMachine : IVirtualMachine
     {
         public static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
+        public static IBlockchainSnapshot BlockchainSnapshot { get; set; }
+
+        public VirtualMachine(IStateManager stateManager)
+        {
+            BlockchainSnapshot = stateManager.LastApprovedSnapshot;
+        }
 
         // TODO: protection from multiple instantiation
 
