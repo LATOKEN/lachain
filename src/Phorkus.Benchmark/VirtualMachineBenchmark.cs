@@ -34,7 +34,7 @@ namespace Phorkus.Benchmark
         {
             var virtualMachine = _container.Resolve<IVirtualMachine>();
             
-            var contract = new Contract
+            /*var contract = new Contract
             {
                 Hash = UInt160Utils.Zero,
                 Abi =
@@ -89,7 +89,7 @@ namespace Phorkus.Benchmark
                 Console.WriteLine("C# result: " + result);
             }
             elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Console.WriteLine("Avg. Elapsed Time: " + elapsedTime / (tries - 1) + "ms");
+            Console.WriteLine("Avg. Elapsed Time: " + elapsedTime / (tries - 1) + "ms");*/
         }
     }
 }

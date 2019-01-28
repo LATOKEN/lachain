@@ -178,7 +178,7 @@ namespace Phorkus.Core.CLI
             if (!_virtualMachine.VerifyContract(contract))
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
-            var tx = _transactionBuilder.ContractTransaction(from, UInt160Utils.Zero, asset, value, contract);
+            var tx = _transactionBuilder.DeployTransaction(from, UInt160Utils.Zero, asset, value, null, null, ContractVersion.Wasm);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.Buffer.ToHex();
@@ -188,17 +188,10 @@ namespace Phorkus.Core.CLI
         {
             var contractHash = arguments[1].HexToUInt160();
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            
-            var invocation = new Invocation
-            {
-                ContractAddress = contractHash,
-                MethodName = arguments[2],
-                Input = ByteString.Empty,
-                Sender = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160(),
-            };
             Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
-            var result = _virtualMachine.InvokeContract(contract, invocation);
-            return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
+//            var result = _virtualMachine.InvokeContract(contract, invocation);
+//            return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
+            return "Not finished";
         }
 
         public string InvokeContract(string[] arguments)

@@ -43,6 +43,11 @@ namespace Phorkus.Storage.Repositories
 
         void CommitTransaction(SignedTransaction signedTransaction, UInt256 blockHash);
         
+        /// <summary>
+        /// TODO: "replace this function with state manager"
+        /// </summary>
+        /// <param name="from"></param>
+        /// <returns></returns>
         uint GetTotalTransactionCount(UInt160 from);
     }
 }

@@ -23,20 +23,17 @@ namespace Phorkus.Core.VM
         }
 
         public static ExecutionStatus FromInvocation(
-            byte[] code, Invocation invocation,
-            IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
+            byte[] code, UInt160 sender, UInt160 contract, byte[] input, IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
             frame = new ExecutionFrame(
                 _CompileWasm<dynamic>(code, blockchainInterface.GetFunctionImports()),
-                invocation.Sender,
-                invocation.ContractAddress,
-                invocation.Input.ToByteArray()
+                sender, contract, input
             );
             return ExecutionStatus.Ok;
         }
 
         public static ExecutionStatus FromInternalCall(
-            byte[] code, int methodSig, UInt160 caller, UInt160 currentAddress, byte[] input,
+            byte[] code, UInt160 caller, UInt160 currentAddress, byte[] input,
             IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
             frame = new ExecutionFrame(

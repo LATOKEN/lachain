@@ -31,27 +31,23 @@ namespace Phorkus.Proto {
             "c2gYASABKAsyCC5VSW50MTYwEhkKA2FiaRgCIAMoCzIMLkNvbnRyYWN0QUJJ",
             "EgwKBHdhc20YAyABKAwSIQoHdmVyc2lvbhgEIAEoDjIQLkNvbnRyYWN0VmVy",
             "c2lvbiIpCg5Db250cmFjdEdsb2JhbBIXCg90b3RhbF9jb250cmFjdHMYASAB",
-            "KA0ibgoKSW52b2NhdGlvbhIiChBjb250cmFjdF9hZGRyZXNzGAEgASgLMggu",
-            "VUludDE2MBITCgttZXRob2RfbmFtZRgCIAEoCRINCgVpbnB1dBgDIAEoDBIY",
-            "CgZzZW5kZXIYBCABKAsyCC5VSW50MTYwKiwKD0NvbnRyYWN0VmVyc2lvbhIZ",
-            "ChVDT05UUkFDVF9WRVJTSU9OX1dBU00QACrPAgoMQ29udHJhY3RUeXBlEhsK",
-            "F0NPTlRSQUNUX1RZUEVfU0lHTkFUVVJFEAASGQoVQ09OVFJBQ1RfVFlQRV9C",
-            "T09MRUFOEAESGQoVQ09OVFJBQ1RfVFlQRV9JTlRFR0VSEAISFgoSQ09OVFJB",
-            "Q1RfVFlQRV9MT05HEAMSGAoUQ09OVFJBQ1RfVFlQRV9JTlQxNjAQBBIYChRD",
-            "T05UUkFDVF9UWVBFX0lOVDI1NhAFEhwKGENPTlRSQUNUX1RZUEVfQllURV9B",
-            "UlJBWRAGEhwKGENPTlRSQUNUX1RZUEVfUFVCTElDX0tFWRAHEhgKFENPTlRS",
-            "QUNUX1RZUEVfU1RSSU5HEAgSFwoTQ09OVFJBQ1RfVFlQRV9BUlJBWRAJEhkK",
-            "FUNPTlRSQUNUX1RZUEVfQUREUkVTUxAKEhYKEkNPTlRSQUNUX1RZUEVfVk9J",
-            "RBALKjEKEENvbnRyYWN0TW9kaWZpZXISHQoZQ09OVFJBQ1RfTU9ESUZJRVJf",
-            "UEFZQUJMRRAAQiMKEWNvbS5sYXRva2VuLnByb3RvqgINUGhvcmt1cy5Qcm90",
-            "b2IGcHJvdG8z"));
+            "KA0qLAoPQ29udHJhY3RWZXJzaW9uEhkKFUNPTlRSQUNUX1ZFUlNJT05fV0FT",
+            "TRAAKs8CCgxDb250cmFjdFR5cGUSGwoXQ09OVFJBQ1RfVFlQRV9TSUdOQVRV",
+            "UkUQABIZChVDT05UUkFDVF9UWVBFX0JPT0xFQU4QARIZChVDT05UUkFDVF9U",
+            "WVBFX0lOVEVHRVIQAhIWChJDT05UUkFDVF9UWVBFX0xPTkcQAxIYChRDT05U",
+            "UkFDVF9UWVBFX0lOVDE2MBAEEhgKFENPTlRSQUNUX1RZUEVfSU5UMjU2EAUS",
+            "HAoYQ09OVFJBQ1RfVFlQRV9CWVRFX0FSUkFZEAYSHAoYQ09OVFJBQ1RfVFlQ",
+            "RV9QVUJMSUNfS0VZEAcSGAoUQ09OVFJBQ1RfVFlQRV9TVFJJTkcQCBIXChND",
+            "T05UUkFDVF9UWVBFX0FSUkFZEAkSGQoVQ09OVFJBQ1RfVFlQRV9BRERSRVNT",
+            "EAoSFgoSQ09OVFJBQ1RfVFlQRV9WT0lEEAsqMQoQQ29udHJhY3RNb2RpZmll",
+            "chIdChlDT05UUkFDVF9NT0RJRklFUl9QQVlBQkxFEABCIwoRY29tLmxhdG9r",
+            "ZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractVersion), typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractABI), global::Phorkus.Proto.ContractABI.Parser, new[]{ "Method", "Input", "Output", "Modifiers" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Wasm", "Version" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractGlobal), global::Phorkus.Proto.ContractGlobal.Parser, new[]{ "TotalContracts" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Invocation), global::Phorkus.Proto.Invocation.Parser, new[]{ "ContractAddress", "MethodName", "Input", "Sender" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractGlobal), global::Phorkus.Proto.ContractGlobal.Parser, new[]{ "TotalContracts" }, null, null, null)
           }));
     }
     #endregion
@@ -615,231 +611,6 @@ namespace Phorkus.Proto {
             break;
           case 8: {
             TotalContracts = input.ReadUInt32();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class Invocation : pb::IMessage<Invocation> {
-    private static readonly pb::MessageParser<Invocation> _parser = new pb::MessageParser<Invocation>(() => new Invocation());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Invocation> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[3]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Invocation() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Invocation(Invocation other) : this() {
-      contractAddress_ = other.contractAddress_ != null ? other.contractAddress_.Clone() : null;
-      methodName_ = other.methodName_;
-      input_ = other.input_;
-      sender_ = other.sender_ != null ? other.sender_.Clone() : null;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Invocation Clone() {
-      return new Invocation(this);
-    }
-
-    /// <summary>Field number for the "contract_address" field.</summary>
-    public const int ContractAddressFieldNumber = 1;
-    private global::Phorkus.Proto.UInt160 contractAddress_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt160 ContractAddress {
-      get { return contractAddress_; }
-      set {
-        contractAddress_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "method_name" field.</summary>
-    public const int MethodNameFieldNumber = 2;
-    private string methodName_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public string MethodName {
-      get { return methodName_; }
-      set {
-        methodName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "input" field.</summary>
-    public const int InputFieldNumber = 3;
-    private pb::ByteString input_ = pb::ByteString.Empty;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Input {
-      get { return input_; }
-      set {
-        input_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "sender" field.</summary>
-    public const int SenderFieldNumber = 4;
-    private global::Phorkus.Proto.UInt160 sender_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt160 Sender {
-      get { return sender_; }
-      set {
-        sender_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Invocation);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Invocation other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (!object.Equals(ContractAddress, other.ContractAddress)) return false;
-      if (MethodName != other.MethodName) return false;
-      if (Input != other.Input) return false;
-      if (!object.Equals(Sender, other.Sender)) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (contractAddress_ != null) hash ^= ContractAddress.GetHashCode();
-      if (MethodName.Length != 0) hash ^= MethodName.GetHashCode();
-      if (Input.Length != 0) hash ^= Input.GetHashCode();
-      if (sender_ != null) hash ^= Sender.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (contractAddress_ != null) {
-        output.WriteRawTag(10);
-        output.WriteMessage(ContractAddress);
-      }
-      if (MethodName.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(MethodName);
-      }
-      if (Input.Length != 0) {
-        output.WriteRawTag(26);
-        output.WriteBytes(Input);
-      }
-      if (sender_ != null) {
-        output.WriteRawTag(34);
-        output.WriteMessage(Sender);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (contractAddress_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ContractAddress);
-      }
-      if (MethodName.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(MethodName);
-      }
-      if (Input.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Input);
-      }
-      if (sender_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Sender);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Invocation other) {
-      if (other == null) {
-        return;
-      }
-      if (other.contractAddress_ != null) {
-        if (contractAddress_ == null) {
-          contractAddress_ = new global::Phorkus.Proto.UInt160();
-        }
-        ContractAddress.MergeFrom(other.ContractAddress);
-      }
-      if (other.MethodName.Length != 0) {
-        MethodName = other.MethodName;
-      }
-      if (other.Input.Length != 0) {
-        Input = other.Input;
-      }
-      if (other.sender_ != null) {
-        if (sender_ == null) {
-          sender_ = new global::Phorkus.Proto.UInt160();
-        }
-        Sender.MergeFrom(other.Sender);
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            if (contractAddress_ == null) {
-              contractAddress_ = new global::Phorkus.Proto.UInt160();
-            }
-            input.ReadMessage(contractAddress_);
-            break;
-          }
-          case 18: {
-            MethodName = input.ReadString();
-            break;
-          }
-          case 26: {
-            Input = input.ReadBytes();
-            break;
-          }
-          case 34: {
-            if (sender_ == null) {
-              sender_ = new global::Phorkus.Proto.UInt160();
-            }
-            input.ReadMessage(sender_);
             break;
           }
         }

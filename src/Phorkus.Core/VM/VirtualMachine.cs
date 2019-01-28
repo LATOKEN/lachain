@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Grpc.Core;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
@@ -11,15 +10,18 @@ namespace Phorkus.Core.VM
 {
     public class VirtualMachine : IVirtualMachine
     {
-        public static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
-        private static IStateManager StateManager { get; set; }
-        public static IBlockchainSnapshot BlockchainSnapshot => StateManager.LastApprovedSnapshot;
-        public static IBlockchainInterface BlockchainInterface { get; } = new DefaultBlockchainInterface();
-        public static ICrypto Crypto { get; } = new BouncyCastle();
+        internal static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
+        
+        internal static IBlockchainSnapshot BlockchainSnapshot => StateManager.LastApprovedSnapshot;
+        internal static IBlockchainInterface BlockchainInterface { get; } = new DefaultBlockchainInterface();
+        
+        internal static IStateManager StateManager { get; set; }
+        internal static ICrypto Crypto { get; set; }
 
-        public VirtualMachine(IStateManager stateManager)
+        public VirtualMachine(IStateManager stateManager, ICrypto crypto)
         {
             StateManager = stateManager;
+            Crypto = crypto;
         }
 
         // TODO: protection from multiple instantiation
@@ -41,11 +43,11 @@ namespace Phorkus.Core.VM
             return false;
         }
 
-        public ExecutionStatus InvokeContract(Contract contract, Invocation invocation)
+        public ExecutionStatus InvokeContract(Contract contract, Transaction transaction)
         {
             try
             {
-                return _InvokeContractUnsafe(contract, invocation);
+                return _InvokeContractUnsafe(contract, transaction);
             }
             catch (Exception e)
             {
@@ -54,15 +56,20 @@ namespace Phorkus.Core.VM
             }
         }
 
-        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, Invocation invocation)
+        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, Transaction transaction)
         {
             if (ExecutionFrames.Count != 0)
                 return ExecutionStatus.VmCorruption;
             if (contract.Version != ContractVersion.Wasm)
                 return ExecutionStatus.IncompatibleCode;
-            
-            var status = ExecutionFrame.FromInvocation(contract.Wasm.ToByteArray(), invocation, BlockchainInterface, out var rootFrame);
-            if (status != ExecutionStatus.Ok) return status;
+            var status = ExecutionFrame.FromInvocation(
+                contract.Wasm.ToByteArray(),
+                transaction.From,
+                transaction.Contract.To,
+                transaction.Contract.Input.ToByteArray(),
+                BlockchainInterface, out var rootFrame);
+            if (status != ExecutionStatus.Ok)
+                return status;
             ExecutionFrames.Push(rootFrame);
             return rootFrame.Execute();
         }

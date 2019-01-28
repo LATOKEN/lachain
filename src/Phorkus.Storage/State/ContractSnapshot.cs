@@ -29,15 +29,15 @@ namespace Phorkus.Storage.State
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void AddContract(UInt160 from, Contract contract)
+        public void AddContract(UInt160 contractHash, Contract contract)
         {
             _state.AddOrUpdate(EntryPrefix.ContractByHash.BuildPrefix(contract.Hash), contract.ToByteArray());
-            var raw = _state.Get(EntryPrefix.ContractCountByFrom.BuildPrefix(from));
+            var raw = _state.Get(EntryPrefix.ContractCountByFrom.BuildPrefix(contractHash));
             var global = new ContractGlobal();
             if (raw != null)
                 global = ContractGlobal.Parser.ParseFrom(raw);
             global.TotalContracts++;
-            _state.AddOrUpdate(EntryPrefix.ContractCountByFrom.BuildPrefix(from), global.ToByteArray());
+            _state.AddOrUpdate(EntryPrefix.ContractCountByFrom.BuildPrefix(contractHash), global.ToByteArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

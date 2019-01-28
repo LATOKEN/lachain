@@ -20,6 +20,8 @@ namespace Phorkus.Core.Blockchain
         Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType, Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp);
 
-        Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, Contract contract);
+        Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, byte[] input = null);
+        
+        Transaction DeployTransaction(UInt160 from, UInt160 to, Asset asset, Money value, ContractABI[] abi, byte[] wasm, ContractVersion version);
     }
 }

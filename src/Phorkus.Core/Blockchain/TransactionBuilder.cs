@@ -51,7 +51,7 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, Contract contract)
+        public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, byte[] input)
         {
             var nonce = _transactionRepository.GetTotalTransactionCount(from);
             var contractTx = new ContractTransaction
@@ -59,8 +59,9 @@ namespace Phorkus.Core.Blockchain
                 Asset = asset.Hash,
                 To = to,
                 Value = value.ToUInt256(),
-                Contract = contract,
             };
+            if (input != null)
+                contractTx.Input = ByteString.CopyFrom(input);
             var tx = new Transaction
             {
                 Type = TransactionType.Contract,
@@ -70,6 +71,12 @@ namespace Phorkus.Core.Blockchain
                 Nonce = nonce
             };
             return tx;
+        }
+
+        public Transaction DeployTransaction(UInt160 @from, UInt160 to, Asset asset, Money value, ContractABI[] abi, byte[] wasm,
+            ContractVersion version)
+        {
+            throw new NotImplementedException();
         }
 
         public Transaction TransferTransaction(UInt160 from, UInt160 to, string assetName, Money value)

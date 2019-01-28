@@ -28,5 +28,6 @@
         WithdrawalFailed,
         ContractFailed,
         ContractNotFound,
+        InvalidContract
     }
 }

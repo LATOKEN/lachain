@@ -2,14 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Runtime;
-
-// ReSharper disable MemberCanBePrivate.Global
-// disable inspection since methods must be public and static for binding in WASM
 
 namespace Phorkus.Core.VM
 {
@@ -17,7 +13,7 @@ namespace Phorkus.Core.VM
     {
         private const string EnvModule = "env";
 
-        private static ExecutionStatus DoInternalCall(UInt160 caller, UInt160 address, int signature, byte[] input,
+        private static ExecutionStatus DoInternalCall(UInt160 caller, UInt160 address, byte[] input,
             out ExecutionFrame frame)
         {
             var contract = VirtualMachine.BlockchainSnapshot.Contracts.GetContractByHash(address);
@@ -28,7 +24,7 @@ namespace Phorkus.Core.VM
             }
 
             var status = ExecutionFrame.FromInternalCall(
-                contract.Wasm.ToByteArray(), signature, caller, address, input,
+                contract.Wasm.ToByteArray(), caller, address, input,
                 VirtualMachine.BlockchainInterface, out frame
             );
             if (status != ExecutionStatus.Ok) return status;
@@ -78,42 +74,29 @@ namespace Phorkus.Core.VM
             var frame = VirtualMachine.ExecutionFrames.Peek();
             var buffer = new byte[length];
             Marshal.Copy(IntPtr.Add(frame.Memory.Start, offset), buffer, 0, length);
-
             Console.WriteLine(
                 $"Contract ({frame.CurrentAddress}) logged: {System.Text.Encoding.ASCII.GetString(buffer)}");
         }
-
+        
         public static int Handler_Env_Call(
-            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset
-        )
+            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset)
         {
             try
             {
                 var frame = VirtualMachine.ExecutionFrames.Peek();
-                var signatureBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 24);
+                var signatureBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
                 var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
                 if (signatureBuffer is null || inputBuffer is null)
-                    return 2; // TODO: return values need reconsideration
-
+                    return 2; // TODO: return values need reconsideration               
                 var address = signatureBuffer.Take(20).ToArray().ToUInt160();
-                var methodSig = signatureBuffer.Skip(20).ToArray();
-                if (DoInternalCall(frame.CurrentAddress, address, BitConverter.ToInt32(methodSig, 0), inputBuffer,
-                        out var newFrame) != ExecutionStatus.Ok)
-                {
+                if (DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame) != ExecutionStatus.Ok)
                     return 2;
-                }
-
                 if (newFrame.Execute() != ExecutionStatus.Ok)
-                {
                     return 2;
-                }
-
                 newFrame = VirtualMachine.ExecutionFrames.Pop();
                 var returned = newFrame.ReturnValue;
                 if (!SafeCopyToMemory(frame.Memory, returned, returnValueOffset))
-                {
                     return 2; // TODO: need to revert everything?
-                }
             }
             catch (Exception e)
             {

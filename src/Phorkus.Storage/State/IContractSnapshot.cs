@@ -14,10 +14,10 @@ namespace Phorkus.Storage.State
         /// <summary>
         /// Adds a smart contract
         /// </summary>
-        /// <param name="from"></param>
+        /// <param name="contractHash"></param>
         /// <param name="contract"></param>
         /// <returns></returns>
-        void AddContract(UInt160 from, Contract contract);
+        void AddContract(UInt160 contractHash, Contract contract);
 
         /// <summary>
         /// Delete a smart contract by its hash

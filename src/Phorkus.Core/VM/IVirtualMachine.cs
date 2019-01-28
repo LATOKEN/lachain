@@ -6,6 +6,6 @@ namespace Phorkus.Core.VM
     {
         bool VerifyContract(Contract contract);
         
-        ExecutionStatus InvokeContract(Contract contract, Invocation invocation);
+        ExecutionStatus InvokeContract(Contract contract, Transaction transaction);
     }
 }
