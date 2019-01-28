@@ -9,7 +9,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
     public class ContractTransactionExecuter : ITransactionExecuter
     {
         private readonly IVirtualMachine _virtualMachine;
-        
+
         public ContractTransactionExecuter(IVirtualMachine virtualMachine)
         {
             _virtualMachine = virtualMachine;
@@ -25,7 +25,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var contract = transaction.Contract;
             /* try to transfer funds from sender to recipient */
             if (!contract.Value.IsZero())
-                snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset, new Money(contract.Value));
+                snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset,
+                    new Money(contract.Value));
             /* if we have invocation block than invoke contract method */
             if (contract.Input != null)
                 return _InvokeContract(transaction, snapshot);
@@ -37,9 +38,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var contract = snapshot.Contracts.GetContractByHash(transaction.Contract.To);
             if (contract is null)
                 return OperatingError.ContractNotFound;
-            return _virtualMachine.InvokeContract(contract, transaction) != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+            return _virtualMachine.InvokeContract(contract, transaction.From, transaction.Contract.Input.ToByteArray()) != ExecutionStatus.Ok
+                ? OperatingError.ContractFailed
+                : OperatingError.Ok;
         }
-        
+
         public OperatingError Verify(Transaction transaction)
         {
             if (transaction.Type != TransactionType.Contract)
@@ -53,7 +56,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.InvalidTransaction;
             return _VerifyInvocation(transaction);
         }
-        
+
         private static OperatingError _VerifyInvocation(Transaction transaction)
         {
             /* TODO: "verify invocation input here" */

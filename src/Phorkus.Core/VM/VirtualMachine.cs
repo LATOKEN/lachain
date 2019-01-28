@@ -43,11 +43,11 @@ namespace Phorkus.Core.VM
             return false;
         }
 
-        public ExecutionStatus InvokeContract(Contract contract, Transaction transaction)
+        public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input)
         {
             try
             {
-                return _InvokeContractUnsafe(contract, transaction);
+                return _InvokeContractUnsafe(contract, sender, input);
             }
             catch (Exception e)
             {
@@ -56,7 +56,7 @@ namespace Phorkus.Core.VM
             }
         }
 
-        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, Transaction transaction)
+        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, UInt160 sender, byte[] input)
         {
             if (ExecutionFrames.Count != 0)
                 return ExecutionStatus.VmCorruption;
@@ -64,9 +64,9 @@ namespace Phorkus.Core.VM
                 return ExecutionStatus.IncompatibleCode;
             var status = ExecutionFrame.FromInvocation(
                 contract.Wasm.ToByteArray(),
-                transaction.From,
-                transaction.Contract.To,
-                transaction.Contract.Input.ToByteArray(),
+                sender,
+                contract.Hash,
+                input,
                 BlockchainInterface, out var rootFrame);
             if (status != ExecutionStatus.Ok)
                 return status;
