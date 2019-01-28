@@ -10,16 +10,13 @@ namespace Phorkus.Core.VM
     public class ExecutionFrame : IDisposable
     {
         private ExecutionFrame(
-            Instance<dynamic> invocationContext, string method, UInt160 sender, UInt160 origin, UInt160 recepient,
+            Instance<dynamic> invocationContext, UInt160 sender,
             UInt160 currentAddress, byte[] input)
         {
             InvocationContext = invocationContext;
             Exports = InvocationContext.Exports.GetType() as System.Type;
             if (Exports is null) throw new RuntimeException("ill-formed contract binary");
-            Method = method;
             Sender = sender;
-            Origin = origin;
-            Recepient = recepient;
             CurrentAddress = currentAddress;
             Input = input;
             ReturnValue = new byte[] { };
@@ -31,14 +28,11 @@ namespace Phorkus.Core.VM
         {
             frame = new ExecutionFrame(
                 _CompileWasm<dynamic>(code, blockchainInterface.GetFunctionImports()),
-                invocation.MethodName,
                 invocation.Sender,
-                invocation.Sender,
-                invocation.ContractAddress,
                 invocation.ContractAddress,
                 invocation.Input.ToByteArray()
             );
-            return ExecutionStatus.OK;
+            return ExecutionStatus.Ok;
         }
 
         public static ExecutionStatus FromInternalCall(
@@ -47,22 +41,9 @@ namespace Phorkus.Core.VM
         {
             frame = new ExecutionFrame(
                 _CompileWasm<dynamic>(code, blockchainInterface.GetFunctionImports()),
-                null, caller, null, null, currentAddress, input
+                caller, currentAddress, input
             );
-            foreach (var method in frame.Exports.GetMethods())
-            {
-                if (!method.IsPublic || method.GetParameters().Length != 0 ||
-                    method.ReturnType != typeof(void)) continue;
-                if (method.Name.GetHashCode() != methodSig) // TODO: SHA3 hash
-                {
-                    continue;
-                }
-
-                frame.Method = method.Name;
-                break;
-            }
-
-            return frame.Method is null ? ExecutionStatus.NO_SUCH_METHOD : ExecutionStatus.OK;
+            return ExecutionStatus.Ok;
         }
 
         public Instance<dynamic> InvocationContext { get; }
@@ -78,22 +59,19 @@ namespace Phorkus.Core.VM
             }
         }
 
-        public string Method;
         public UInt160 Sender { get; }
-        public UInt160 Origin { get; }
-        public UInt160 Recepient { get; }
         public UInt160 CurrentAddress { get; }
         public byte[] Input { get; }
         public byte[] ReturnValue { get; set; }
 
         public ExecutionStatus Execute()
         {
-            var method = Exports.GetMethod(Method);
+            var method = Exports.GetMethod("start");
             if (method is null)
-                return ExecutionStatus.MISSING_SYMBOL;
+                return ExecutionStatus.MissingEntrypoint;
             var result = method.Invoke(InvocationContext.Exports, new object[] { });
             Console.WriteLine("Contract result is: " + result);
-            return ExecutionStatus.OK;
+            return ExecutionStatus.Ok;
         }
 
         public void Dispose()

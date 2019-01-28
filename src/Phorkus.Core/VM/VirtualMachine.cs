@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Grpc.Core;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.WebAssembly;
@@ -14,6 +15,7 @@ namespace Phorkus.Core.VM
         private static IStateManager StateManager { get; set; }
         public static IBlockchainSnapshot BlockchainSnapshot => StateManager.LastApprovedSnapshot;
         public static IBlockchainInterface BlockchainInterface { get; } = new DefaultBlockchainInterface();
+        public static ICrypto Crypto { get; } = new BouncyCastle();
 
         public VirtualMachine(IStateManager stateManager)
         {
@@ -48,19 +50,19 @@ namespace Phorkus.Core.VM
             catch (Exception e)
             {
                 Console.Error.WriteLine(e);
-                return ExecutionStatus.UNKNOWN_ERROR;
+                return ExecutionStatus.UnknownError;
             }
         }
 
         private static ExecutionStatus _InvokeContractUnsafe(Contract contract, Invocation invocation)
         {
             if (ExecutionFrames.Count != 0)
-                return ExecutionStatus.VM_CORRUPTION;
+                return ExecutionStatus.VmCorruption;
             if (contract.Version != ContractVersion.Wasm)
-                return ExecutionStatus.INCOMPATIBLE_CODE;
+                return ExecutionStatus.IncompatibleCode;
             
             var status = ExecutionFrame.FromInvocation(contract.Wasm.ToByteArray(), invocation, BlockchainInterface, out var rootFrame);
-            if (status != ExecutionStatus.OK) return status;
+            if (status != ExecutionStatus.Ok) return status;
             ExecutionFrames.Push(rootFrame);
             return rootFrame.Execute();
         }

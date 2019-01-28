@@ -198,7 +198,7 @@ namespace Phorkus.Core.CLI
             };
             Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
             var result = _virtualMachine.InvokeContract(contract, invocation);
-            return result == ExecutionStatus.OK ? "Contract has been successfully executed" : "Contract execution failed";
+            return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
         }
 
         public string InvokeContract(string[] arguments)

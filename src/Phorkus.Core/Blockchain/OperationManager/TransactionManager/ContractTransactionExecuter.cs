@@ -48,7 +48,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var contract = snapshot.Contracts.GetContractByHash(invocation.ContractAddress);
             if (contract is null)
                 return OperatingError.ContractNotFound;
-            return _virtualMachine.InvokeContract(contract, invocation) != ExecutionStatus.OK ? OperatingError.ContractFailed : OperatingError.Ok;
+            return _virtualMachine.InvokeContract(contract, invocation) != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
         }
         
         public OperatingError Verify(Transaction transaction)

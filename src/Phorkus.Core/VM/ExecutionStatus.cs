@@ -2,13 +2,12 @@
 {
     public enum ExecutionStatus
     {
-        OK = 0,
-        INCOMPATIBLE_CODE = 1,
-        COMPILATION_FAILURE = 2,
-        MISSING_SYMBOL = 3,
-        NO_SUCH_METHOD = 4,
-        INCORRECT_CALL = 5,
-        UNKNOWN_ERROR = -1,
-        VM_CORRUPTION = -2,
+        Ok = 0,
+        IncompatibleCode = 1,
+        CompilationFailure = 2,
+        MissingEntrypoint = 3,
+        IncorrectCall = 5,
+        UnknownError = -1,
+        VmCorruption = -2,
     }
 }
