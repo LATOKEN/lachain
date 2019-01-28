@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Grpc.Core;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.WebAssembly;
@@ -10,11 +11,13 @@ namespace Phorkus.Core.VM
     public class VirtualMachine : IVirtualMachine
     {
         public static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
-        public static IBlockchainSnapshot BlockchainSnapshot { get; set; }
+        private static IStateManager StateManager { get; set; }
+        public static IBlockchainSnapshot BlockchainSnapshot => StateManager.LastApprovedSnapshot;
+        public static IBlockchainInterface BlockchainInterface { get; } = new DefaultBlockchainInterface();
 
         public VirtualMachine(IStateManager stateManager)
         {
-            BlockchainSnapshot = stateManager.LastApprovedSnapshot;
+            StateManager = stateManager;
         }
 
         // TODO: protection from multiple instantiation
@@ -56,7 +59,7 @@ namespace Phorkus.Core.VM
             if (contract.Version != ContractVersion.Wasm)
                 return ExecutionStatus.INCOMPATIBLE_CODE;
             
-            var status = ExecutionFrame.FromInvocation(contract.Wasm.ToByteArray(), invocation, new DefaultBlockchainInterface(), out var rootFrame);
+            var status = ExecutionFrame.FromInvocation(contract.Wasm.ToByteArray(), invocation, BlockchainInterface, out var rootFrame);
             if (status != ExecutionStatus.OK) return status;
             ExecutionFrames.Push(rootFrame);
             return rootFrame.Execute();

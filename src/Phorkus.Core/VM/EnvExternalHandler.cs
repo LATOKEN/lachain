@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 
@@ -13,6 +14,22 @@ namespace Phorkus.Core.VM
     public class EnvExternalHandler : IExternalHandler
     {
         private const string EnvModule = "env";
+
+        private static ExecutionStatus DoInternalCall(UInt160 caller, UInt160 address, int signature, byte[] input, out ExecutionFrame frame)
+        {
+            var contract = VirtualMachine.BlockchainSnapshot.Contracts.GetContractByHash(address);
+            if (contract is null)
+            {
+                frame = null;
+                return ExecutionStatus.INCORRECT_CALL;
+            }
+
+            var status = ExecutionFrame.FromInternalCall(new byte[] { }, signature, caller, address, input,
+                VirtualMachine.BlockchainInterface, out frame);
+            if (status != ExecutionStatus.OK) return status;
+            VirtualMachine.ExecutionFrames.Push(frame);
+            return status;
+        }
 
         public static int Handler_Env_GetCallValue(int offset)
         {
@@ -41,18 +58,17 @@ namespace Phorkus.Core.VM
                 Marshal.Copy(IntPtr.Add(frame.Memory.Start, callSignatureOffset), signatureBuffer, 0, 24);
                 var address = signatureBuffer.Take(20).ToArray().ToUInt160();
                 var methodSig = signatureBuffer.Skip(20).ToArray(); // TODO: methods sigs
-                var contract = VirtualMachine.BlockchainSnapshot.Contracts.GetContractByHash(address);
-                if (contract is null)
-                {
-                    return 2; // TODO: exit codes are weird
-                }
+                
 
                 var inputBuffer = new byte[inputLength];
                 Marshal.Copy(IntPtr.Add(frame.Memory.Start, inputOffset), inputBuffer, 0, inputLength);
-                
-                if (ExecutionFrame.FromInternalCall(out var newFrame) != ExecutionStatus.OK)
-                    return 1;
-                VirtualMachine.ExecutionFrames.Push(newFrame);
+
+
+                if (DoInternalCall(frame.CurrentAddress, address, BitConverter.ToInt32(methodSig, 0), inputBuffer,
+                        out var newFrame) != ExecutionStatus.OK)
+                {
+                    return 2;
+                }
                 if (newFrame.Execute() != ExecutionStatus.OK)
                 {
                     return 2;

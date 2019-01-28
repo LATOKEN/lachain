@@ -41,10 +41,28 @@ namespace Phorkus.Core.VM
             return ExecutionStatus.OK;
         }
 
-        public static ExecutionStatus FromInternalCall(out ExecutionFrame frame)
+        public static ExecutionStatus FromInternalCall(
+            byte[] code, int methodSig, UInt160 caller, UInt160 currentAddress, byte[] input,
+            IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
-            frame = null;
-            return ExecutionStatus.OK;
+            frame = new ExecutionFrame(
+                _CompileWasm<dynamic>(code, blockchainInterface.GetFunctionImports()),
+                null, caller, null, null, currentAddress, input
+            );
+            foreach (var method in frame.Exports.GetMethods())
+            {
+                if (!method.IsPublic || method.GetParameters().Length != 0 ||
+                    method.ReturnType != typeof(void)) continue;
+                if (method.Name.GetHashCode() != methodSig) // TODO: SHA3 hash
+                {
+                    continue;
+                }
+
+                frame.Method = method.Name;
+                break;
+            }
+
+            return frame.Method is null ? ExecutionStatus.NO_SUCH_METHOD : ExecutionStatus.OK;
         }
 
         public Instance<dynamic> InvocationContext { get; }
