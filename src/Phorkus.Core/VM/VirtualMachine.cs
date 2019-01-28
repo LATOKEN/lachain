@@ -32,7 +32,7 @@ namespace Phorkus.Core.VM
             try
             {
                 using (var stream = new MemoryStream(contractCode))
-                    Compile.FromBinary<dynamic>(stream);
+                    Compile.FromBinary<dynamic>(stream, BlockchainInterface.GetFunctionImports());
                 return true;
             }
             catch (Exception e)
