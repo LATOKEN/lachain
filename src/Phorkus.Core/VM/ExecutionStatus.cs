@@ -6,7 +6,7 @@
         IncompatibleCode = 1,
         CompilationFailure = 2,
         MissingEntrypoint = 3,
-        IncorrectCall = 5,
+        NoSuchContract = 4,
         UnknownError = -1,
         VmCorruption = -2,
     }

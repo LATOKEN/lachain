@@ -7,6 +7,8 @@ using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Runtime;
 
+// ReSharper disable MemberCanBePrivate.Global
+
 namespace Phorkus.Core.VM
 {
     public class EnvExternalHandler : IExternalHandler
@@ -20,7 +22,7 @@ namespace Phorkus.Core.VM
             if (contract is null)
             {
                 frame = null;
-                return ExecutionStatus.IncorrectCall;
+                return ExecutionStatus.NoSuchContract;
             }
 
             var status = ExecutionFrame.FromInternalCall(
@@ -60,50 +62,80 @@ namespace Phorkus.Core.VM
             {
                 return false;
             }
+
             return true;
         }
 
         public static int Handler_Env_GetCallValue(int offset)
         {
-            return 0;
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            if (offset < 0 || offset >= frame.Input.Length)
+            {
+                throw new RuntimeException("Bad getcallvalue call");
+            }
+
+            return frame.Input[offset];
         }
 
-        public static void Handler_Env_Log(int offset, int length)
+        public static int Handler_Env_GetCallSize()
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            return frame.Input.Length;
+        }
+
+        public static void Handler_Env_CopyCallValue(int from, int to, int offset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            if (from < 0 || to > frame.Input.Length || from > to)
+            {
+                throw new RuntimeException("Copy to contract memory failed: bad range");
+            }
+            if (!SafeCopyToMemory(frame.Memory, frame.Input.Skip(from).Take(to - from).ToArray(), offset))
+            {
+                throw new RuntimeException("Copy to contract memory failed");
+            }
+        }
+
+        public static void Handler_Env_WriteLog(int offset, int length)
         {
             // TODO: check signs
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var buffer = new byte[length];
-            Marshal.Copy(IntPtr.Add(frame.Memory.Start, offset), buffer, 0, length);
-            Console.WriteLine(
-                $"Contract ({frame.CurrentAddress}) logged: {System.Text.Encoding.ASCII.GetString(buffer)}");
+            var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
+            if (buffer == null)
+            {
+                throw new RuntimeException("Bad call to writelog");
+            }
+            Console.WriteLine($"Contract ({frame.CurrentAddress}) logged: {System.Text.Encoding.ASCII.GetString(buffer)}");
         }
-        
+
         public static int Handler_Env_Call(
             int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset)
         {
-            try
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var signatureBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
+            var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
+            if (signatureBuffer is null || inputBuffer is null)
             {
-                var frame = VirtualMachine.ExecutionFrames.Peek();
-                var signatureBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
-                var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
-                if (signatureBuffer is null || inputBuffer is null)
-                    return 2; // TODO: return values need reconsideration               
-                var address = signatureBuffer.Take(20).ToArray().ToUInt160();
-                if (DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame) != ExecutionStatus.Ok)
-                    return 2;
-                if (newFrame.Execute() != ExecutionStatus.Ok)
-                    return 2;
-                newFrame = VirtualMachine.ExecutionFrames.Pop();
-                var returned = newFrame.ReturnValue;
-                if (!SafeCopyToMemory(frame.Memory, returned, returnValueOffset))
-                    return 2; // TODO: need to revert everything?
+                throw new RuntimeException("Bad call to call function");
             }
-            catch (Exception e)
+            var address = signatureBuffer.Take(20).ToArray().ToUInt160();
+            var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame);
+            if (status != ExecutionStatus.Ok)
             {
-                Console.WriteLine(e);
-                return 3;
+                throw new RuntimeException("Cannot invoke call: " + status);
             }
 
+            status = newFrame.Execute(); 
+            if (status != ExecutionStatus.Ok)
+            {
+                throw new RuntimeException("Cannot invoke call: " + status);
+            }
+            newFrame = VirtualMachine.ExecutionFrames.Pop();
+            var returned = newFrame.ReturnValue;
+            if (!SafeCopyToMemory(frame.Memory, returned, returnValueOffset))
+            {
+                throw new RuntimeException("Cannot invoke call: cannot pass return value");
+            }
             return 0;
         }
 
@@ -113,8 +145,13 @@ namespace Phorkus.Core.VM
             {
                 new FunctionImport(EnvModule, "getcallvalue",
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_GetCallValue))),
+                new FunctionImport(EnvModule, "getcallsize",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_GetCallSize))),
+                new FunctionImport(EnvModule, "copycallvalue",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_CopyCallValue))),
                 new FunctionImport(EnvModule, "call", typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_Call))),
-                new FunctionImport(EnvModule, "log", typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_Log))),
+                new FunctionImport(EnvModule, "writelog",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
             };
         }
     }
