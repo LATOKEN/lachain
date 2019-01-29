@@ -39,7 +39,7 @@ namespace Phorkus.Core.Consensus
         private bool _gotNewBlock;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(2);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
 
         public ConsensusManager(
             IBlockManager blockManager,

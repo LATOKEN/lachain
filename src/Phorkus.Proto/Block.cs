@@ -32,17 +32,13 @@ namespace Phorkus.Proto {
             "AQoFQmxvY2sSHAoGaGVhZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISFgoEaGFz",
             "aBgCIAEoCzIILlVJbnQyNTYSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygL",
             "MgguVUludDI1NhIbCghtdWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnEh0KC2F2",
-            "ZXJhZ2VfZmVlGAUgASgLMgguVUludDI1NiJ4CgpCbG9ja1N0YXRlEicKBnN0",
-            "YXR1cxgBIAEoDjIXLkJsb2NrU3RhdGUuQmxvY2tTdGF0dXMiQQoLQmxvY2tT",
-            "dGF0dXMSFgoSQkxPQ0tfU1RBVFVTX1JFQURZEAASGgoWQkxPQ0tfU1RBVFVT",
-            "X0NPTkZJUk1FRBABQiMKEWNvbS5sYXRva2VuLnByb3RvqgINUGhvcmt1cy5Q",
-            "cm90b2IGcHJvdG8z"));
+            "ZXJhZ2VfZmVlGAUgASgLMgguVUludDI1NkIjChFjb20ubGF0b2tlbi5wcm90",
+            "b6oCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Validator", "Nonce" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig", "AverageFee" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockState), global::Phorkus.Proto.BlockState.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Phorkus.Proto.BlockState.Types.BlockStatus) }, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig", "AverageFee" }, null, null, null)
           }));
     }
     #endregion
@@ -618,147 +614,6 @@ namespace Phorkus.Proto {
         }
       }
     }
-
-  }
-
-  public sealed partial class BlockState : pb::IMessage<BlockState> {
-    private static readonly pb::MessageParser<BlockState> _parser = new pb::MessageParser<BlockState>(() => new BlockState());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<BlockState> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.BlockReflection.Descriptor.MessageTypes[2]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlockState() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlockState(BlockState other) : this() {
-      status_ = other.status_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BlockState Clone() {
-      return new BlockState(this);
-    }
-
-    /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 1;
-    private global::Phorkus.Proto.BlockState.Types.BlockStatus status_ = 0;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.BlockState.Types.BlockStatus Status {
-      get { return status_; }
-      set {
-        status_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as BlockState);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(BlockState other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Status != other.Status) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Status != 0) hash ^= Status.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Status != 0) {
-        output.WriteRawTag(8);
-        output.WriteEnum((int) Status);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Status != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(BlockState other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Status != 0) {
-        Status = other.Status;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 8: {
-            status_ = (global::Phorkus.Proto.BlockState.Types.BlockStatus) input.ReadEnum();
-            break;
-          }
-        }
-      }
-    }
-
-    #region Nested types
-    /// <summary>Container for nested types declared in the BlockState message type.</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static partial class Types {
-      public enum BlockStatus {
-        [pbr::OriginalName("BLOCK_STATUS_READY")] Ready = 0,
-        [pbr::OriginalName("BLOCK_STATUS_CONFIRMED")] Confirmed = 1,
-      }
-
-    }
-    #endregion
 
   }
 

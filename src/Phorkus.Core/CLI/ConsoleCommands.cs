@@ -177,11 +177,14 @@ namespace Phorkus.Core.CLI
         
         public string CallContract(string[] arguments)
         {
+            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var contractHash = arguments[1].HexToUInt160();
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            if (contract is null)
+                return $"Unable to find contract by hash {contractHash.Buffer.ToHex()}";
 //            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
             _stateManager.NewSnapshot();
-            var result = _virtualMachine.InvokeContract(contract, _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160(), new byte[]{});
+            var result = _virtualMachine.InvokeContract(contract, from, new byte[]{});
             _stateManager.Rollback();
             return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
             // 0x6679379687ab3d77d127b863d45ab26ee5a9e291

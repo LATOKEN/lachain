@@ -65,6 +65,21 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
 
+        private void _TryFixGlobalConfig(ulong blockHeight)
+        {
+            /* TODO: "fix me in future by using new state manager" */
+            if (blockHeight == 0)
+                return;
+            while (true)
+            {
+                var block = _blockRepository.GetBlockByHeight(blockHeight);
+                if (block is null)
+                    break;
+                ++blockHeight;
+            }
+            _globalRepository.SetTotalBlockHeight(blockHeight - 1);
+        }
+        
         public OperatingError Persist(Block block)
         {
             var startTime = TimeUtils.CurrentTimeMillis();
@@ -78,7 +93,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 return OperatingError.InvalidNonce;
             var exists = _blockRepository.GetBlockByHeight(block.Header.Index);
             if (exists != null)
+            {
+                _TryFixGlobalConfig(block.Header.Index);
                 return OperatingError.BlockAlreadyExists;
+            }
             /* check prev block hash */
             var latestBlock = _blockRepository.GetBlockByHeight(currentBlockHeader);
             if (latestBlock != null && !block.Header.PrevBlockHash.Equals(latestBlock.Hash))

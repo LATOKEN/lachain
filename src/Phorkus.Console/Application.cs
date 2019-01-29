@@ -31,11 +31,6 @@ namespace Phorkus.Console
 
         public Application()
         {
-            AppDomain.CurrentDomain.UnhandledException += (sender, exception) =>
-            {
-                System.Console.Error.WriteLine(exception);
-            };
-
             var containerBuilder = new SimpleInjectorContainerBuilder(
                 new ConfigManager("config.json"));
 
@@ -46,7 +41,7 @@ namespace Phorkus.Console
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
-
+            
             _container = containerBuilder.Build();
         }
 

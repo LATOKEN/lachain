@@ -50,7 +50,7 @@ namespace Phorkus.Benchmark
             }
 
             var snapshot = stateManager.NewSnapshot();
-            snapshot.Contracts.AddContract(contract.Hash, contract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, contract);
             stateManager.Approve();
             
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());

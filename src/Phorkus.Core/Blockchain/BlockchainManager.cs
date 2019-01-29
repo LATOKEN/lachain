@@ -40,7 +40,7 @@ namespace Phorkus.Core.Blockchain
         public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
-            if (CurrentBlock != null)
+            if (_blockRepository.GetBlockByHeight(0) != null)
                 return false;
             PersistBlockManually(genesisBlock.Block, genesisBlock.Transactions);
             return true;
