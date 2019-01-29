@@ -45,24 +45,12 @@ namespace Phorkus.Core.VM
 
         public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input)
         {
-            StateManager.NewSnapshot();
             try
             {
-                var status = _InvokeContractUnsafe(contract, sender, input);
-                if (status != ExecutionStatus.Ok)
-                {
-                    StateManager.Rollback();
-                }
-                else
-                {
-                    StateManager.Approve();
-                }
-
-                return status;
+                return _InvokeContractUnsafe(contract, sender, input);
             }
             catch (Exception e)
             {
-                StateManager.Rollback();
                 Console.Error.WriteLine(e);
                 return ExecutionStatus.UnknownError;
             }

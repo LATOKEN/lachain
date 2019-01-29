@@ -56,10 +56,13 @@ namespace Phorkus.Benchmark
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
             
             var currentTime = TimeUtils.CurrentTimeMillis();
+            stateManager.NewSnapshot();
             if (virtualMachine.InvokeContract(contract, UInt160Utils.Zero, new byte[] { }) != ExecutionStatus.Ok)
             {
+                stateManager.Rollback();
                 Console.WriteLine("Contract execution failed");
             }   
+            stateManager.Approve();
             var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
             Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
         }
