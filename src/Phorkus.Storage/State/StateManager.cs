@@ -68,7 +68,7 @@ namespace Phorkus.Storage.State
             _balanceManager.Commit();
             _assetManager.Commit();
             _contractManager.Commit();
-            _contractStorageManager.Rollback();
+            _contractStorageManager.Commit();
         }
     }
 }
