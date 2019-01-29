@@ -166,6 +166,18 @@ namespace Phorkus.Core.VM
             VirtualMachine.BlockchainSnapshot.ContractStorage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
         }
 
+        public static void Handler_Env_SetReturn(int offset, int length)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var ret = SafeCopyFromMemory(frame.Memory, offset, length);
+            if (ret is null)
+            {
+                throw new RuntimeException("Bad call to setreturn");
+            }
+
+            frame.ReturnValue = ret;
+        }
+
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
             return new[]
@@ -183,6 +195,8 @@ namespace Phorkus.Core.VM
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_LoadStorage))),
                 new FunctionImport(EnvModule, "savestorage",
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_SaveStorage))),
+                new FunctionImport(EnvModule, "setreturn",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_SetReturn))),
             };
         }
     }

@@ -42,7 +42,7 @@ namespace Phorkus.Benchmark
             {
                 Hash = hash,
                 Version = ContractVersion.Wasm,
-                Wasm = ByteString.CopyFrom("0061736d01000000011b056000017f60017f017f60027f7f0060057f7f7f7f7f017f600000026e0603656e760b67657463616c6c73697a65000003656e760c67657463616c6c76616c7565000103656e760e696e766f6b65636f6e7472616374000303656e760b6c6f616473746f72616765000203656e760b7361766573746f72616765000203656e760877726974656c6f67000203030201040404017000000503010001071f03066d656d6f727902000a6765745f6f6666736574000605737461727400070adc01020a00200041027441106a0bce0101037f024010004101480d00024010004104480d004100210041002101410021020340200210012000742001722101200041086a2100200241016a22024104470d000b200141effdb6f57d470d00410041dedbfafd7e3602104100100622004104100541004100360210200041201006220210032002412010050f0b410041bab9aff50136021041001006410410050f0b410041cafdebf57b36029001410010062200412010061004410041effdb6f57d3602244100410036029001200041044105100620004106100610021a0b".HexToBytes())
+                Wasm = ByteString.CopyFrom("0061736d0100000001180560027f7f006000017f60037f7f7f0060017f017f600000026a0603656e760d636f707963616c6c76616c7565000203656e760b67657463616c6c73697a65000103656e760b6c6f616473746f72616765000003656e760b7361766573746f72616765000003656e760973657472657475726e000003656e760877726974656c6f6700000304030304040404017000000503010001072a04066d656d6f727902000a6765745f6f666673657400060866616c6c6261636b000705737461727400080aa801030a00200041027441106a0b1500410041dedbfafd7e36021041001006410410050b840101027f02400240100141034c0d00410041044100100622001000410028021022014102460d0120014101470d00024010014118460d0010070b4104411820001000200041201006220110022001412010040f0b10070f0b024010014138460d0010070b41044118200010004118413841201006220110002000200110032001412010040b".HexToBytes())
             };
             if (!virtualMachine.VerifyContract(contract.Wasm.ToByteArray()))
             {
@@ -57,12 +57,47 @@ namespace Phorkus.Benchmark
             
             var currentTime = TimeUtils.CurrentTimeMillis();
             stateManager.NewSnapshot();
-            if (virtualMachine.InvokeContract(contract, UInt160Utils.Zero, new byte[] { }) != ExecutionStatus.Ok)
+            var status = virtualMachine.InvokeContract(contract, UInt160Utils.Zero, new byte[] { }); 
+            if (status != ExecutionStatus.Ok)
             {
                 stateManager.Rollback();
-                Console.WriteLine("Contract execution failed");
-            }   
+                Console.WriteLine("Contract execution failed: " + status);
+                goto exit_mark;
+            }
+
+            var input = new byte[24];
+            input[0] = 1;
+            status = virtualMachine.InvokeContract(contract, UInt160Utils.Zero, input); 
+            if (status != ExecutionStatus.Ok)
+            {
+                stateManager.Rollback();
+                Console.WriteLine("Contract execution failed: " + status);
+                goto exit_mark;
+            }
+            
+            input = new byte[24 + 32];
+            input[0] = 2;
+            input[24] = 10;
+            status = virtualMachine.InvokeContract(contract, UInt160Utils.Zero, input); 
+            if (status != ExecutionStatus.Ok)
+            {
+                stateManager.Rollback();
+                Console.WriteLine("Contract execution failed: " + status);
+                goto exit_mark;
+            }
+            
+            input = new byte[24];
+            input[0] = 1;
+            status = virtualMachine.InvokeContract(contract, UInt160Utils.Zero, input); 
+            if (status != ExecutionStatus.Ok)
+            {
+                stateManager.Rollback();
+                Console.WriteLine("Contract execution failed: " + status);
+                goto exit_mark;
+            }
+            
             stateManager.Approve();
+            exit_mark:
             var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
             Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
         }
