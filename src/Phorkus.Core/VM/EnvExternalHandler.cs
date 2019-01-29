@@ -105,7 +105,7 @@ namespace Phorkus.Core.VM
             {
                 throw new RuntimeException("Bad call to writelog");
             }
-            Console.WriteLine($"Contract ({frame.CurrentAddress}) logged: {System.Text.Encoding.ASCII.GetString(buffer)}");
+            Console.WriteLine($"Contract ({frame.CurrentAddress}) logged: {buffer.ToHex()}");
         }
 
         public static int Handler_Env_Call(
@@ -139,6 +139,34 @@ namespace Phorkus.Core.VM
             return 0;
         }
 
+        public static void Handler_Env_StorageLoad(int keyOffset, int valueOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            if (key is null)
+            {
+                throw new RuntimeException("Bad call to storageload");
+            }
+            var value = VirtualMachine.BlockchainSnapshot.ContractStorage.GetValue(frame.CurrentAddress, key.ToUInt256());
+            if (!SafeCopyToMemory(frame.Memory, value.Buffer.ToByteArray(), valueOffset))
+            {
+                throw new RuntimeException("Cannot copy storageload result to memory");
+            }
+        }
+        
+        public static void Handler_Env_StorageSave(int keyOffset, int valueOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32);
+            if (key is null || value is null)
+            {
+                throw new RuntimeException("Bad call to storageload");
+            }
+            VirtualMachine.BlockchainSnapshot.ContractStorage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
+        }
+        
+
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
             return new[]
@@ -152,6 +180,10 @@ namespace Phorkus.Core.VM
                 new FunctionImport(EnvModule, "call", typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_Call))),
                 new FunctionImport(EnvModule, "writelog",
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
+                new FunctionImport(EnvModule, "storageload",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_StorageLoad))),
+                new FunctionImport(EnvModule, "storagesave",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_StorageSave))),
             };
         }
     }

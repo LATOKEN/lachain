@@ -12,17 +12,20 @@ namespace Phorkus.Storage.State
         private readonly ISnapshotManager<IBalanceSnapshot> _balanceManager;
         private readonly ISnapshotManager<IAssetSnapshot> _assetManager;
         private readonly ISnapshotManager<IContractSnapshot> _contractManager;
+        private readonly ISnapshotManager<IContractStorageSnapshot> _contractStorageManager;
 
         public StateManager(IStorageManager storageManager)
         {
             _balanceManager = new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager, (uint) RepositoryType.BalanceRepository);
             _assetManager = new SnapshotManager<IAssetSnapshot, AssetSnapshot>(storageManager, (uint) RepositoryType.AssetRepository);
             _contractManager = new SnapshotManager<IContractSnapshot, ContractSnapshot>(storageManager, (uint) RepositoryType.ContractRepository);
+            _contractStorageManager = new SnapshotManager<IContractStorageSnapshot, ContractStorageSnapshot>(storageManager, (uint) RepositoryType.ContractStorageRepository);
             
             LastApprovedSnapshot = new BlockchainSnapshot(
                 _balanceManager.LastApprovedSnapshot,
                 _assetManager.LastApprovedSnapshot,
-                _contractManager.LastApprovedSnapshot
+                _contractManager.LastApprovedSnapshot,
+                _contractStorageManager.LastApprovedSnapshot
             );
         }
         
@@ -33,7 +36,8 @@ namespace Phorkus.Storage.State
             PendingSnapshot = new BlockchainSnapshot(
                 _balanceManager.NewSnapshot(),
                 _assetManager.NewSnapshot(),
-                _contractManager.NewSnapshot()
+                _contractManager.NewSnapshot(),
+                _contractStorageManager.NewSnapshot()
             );
             return PendingSnapshot;
         }
@@ -43,6 +47,7 @@ namespace Phorkus.Storage.State
             _balanceManager.Approve();
             _assetManager.Approve();
             _contractManager.Approve();
+            _contractStorageManager.Approve();
             LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
             PendingSnapshot = null;
         }
@@ -54,6 +59,7 @@ namespace Phorkus.Storage.State
             _balanceManager.Rollback();
             _assetManager.Rollback();
             _contractManager.Rollback();
+            _contractStorageManager.Rollback();
             PendingSnapshot = null;
         }
 
@@ -62,6 +68,7 @@ namespace Phorkus.Storage.State
             _balanceManager.Commit();
             _assetManager.Commit();
             _contractManager.Commit();
+            _contractStorageManager.Rollback();
         }
     }
 }
