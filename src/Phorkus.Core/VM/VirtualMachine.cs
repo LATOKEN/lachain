@@ -26,9 +26,8 @@ namespace Phorkus.Core.VM
 
         // TODO: protection from multiple instantiation
 
-        public bool VerifyContract(Contract contract)
+        public bool VerifyContract(byte[] contractCode)
         {
-            var contractCode = contract.Wasm.ToByteArray();
             try
             {
                 using (var stream = new MemoryStream(contractCode))

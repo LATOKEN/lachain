@@ -23,7 +23,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            long currentNonce = _transactionRepository.GetTotalTransactionCount(transaction.From);
+            long currentNonce = snapshot.Contracts.GetTotalContractsByFrom(transaction.From);
             /* validate transaction before execution */
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
@@ -38,7 +38,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 Abi = { deploy.Abi },
                 Wasm = deploy.Wasm
             };
-            if (!_virtualMachine.VerifyContract(contract))
+            if (!_virtualMachine.VerifyContract(contract.Wasm.ToByteArray()))
                 return OperatingError.InvalidContract;
             snapshot.Contracts.AddContract(contract.Hash, contract);
             return OperatingError.Ok;

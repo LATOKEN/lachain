@@ -162,23 +162,14 @@ namespace Phorkus.Core.CLI
         
         public string DeployContract(string[] arguments)
         {
-            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[1]);
-            var value = Money.Parse(arguments[2]);
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var nonce = _stateManager.LastApprovedSnapshot.Contracts.GetTotalContractsByFrom(from);
             var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).ToHash160();
-            var contract = new Contract
-            {
-                Hash = hash,
-                /* TODO: "we don't support ABI now" */
-                Abi = {  },
-                Version = ContractVersion.Wasm,
-                Wasm = ByteString.CopyFrom(arguments[3].HexToBytes())
-            };
-            if (!_virtualMachine.VerifyContract(contract))
+            var contractCode = arguments[1].HexToBytes();
+            if (!_virtualMachine.VerifyContract(contractCode))
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
-            var tx = _transactionBuilder.DeployTransaction(from, null, null, ContractVersion.Wasm);
+            var tx = _transactionBuilder.DeployTransaction(from, null, contractCode, ContractVersion.Wasm);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.Buffer.ToHex();
@@ -188,10 +179,12 @@ namespace Phorkus.Core.CLI
         {
             var contractHash = arguments[1].HexToUInt160();
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
-//            var result = _virtualMachine.InvokeContract(contract, invocation);
-//            return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
-            return "Not finished";
+//            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
+            _stateManager.NewSnapshot();
+            var result = _virtualMachine.InvokeContract(contract, _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160(), new byte[]{});
+            _stateManager.Rollback();
+            return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
+            // 0x6679379687ab3d77d127b863d45ab26ee5a9e291
         }
 
         public string InvokeContract(string[] arguments)

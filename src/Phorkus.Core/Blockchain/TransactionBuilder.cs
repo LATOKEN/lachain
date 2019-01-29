@@ -75,7 +75,21 @@ namespace Phorkus.Core.Blockchain
         
         public Transaction DeployTransaction(UInt160 from, IEnumerable<ContractABI> abi, IEnumerable<byte> wasm, ContractVersion version)
         {
-            throw new NotImplementedException();
+            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var deployTx = new DeployTransaction
+            {
+                Version = ContractVersion.Wasm,
+                Wasm = ByteString.CopyFrom(wasm.ToArray())
+            };
+            var tx = new Transaction
+            {
+                Type = TransactionType.Deploy,
+                From = from,
+                Deploy = deployTx,
+                Fee = _CalcEstimatedBlockFee(),
+                Nonce = nonce
+            };
+            return tx;            
         }
 
         public Transaction TransferTransaction(UInt160 from, UInt160 to, string assetName, Money value)
