@@ -108,7 +108,7 @@ namespace Phorkus.Core.VM
             Console.WriteLine($"Contract ({frame.CurrentAddress}) logged: {buffer.ToHex()}");
         }
 
-        public static int Handler_Env_Call(
+        public static int Handler_Env_InvokeContract(
             int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -139,7 +139,7 @@ namespace Phorkus.Core.VM
             return 0;
         }
 
-        public static void Handler_Env_StorageLoad(int keyOffset, int valueOffset)
+        public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
@@ -154,7 +154,7 @@ namespace Phorkus.Core.VM
             }
         }
         
-        public static void Handler_Env_StorageSave(int keyOffset, int valueOffset)
+        public static void Handler_Env_SaveStorage(int keyOffset, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
@@ -177,13 +177,13 @@ namespace Phorkus.Core.VM
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_GetCallSize))),
                 new FunctionImport(EnvModule, "copycallvalue",
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_CopyCallValue))),
-                new FunctionImport(EnvModule, "call", typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_Call))),
+                new FunctionImport(EnvModule, "invokecontract", typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_InvokeContract))),
                 new FunctionImport(EnvModule, "writelog",
                     typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
-                new FunctionImport(EnvModule, "storageload",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_StorageLoad))),
-                new FunctionImport(EnvModule, "storagesave",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_StorageSave))),
+                new FunctionImport(EnvModule, "loadstorage",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_LoadStorage))),
+                new FunctionImport(EnvModule, "savestorage",
+                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_SaveStorage))),
             };
         }
     }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Runtime;
 
@@ -66,8 +67,8 @@ namespace Phorkus.Core.VM
             var method = Exports.GetMethod("start");
             if (method is null)
                 return ExecutionStatus.MissingEntrypoint;
-            var result = method.Invoke(InvocationContext.Exports, new object[] { });
-            Console.WriteLine("Contract result is: " + result);
+            method.Invoke(InvocationContext.Exports, new object[] { });
+            Console.WriteLine($"Contract {CurrentAddress} exited with return value: {ReturnValue.ToHex()}");
             return ExecutionStatus.Ok;
         }
 

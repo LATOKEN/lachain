@@ -12,7 +12,7 @@ namespace Phorkus.Core.VM
     {
         internal static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
         
-        internal static IBlockchainSnapshot BlockchainSnapshot => StateManager.LastApprovedSnapshot;
+        internal static IBlockchainSnapshot BlockchainSnapshot => StateManager.CurrentSnapshot;
         internal static IBlockchainInterface BlockchainInterface { get; } = new DefaultBlockchainInterface();
         
         internal static IStateManager StateManager { get; set; }
@@ -45,12 +45,24 @@ namespace Phorkus.Core.VM
 
         public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input)
         {
+            StateManager.NewSnapshot();
             try
             {
-                return _InvokeContractUnsafe(contract, sender, input);
+                var status = _InvokeContractUnsafe(contract, sender, input);
+                if (status != ExecutionStatus.Ok)
+                {
+                    StateManager.Rollback();
+                }
+                else
+                {
+                    StateManager.Approve();
+                }
+
+                return status;
             }
             catch (Exception e)
             {
+                StateManager.Rollback();
                 Console.Error.WriteLine(e);
                 return ExecutionStatus.UnknownError;
             }
