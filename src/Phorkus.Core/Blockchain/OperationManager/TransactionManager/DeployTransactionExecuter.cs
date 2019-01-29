@@ -23,7 +23,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            long contractNonce = snapshot.Contracts.GetTotalContractsByFrom(transaction.From);
+            var contractNonce = snapshot.Contracts.GetTotalContractsByFrom(transaction.From);
             /* validate transaction before execution */
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
@@ -51,8 +51,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var deploy = transaction.Deploy;
             if (deploy?.Version is null)
                 return OperatingError.InvalidTransaction;
-            if (deploy?.Abi is null || !deploy.Abi.Any())
-                return OperatingError.InvalidTransaction;
+            // TODO: abi
             if (deploy?.Wasm is null)
                 return OperatingError.InvalidTransaction;
             var result = _VerifyContract(transaction);
