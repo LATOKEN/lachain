@@ -12,7 +12,7 @@ namespace Phorkus.Core.VM
     {
         internal static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
         
-        internal static IBlockchainSnapshot BlockchainSnapshot => StateManager.CurrentSnapshot;
+        internal static IBlockchainSnapshot BlockchainSnapshot => StateManager.LastApprovedSnapshot;
         internal static IBlockchainInterface BlockchainInterface { get; } = new DefaultBlockchainInterface();
         
         internal static IStateManager StateManager { get; set; }

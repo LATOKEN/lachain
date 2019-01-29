@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using NBitcoin;
+using Org.BouncyCastle.Security;
 using Phorkus.Party;
 using Phorkus.Party.Generator;
 using Phorkus.Party.Generator.Messages;
@@ -54,7 +55,7 @@ namespace HermesTestConsole
                 
                 if (biprimalityTestResult is null)
                 {
-                    if (count % 100000 == 0)
+                    if (count % 1_000_000 == 0)
                     {
                         participants = new SortedDictionary<PublicKey, int>(new PublicKeyComparer());
                         for (var i = 0; i < publicKeys.Length; i++)
@@ -64,11 +65,11 @@ namespace HermesTestConsole
                         foreach (var p in participants)
                             protos[p.Key] = new DefaultGeneratorProtocol(participants, p.Key);
                     
-                        var seed = "0xbadcab1e".HexToBytes();
+                        var seed = SecureRandom.GetSeed(64 * 1024);
                         
                         DefaultGeneratorProtocol.protoParam = null;
                         foreach (var p in participants)
-                            protos[p.Key].Initialize(BitConverter.GetBytes(p.Value));
+                            protos[p.Key].Initialize(seed);
                     }
                     
                     var shares = new SortedDictionary<PublicKey, IDictionary<PublicKey, BgwPublicParams>>(new PublicKeyComparer());

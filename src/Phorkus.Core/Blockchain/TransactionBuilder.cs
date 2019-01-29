@@ -72,9 +72,8 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-
-        public Transaction DeployTransaction(UInt160 @from, UInt160 to, Asset asset, Money value, ContractABI[] abi, byte[] wasm,
-            ContractVersion version)
+        
+        public Transaction DeployTransaction(UInt160 from, IEnumerable<ContractABI> abi, IEnumerable<byte> wasm, ContractVersion version)
         {
             throw new NotImplementedException();
         }

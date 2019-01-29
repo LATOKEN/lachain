@@ -178,7 +178,7 @@ namespace Phorkus.Core.CLI
             if (!_virtualMachine.VerifyContract(contract))
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
-            var tx = _transactionBuilder.DeployTransaction(from, UInt160Utils.Zero, asset, value, null, null, ContractVersion.Wasm);
+            var tx = _transactionBuilder.DeployTransaction(from, null, null, ContractVersion.Wasm);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.Buffer.ToHex();

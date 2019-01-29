@@ -65,7 +65,7 @@ namespace Phorkus.Core.VM
 
             return true;
         }
-
+        
         public static int Handler_Env_GetCallValue(int offset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -165,7 +165,6 @@ namespace Phorkus.Core.VM
             }
             VirtualMachine.BlockchainSnapshot.ContractStorage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
         }
-        
 
         public IEnumerable<FunctionImport> GetFunctionImports()
         {

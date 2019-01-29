@@ -1,4 +1,5 @@
-﻿using Phorkus.Proto;
+﻿using System.Collections.Generic;
+using Phorkus.Proto;
 using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain
@@ -22,6 +23,6 @@ namespace Phorkus.Core.Blockchain
 
         Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, byte[] input = null);
         
-        Transaction DeployTransaction(UInt160 from, UInt160 to, Asset asset, Money value, ContractABI[] abi, byte[] wasm, ContractVersion version);
+        Transaction DeployTransaction(UInt160 from, IEnumerable<ContractABI> abi, IEnumerable<byte> wasm, ContractVersion version);
     }
 }
