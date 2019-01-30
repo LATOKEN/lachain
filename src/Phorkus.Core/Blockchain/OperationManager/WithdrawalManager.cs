@@ -4,26 +4,28 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Threshold;
 using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;
+using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
+namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class WithdrawalManager : IWithdrawalManager
     {
         private readonly ICrossChainManager _crossChainManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionPool _transactionPool;
-        private readonly ITransactionRepository _transactionRepository;
+        private readonly IPoolRepository _poolRepository;
         private readonly ITransactionSigner _transactionSigner;
         private readonly IValidatorManager _validatorManager;
+        private readonly IStateManager _stateManager;
         private readonly IThresholdManager _thresholdManager;
-        private readonly IWithdrawalRepository _withdrawalRepository;
         private readonly ILogger<IWithdrawalManager> _logger;
 
         private volatile bool _stopped = true;
@@ -33,27 +35,28 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
-            ITransactionRepository transactionRepository,
+            IPoolRepository poolRepository,
             IValidatorManager validatorManager,
+            IStateManager stateManager,
             IThresholdManager thresholdManager,
-            IWithdrawalRepository withdrawalRepository,
             ILogger<IWithdrawalManager> logger)
         {
             _crossChainManager = crossChainManager;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
-            _transactionRepository = transactionRepository;
+            _poolRepository = poolRepository;
             _transactionSigner = transactionSigner;
             _thresholdManager = thresholdManager;
+            _stateManager = stateManager;
             _validatorManager = validatorManager;
-            _withdrawalRepository = withdrawalRepository;
             _logger = logger;
+            _stateManager = stateManager;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryApproveWithdrawal(KeyPair keyPair, ulong nonce)
         {
-            var withdrawal = _withdrawalRepository.GetWithdrawalByNonce(nonce);
+            var withdrawal = _stateManager.LastApprovedSnapshot.Withdrawals.GetWithdrawalByNonce(nonce);
             if (withdrawal is null)
             {
                 _logger.LogWarning($"Unable to find withdrawal by nonce ({nonce}) for execution");
@@ -67,7 +70,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             }
 
             /* try to fetch transaction from database storage */
-            var transaction = _transactionRepository.GetTransactionByHash(withdrawal.TransactionHash)?.Transaction;
+            var transaction = _poolRepository.GetTransactionByHash(withdrawal.TransactionHash)?.Transaction;
             if (transaction is null)
                 throw new InvalidTransactionException(OperatingError.InvalidTransaction);
             /* check transaction confirmation in blockchain */
@@ -93,22 +96,25 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (!_validatorManager.CheckValidator(keyPair.PublicKey))
                 return false;
             /* sign transaction with validator's private key */
-            var signedTransaction = _transactionSigner.Sign(confirmTransaction, keyPair);
-            if (!_transactionPool.Add(signedTransaction))
+            var acceptedTransaction = _transactionSigner.Sign(confirmTransaction, keyPair);
+            if (!_transactionPool.Add(acceptedTransaction))
             {
                 _logger.LogWarning(
                     $"Couldn't send confirm transaction transaction ({withdrawTx.TransactionHash.ToByteArray()}) to transaction pool");
                 return false;
             }
 
-            _withdrawalRepository.ApproveWithdrawal(withdrawal.TransactionHash);
+            throw new NotImplementedException("We can't confirm withdrawal here, cuz we need to create new transaction or create system contract for cross-chain");
+            /*_withdrawalRepository.Withdrawals.ApproveWithdrawal(
+                withdrawal.TransactionHash);*/
+            
             return true;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void ExecuteWithdrawal(ThresholdKey thresholdKey, KeyPair keyPair, ulong nonce)
         {
-            var withdrawal = _withdrawalRepository.GetWithdrawalByNonce(nonce);
+            var withdrawal = _stateManager.LastApprovedSnapshot.Withdrawals.GetWithdrawalByNonce(nonce);
             if (withdrawal is null)
             {
                 _logger.LogWarning($"Unable to find withdrawal by nonce ({nonce}) for execution");
@@ -122,7 +128,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return;
             }
 
-            var transaction = _transactionRepository.GetTransactionByHash(withdrawal.TransactionHash)
+            var transaction = _poolRepository.GetTransactionByHash(withdrawal.TransactionHash)
                 .Transaction;
             var withdrawTx = transaction.Withdraw;
 
@@ -156,11 +162,12 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var transactionHash = transactionService.BroadcastTransaction(rawTransaction);
             if (transactionHash == null)
                 return;
-
-            _withdrawalRepository.ConfirmWithdrawal(
+            
+            throw new NotImplementedException("We can't confirm withdrawal here, cuz we need to create new transaction or create system contract for cross-chain");
+            /*_withdrawalRepository.ConfirmWithdrawal(
                 withdrawal.TransactionHash,
                 rawTransaction.TransactionData,
-                transactionHash);
+                transactionHash);*/
         }
 
         private void _ExecuteWorker(ThresholdKey thresholdKey, KeyPair keyPair)
@@ -169,8 +176,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             {
                 Thread.Sleep(1_000);
 
-                var approved = _withdrawalRepository.GetApprovedWithdrawalNonce();
-                var current = _withdrawalRepository.GetCurrentWithdrawalNonce();
+                var approved = _stateManager.LastApprovedSnapshot.Withdrawals.GetApprovedWithdrawalNonce();
+                var current = _stateManager.LastApprovedSnapshot.Withdrawals.GetCurrentWithdrawalNonce();
 
                 if (current >= approved)
                     continue;
@@ -186,8 +193,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             {
                 Thread.Sleep(10_000);
 
-                var approved = _withdrawalRepository.GetApprovedWithdrawalNonce();
-                var current = _withdrawalRepository.GetCurrentWithdrawalNonce();
+                var approved = _stateManager.LastApprovedSnapshot.Withdrawals.GetApprovedWithdrawalNonce();
+                var current = _stateManager.LastApprovedSnapshot.Withdrawals.GetCurrentWithdrawalNonce();
 
                 if (current >= approved)
                     continue;

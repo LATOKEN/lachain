@@ -1,42 +1,38 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Core.Consensus;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;
+using Phorkus.Storage.State;
 
 namespace Phorkus.Core.Network
 {
     public class MessageHandler : IMessageHandler
     {
         private readonly IBlockSynchronizer _blockSynchronizer;
-        private readonly ITransactionRepository _transactionRepository;
-        private readonly IBlockRepository _blockRepository;
-        private readonly IGlobalRepository _globalRepository;
         private readonly IConsensusManager _consensusManager;
         private readonly ILogger<MessageHandler> _logger;
-
+        private readonly IStateManager _stateManager;
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
-            ITransactionRepository transactionRepository,
-            IBlockRepository blockRepository,
-            IGlobalRepository globalRepository,
             IConsensusManager consensusManager, 
-            ILogger<MessageHandler> logger)
+            ILogger<MessageHandler> logger,
+            IStateManager stateManager)
         {
             _blockSynchronizer = blockSynchronizer;
-            _transactionRepository = transactionRepository;
-            _blockRepository = blockRepository;
-            _globalRepository = globalRepository;
             _consensusManager = consensusManager;
             _logger = logger;
+            _stateManager = stateManager;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
         {
-            var reply = envelope.MessageFactory.PingReply(request.Timestamp, _globalRepository.GetTotalBlockHeight());
+            var reply = envelope.MessageFactory.PingReply(request.Timestamp,
+                _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
             envelope.RemotePeer.Send(reply);
         }
 
@@ -47,7 +43,7 @@ namespace Phorkus.Core.Network
 
         public void GetBlocksByHashesRequest(MessageEnvelope envelope, GetBlocksByHashesRequest request)
         {
-            var blocks = _blockRepository.GetBlocksByHashes(request.BlockHashes);
+            var blocks = _stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes);
             envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHashesReply(blocks));
         }
 
@@ -60,7 +56,7 @@ namespace Phorkus.Core.Network
 
         public void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request)
         {
-            var blockHashes = _blockRepository
+            var blockHashes = _stateManager.LastApprovedSnapshot.Blocks
                 .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
             envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHeightRangeReply(blockHashes));
@@ -73,7 +69,14 @@ namespace Phorkus.Core.Network
 
         public void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request)
         {
-            var txs = _transactionRepository.GetTransactionsByHashes(request.TransactionHashes);
+            var txs = new List<AcceptedTransaction>();
+            foreach (var txHash in request.TransactionHashes)
+            {
+                var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
+                if (tx is null)
+                    continue;
+                txs.Add(tx);
+            }
             envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
         }
 

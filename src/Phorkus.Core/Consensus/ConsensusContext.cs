@@ -66,6 +66,11 @@ namespace Phorkus.Core.Consensus
             return result;
         }
 
+        public IEnumerable<AcceptedTransaction> GetProposedTransactions()
+        {
+            return CurrentProposal?.Transactions?.Values;
+        }
+
         public Block GetProposedBlock()
         {
             var header = GetProposedHeader();

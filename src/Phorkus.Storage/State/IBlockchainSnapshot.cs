@@ -5,6 +5,9 @@
         IBalanceSnapshot Balances { get; }
         IAssetSnapshot Assets { get; }
         IContractSnapshot Contracts { get; }
-        IContractStorageSnapshot ContractStorage { get; }
+        IStorageSnapshot Storage { get; }
+        ITransactionSnapshot Transactions { get; }
+        IBlockSnapshot Blocks { get; }
+        IWithdrawalSnapshot Withdrawals { get; }
     }
 }

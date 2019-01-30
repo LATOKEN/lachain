@@ -5,20 +5,21 @@ using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Core.VM;
 using Phorkus.Storage.Repositories;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class DeployTransactionExecuter : ITransactionExecuter
     {
-        private readonly ITransactionRepository _transactionRepository;
+        private readonly IPoolRepository _poolRepository;
         private readonly IVirtualMachine _virtualMachine;
         
         public DeployTransactionExecuter(
             IVirtualMachine virtualMachine,
-            ITransactionRepository transactionRepository)
+            IPoolRepository poolRepository)
         {
             _virtualMachine = virtualMachine;
-            _transactionRepository = transactionRepository;
+            _poolRepository = poolRepository;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
@@ -31,6 +32,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var deploy = transaction.Deploy;
             /* calculate contract hash and register it */
             var hash = transaction.From.Buffer.ToArray().Concat(BitConverter.GetBytes(contractNonce)).ToHash160();
+            Console.WriteLine("Contract hash: " + hash.Buffer.ToHex());
             var contract = new Contract
             {
                 Hash = hash,

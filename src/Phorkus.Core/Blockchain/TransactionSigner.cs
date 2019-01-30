@@ -31,9 +31,9 @@ namespace Phorkus.Core.Blockchain
                 _verifiedTransactions.TryAdd(transaction.Hash, transaction.Hash);
         }
         
-        public event EventHandler<SignedTransaction> OnTransactionSigned;
+        public event EventHandler<AcceptedTransaction> OnTransactionSigned;
         
-        public SignedTransaction Sign(Transaction transaction, KeyPair keyPair)
+        public AcceptedTransaction Sign(Transaction transaction, KeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
             var message = transaction.ToHash256().Buffer.ToByteArray();
@@ -42,7 +42,7 @@ namespace Phorkus.Core.Blockchain
             var pubKey = _crypto.RecoverSignature(message, signature);
             if (!pubKey.SequenceEqual(keyPair.PublicKey.Buffer.ToByteArray()))
                 throw new InvalidKeyPairException();
-            var signed = new SignedTransaction
+            var signed = new AcceptedTransaction
             {
                 Transaction = transaction,
                 Hash = transaction.ToHash256(),
@@ -52,7 +52,7 @@ namespace Phorkus.Core.Blockchain
             return signed;
         }
 
-        public OperatingError VerifySignature(SignedTransaction transaction, PublicKey publicKey)
+        public OperatingError VerifySignature(AcceptedTransaction transaction, PublicKey publicKey)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey)
@@ -62,7 +62,7 @@ namespace Phorkus.Core.Blockchain
             return OperatingError.Ok;
         }
 
-        public OperatingError VerifySignature(SignedTransaction transaction)
+        public OperatingError VerifySignature(AcceptedTransaction transaction)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction)

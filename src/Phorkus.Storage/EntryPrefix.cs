@@ -12,10 +12,10 @@
         
         BlockByHash = 0x0301,
         BlockHashByHeight = 0x0302,
+        BlockHeight = 0x0303,
         
         TransactionByHash = 0x0401,
-        TransactionLatestByFrom = 0x0402,
-        TransactionStateByHash = 0x0403,
+        TransactionCountByFrom = 0x0402,
         TransactionPool = 0x0404,
         
         BalanceByOwnerAndAsset = 0x0501,

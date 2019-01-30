@@ -61,8 +61,8 @@ namespace Phorkus.Proto.Grpc {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.ContractReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.SendSignedTransactionRequest), global::Phorkus.Proto.Grpc.SendSignedTransactionRequest.Parser, new[]{ "Transaction", "Signature" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.SendSignedTransactionReply), global::Phorkus.Proto.Grpc.SendSignedTransactionReply.Parser, new[]{ "Hash" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.SendAcceptedTransactionRequest), global::Phorkus.Proto.Grpc.SendAcceptedTransactionRequest.Parser, new[]{ "Transaction", "Signature" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.SendAcceptedTransactionReply), global::Phorkus.Proto.Grpc.SendAcceptedTransactionReply.Parser, new[]{ "Hash" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest), global::Phorkus.Proto.Grpc.CreateContractTransactionRequest.Parser, new[]{ "From", "To", "Asset", "Value", "Input", "Fee" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.CreateContractTransactionReply), global::Phorkus.Proto.Grpc.CreateContractTransactionReply.Parser, new[]{ "Transaction", "Hash" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.CreateDeployTransactionRequest), global::Phorkus.Proto.Grpc.CreateDeployTransactionRequest.Parser, new[]{ "From", "Abi", "Wasm", "Version" }, null, null, null),
@@ -77,11 +77,11 @@ namespace Phorkus.Proto.Grpc {
 
   }
   #region Messages
-  public sealed partial class SendSignedTransactionRequest : pb::IMessage<SendSignedTransactionRequest> {
-    private static readonly pb::MessageParser<SendSignedTransactionRequest> _parser = new pb::MessageParser<SendSignedTransactionRequest>(() => new SendSignedTransactionRequest());
+  public sealed partial class SendAcceptedTransactionRequest : pb::IMessage<SendAcceptedTransactionRequest> {
+    private static readonly pb::MessageParser<SendAcceptedTransactionRequest> _parser = new pb::MessageParser<SendAcceptedTransactionRequest>(() => new SendAcceptedTransactionRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<SendSignedTransactionRequest> Parser { get { return _parser; } }
+    public static pb::MessageParser<SendAcceptedTransactionRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -94,22 +94,22 @@ namespace Phorkus.Proto.Grpc {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public SendSignedTransactionRequest() {
+    public SendAcceptedTransactionRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public SendSignedTransactionRequest(SendSignedTransactionRequest other) : this() {
+    public SendAcceptedTransactionRequest(SendAcceptedTransactionRequest other) : this() {
       transaction_ = other.transaction_ != null ? other.transaction_.Clone() : null;
       signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public SendSignedTransactionRequest Clone() {
-      return new SendSignedTransactionRequest(this);
+    public SendAcceptedTransactionRequest Clone() {
+      return new SendAcceptedTransactionRequest(this);
     }
 
     /// <summary>Field number for the "transaction" field.</summary>
@@ -136,11 +136,11 @@ namespace Phorkus.Proto.Grpc {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as SendSignedTransactionRequest);
+      return Equals(other as SendAcceptedTransactionRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(SendSignedTransactionRequest other) {
+    public bool Equals(SendAcceptedTransactionRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -199,7 +199,7 @@ namespace Phorkus.Proto.Grpc {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(SendSignedTransactionRequest other) {
+    public void MergeFrom(SendAcceptedTransactionRequest other) {
       if (other == null) {
         return;
       }
@@ -246,11 +246,11 @@ namespace Phorkus.Proto.Grpc {
 
   }
 
-  public sealed partial class SendSignedTransactionReply : pb::IMessage<SendSignedTransactionReply> {
-    private static readonly pb::MessageParser<SendSignedTransactionReply> _parser = new pb::MessageParser<SendSignedTransactionReply>(() => new SendSignedTransactionReply());
+  public sealed partial class SendAcceptedTransactionReply : pb::IMessage<SendAcceptedTransactionReply> {
+    private static readonly pb::MessageParser<SendAcceptedTransactionReply> _parser = new pb::MessageParser<SendAcceptedTransactionReply>(() => new SendAcceptedTransactionReply());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<SendSignedTransactionReply> Parser { get { return _parser; } }
+    public static pb::MessageParser<SendAcceptedTransactionReply> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -263,21 +263,21 @@ namespace Phorkus.Proto.Grpc {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public SendSignedTransactionReply() {
+    public SendAcceptedTransactionReply() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public SendSignedTransactionReply(SendSignedTransactionReply other) : this() {
+    public SendAcceptedTransactionReply(SendAcceptedTransactionReply other) : this() {
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public SendSignedTransactionReply Clone() {
-      return new SendSignedTransactionReply(this);
+    public SendAcceptedTransactionReply Clone() {
+      return new SendAcceptedTransactionReply(this);
     }
 
     /// <summary>Field number for the "hash" field.</summary>
@@ -293,11 +293,11 @@ namespace Phorkus.Proto.Grpc {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as SendSignedTransactionReply);
+      return Equals(other as SendAcceptedTransactionReply);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(SendSignedTransactionReply other) {
+    public bool Equals(SendAcceptedTransactionReply other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -347,7 +347,7 @@ namespace Phorkus.Proto.Grpc {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(SendSignedTransactionReply other) {
+    public void MergeFrom(SendAcceptedTransactionReply other) {
       if (other == null) {
         return;
       }

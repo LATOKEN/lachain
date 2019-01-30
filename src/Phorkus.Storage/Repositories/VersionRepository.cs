@@ -2,7 +2,7 @@
 
 namespace Phorkus.Storage.Repositories
 {
-    public class VersionRepository
+    public class VersionRepository : IVersionRepository
     {
         private readonly IRocksDbContext _dbContext;
 

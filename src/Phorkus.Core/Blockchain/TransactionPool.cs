@@ -14,36 +14,36 @@ namespace Phorkus.Core.Blockchain
     {
         public const int PeekLimit = 1000;
 
-        private readonly ITransactionRepository _transactionRepository;
+        private readonly IPoolRepository _poolRepository;
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly ITransactionManager _transactionManager;
         
-        private readonly ConcurrentDictionary<UInt256, SignedTransaction> _transactions
-            = new ConcurrentDictionary<UInt256, SignedTransaction>();
+        private readonly ConcurrentDictionary<UInt256, AcceptedTransaction> _transactions
+            = new ConcurrentDictionary<UInt256, AcceptedTransaction>();
         
-        private readonly ConcurrentQueue<SignedTransaction> _transactionsQueue
-            = new ConcurrentQueue<SignedTransaction>();
+        private readonly ConcurrentQueue<AcceptedTransaction> _transactionsQueue
+            = new ConcurrentQueue<AcceptedTransaction>();
 
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
-            ITransactionRepository transactionRepository, ITransactionManager transactionManager)
+            IPoolRepository poolRepository, ITransactionManager transactionManager)
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            _transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
+            _poolRepository = poolRepository ?? throw new ArgumentNullException(nameof(poolRepository));
             _transactionManager = transactionManager;
 
             Restore();
         }
 
-        public IReadOnlyDictionary<UInt256, SignedTransaction> Transactions => _transactions;
+        public IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions => _transactions;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Restore()
         {
-            var txHashes = _transactionRepository.GetTransactionPool();
+            var txHashes = _poolRepository.GetTransactionPool();
             foreach (var txHash in txHashes)
             {
-                var tx = _transactionRepository.GetTransactionByHash(txHash);
+                var tx = _poolRepository.GetTransactionByHash(txHash);
                 if (tx is null)
                     continue;
                 Add(tx);
@@ -51,7 +51,7 @@ namespace Phorkus.Core.Blockchain
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool Add(SignedTransaction transaction)
+        public bool Add(AcceptedTransaction transaction)
         {
             if (transaction is null)
                 throw new ArgumentNullException(nameof(transaction));
@@ -59,7 +59,7 @@ namespace Phorkus.Core.Blockchain
             if (_transactions.ContainsKey(transaction.Hash))
                 return false;
             /* verify transaction before adding */
-            var result = _transactionManager.Verify(transaction.Transaction);
+            var result = _transactionManager.Verify(transaction);
             if (result != OperatingError.Ok)
                 return false;
             _transactionVerifier.VerifyTransaction(transaction);
@@ -67,17 +67,17 @@ namespace Phorkus.Core.Blockchain
             _transactions[transaction.Hash] = transaction;
             _transactionsQueue.Enqueue(transaction);
             /* write transaction to persistence storage */
-            if (!_transactionRepository.ContainsTransactionByHash(transaction.Hash))
-                _transactionRepository.AddTransaction(transaction);
+            if (!_poolRepository.ContainsTransactionByHash(transaction.Hash))
+                _poolRepository.AddTransaction(transaction);
             return true;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IReadOnlyCollection<SignedTransaction> Peek(int limit = -1)
+        public IReadOnlyCollection<AcceptedTransaction> Peek(int limit = -1)
         {
             if (limit < 0)
                 limit = PeekLimit;
-            var result = new List<SignedTransaction>();
+            var result = new List<AcceptedTransaction>();
             var txToPeek = Math.Min(_transactionsQueue.Count, limit);
             for (var i = 0; i < txToPeek; i++)
             {

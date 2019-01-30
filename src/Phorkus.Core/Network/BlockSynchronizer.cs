@@ -9,6 +9,7 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Network
@@ -22,6 +23,7 @@ namespace Phorkus.Core.Network
         private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
+        private readonly IPoolRepository _poolRepository;
         
         private readonly IDictionary<IRemotePeer, ulong> _peerHeights
             = new ConcurrentDictionary<IRemotePeer, ulong>();
@@ -36,7 +38,8 @@ namespace Phorkus.Core.Network
             ILogger<IBlockSynchronizer> logger,
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
-            INetworkManager networkManager)
+            INetworkManager networkManager,
+            IPoolRepository poolRepository)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -45,6 +48,7 @@ namespace Phorkus.Core.Network
             _networkContext = networkContext;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
+            _poolRepository = poolRepository;
         }
 
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
@@ -68,17 +72,18 @@ namespace Phorkus.Core.Network
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
         
-        public uint HandleTransactionsFromPeer(IEnumerable<SignedTransaction> transactions, IRemotePeer remotePeer)
+        public uint HandleTransactionsFromPeer(IEnumerable<AcceptedTransaction> transactions, IRemotePeer remotePeer)
         {
             var persisted = 0u;
             foreach (var tx in transactions)
             {
-                var error = _transactionManager.Persist(tx);
+                var error = _transactionManager.Verify(tx);
                 if (error != OperatingError.Ok)
                 {
                     _logger.LogWarning($"Unable to persist transaction ({error})");
                     continue;
                 }
+                _poolRepository.AddTransaction(tx);
                 persisted++;
             }
             lock (_peerHasTransactions)
@@ -106,7 +111,15 @@ namespace Phorkus.Core.Network
                     return;
             }
             /* persist block to database */
-            var error = _blockManager.Persist(block);
+            var txs = new List<AcceptedTransaction>();
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var tx = _poolRepository.GetTransactionByHash(txHash);
+                if (tx is null)
+                    continue;
+                txs.Add(tx);
+            }
+            var error = _blockManager.Execute(block, txs);
             if (error == OperatingError.BlockAlreadyExists)
                 return;
             if (error != OperatingError.Ok)

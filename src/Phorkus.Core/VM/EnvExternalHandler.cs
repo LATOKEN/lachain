@@ -147,7 +147,7 @@ namespace Phorkus.Core.VM
             {
                 throw new RuntimeException("Bad call to storageload");
             }
-            var value = VirtualMachine.BlockchainSnapshot.ContractStorage.GetValue(frame.CurrentAddress, key.ToUInt256());
+            var value = VirtualMachine.BlockchainSnapshot.Storage.GetValue(frame.CurrentAddress, key.ToUInt256());
             if (!SafeCopyToMemory(frame.Memory, value.Buffer.ToByteArray(), valueOffset))
             {
                 throw new RuntimeException("Cannot copy storageload result to memory");
@@ -163,7 +163,7 @@ namespace Phorkus.Core.VM
             {
                 throw new RuntimeException("Bad call to storageload");
             }
-            VirtualMachine.BlockchainSnapshot.ContractStorage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
+            VirtualMachine.BlockchainSnapshot.Storage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
         }
 
         public IEnumerable<FunctionImport> GetFunctionImports()

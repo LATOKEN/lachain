@@ -18,7 +18,6 @@ namespace Phorkus.Core.CLI
 {
     public class ConsoleManager : IConsoleManager
     {
-        private readonly IGlobalRepository _globalRepository;
         private readonly IValidatorManager _validatorManager;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
@@ -33,7 +32,6 @@ namespace Phorkus.Core.CLI
         public bool IsWorking { get; set; }
 
         public ConsoleManager(
-            IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
@@ -45,7 +43,6 @@ namespace Phorkus.Core.CLI
             ILogger<IConsoleManager> logger)
         {
             _blockManager = blockManager;
-            _globalRepository = globalRepository;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
@@ -58,7 +55,7 @@ namespace Phorkus.Core.CLI
 
         private void _Worker(ThresholdKey thresholdKey, KeyPair keyPair)
         {
-            _consoleCommands = new ConsoleCommands(_globalRepository, _transactionBuilder, _transactionPool,
+            _consoleCommands = new ConsoleCommands(_transactionBuilder, _transactionPool,
                 _transactionManager, _blockManager, _validatorManager, _stateManager, _virtualMachine,
                 _crypto, keyPair);
             try

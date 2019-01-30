@@ -22,8 +22,8 @@ namespace Phorkus.Core.Blockchain
         private readonly IDictionary<UInt160, PublicKey> _publicKeyCache
             = new Dictionary<UInt160, PublicKey>();
 
-        private readonly Queue<SignedTransaction> _transactionQueue
-            = new Queue<SignedTransaction>();
+        private readonly Queue<AcceptedTransaction> _transactionQueue
+            = new Queue<AcceptedTransaction>();
 
         private readonly object _queueNotEmpty = new object();
 
@@ -35,27 +35,27 @@ namespace Phorkus.Core.Blockchain
             _logger = logger;
         }
 
-        public event EventHandler<SignedTransaction> OnTransactionVerified;
+        public event EventHandler<AcceptedTransaction> OnTransactionVerified;
 
-        public void VerifyTransaction(SignedTransaction signedTransaction, PublicKey publicKey)
+        public void VerifyTransaction(AcceptedTransaction acceptedTransaction, PublicKey publicKey)
         {
             var address = _crypto.ComputeAddress(publicKey.Buffer.ToByteArray()).ToUInt160();
             _publicKeyCache.Add(address, publicKey);
-            VerifyTransaction(signedTransaction);
+            VerifyTransaction(acceptedTransaction);
         }
 
-        public void VerifyTransaction(SignedTransaction signedTransaction)
+        public void VerifyTransaction(AcceptedTransaction acceptedTransaction)
         {
-            if (signedTransaction is null)
-                throw new ArgumentNullException(nameof(signedTransaction));
+            if (acceptedTransaction is null)
+                throw new ArgumentNullException(nameof(acceptedTransaction));
             lock (_queueNotEmpty)
             {
-                _transactionQueue.Enqueue(signedTransaction);
+                _transactionQueue.Enqueue(acceptedTransaction);
                 Monitor.PulseAll(_queueNotEmpty);
             }
         }
 
-        public bool VerifyTransactionImmediately(SignedTransaction transaction, PublicKey publicKey)
+        public bool VerifyTransactionImmediately(AcceptedTransaction transaction, PublicKey publicKey)
         {
             try
             {
@@ -73,7 +73,7 @@ namespace Phorkus.Core.Blockchain
             return true;
         }
 
-        public bool VerifyTransactionImmediately(SignedTransaction transaction)
+        public bool VerifyTransactionImmediately(AcceptedTransaction transaction)
         {
             if (transaction is null)
                 throw new ArgumentNullException(nameof(transaction));
@@ -114,7 +114,7 @@ namespace Phorkus.Core.Blockchain
             {
                 try
                 {
-                    SignedTransaction tx;
+                    AcceptedTransaction tx;
                     lock (_queueNotEmpty)
                     {
                         while (_transactionQueue.Count == 0)

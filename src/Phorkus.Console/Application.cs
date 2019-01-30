@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
@@ -50,7 +49,6 @@ namespace Phorkus.Console
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
-            var blockRepository = _container.Resolve<IBlockRepository>();
             var crypto = _container.Resolve<ICrypto>();
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
@@ -68,6 +66,7 @@ namespace Phorkus.Console
             var blockManager = _container.Resolve<IBlockManager>();
             var virtualMachine = _container.Resolve<IVirtualMachine>();
             var rpcManager = _container.Resolve<IRpcManager>();
+            var stateManager = _container.Resolve<IStateManager>();
             
             var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
             var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
@@ -88,7 +87,7 @@ namespace Phorkus.Console
             if (blockchainManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
 
-            var genesisBlock = blockRepository.GetBlockByHeight(0);
+            var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
             System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
             System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
@@ -113,7 +112,6 @@ namespace Phorkus.Console
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
             System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
 
@@ -143,8 +141,8 @@ namespace Phorkus.Console
                 addressFormat: AddressFormat.Ripmd160,
                 timestamp: 0
             );
-            var signedTransaction = transactionManager.Sign(transaction, keyPair);
-            transactionPool.Add(signedTransaction);*/
+            var AcceptedTransaction = transactionManager.Sign(transaction, keyPair);
+            transactionPool.Add(AcceptedTransaction);*/
             
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 

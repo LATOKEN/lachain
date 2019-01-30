@@ -14,14 +14,12 @@ using Phorkus.Party.Crypto;
 using Phorkus.Party.Crypto.Key;
 using Phorkus.Party.Signer;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Threshold
 {
     public class ThresholdManager : IThresholdManager
     {
-        private readonly IGlobalRepository _globalRepository;
         private readonly ICrypto _crypto;
         private readonly IValidatorManager _validatorManager;
         private readonly INetworkContext _networkContext;
@@ -38,14 +36,11 @@ namespace Phorkus.Core.Threshold
         private readonly object _messageChanged = new object();
 
         public ThresholdManager(
-            IGlobalRepository globalRepository,
             ICrypto crypto,
             IValidatorManager validatorManager,
             ILogger<IThresholdManager> logger,
-            INetworkContext networkContext
-        )
+            INetworkContext networkContext)
         {
-            _globalRepository = globalRepository;
             _crypto = crypto;
             _validatorManager = validatorManager;
             _logger = logger;

@@ -2,10 +2,8 @@
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.OperationManager.BlockManager;
-using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Proto;
-using Phorkus.Crypto;
-using Phorkus.Storage.Repositories;
+using Phorkus.Storage.State;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -13,49 +11,33 @@ namespace Phorkus.Core.Blockchain
     {
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IBlockManager _blockManager;
-        private readonly ITransactionManager _transactionManager;
-        private readonly IBlockRepository _blockRepository;
-        private readonly IGlobalRepository _globalRepository;
+        private readonly IStateManager _stateManager;
 
-        public ulong CurrentBlockHeaderHeight => _globalRepository.GetTotalBlockHeaderHeight();
-        public ulong CurrentBlockHeight => _globalRepository.GetTotalBlockHeight();
+        public ulong CurrentBlockHeight => _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+        public Block CurrentBlock => _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(CurrentBlockHeight);
 
-        public Block CurrentBlockHeader => _blockRepository.GetBlockByHeight(CurrentBlockHeaderHeight);
-        public Block CurrentBlock => _blockRepository.GetBlockByHeight(CurrentBlockHeight);
-        
         public BlockchainManager(
             IGenesisBuilder genesisBuilder,
             IBlockManager blockManager,
-            ITransactionManager transactionManager,
-            IBlockRepository blockRepository,
-            IGlobalRepository globalRepository)
+            IStateManager stateManager)
         {
             _genesisBuilder = genesisBuilder;
             _blockManager = blockManager;
-            _transactionManager = transactionManager;
-            _blockRepository = blockRepository;
-            _globalRepository = globalRepository;
+            _stateManager = stateManager;
         }
-        
+
         public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
-            if (_blockRepository.GetBlockByHeight(0) != null)
+            if (_stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0) != null)
                 return false;
             PersistBlockManually(genesisBlock.Block, genesisBlock.Transactions);
             return true;
         }
-        
-        public void PersistBlockManually(Block block, IEnumerable<SignedTransaction> transactions)
+
+        public void PersistBlockManually(Block block, IEnumerable<AcceptedTransaction> transactions)
         {
-            foreach (var tx in transactions)
-            {
-                var result = _transactionManager.Persist(tx);
-                if (result == OperatingError.Ok)
-                    continue;
-                throw new InvalidTransactionException(result);
-            }
-            var error = _blockManager.Persist(block);
+            var error = _blockManager.Execute(block, transactions);
             if (error != OperatingError.Ok)
                 throw new InvalidBlockException(error);
         }

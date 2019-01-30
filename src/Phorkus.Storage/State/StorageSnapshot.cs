@@ -5,13 +5,13 @@ using Phorkus.Utility.Utils;
 
 namespace Phorkus.Storage.State
 {
-    class ContractStorageSnapshot : IContractStorageSnapshot
+    class StorageSnapshot : IStorageSnapshot
     {
         private readonly IStorageState _state;
         
         public ulong Version => _state.CurrentVersion;
 
-        public ContractStorageSnapshot(IStorageState state)
+        public StorageSnapshot(IStorageState state)
         {
             _state = state;
         }

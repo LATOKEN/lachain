@@ -6,7 +6,7 @@ namespace Phorkus.Core.Consensus
     public class ConsensusProposal
     {
         public UInt256[] TransactionHashes;
-        public Dictionary<UInt256, SignedTransaction> Transactions;
+        public Dictionary<UInt256, AcceptedTransaction> Transactions;
         public ulong Timestamp;
         public ulong Nonce;
         

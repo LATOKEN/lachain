@@ -1,8 +1,8 @@
-using Phorkus.Proto;
+﻿using Phorkus.Proto;
 
-namespace Phorkus.Storage.Repositories
+namespace Phorkus.Storage.State
 {
-    public interface IWithdrawalRepository
+    public interface IWithdrawalSnapshot : ISnapshot
     {
         /// <summary>
         /// Retrieves a withdrawal by identifier / hash

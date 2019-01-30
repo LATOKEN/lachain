@@ -1,10 +1,16 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Proto;
 
-namespace Phorkus.Storage.Repositories
+namespace Phorkus.Storage.State
 {
-    public interface IBlockRepository
+    public interface IBlockSnapshot : ISnapshot
     {
+        /// <summary>
+        /// Retrieves the total / current block height
+        /// </summary>
+        /// <returns>Total / current block height</returns>
+        ulong GetTotalBlockHeight();
+        
         /// <summary>
         /// Retrieves a hash by height / index
         /// </summary>
@@ -20,19 +26,10 @@ namespace Phorkus.Storage.Repositories
         Block GetBlockByHash(UInt256 blockHash);
         
         /// <summary>
-        /// Returns block hashes by heights specified
-        /// </summary>
-        /// <param name="heights"></param>
-        /// <returns></returns>
-        IEnumerable<UInt256> GetBlockHashesByHeights(IEnumerable<uint> heights);
-        
-        /// <summary>
         /// Adds a block header to the repository storage
         /// </summary>
         /// <param name="block">Block header</param>
-        bool AddBlock(Block block);
-
-        Block GetNextBlockByHash(UInt256 blockHash);
+        void AddBlock(Block block);
         
         IEnumerable<Block> GetBlocksByHeightRange(ulong height, ulong count);
 

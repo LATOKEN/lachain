@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility;
@@ -14,7 +15,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         Block GetByHash(UInt256 blockHash);
         
-        OperatingError Persist(Block block);
+        OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions);
         
         Signature Sign(BlockHeader block, KeyPair keyPair);
         

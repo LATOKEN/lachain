@@ -12,20 +12,29 @@ namespace Phorkus.Storage.State
         private readonly ISnapshotManager<IBalanceSnapshot> _balanceManager;
         private readonly ISnapshotManager<IAssetSnapshot> _assetManager;
         private readonly ISnapshotManager<IContractSnapshot> _contractManager;
-        private readonly ISnapshotManager<IContractStorageSnapshot> _contractStorageManager;
+        private readonly ISnapshotManager<IStorageSnapshot> _storageManager;
+        private readonly ISnapshotManager<ITransactionSnapshot> _transactionManager;
+        private readonly ISnapshotManager<IBlockSnapshot> _blockManager;
+        private readonly ISnapshotManager<IWithdrawalSnapshot> _withdrawalManager;
 
         public StateManager(IStorageManager storageManager)
         {
             _balanceManager = new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager, (uint) RepositoryType.BalanceRepository);
             _assetManager = new SnapshotManager<IAssetSnapshot, AssetSnapshot>(storageManager, (uint) RepositoryType.AssetRepository);
             _contractManager = new SnapshotManager<IContractSnapshot, ContractSnapshot>(storageManager, (uint) RepositoryType.ContractRepository);
-            _contractStorageManager = new SnapshotManager<IContractStorageSnapshot, ContractStorageSnapshot>(storageManager, (uint) RepositoryType.ContractStorageRepository);
+            _storageManager = new SnapshotManager<IStorageSnapshot, StorageSnapshot>(storageManager, (uint) RepositoryType.StorageRepository);
+            _transactionManager = new SnapshotManager<ITransactionSnapshot, TransactionSnapshot>(storageManager, (uint) RepositoryType.TransactionRepository);
+            _blockManager = new SnapshotManager<IBlockSnapshot, BlockSnapshot>(storageManager, (uint) RepositoryType.BlockRepository);
+            _withdrawalManager = new SnapshotManager<IWithdrawalSnapshot, WithdrawalSnapshot>(storageManager, (uint) RepositoryType.WithdrawalRepository);
             
             LastApprovedSnapshot = new BlockchainSnapshot(
                 _balanceManager.LastApprovedSnapshot,
                 _assetManager.LastApprovedSnapshot,
                 _contractManager.LastApprovedSnapshot,
-                _contractStorageManager.LastApprovedSnapshot
+                _storageManager.LastApprovedSnapshot,
+                _transactionManager.LastApprovedSnapshot,
+                _blockManager.LastApprovedSnapshot,
+                _withdrawalManager.LastApprovedSnapshot
             );
         }
         
@@ -37,7 +46,10 @@ namespace Phorkus.Storage.State
                 _balanceManager.NewSnapshot(),
                 _assetManager.NewSnapshot(),
                 _contractManager.NewSnapshot(),
-                _contractStorageManager.NewSnapshot()
+                _storageManager.NewSnapshot(),
+                _transactionManager.NewSnapshot(),
+                _blockManager.NewSnapshot(),
+                _withdrawalManager.NewSnapshot()
             );
             return PendingSnapshot;
         }
@@ -47,11 +59,14 @@ namespace Phorkus.Storage.State
             _balanceManager.Approve();
             _assetManager.Approve();
             _contractManager.Approve();
-            _contractStorageManager.Approve();
+            _storageManager.Approve();
+            _transactionManager.Approve();
+            _blockManager.Approve();
+            _withdrawalManager.Approve();
             LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
             PendingSnapshot = null;
         }
-
+        
         public void Rollback()
         {
             if (PendingSnapshot == null)
@@ -59,7 +74,10 @@ namespace Phorkus.Storage.State
             _balanceManager.Rollback();
             _assetManager.Rollback();
             _contractManager.Rollback();
-            _contractStorageManager.Rollback();
+            _storageManager.Rollback();
+            _transactionManager.Rollback();
+            _blockManager.Rollback();
+            _withdrawalManager.Rollback();
             PendingSnapshot = null;
         }
 
@@ -68,7 +86,10 @@ namespace Phorkus.Storage.State
             _balanceManager.Commit();
             _assetManager.Commit();
             _contractManager.Commit();
-            _contractStorageManager.Commit();
+            _storageManager.Commit();
+            _transactionManager.Commit();
+            _blockManager.Commit();
+            _withdrawalManager.Commit();
         }
     }
 }

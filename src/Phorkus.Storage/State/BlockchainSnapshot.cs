@@ -3,19 +3,29 @@
     public class BlockchainSnapshot : IBlockchainSnapshot
     {
         public BlockchainSnapshot(
-            IBalanceSnapshot balances, IAssetSnapshot assets, IContractSnapshot contracts,
-            IContractStorageSnapshot contractStorage
-        )
+            IBalanceSnapshot balances,
+            IAssetSnapshot assets,
+            IContractSnapshot contracts,
+            IStorageSnapshot storage,
+            ITransactionSnapshot transactions,
+            IBlockSnapshot blocks,
+            IWithdrawalSnapshot withdrawals)
         {
             Balances = balances;
             Assets = assets;
             Contracts = contracts;
-            ContractStorage = contractStorage;
+            Storage = storage;
+            Transactions = transactions;
+            Blocks = blocks;
+            Withdrawals = withdrawals;
         }
 
         public IBalanceSnapshot Balances { get; }
         public IAssetSnapshot Assets { get; }
         public IContractSnapshot Contracts { get; }
-        public IContractStorageSnapshot ContractStorage { get; }
+        public IStorageSnapshot Storage { get; }
+        public ITransactionSnapshot Transactions { get; }
+        public IBlockSnapshot Blocks { get; }
+        public IWithdrawalSnapshot Withdrawals { get; }
     }
 }

@@ -5,13 +5,13 @@ namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionPool
     {
-        IReadOnlyDictionary<UInt256, SignedTransaction> Transactions { get; }
+        IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions { get; }
 
         void Restore();
         
-        bool Add(SignedTransaction transaction);
+        bool Add(AcceptedTransaction transaction);
         
-        IReadOnlyCollection<SignedTransaction> Peek(int limit = -1);
+        IReadOnlyCollection<AcceptedTransaction> Peek(int limit = -1);
 
         uint Size();
         

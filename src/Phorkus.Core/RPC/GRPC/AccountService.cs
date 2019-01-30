@@ -21,10 +21,10 @@ namespace Phorkus.Core.RPC.GRPC
             _stateManager = stateManager;
         }
 
-        public override Task<SendSignedTransactionReply> SendSignedTransaction(SendSignedTransactionRequest request,
+        public override Task<SendAcceptedTransactionReply> SendAcceptedTransaction(SendAcceptedTransactionRequest request,
             ServerCallContext context)
         {
-            return base.SendSignedTransaction(request, context);
+            return base.SendAcceptedTransaction(request, context);
         }
 
         public override Task<CreateContractTransactionReply> CreateContractTranscation(

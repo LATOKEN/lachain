@@ -28,6 +28,7 @@
         WithdrawalFailed,
         ContractFailed,
         ContractNotFound,
-        InvalidContract
+        InvalidContract,
+        InsufficientBalance
     }
 }

@@ -25,7 +25,7 @@ namespace Phorkus.Networking
 
         NetworkMessage GetTransactionsByHashesRequest(IEnumerable<UInt256> transactionHashes);
 
-        NetworkMessage GetTransactionsByHashesReply(IEnumerable<SignedTransaction> transactions);
+        NetworkMessage GetTransactionsByHashesReply(IEnumerable<AcceptedTransaction> transactions);
         
         NetworkMessage ThresholdRequest(byte[] message);
 

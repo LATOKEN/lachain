@@ -12,7 +12,7 @@ namespace Phorkus.Core.Blockchain
     {
         private readonly BlockHeader _prevBlock;
         
-        private IReadOnlyCollection<SignedTransaction> _transactions;
+        private IReadOnlyCollection<AcceptedTransaction> _transactions;
         private MultiSig _multiSig;
         private PublicKey _blockValidator;
 
@@ -22,7 +22,7 @@ namespace Phorkus.Core.Blockchain
             _blockValidator = blockValidator;
         }
 
-        public BlockBuilder WithTransactions(IReadOnlyCollection<SignedTransaction> transactions)
+        public BlockBuilder WithTransactions(IReadOnlyCollection<AcceptedTransaction> transactions)
         {
             _transactions = transactions;
             return this;

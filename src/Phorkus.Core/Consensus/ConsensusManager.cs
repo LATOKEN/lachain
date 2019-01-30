@@ -19,12 +19,10 @@ namespace Phorkus.Core.Consensus
     public class ConsensusManager : IConsensusManager
     {
         private readonly IBlockManager _blockManager;
-        private readonly ITransactionManager _transactionManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ITransactionPool _transactionPool;
         private readonly INetworkBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
-        private readonly ITransactionBuilder _transactionBuilder;
         private readonly ICrypto _crypto;
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
@@ -43,13 +41,11 @@ namespace Phorkus.Core.Consensus
 
         public ConsensusManager(
             IBlockManager blockManager,
-            ITransactionManager transactionManager,
             IBlockchainContext blockchainContext,
             ITransactionPool transactionPool,
             INetworkBroadcaster broadcaster,
             ILogger<ConsensusManager> logger,
             IConfigManager configManager,
-            ITransactionBuilder transactionFactory,
             ICrypto crypto,
             IBlockSynchronizer blockchainSynchronizer,
             IValidatorManager validatorManager)
@@ -57,9 +53,7 @@ namespace Phorkus.Core.Consensus
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
-            _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
-            _transactionBuilder = transactionFactory ?? throw new ArgumentNullException(nameof(transactionFactory));
             _blockchainSynchronizer =
                 blockchainSynchronizer ?? throw new ArgumentNullException(nameof(blockchainSynchronizer));
             _blockchainContext = blockchainContext ?? throw new ArgumentNullException(nameof(blockchainContext));
@@ -220,12 +214,13 @@ namespace Phorkus.Core.Consensus
                 // TODO: check multisig one last time
 
                 var block = _context.GetProposedBlock();
+                var txs = _context.GetProposedTransactions();
 
                 _logger.LogDebug($"Block approved by consensus: {block.Hash}");
 
                 _context.State |= ConsensusState.BlockSent;
 
-                var result = _blockManager.Persist(block);
+                var result = _blockManager.Execute(block, txs);
                 if (result == OperatingError.Ok)
                     _logger.LogDebug($"Block persist completed: {block.Hash}");
                 else
@@ -331,7 +326,7 @@ namespace Phorkus.Core.Consensus
             _context.CurrentProposal = new ConsensusProposal
             {
                 TransactionHashes = prepareRequest.TransactionHashes.ToArray(),
-                Transactions = new Dictionary<UInt256, SignedTransaction>(),
+                Transactions = new Dictionary<UInt256, AcceptedTransaction>(),
                 Timestamp = prepareRequest.Timestamp,
                 Nonce = prepareRequest.Nonce
             };

@@ -24,7 +24,6 @@ namespace Phorkus.Core.CrossChain
         private readonly IDictionary<BlockchainType, Timer> _synchronizeTimers
             = new Dictionary<BlockchainType, Timer>();
 
-        private readonly IGlobalRepository _globalRepository;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionManager _transactionManager;
@@ -43,14 +42,12 @@ namespace Phorkus.Core.CrossChain
         public bool IsWorking { get; set; }
 
         public CrossChain(
-            IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
             ICrypto crypto,
             IValidatorManager validatorManager)
         {
-            _globalRepository = globalRepository;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;

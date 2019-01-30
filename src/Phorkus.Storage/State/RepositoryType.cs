@@ -5,8 +5,10 @@
         MetaRepository = 0,
         BalanceRepository = 1,
         AssetRepository = 2,
-        StorageRepository = 3,
         ContractRepository = 4,
-        ContractStorageRepository = 5,
+        StorageRepository = 5,
+        TransactionRepository = 6,
+        BlockRepository = 7,
+        WithdrawalRepository = 8,
     }
 }

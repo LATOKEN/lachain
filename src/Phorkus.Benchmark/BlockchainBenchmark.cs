@@ -41,12 +41,11 @@ namespace Phorkus.Benchmark
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
-            var blockRepository = _container.Resolve<IBlockRepository>();
             var crypto = _container.Resolve<ICrypto>();
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
-            var blockchainStateManager = _container.Resolve<IStateManager>();
+            var stateManager = _container.Resolve<IStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -61,7 +60,7 @@ namespace Phorkus.Benchmark
             if (blockchainManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
-            var genesisBlock = blockRepository.GetBlockByHeight(0);
+            var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
             Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
@@ -72,36 +71,34 @@ namespace Phorkus.Benchmark
                 Console.WriteLine($" + - {s.Buffer.ToHex()}");
             Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
             
-            var asset = blockchainStateManager.LastApprovedSnapshot.Assets.GetAssetByName("LA");
+            var asset = stateManager.LastApprovedSnapshot.Assets.GetAssetByName("LA");
 
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
 
             _BenchTxProcessing(transactionBuilder, blockchainContext, transactionManager, blockManager,
                 blockchainManager, keyPair, asset);
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
             
             _BenchOneTxInBlock(transactionBuilder, blockchainContext, transactionManager, blockManager,
                 blockchainManager, keyPair, asset);
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
-            Console.WriteLine("Balance of LA 0x6b: " + blockchainStateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
+            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1, asset.Hash));
+            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2, asset.Hash));
             Console.WriteLine("-------------------------------");
         }
 

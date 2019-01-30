@@ -60,12 +60,12 @@ namespace Phorkus.CoreTest
             var validatorManager = new ValidatorManager(configManager, bouncyCastle);
             var genesisAssetsBuilder = new GenesisAssetsBuilder(validatorManager, null, new BouncyCastle());
             var genesisBuilder = new GenesisBuilder(genesisAssetsBuilder, new BouncyCastle(),
-                new TransactionManager(null, null, null, null, null, null, new BouncyCastle()));
+                new TransactionManager(null, null, null, null, null, null, null));
 
             var crypto = new BouncyCastle();
 
             var registerTx = genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(null);
-            var txManager = new TransactionManager(null, null, null, null, null, null, crypto);
+            var txManager = new TransactionManager(null, null, null, null, null, null, null);
 
             System.Console.Write("Signing transaction... ");
             var signed = txManager.Sign(registerTx, new KeyPair(privateKey.ToPrivateKey(), publicKey.ToPublicKey()));
@@ -84,7 +84,7 @@ namespace Phorkus.CoreTest
                     "0x4a252a9a20db1fed75aaf5770857ee6d364ca7fbcefcd1dd7f3194aa59ae2cb1d22a3860900de65157ba625d80030ffdfc64d1cc872e94dc8aff43199fb6a7f5"
                         .HexToBytes())
             };
-            var invalidSigned = new SignedTransaction
+            var invalidSigned = new AcceptedTransaction
             {
                 Transaction = signed.Transaction,
                 Hash = signed.Transaction.ToHash256()

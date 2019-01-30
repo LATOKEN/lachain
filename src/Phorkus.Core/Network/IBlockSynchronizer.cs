@@ -9,7 +9,7 @@ namespace Phorkus.Core.Network
     {
         uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
         
-        uint HandleTransactionsFromPeer(IEnumerable<SignedTransaction> transactions, IRemotePeer remotePeer);
+        uint HandleTransactionsFromPeer(IEnumerable<AcceptedTransaction> transactions, IRemotePeer remotePeer);
 
         uint WaitForBlocks(IEnumerable<UInt256> blockHashes, TimeSpan timeout);
         

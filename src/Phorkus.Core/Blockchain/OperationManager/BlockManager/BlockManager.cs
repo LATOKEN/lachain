@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -16,8 +14,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 {
     public class BlockManager : IBlockManager
     {
-        private readonly IGlobalRepository _globalRepository;
-        private readonly IBlockRepository _blockRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly ICrypto _crypto;
         private readonly IValidatorManager _validatorManager;
@@ -25,10 +21,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         private readonly IMultisigVerifier _multisigVerifier;
         private readonly Logger.ILogger<IBlockManager> _logger;
         private readonly IStateManager _stateManager;
-
+        
         public BlockManager(
-            IGlobalRepository globalRepository,
-            IBlockRepository blockRepository,
             ITransactionManager transactionManager,
             ICrypto crypto,
             IValidatorManager validatorManager,
@@ -36,8 +30,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             IMultisigVerifier multisigVerifier, Logger.ILogger<IBlockManager> logger,
             IStateManager stateManager)
         {
-            _globalRepository = globalRepository;
-            _blockRepository = blockRepository;
             _transactionManager = transactionManager;
             _crypto = crypto;
             _validatorManager = validatorManager;
@@ -52,103 +44,126 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
         public Block GetByHeight(ulong blockHeight)
         {
-            return _blockRepository.GetBlockByHeight(blockHeight);
+            return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
         }
         
         public Block GetByHash(UInt256 blockHash)
         {
-            return _blockRepository.GetBlockByHash(blockHash);
+            return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
         }
 
         private bool _IsGenesisBlock(Block block)
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
-
-        private void _TryFixGlobalConfig(ulong blockHeight)
-        {
-            /* TODO: "fix me in future by using new state manager" */
-            if (blockHeight == 0)
-                return;
-            while (true)
-            {
-                var block = _blockRepository.GetBlockByHeight(blockHeight);
-                if (block is null)
-                    break;
-                ++blockHeight;
-            }
-            _globalRepository.SetTotalBlockHeight(blockHeight - 1);
-        }
         
-        public OperatingError Persist(Block block)
+        public OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions)
         {
+            var currentTransactions = transactions.ToDictionary(tx => tx.Hash, tx => tx);
             var startTime = TimeUtils.CurrentTimeMillis();
+            
             /* verify next block */
             var error = Verify(block);
             if (error != OperatingError.Ok)
                 return error;
+            
             /* check next block index */
-            var currentBlockHeader = _globalRepository.GetTotalBlockHeight();
+            var currentBlockHeader = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             if (!_IsGenesisBlock(block) && currentBlockHeader + 1 != block.Header.Index)
                 return OperatingError.InvalidNonce;
-            var exists = _blockRepository.GetBlockByHeight(block.Header.Index);
+            var exists = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
             if (exists != null)
-            {
-                _TryFixGlobalConfig(block.Header.Index);
                 return OperatingError.BlockAlreadyExists;
-            }
+            
             /* check prev block hash */
-            var latestBlock = _blockRepository.GetBlockByHeight(currentBlockHeader);
+            var latestBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentBlockHeader);
             if (latestBlock != null && !block.Header.PrevBlockHash.Equals(latestBlock.Hash))
                 return OperatingError.PrevBlockHashMismatched;
+            
             /* verify block signatures */
             error = VerifySignatures(block);
             if (error != OperatingError.Ok)
                 return error;
-            /* confirm block transactions */
+            
+            /* check do we have all transcations specified */
             foreach (var txHash in block.TransactionHashes)
             {
-                if (_transactionManager.GetByHash(txHash) is null)
+                if (!currentTransactions.ContainsKey(txHash))
                     return OperatingError.TransactionLost;
             }
+            
+            /* confirm block transactions */
             var validatorAddress = _crypto.ComputeAddress(block.Header.Validator.Buffer.ToByteArray()).ToUInt160();
+            
             /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
-                var tx = _transactionManager.GetByHash(txHash);
-                /* TODO: "change fee calculation logic" */
-                var feeSnapshot = _stateManager.NewSnapshot();
-                var asset = feeSnapshot.Assets.GetAssetByName("LA");
-                if (asset != null && block.Header.Index > 0)
-                    feeSnapshot.Balances.TransferAvailableBalance(tx.Transaction.From, validatorAddress, asset.Hash, tx.Transaction.Fee.ToMoney());
-                _stateManager.Approve();
-                /* execute transaction */
+                /* try to find transaction by hash */
+                var transaction = currentTransactions[txHash];
                 var snapshot = _stateManager.NewSnapshot();
-                var result = _transactionManager.Execute(block, txHash, snapshot);
-                if (result == OperatingError.Ok)
+                
+                /* try to take fee from sender */
+                var result = _TakeTransactionFee(validatorAddress, transaction, snapshot);
+                if (result != OperatingError.Ok)
                 {
-                    _stateManager.Approve();
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                        _logger.LogDebug($"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({_transactionManager.GetByHash(txHash).Transaction.Nonce})");
+                    _stateManager.Rollback();
+                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}, excepted {_transactionManager.CalcNextTxNonce(transaction.Transaction?.From)}), {result}");
                     continue;
                 }
-                _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({tx?.Transaction?.Nonce}, excepted {_transactionManager.CalcNextTxNonce(tx?.Transaction?.From)}), {result}");
-                _stateManager.Rollback();                
+                
+                /* try to execute transaction */
+                result = _transactionManager.Execute(block, transaction, snapshot);
+                if (result != OperatingError.Ok)
+                {
+                    _stateManager.Rollback();
+                    snapshot = _stateManager.NewSnapshot();
+                    if (_TakeTransactionFee(validatorAddress, transaction, snapshot) != OperatingError.Ok)
+                        throw new Exception($"Unable to take fee for transaction {transaction.Hash.Buffer.ToHex()}");
+                    snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
+                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}, excepted {_transactionManager.CalcNextTxNonce(transaction.Transaction?.From)}), {result}");
+                    _stateManager.Approve();
+                    continue;
+                }
+                
+                /* mark transaction as executed */
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
+                snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
+                _stateManager.Approve();
             }
             block.AverageFee = _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
-            /* write block to database */
-            _blockRepository.AddBlock(block);
+            
+            /* save block to repository */
+            var snapshotBlock = _stateManager.NewSnapshot();
+            snapshotBlock.Blocks.AddBlock(block);
+            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms");
+            _stateManager.Approve();
+            
+            /* flush changes to database */
             _stateManager.Commit();
-            var currentHeaderHeight = _globalRepository.GetTotalBlockHeight();
-            if (block.Header.Index > currentHeaderHeight)
-                _globalRepository.SetTotalBlockHeaderHeight(block.Header.Index);
-            _globalRepository.SetTotalBlockHeight(block.Header.Index);
-            var elapsedTime = TimeUtils.CurrentTimeMillis() - startTime;
-            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {elapsedTime} ms");
+            
             OnBlockPersisted?.Invoke(this, block);
             return OperatingError.Ok;
         }
 
+        private OperatingError _TakeTransactionFee(UInt160 validatorAddress, AcceptedTransaction transaction, IBlockchainSnapshot snapshot)
+        {
+            var asset = snapshot.Assets.GetAssetByName("LA");
+            if (asset is null)
+                return OperatingError.Ok;
+            /* genesis block doesn't have LA asset and validators fee free */
+            if (_validatorManager.CheckValidator(transaction.Transaction.From))
+                return OperatingError.Ok;
+            /* check availabe LA balance */
+            var availableBalance = snapshot.Balances.GetAvailableBalance(transaction.Transaction.From, asset.Hash);
+            if (availableBalance.CompareTo(transaction.Transaction.Fee.ToMoney()) < 0)
+                return OperatingError.InsufficientBalance;
+            /* transfer fee from wallet to validator */
+            snapshot.Balances.TransferAvailableBalance(transaction.Transaction.From, validatorAddress,
+                asset.Hash, transaction.Transaction.Fee.ToMoney());
+            return OperatingError.Ok;
+        }
+        
         public Signature Sign(BlockHeader block, KeyPair keyPair)
         {
             return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
@@ -174,6 +189,8 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
         public OperatingError Verify(Block block)
         {
             var header = block.Header;
+            if (!Equals(block.Hash, header.ToHash256()))
+                return OperatingError.HashMismatched;
             if (header.Version != 0)
                 return OperatingError.InvalidBlock;
             if (block.Header.Index != 0 && header.PrevBlockHash.IsZero())
@@ -190,19 +207,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             return OperatingError.Ok;
         }
 
-        public Money CalcEstimatedFee(UInt256 blockHash)
-        {
-            var block = _blockRepository.GetBlockByHash(blockHash);
-            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
-        }
-
-        public Money CalcEstimatedFee()
-        {
-            var currentHeight = _globalRepository.GetTotalBlockHeight();
-            var block = _blockRepository.GetBlockByHeight(currentHeight);
-            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
-        }
-        
         private Money _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
         {
             var arrayOfHashes = txHashes as UInt256[] ?? txHashes.ToArray();
@@ -220,6 +224,19 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 sum += tx.Transaction.Fee.ToMoney();
             }
             return sum / arrayOfHashes.Length;
+        }
+        
+        public Money CalcEstimatedFee(UInt256 blockHash)
+        {
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
+            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+        }
+
+        public Money CalcEstimatedFee()
+        {
+            var currentHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentHeight);
+            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using Phorkus.Core.Utils;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 
@@ -9,15 +8,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class WithdrawTransactionExecuter : ITransactionExecuter
     {
-        private readonly IWithdrawalRepository _withdrawalRepository;        
         private readonly IValidatorManager _validatorManager;
         
-        public WithdrawTransactionExecuter(
-            IValidatorManager validatorManager,
-            IWithdrawalRepository withdrawalRepository)
+        public WithdrawTransactionExecuter(IValidatorManager validatorManager)
         {
             _validatorManager = validatorManager;
-            _withdrawalRepository = withdrawalRepository;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
@@ -39,7 +34,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 State = WithdrawalState.Registered,
                 Timestamp = (ulong) new DateTimeOffset().ToUnixTimeMilliseconds()
             };
-            return !_withdrawalRepository.AddWithdrawal(withdrawal) ? OperatingError.WithdrawalFailed : OperatingError.Ok;
+            return !snapshot.Withdrawals.AddWithdrawal(withdrawal) ? OperatingError.WithdrawalFailed : OperatingError.Ok;
         }
 
         public OperatingError Verify(Transaction transaction)

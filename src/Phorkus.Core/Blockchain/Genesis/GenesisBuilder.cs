@@ -72,8 +72,8 @@ namespace Phorkus.Core.Blockchain.Genesis
             }
             
             var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, _keyPair));
-            var signedTransactions = signed as SignedTransaction[] ?? signed.ToArray();
-            var txHashes = signedTransactions.Select(tx => tx.Hash).ToArray();
+            var AcceptedTransactions = signed as AcceptedTransaction[] ?? signed.ToArray();
+            var txHashes = AcceptedTransactions.Select(tx => tx.Hash).ToArray();
             
             var header = new BlockHeader
             {
@@ -93,7 +93,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Header = header
             };
             
-            _genesisBlock = new BlockWithTransactions(result, signedTransactions.ToArray());
+            _genesisBlock = new BlockWithTransactions(result, AcceptedTransactions.ToArray());
             return _genesisBlock;
         }
     }

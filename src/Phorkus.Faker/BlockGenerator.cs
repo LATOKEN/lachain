@@ -34,7 +34,6 @@ namespace Phorkus.Faker
             var blockchainManager = container.Resolve<IBlockchainManager>();
             var blockchainContext = container.Resolve<IBlockchainContext>();
             var configManager = container.Resolve<IConfigManager>();
-            var blockRepository = container.Resolve<IBlockRepository>();
             var crypto = container.Resolve<ICrypto>();
             var transactionFactory = container.Resolve<ITransactionBuilder>();
             var transactionManager = container.Resolve<ITransactionManager>();
@@ -56,7 +55,7 @@ namespace Phorkus.Faker
             if (blockchainManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
-            var genesisBlock = blockRepository.GetBlockByHeight(0);
+            var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
             Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
@@ -76,7 +75,6 @@ namespace Phorkus.Faker
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeaderHeight);
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Balance of LA 0x3e: " + balanceRepository.GetAvailableBalance(address1, asset.Hash));
@@ -106,7 +104,7 @@ namespace Phorkus.Faker
                 for (var i = 0; i < _blockTxs; i++)
                 {
                     var tx = transactionFactory.TransferTransaction(from, address1, asset.Hash, Money.Zero);
-                    tx.Nonce = (ulong) (lastNonce + i);
+                    tx.Nonce = lastNonce + (ulong) i;
                     unsignedTxs.Add(tx);
                 }
                 var txs = unsignedTxs.AsParallel().Select(tx => transactionManager.Sign(tx, keyPair)).ToList();

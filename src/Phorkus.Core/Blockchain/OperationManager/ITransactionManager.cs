@@ -6,19 +6,21 @@ namespace Phorkus.Core.Blockchain.OperationManager
 {
     public interface ITransactionManager : ITransactionSigner
     {
-        event EventHandler<SignedTransaction> OnTransactionPersisted;
-        event EventHandler<SignedTransaction> OnTransactionFailed;
-        event EventHandler<SignedTransaction> OnTransactionExecuted;
-        event EventHandler<SignedTransaction> OnTransactionSigned;
+        event EventHandler<AcceptedTransaction> OnTransactionPersisted;
+        event EventHandler<AcceptedTransaction> OnTransactionFailed;
+        event EventHandler<AcceptedTransaction> OnTransactionExecuted;
+        event EventHandler<AcceptedTransaction> OnTransactionSigned;
         
-        SignedTransaction GetByHash(UInt256 transactionHash);
-        
-        OperatingError Persist(SignedTransaction transaction);
+        AcceptedTransaction GetByHash(UInt256 transactionHash);
 
-        OperatingError Execute(Block block, UInt256 txHash, IBlockchainSnapshot snapshot);
+        OperatingError Execute(Block block, AcceptedTransaction transaction, IBlockchainSnapshot snapshot);
         
-        OperatingError Verify(Transaction transaction);
+        OperatingError Verify(AcceptedTransaction transaction);
 
-        uint CalcNextTxNonce(UInt160 from);
+        OperatingError VerifySignature(AcceptedTransaction transaction, PublicKey publicKey);
+        
+        OperatingError VerifySignature(AcceptedTransaction transaction);
+        
+        ulong CalcNextTxNonce(UInt160 from);
     }
 }

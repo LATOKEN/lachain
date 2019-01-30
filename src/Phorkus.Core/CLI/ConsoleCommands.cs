@@ -20,7 +20,6 @@ namespace Phorkus.Core.CLI
         private const uint AddressLength = 20;
         private const uint TxLength = 32;
 
-        private readonly IGlobalRepository _globalRepository;
         private readonly IValidatorManager _validatorManager;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
@@ -32,7 +31,6 @@ namespace Phorkus.Core.CLI
         private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
-            IGlobalRepository globalRepository,
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
@@ -44,7 +42,6 @@ namespace Phorkus.Core.CLI
             KeyPair keyPair)
         {
             _blockManager = blockManager;
-            _globalRepository = globalRepository;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
@@ -248,7 +245,7 @@ namespace Phorkus.Core.CLI
             if (arguments.Length != 2)
                 return null;
             var rawTx = arguments[1].HexToBytes();
-            var tx = SignedTransaction.Parser.ParseFrom(rawTx);
+            var tx = AcceptedTransaction.Parser.ParseFrom(rawTx);
             _transactionPool.Add(tx);
             return tx.Hash.ToHex();
         }

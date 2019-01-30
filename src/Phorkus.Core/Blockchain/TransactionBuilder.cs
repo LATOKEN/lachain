@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -12,26 +11,16 @@ namespace Phorkus.Core.Blockchain
 {
     public class TransactionBuilder : ITransactionBuilder
     {
-        private readonly IGlobalRepository _globalRepository;
         private readonly IStateManager _stateManager;
-        private readonly ITransactionRepository _transactionRepository;
-        private readonly IBlockRepository _blockRepository;
-
-        public TransactionBuilder(
-            IGlobalRepository globalRepository,
-            IStateManager stateManager,
-            ITransactionRepository transactionRepository,
-            IBlockRepository blockRepository)
+        
+        public TransactionBuilder(IStateManager stateManager)
         {
-            _globalRepository = globalRepository;
             _stateManager = stateManager;
-            _transactionRepository = transactionRepository;
-            _blockRepository = blockRepository;
         }
 
         public Transaction RegisterTransaction(AssetType type, string name, Money supply, uint decimals, UInt160 owner)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var registerTx = new RegisterTransaction
             {
                 Type = type,
@@ -53,7 +42,7 @@ namespace Phorkus.Core.Blockchain
 
         public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, byte[] input)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var contractTx = new ContractTransaction
             {
                 Asset = asset.Hash,
@@ -72,10 +61,11 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
-        public Transaction DeployTransaction(UInt160 from, IEnumerable<ContractABI> abi, IEnumerable<byte> wasm, ContractVersion version)
+
+        public Transaction DeployTransaction(UInt160 from, IEnumerable<ContractABI> abi, IEnumerable<byte> wasm,
+            ContractVersion version)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var deployTx = new DeployTransaction
             {
                 Version = ContractVersion.Wasm,
@@ -89,7 +79,7 @@ namespace Phorkus.Core.Blockchain
                 Fee = _CalcEstimatedBlockFee(),
                 Nonce = nonce
             };
-            return tx;            
+            return tx;
         }
 
         public Transaction TransferTransaction(UInt160 from, UInt160 to, string assetName, Money value)
@@ -99,10 +89,10 @@ namespace Phorkus.Core.Blockchain
                 throw new Exception($"Unable to resolve asset by name ({assetName})");
             return TransferTransaction(from, to, asset.Hash, value);
         }
-        
+
         public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(from);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var contractTx = new ContractTransaction
             {
                 Asset = asset,
@@ -124,7 +114,7 @@ namespace Phorkus.Core.Blockchain
             Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var deposit = new DepositTransaction
             {
                 Recipient = recipient,
@@ -144,11 +134,11 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
+
         public Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
             Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var withdraw = new WithdrawTransaction
             {
                 Recipient = recipient,
@@ -172,7 +162,7 @@ namespace Phorkus.Core.Blockchain
         public Transaction ConfirmTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
             Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _transactionRepository.GetTotalTransactionCount(recipient);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var confirm = new ConfirmTransaction
             {
                 Recipient = recipient,
@@ -192,14 +182,12 @@ namespace Phorkus.Core.Blockchain
             };
             return tx;
         }
-        
+
         private UInt256 _CalcEstimatedBlockFee()
         {
-            var block = _blockRepository.GetBlockByHeight(
-                _globalRepository.GetTotalBlockHeight());
-            if (block is null)
-                return UInt256Utils.Zero;
-            return _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(
+                _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+            return block is null ? UInt256Utils.Zero : _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
         }
         
         private Money _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
@@ -210,7 +198,7 @@ namespace Phorkus.Core.Blockchain
             var sum = Money.Zero;
             foreach (var txHash in arrayOfHashes)
             {
-                var tx = _transactionRepository.GetTransactionByHash(txHash);
+                var tx = _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(txHash);
                 if (tx is null)
                     continue;
                 sum += tx.Transaction.Fee.ToMoney();
