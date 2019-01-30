@@ -50,6 +50,7 @@ namespace Phorkus.Core.VM
             }
             catch (Exception e)
             {
+                ExecutionFrames.Clear();
                 Console.Error.WriteLine(e);
                 return ExecutionStatus.UnknownError;
             }
@@ -70,7 +71,9 @@ namespace Phorkus.Core.VM
             if (status != ExecutionStatus.Ok)
                 return status;
             ExecutionFrames.Push(rootFrame);
-            return rootFrame.Execute();
+            var result = rootFrame.Execute();
+            ExecutionFrames.Pop();
+            return result;
         }
     }
 }
