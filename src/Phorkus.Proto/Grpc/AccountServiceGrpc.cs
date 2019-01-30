@@ -30,10 +30,10 @@ namespace Phorkus.Proto.Grpc {
         __Marshaller_SendAcceptedTransactionRequest,
         __Marshaller_SendAcceptedTransactionReply);
 
-    static readonly grpc::Method<global::Phorkus.Proto.Grpc.CreateContractTransactionRequest, global::Phorkus.Proto.Grpc.CreateContractTransactionReply> __Method_CreateContractTranscation = new grpc::Method<global::Phorkus.Proto.Grpc.CreateContractTransactionRequest, global::Phorkus.Proto.Grpc.CreateContractTransactionReply>(
+    static readonly grpc::Method<global::Phorkus.Proto.Grpc.CreateContractTransactionRequest, global::Phorkus.Proto.Grpc.CreateContractTransactionReply> __Method_CreateContractTransaction = new grpc::Method<global::Phorkus.Proto.Grpc.CreateContractTransactionRequest, global::Phorkus.Proto.Grpc.CreateContractTransactionReply>(
         grpc::MethodType.Unary,
         __ServiceName,
-        "CreateContractTranscation",
+        "CreateContractTransaction",
         __Marshaller_CreateContractTransactionRequest,
         __Marshaller_CreateContractTransactionReply);
 
@@ -72,7 +72,7 @@ namespace Phorkus.Proto.Grpc {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
-      public virtual global::System.Threading.Tasks.Task<global::Phorkus.Proto.Grpc.CreateContractTransactionReply> CreateContractTranscation(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Phorkus.Proto.Grpc.CreateContractTransactionReply> CreateContractTransaction(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -133,21 +133,21 @@ namespace Phorkus.Proto.Grpc {
       {
         return CallInvoker.AsyncUnaryCall(__Method_SendAcceptedTransaction, null, options, request);
       }
-      public virtual global::Phorkus.Proto.Grpc.CreateContractTransactionReply CreateContractTranscation(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::Phorkus.Proto.Grpc.CreateContractTransactionReply CreateContractTransaction(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return CreateContractTranscation(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return CreateContractTransaction(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
-      public virtual global::Phorkus.Proto.Grpc.CreateContractTransactionReply CreateContractTranscation(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::CallOptions options)
+      public virtual global::Phorkus.Proto.Grpc.CreateContractTransactionReply CreateContractTransaction(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::CallOptions options)
       {
-        return CallInvoker.BlockingUnaryCall(__Method_CreateContractTranscation, null, options, request);
+        return CallInvoker.BlockingUnaryCall(__Method_CreateContractTransaction, null, options, request);
       }
-      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.CreateContractTransactionReply> CreateContractTranscationAsync(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.CreateContractTransactionReply> CreateContractTransactionAsync(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return CreateContractTranscationAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return CreateContractTransactionAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
-      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.CreateContractTransactionReply> CreateContractTranscationAsync(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.CreateContractTransactionReply> CreateContractTransactionAsync(global::Phorkus.Proto.Grpc.CreateContractTransactionRequest request, grpc::CallOptions options)
       {
-        return CallInvoker.AsyncUnaryCall(__Method_CreateContractTranscation, null, options, request);
+        return CallInvoker.AsyncUnaryCall(__Method_CreateContractTransaction, null, options, request);
       }
       public virtual global::Phorkus.Proto.Grpc.CreateDeployTransactionReply CreateDeployTransaction(global::Phorkus.Proto.Grpc.CreateDeployTransactionRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
@@ -210,7 +210,7 @@ namespace Phorkus.Proto.Grpc {
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_SendAcceptedTransaction, serviceImpl.SendAcceptedTransaction)
-          .AddMethod(__Method_CreateContractTranscation, serviceImpl.CreateContractTranscation)
+          .AddMethod(__Method_CreateContractTransaction, serviceImpl.CreateContractTransaction)
           .AddMethod(__Method_CreateDeployTransaction, serviceImpl.CreateDeployTransaction)
           .AddMethod(__Method_GetBalance, serviceImpl.GetBalance)
           .AddMethod(__Method_GetAvailableAssets, serviceImpl.GetAvailableAssets).Build();
@@ -223,7 +223,7 @@ namespace Phorkus.Proto.Grpc {
     public static void BindService(grpc::ServiceBinderBase serviceBinder, AccountServiceBase serviceImpl)
     {
       serviceBinder.AddMethod(__Method_SendAcceptedTransaction, serviceImpl.SendAcceptedTransaction);
-      serviceBinder.AddMethod(__Method_CreateContractTranscation, serviceImpl.CreateContractTranscation);
+      serviceBinder.AddMethod(__Method_CreateContractTransaction, serviceImpl.CreateContractTransaction);
       serviceBinder.AddMethod(__Method_CreateDeployTransaction, serviceImpl.CreateDeployTransaction);
       serviceBinder.AddMethod(__Method_GetBalance, serviceImpl.GetBalance);
       serviceBinder.AddMethod(__Method_GetAvailableAssets, serviceImpl.GetAvailableAssets);

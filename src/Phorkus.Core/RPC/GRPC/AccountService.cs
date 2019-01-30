@@ -26,8 +26,8 @@ namespace Phorkus.Core.RPC.GRPC
         {
             return base.SendAcceptedTransaction(request, context);
         }
-
-        public override Task<CreateContractTransactionReply> CreateContractTranscation(
+        
+        public override Task<CreateContractTransactionReply> CreateContractTransaction(
             CreateContractTransactionRequest request, ServerCallContext context)
         {
             var tx = _transactionBuilder.TransferTransaction(request.From, request.To, request.Asset,
