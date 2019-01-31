@@ -46,7 +46,7 @@ namespace Phorkus.Crypto
 
     public class BouncyCastle : ICrypto
     {
-        private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256r1");
+        private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
 
         private static readonly ECDomainParameters Domain
             = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
