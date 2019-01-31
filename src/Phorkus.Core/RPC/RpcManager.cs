@@ -16,6 +16,7 @@ namespace Phorkus.Core.RPC
         private readonly IConfigManager _configManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly IStateManager _stateManager;
+        private readonly ITransactionPool _transactionPool;
 
         public RpcManager(
             ITransactionManager transactionManager,
@@ -23,7 +24,8 @@ namespace Phorkus.Core.RPC
             IBlockchainContext blockchainContext,
             IConfigManager configManager,
             ITransactionBuilder transactionBuilder,
-            IStateManager stateManager)
+            IStateManager stateManager,
+            ITransactionPool transactionPool)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -31,6 +33,7 @@ namespace Phorkus.Core.RPC
             _configManager = configManager;
             _transactionBuilder = transactionBuilder;
             _stateManager = stateManager;
+            _transactionPool = transactionPool;
         }
 
         private Server _server;
@@ -44,7 +47,7 @@ namespace Phorkus.Core.RPC
                 Services =
                 {
                     BlockchainService.BindService(new GRPC.BlockchainService(_transactionManager, _blockManager, _blockchainContext)),
-                    AccountService.BindService(new GRPC.AccountService(_transactionBuilder, _stateManager))
+                    AccountService.BindService(new GRPC.AccountService(_transactionBuilder, _stateManager, _transactionPool))
                 },
                 Ports =
                 {

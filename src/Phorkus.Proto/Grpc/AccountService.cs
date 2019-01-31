@@ -47,17 +47,21 @@ namespace Phorkus.Proto.Grpc {
             "c3QiiAEKF0dldEF2YWlsYWJsZUFzc2V0c1JlcGx5EjQKBmFzc2V0cxgBIAMo",
             "CzIkLkdldEF2YWlsYWJsZUFzc2V0c1JlcGx5LkFzc2V0c0VudHJ5GjcKC0Fz",
             "c2V0c0VudHJ5EgsKA2tleRgBIAEoCRIXCgV2YWx1ZRgCIAEoCzIILlVJbnQx",
-            "NjA6AjgBMqcDCg5BY2NvdW50U2VydmljZRJZChdTZW5kQWNjZXB0ZWRUcmFu",
-            "c2FjdGlvbhIfLlNlbmRBY2NlcHRlZFRyYW5zYWN0aW9uUmVxdWVzdBodLlNl",
-            "bmRBY2NlcHRlZFRyYW5zYWN0aW9uUmVwbHkSXwoZQ3JlYXRlQ29udHJhY3RU",
-            "cmFuc2FjdGlvbhIhLkNyZWF0ZUNvbnRyYWN0VHJhbnNhY3Rpb25SZXF1ZXN0",
-            "Gh8uQ3JlYXRlQ29udHJhY3RUcmFuc2FjdGlvblJlcGx5ElkKF0NyZWF0ZURl",
-            "cGxveVRyYW5zYWN0aW9uEh8uQ3JlYXRlRGVwbG95VHJhbnNhY3Rpb25SZXF1",
-            "ZXN0Gh0uQ3JlYXRlRGVwbG95VHJhbnNhY3Rpb25SZXBseRIyCgpHZXRCYWxh",
-            "bmNlEhIuR2V0QmFsYW5jZVJlcXVlc3QaEC5HZXRCYWxhbmNlUmVwbHkSSgoS",
-            "R2V0QXZhaWxhYmxlQXNzZXRzEhouR2V0QXZhaWxhYmxlQXNzZXRzUmVxdWVz",
-            "dBoYLkdldEF2YWlsYWJsZUFzc2V0c1JlcGx5QigKEWNvbS5sYXRva2VuLnBy",
-            "b3RvqgISUGhvcmt1cy5Qcm90by5HcnBjYgZwcm90bzM="));
+            "NjA6AjgBIjUKG0NhbGNUcmFuc2FjdGlvbk5vbmNlUmVxdWVzdBIWCgRmcm9t",
+            "GAEgASgLMgguVUludDE2MCIqChlDYWxjVHJhbnNhY3Rpb25Ob25jZVJlcGx5",
+            "Eg0KBW5vbmNlGAEgASgEMvkDCg5BY2NvdW50U2VydmljZRJZChdTZW5kQWNj",
+            "ZXB0ZWRUcmFuc2FjdGlvbhIfLlNlbmRBY2NlcHRlZFRyYW5zYWN0aW9uUmVx",
+            "dWVzdBodLlNlbmRBY2NlcHRlZFRyYW5zYWN0aW9uUmVwbHkSXwoZQ3JlYXRl",
+            "Q29udHJhY3RUcmFuc2FjdGlvbhIhLkNyZWF0ZUNvbnRyYWN0VHJhbnNhY3Rp",
+            "b25SZXF1ZXN0Gh8uQ3JlYXRlQ29udHJhY3RUcmFuc2FjdGlvblJlcGx5ElkK",
+            "F0NyZWF0ZURlcGxveVRyYW5zYWN0aW9uEh8uQ3JlYXRlRGVwbG95VHJhbnNh",
+            "Y3Rpb25SZXF1ZXN0Gh0uQ3JlYXRlRGVwbG95VHJhbnNhY3Rpb25SZXBseRIy",
+            "CgpHZXRCYWxhbmNlEhIuR2V0QmFsYW5jZVJlcXVlc3QaEC5HZXRCYWxhbmNl",
+            "UmVwbHkSSgoSR2V0QXZhaWxhYmxlQXNzZXRzEhouR2V0QXZhaWxhYmxlQXNz",
+            "ZXRzUmVxdWVzdBoYLkdldEF2YWlsYWJsZUFzc2V0c1JlcGx5ElAKFENhbGNU",
+            "cmFuc2FjdGlvbk5vbmNlEhwuQ2FsY1RyYW5zYWN0aW9uTm9uY2VSZXF1ZXN0",
+            "GhouQ2FsY1RyYW5zYWN0aW9uTm9uY2VSZXBseUIoChFjb20ubGF0b2tlbi5w",
+            "cm90b6oCElBob3JrdXMuUHJvdG8uR3JwY2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.ContractReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -70,7 +74,9 @@ namespace Phorkus.Proto.Grpc {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetBalanceRequest), global::Phorkus.Proto.Grpc.GetBalanceRequest.Parser, new[]{ "Address", "AssetHash" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetBalanceReply), global::Phorkus.Proto.Grpc.GetBalanceReply.Parser, new[]{ "AssetHash", "Balance" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetAvailableAssetsRequest), global::Phorkus.Proto.Grpc.GetAvailableAssetsRequest.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetAvailableAssetsReply), global::Phorkus.Proto.Grpc.GetAvailableAssetsReply.Parser, new[]{ "Assets" }, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.GetAvailableAssetsReply), global::Phorkus.Proto.Grpc.GetAvailableAssetsReply.Parser, new[]{ "Assets" }, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest), global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest.Parser, new[]{ "From" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Grpc.CalcTransactionNonceReply), global::Phorkus.Proto.Grpc.CalcTransactionNonceReply.Parser, new[]{ "Nonce" }, null, null, null)
           }));
     }
     #endregion
@@ -1781,6 +1787,270 @@ namespace Phorkus.Proto.Grpc {
             break;
           case 10: {
             assets_.AddEntriesFrom(input, _map_assets_codec);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class CalcTransactionNonceRequest : pb::IMessage<CalcTransactionNonceRequest> {
+    private static readonly pb::MessageParser<CalcTransactionNonceRequest> _parser = new pb::MessageParser<CalcTransactionNonceRequest>(() => new CalcTransactionNonceRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<CalcTransactionNonceRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.Grpc.AccountServiceReflection.Descriptor.MessageTypes[10]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CalcTransactionNonceRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CalcTransactionNonceRequest(CalcTransactionNonceRequest other) : this() {
+      from_ = other.from_ != null ? other.from_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CalcTransactionNonceRequest Clone() {
+      return new CalcTransactionNonceRequest(this);
+    }
+
+    /// <summary>Field number for the "from" field.</summary>
+    public const int FromFieldNumber = 1;
+    private global::Phorkus.Proto.UInt160 from_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt160 From {
+      get { return from_; }
+      set {
+        from_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as CalcTransactionNonceRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(CalcTransactionNonceRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(From, other.From)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (from_ != null) hash ^= From.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (from_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(From);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (from_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(From);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(CalcTransactionNonceRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.from_ != null) {
+        if (from_ == null) {
+          from_ = new global::Phorkus.Proto.UInt160();
+        }
+        From.MergeFrom(other.From);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (from_ == null) {
+              from_ = new global::Phorkus.Proto.UInt160();
+            }
+            input.ReadMessage(from_);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class CalcTransactionNonceReply : pb::IMessage<CalcTransactionNonceReply> {
+    private static readonly pb::MessageParser<CalcTransactionNonceReply> _parser = new pb::MessageParser<CalcTransactionNonceReply>(() => new CalcTransactionNonceReply());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<CalcTransactionNonceReply> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.Grpc.AccountServiceReflection.Descriptor.MessageTypes[11]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CalcTransactionNonceReply() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CalcTransactionNonceReply(CalcTransactionNonceReply other) : this() {
+      nonce_ = other.nonce_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CalcTransactionNonceReply Clone() {
+      return new CalcTransactionNonceReply(this);
+    }
+
+    /// <summary>Field number for the "nonce" field.</summary>
+    public const int NonceFieldNumber = 1;
+    private ulong nonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Nonce {
+      get { return nonce_; }
+      set {
+        nonce_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as CalcTransactionNonceReply);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(CalcTransactionNonceReply other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Nonce != other.Nonce) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Nonce != 0UL) {
+        output.WriteRawTag(8);
+        output.WriteUInt64(Nonce);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Nonce != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(CalcTransactionNonceReply other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Nonce != 0UL) {
+        Nonce = other.Nonce;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Nonce = input.ReadUInt64();
             break;
           }
         }

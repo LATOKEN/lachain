@@ -22,6 +22,8 @@ namespace Phorkus.Proto.Grpc {
     static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetBalanceReply> __Marshaller_GetBalanceReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetBalanceReply.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetAvailableAssetsRequest> __Marshaller_GetAvailableAssetsRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetAvailableAssetsRequest.Parser.ParseFrom);
     static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.GetAvailableAssetsReply> __Marshaller_GetAvailableAssetsReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.GetAvailableAssetsReply.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest> __Marshaller_CalcTransactionNonceRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Phorkus.Proto.Grpc.CalcTransactionNonceReply> __Marshaller_CalcTransactionNonceReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Phorkus.Proto.Grpc.CalcTransactionNonceReply.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Phorkus.Proto.Grpc.SendAcceptedTransactionRequest, global::Phorkus.Proto.Grpc.SendAcceptedTransactionReply> __Method_SendAcceptedTransaction = new grpc::Method<global::Phorkus.Proto.Grpc.SendAcceptedTransactionRequest, global::Phorkus.Proto.Grpc.SendAcceptedTransactionReply>(
         grpc::MethodType.Unary,
@@ -58,6 +60,13 @@ namespace Phorkus.Proto.Grpc {
         __Marshaller_GetAvailableAssetsRequest,
         __Marshaller_GetAvailableAssetsReply);
 
+    static readonly grpc::Method<global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest, global::Phorkus.Proto.Grpc.CalcTransactionNonceReply> __Method_CalcTransactionNonce = new grpc::Method<global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest, global::Phorkus.Proto.Grpc.CalcTransactionNonceReply>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "CalcTransactionNonce",
+        __Marshaller_CalcTransactionNonceRequest,
+        __Marshaller_CalcTransactionNonceReply);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -88,6 +97,11 @@ namespace Phorkus.Proto.Grpc {
       }
 
       public virtual global::System.Threading.Tasks.Task<global::Phorkus.Proto.Grpc.GetAvailableAssetsReply> GetAvailableAssets(global::Phorkus.Proto.Grpc.GetAvailableAssetsRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      public virtual global::System.Threading.Tasks.Task<global::Phorkus.Proto.Grpc.CalcTransactionNonceReply> CalcTransactionNonce(global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -197,6 +211,22 @@ namespace Phorkus.Proto.Grpc {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetAvailableAssets, null, options, request);
       }
+      public virtual global::Phorkus.Proto.Grpc.CalcTransactionNonceReply CalcTransactionNonce(global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return CalcTransactionNonce(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Phorkus.Proto.Grpc.CalcTransactionNonceReply CalcTransactionNonce(global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_CalcTransactionNonce, null, options, request);
+      }
+      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.CalcTransactionNonceReply> CalcTransactionNonceAsync(global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return CalcTransactionNonceAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual grpc::AsyncUnaryCall<global::Phorkus.Proto.Grpc.CalcTransactionNonceReply> CalcTransactionNonceAsync(global::Phorkus.Proto.Grpc.CalcTransactionNonceRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_CalcTransactionNonce, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override AccountServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
@@ -213,7 +243,8 @@ namespace Phorkus.Proto.Grpc {
           .AddMethod(__Method_CreateContractTransaction, serviceImpl.CreateContractTransaction)
           .AddMethod(__Method_CreateDeployTransaction, serviceImpl.CreateDeployTransaction)
           .AddMethod(__Method_GetBalance, serviceImpl.GetBalance)
-          .AddMethod(__Method_GetAvailableAssets, serviceImpl.GetAvailableAssets).Build();
+          .AddMethod(__Method_GetAvailableAssets, serviceImpl.GetAvailableAssets)
+          .AddMethod(__Method_CalcTransactionNonce, serviceImpl.CalcTransactionNonce).Build();
     }
 
     /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
@@ -227,6 +258,7 @@ namespace Phorkus.Proto.Grpc {
       serviceBinder.AddMethod(__Method_CreateDeployTransaction, serviceImpl.CreateDeployTransaction);
       serviceBinder.AddMethod(__Method_GetBalance, serviceImpl.GetBalance);
       serviceBinder.AddMethod(__Method_GetAvailableAssets, serviceImpl.GetAvailableAssets);
+      serviceBinder.AddMethod(__Method_CalcTransactionNonce, serviceImpl.CalcTransactionNonce);
     }
 
   }

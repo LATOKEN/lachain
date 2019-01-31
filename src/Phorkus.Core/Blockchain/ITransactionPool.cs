@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 
 namespace Phorkus.Core.Blockchain
@@ -8,6 +9,8 @@ namespace Phorkus.Core.Blockchain
         IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions { get; }
 
         void Restore();
+
+        bool Add(Transaction transaction, Signature signature);
         
         bool Add(AcceptedTransaction transaction);
         

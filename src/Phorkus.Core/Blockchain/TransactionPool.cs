@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Utils;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;
 using Phorkus.Utility;
@@ -49,7 +50,20 @@ namespace Phorkus.Core.Blockchain
                 Add(tx);
             }
         }
-        
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool Add(Transaction transaction, Signature signature)
+        {
+            var acceptedTx = new AcceptedTransaction
+            {
+                Transaction = transaction,
+                Hash = transaction.ToHash256(),
+                Signature = signature,
+                Status = TransactionStatus.Pool
+            };
+            return Add(acceptedTx);
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Add(AcceptedTransaction transaction)
         {

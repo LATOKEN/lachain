@@ -1,7 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
-using NBitcoin;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Utils;
 using Phorkus.Proto.Grpc;
@@ -14,17 +14,29 @@ namespace Phorkus.Core.RPC.GRPC
     {
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly IStateManager _stateManager;
+        private readonly ITransactionPool _transactionPool;
 
-        public AccountService(ITransactionBuilder transactionBuilder, IStateManager stateManager)
+        public AccountService(
+            ITransactionBuilder transactionBuilder,
+            IStateManager stateManager,
+            ITransactionPool transactionPool)
         {
             _transactionBuilder = transactionBuilder;
             _stateManager = stateManager;
+            _transactionPool = transactionPool;
         }
 
         public override Task<SendAcceptedTransactionReply> SendAcceptedTransaction(SendAcceptedTransactionRequest request,
             ServerCallContext context)
         {
-            return base.SendAcceptedTransaction(request, context);
+            if (!_transactionPool.Add(request.Transaction, request.Signature))
+                throw new Exception("Unable to add transaction to pool");
+            var txHash = request.Transaction.ToHash256();
+            var reply = new SendAcceptedTransactionReply
+            {
+                Hash = txHash
+            };
+            return Task.FromResult(reply);
         }
         
         public override Task<CreateContractTransactionReply> CreateContractTransaction(
@@ -74,6 +86,16 @@ namespace Phorkus.Core.RPC.GRPC
             var reply = new GetAvailableAssetsReply
             {
                 Assets = { assetHashesByName }
+            };
+            return Task.FromResult(reply);
+        }
+
+        public override Task<CalcTransactionNonceReply> CalcTransactionNonce(CalcTransactionNonceRequest request, ServerCallContext context)
+        {
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(request.From);
+            var reply = new CalcTransactionNonceReply
+            {
+                Nonce = nonce
             };
             return Task.FromResult(reply);
         }
