@@ -70,7 +70,7 @@ namespace Phorkus.Core.Blockchain
             return true;
         }
 
-        public bool VerifyTransactionImmediately(AcceptedTransaction transaction)
+        public bool VerifyTransactionImmediately(AcceptedTransaction transaction, bool cacheEnabled = true)
         {
             if (transaction is null)
                 throw new ArgumentNullException(nameof(transaction));
@@ -82,7 +82,7 @@ namespace Phorkus.Core.Blockchain
             try
             {
                 /* try to verify signature using public key cache to avoid EC recover */
-                if (_publicKeyCache.TryGetValue(transaction.Transaction.From, out var publicKey))
+                if (cacheEnabled && _publicKeyCache.TryGetValue(transaction.Transaction.From, out var publicKey))
                     return VerifyTransactionImmediately(transaction, publicKey);
 
                 /* recover EC to get public key from signature to compute address */
@@ -95,7 +95,8 @@ namespace Phorkus.Core.Blockchain
                     return false;
 
                 /* try to remember public key for this address */
-                _publicKeyCache.Add(transaction.Transaction.From, rawKey.ToPublicKey());
+                if (cacheEnabled)
+                    _publicKeyCache.Add(transaction.Transaction.From, rawKey.ToPublicKey());
             }
             catch (Exception)
             {

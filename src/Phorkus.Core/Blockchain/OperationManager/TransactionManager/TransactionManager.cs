@@ -148,10 +148,10 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignature(AcceptedTransaction transaction)
+        public OperatingError VerifySignature(AcceptedTransaction transaction, bool cacheEnabled = true)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction)
+                return _transactionVerifier.VerifyTransactionImmediately(transaction, cacheEnabled)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
             _verifiedTransactions.TryRemove(transaction.Hash, out _);

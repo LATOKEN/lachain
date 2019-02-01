@@ -19,7 +19,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
         OperatingError VerifySignature(AcceptedTransaction transaction, PublicKey publicKey);
         
-        OperatingError VerifySignature(AcceptedTransaction transaction);
+        OperatingError VerifySignature(AcceptedTransaction transaction, bool cacheEnabled = true);
         
         ulong CalcNextTxNonce(UInt160 from);
     }

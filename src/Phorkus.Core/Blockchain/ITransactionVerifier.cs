@@ -12,7 +12,7 @@ namespace Phorkus.Core.Blockchain
         void VerifyTransaction(AcceptedTransaction acceptedTransaction);
 
         bool VerifyTransactionImmediately(AcceptedTransaction transaction, PublicKey publicKey);
-        bool VerifyTransactionImmediately(AcceptedTransaction transaction);
+        bool VerifyTransactionImmediately(AcceptedTransaction transaction, bool cacheEnabled = true);
         
         void Start();
         void Stop();

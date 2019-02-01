@@ -129,7 +129,7 @@ namespace Phorkus.Console
             blockSynchronizer.Start();
             withdrawalManager.Start(thresholdKey, keyPair);
             commandManager.Start(thresholdKey, keyPair);
-            //rpcManager.Start();
+            rpcManager.Start();
             
             // var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
             

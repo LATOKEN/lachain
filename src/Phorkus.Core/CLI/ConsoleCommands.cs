@@ -251,12 +251,11 @@ namespace Phorkus.Core.CLI
         }
 
         /*
-         * SendTransaction
-         * from, UInt160,
-         * to, UInt160,
-         * assetName, string
-         * value, UInt256,
-         * fee, UInt256
+         * SendTransaction:
+         * 1. to, UInt160,
+         * 2. assetName, string
+         * 3. value, UInt256,
+         * 4. fee, UInt256
         */
         public string SendTransaction(string[] arguments)
         {
@@ -269,6 +268,32 @@ namespace Phorkus.Core.CLI
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
+        }
+
+        /// <summary>
+        /// Verify Transaction:
+        ///  1. raw transaction in hex
+        ///  2. raw signature in hex
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        public string VerifyTx(string[] arguments)
+        {
+            var tx = Transaction.Parser.ParseFrom(
+                arguments[1].HexToBytes());
+            var sig = arguments[2].HexToBytes().ToSignature();
+            Console.WriteLine($"Tx Hash: {tx.ToHash256().Buffer.ToHex()}");
+            var accepted = new AcceptedTransaction
+            {
+                Transaction = tx,
+                Hash = tx.ToHash256(),
+                Signature = sig
+            };
+            Console.WriteLine("Transaction valid: " + _transactionManager.Verify(accepted));
+            Console.WriteLine(_transactionManager.VerifySignature(accepted, false) == OperatingError.Ok
+                ? "Signature valid: OK"
+                : "Signature valid: FAILED");
+            return "\n";
         }
     }
 }
