@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Phorkus.Proto;
 
@@ -36,17 +37,17 @@ namespace Phorkus.Storage.State
 
         public void AddTransaction(AcceptedTransaction acceptedTransaction, TransactionStatus transactionStatus)
         {
-            /* check transaction nonce just in case */
-            var nonce = GetTotalTransactionCount(acceptedTransaction.Transaction.From);
-            if (nonce != acceptedTransaction.Transaction.Nonce)
-                throw new Exception($"Wait, you can't add to storage transaction with this nonce {acceptedTransaction.Transaction.Nonce}, cuz excepted {nonce}, check it before");
+            var expectedNonce = GetTotalTransactionCount(acceptedTransaction.Transaction.From);
+            if (transactionStatus == TransactionStatus.Executed && expectedNonce != acceptedTransaction.Transaction.Nonce)
+                throw new Exception("ho ho ho, this should never happen, transaction nonce mismatch");
             /* save transaction status */
             acceptedTransaction.Status = transactionStatus;
             /* write transaction to storage */
             _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(acceptedTransaction.Hash),
                 acceptedTransaction.ToByteArray());
             /* update current address nonce */
-            _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(acceptedTransaction.Transaction.From), BitConverter.GetBytes(nonce + 1));
+            if (transactionStatus == TransactionStatus.Executed)
+                _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(acceptedTransaction.Transaction.From), BitConverter.GetBytes(expectedNonce + 1));
         }
     }
 }
