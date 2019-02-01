@@ -105,7 +105,7 @@ namespace Phorkus.Core.Blockchain
                     continue;
                 result.Add(transaction);
             }
-            return result.OrderByDescending(tx => tx.Transaction.Fee, new UInt256Comparer()).ToList();
+            return result.OrderByDescending(tx => tx.Transaction.Fee, new UInt256Comparer()).Where(tx => _transactionManager.GetByHash(tx.Hash) == null).ToList();
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]

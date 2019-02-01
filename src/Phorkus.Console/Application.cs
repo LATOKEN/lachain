@@ -1,7 +1,5 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
-using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -20,7 +18,6 @@ using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
