@@ -303,6 +303,8 @@ namespace Phorkus.Networking
             Console.Error.WriteLine(message);
         }
 
+        public bool IsReady => _serverWorker != null && _serverWorker.IsActive;
+        
         public void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler)
         {
             _messageHandler = messageHandler;

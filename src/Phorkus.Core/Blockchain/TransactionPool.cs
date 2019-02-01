@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
+using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;
 using Phorkus.Utility;
@@ -18,6 +19,8 @@ namespace Phorkus.Core.Blockchain
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
+        private readonly INetworkManager _networkManager;
+        private readonly INetworkBroadcaster _networkBroadcaster;
         
         private readonly ConcurrentDictionary<UInt256, AcceptedTransaction> _transactions
             = new ConcurrentDictionary<UInt256, AcceptedTransaction>();
@@ -28,11 +31,15 @@ namespace Phorkus.Core.Blockchain
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
-            ITransactionManager transactionManager)
+            ITransactionManager transactionManager,
+            INetworkManager networkManager,
+            INetworkBroadcaster networkBroadcaster)
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
             _poolRepository = poolRepository ?? throw new ArgumentNullException(nameof(poolRepository));
             _transactionManager = transactionManager;
+            _networkBroadcaster = networkBroadcaster;
+            _networkManager = networkManager;
 
             Restore();
         }
@@ -89,6 +96,12 @@ namespace Phorkus.Core.Blockchain
             /* write transaction to persistence storage */
             if (!_poolRepository.ContainsTransactionByHash(transaction.Hash))
                 _poolRepository.AddTransaction(transaction);
+            if (!_networkManager.IsReady)
+                return true;
+            var message = _networkManager.MessageFactory.GetTransactionsByHashesReply(
+                new [] { transaction }
+            );
+            _networkBroadcaster.Broadcast(message);
             return true;
         }
 

@@ -16,6 +16,8 @@ namespace Phorkus.Networking
 
         IRemotePeer Connect(PeerAddress address);
 
+        bool IsReady { get; }
+
         void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler);
 
         void Stop();

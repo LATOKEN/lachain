@@ -83,12 +83,8 @@ namespace Phorkus.Core.Network
                     _logger.LogWarning($"Unable to verify transaction ({error})");
                     continue;
                 }
-                if (!_transactionPool.Add(tx))
-                {
-                    _logger.LogWarning($"Failed to add transaction to pool");
-                    continue;
-                }
-                persisted++;
+                if (_transactionPool.Add(tx))
+                    persisted++;
             }
             lock (_peerHasTransactions)
                 Monitor.PulseAll(_peerHasTransactions);
