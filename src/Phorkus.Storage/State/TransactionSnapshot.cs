@@ -34,7 +34,7 @@ namespace Phorkus.Storage.State
             var raw = _state.Get(EntryPrefix.TransactionByHash.BuildPrefix(transactionHash));
             return raw != null ? AcceptedTransaction.Parser.ParseFrom(raw) : null;
         }
-
+        
         public void AddTransaction(AcceptedTransaction acceptedTransaction, TransactionStatus transactionStatus)
         {
             var expectedNonce = GetTotalTransactionCount(acceptedTransaction.Transaction.From);

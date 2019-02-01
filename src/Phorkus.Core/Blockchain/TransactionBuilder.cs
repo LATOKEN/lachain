@@ -42,7 +42,7 @@ namespace Phorkus.Core.Blockchain
 
         public Transaction ContractTransaction(UInt160 from, UInt160 to, Asset asset, Money value, byte[] input)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractTx = new ContractTransaction
             {
                 Asset = asset.Hash,
@@ -65,7 +65,7 @@ namespace Phorkus.Core.Blockchain
         public Transaction DeployTransaction(UInt160 from, IEnumerable<ContractABI> abi, IEnumerable<byte> wasm,
             ContractVersion version)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var deployTx = new DeployTransaction
             {
                 Version = ContractVersion.Wasm,
@@ -92,7 +92,7 @@ namespace Phorkus.Core.Blockchain
 
         public Transaction TransferTransaction(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractTx = new ContractTransaction
             {
                 Asset = asset,
@@ -114,7 +114,7 @@ namespace Phorkus.Core.Blockchain
             Money value,
             byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var deposit = new DepositTransaction
             {
                 Recipient = recipient,
@@ -138,7 +138,7 @@ namespace Phorkus.Core.Blockchain
         public Transaction WithdrawTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
             Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var withdraw = new WithdrawTransaction
             {
                 Recipient = recipient,
@@ -162,7 +162,7 @@ namespace Phorkus.Core.Blockchain
         public Transaction ConfirmTransaction(UInt160 from, UInt160 recipient, BlockchainType blockchainType,
             Money value, byte[] transactionHash, AddressFormat addressFormat, ulong timestamp)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var confirm = new ConfirmTransaction
             {
                 Recipient = recipient,
