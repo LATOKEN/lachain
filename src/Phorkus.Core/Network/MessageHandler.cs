@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NLog.Internal;
 using Phorkus.Core.Consensus;
 using Phorkus.Logger;
 using Phorkus.Networking;
@@ -76,10 +75,16 @@ namespace Phorkus.Core.Network
             var txs = new List<AcceptedTransaction>();
             foreach (var txHash in request.TransactionHashes)
             {
+                _logger.LogError($"Requested {txHash}");
                 var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash)
                      ?? _poolRepository.GetTransactionByHash(txHash);
-                if (tx != null)
+                if (tx != null) 
                     txs.Add(tx);
+                else
+                {
+                    _logger.LogError($"Not found {txHash}");
+                    _logger.LogError(string.Join("; ", _poolRepository.GetTransactionPool()));
+                }
             }
             envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
         }

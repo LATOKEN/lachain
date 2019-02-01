@@ -38,6 +38,11 @@ namespace Phorkus.Core.Blockchain
 
         public IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions => _transactions;
 
+        public AcceptedTransaction GetByHash(UInt256 hash)
+        {
+            return _transactions.TryGetValue(hash, out var tx) ? tx : null;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Restore()
         {

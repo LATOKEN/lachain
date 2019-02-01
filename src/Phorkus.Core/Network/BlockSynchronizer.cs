@@ -17,6 +17,7 @@ namespace Phorkus.Core.Network
     public class BlockSynchronizer : IBlockSynchronizer
     {
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionPool _transactionPool;
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ILogger<IBlockSynchronizer> _logger;
@@ -39,7 +40,8 @@ namespace Phorkus.Core.Network
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
-            IPoolRepository poolRepository)
+            IPoolRepository poolRepository,
+            ITransactionPool transactionPool)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -49,6 +51,7 @@ namespace Phorkus.Core.Network
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
             _poolRepository = poolRepository;
+            _transactionPool = transactionPool;
         }
 
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
@@ -223,7 +226,7 @@ namespace Phorkus.Core.Network
             var list = new List<UInt256>();
             foreach (var hash in txHashes)
             {
-                var tx = _transactionManager.GetByHash(hash);
+                var tx = _transactionManager.GetByHash(hash) ?? _transactionPool.GetByHash(hash);
                 if (tx != null)
                     continue;
                 list.Add(hash);

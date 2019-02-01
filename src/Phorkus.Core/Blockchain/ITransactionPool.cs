@@ -8,6 +8,8 @@ namespace Phorkus.Core.Blockchain
     {
         IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions { get; }
 
+        AcceptedTransaction GetByHash(UInt256 hash);
+
         void Restore();
 
         bool Add(Transaction transaction, Signature signature);

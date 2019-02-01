@@ -23,7 +23,6 @@ namespace Phorkus.Core.Consensus
         private readonly ITransactionPool _transactionPool;
         private readonly INetworkBroadcaster _broadcaster;
         private readonly ILogger<ConsensusManager> _logger;
-        private readonly ICrypto _crypto;
         private readonly ConsensusContext _context;
         private readonly KeyPair _keyPair;
         private readonly IBlockSynchronizer _blockchainSynchronizer;
@@ -37,7 +36,7 @@ namespace Phorkus.Core.Consensus
         private bool _gotNewBlock;
         private readonly SecureRandom _random;
 
-        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan _timePerBlock = TimeSpan.FromSeconds(10);
 
         public ConsensusManager(
             IBlockManager blockManager,
@@ -60,10 +59,10 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _validatorManager = validatorManager ?? throw new ArgumentNullException(nameof(validatorManager));
-            _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
+            crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
 
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            _messageFactory = new MessageFactory(_keyPair, _crypto);
+            _messageFactory = new MessageFactory(_keyPair, crypto);
             _context = new ConsensusContext(_keyPair, _validatorManager.Validators.ToList());
             _random = new SecureRandom();
             _stopped = true;
