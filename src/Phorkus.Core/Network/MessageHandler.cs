@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NLog.Internal;
 using Phorkus.Core.Consensus;
 using Phorkus.Logger;
 using Phorkus.Networking;
@@ -16,17 +17,20 @@ namespace Phorkus.Core.Network
         private readonly IConsensusManager _consensusManager;
         private readonly ILogger<MessageHandler> _logger;
         private readonly IStateManager _stateManager;
+        private readonly IPoolRepository _poolRepository;
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
             IConsensusManager consensusManager, 
             ILogger<MessageHandler> logger,
-            IStateManager stateManager)
+            IStateManager stateManager,
+            IPoolRepository poolRepository)
         {
             _blockSynchronizer = blockSynchronizer;
             _consensusManager = consensusManager;
             _logger = logger;
             _stateManager = stateManager;
+            _poolRepository = poolRepository;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -72,10 +76,10 @@ namespace Phorkus.Core.Network
             var txs = new List<AcceptedTransaction>();
             foreach (var txHash in request.TransactionHashes)
             {
-                var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
-                if (tx is null)
-                    continue;
-                txs.Add(tx);
+                var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash)
+                     ?? _poolRepository.GetTransactionByHash(txHash);
+                if (tx != null)
+                    txs.Add(tx);
             }
             envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
         }

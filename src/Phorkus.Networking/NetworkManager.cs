@@ -150,9 +150,7 @@ namespace Phorkus.Networking
         public void Broadcast(NetworkMessage networkMessage)
         {
             foreach (var peer in ActivePeers)
-            {
                 peer.Value.Send(networkMessage);
-            }
         }
 
         private void _HandleOpen(string message)
