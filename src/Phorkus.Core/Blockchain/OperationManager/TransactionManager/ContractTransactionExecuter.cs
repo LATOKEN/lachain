@@ -24,9 +24,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return error;
             var contract = transaction.Contract;
             /* try to transfer funds from sender to recipient */
-            if (!contract.Value.IsZero())
-                snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset,
-                    new Money(contract.Value));
+            if (!contract.Value.IsZero() && !snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To,
+                    contract.Asset, new Money(contract.Value)))
+                return OperatingError.InsufficientBalance;
             /* if we have invocation block than invoke contract method */
             if (contract.Input != null && !contract.Input.IsEmpty)
                 return _InvokeContract(transaction, snapshot);

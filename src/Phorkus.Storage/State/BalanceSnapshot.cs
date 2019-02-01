@@ -1,4 +1,5 @@
-﻿using Google.Protobuf;
+﻿using System.Runtime.CompilerServices;
+using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -16,6 +17,7 @@ namespace Phorkus.Storage.State
 
         public ulong Version => _state.CurrentVersion;
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money GetAvailableBalance(UInt160 owner, UInt160 asset)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner, asset);
@@ -24,12 +26,14 @@ namespace Phorkus.Storage.State
             return new Money(balance);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetAvailableBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner, asset);
             _state.AddOrUpdate(key, value.ToUInt256().ToByteArray());
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money AddAvailableBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var balance = GetAvailableBalance(owner, asset);
@@ -38,6 +42,7 @@ namespace Phorkus.Storage.State
             return balance;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money SubAvailableBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var balance = GetAvailableBalance(owner, asset);
@@ -46,6 +51,7 @@ namespace Phorkus.Storage.State
             return balance;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money GetWithdrawingBalance(UInt160 owner, UInt160 asset)
         {
             var key = EntryPrefix.WithdrawingBalanceByOwnerAndAsset.BuildPrefix(owner, asset);
@@ -54,12 +60,14 @@ namespace Phorkus.Storage.State
             return new Money(balance);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetWithdrawingBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var key = EntryPrefix.WithdrawingBalanceByOwnerAndAsset.BuildPrefix(owner, asset);
             _state.AddOrUpdate(key, value.ToUInt256().ToByteArray());
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money AddWithdrawingBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var balance = GetWithdrawingBalance(owner, asset);
@@ -68,6 +76,7 @@ namespace Phorkus.Storage.State
             return balance;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money SubWithdrawingBalance(UInt160 owner, UInt160 asset, Money value)
         {
             var balance = GetWithdrawingBalance(owner, asset);
@@ -76,10 +85,15 @@ namespace Phorkus.Storage.State
             return balance;
         }
 
-        public void TransferAvailableBalance(UInt160 from, UInt160 to, UInt160 asset, Money value)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TransferAvailableBalance(UInt160 from, UInt160 to, UInt160 asset, Money value)
         {
+            var availableBalance = GetAvailableBalance(from, asset);
+            if (availableBalance.CompareTo(value) < 0)
+                return false;
             SubAvailableBalance(from, asset, value);
             AddAvailableBalance(to, asset, value);
+            return true;
         }
         
         public void Commit()
