@@ -15,8 +15,8 @@ namespace Phorkus.Core.Blockchain
     {
         public const int PeekLimit = 1000;
 
-        private readonly IPoolRepository _poolRepository;
         private readonly ITransactionVerifier _transactionVerifier;
+        private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
         
         private readonly ConcurrentDictionary<UInt256, AcceptedTransaction> _transactions
@@ -27,7 +27,8 @@ namespace Phorkus.Core.Blockchain
 
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
-            IPoolRepository poolRepository, ITransactionManager transactionManager)
+            IPoolRepository poolRepository,
+            ITransactionManager transactionManager)
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
             _poolRepository = poolRepository ?? throw new ArgumentNullException(nameof(poolRepository));
@@ -40,7 +41,7 @@ namespace Phorkus.Core.Blockchain
 
         public AcceptedTransaction GetByHash(UInt256 hash)
         {
-            return _transactions.TryGetValue(hash, out var tx) ? tx : null;
+            return _transactions.TryGetValue(hash, out var tx) ? tx : _poolRepository.GetTransactionByHash(hash);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -68,7 +69,7 @@ namespace Phorkus.Core.Blockchain
             };
             return Add(acceptedTx);
         }
-
+        
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Add(AcceptedTransaction transaction)
         {
@@ -112,7 +113,7 @@ namespace Phorkus.Core.Blockchain
         {
             return (uint) _transactions.Count;
         }
-
+        
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Delete(UInt256 transactionHash)
         {

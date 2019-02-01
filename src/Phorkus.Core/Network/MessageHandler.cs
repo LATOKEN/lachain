@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 
 namespace Phorkus.Core.Network
@@ -15,21 +15,21 @@ namespace Phorkus.Core.Network
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IConsensusManager _consensusManager;
         private readonly ILogger<MessageHandler> _logger;
+        private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
-        private readonly IPoolRepository _poolRepository;
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
             IConsensusManager consensusManager, 
             ILogger<MessageHandler> logger,
-            IStateManager stateManager,
-            IPoolRepository poolRepository)
+            ITransactionPool transactionPool,
+            IStateManager stateManager)
         {
             _blockSynchronizer = blockSynchronizer;
             _consensusManager = consensusManager;
             _logger = logger;
+            _transactionPool = transactionPool;
             _stateManager = stateManager;
-            _poolRepository = poolRepository;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -75,16 +75,10 @@ namespace Phorkus.Core.Network
             var txs = new List<AcceptedTransaction>();
             foreach (var txHash in request.TransactionHashes)
             {
-                _logger.LogError($"Requested {txHash}");
                 var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash)
-                     ?? _poolRepository.GetTransactionByHash(txHash);
+                     ?? _transactionPool.GetByHash(txHash);
                 if (tx != null) 
                     txs.Add(tx);
-                else
-                {
-                    _logger.LogError($"Not found {txHash}");
-                    _logger.LogError(string.Join("; ", _poolRepository.GetTransactionPool()));
-                }
             }
             envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
         }

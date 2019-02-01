@@ -22,7 +22,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         private readonly IStateManager _stateManager;
 
         public TransactionManager(
-            IPoolRepository poolRepository,
             IValidatorManager validatorManager,
             ITransactionVerifier transactionVerifier,
             IMultisigVerifier multisigVerifier,
@@ -39,9 +38,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
                 {TransactionType.Withdraw, new WithdrawTransactionExecuter(validatorManager)},
                 {TransactionType.Confirm, new ConfirmTransactionExecuter(validatorManager)},
-                {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine, poolRepository) }
+                {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine) }
             };
-            _stateManager = stateManager ?? throw new ArgumentNullException(nameof(poolRepository));
+            _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
 

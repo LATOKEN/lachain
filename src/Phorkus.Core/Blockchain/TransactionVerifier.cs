@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain
@@ -136,7 +133,7 @@ namespace Phorkus.Core.Blockchain
 
         public void Start()
         {
-            uint workers = 4;
+            uint workers = 1;
             if (workers <= 0)
                 throw new ArgumentOutOfRangeException(nameof(workers));
             if (_working)

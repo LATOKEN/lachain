@@ -104,6 +104,7 @@ namespace Phorkus.Console
             foreach (var assetName in assetNames)
                 System.Console.WriteLine($" + - {assetName}: {assetRepository.GetAssetByName(assetName)?.Hash}");
             
+            // sendtransaction 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 1000.999 0.0001
             // sendtransaction 0x34a3bdffa1fa927888fe8df23d55058db4a65c4f LA 0.9999 0.0001
             // sendtransaction 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 100000.999 0.0001
             // sendtransaction 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 LA 100000.999 0.0001
@@ -131,7 +132,7 @@ namespace Phorkus.Console
             blockSynchronizer.Start();
             withdrawalManager.Start(thresholdKey, keyPair);
             commandManager.Start(thresholdKey, keyPair);
-//            rpcManager.Start();
+            //rpcManager.Start();
             
             // var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
             

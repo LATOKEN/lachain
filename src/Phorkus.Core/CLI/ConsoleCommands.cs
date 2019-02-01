@@ -265,7 +265,7 @@ namespace Phorkus.Core.CLI
             var value = Money.Parse(arguments[3]);
             var fee = Money.Parse(arguments[4]);
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
-            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, null);
+            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();

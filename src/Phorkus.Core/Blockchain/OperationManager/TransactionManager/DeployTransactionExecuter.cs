@@ -11,15 +11,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
     public class DeployTransactionExecuter : ITransactionExecuter
     {
-        private readonly IPoolRepository _poolRepository;
         private readonly IVirtualMachine _virtualMachine;
         
-        public DeployTransactionExecuter(
-            IVirtualMachine virtualMachine,
-            IPoolRepository poolRepository)
+        public DeployTransactionExecuter(IVirtualMachine virtualMachine)
         {
             _virtualMachine = virtualMachine;
-            _poolRepository = poolRepository;
         }
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)

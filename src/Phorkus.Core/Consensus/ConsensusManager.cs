@@ -181,6 +181,29 @@ namespace Phorkus.Core.Consensus
                     continue;
                 }
 
+                var proposalUpdateFailed = false;
+                foreach (var txHash in _context.CurrentProposal.TransactionHashes)
+                {
+                    if (_context.CurrentProposal.Transactions.ContainsKey(txHash))
+                        continue;
+                    var tx = _transactionPool.GetByHash(txHash);
+                    if (tx is null)
+                    {
+                        proposalUpdateFailed = true;
+                        break;
+                    }
+                    _context.CurrentProposal.Transactions.Add(txHash, tx);
+                }
+
+                if (proposalUpdateFailed)
+                {
+                    _logger.LogWarning(
+                        "Something went wrong and we can't find all requested transactions in pool, but have already received them");
+                    RequestChangeView();
+                    continue;
+                }
+
+
                 // When all transaction are collected and validated, we are able to sign block
                 _logger.LogDebug("Send prepare response");
 

@@ -28,7 +28,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To, contract.Asset,
                     new Money(contract.Value));
             /* if we have invocation block than invoke contract method */
-            if (contract.Input != null)
+            if (contract.Input != null && !contract.Input.IsEmpty)
                 return _InvokeContract(transaction, snapshot);
             return OperatingError.Ok;
         }

@@ -17,14 +17,13 @@ namespace Phorkus.Core.Network
     public class BlockSynchronizer : IBlockSynchronizer
     {
         private readonly ITransactionManager _transactionManager;
-        private readonly ITransactionPool _transactionPool;
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly ILogger<IBlockSynchronizer> _logger;
         private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
-        private readonly IPoolRepository _poolRepository;
+        private readonly ITransactionPool _transactionPool;
         
         private readonly IDictionary<IRemotePeer, ulong> _peerHeights
             = new ConcurrentDictionary<IRemotePeer, ulong>();
@@ -40,7 +39,6 @@ namespace Phorkus.Core.Network
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
-            IPoolRepository poolRepository,
             ITransactionPool transactionPool)
         {
             _transactionManager = transactionManager;
@@ -50,7 +48,6 @@ namespace Phorkus.Core.Network
             _networkContext = networkContext;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
-            _poolRepository = poolRepository;
             _transactionPool = transactionPool;
         }
 
@@ -83,10 +80,14 @@ namespace Phorkus.Core.Network
                 var error = _transactionManager.Verify(tx);
                 if (error != OperatingError.Ok)
                 {
-                    _logger.LogWarning($"Unable to persist transaction ({error})");
+                    _logger.LogWarning($"Unable to verify transaction ({error})");
                     continue;
                 }
-                _poolRepository.AddTransaction(tx);
+                if (!_transactionPool.Add(tx))
+                {
+                    _logger.LogWarning($"Failed to add transaction to pool");
+                    continue;
+                }
                 persisted++;
             }
             lock (_peerHasTransactions)
@@ -117,7 +118,7 @@ namespace Phorkus.Core.Network
             var txs = new List<AcceptedTransaction>();
             foreach (var txHash in block.TransactionHashes)
             {
-                var tx = _poolRepository.GetTransactionByHash(txHash);
+                var tx = _transactionPool.GetByHash(txHash);
                 if (tx is null)
                     continue;
                 txs.Add(tx);

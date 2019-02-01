@@ -10,7 +10,6 @@ using Phorkus.CrossChain;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
@@ -21,7 +20,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private readonly ICrossChainManager _crossChainManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionPool _transactionPool;
-        private readonly IPoolRepository _poolRepository;
         private readonly ITransactionSigner _transactionSigner;
         private readonly IValidatorManager _validatorManager;
         private readonly IStateManager _stateManager;
@@ -35,7 +33,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
-            IPoolRepository poolRepository,
             IValidatorManager validatorManager,
             IStateManager stateManager,
             IThresholdManager thresholdManager,
@@ -44,7 +41,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _crossChainManager = crossChainManager;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
-            _poolRepository = poolRepository;
             _transactionSigner = transactionSigner;
             _thresholdManager = thresholdManager;
             _stateManager = stateManager;
@@ -70,7 +66,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             }
 
             /* try to fetch transaction from database storage */
-            var transaction = _poolRepository.GetTransactionByHash(withdrawal.TransactionHash)?.Transaction;
+            var transaction = _transactionPool.GetByHash(withdrawal.TransactionHash)?.Transaction;
             if (transaction is null)
                 throw new InvalidTransactionException(OperatingError.InvalidTransaction);
             /* check transaction confirmation in blockchain */
@@ -127,8 +123,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     $"You can't execute withdrawals with not registered state, found ({withdrawal.State})");
                 return;
             }
-
-            var transaction = _poolRepository.GetTransactionByHash(withdrawal.TransactionHash)
+            
+            var transaction = _transactionPool.GetByHash(withdrawal.TransactionHash)
                 .Transaction;
             var withdrawTx = transaction.Withdraw;
 
