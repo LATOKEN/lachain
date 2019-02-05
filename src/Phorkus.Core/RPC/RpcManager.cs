@@ -38,9 +38,24 @@ namespace Phorkus.Core.RPC
         }
 
         private HttpService _httpService;
+        private Server _grpcService;
         
         public void Start()
-        {            
+        {
+            _grpcService = new Server
+            {
+                Services =
+                {
+                    Proto.Grpc.BlockchainService.BindService(new GRPC.BlockchainService(_transactionManager, _blockManager, _blockchainContext)),
+                    Proto.Grpc.AccountService.BindService(new GRPC.AccountService(_transactionBuilder, _stateManager, _transactionPool))
+                },
+                Ports =
+                {
+                    new ServerPort("0.0.0.0", 6060, ServerCredentials.Insecure)
+                }
+            };
+            _grpcService.Start();
+            
             // ReSharper disable once UnusedVariable
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
