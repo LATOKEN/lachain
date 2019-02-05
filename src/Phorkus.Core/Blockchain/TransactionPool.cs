@@ -65,7 +65,7 @@ namespace Phorkus.Core.Blockchain
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool Add(Transaction transaction, Signature signature)
+        public OperatingError Add(Transaction transaction, Signature signature)
         {
             var acceptedTx = new AcceptedTransaction
             {
@@ -78,17 +78,17 @@ namespace Phorkus.Core.Blockchain
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool Add(AcceptedTransaction transaction)
+        public OperatingError Add(AcceptedTransaction transaction)
         {
             if (transaction is null)
                 throw new ArgumentNullException(nameof(transaction));
             /* don't add to transaction pool transactions with the same hashes */
             if (_transactions.ContainsKey(transaction.Hash))
-                return false;
+                return OperatingError.AlreadyExists;
             /* verify transaction before adding */
             var result = _transactionManager.Verify(transaction);
             if (result != OperatingError.Ok)
-                return false;
+                return result;
             _transactionVerifier.VerifyTransaction(transaction);
             /* put transaction to pool queue */
             _transactions[transaction.Hash] = transaction;
@@ -97,12 +97,12 @@ namespace Phorkus.Core.Blockchain
             if (!_poolRepository.ContainsTransactionByHash(transaction.Hash))
                 _poolRepository.AddTransaction(transaction);
             if (!_networkManager.IsReady)
-                return true;
+                return OperatingError.Ok;
             var message = _networkManager.MessageFactory.GetTransactionsByHashesReply(
                 new [] { transaction }
             );
             _networkBroadcaster.Broadcast(message);
-            return true;
+            return OperatingError.Ok;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

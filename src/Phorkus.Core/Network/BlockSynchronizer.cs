@@ -9,7 +9,6 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Network
@@ -83,7 +82,7 @@ namespace Phorkus.Core.Network
                     _logger.LogWarning($"Unable to verify transaction ({error})");
                     continue;
                 }
-                if (_transactionPool.Add(tx))
+                if (_transactionPool.Add(tx) == OperatingError.Ok)
                     persisted++;
             }
             lock (_peerHasTransactions)

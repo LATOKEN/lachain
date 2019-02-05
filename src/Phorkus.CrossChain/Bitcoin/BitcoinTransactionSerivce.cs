@@ -28,7 +28,7 @@ namespace Phorkus.CrossChain.Bitcoin
             _rpcClient = new RPCClient(credentials, "127.0.0.1", Network.Main);
         }
 
-        public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
+        public AddressFormat AddressFormat { get; } = AddressFormat.Ripemd160;
 
         public ulong BlockGenerationTime { get; } = 10 * 60 * 1000;
 

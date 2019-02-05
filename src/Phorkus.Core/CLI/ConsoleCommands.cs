@@ -8,7 +8,6 @@ using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -179,19 +178,18 @@ namespace Phorkus.Core.CLI
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
             if (contract is null)
                 return $"Unable to find contract by hash {contractHash.Buffer.ToHex()}";
-//            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
+            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
             _stateManager.NewSnapshot();
             var result = _virtualMachine.InvokeContract(contract, from, new byte[]{});
             _stateManager.Rollback();
             return result == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
-            // 0x6679379687ab3d77d127b863d45ab26ee5a9e291
         }
 
         public string InvokeContract(string[] arguments)
         {
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(arguments[1].HexToUInt160());
             
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public string Help(string[] arguments)
@@ -233,9 +231,10 @@ namespace Phorkus.Core.CLI
             var to = arguments[1].HexToUInt160();
             var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
             var value = Money.Parse(arguments[3]);
-            var fee = Money.Parse(arguments[4]);
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
-            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value, null);
+            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value);
+            if (arguments.Length >= 4)
+                tx.Fee = Money.Parse(arguments[4]).ToUInt256();
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
         }
@@ -277,7 +276,7 @@ namespace Phorkus.Core.CLI
         /// </summary>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public string VerifyTx(string[] arguments)
+        public string VerifyTransaction(string[] arguments)
         {
             var tx = Transaction.Parser.ParseFrom(
                 arguments[1].HexToBytes());
@@ -289,10 +288,10 @@ namespace Phorkus.Core.CLI
                 Hash = tx.ToHash256(),
                 Signature = sig
             };
-            Console.WriteLine("Transaction valid: " + _transactionManager.Verify(accepted));
+            Console.WriteLine("Transaction validity: " + _transactionManager.Verify(accepted));
             Console.WriteLine(_transactionManager.VerifySignature(accepted, false) == OperatingError.Ok
-                ? "Signature valid: OK"
-                : "Signature valid: FAILED");
+                ? "Signature validity: OK"
+                : "Signature validity: INVALID");
             return "\n";
         }
     }

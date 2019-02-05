@@ -12,9 +12,9 @@ namespace Phorkus.Core.Blockchain
 
         void Restore();
 
-        bool Add(Transaction transaction, Signature signature);
+        OperatingError Add(Transaction transaction, Signature signature);
         
-        bool Add(AcceptedTransaction transaction);
+        OperatingError Add(AcceptedTransaction transaction);
         
         IReadOnlyCollection<AcceptedTransaction> Peek(int limit = -1);
 

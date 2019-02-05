@@ -93,7 +93,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return false;
             /* sign transaction with validator's private key */
             var acceptedTransaction = _transactionSigner.Sign(confirmTransaction, keyPair);
-            if (!_transactionPool.Add(acceptedTransaction))
+            if (_transactionPool.Add(acceptedTransaction) != OperatingError.Ok)
             {
                 _logger.LogWarning(
                     $"Couldn't send confirm transaction transaction ({withdrawTx.TransactionHash.ToByteArray()}) to transaction pool");

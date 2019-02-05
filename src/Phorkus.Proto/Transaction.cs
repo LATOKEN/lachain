@@ -73,9 +73,9 @@ namespace Phorkus.Proto {
             "b25TdGF0dXMSHgoaVFJBTlNBQ1RJT05fU1RBVFVTX1VOS05PV04QABIbChdU",
             "UkFOU0FDVElPTl9TVEFUVVNfUE9PTBABEh8KG1RSQU5TQUNUSU9OX1NUQVRV",
             "U19FWEVDVVRFRBACEh0KGVRSQU5TQUNUSU9OX1NUQVRVU19GQUlMRUQQAyor",
-            "Cg5CbG9ja2NoYWluVHlwZRILCgdCSVRDT0lOEAASDAoIRVRIRVJFVU0QASoq",
-            "Cg1BZGRyZXNzRm9ybWF0EgwKCFJJUE1EMTYwEAASCwoHRUQyNTUxORABQiMK",
-            "EWNvbS5sYXRva2VuLnByb3RvqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
+            "Cg5CbG9ja2NoYWluVHlwZRILCgdCSVRDT0lOEAASDAoIRVRIRVJFVU0QASor",
+            "Cg1BZGRyZXNzRm9ybWF0Eg0KCVJJUEVNRDE2MBAAEgsKB0VEMjU1MTkQAUIj",
+            "ChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.AssetReflection.Descriptor, global::Phorkus.Proto.ContractReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionType), typeof(global::Phorkus.Proto.TransactionStatus), typeof(global::Phorkus.Proto.BlockchainType), typeof(global::Phorkus.Proto.AddressFormat), }, new pbr::GeneratedClrTypeInfo[] {
@@ -118,7 +118,7 @@ namespace Phorkus.Proto {
   }
 
   public enum AddressFormat {
-    [pbr::OriginalName("RIPMD160")] Ripmd160 = 0,
+    [pbr::OriginalName("RIPEMD160")] Ripemd160 = 0,
     [pbr::OriginalName("ED25519")] Ed25519 = 1,
   }
 

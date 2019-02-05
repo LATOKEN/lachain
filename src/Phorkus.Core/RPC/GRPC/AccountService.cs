@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
 using Phorkus.Proto.Grpc;
 using Phorkus.Storage.State;
@@ -29,37 +30,12 @@ namespace Phorkus.Core.RPC.GRPC
         public override Task<SendAcceptedTransactionReply> SendAcceptedTransaction(SendAcceptedTransactionRequest request,
             ServerCallContext context)
         {
-            if (!_transactionPool.Add(request.Transaction, request.Signature))
+            if (_transactionPool.Add(request.Transaction, request.Signature) != OperatingError.Ok)
                 throw new Exception("Unable to add transaction to pool");
             var txHash = request.Transaction.ToHash256();
             var reply = new SendAcceptedTransactionReply
             {
                 Hash = txHash
-            };
-            return Task.FromResult(reply);
-        }
-        
-        public override Task<CreateContractTransactionReply> CreateContractTransaction(
-            CreateContractTransactionRequest request, ServerCallContext context)
-        {
-            var tx = _transactionBuilder.TransferTransaction(request.From, request.To, request.Asset,
-                request.Value.ToMoney());
-            var reply = new CreateContractTransactionReply
-            {
-                Transaction = tx,
-                Hash = tx.ToHash256()
-            };
-            return Task.FromResult(reply);
-        }
-
-        public override Task<CreateDeployTransactionReply> CreateDeployTransaction(
-            CreateDeployTransactionRequest request, ServerCallContext context)
-        {
-            var tx = _transactionBuilder.DeployTransaction(request.From, request.Abi, request.Wasm, request.Version);
-            var reply = new CreateDeployTransactionReply
-            {
-                Transaction = tx,
-                Hash = tx.ToHash256()
             };
             return Task.FromResult(reply);
         }

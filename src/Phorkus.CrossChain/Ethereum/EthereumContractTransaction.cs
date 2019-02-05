@@ -11,7 +11,7 @@ namespace Phorkus.CrossChain.Ethereum
 
         public UInt160 Recipient { get; set; }
 
-        public AddressFormat AddressFormat { get; } = AddressFormat.Ripmd160;
+        public AddressFormat AddressFormat { get; } = AddressFormat.Ripemd160;
 
         public byte[] TransactionHash { get; }
         
