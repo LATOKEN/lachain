@@ -86,41 +86,41 @@ namespace Phorkus.Benchmark
                 goto exit_mark;
             }
             
-            /* ERC-20: balanceOf (0x70a08231) */
-            input = new byte[24];
-            input[3] = 0x70;
-            input[2] = 0xa0;
-            input[1] = 0x82;
-            input[0] = 0x31;
-            for (var i = 0; i < 20; i++)
-                input[i + 4] = sender.Buffer[i];
-            status = virtualMachine.InvokeContract(contract, sender, input); 
-            if (status != ExecutionStatus.Ok)
-            {
-                stateManager.Rollback();
-                Console.WriteLine("Contract execution failed: " + status);
-                goto exit_mark;
-            }
-            
-            /* ERC-20: transfer (0xa9059cbb) */
-            input = new byte[4 + 20 + 4];
-            input[3] = 0xa9;
-            input[2] = 0x05;
-            input[1] = 0x9c;
-            input[0] = 0xbb;
-            for (var i = 0; i < 20; i++)
-                input[i + 4] = to.Buffer[i];
-            input[24] = 0x00;
-            input[25] = 0x00;
-            input[26] = 0x00;
-            input[27] = 0x01;
-            status = virtualMachine.InvokeContract(contract, sender, input); 
-            if (status != ExecutionStatus.Ok)
-            {
-                stateManager.Rollback();
-                Console.WriteLine("Contract execution failed: " + status);
-                goto exit_mark;
-            }
+//            /* ERC-20: balanceOf (0x70a08231) */
+//            input = new byte[24];
+//            input[3] = 0x70;
+//            input[2] = 0xa0;
+//            input[1] = 0x82;
+//            input[0] = 0x31;
+//            for (var i = 0; i < 20; i++)
+//                input[i + 4] = sender.Buffer[i];
+//            status = virtualMachine.InvokeContract(contract, sender, input); 
+//            if (status != ExecutionStatus.Ok)
+//            {
+//                stateManager.Rollback();
+//                Console.WriteLine("Contract execution failed: " + status);
+//                goto exit_mark;
+//            }
+//            
+//            /* ERC-20: transfer (0xa9059cbb) */
+//            input = new byte[4 + 20 + 4];
+//            input[3] = 0xa9;
+//            input[2] = 0x05;
+//            input[1] = 0x9c;
+//            input[0] = 0xbb;
+//            for (var i = 0; i < 20; i++)
+//                input[i + 4] = to.Buffer[i];
+//            input[24] = 0x00;
+//            input[25] = 0x00;
+//            input[26] = 0x00;
+//            input[27] = 0x01;
+//            status = virtualMachine.InvokeContract(contract, sender, input); 
+//            if (status != ExecutionStatus.Ok)
+//            {
+//                stateManager.Rollback();
+//                Console.WriteLine("Contract execution failed: " + status);
+//                goto exit_mark;
+//            }
             
 //            /* ERC-20: balanceOf (0x70a08231) */
 //            input = new byte[24];

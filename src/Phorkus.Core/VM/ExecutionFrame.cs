@@ -71,6 +71,8 @@ namespace Phorkus.Core.VM
             if (method is null)
                 return ExecutionStatus.MissingEntrypoint;
             method.Invoke(InvocationContext.Exports, new object[] { });
+            var body = method.GetMethodBody();
+            var byteCode = body.GetILAsByteArray();
             Console.WriteLine($"Contract {CurrentAddress} exited with return value: {ReturnValue.ToHex()}");
             return ExecutionStatus.Ok;
         }

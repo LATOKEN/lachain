@@ -4,8 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
+using ICSharpCode.Decompiler.CSharp;
+using ICSharpCode.Decompiler.Disassembler;
 
 namespace Phorkus.WebAssembly
 {
@@ -284,6 +287,8 @@ namespace Phorkus.WebAssembly
                                         var len = ReadULEB128(customReader);
                                         var name = customReader.ReadBytes((int)len);
                                         Console.WriteLine(" " + index + " : " + Encoding.ASCII.GetString(name));
+                                        if (!string.IsNullOrEmpty(functionSignatures[index].DebugName))
+                                            continue;
                                         functionSignatures[index].DebugName = Encoding.ASCII.GetString(name);
                                     }
                                     Console.WriteLine("----------------------------");
@@ -783,7 +788,7 @@ namespace Phorkus.WebAssembly
                                 {
                                     il.DeclareLocal(local.ToSystemType());
                                 }
-
+                                
                                 foreach (var instruction in Instruction.Parse(reader))
                                 {
                                     var debug = " ";
@@ -802,7 +807,7 @@ namespace Phorkus.WebAssembly
                                         if (callStackLevel > 0)
                                             --callStackLevel;
                                     }
-                                    il.EmitWriteLine(debug);
+//                                    il.EmitWriteLine(debug);
                                     instruction.Compile(context);
                                     context.Previous = instruction.OpCode;
                                 }
@@ -959,6 +964,57 @@ namespace Phorkus.WebAssembly
             }
 
             module.CreateGlobalFunctions();
+            
+            int idx = 0;
+            foreach (var fn in internalFunctions)
+            {
+                try
+                {
+                    byte[] byteCode;
+                    if (fn is MethodBuilder methodBuilder)
+                    {
+                        var dynMethod = typeof(MethodBuilder).GetMethod("GetBody", 
+                            BindingFlags.NonPublic | BindingFlags.Instance);
+                        object result = dynMethod.Invoke(methodBuilder, new object[0]);
+                        byteCode = (byte[])result;
+                    }
+                    else
+                    {
+                        var body = fn.GetMethodBody();
+                        byteCode = body.GetILAsByteArray();
+                    }
+                    var sb = new StringBuilder();
+                    foreach (var b in byteCode)
+                        sb.AppendFormat("{0:x2}", b);
+                    Console.WriteLine($" {idx} : ({functionSignatures[idx].DebugName}): 0x{sb}");
+
+                    unsafe
+                    {
+                        fixed (byte* bf = byteCode)
+                        {
+                            var blobReader = new BlobReader(bf, byteCode.Length);
+                            Console.WriteLine("~~~~~~~");
+                            var hex = "";
+                            while (blobReader.RemainingBytes > 0)
+                            {
+                                var r = ILParser.DecodeOpCode(ref blobReader);
+                                var sb2 = new StringBuilder();
+                                sb2.AppendFormat("{0:x2}", (int) r);
+                                hex += sb2.ToString();
+                                Console.Write(r + " ");
+                            }
+                            Console.WriteLine("\n~~~~~~~");
+                            if (!sb.ToString().Equals(hex))
+                                throw new Exception("Invalid LI code restored");
+                        }
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                ++idx;
+            }
+            
             return instance.DeclaredConstructors.First();
         }
     }
