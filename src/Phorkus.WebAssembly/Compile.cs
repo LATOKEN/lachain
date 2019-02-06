@@ -248,6 +248,7 @@ namespace Phorkus.WebAssembly
             GlobalInfo[] globalSetters = null;
             CompilationContext context = null;
             MethodInfo startFunction = null;
+            var debugNames = new string[100];
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
@@ -286,10 +287,11 @@ namespace Phorkus.WebAssembly
                                         var index = ReadULEB128(customReader);
                                         var len = ReadULEB128(customReader);
                                         var name = customReader.ReadBytes((int)len);
-                                        Console.WriteLine(" " + index + " : " + Encoding.ASCII.GetString(name));
-                                        if (!string.IsNullOrEmpty(functionSignatures[index].DebugName))
+                                        var parsedName = Encoding.ASCII.GetString(name);
+                                        Console.WriteLine(" " + index + " : " + parsedName);
+                                        if (debugNames[index] != null)
                                             continue;
-                                        functionSignatures[index].DebugName = Encoding.ASCII.GetString(name);
+                                        debugNames[index] = parsedName;
                                     }
                                     Console.WriteLine("----------------------------");
                                 } break;
@@ -986,7 +988,7 @@ namespace Phorkus.WebAssembly
                     var sb = new StringBuilder();
                     foreach (var b in byteCode)
                         sb.AppendFormat("{0:x2}", b);
-                    Console.WriteLine($" {idx} : ({functionSignatures[idx].DebugName}): 0x{sb}");
+                    Console.WriteLine($" {idx} : ({debugNames[idx]}): 0x{sb}");
 
                     unsafe
                     {

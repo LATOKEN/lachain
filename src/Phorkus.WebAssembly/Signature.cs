@@ -14,7 +14,6 @@ namespace Phorkus.WebAssembly
         private static readonly RegeneratingWeakReference<Signature> empty = new RegeneratingWeakReference<Signature>(() => new Signature());
 
         public static Signature Empty => empty;
-        public string DebugName;
         
         private Signature()
         {
@@ -87,7 +86,7 @@ namespace Phorkus.WebAssembly
             Debug.Assert(parameters != null);
             Debug.Assert(returns != null);
 
-            var builder = new StringBuilder(DebugName);
+            var builder = new StringBuilder();
 
             if (parameters.Length == 0)
             {
