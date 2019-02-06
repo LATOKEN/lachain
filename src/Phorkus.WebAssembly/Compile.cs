@@ -248,7 +248,6 @@ namespace Phorkus.WebAssembly
             GlobalInfo[] globalSetters = null;
             CompilationContext context = null;
             MethodInfo startFunction = null;
-            var debugNames = new string[100];
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
@@ -393,9 +392,9 @@ namespace Phorkus.WebAssembly
                             for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                             {
                                 var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
-                                var parms = signature.ParameterTypes.Concat(new[] { exports }).ToArray();
+                                System.Type[] parms = signature.ParameterTypes.Concat(new[] {exports}).ToArray();
                                 internalFunctions[i] = exportsBuilder.DefineMethod(
-                                    $"👻 {i}",
+                                    $"👻{debugNames[i]} [{i}]",
                                     internalFunctionAttributes,
                                     CallingConventions.Standard,
                                     signature.ReturnTypes.FirstOrDefault(),
@@ -809,7 +808,7 @@ namespace Phorkus.WebAssembly
                                         if (callStackLevel > 0)
                                             --callStackLevel;
                                     }
-//                                    il.EmitWriteLine(debug);
+                                    il.EmitWriteLine(debug);
                                     instruction.Compile(context);
                                     context.Previous = instruction.OpCode;
                                 }
@@ -1019,5 +1018,7 @@ namespace Phorkus.WebAssembly
             
             return instance.DeclaredConstructors.First();
         }
+        
+        private static string[] debugNames = new string[100];
     }
 }

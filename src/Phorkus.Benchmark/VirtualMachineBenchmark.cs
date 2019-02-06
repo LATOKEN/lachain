@@ -67,8 +67,8 @@ namespace Phorkus.Benchmark
             var sender = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
             var to = "0xfd893ce89186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
             
-            /* give to sender 1 token */
-            stateManager.CurrentSnapshot.Storage.SetValue(contract.Hash, sender.ToUInt256(), Money.FromDecimal(1).ToUInt256());
+//            /* give to sender 1 token */
+//            stateManager.CurrentSnapshot.Storage.SetValue(contract.Hash, sender.ToUInt256(), Money.FromDecimal(1).ToUInt256());
             
             /* ERC-20: totalSupply (0x18160ddd) */
             var input = new byte[24];

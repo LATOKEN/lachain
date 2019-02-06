@@ -11,7 +11,7 @@ namespace Phorkus.Core.VM
     public class ExecutionFrame : IDisposable
     {
         private ExecutionFrame(
-            Instance<dynamic> invocationContext, UInt160 sender,
+            Instance<JitEntryPoint> invocationContext, UInt160 sender,
             UInt160 currentAddress, byte[] input)
         {
             InvocationContext = invocationContext;
@@ -24,11 +24,16 @@ namespace Phorkus.Core.VM
             ReturnValue = new byte[] { };
         }
 
+        public abstract class JitEntryPoint
+        {
+            public abstract void start();
+        } 
+        
         public static ExecutionStatus FromInvocation(
             byte[] code, UInt160 sender, UInt160 contract, byte[] input, IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
             frame = new ExecutionFrame(
-                _CompileWasm<dynamic>(code, blockchainInterface.GetFunctionImports()),
+                _CompileWasm<JitEntryPoint>(code, blockchainInterface.GetFunctionImports()),
                 sender, contract, input
             );
             return ExecutionStatus.Ok;
@@ -39,13 +44,13 @@ namespace Phorkus.Core.VM
             IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
             frame = new ExecutionFrame(
-                _CompileWasm<dynamic>(code, blockchainInterface.GetFunctionImports()),
+                _CompileWasm<JitEntryPoint>(code, blockchainInterface.GetFunctionImports()),
                 caller, currentAddress, input
             );
             return ExecutionStatus.Ok;
         }
 
-        public Instance<dynamic> InvocationContext { get; }
+        public Instance<JitEntryPoint> InvocationContext { get; }
         private System.Type Exports { get; }
 
         public UnmanagedMemory Memory
@@ -70,9 +75,7 @@ namespace Phorkus.Core.VM
             var method = Exports.GetMethod("start");
             if (method is null)
                 return ExecutionStatus.MissingEntrypoint;
-            method.Invoke(InvocationContext.Exports, new object[] { });
-            var body = method.GetMethodBody();
-            var byteCode = body.GetILAsByteArray();
+            InvocationContext.Exports.start();
             Console.WriteLine($"Contract {CurrentAddress} exited with return value: {ReturnValue.ToHex()}");
             return ExecutionStatus.Ok;
         }
