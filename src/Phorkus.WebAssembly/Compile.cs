@@ -801,7 +801,7 @@ namespace Phorkus.WebAssembly
                                         var index = ((Instructions.Call) instruction).Index;
                                         if (index > importedFunctions)
                                             callStackLevel++;
-                                        debug += " (" + index + ")";
+                                        debug += " (" + (debugNames[index] != null ? debugNames[index] : index.ToString()) + ")";
                                     }
                                     else if (instruction.OpCode == OpCode.End)
                                     {
