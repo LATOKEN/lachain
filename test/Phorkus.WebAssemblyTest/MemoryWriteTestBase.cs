@@ -51,7 +51,7 @@ namespace Phorkus.WebAssemblyTest
             });
             module.Exports.Add(new Export
             {
-                Name = nameof(Test),
+                Name = nameof(MemoryWriteTestBase<T>.Test),
             });
             module.Exports.Add(new Export
             {
@@ -64,6 +64,7 @@ namespace Phorkus.WebAssemblyTest
             });
 
             return module.ToInstance<MemoryWriteTestBase<T>>();
+            ;
         }
     }
 }

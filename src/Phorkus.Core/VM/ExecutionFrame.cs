@@ -16,7 +16,8 @@ namespace Phorkus.Core.VM
         {
             InvocationContext = invocationContext;
             Exports = InvocationContext.Exports.GetType() as System.Type;
-            if (Exports is null) throw new RuntimeException("ill-formed contract binary");
+            if (Exports is null)
+                throw new RuntimeException("ill-formed contract binary");
             Sender = sender;
             CurrentAddress = currentAddress;
             Input = input;
@@ -52,16 +53,18 @@ namespace Phorkus.Core.VM
             get
             {
                 var memoryGetter = Exports.GetMethod("get_memory");
-                if (memoryGetter is null) return null;
+                if (memoryGetter is null)
+                    return null;
                 return memoryGetter.Invoke(InvocationContext.Exports, new object[] { }) as UnmanagedMemory;
             }
         }
 
         public UInt160 Sender { get; }
         public UInt160 CurrentAddress { get; }
+        
         public byte[] Input { get; }
         public byte[] ReturnValue { get; set; }
-
+        
         public ExecutionStatus Execute()
         {
             var method = Exports.GetMethod("start");
@@ -71,7 +74,7 @@ namespace Phorkus.Core.VM
             Console.WriteLine($"Contract {CurrentAddress} exited with return value: {ReturnValue.ToHex()}");
             return ExecutionStatus.Ok;
         }
-
+        
         public void Dispose()
         {
             InvocationContext?.Dispose();

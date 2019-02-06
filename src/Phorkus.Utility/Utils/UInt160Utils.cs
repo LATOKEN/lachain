@@ -25,6 +25,13 @@ namespace Phorkus.Utility.Utils
             };
         }
 
+        public static UInt256 ToUInt256(this UInt160 value)
+        {
+            var buffer = new byte[32];
+            Array.Copy(value.Buffer.ToByteArray(), 0, buffer, 0, 20);
+            return buffer.ToUInt256();
+        }
+        
         public static BigInteger ToBigInteger(this UInt160 value)
         {
             return new BigInteger(value.Buffer.ToByteArray().Reverse().Concat(new byte[] {0}).ToArray());

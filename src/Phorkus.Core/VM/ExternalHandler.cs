@@ -11,7 +11,7 @@ using Phorkus.WebAssembly.Runtime;
 
 namespace Phorkus.Core.VM
 {
-    public class EnvExternalHandler : IExternalHandler
+    public class ExternalHandler : IExternalHandler
     {
         private const string EnvModule = "env";
 
@@ -36,8 +36,10 @@ namespace Phorkus.Core.VM
 
         private static byte[] SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)
         {
-            if (length < 0 || offset < 0) return null;
-            if (offset + length > memory.Size) return null;
+            if (length < 0 || offset < 0)
+                return null;
+            if (offset + length > memory.Size)
+                return null;
             var buffer = new byte[length];
             try
             {
@@ -53,7 +55,8 @@ namespace Phorkus.Core.VM
 
         private static bool SafeCopyToMemory(UnmanagedMemory memory, byte[] data, int offset)
         {
-            if (offset < 0 || offset + data.Length > memory.Size) return false;
+            if (offset < 0 || offset + data.Length > memory.Size)
+                return false;
             try
             {
                 Marshal.Copy(data, 0, IntPtr.Add(memory.Start, offset), data.Length);
@@ -138,65 +141,93 @@ namespace Phorkus.Core.VM
             }
             return 0;
         }
-
-        public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
+        
+        public static void Handler_Env_LoadStorage(int keyOffset, int keyLength, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            if (keyLength > 32)
+                throw new Exception("Key length can't be greater than 32 bytes");
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
             if (key is null)
-            {
-                throw new RuntimeException("Bad call to storageload");
-            }
+                throw new RuntimeException("Bad call to LOADSTORAGE");
+            if (key.Length < 32)
+                key = _AlignTo32(key);
             var value = VirtualMachine.BlockchainSnapshot.Storage.GetValue(frame.CurrentAddress, key.ToUInt256());
             if (!SafeCopyToMemory(frame.Memory, value.Buffer.ToByteArray(), valueOffset))
-            {
                 throw new RuntimeException("Cannot copy storageload result to memory");
-            }
         }
         
-        public static void Handler_Env_SaveStorage(int keyOffset, int valueOffset)
+        public static void Handler_Env_SaveStorage(int keyOffset, int keyLength, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            if (keyLength > 32)
+                throw new Exception("Key length can't be greater than 32 bytes");
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
+            if (key is null)
+                throw new RuntimeException("Bad call to SAVESTORAGE");
+            if (key.Length < 32)
+                key = _AlignTo32(key);
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32);
-            if (key is null || value is null)
-            {
-                throw new RuntimeException("Bad call to storageload");
-            }
+            if (value is null)
+                throw new RuntimeException("Bad call to SAVESTORAGE");
             VirtualMachine.BlockchainSnapshot.Storage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
         }
 
+        private static byte[] _AlignTo32(byte[] buffer)
+        {
+            if (buffer.Length == 32)
+                return buffer;
+            var result = new byte[32];
+            Array.Copy(buffer, 0, result, 0, 20);
+            return result;
+        }
+        
         public static void Handler_Env_SetReturn(int offset, int length)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
             var ret = SafeCopyFromMemory(frame.Memory, offset, length);
             if (ret is null)
-            {
-                throw new RuntimeException("Bad call to setreturn");
-            }
-
+                throw new RuntimeException("Bad call to SETRETURN");
             frame.ReturnValue = ret;
         }
-
+        
+        public static void Handler_Env_GetSender(int dataOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = frame.Sender.Buffer.ToByteArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new RuntimeException("Bad call to GETSENDER");
+        }
+        
+        public static void Handler_Env_Halt(int haltCode)
+        {
+            throw new HaltException(haltCode);
+        }
+        
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
             return new[]
             {
-                new FunctionImport(EnvModule, "getcallvalue",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_GetCallValue))),
-                new FunctionImport(EnvModule, "getcallsize",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_GetCallSize))),
-                new FunctionImport(EnvModule, "copycallvalue",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_CopyCallValue))),
-                new FunctionImport(EnvModule, "invokecontract", typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_InvokeContract))),
-                new FunctionImport(EnvModule, "writelog",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
-                new FunctionImport(EnvModule, "loadstorage",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_LoadStorage))),
-                new FunctionImport(EnvModule, "savestorage",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_SaveStorage))),
-                new FunctionImport(EnvModule, "setreturn",
-                    typeof(EnvExternalHandler).GetMethod(nameof(Handler_Env_SetReturn))),
+                new FunctionImport(EnvModule, "get_call_value",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetCallValue))),
+                new FunctionImport(EnvModule, "get_call_size",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetCallSize))),
+                new FunctionImport(EnvModule, "copy_call_value",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CopyCallValue))),
+                new FunctionImport(EnvModule, "invoke_contract", typeof(ExternalHandler).GetMethod(nameof(Handler_Env_InvokeContract))),
+                new FunctionImport(EnvModule, "write_log",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
+                new FunctionImport(EnvModule, "load_storage",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_LoadStorage))),
+                new FunctionImport(EnvModule, "save_storage",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SaveStorage))),
+                new FunctionImport(EnvModule, "set_return",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SetReturn))),
+                new FunctionImport(EnvModule, "get_sender",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetSender))),
+                new FunctionImport(EnvModule, "halt",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Halt))),
             };
         }
     }

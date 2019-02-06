@@ -11,7 +11,7 @@ namespace Phorkus.Core.VM
         {
             if (_functionImports != null)
                 return _functionImports;
-            _functionImports = new EnvExternalHandler().GetFunctionImports();
+            _functionImports = new ExternalHandler().GetFunctionImports();
             return _functionImports;
         }
     }
