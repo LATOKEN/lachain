@@ -11,7 +11,7 @@ namespace Phorkus.WebAssembly
     {
         public readonly TypeBuilder ExportsBuilder;
         private ILGenerator generator;
-
+        
         public CompilationContext(
             TypeBuilder exportsBuilder,
             FieldBuilder memory,
@@ -34,12 +34,18 @@ namespace Phorkus.WebAssembly
             this.Types = types;
             this.GlobalGetters = globalGetters;
             this.GlobalSetters = globalSetters;
+            this.Module = module;
 
+            InitIndirect(functionElements);
+        }
+
+        public void InitIndirect(Compile.Indirect[] functionElements)
+        {
             if (functionElements == null)
                 return;
 
             //Capture the information about indirectly-callable functions.
-            var indirectBuilder = module.DefineType("☣ Indirect",
+            var indirectBuilder = Module.DefineType("☣ Indirect",
                 TypeAttributes.Public | //Change to something more appropriate once behavior is validated.
                 TypeAttributes.Sealed | TypeAttributes.SequentialLayout | TypeAttributes.BeforeFieldInit,
                 typeof(System.ValueType)
@@ -167,7 +173,7 @@ namespace Phorkus.WebAssembly
             indirectBuilder.CreateTypeInfo();
             this.generator = null;
         }
-
+        
         public void Reset(
             ILGenerator generator,
             Signature signature,
@@ -226,6 +232,8 @@ namespace Phorkus.WebAssembly
         public readonly Compile.GlobalInfo[] GlobalGetters;
 
         public readonly Compile.GlobalInfo[] GlobalSetters;
+        
+        public readonly ModuleBuilder Module;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |

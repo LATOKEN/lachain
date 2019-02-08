@@ -736,6 +736,7 @@ namespace Phorkus.WebAssembly
                                         );
                                 }
                             }
+                            context.InitIndirect(functionElements);
                         }
                         break;
 
@@ -792,7 +793,7 @@ namespace Phorkus.WebAssembly
                                 
                                 foreach (var instruction in Instruction.Parse(reader))
                                 {
-                                    var debug = " ";
+                                    /*var debug = " ";
                                     for (var i = 1; i <= callStackLevel; i++)
                                         debug += "-";
                                     debug += " " + instruction.OpCode;
@@ -808,7 +809,7 @@ namespace Phorkus.WebAssembly
                                         if (callStackLevel > 0)
                                             --callStackLevel;
                                     }
-                                    il.EmitWriteLine(debug);
+                                    il.EmitWriteLine(debug);*/
                                     instruction.Compile(context);
                                     context.Previous = instruction.OpCode;
                                 }
