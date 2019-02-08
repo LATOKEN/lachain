@@ -707,6 +707,7 @@ namespace Phorkus.WebAssembly
                             if (functionElements == null)
                                 throw new ModuleLoadException("Element section found without an associated table section.", preSectionOffset);
 
+                            uint fixOffset = 0;
                             var count = reader.ReadVarUInt32();
                             for (var i = 0; i < count; i++)
                             {
@@ -729,6 +730,7 @@ namespace Phorkus.WebAssembly
                                 /*if (elements != functionElements.Length)
                                     throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", preElementsOffset);*/
                                 var fixedFunctionElements = Math.Min(functionElements.Length, elements);
+                                fixOffset = (uint) Math.Abs(functionElements.Length - elements);
                                 
                                 for (var j = 0; j < fixedFunctionElements; j++)
                                 {
@@ -736,9 +738,8 @@ namespace Phorkus.WebAssembly
                                     functionElements[j] = new Indirect(
                                         functionSignatures[functionIndex].TypeIndex, (MethodBuilder)internalFunctions[functionIndex]);
                                 }
-                                
                             }
-                            context.InitIndirect(functionElements);
+                            context.InitIndirect(functionElements, fixOffset);
                         }
                         break;
 

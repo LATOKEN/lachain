@@ -39,7 +39,7 @@ namespace Phorkus.WebAssembly
             InitIndirect(functionElements);
         }
 
-        public void InitIndirect(Compile.Indirect[] functionElements)
+        public void InitIndirect(Compile.Indirect[] functionElements, uint fixOffset = 0)
         {
             if (functionElements == null)
                 return;
@@ -127,6 +127,8 @@ namespace Phorkus.WebAssembly
             var endTry = il.BeginExceptionBlock();
             il.Emit(OpCodes.Ldsfld, indirectLocationsFieldBuilder);
             il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldc_I4_S, fixOffset); // TODO: "kill me please, fuckn Clang++"
+            il.Emit(OpCodes.Sub); // TODO: "kill me please, fuckn Clang++"
             il.Emit(OpCodes.Ldelem, indirectBuilder);
             il.Emit(OpCodes.Stloc_0);
             il.Emit(OpCodes.Leave_S, endTry);
