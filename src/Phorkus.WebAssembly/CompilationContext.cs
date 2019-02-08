@@ -90,10 +90,12 @@ namespace Phorkus.WebAssembly
 
             this.generator = il = indirectBuilder.DefineTypeInitializer().GetILGenerator();
 
-            Instructions.Int32Constant.Emit(this, functionElements.Length);
+            /* TODO: "stupid bug in clang, read this (src/Phorkus.WebAssembly/Compile.cs:731)" */
+            var validIndirectFunctions = functionElements.Count(fe => fe.function != null);
+            Instructions.Int32Constant.Emit(this, validIndirectFunctions);
             il.Emit(OpCodes.Newarr, indirectBuilder);
-
-            for (var i = 0; i < functionElements.Length; i++)
+            
+            for (var i = 0; i < validIndirectFunctions; i++)
             {
                 var fe = functionElements[i];
                 il.Emit(OpCodes.Dup);

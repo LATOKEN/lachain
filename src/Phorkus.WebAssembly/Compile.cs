@@ -718,23 +718,25 @@ namespace Phorkus.WebAssembly
                                 {
                                     var preInitializerOffset = reader.Offset;
                                     var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
-                                    if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || c.Value != 0 || !(initializer[1] is Instructions.End))
+                                    /* TODO: "why do you need this check? (c.Value != 0)" */
+                                    if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || !(initializer[1] is Instructions.End))
                                         throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant of 0 followed by end.", preInitializerOffset);
                                 }
 
                                 var preElementsOffset = reader.Offset;
                                 var elements = reader.ReadVarUInt32();
-                                if (elements != functionElements.Length)
-                                    throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", preElementsOffset);
-
-                                for (var j = 0; j < functionElements.Length; j++)
+                                /* TODO: "clang generates invalid function table, it adds one dummy element without reference" */
+                                /*if (elements != functionElements.Length)
+                                    throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", preElementsOffset);*/
+                                var fixedFunctionElements = Math.Min(functionElements.Length, elements);
+                                
+                                for (var j = 0; j < fixedFunctionElements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
                                     functionElements[j] = new Indirect(
-                                        functionSignatures[functionIndex].TypeIndex,
-                                        (MethodBuilder)internalFunctions[importedFunctions + functionIndex]
-                                        );
+                                        functionSignatures[functionIndex].TypeIndex, (MethodBuilder)internalFunctions[functionIndex]);
                                 }
+                                
                             }
                             context.InitIndirect(functionElements);
                         }
