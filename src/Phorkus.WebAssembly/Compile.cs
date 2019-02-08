@@ -733,9 +733,8 @@ namespace Phorkus.WebAssembly
                                 for (var j = 0; j < fixedFunctionElements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
-                                    Console.WriteLine($"Function {functionIndex}:({debugNames[functionIndex]})");
                                     functionElements[j] = new Indirect(
-                                        (uint) j, (MethodBuilder)internalFunctions[functionIndex]);
+                                        functionSignatures[functionIndex].TypeIndex, (MethodBuilder)internalFunctions[functionIndex]);
                                 }
                                 
                             }
