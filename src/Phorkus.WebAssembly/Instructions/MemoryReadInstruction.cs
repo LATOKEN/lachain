@@ -51,8 +51,7 @@ namespace Phorkus.WebAssembly.Instructions
                 case Options.Align4: alignment = 4; break;
                 case Options.Align8: alignment = 8; break;
             }
-
-            if (alignment != 4)
+            if (alignment != Size)
                 context.Emit(OpCodes.Unaligned, alignment);
 
             context.Emit(this.EmittedOpCode);

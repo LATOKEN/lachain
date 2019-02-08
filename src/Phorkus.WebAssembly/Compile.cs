@@ -966,7 +966,7 @@ namespace Phorkus.WebAssembly
 
             module.CreateGlobalFunctions();
             
-            int idx = 0;
+            /*int idx = 0;
             foreach (var fn in internalFunctions)
             {
                 try
@@ -1014,7 +1014,7 @@ namespace Phorkus.WebAssembly
                 {
                 }
                 ++idx;
-            }
+            }*/
             
             return instance.DeclaredConstructors.First();
         }
