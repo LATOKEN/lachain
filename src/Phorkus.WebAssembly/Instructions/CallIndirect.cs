@@ -82,6 +82,8 @@ namespace Phorkus.WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
+            var debugName = WebAssembly.Compile.debugNames[Type];
+            
             var signature = context.Types[this.Type];
             var paramTypes = signature.RawParameterTypes;
             var returnTypes = signature.RawReturnTypes;
@@ -105,6 +107,8 @@ namespace Phorkus.WebAssembly.Instructions
                 stack.Push(returnTypes[i]);
 
             Int32Constant.Emit(context, checked((int)this.Type));
+            
+            context.Generator.EmitWriteLine($"Indirect Call To ({Type}:{debugName})");
             context.Emit(OpCodes.Call, context[HelperMethod.GetFunctionPointer]);
             context.Emit(OpCodes.Stloc, context.IndirectPointerLocal.LocalIndex);
             context.EmitLoadThis();

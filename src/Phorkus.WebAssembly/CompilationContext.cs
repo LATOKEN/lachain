@@ -236,6 +236,8 @@ namespace Phorkus.WebAssembly
         public readonly Compile.GlobalInfo[] GlobalSetters;
         
         public readonly ModuleBuilder Module;
+        
+        public ILGenerator Generator => generator;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |

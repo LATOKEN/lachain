@@ -280,19 +280,19 @@ namespace Phorkus.WebAssembly
                                     if (count > functionSignatures.Length)
                                         break;
                                     
-                                    Console.WriteLine("Functions:\n----------------------------");
+                                    //Console.WriteLine("Functions:\n----------------------------");
                                     while (count-- > 0)
                                     {
                                         var index = ReadULEB128(customReader);
                                         var len = ReadULEB128(customReader);
                                         var name = customReader.ReadBytes((int)len);
                                         var parsedName = Encoding.ASCII.GetString(name);
-                                        Console.WriteLine(" " + index + " : " + parsedName);
+                                        //Console.WriteLine(" " + index + " : " + parsedName);
                                         if (debugNames[index] != null)
                                             continue;
                                         debugNames[index] = parsedName;
                                     }
-                                    Console.WriteLine("----------------------------");
+                                    //Console.WriteLine("----------------------------");
                                 } break;
                                 case "linking":
                                     /* TODO: "not implemented" */
@@ -733,8 +733,9 @@ namespace Phorkus.WebAssembly
                                 for (var j = 0; j < fixedFunctionElements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
+                                    Console.WriteLine($"Function {functionIndex}:({debugNames[functionIndex]})");
                                     functionElements[j] = new Indirect(
-                                        functionSignatures[functionIndex].TypeIndex, (MethodBuilder)internalFunctions[functionIndex]);
+                                        (uint) j, (MethodBuilder)internalFunctions[functionIndex]);
                                 }
                                 
                             }
@@ -1022,6 +1023,6 @@ namespace Phorkus.WebAssembly
             return instance.DeclaredConstructors.First();
         }
         
-        private static string[] debugNames = new string[100];
+        public static string[] debugNames = new string[100];
     }
 }
