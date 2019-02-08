@@ -3,7 +3,7 @@ using Phorkus.WebAssembly;
 
 namespace Phorkus.Core.VM
 {
-    class DefaultBlockchainInterface : IBlockchainInterface
+    class BlockchainInterface : IBlockchainInterface
     {
         private IEnumerable<FunctionImport> _functionImports;
 

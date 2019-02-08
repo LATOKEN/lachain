@@ -66,5 +66,15 @@ namespace Phorkus.Crypto
                 return BitConverter.ToUInt32(murmur.ComputeHash(message), 0);
             }
         }
+        
+        public static byte[] ToKeccak256(this IEnumerable<byte> message)
+        {
+            var bytes = message as byte[] ?? message.ToArray();
+            var digest = new KeccakDigest(256);
+            digest.BlockUpdate(bytes, 0, bytes.Length);
+            var output = new byte[32];
+            digest.DoFinal(output, 0);
+            return output;
+        }
     }
 }

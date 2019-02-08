@@ -90,13 +90,9 @@ namespace Phorkus.Core.VM
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
             if (from < 0 || to > frame.Input.Length || from > to)
-            {
                 throw new RuntimeException("Copy to contract memory failed: bad range");
-            }
             if (!SafeCopyToMemory(frame.Memory, frame.Input.Skip(from).Take(to - from).ToArray(), offset))
-            {
                 throw new RuntimeException("Copy to contract memory failed");
-            }
         }
 
         public static void Handler_Env_WriteLog(int offset, int length)
@@ -178,7 +174,7 @@ namespace Phorkus.Core.VM
             if (buffer.Length == 32)
                 return buffer;
             var result = new byte[32];
-            Array.Copy(buffer, 0, result, 0, 20);
+            Array.Copy(buffer, 0, result, 0, buffer.Length);
             return result;
         }
         
@@ -215,7 +211,8 @@ namespace Phorkus.Core.VM
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetCallSize))),
                 new FunctionImport(EnvModule, "copy_call_value",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CopyCallValue))),
-                new FunctionImport(EnvModule, "invoke_contract", typeof(ExternalHandler).GetMethod(nameof(Handler_Env_InvokeContract))),
+                new FunctionImport(EnvModule, "invoke_contract",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_InvokeContract))),
                 new FunctionImport(EnvModule, "write_log",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
                 new FunctionImport(EnvModule, "load_storage",
