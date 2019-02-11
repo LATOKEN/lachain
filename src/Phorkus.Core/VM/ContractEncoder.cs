@@ -24,7 +24,7 @@ namespace Phorkus.Core.VM
                 new MemoryStream());
             var buffer = Encoding.ASCII.GetBytes(methodSignature)
                 .ToKeccak256();
-            var signature = buffer[3] | buffer[2] << 8 | buffer[1] << 16 | buffer[0] << 24;
+            var signature = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
             _binaryWriter.Write(signature);
         }
 

@@ -107,7 +107,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                 if (result != OperatingError.Ok)
                 {
                     _stateManager.Rollback();
-                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}, excepted {_transactionManager.CalcNextTxNonce(transaction.Transaction?.From)}), {result}");
+                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
                 }
                 
