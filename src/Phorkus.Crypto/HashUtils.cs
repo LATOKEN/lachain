@@ -67,7 +67,7 @@ namespace Phorkus.Crypto
             }
         }
         
-        public static byte[] ToKeccak256(this IEnumerable<byte> message)
+        public static byte[] Keccak256(this IEnumerable<byte> message)
         {
             var bytes = message as byte[] ?? message.ToArray();
             var digest = new KeccakDigest(256);

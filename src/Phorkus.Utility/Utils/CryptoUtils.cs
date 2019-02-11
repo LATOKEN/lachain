@@ -6,9 +6,11 @@ namespace Phorkus.Utility.Utils
 {
     public static class CryptoUtils
     {
+        public const int PublicKeyLength = 33;
+        
         public static PublicKey ToPublicKey(this byte[] buffer)
         {
-            if (buffer.Length != 33)
+            if (buffer.Length != PublicKeyLength)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
             return new PublicKey
             {

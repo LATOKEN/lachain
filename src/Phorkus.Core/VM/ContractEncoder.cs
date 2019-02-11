@@ -23,7 +23,7 @@ namespace Phorkus.Core.VM
             _binaryWriter = new BinaryWriter(
                 new MemoryStream());
             var buffer = Encoding.ASCII.GetBytes(methodSignature)
-                .ToKeccak256();
+                .Keccak256();
             var signature = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
             _binaryWriter.Write(signature);
         }

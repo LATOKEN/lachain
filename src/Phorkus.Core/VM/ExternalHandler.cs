@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
@@ -200,11 +201,63 @@ namespace Phorkus.Core.VM
         {
             throw new HaltException(haltCode);
         }
+
+        public static void Handler_Env_Keccak256(int dataOffset, int dataLength, int resultOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            var result = data.Keccak256();
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
+        }
+        
+        public static void Handler_Env_Sha256(int dataOffset, int dataLength, int resultOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            var result = data.Sha256();
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
+        }
+        
+        public static void Handler_Env_Ripemd160(int dataOffset, int dataLength, int resultOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            var result = data.Ripemd160();
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
+        }
+        
+        public static void Handler_Env_Murmur3(int dataOffset, int dataLength, int resultOffset, int seed)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            var result = data.Murmur3((uint) seed);
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
+        }
+        
+        public static void Handler_Env_Recover(int messageOffset, int messageLength, int signatureOffset, int resultOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength);
+            var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length);
+            var publicKey = VirtualMachine.Crypto.RecoverSignature(message, sig);
+            SafeCopyToMemory(frame.Memory, publicKey, resultOffset);
+        }
+        
+        public static void Handler_Env_Verify(int messageOffset, int messageLength, int signatureOffset, int publicKeyOffset, int resultOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength);
+            var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length);
+            var publicKey = SafeCopyFromMemory(frame.Memory, publicKeyOffset, CryptoUtils.PublicKeyLength);
+            var result = VirtualMachine.Crypto.VerifySignature(message, sig, publicKey);
+            SafeCopyToMemory(frame.Memory, new[]{ result ? (byte) 1 : (byte) 0 }, resultOffset);
+        }
         
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
             return new[]
             {
+                /* basic system methods */
                 new FunctionImport(EnvModule, "get_call_value",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetCallValue))),
                 new FunctionImport(EnvModule, "get_call_size",
@@ -225,6 +278,20 @@ namespace Phorkus.Core.VM
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetSender))),
                 new FunctionImport(EnvModule, "halt",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Halt))),
+                /* crypto hash bindings */
+                new FunctionImport(EnvModule, "crypto_keccak256",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Keccak256))),
+                new FunctionImport(EnvModule, "crypto_sha256",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Sha256))),
+                new FunctionImport(EnvModule, "crypto_ripemd160",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Ripemd160))),
+                new FunctionImport(EnvModule, "crypto_murmur3",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Murmur3))),
+                /* cryptography methods */
+                new FunctionImport(EnvModule, "crypto_recover",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Recover))),
+                new FunctionImport(EnvModule, "crypto_verify",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_Verify))),
             };
         }
     }

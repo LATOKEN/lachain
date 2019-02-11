@@ -6,7 +6,9 @@ namespace Phorkus.Utility.Utils
 {
     public static class SignatureUtils
     {
-        public static Signature Zero = new byte[65].ToSignature();
+        public const int Length = 65;
+        
+        public static Signature Zero = new byte[Length].ToSignature();
 
         public static bool IsZero(this Signature signature)
         {
@@ -15,7 +17,7 @@ namespace Phorkus.Utility.Utils
         
         public static Signature ToSignature(this byte[] signature)
         {
-            if (signature.Length != 65)
+            if (signature.Length != Length)
                 throw new ArgumentOutOfRangeException(nameof(signature));
             return new Signature
             {
