@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Phorkus.Storage.State
 {
@@ -17,6 +18,9 @@ namespace Phorkus.Storage.State
         private readonly ISnapshotManager<IBlockSnapshot> _blockManager;
         private readonly ISnapshotManager<IWithdrawalSnapshot> _withdrawalManager;
 
+        private readonly Mutex _globalMutex
+            = new Mutex(false);
+        
         public StateManager(IStorageManager storageManager)
         {
             _balanceManager = new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager, (uint) RepositoryType.BalanceRepository);
@@ -40,6 +44,7 @@ namespace Phorkus.Storage.State
         
         public IBlockchainSnapshot NewSnapshot()
         {
+            _globalMutex.WaitOne();
             if (PendingSnapshot != null)
                 throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
             PendingSnapshot = new BlockchainSnapshot(
@@ -56,6 +61,7 @@ namespace Phorkus.Storage.State
 
         public void Approve()
         {
+            _globalMutex.ReleaseMutex();
             _balanceManager.Approve();
             _assetManager.Approve();
             _contractManager.Approve();
@@ -69,6 +75,7 @@ namespace Phorkus.Storage.State
         
         public void Rollback()
         {
+            _globalMutex.ReleaseMutex();
             if (PendingSnapshot == null)
                 throw new InvalidOperationException("Nothing to rollback");
             _balanceManager.Rollback();
@@ -83,6 +90,14 @@ namespace Phorkus.Storage.State
 
         public void Commit()
         {
+            try
+            {
+                _globalMutex.ReleaseMutex();
+            }
+            catch (ApplicationException)
+            {
+                // ignore
+            }
             _balanceManager.Commit();
             _assetManager.Commit();
             _contractManager.Commit();

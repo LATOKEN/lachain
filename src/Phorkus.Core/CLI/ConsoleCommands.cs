@@ -241,12 +241,15 @@ namespace Phorkus.Core.CLI
 
         public string SendRawTransaction(string[] arguments)
         {
-            if (arguments.Length != 2)
+            if (arguments.Length != 3)
                 return null;
             var rawTx = arguments[1].HexToBytes();
-            var tx = AcceptedTransaction.Parser.ParseFrom(rawTx);
-            _transactionPool.Add(tx);
-            return tx.Hash.ToHex();
+            var tx = Transaction.Parser.ParseFrom(rawTx);
+            var sig = arguments[2].HexToBytes().ToSignature();
+            var result = _transactionPool.Add(tx, sig);
+            Console.WriteLine($"Status: {result}");
+            Console.WriteLine($"Hash: {tx.ToHash256().ToHex()}");
+            return "";
         }
 
         /*
@@ -278,6 +281,9 @@ namespace Phorkus.Core.CLI
         /// <returns></returns>
         public string VerifyTransaction(string[] arguments)
         {
+            arguments[1] = "0x080322160a14e855e8f8e5f66a84c62800e9fc8fa06d77c35baf323b0a160a14309ef5b9fed49a18eb3ea1d090c79df690936b9812160a146bc32575acb8754886dc283c2c8ac54b1bd931951a090a072386f26fc100007200";
+            arguments[2] = "0x01aa279be6f82767f7d1c75a966b33c13d2ae573f7f39ccf7557d86cc0cdb8aa5731b2639ff6ef7555232fd1ed6e27e281e5ae96de22b49083df380fb892485761";
+            
             var tx = Transaction.Parser.ParseFrom(
                 arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
@@ -289,6 +295,9 @@ namespace Phorkus.Core.CLI
                 Signature = sig
             };
             Console.WriteLine("Transaction validity: " + _transactionManager.Verify(accepted));
+            Console.WriteLine(_transactionManager.VerifySignature(accepted) == OperatingError.Ok
+                ? "Signature validity: OK"
+                : "Signature validity: INVALID");
             Console.WriteLine(_transactionManager.VerifySignature(accepted, false) == OperatingError.Ok
                 ? "Signature validity: OK"
                 : "Signature validity: INVALID");

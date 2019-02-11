@@ -43,7 +43,7 @@ namespace Phorkus.Storage.State
             _lastApprovedSnapshot = _pendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
             _pendingSnapshot = null;
         }
-
+        
         public void Rollback()
         {
             if (PendingSnapshot == null)

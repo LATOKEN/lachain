@@ -52,14 +52,14 @@ namespace Phorkus.Proto {
             "MTYwIl8KEURlcGxveVRyYW5zYWN0aW9uEhkKA2FiaRgBIAMoCzIMLkNvbnRy",
             "YWN0QUJJEgwKBHdhc20YAiABKAwSIQoHdmVyc2lvbhgDIAEoDjIQLkNvbnRy",
             "YWN0VmVyc2lvbiKLAwoLVHJhbnNhY3Rpb24SHgoEdHlwZRgBIAEoDjIQLlRy",
-            "YW5zYWN0aW9uVHlwZRIWCgRmcm9tGAQgASgLMgguVUludDE2MBINCgVub25j",
-            "ZRgFIAEoBBIoCghjb250cmFjdBgGIAEoCzIULkNvbnRyYWN0VHJhbnNhY3Rp",
-            "b25IABIiCgVpc3N1ZRgHIAEoCzIRLklzc3VlVHJhbnNhY3Rpb25IABIoCghy",
-            "ZWdpc3RlchgJIAEoCzIULlJlZ2lzdGVyVHJhbnNhY3Rpb25IABImCgdkZXBv",
-            "c2l0GAsgASgLMhMuRGVwb3NpdFRyYW5zYWN0aW9uSAASKAoId2l0aGRyYXcY",
-            "DCABKAsyFC5XaXRoZHJhd1RyYW5zYWN0aW9uSAASJAoGZGVwbG95GA8gASgL",
-            "MhIuRGVwbG95VHJhbnNhY3Rpb25IABImCgdjb25maXJtGA0gASgLMhMuQ29u",
-            "ZmlybVRyYW5zYWN0aW9uSAASFQoDZmVlGA4gASgLMgguVUludDI1NkIGCgRk",
+            "YW5zYWN0aW9uVHlwZRIWCgRmcm9tGAIgASgLMgguVUludDE2MBINCgVub25j",
+            "ZRgDIAEoBBIVCgNmZWUYBCABKAsyCC5VSW50MjU2EigKCGNvbnRyYWN0GAUg",
+            "ASgLMhQuQ29udHJhY3RUcmFuc2FjdGlvbkgAEiIKBWlzc3VlGAYgASgLMhEu",
+            "SXNzdWVUcmFuc2FjdGlvbkgAEigKCHJlZ2lzdGVyGAcgASgLMhQuUmVnaXN0",
+            "ZXJUcmFuc2FjdGlvbkgAEiYKB2RlcG9zaXQYCCABKAsyEy5EZXBvc2l0VHJh",
+            "bnNhY3Rpb25IABIoCgh3aXRoZHJhdxgJIAEoCzIULldpdGhkcmF3VHJhbnNh",
+            "Y3Rpb25IABIkCgZkZXBsb3kYCiABKAsyEi5EZXBsb3lUcmFuc2FjdGlvbkgA",
+            "EiYKB2NvbmZpcm0YCyABKAsyEy5Db25maXJtVHJhbnNhY3Rpb25IAEIGCgRk",
             "YXRhIqwBChNBY2NlcHRlZFRyYW5zYWN0aW9uEiEKC3RyYW5zYWN0aW9uGAEg",
             "ASgLMgwuVHJhbnNhY3Rpb24SFgoEaGFzaBgCIAEoCzIILlVJbnQyNTYSHQoJ",
             "c2lnbmF0dXJlGAMgASgLMgouU2lnbmF0dXJlEhcKBWJsb2NrGAQgASgLMggu",
@@ -86,7 +86,7 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.WithdrawTransaction), global::Phorkus.Proto.WithdrawTransaction.Parser, new[]{ "Recipient", "BlockchainType", "Value", "TransactionHash", "AddressFormat", "Timestamp", "AssetHash" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConfirmTransaction), global::Phorkus.Proto.ConfirmTransaction.Parser, new[]{ "Recipient", "BlockchainType", "Value", "TransactionHash", "AddressFormat", "Timestamp", "AssetHash" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.DeployTransaction), global::Phorkus.Proto.DeployTransaction.Parser, new[]{ "Abi", "Wasm", "Version" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "From", "Nonce", "Contract", "Issue", "Register", "Deposit", "Withdraw", "Deploy", "Confirm", "Fee" }, new[]{ "Data" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "From", "Nonce", "Fee", "Contract", "Issue", "Register", "Deposit", "Withdraw", "Deploy", "Confirm" }, new[]{ "Data" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.AcceptedTransaction), global::Phorkus.Proto.AcceptedTransaction.Parser, new[]{ "Transaction", "Hash", "Signature", "Block", "Status" }, null, null, null)
           }));
     }
@@ -2041,7 +2041,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "from" field.</summary>
-    public const int FromFieldNumber = 4;
+    public const int FromFieldNumber = 2;
     private global::Phorkus.Proto.UInt160 from_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.UInt160 From {
@@ -2052,7 +2052,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "nonce" field.</summary>
-    public const int NonceFieldNumber = 5;
+    public const int NonceFieldNumber = 3;
     private ulong nonce_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ulong Nonce {
@@ -2062,8 +2062,19 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "fee" field.</summary>
+    public const int FeeFieldNumber = 4;
+    private global::Phorkus.Proto.UInt256 fee_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt256 Fee {
+      get { return fee_; }
+      set {
+        fee_ = value;
+      }
+    }
+
     /// <summary>Field number for the "contract" field.</summary>
-    public const int ContractFieldNumber = 6;
+    public const int ContractFieldNumber = 5;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.ContractTransaction Contract {
       get { return dataCase_ == DataOneofCase.Contract ? (global::Phorkus.Proto.ContractTransaction) data_ : null; }
@@ -2074,7 +2085,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "issue" field.</summary>
-    public const int IssueFieldNumber = 7;
+    public const int IssueFieldNumber = 6;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.IssueTransaction Issue {
       get { return dataCase_ == DataOneofCase.Issue ? (global::Phorkus.Proto.IssueTransaction) data_ : null; }
@@ -2085,7 +2096,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "register" field.</summary>
-    public const int RegisterFieldNumber = 9;
+    public const int RegisterFieldNumber = 7;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.RegisterTransaction Register {
       get { return dataCase_ == DataOneofCase.Register ? (global::Phorkus.Proto.RegisterTransaction) data_ : null; }
@@ -2096,7 +2107,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "deposit" field.</summary>
-    public const int DepositFieldNumber = 11;
+    public const int DepositFieldNumber = 8;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.DepositTransaction Deposit {
       get { return dataCase_ == DataOneofCase.Deposit ? (global::Phorkus.Proto.DepositTransaction) data_ : null; }
@@ -2107,7 +2118,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "withdraw" field.</summary>
-    public const int WithdrawFieldNumber = 12;
+    public const int WithdrawFieldNumber = 9;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.WithdrawTransaction Withdraw {
       get { return dataCase_ == DataOneofCase.Withdraw ? (global::Phorkus.Proto.WithdrawTransaction) data_ : null; }
@@ -2118,7 +2129,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "deploy" field.</summary>
-    public const int DeployFieldNumber = 15;
+    public const int DeployFieldNumber = 10;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.DeployTransaction Deploy {
       get { return dataCase_ == DataOneofCase.Deploy ? (global::Phorkus.Proto.DeployTransaction) data_ : null; }
@@ -2129,7 +2140,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "confirm" field.</summary>
-    public const int ConfirmFieldNumber = 13;
+    public const int ConfirmFieldNumber = 11;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.ConfirmTransaction Confirm {
       get { return dataCase_ == DataOneofCase.Confirm ? (global::Phorkus.Proto.ConfirmTransaction) data_ : null; }
@@ -2139,28 +2150,17 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "fee" field.</summary>
-    public const int FeeFieldNumber = 14;
-    private global::Phorkus.Proto.UInt256 fee_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt256 Fee {
-      get { return fee_; }
-      set {
-        fee_ = value;
-      }
-    }
-
     private object data_;
     /// <summary>Enum of possible cases for the "data" oneof.</summary>
     public enum DataOneofCase {
       None = 0,
-      Contract = 6,
-      Issue = 7,
-      Register = 9,
-      Deposit = 11,
-      Withdraw = 12,
-      Deploy = 15,
-      Confirm = 13,
+      Contract = 5,
+      Issue = 6,
+      Register = 7,
+      Deposit = 8,
+      Withdraw = 9,
+      Deploy = 10,
+      Confirm = 11,
     }
     private DataOneofCase dataCase_ = DataOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2190,6 +2190,7 @@ namespace Phorkus.Proto {
       if (Type != other.Type) return false;
       if (!object.Equals(From, other.From)) return false;
       if (Nonce != other.Nonce) return false;
+      if (!object.Equals(Fee, other.Fee)) return false;
       if (!object.Equals(Contract, other.Contract)) return false;
       if (!object.Equals(Issue, other.Issue)) return false;
       if (!object.Equals(Register, other.Register)) return false;
@@ -2197,7 +2198,6 @@ namespace Phorkus.Proto {
       if (!object.Equals(Withdraw, other.Withdraw)) return false;
       if (!object.Equals(Deploy, other.Deploy)) return false;
       if (!object.Equals(Confirm, other.Confirm)) return false;
-      if (!object.Equals(Fee, other.Fee)) return false;
       if (DataCase != other.DataCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -2208,6 +2208,7 @@ namespace Phorkus.Proto {
       if (Type != 0) hash ^= Type.GetHashCode();
       if (from_ != null) hash ^= From.GetHashCode();
       if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
+      if (fee_ != null) hash ^= Fee.GetHashCode();
       if (dataCase_ == DataOneofCase.Contract) hash ^= Contract.GetHashCode();
       if (dataCase_ == DataOneofCase.Issue) hash ^= Issue.GetHashCode();
       if (dataCase_ == DataOneofCase.Register) hash ^= Register.GetHashCode();
@@ -2215,7 +2216,6 @@ namespace Phorkus.Proto {
       if (dataCase_ == DataOneofCase.Withdraw) hash ^= Withdraw.GetHashCode();
       if (dataCase_ == DataOneofCase.Deploy) hash ^= Deploy.GetHashCode();
       if (dataCase_ == DataOneofCase.Confirm) hash ^= Confirm.GetHashCode();
-      if (fee_ != null) hash ^= Fee.GetHashCode();
       hash ^= (int) dataCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -2235,44 +2235,44 @@ namespace Phorkus.Proto {
         output.WriteEnum((int) Type);
       }
       if (from_ != null) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(18);
         output.WriteMessage(From);
       }
       if (Nonce != 0UL) {
-        output.WriteRawTag(40);
+        output.WriteRawTag(24);
         output.WriteUInt64(Nonce);
       }
+      if (fee_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(Fee);
+      }
       if (dataCase_ == DataOneofCase.Contract) {
-        output.WriteRawTag(50);
+        output.WriteRawTag(42);
         output.WriteMessage(Contract);
       }
       if (dataCase_ == DataOneofCase.Issue) {
-        output.WriteRawTag(58);
+        output.WriteRawTag(50);
         output.WriteMessage(Issue);
       }
       if (dataCase_ == DataOneofCase.Register) {
-        output.WriteRawTag(74);
+        output.WriteRawTag(58);
         output.WriteMessage(Register);
       }
       if (dataCase_ == DataOneofCase.Deposit) {
-        output.WriteRawTag(90);
+        output.WriteRawTag(66);
         output.WriteMessage(Deposit);
       }
       if (dataCase_ == DataOneofCase.Withdraw) {
-        output.WriteRawTag(98);
+        output.WriteRawTag(74);
         output.WriteMessage(Withdraw);
       }
-      if (dataCase_ == DataOneofCase.Confirm) {
-        output.WriteRawTag(106);
-        output.WriteMessage(Confirm);
-      }
-      if (fee_ != null) {
-        output.WriteRawTag(114);
-        output.WriteMessage(Fee);
-      }
       if (dataCase_ == DataOneofCase.Deploy) {
-        output.WriteRawTag(122);
+        output.WriteRawTag(82);
         output.WriteMessage(Deploy);
+      }
+      if (dataCase_ == DataOneofCase.Confirm) {
+        output.WriteRawTag(90);
+        output.WriteMessage(Confirm);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -2290,6 +2290,9 @@ namespace Phorkus.Proto {
       }
       if (Nonce != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
+      }
+      if (fee_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Fee);
       }
       if (dataCase_ == DataOneofCase.Contract) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Contract);
@@ -2311,9 +2314,6 @@ namespace Phorkus.Proto {
       }
       if (dataCase_ == DataOneofCase.Confirm) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Confirm);
-      }
-      if (fee_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Fee);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -2404,18 +2404,25 @@ namespace Phorkus.Proto {
             type_ = (global::Phorkus.Proto.TransactionType) input.ReadEnum();
             break;
           }
-          case 34: {
+          case 18: {
             if (from_ == null) {
               from_ = new global::Phorkus.Proto.UInt160();
             }
             input.ReadMessage(from_);
             break;
           }
-          case 40: {
+          case 24: {
             Nonce = input.ReadUInt64();
             break;
           }
-          case 50: {
+          case 34: {
+            if (fee_ == null) {
+              fee_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(fee_);
+            break;
+          }
+          case 42: {
             global::Phorkus.Proto.ContractTransaction subBuilder = new global::Phorkus.Proto.ContractTransaction();
             if (dataCase_ == DataOneofCase.Contract) {
               subBuilder.MergeFrom(Contract);
@@ -2424,7 +2431,7 @@ namespace Phorkus.Proto {
             Contract = subBuilder;
             break;
           }
-          case 58: {
+          case 50: {
             global::Phorkus.Proto.IssueTransaction subBuilder = new global::Phorkus.Proto.IssueTransaction();
             if (dataCase_ == DataOneofCase.Issue) {
               subBuilder.MergeFrom(Issue);
@@ -2433,7 +2440,7 @@ namespace Phorkus.Proto {
             Issue = subBuilder;
             break;
           }
-          case 74: {
+          case 58: {
             global::Phorkus.Proto.RegisterTransaction subBuilder = new global::Phorkus.Proto.RegisterTransaction();
             if (dataCase_ == DataOneofCase.Register) {
               subBuilder.MergeFrom(Register);
@@ -2442,7 +2449,7 @@ namespace Phorkus.Proto {
             Register = subBuilder;
             break;
           }
-          case 90: {
+          case 66: {
             global::Phorkus.Proto.DepositTransaction subBuilder = new global::Phorkus.Proto.DepositTransaction();
             if (dataCase_ == DataOneofCase.Deposit) {
               subBuilder.MergeFrom(Deposit);
@@ -2451,7 +2458,7 @@ namespace Phorkus.Proto {
             Deposit = subBuilder;
             break;
           }
-          case 98: {
+          case 74: {
             global::Phorkus.Proto.WithdrawTransaction subBuilder = new global::Phorkus.Proto.WithdrawTransaction();
             if (dataCase_ == DataOneofCase.Withdraw) {
               subBuilder.MergeFrom(Withdraw);
@@ -2460,29 +2467,22 @@ namespace Phorkus.Proto {
             Withdraw = subBuilder;
             break;
           }
-          case 106: {
-            global::Phorkus.Proto.ConfirmTransaction subBuilder = new global::Phorkus.Proto.ConfirmTransaction();
-            if (dataCase_ == DataOneofCase.Confirm) {
-              subBuilder.MergeFrom(Confirm);
-            }
-            input.ReadMessage(subBuilder);
-            Confirm = subBuilder;
-            break;
-          }
-          case 114: {
-            if (fee_ == null) {
-              fee_ = new global::Phorkus.Proto.UInt256();
-            }
-            input.ReadMessage(fee_);
-            break;
-          }
-          case 122: {
+          case 82: {
             global::Phorkus.Proto.DeployTransaction subBuilder = new global::Phorkus.Proto.DeployTransaction();
             if (dataCase_ == DataOneofCase.Deploy) {
               subBuilder.MergeFrom(Deploy);
             }
             input.ReadMessage(subBuilder);
             Deploy = subBuilder;
+            break;
+          }
+          case 90: {
+            global::Phorkus.Proto.ConfirmTransaction subBuilder = new global::Phorkus.Proto.ConfirmTransaction();
+            if (dataCase_ == DataOneofCase.Confirm) {
+              subBuilder.MergeFrom(Confirm);
+            }
+            input.ReadMessage(subBuilder);
+            Confirm = subBuilder;
             break;
           }
         }

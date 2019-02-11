@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
@@ -23,9 +24,8 @@ namespace Phorkus.Core.VM
             StateManager = stateManager;
             Crypto = crypto;
         }
-
-        // TODO: protection from multiple instantiation
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifyContract(byte[] contractCode)
         {
             try
@@ -42,11 +42,12 @@ namespace Phorkus.Core.VM
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input)
         {
             try
             {
-                return _InvokeContractUnsafe(contract, sender, input);
+                return _InvokeContractUnsafe(contract, sender, input, out _);
             }
             catch (Exception e)
             {
@@ -56,8 +57,34 @@ namespace Phorkus.Core.VM
             }
         }
 
-        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, UInt160 sender, byte[] input)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public ExecutionStatus CallContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue)
         {
+            try
+            {
+                return _InvokeContractUnsafe(contract, sender, input, out returnValue);
+            }
+            catch (HaltException e)
+            {
+                ExecutionFrames.Clear();
+                returnValue = new[]
+                {
+                    (byte) e.HaltCode
+                };
+                return ExecutionStatus.ExecutionHalted;
+            }
+            catch (Exception e)
+            {
+                ExecutionFrames.Clear();
+                Console.Error.WriteLine(e);
+                returnValue = null;
+                return ExecutionStatus.UnknownError;
+            }
+        }
+        
+        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue)
+        {
+            returnValue = null;
             if (ExecutionFrames.Count != 0)
                 return ExecutionStatus.VmCorruption;
             if (contract.Version != ContractVersion.Wasm)
@@ -72,6 +99,8 @@ namespace Phorkus.Core.VM
                 return status;
             ExecutionFrames.Push(rootFrame);
             var result = rootFrame.Execute();
+            if (result == ExecutionStatus.Ok)
+                returnValue = rootFrame.ReturnValue;
             ExecutionFrames.Pop();
             return result;
         }

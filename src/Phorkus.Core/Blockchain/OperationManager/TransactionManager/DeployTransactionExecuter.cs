@@ -4,7 +4,6 @@ using Phorkus.Core.Utils;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Core.VM;
-using Phorkus.Storage.Repositories;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager

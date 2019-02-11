@@ -7,5 +7,7 @@ namespace Phorkus.Core.VM
         bool VerifyContract(byte[] code);
         
         ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input);
+        
+        ExecutionStatus CallContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue);
     }
 }
