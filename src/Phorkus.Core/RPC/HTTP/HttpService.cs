@@ -38,6 +38,7 @@ namespace Phorkus.Core.RPC.HTTP
                 throw new Exception("Your platform doesn't support [HttpListener]");
             _httpListener = new HttpListener();
             _httpListener.Prefixes.Add($"http://{rpcConfig.Host}:{rpcConfig.Port}/");
+            _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             _httpListener.Start();
             while (_httpListener.IsListening)
             {
@@ -61,6 +62,16 @@ namespace Phorkus.Core.RPC.HTTP
             var length = request.InputStream.Read(buffer, 0, buffer.Length);
             if (length <= 0 || length >= buffer.Length && request.InputStream.CanRead)
                 return false;
+            var body = Encoding.UTF8.GetString(buffer, 0, length);
+            if (request.HttpMethod == "OPTIONS")
+            {
+                response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
+                response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
+                response.AddHeader("Access-Control-Max-Age", "1728000");
+                return true;
+            }
+            response.Headers.Add("Access-Control-Allow-Origin", "*");
+            response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
             var rpcResultHandler = new AsyncCallback(result =>
             {
                 if (!(result is JsonRpcStateAsync jsonRpcStateAsync))
@@ -72,7 +83,7 @@ namespace Phorkus.Core.RPC.HTTP
             });
             var async = new JsonRpcStateAsync(rpcResultHandler, null)
             {
-                JsonRpc = Encoding.UTF8.GetString(buffer, 0, length)
+                JsonRpc = body
             };
             JsonRpcProcessor.Process(async);
             return true;
