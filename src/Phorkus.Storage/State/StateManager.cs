@@ -45,6 +45,7 @@ namespace Phorkus.Storage.State
         public IBlockchainSnapshot NewSnapshot()
         {
             _globalMutex.WaitOne();
+            
             if (PendingSnapshot != null)
                 throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
             PendingSnapshot = new BlockchainSnapshot(
@@ -61,50 +62,68 @@ namespace Phorkus.Storage.State
 
         public void Approve()
         {
-            _globalMutex.ReleaseMutex();
-            _balanceManager.Approve();
-            _assetManager.Approve();
-            _contractManager.Approve();
-            _storageManager.Approve();
-            _transactionManager.Approve();
-            _blockManager.Approve();
-            _withdrawalManager.Approve();
-            LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
-            PendingSnapshot = null;
+            try
+            {
+                _balanceManager.Approve();
+                _assetManager.Approve();
+                _contractManager.Approve();
+                _storageManager.Approve();
+                _transactionManager.Approve();
+                _blockManager.Approve();
+                _withdrawalManager.Approve();
+                LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
+                PendingSnapshot = null;
+            }
+            finally
+            {
+                _globalMutex.ReleaseMutex();
+            }
         }
         
         public void Rollback()
         {
-            _globalMutex.ReleaseMutex();
-            if (PendingSnapshot == null)
-                throw new InvalidOperationException("Nothing to rollback");
-            _balanceManager.Rollback();
-            _assetManager.Rollback();
-            _contractManager.Rollback();
-            _storageManager.Rollback();
-            _transactionManager.Rollback();
-            _blockManager.Rollback();
-            _withdrawalManager.Rollback();
-            PendingSnapshot = null;
+            try
+            {
+                if (PendingSnapshot == null)
+                    throw new InvalidOperationException("Nothing to rollback");
+                _balanceManager.Rollback();
+                _assetManager.Rollback();
+                _contractManager.Rollback();
+                _storageManager.Rollback();
+                _transactionManager.Rollback();
+                _blockManager.Rollback();
+                _withdrawalManager.Rollback();
+                PendingSnapshot = null;
+            }
+            finally
+            {
+                _globalMutex.ReleaseMutex();
+            }
         }
 
         public void Commit()
         {
             try
             {
-                _globalMutex.ReleaseMutex();
+                _balanceManager.Commit();
+                _assetManager.Commit();
+                _contractManager.Commit();
+                _storageManager.Commit();
+                _transactionManager.Commit();
+                _blockManager.Commit();
+                _withdrawalManager.Commit();
             }
-            catch (ApplicationException)
+            finally
             {
-                // ignore
+                try
+                {
+                    _globalMutex.ReleaseMutex();
+                }
+                catch (ApplicationException)
+                {
+                    // ignore
+                }
             }
-            _balanceManager.Commit();
-            _assetManager.Commit();
-            _contractManager.Commit();
-            _storageManager.Commit();
-            _transactionManager.Commit();
-            _blockManager.Commit();
-            _withdrawalManager.Commit();
         }
     }
 }

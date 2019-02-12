@@ -30,24 +30,22 @@ namespace Phorkus.Proto {
             "cnMYBCADKA4yES5Db250cmFjdE1vZGlmaWVyIm4KCENvbnRyYWN0EhYKBGhh",
             "c2gYASABKAsyCC5VSW50MTYwEhkKA2FiaRgCIAMoCzIMLkNvbnRyYWN0QUJJ",
             "EgwKBHdhc20YAyABKAwSIQoHdmVyc2lvbhgEIAEoDjIQLkNvbnRyYWN0VmVy",
-            "c2lvbiIpCg5Db250cmFjdEdsb2JhbBIXCg90b3RhbF9jb250cmFjdHMYASAB",
-            "KA0qLAoPQ29udHJhY3RWZXJzaW9uEhkKFUNPTlRSQUNUX1ZFUlNJT05fV0FT",
-            "TRAAKs8CCgxDb250cmFjdFR5cGUSGwoXQ09OVFJBQ1RfVFlQRV9TSUdOQVRV",
-            "UkUQABIZChVDT05UUkFDVF9UWVBFX0JPT0xFQU4QARIZChVDT05UUkFDVF9U",
-            "WVBFX0lOVEVHRVIQAhIWChJDT05UUkFDVF9UWVBFX0xPTkcQAxIYChRDT05U",
-            "UkFDVF9UWVBFX0lOVDE2MBAEEhgKFENPTlRSQUNUX1RZUEVfSU5UMjU2EAUS",
-            "HAoYQ09OVFJBQ1RfVFlQRV9CWVRFX0FSUkFZEAYSHAoYQ09OVFJBQ1RfVFlQ",
-            "RV9QVUJMSUNfS0VZEAcSGAoUQ09OVFJBQ1RfVFlQRV9TVFJJTkcQCBIXChND",
-            "T05UUkFDVF9UWVBFX0FSUkFZEAkSGQoVQ09OVFJBQ1RfVFlQRV9BRERSRVNT",
-            "EAoSFgoSQ09OVFJBQ1RfVFlQRV9WT0lEEAsqMQoQQ29udHJhY3RNb2RpZmll",
-            "chIdChlDT05UUkFDVF9NT0RJRklFUl9QQVlBQkxFEABCIwoRY29tLmxhdG9r",
-            "ZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "c2lvbiosCg9Db250cmFjdFZlcnNpb24SGQoVQ09OVFJBQ1RfVkVSU0lPTl9X",
+            "QVNNEAAqzwIKDENvbnRyYWN0VHlwZRIbChdDT05UUkFDVF9UWVBFX1NJR05B",
+            "VFVSRRAAEhkKFUNPTlRSQUNUX1RZUEVfQk9PTEVBThABEhkKFUNPTlRSQUNU",
+            "X1RZUEVfSU5URUdFUhACEhYKEkNPTlRSQUNUX1RZUEVfTE9ORxADEhgKFENP",
+            "TlRSQUNUX1RZUEVfSU5UMTYwEAQSGAoUQ09OVFJBQ1RfVFlQRV9JTlQyNTYQ",
+            "BRIcChhDT05UUkFDVF9UWVBFX0JZVEVfQVJSQVkQBhIcChhDT05UUkFDVF9U",
+            "WVBFX1BVQkxJQ19LRVkQBxIYChRDT05UUkFDVF9UWVBFX1NUUklORxAIEhcK",
+            "E0NPTlRSQUNUX1RZUEVfQVJSQVkQCRIZChVDT05UUkFDVF9UWVBFX0FERFJF",
+            "U1MQChIWChJDT05UUkFDVF9UWVBFX1ZPSUQQCyoxChBDb250cmFjdE1vZGlm",
+            "aWVyEh0KGUNPTlRSQUNUX01PRElGSUVSX1BBWUFCTEUQAEIjChFjb20ubGF0",
+            "b2tlbi5wcm90b6oCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.ContractVersion), typeof(global::Phorkus.Proto.ContractType), typeof(global::Phorkus.Proto.ContractModifier), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractABI), global::Phorkus.Proto.ContractABI.Parser, new[]{ "Method", "Input", "Output", "Modifiers" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Wasm", "Version" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ContractGlobal), global::Phorkus.Proto.ContractGlobal.Parser, new[]{ "TotalContracts" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Contract), global::Phorkus.Proto.Contract.Parser, new[]{ "Hash", "Abi", "Wasm", "Version" }, null, null, null)
           }));
     }
     #endregion
@@ -482,135 +480,6 @@ namespace Phorkus.Proto {
           }
           case 32: {
             version_ = (global::Phorkus.Proto.ContractVersion) input.ReadEnum();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class ContractGlobal : pb::IMessage<ContractGlobal> {
-    private static readonly pb::MessageParser<ContractGlobal> _parser = new pb::MessageParser<ContractGlobal>(() => new ContractGlobal());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ContractGlobal> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ContractReflection.Descriptor.MessageTypes[2]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ContractGlobal() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ContractGlobal(ContractGlobal other) : this() {
-      totalContracts_ = other.totalContracts_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ContractGlobal Clone() {
-      return new ContractGlobal(this);
-    }
-
-    /// <summary>Field number for the "total_contracts" field.</summary>
-    public const int TotalContractsFieldNumber = 1;
-    private uint totalContracts_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint TotalContracts {
-      get { return totalContracts_; }
-      set {
-        totalContracts_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as ContractGlobal);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ContractGlobal other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (TotalContracts != other.TotalContracts) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (TotalContracts != 0) hash ^= TotalContracts.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (TotalContracts != 0) {
-        output.WriteRawTag(8);
-        output.WriteUInt32(TotalContracts);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (TotalContracts != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(TotalContracts);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ContractGlobal other) {
-      if (other == null) {
-        return;
-      }
-      if (other.TotalContracts != 0) {
-        TotalContracts = other.TotalContracts;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 8: {
-            TotalContracts = input.ReadUInt32();
             break;
           }
         }
