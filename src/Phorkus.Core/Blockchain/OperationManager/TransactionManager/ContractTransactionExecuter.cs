@@ -17,7 +17,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            /* TODO: "verify contract nonce here" */
             /* validate transaction before execution */
             var error = Verify(transaction);
             if (error != OperatingError.Ok)

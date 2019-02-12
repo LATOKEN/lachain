@@ -19,14 +19,13 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            var contractNonce = snapshot.Contracts.GetTotalContractsByFrom(transaction.From);
             /* validate transaction before execution */
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
             var deploy = transaction.Deploy;
             /* calculate contract hash and register it */
-            var hash = transaction.From.Buffer.ToArray().Concat(BitConverter.GetBytes(contractNonce)).ToHash160();
+            var hash = transaction.From.Buffer.ToArray().Concat(BitConverter.GetBytes((uint) transaction.Nonce)).ToHash160();
             Console.WriteLine("Contract hash: " + hash.Buffer.ToHex());
             var contract = new Contract
             {

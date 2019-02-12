@@ -31,7 +31,6 @@
         WithdrawalNonce = 0x0704,
         
         ContractByHash = 0x0801,
-        ContractCountByFrom = 0x0802,
         
         ContractStorage = 0x903,
     }

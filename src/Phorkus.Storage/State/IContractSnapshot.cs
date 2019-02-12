@@ -25,7 +25,5 @@ namespace Phorkus.Storage.State
         /// <param name="contractHash"></param>
         /// <returns></returns>
         void DeleteContractByHash(UInt160 contractHash);
-
-        uint GetTotalContractsByFrom(UInt160 from);
     }
 }

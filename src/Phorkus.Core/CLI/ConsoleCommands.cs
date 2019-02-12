@@ -159,7 +159,7 @@ namespace Phorkus.Core.CLI
         public string DeployContract(string[] arguments)
         {
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
-            var nonce = _stateManager.LastApprovedSnapshot.Contracts.GetTotalContractsByFrom(from);
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).ToHash160();
             var contractCode = arguments[1].HexToBytes();
             if (!_virtualMachine.VerifyContract(contractCode))
