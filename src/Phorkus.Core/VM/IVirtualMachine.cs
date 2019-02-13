@@ -8,6 +8,6 @@ namespace Phorkus.Core.VM
         
         ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input);
         
-        ExecutionStatus CallContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue);
+        ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue);
     }
 }

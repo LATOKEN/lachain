@@ -58,7 +58,7 @@ namespace Phorkus.Core.VM
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ExecutionStatus CallContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue)
+        public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue)
         {
             try
             {

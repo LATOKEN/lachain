@@ -25,19 +25,20 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgtibG9jay5wcm90bxoNZGVmYXVsdC5wcm90bxoObXVsdGlzaWcucHJvdG8i",
-            "sAEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
+            "zgEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
             "a19oYXNoGAIgASgLMgguVUludDI1NhIdCgttZXJrbGVfcm9vdBgDIAEoCzII",
-            "LlVJbnQyNTYSEQoJdGltZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEh0K",
-            "CXZhbGlkYXRvchgHIAEoCzIKLlB1YmxpY0tleRINCgVub25jZRgGIAEoBCKf",
-            "AQoFQmxvY2sSHAoGaGVhZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISFgoEaGFz",
-            "aBgCIAEoCzIILlVJbnQyNTYSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygL",
-            "MgguVUludDI1NhIbCghtdWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnEh0KC2F2",
-            "ZXJhZ2VfZmVlGAUgASgLMgguVUludDI1NkIjChFjb20ubGF0b2tlbi5wcm90",
-            "b6oCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
+            "LlVJbnQyNTYSHAoKc3RhdGVfaGFzaBgIIAEoCzIILlVJbnQyNTYSEQoJdGlt",
+            "ZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEh0KCXZhbGlkYXRvchgHIAEo",
+            "CzIKLlB1YmxpY0tleRINCgVub25jZRgGIAEoBCKfAQoFQmxvY2sSHAoGaGVh",
+            "ZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISFgoEaGFzaBgCIAEoCzIILlVJbnQy",
+            "NTYSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygLMgguVUludDI1NhIbCght",
+            "dWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnEh0KC2F2ZXJhZ2VfZmVlGAUgASgL",
+            "MgguVUludDI1NkIjChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3JrdXMuUHJv",
+            "dG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "Timestamp", "Index", "Validator", "Nonce" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "StateHash", "Timestamp", "Index", "Validator", "Nonce" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig", "AverageFee" }, null, null, null)
           }));
     }
@@ -73,6 +74,7 @@ namespace Phorkus.Proto {
       version_ = other.version_;
       prevBlockHash_ = other.prevBlockHash_ != null ? other.prevBlockHash_.Clone() : null;
       merkleRoot_ = other.merkleRoot_ != null ? other.merkleRoot_.Clone() : null;
+      stateHash_ = other.stateHash_ != null ? other.stateHash_.Clone() : null;
       timestamp_ = other.timestamp_;
       index_ = other.index_;
       validator_ = other.validator_ != null ? other.validator_.Clone() : null;
@@ -115,6 +117,17 @@ namespace Phorkus.Proto {
       get { return merkleRoot_; }
       set {
         merkleRoot_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "state_hash" field.</summary>
+    public const int StateHashFieldNumber = 8;
+    private global::Phorkus.Proto.UInt256 stateHash_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.UInt256 StateHash {
+      get { return stateHash_; }
+      set {
+        stateHash_ = value;
       }
     }
 
@@ -178,6 +191,7 @@ namespace Phorkus.Proto {
       if (Version != other.Version) return false;
       if (!object.Equals(PrevBlockHash, other.PrevBlockHash)) return false;
       if (!object.Equals(MerkleRoot, other.MerkleRoot)) return false;
+      if (!object.Equals(StateHash, other.StateHash)) return false;
       if (Timestamp != other.Timestamp) return false;
       if (Index != other.Index) return false;
       if (!object.Equals(Validator, other.Validator)) return false;
@@ -191,6 +205,7 @@ namespace Phorkus.Proto {
       if (Version != 0) hash ^= Version.GetHashCode();
       if (prevBlockHash_ != null) hash ^= PrevBlockHash.GetHashCode();
       if (merkleRoot_ != null) hash ^= MerkleRoot.GetHashCode();
+      if (stateHash_ != null) hash ^= StateHash.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
       if (Index != 0UL) hash ^= Index.GetHashCode();
       if (validator_ != null) hash ^= Validator.GetHashCode();
@@ -236,6 +251,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(58);
         output.WriteMessage(Validator);
       }
+      if (stateHash_ != null) {
+        output.WriteRawTag(66);
+        output.WriteMessage(StateHash);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -252,6 +271,9 @@ namespace Phorkus.Proto {
       }
       if (merkleRoot_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MerkleRoot);
+      }
+      if (stateHash_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(StateHash);
       }
       if (Timestamp != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
@@ -290,6 +312,12 @@ namespace Phorkus.Proto {
           merkleRoot_ = new global::Phorkus.Proto.UInt256();
         }
         MerkleRoot.MergeFrom(other.MerkleRoot);
+      }
+      if (other.stateHash_ != null) {
+        if (stateHash_ == null) {
+          stateHash_ = new global::Phorkus.Proto.UInt256();
+        }
+        StateHash.MergeFrom(other.StateHash);
       }
       if (other.Timestamp != 0UL) {
         Timestamp = other.Timestamp;
@@ -352,6 +380,13 @@ namespace Phorkus.Proto {
               validator_ = new global::Phorkus.Proto.PublicKey();
             }
             input.ReadMessage(validator_);
+            break;
+          }
+          case 66: {
+            if (stateHash_ == null) {
+              stateHash_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(stateHash_);
             break;
           }
         }

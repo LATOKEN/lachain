@@ -20,7 +20,7 @@ namespace Phorkus.Utility.Utils
         
         public static BigInteger ToBigInteger(this UInt256 value)
         {
-            return new BigInteger(value.Buffer.ToByteArray().Reverse().Concat(new byte[] {0}).ToArray());
+            return new BigInteger(value.Buffer.ToByteArray().Concat(new byte[] {0}).ToArray());
         }
 
         public static UInt256 ToUInt256(this BigInteger value)
