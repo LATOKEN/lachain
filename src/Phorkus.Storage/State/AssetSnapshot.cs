@@ -38,7 +38,18 @@ namespace Phorkus.Storage.State
 
         public IEnumerable<Asset> GetAssets()
         {
-            return _state.Values.Select(value => Asset.Parser.ParseFrom(value));
+            return _state.Values.SelectMany(value =>
+            {
+                /* TODO: "fix me please" */
+                try
+                {
+                    return new[] {Asset.Parser.ParseFrom(value)};
+                }
+                catch
+                {
+                    return Enumerable.Empty<Asset>();
+                }
+            });
         }
 
         public Asset GetAssetByHash(UInt160 assetHash)
