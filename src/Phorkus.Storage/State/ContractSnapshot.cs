@@ -20,7 +20,9 @@ namespace Phorkus.Storage.State
         {
             _state.Commit();
         }
-        
+
+        public UInt256 Hash => _state.Hash;
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Contract GetContractByHash(UInt160 contractHash)
         {

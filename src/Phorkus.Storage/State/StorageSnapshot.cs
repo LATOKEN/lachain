@@ -22,6 +22,8 @@ namespace Phorkus.Storage.State
             _state.Commit();
         }
 
+        public UInt256 Hash => _state.Hash;
+
         public UInt256 GetValue(UInt160 contract, UInt256 key)
         {
             var value = _state.Get(

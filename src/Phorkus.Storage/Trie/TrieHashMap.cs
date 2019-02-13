@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Crypto;
+using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Storage.Trie
 {
@@ -86,6 +88,11 @@ namespace Phorkus.Storage.Trie
         public IEnumerable<byte[]> GetValues(ulong root)
         {
             return TraverseValues(root);
+        }
+
+        public UInt256 GetHash(ulong root)
+        {
+            return root == 0 ? UInt256Utils.Zero : GetNodeById(root).Hash.ToUInt256();
         }
 
         private IEnumerable<byte[]> TraverseValues(ulong root)

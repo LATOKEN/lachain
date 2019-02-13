@@ -24,6 +24,8 @@ namespace Phorkus.Storage.State
             _state.Commit();
         }
 
+        public UInt256 Hash => _state.Hash;
+
         public IEnumerable<UInt160> GetAssetHashes()
         {
             return GetAssets().Select(asset => asset.Hash);

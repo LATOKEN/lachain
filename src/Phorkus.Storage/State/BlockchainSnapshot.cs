@@ -1,4 +1,9 @@
-﻿namespace Phorkus.Storage.State
+﻿using System.Linq;
+using Phorkus.Crypto;
+using Phorkus.Proto;
+using Phorkus.Utility.Utils;
+
+namespace Phorkus.Storage.State
 {
     public class BlockchainSnapshot : IBlockchainSnapshot
     {
@@ -27,5 +32,17 @@
         public ITransactionSnapshot Transactions { get; }
         public IBlockSnapshot Blocks { get; }
         public IWithdrawalSnapshot Withdrawals { get; }
+
+        public UInt256 StateHash
+        {
+            get
+            {
+                return new ISnapshot[] {Balances, Assets, Contracts, Storage, Transactions, Blocks, Withdrawals}
+                    .Aggregate(
+                        Enumerable.Empty<byte>(),
+                        (current, snapshot) => current.Concat(snapshot.Hash.Buffer.ToByteArray()))
+                    .Keccak256().ToUInt256();
+            }
+        }
     }
 }

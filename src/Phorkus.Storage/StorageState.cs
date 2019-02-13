@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Phorkus.Proto;
 using Phorkus.Storage.Trie;
 
 namespace Phorkus.Storage
@@ -66,6 +67,8 @@ namespace Phorkus.Storage
         }
 
         public IEnumerable<byte[]> Values => _trieMap.GetValues(CurrentVersion);
+
+        public UInt256 Hash => _trieMap.GetHash(CurrentVersion);
 
         public ulong Commit()
         {

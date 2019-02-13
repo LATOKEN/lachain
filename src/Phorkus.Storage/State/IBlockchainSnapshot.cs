@@ -1,4 +1,6 @@
-﻿namespace Phorkus.Storage.State
+﻿using Phorkus.Proto;
+
+namespace Phorkus.Storage.State
 {
     public interface IBlockchainSnapshot
     {
@@ -9,5 +11,7 @@
         ITransactionSnapshot Transactions { get; }
         IBlockSnapshot Blocks { get; }
         IWithdrawalSnapshot Withdrawals { get; }
+
+        UInt256 StateHash { get; }
     }
 }

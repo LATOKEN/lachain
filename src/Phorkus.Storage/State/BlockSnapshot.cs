@@ -22,6 +22,8 @@ namespace Phorkus.Storage.State
             _state.Commit();
         }
 
+        public UInt256 Hash => _state.Hash;
+
         public ulong GetTotalBlockHeight()
         {
             var raw = _state.Get(EntryPrefix.BlockHeight.BuildPrefix());

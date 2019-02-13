@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Phorkus.Proto;
 
 namespace Phorkus.Storage.Trie
 {
@@ -13,5 +14,6 @@ namespace Phorkus.Storage.Trie
         ulong TryDelete(ulong root, byte[] key, out byte[] value);
         byte[] Find(ulong root, byte[] key);
         IEnumerable<byte[]> GetValues(ulong root);
+        UInt256 GetHash(ulong root);
     }
 }
