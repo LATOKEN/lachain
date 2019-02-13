@@ -37,7 +37,7 @@ namespace Phorkus.Storage.State
         {
             get
             {
-                return new ISnapshot[] {Balances, Assets, Contracts, Storage, Transactions, Blocks, Withdrawals}
+                return new ISnapshot[] {Balances, Assets, Contracts, Storage, Transactions, Withdrawals}
                     .Aggregate(
                         Enumerable.Empty<byte>(),
                         (current, snapshot) => current.Concat(snapshot.Hash.Buffer.ToByteArray()))

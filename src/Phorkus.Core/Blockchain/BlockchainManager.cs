@@ -37,7 +37,7 @@ namespace Phorkus.Core.Blockchain
 
         public void PersistBlockManually(Block block, IEnumerable<AcceptedTransaction> transactions)
         {
-            var error = _blockManager.Execute(block, transactions);
+            var error = _blockManager.Execute(block, transactions, commit: true, checkStateHash: false);
             if (error != OperatingError.Ok)
                 throw new InvalidBlockException(error);
         }

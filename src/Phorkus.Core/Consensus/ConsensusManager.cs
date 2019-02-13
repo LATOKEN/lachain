@@ -12,6 +12,7 @@ using Phorkus.Proto;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Networking;
+using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Consensus
@@ -28,6 +29,7 @@ namespace Phorkus.Core.Consensus
         private readonly IBlockSynchronizer _blockchainSynchronizer;
         private readonly MessageFactory _messageFactory;
         private readonly IValidatorManager _validatorManager;
+        private readonly IStateManager _stateManager;
 
         private readonly object _quorumSignaturesAcquired = new object();
         private readonly object _prepareRequestReceived = new object();
@@ -47,10 +49,11 @@ namespace Phorkus.Core.Consensus
             IConfigManager configManager,
             ICrypto crypto,
             IBlockSynchronizer blockchainSynchronizer,
-            IValidatorManager validatorManager)
+            IValidatorManager validatorManager,
+            IStateManager stateManager)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
-            
+
             _blockManager = blockManager ?? throw new ArgumentNullException(nameof(blockManager));
             _transactionPool = transactionPool ?? throw new ArgumentNullException(nameof(transactionPool));
             _blockchainSynchronizer =
@@ -59,6 +62,7 @@ namespace Phorkus.Core.Consensus
             _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _validatorManager = validatorManager ?? throw new ArgumentNullException(nameof(validatorManager));
+            _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
 
             _keyPair = new KeyPair(config.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
@@ -67,7 +71,7 @@ namespace Phorkus.Core.Consensus
             _random = new SecureRandom();
             _stopped = true;
             _gotNewBlock = false;
-            
+
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
 
@@ -76,11 +80,11 @@ namespace Phorkus.Core.Consensus
             lock (this)
             {
                 _context.LastBlockRecieved = DateTime.UtcNow;
-                if (_context.State.HasFlag(ConsensusState.ViewChanging))                
+                if (_context.State.HasFlag(ConsensusState.ViewChanging))
                     _gotNewBlock = true;
             }
         }
-        
+
         public void Stop()
         {
             _stopped = true;
@@ -109,7 +113,8 @@ namespace Phorkus.Core.Consensus
                         while (!CanChangeView(out viewNumber))
                         {
                             // TODO: manage timeouts
-                            var timeToWait = TimeUtils.Multiply(_timePerBlock, 1 << _context.MyState.ExpectedViewNumber);
+                            var timeToWait =
+                                TimeUtils.Multiply(_timePerBlock, 1 << _context.MyState.ExpectedViewNumber);
                             if (!Monitor.Wait(_changeViewApproved, timeToWait))
                             {
                                 RequestChangeView();
@@ -124,15 +129,35 @@ namespace Phorkus.Core.Consensus
                 if (_context.Role.HasFlag(ConsensusState.Primary))
                 {
                     // if we are primary, wait until block must be produced
-                    var timeToAwait = _timePerBlock - (DateTime.UtcNow - _context.LastBlockRecieved) - TimeSpan.FromSeconds(1);
+                    var timeToAwait = _timePerBlock - (DateTime.UtcNow - _context.LastBlockRecieved) -
+                                      TimeSpan.FromSeconds(1);
                     _logger.LogDebug("Waiting " + timeToAwait.TotalMilliseconds + "ms until we can produce block");
                     if (timeToAwait.TotalSeconds > 0)
                         Thread.Sleep(timeToAwait);
                     _logger.LogDebug("Wait completed");
-                    
-                    var blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlock.Header, _keyPair.PublicKey)
-                        .WithTransactions(_transactionPool).Build((ulong) _random.Next());
-                    
+
+                    var blockWithTransactions =
+                        new BlockBuilder(_blockchainContext.CurrentBlock.Header, _keyPair.PublicKey)
+                            .WithTransactions(_transactionPool).Build((ulong) _random.Next());
+
+                    var snapshotBefore = _stateManager.LastApprovedSnapshot;
+                    _logger.LogDebug("Executing transactions in no-check no-commit mode");
+                    var error = _blockManager.Execute(
+                        blockWithTransactions.Block, blockWithTransactions.Transactions,
+                        commit: false, checkStateHash: false
+                    );
+                    if (error != OperatingError.Ok)
+                        throw new InvalidOperationException($"Cannot assemble block: error {error}");
+                    blockWithTransactions.Block.Header.StateHash = _stateManager.LastApprovedSnapshot.StateHash;
+                    _logger.LogDebug(
+                        $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
+                        $" state_hash={blockWithTransactions.Block.Header.StateHash}"
+                    );
+                    _stateManager.RollbackTo(snapshotBefore);
+                    _logger.LogDebug(
+                        $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
+                    );
+
                     _logger.LogDebug($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
                     _context.CurrentProposal = new ConsensusProposal
@@ -140,7 +165,8 @@ namespace Phorkus.Core.Consensus
                         TransactionHashes = blockWithTransactions.Transactions.Select(tx => tx.Hash).ToArray(),
                         Transactions = blockWithTransactions.Transactions.ToDictionary(tx => tx.Hash),
                         Timestamp = blockWithTransactions.Block.Header.Timestamp,
-                        Nonce = blockWithTransactions.Block.Header.Nonce
+                        Nonce = blockWithTransactions.Block.Header.Nonce,
+                        StateHash = blockWithTransactions.Block.Header.StateHash
                     };
                     _context.State |= ConsensusState.RequestSent;
 
@@ -192,6 +218,7 @@ namespace Phorkus.Core.Consensus
                         proposalUpdateFailed = true;
                         break;
                     }
+
                     _context.CurrentProposal.Transactions.Add(txHash, tx);
                 }
 
@@ -242,11 +269,12 @@ namespace Phorkus.Core.Consensus
 
                 _context.State |= ConsensusState.BlockSent;
 
-                var result = _blockManager.Execute(block, txs);
+                var result = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
                 if (result == OperatingError.Ok)
                     _logger.LogDebug($"Block persist completed: {block.Hash}");
                 else
-                    _logger.LogWarning($"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
+                    _logger.LogWarning(
+                        $"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
 
                 _context.LastBlockRecieved = DateTime.UtcNow;
                 InitializeConsensus(0);
@@ -350,11 +378,12 @@ namespace Phorkus.Core.Consensus
                 TransactionHashes = prepareRequest.TransactionHashes.ToArray(),
                 Transactions = new Dictionary<UInt256, AcceptedTransaction>(),
                 Timestamp = prepareRequest.Timestamp,
-                Nonce = prepareRequest.Nonce
+                Nonce = prepareRequest.Nonce,
+                StateHash = prepareRequest.StateHash
             };
-            
+
             var header = _context.GetProposedHeader();
-            
+
             var sigVerified = _blockManager.VerifySignature(header, prepareRequest.Signature,
                 _context.Validators[validatorIndex].PublicKey);
             if (sigVerified != OperatingError.Ok)
@@ -389,7 +418,7 @@ namespace Phorkus.Core.Consensus
             );
             OnSignatureAcquired(prepareResponse.Validator.ValidatorIndex, prepareResponse.Signature);
         }
-        
+
         public void OnChangeViewReceived(ChangeViewRequest changeViewRequest)
         {
             if (!CheckPayload(changeViewRequest.Validator, true))

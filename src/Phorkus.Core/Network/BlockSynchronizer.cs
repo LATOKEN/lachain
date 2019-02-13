@@ -118,7 +118,7 @@ namespace Phorkus.Core.Network
                     continue;
                 txs.Add(tx);
             }
-            var error = _blockManager.Execute(block, txs);
+            var error = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
             if (error == OperatingError.BlockAlreadyExists)
                 return;
             if (error != OperatingError.Ok)

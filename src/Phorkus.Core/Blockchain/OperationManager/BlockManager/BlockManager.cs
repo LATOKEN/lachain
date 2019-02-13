@@ -57,10 +57,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
         
-        public OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions)
+        public OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions, bool checkStateHash, bool commit)
         {
             var currentTransactions = transactions.ToDictionary(tx => tx.Hash, tx => tx);
             var startTime = TimeUtils.CurrentTimeMillis();
+            var snapshotBefore = _stateManager.LastApprovedSnapshot;
             
             /* verify next block */
             var error = Verify(block);
@@ -120,7 +121,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                     if (_TakeTransactionFee(validatorAddress, transaction, snapshot) != OperatingError.Ok)
                         throw new Exception($"Unable to take fee for transaction {transaction.Hash.Buffer.ToHex()}");
                     snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
-                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}, excepted {_transactionManager.CalcNextTxNonce(transaction.Transaction?.From)}), {result}");
+                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}, expected {_transactionManager.CalcNextTxNonce(transaction.Transaction?.From)}), {result}");
                     _stateManager.Approve();
                     continue;
                 }
@@ -138,11 +139,19 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             snapshotBlock.Blocks.AddBlock(block);
             _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms");
             _stateManager.Approve();
-            
-            /* flush changes to database */
-            _stateManager.Commit();
-            
-            OnBlockPersisted?.Invoke(this, block);
+
+            if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
+            {
+                _stateManager.RollbackTo(snapshotBefore);
+                return OperatingError.InvalidState;
+            }
+
+            if (commit)
+            {
+                /* flush changes to database */
+                _stateManager.Commit();
+                OnBlockPersisted?.Invoke(this, block);
+            }
             return OperatingError.Ok;
         }
 

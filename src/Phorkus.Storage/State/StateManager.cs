@@ -20,17 +20,31 @@ namespace Phorkus.Storage.State
 
         private readonly Mutex _globalMutex
             = new Mutex(false);
-        
+
         public StateManager(IStorageManager storageManager)
         {
-            _balanceManager = new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager, (uint) RepositoryType.BalanceRepository);
-            _assetManager = new SnapshotManager<IAssetSnapshot, AssetSnapshot>(storageManager, (uint) RepositoryType.AssetRepository);
-            _contractManager = new SnapshotManager<IContractSnapshot, ContractSnapshot>(storageManager, (uint) RepositoryType.ContractRepository);
-            _storageManager = new SnapshotManager<IStorageSnapshot, StorageSnapshot>(storageManager, (uint) RepositoryType.StorageRepository);
-            _transactionManager = new SnapshotManager<ITransactionSnapshot, TransactionSnapshot>(storageManager, (uint) RepositoryType.TransactionRepository);
-            _blockManager = new SnapshotManager<IBlockSnapshot, BlockSnapshot>(storageManager, (uint) RepositoryType.BlockRepository);
-            _withdrawalManager = new SnapshotManager<IWithdrawalSnapshot, WithdrawalSnapshot>(storageManager, (uint) RepositoryType.WithdrawalRepository);
-            
+            _balanceManager =
+                new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager,
+                    (uint) RepositoryType.BalanceRepository);
+            _assetManager =
+                new SnapshotManager<IAssetSnapshot, AssetSnapshot>(storageManager,
+                    (uint) RepositoryType.AssetRepository);
+            _contractManager =
+                new SnapshotManager<IContractSnapshot, ContractSnapshot>(storageManager,
+                    (uint) RepositoryType.ContractRepository);
+            _storageManager =
+                new SnapshotManager<IStorageSnapshot, StorageSnapshot>(storageManager,
+                    (uint) RepositoryType.StorageRepository);
+            _transactionManager =
+                new SnapshotManager<ITransactionSnapshot, TransactionSnapshot>(storageManager,
+                    (uint) RepositoryType.TransactionRepository);
+            _blockManager =
+                new SnapshotManager<IBlockSnapshot, BlockSnapshot>(storageManager,
+                    (uint) RepositoryType.BlockRepository);
+            _withdrawalManager =
+                new SnapshotManager<IWithdrawalSnapshot, WithdrawalSnapshot>(storageManager,
+                    (uint) RepositoryType.WithdrawalRepository);
+
             LastApprovedSnapshot = new BlockchainSnapshot(
                 _balanceManager.LastApprovedSnapshot,
                 _assetManager.LastApprovedSnapshot,
@@ -41,11 +55,11 @@ namespace Phorkus.Storage.State
                 _withdrawalManager.LastApprovedSnapshot
             );
         }
-        
+
         public IBlockchainSnapshot NewSnapshot()
         {
             _globalMutex.WaitOne();
-            
+
             if (PendingSnapshot != null)
                 throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
             PendingSnapshot = new BlockchainSnapshot(
@@ -79,7 +93,7 @@ namespace Phorkus.Storage.State
                 _globalMutex.ReleaseMutex();
             }
         }
-        
+
         public void Rollback()
         {
             try
@@ -124,6 +138,22 @@ namespace Phorkus.Storage.State
                     // ignore
                 }
             }
+        }
+
+        public void RollbackTo(IBlockchainSnapshot snapshot)
+        {
+            if (PendingSnapshot != null)
+                throw new InvalidOperationException("Cannot rollback to state with unapproved changes");
+            _globalMutex.WaitOne();
+            _balanceManager.RollbackTo(snapshot.Balances);
+            _assetManager.RollbackTo(snapshot.Assets);
+            _contractManager.RollbackTo(snapshot.Contracts);
+            _storageManager.RollbackTo(snapshot.Storage);
+            _transactionManager.RollbackTo(snapshot.Transactions);
+            _blockManager.RollbackTo(snapshot.Blocks);
+            _withdrawalManager.RollbackTo(snapshot.Withdrawals);
+            _globalMutex.ReleaseMutex();
+            LastApprovedSnapshot = snapshot;
         }
     }
 }

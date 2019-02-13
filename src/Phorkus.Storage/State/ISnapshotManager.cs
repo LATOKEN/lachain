@@ -1,6 +1,6 @@
 ﻿namespace Phorkus.Storage.State
 {
-    public interface ISnapshotManager<out T>
+    public interface ISnapshotManager<T>
     {
         T CurrentSnapshot { get; }
         T LastApprovedSnapshot { get; }
@@ -22,5 +22,10 @@
         /// Commit already approved snapshot
         /// </summary>
         void Commit();
+
+        /// <summary>
+        /// Rollback to specific version (in approved but uncommited state)
+        /// </summary>
+        void RollbackTo(T snapshot);
     }
 }

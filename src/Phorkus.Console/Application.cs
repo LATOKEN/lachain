@@ -171,7 +171,7 @@ namespace Phorkus.Console
                 Thread.Sleep(1000);
         }
         
-        private static ulong _dirtyNonce;
+//        private static ulong _dirtyNonce;
 
         private void _TraceBalances(IAssetSnapshot assetSnapshot, IBalanceSnapshot balanceSnapshot, UInt160 address)
         {

@@ -15,7 +15,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         Block GetByHash(UInt256 blockHash);
         
-        OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions);
+        OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions, bool checkStateHash, bool commit);
         
         Signature Sign(BlockHeader block, KeyPair keyPair);
         

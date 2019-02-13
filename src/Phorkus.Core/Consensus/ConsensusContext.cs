@@ -58,6 +58,7 @@ namespace Phorkus.Core.Consensus
                 Version = Version,
                 PrevBlockHash = PreviousBlockHash,
                 MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes) ?? UInt256Utils.Zero,
+                StateHash = CurrentProposal.StateHash,
                 Timestamp = CurrentProposal.Timestamp,
                 Index = BlockIndex,
                 Validator = Validators[PrimaryIndex].PublicKey,
@@ -159,7 +160,8 @@ namespace Phorkus.Core.Consensus
                 Validator = MakeValidator(),
                 Nonce = block.Block.Header.Nonce,
                 Signature = signature,
-                Timestamp = block.Block.Header.Timestamp
+                Timestamp = block.Block.Header.Timestamp,
+                StateHash = block.Block.Header.StateHash
             };
             if (block.Transactions.Count > 0)
                 blockPrepareRequest.TransactionHashes.AddRange(block.Block.TransactionHashes);
@@ -186,7 +188,8 @@ namespace Phorkus.Core.Consensus
             CurrentProposal = new ConsensusProposal
             {
                 TransactionHashes = block.Transactions.Distinct().Select(t => t.Hash).ToArray(),
-                Transactions = block.Transactions.Distinct().ToDictionary(transaction => transaction.Hash)
+                Transactions = block.Transactions.Distinct().ToDictionary(transaction => transaction.Hash),
+                StateHash = block.Block.Header.StateHash
             };
         }
     }
