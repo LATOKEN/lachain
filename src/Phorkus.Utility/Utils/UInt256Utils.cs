@@ -30,7 +30,7 @@ namespace Phorkus.Utility.Utils
             var bytes = value.ToByteArray();
             if (bytes.Length > 33 || bytes.Length == 33 && bytes[32] != 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
-            return bytes.Take(32).Concat(new byte[32 - bytes.Length]).Reverse().ToArray().ToUInt256();
+            return bytes.Take(32).Concat(new byte[Math.Max(32 - bytes.Length, 0)]).ToArray().ToUInt256();
         }
 
         public static Money ToMoney(this UInt256 value)

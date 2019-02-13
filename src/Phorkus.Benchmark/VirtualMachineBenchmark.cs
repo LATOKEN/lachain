@@ -54,28 +54,6 @@ namespace Phorkus.Benchmark
             
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
             
-            var currentTime = TimeUtils.CurrentTimeMillis();
-            stateManager.NewSnapshot();
-
-            var sender = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
-            var to = "0xfd893ce89186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
-            
-            /* give to sender 1 token */
-            var valueToTransfer = Money.Wei;
-            stateManager.CurrentSnapshot.Storage.SetValue(contract.Hash, sender.ToUInt256(), (valueToTransfer * 3).ToUInt256());
-            
-            /* ERC-20: totalSupply (0x18160ddd) */
-            Console.WriteLine("\nERC-20: totalSupply()");
-            var input = ContractEncoder.Encode("totalSupply()");
-            Console.WriteLine("ABI: " + input.ToHex());
-            var status = virtualMachine.InvokeContract(contract, sender, input);
-            if (status != ExecutionStatus.Ok)
-            {
-                stateManager.Rollback();
-                Console.WriteLine("Contract execution failed: " + status);
-                goto exit_mark;
-            }
-            
 //            /* ERC-20: totalSupply (0x18160ddd) */
 //            Console.WriteLine("\nERC-20: totalSupply()");
 //            input = ContractEncoder.Encode("totalSupply()", sender);
@@ -87,7 +65,7 @@ namespace Phorkus.Benchmark
 //                Console.WriteLine("Contract execution failed: " + status);
 //                goto exit_mark;
 //            }
-            
+//            
 //            /* ERC-20: balanceOf (0x70a08231) */
 //            Console.WriteLine($"\nERC-20: balanceOf({sender.Buffer.ToHex()})");
 //            input = ContractEncoder.Encode("balanceOf(address)", sender);
@@ -132,46 +110,71 @@ namespace Phorkus.Benchmark
 //                goto exit_mark;
 //            }
 
-            /* ERC-20: balanceOf (0x40c10f19) */
-            Console.WriteLine($"\nERC-20: mint({sender.Buffer.ToHex()},{Money.FromDecimal(1)})");
-            input = ContractEncoder.Encode("mint(address,uint256)", sender, Money.FromDecimal(1));
-            Console.WriteLine("ABI: " + input.ToHex());
-            status = virtualMachine.InvokeContract(contract, sender, input); 
-            if (status != ExecutionStatus.Ok)
+            for (int i = 0; i < 2; ++i)
             {
-                stateManager.Rollback();
-                Console.WriteLine("Contract execution failed: " + status);
-                goto exit_mark;
-            }
+                var currentTime = TimeUtils.CurrentTimeMillis();
+                stateManager.NewSnapshot();
+
+                var sender = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
+                var to = "0xfd893ce89186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
             
-            /* ERC-20: totalSupply (0x18160ddd) */
-            Console.WriteLine("\nERC-20: totalSupply()");
-            Console.WriteLine("ABI: " + input.ToHex());
-            input = ContractEncoder.Encode("totalSupply()");
-            status = virtualMachine.InvokeContract(contract, sender, input);
-            if (status != ExecutionStatus.Ok)
-            {
-                stateManager.Rollback();
-                Console.WriteLine("Contract execution failed: " + status);
-                goto exit_mark;
-            }
+                /* give to sender 1 token */
+                var valueToTransfer = Money.Wei;
+                stateManager.CurrentSnapshot.Storage.SetValue(contract.Hash, sender.ToUInt256(), (valueToTransfer * 3).ToUInt256());
             
-            /* ERC-20: balanceOf (0x0a08231) */
-            Console.WriteLine($"\nERC-20: balanceOf({sender.Buffer.ToHex()})");
-            input = ContractEncoder.Encode("balanceOf(address)", sender);
-            Console.WriteLine("ABI: " + input.ToHex());
-            status = virtualMachine.InvokeContract(contract, sender, input); 
-            if (status != ExecutionStatus.Ok)
-            {
-                stateManager.Rollback();
-                Console.WriteLine("Contract execution failed: " + status);
-                goto exit_mark;
+                /* ERC-20: totalSupply (0x18160ddd) */
+                Console.WriteLine("\nERC-20: totalSupply()");
+                var input = ContractEncoder.Encode("totalSupply()");
+                Console.WriteLine("ABI: " + input.ToHex());
+                var status = virtualMachine.InvokeContract(contract, sender, input);
+                if (status != ExecutionStatus.Ok)
+                {
+                    stateManager.Rollback();
+                    Console.WriteLine("Contract execution failed: " + status);
+                    return;
+                }
+                
+                /* ERC-20: balanceOf (0x40c10f19) */
+                Console.WriteLine($"\nERC-20: mint({sender.Buffer.ToHex()},{Money.FromDecimal(100)})");
+                input = ContractEncoder.Encode("mint(address,uint256)", sender, Money.FromDecimal(100));
+                Console.WriteLine("ABI: " + input.ToHex());
+                status = virtualMachine.InvokeContract(contract, sender, input);
+                if (status != ExecutionStatus.Ok)
+                {
+                    stateManager.Rollback();
+                    Console.WriteLine("Contract execution failed: " + status);
+                    goto exit_mark;
+                }
+
+                /* ERC-20: totalSupply (0x18160ddd) */
+                Console.WriteLine("\nERC-20: totalSupply()");
+                Console.WriteLine("ABI: " + input.ToHex());
+                input = ContractEncoder.Encode("totalSupply()");
+                status = virtualMachine.InvokeContract(contract, sender, input);
+                if (status != ExecutionStatus.Ok)
+                {
+                    stateManager.Rollback();
+                    Console.WriteLine("Contract execution failed: " + status);
+                    goto exit_mark;
+                }
+
+                /* ERC-20: balanceOf (0x0a08231) */
+                Console.WriteLine($"\nERC-20: balanceOf({sender.Buffer.ToHex()})");
+                input = ContractEncoder.Encode("balanceOf(address)", sender);
+                Console.WriteLine("ABI: " + input.ToHex());
+                status = virtualMachine.InvokeContract(contract, sender, input);
+                if (status != ExecutionStatus.Ok)
+                {
+                    stateManager.Rollback();
+                    Console.WriteLine("Contract execution failed: " + status);
+                    goto exit_mark;
+                }
+
+                stateManager.Approve();
+                exit_mark:
+                var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+                Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
             }
-            
-            stateManager.Approve();
-            exit_mark:
-            var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
         }
     }
 }
