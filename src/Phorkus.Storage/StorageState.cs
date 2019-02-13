@@ -65,8 +65,6 @@ namespace Phorkus.Storage
             return CurrentVersion;
         }
 
-        public IEnumerable<KeyValuePair<byte[], byte[]>> Entries => _trieMap.GetEntries(CurrentVersion);
-        public IEnumerable<byte[]> Keys => _trieMap.GetKeys(CurrentVersion);
         public IEnumerable<byte[]> Values => _trieMap.GetValues(CurrentVersion);
 
         public ulong Commit()

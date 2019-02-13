@@ -13,8 +13,6 @@ namespace Phorkus.Storage
         ulong Delete(byte[] key, out byte[] value);
         ulong TryDelete(byte[] key, out byte[] value);
         
-        IEnumerable<KeyValuePair<byte[], byte[]>> Entries { get; }
-        IEnumerable<byte[]> Keys { get; }
         IEnumerable<byte[]> Values { get; }
         
         ulong Commit();

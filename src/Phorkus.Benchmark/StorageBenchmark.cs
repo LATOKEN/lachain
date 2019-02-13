@@ -5,7 +5,8 @@ using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
-using Phorkus.Storage;
+using Phorkus.Proto;
+using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Benchmark
@@ -40,44 +41,63 @@ namespace Phorkus.Benchmark
             }
         }
 
+        private static UInt256 RandUInt256()
+        {
+            var buffer = new byte[32];
+            for (var i = 0; i < 8; ++i)
+            {
+                var x = Rand();
+                for (var j = 0; j < 4; ++j)
+                    buffer[i * 4 + j] = (byte) ((x >> (8 * j)) & 0xFF);
+            }
+
+            return buffer.ToUInt256();
+        }
+
         public void Start(string[] args)
         {
-            var rocksDbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = new StorageManager(rocksDbContext);
-
+            var stateManager = _container.Resolve<IStateManager>();
+            
             const uint T = 100000;
             const uint batches = 100;
-            IDictionary<byte[], byte[]> blocks = new Dictionary<byte[], byte[]>();
+            IDictionary<UInt256, UInt256> blocks = new Dictionary<UInt256, UInt256>();
 
-            var state = storageManager.GetLastState(1);
-            Console.WriteLine("Initial repo version: " + state.CurrentVersion);
+            var contract = UInt160Utils.Zero;
+
+            Console.WriteLine("Initial repo version: " + stateManager.LastApprovedSnapshot.Storage.Version);
             for (var it = 0u; it < batches; ++it)
             {
                 Console.WriteLine($"commit number {it}");
+                var snapshot = stateManager.NewSnapshot();
                 var start = TimeUtils.CurrentTimeMillis();
                 for (var i = 0u; i < T; ++i)
                 {
+                    
                     if (blocks.Count == 0 || Rand() % 3 != 0)
                     {
-                        var key = BitConverter.GetBytes(Rand());
-                        var value = BitConverter.GetBytes(Rand());
+                        var key = RandUInt256();
+                        var value = RandUInt256();
                         blocks[key] = value;
-                        state.AddOrUpdate(key, value);
+                        snapshot.Storage.SetValue(contract, key, value);
                     }
                     else
                     {
                         var key = blocks.Keys.First();
-                        state.Delete(key, out _);
+                        snapshot.Storage.DeleteValue(contract, key, out var wasValue);
+                        if (!wasValue.Equals(blocks[key]))
+                            throw new InvalidOperationException("FAIL: value in storage is incorrect");
                         blocks.Remove(key);
                     }
                 }
 
+                stateManager.Approve();
+                
                 var inMemPhase = TimeUtils.CurrentTimeMillis();
                 Console.WriteLine($"{T} insertions in {inMemPhase - start}ms");
                 Console.WriteLine($"{(double) (inMemPhase - start) / T}ms per insertion");
                 Console.WriteLine($"{(double) T * 1000 / (inMemPhase - start)} insertions per sec");
 
-                state.Commit();
+                stateManager.Commit();
                 var commit = TimeUtils.CurrentTimeMillis();
             
                 Console.WriteLine($"Commited {T} operations in {commit - inMemPhase}ms");

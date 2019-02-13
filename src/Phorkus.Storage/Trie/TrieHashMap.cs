@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Crypto;
 
 namespace Phorkus.Storage.Trie
 {
-    public class TrieHashMap : ITrieMap
+    internal class TrieHashMap : ITrieMap
     {
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new Dictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
@@ -27,7 +29,7 @@ namespace Phorkus.Storage.Trie
             _repository.WriteNode(root, node);
             _persistedNodes.Add(root);
         }
-        
+
         public void Checkpoint(ulong root)
         {
             EnsurePersisted(root);
@@ -40,238 +42,241 @@ namespace Phorkus.Storage.Trie
             _persistedNodes.Clear();
         }
 
-        private static uint Hash(IEnumerable<byte> key)
+        private static byte[] Hash(IEnumerable<byte> key)
         {
-            unchecked
-            {
-                return key.Aggregate(0u, (current, b) => current * 1131861u + b);
-            }
+            return key.Keccak256();
         }
 
         public ulong Add(ulong root, byte[] key, byte[] value)
         {
-            var hash = Hash(key);
-            return AddInternal(root, hash, 0, key, value);
+            key = Hash(key);
+            return AddInternal(root, 0, key, value, true);
         }
 
         public ulong AddOrUpdate(ulong root, byte[] key, byte[] value)
         {
-            var hash = Hash(key);
-            return AddOrUpdateInternal(root, hash, 0, key, value);
+            key = Hash(key);
+            return AddInternal(root, 0, key, value, false);
         }
 
         public ulong Update(ulong root, byte[] key, byte[] value)
         {
-            var hash = Hash(key);
-            return UpdateInternal(root, hash, 0, key, value);
+            key = Hash(key);
+            return UpdateInternal(root, 0, key, value);
         }
 
         public ulong Delete(ulong root, byte[] key, out byte[] value)
         {
-            var hash = Hash(key);
-            return DeleteInternal(root, hash, 0, key, out value);
+            key = Hash(key);
+            return DeleteInternal(root, 0, key, out value, true);
         }
 
         public ulong TryDelete(ulong root, byte[] key, out byte[] value)
         {
-            var hash = Hash(key);
-            return TryDeleteInternal(root, hash, 0, key, out value);
+            key = Hash(key);
+            return DeleteInternal(root, 0, key, out value, false);
         }
 
         public byte[] Find(ulong root, byte[] key)
         {
-            var hash = Hash(key);
-            return FindInternal(root, hash, key);
-        }
-
-        public IEnumerable<byte[]> GetKeys(ulong root)
-        {
-            return Traverse(root, 0).Select(pair => pair.Key);
+            key = Hash(key);
+            return FindInternal(root, key);
         }
 
         public IEnumerable<byte[]> GetValues(ulong root)
         {
-            return Traverse(root, 0).Select(pair => pair.Value);
+            return TraverseValues(root);
         }
 
-        public IEnumerable<KeyValuePair<byte[], byte[]>> GetEntries(ulong root)
-        {
-            return Traverse(root, 0);
-        }
-
-        private IEnumerable<KeyValuePair<byte[], byte[]>> Traverse(ulong root, int height)
+        private IEnumerable<byte[]> TraverseValues(ulong root)
         {
             if (root == 0)
                 yield break;
-            
-            /* 7 is 32 bits (32 bit integer sizeof) / log_2(32) */
-            if (height == 7)
+
+            var node = GetNodeById(root);
+            switch (node)
             {
-                var node = GetNodeById(root);
-                if (!(node is LeafNode leafNode))
-                    yield break;
-                foreach (var pair in leafNode.Pairs)
-                    yield return pair;
-                yield break;
+                case LeafNode leafNode:
+                    yield return leafNode.Value;
+                    break;
+                default:
+                    foreach (var child in node.Children)
+                    foreach (var value in TraverseValues(child))
+                        yield return value;
+                    break;
             }
-            
-            foreach (var son in GetNodeById(root).Children)
-            foreach (var entry in Traverse(son, height + 1))
-                yield return entry;
         }
 
         private IHashTrieNode GetNodeById(ulong id)
         {
+            if (id == 0) return null;
             return _nodeCache.TryGetValue(id, out var node) ? node : _repository.GetNode(id);
         }
 
-        private ulong NewLeafNode(byte[] key, byte[] value)
+        private ulong ModifyInternalNode(InternalNode node, byte h, ulong value, byte[] valueHash)
+        {
+            if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
+            {
+                // we have to handle case when one of two children is deleted and internal node is folded to leaf
+                var secondChild = node.Children.First(child => child != node.GetChildByHash(h));
+                return secondChild;
+            }
+
+            var modified = InternalNode.ModifyChildren(
+                node, h, value, node.Children.Select(id => GetNodeById(id).Hash), valueHash);
+            if (modified == null) return 0u;
+            var newId = _versionFactory.NewVersion();
+            _nodeCache[newId] = modified;
+            return newId;
+        }
+
+        private ulong NewLeafNode(IEnumerable<byte> key, IEnumerable<byte> value)
         {
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = new LeafNode(key, value);
             return newId;
         }
 
-        private ulong ModifyInternalNode(InternalNode node, byte h, ulong value)
+        private ulong UpdateLeafNode(ulong id, LeafNode node, byte[] value)
         {
-            var newId = _versionFactory.NewVersion();
-            _nodeCache[newId] = InternalNode.ModifyChildren(node, h, value);
-            return newId;
+            return node.Value.SequenceEqual(value) ? id : NewLeafNode(node.KeyHash, value);
         }
 
-        private ulong InsertInLeafNode(LeafNode node, byte[] key, byte[] value)
+        private static byte HashFragment(IReadOnlyList<byte> hash, int n)
         {
-            var newId = _versionFactory.NewVersion();
-            _nodeCache[newId] = LeafNode.Insert(node, key, value);
-            return newId;
+            var bitOffset = 5 * n;
+            if (bitOffset % 8 <= 3)
+                return (byte) ((hash[bitOffset / 8] >> (bitOffset % 8)) & 0x1F);
+            var fromFirst = 8 - bitOffset % 8;
+            var first = hash[bitOffset / 8] >> (bitOffset % 8);
+            var second = hash[bitOffset / 8 + 1] & ((1u << (5 - fromFirst)) - 1);
+            return (byte) ((second << fromFirst) | first);
         }
 
-        private ulong TryDeleteInLeafNode(LeafNode node, byte[] key, out byte[] value)
+        private ulong SplitLeafNode(
+            ulong id, LeafNode leafNode, int height, IReadOnlyList<byte> keyHash, IEnumerable<byte> value
+        )
         {
-            var newId = _versionFactory.NewVersion();
-            _nodeCache[newId] = LeafNode.Delete(node, key, out value);
-            return newId;
-        }
-
-        private ulong InsertOrUpdateInLeafNode(LeafNode node, byte[] key, byte[] value)
-        {
-            var newId = _versionFactory.NewVersion();
-            _nodeCache[newId] = LeafNode.InsertOrUpdate(node, key, value);
-            return newId;
-        }
-
-        private ulong UpdateInLeafNode(LeafNode node, byte[] key, byte[] value)
-        {
-            var newId = _versionFactory.NewVersion();
-            _nodeCache[newId] = LeafNode.Update(node, key, value);
-            return newId;
-        }
-
-        private ulong DeleteInLeafNode(LeafNode node, byte[] key, out byte[] value)
-        {
-            var newId = _versionFactory.NewVersion();
-            _nodeCache[newId] = LeafNode.Delete(node, key, out value, true);
-            return newId;
-        }
-
-        private static byte HashFragment(uint hash, int n)
-        {
-            return (byte) ((hash >> (5 * n)) & 0x1F);
-        }
-
-        private ulong AddInternal(ulong root, uint hash, int height, byte[] key, byte[] value)
-        {
-            if (height == 7)
+            var firstFragment = HashFragment(leafNode.KeyHash, height);
+            var secondFragment = HashFragment(keyHash, height);
+            if (firstFragment != secondFragment)
             {
-                if (root == 0)
-                    return NewLeafNode(key, value);
-                return InsertInLeafNode(GetNodeById(root) as LeafNode, key, value);
+                var secondSon = NewLeafNode(keyHash, value);
+                var secondSonHash = GetNodeById(secondSon).Hash;
+
+                var newId = _versionFactory.NewVersion();
+                _nodeCache[newId] = InternalNode.WithChildren(
+                    new[] {id, secondSon},
+                    new[] {firstFragment, secondFragment},
+                    new[] {leafNode.Hash, secondSonHash}
+                );
+                return newId;
             }
-            
-            var h = HashFragment(hash, height);
+            else
+            {
+                var son = SplitLeafNode(id, leafNode, height + 1, keyHash, value);
+                var sonHash = GetNodeById(son).Hash;
+                var newId = _versionFactory.NewVersion();
+                _nodeCache[newId] = InternalNode.WithChildren(new[] {son}, new[] {firstFragment}, new[] {sonHash});
+                return newId;
+            }
+        }
+
+        private ulong AddInternal(ulong root, int height, IReadOnlyList<byte> keyHash, byte[] value, bool check)
+        {
             if (root == 0)
+                return NewLeafNode(keyHash, value);
+
+            var rootNode = GetNodeById(root);
+            switch (rootNode)
             {
-                var son = AddInternal(0, hash, height + 1, key, value);
-                return ModifyInternalNode(null, h, son);
+                case InternalNode internalNode:
+                    var h = HashFragment(keyHash, height);
+                    var to = internalNode.GetChildByHash(h);
+                    var updatedTo = AddInternal(to, height + 1, keyHash, value, check);
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo).Hash);
+                case LeafNode leafNode:
+                    if (!leafNode.KeyHash.SequenceEqual(keyHash))
+                        return SplitLeafNode(root, leafNode, height, keyHash, value);
+                    if (check)
+                        throw new ArgumentException("Specified keyHash is already present or hash collision occured");
+                    return UpdateLeafNode(root, leafNode, value);
             }
 
-            var rootNode = GetNodeById(root);
-            var to = rootNode.GetChildByHash(h);
-            return ModifyInternalNode(rootNode as InternalNode, h, AddInternal(to, hash, height + 1, key, value));
+            throw new InvalidOperationException($"Unknown node type {root.GetType()}");
         }
 
-        private ulong AddOrUpdateInternal(ulong root, uint hash, int height, byte[] key, byte[] value)
-        {
-            if (height == 7)
-            {
-                if (root == 0) return NewLeafNode(key, value);
-                return InsertOrUpdateInLeafNode(GetNodeById(root) as LeafNode, key, value);
-            }
-
-            var h = HashFragment(hash, height);
-            if (root == 0)
-            {
-                var son = AddOrUpdateInternal(0, hash, height + 1, key, value);
-                return ModifyInternalNode(null, h, son);
-            }
-
-            var rootNode = GetNodeById(root);
-            var to = rootNode.GetChildByHash(h);
-            return ModifyInternalNode(rootNode as InternalNode, h,
-                AddOrUpdateInternal(to, hash, height + 1, key, value));
-        }
-
-        private ulong DeleteInternal(ulong root, uint hash, int height, byte[] key, out byte[] value)
-        {
-            if (root == 0) throw new KeyNotFoundException(nameof(key));
-            var rootNode = GetNodeById(root);
-            if (height == 7) return DeleteInLeafNode(rootNode as LeafNode, key, out value);
-            var h = HashFragment(hash, height);
-            var to = rootNode.GetChildByHash(h);
-            return ModifyInternalNode(
-                rootNode as InternalNode, h, DeleteInternal(to, hash, height + 1, key, out value)
-            );
-        }
-
-        private ulong UpdateInternal(ulong root, uint hash, int height, byte[] key, byte[] value)
-        {
-            if (root == 0) throw new KeyNotFoundException(nameof(key));
-            var rootNode = GetNodeById(root);
-            if (height == 7) return UpdateInLeafNode(rootNode as LeafNode, key, value);
-            var h = HashFragment(hash, height);
-            var to = rootNode.GetChildByHash(h);
-            return ModifyInternalNode(
-                rootNode as InternalNode, h, UpdateInternal(to, hash, height + 1, key, value)
-            );
-        }
-
-        private ulong TryDeleteInternal(ulong root, uint hash, int height, byte[] key, out byte[] value)
+        private ulong DeleteInternal(ulong root, int height, byte[] keyHash, out byte[] value, bool check)
         {
             if (root == 0)
             {
+                if (check) throw new KeyNotFoundException(nameof(keyHash));
                 value = null;
-                return 0;
+                return root;
             }
 
             var rootNode = GetNodeById(root);
-            if (height == 7) return TryDeleteInLeafNode(rootNode as LeafNode, key, out value);
-            var h = HashFragment(hash, height);
-            var to = rootNode.GetChildByHash(h);
-            return ModifyInternalNode(
-                rootNode as InternalNode, h, TryDeleteInternal(to, hash, height + 1, key, out value)
-            );
+            switch (rootNode)
+            {
+                case InternalNode internalNode:
+                    var h = HashFragment(keyHash, height);
+                    var to = internalNode.GetChildByHash(h);
+                    var updatedTo = DeleteInternal(to, height + 1, keyHash, out value, check);
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash);
+                case LeafNode leafNode:
+                    if (!leafNode.KeyHash.SequenceEqual(keyHash))
+                    {
+                        if (check) throw new KeyNotFoundException(nameof(keyHash));
+                        value = null;
+                        return root;
+                    }
+
+                    value = leafNode.Value.ToArray();
+                    return 0;
+            }
+
+            throw new InvalidOperationException($"Unknown node type {root.GetType()}");
         }
 
-        private byte[] FindInternal(ulong root, uint hash, byte[] key)
+        private ulong UpdateInternal(ulong root, int height, byte[] keyHash, byte[] value)
         {
-            for (var height = 0; height < 7; ++height)
+            if (root == 0) throw new KeyNotFoundException(nameof(keyHash));
+            var rootNode = GetNodeById(root);
+            switch (rootNode)
+            {
+                case InternalNode internalNode:
+                    var h = HashFragment(keyHash, height);
+                    var to = internalNode.GetChildByHash(h);
+                    var updatedTo = UpdateInternal(to, height + 1, keyHash, value);
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo).Hash);
+                case LeafNode leafNode:
+                    if (!leafNode.KeyHash.SequenceEqual(keyHash))
+                        throw new KeyNotFoundException(nameof(keyHash));
+                    return UpdateLeafNode(root, leafNode, value);
+            }
+
+            throw new InvalidOperationException($"Unknown node type {root.GetType()}");
+        }
+
+        private byte[] FindInternal(ulong root, IReadOnlyList<byte> keyHash)
+        {
+            for (var height = 0;; ++height)
             {
                 if (root == 0) return null;
                 var rootNode = GetNodeById(root);
-                root = rootNode.GetChildByHash(HashFragment(hash, height));
+                switch (rootNode)
+                {
+                    case InternalNode internalNode:
+                        var h = HashFragment(keyHash, height);
+                        root = internalNode.GetChildByHash(h);
+                        break;
+                    case LeafNode leafNode:
+                        if (leafNode.KeyHash.SequenceEqual(keyHash)) return leafNode.Value.ToArray();
+                        return null;
+                    default:
+                        throw new InvalidOperationException($"Unknown node type {root.GetType()}");
+                }
             }
-
-            return (GetNodeById(root) as LeafNode)?.Find(key);
         }
     }
 }

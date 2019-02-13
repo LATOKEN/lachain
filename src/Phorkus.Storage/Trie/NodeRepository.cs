@@ -1,6 +1,6 @@
 ﻿namespace Phorkus.Storage.Trie
 {
-    public class NodeRepository
+    internal class NodeRepository
     {
         private readonly IRocksDbContext _rocksDbContext;
 

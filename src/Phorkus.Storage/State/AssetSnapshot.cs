@@ -26,32 +26,17 @@ namespace Phorkus.Storage.State
 
         public IEnumerable<UInt160> GetAssetHashes()
         {
-            return _state.Entries.SelectMany(pair =>
-            {
-                if (EntryPrefix.AssetByHash.Matches(pair.Key))
-                    return new[] {UInt160.Parser.ParseFrom(pair.Key.Skip(2).ToArray())};
-                return Enumerable.Empty<UInt160>();
-            });
+            return GetAssets().Select(asset => asset.Hash);
         }
 
         public IEnumerable<string> GetAssetNames()
         {
-            return _state.Entries.SelectMany(pair =>
-            {
-                if (EntryPrefix.AssetHashByName.Matches(pair.Key))
-                    return new[] {Encoding.ASCII.GetString(pair.Key.Skip(2).ToArray())};
-                return Enumerable.Empty<string>();
-            });
+            return GetAssets().Select(asset => asset.Name);
         }
 
         public IEnumerable<Asset> GetAssets()
         {
-            return _state.Entries.SelectMany(pair =>
-            {
-                if (EntryPrefix.AssetByHash.Matches(pair.Key))
-                    return new[] {Asset.Parser.ParseFrom(pair.Value)};
-                return Enumerable.Empty<Asset>();
-            });
+            return _state.Values.Select(value => Asset.Parser.ParseFrom(value));
         }
 
         public Asset GetAssetByHash(UInt160 assetHash)

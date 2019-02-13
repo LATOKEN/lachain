@@ -37,5 +37,14 @@ namespace Phorkus.Storage.State
                 value.Buffer.ToByteArray()
             );
         }
+
+        public void DeleteValue(UInt160 contract, UInt256 key, out UInt256 value)
+        {
+            _state.TryDelete(
+                EntryPrefix.ContractStorage.BuildPrefix(contract).Concat(key.Buffer.ToByteArray()).ToArray(),
+                out var buffer
+            );
+            value = buffer is null ? UInt256Utils.Zero : buffer.ToUInt256();
+        }
     }
 }

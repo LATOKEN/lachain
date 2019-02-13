@@ -2,9 +2,11 @@
 
 namespace Phorkus.Storage.Trie
 {
-    public interface IHashTrieNode
+    internal interface IHashTrieNode
     {
         NodeType Type { get; }
+
+        byte[] Hash { get; }
         
         IEnumerable<ulong> Children { get; }
         

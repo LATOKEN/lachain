@@ -1,85 +1,128 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Crypto;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Storage.Trie
 {
-    public class InternalNode : IHashTrieNode
+    internal class InternalNode : IHashTrieNode
     {
         public uint ChildrenMask { get; private set; }
-        
+
         private ulong[] _children;
-        
+
         public NodeType Type { get; } = NodeType.Internal;
+        public byte[] Hash { get; private set; }
 
         public ulong GetChildByHash(byte h)
         {
             return (ChildrenMask & (1u << h)) == 0 ? 0ul : _children[BitsUtils.PositionOf(ChildrenMask, h)];
         }
-        
+
         public IEnumerable<ulong> Children => _children;
 
         private InternalNode()
         {
+            ChildrenMask = 0;
+            _children = new ulong[0];
+            UpdateHash(Enumerable.Empty<byte[]>(), Enumerable.Empty<byte>());
         }
-        
-        internal InternalNode(uint mask, IEnumerable<ulong> children)
+
+        public InternalNode(uint mask, IEnumerable<ulong> children, IEnumerable<byte[]> childrenHashes)
         {
             ChildrenMask = mask;
             _children = children.ToArray();
+            UpdateHash(childrenHashes, GetChildrenLabels(mask));
+        }
+        
+        public InternalNode(uint mask, IEnumerable<ulong> children, IEnumerable<byte> hash)
+        {
+            ChildrenMask = mask;
+            _children = children.ToArray();
+            Hash = hash.ToArray();
         }
 
-        public static InternalNode ModifyChildren(InternalNode node, byte h, ulong value)
+        private static IEnumerable<byte> GetChildrenLabels(uint mask)
+        {
+            return Enumerable.Range(0, 32).Where(i => ((mask >> i) & 1) != 0).Select(i => (byte) i);
+        }
+
+        private void UpdateHash(IEnumerable<byte[]> childrenHashes, IEnumerable<byte> childrenLabels)
+        {
+            Hash = childrenHashes
+                .Zip(childrenLabels, (bytes, i) => new[] {i}.Concat(bytes))
+                .SelectMany(bytes => bytes)
+                .Keccak256();
+        }
+
+        public static InternalNode WithChildren(
+            IEnumerable<ulong> childrenIds, IEnumerable<byte> childrenLabels, IEnumerable<byte[]> childrenHashes)
+        {
+            var labels = childrenLabels.ToList();
+            var ids = childrenIds.ToList();
+            if (labels.Distinct().Count() != labels.Count)
+                throw new ArgumentException("Trying to create internal trie node with equal children labels");
+            var mask = (uint) labels.Sum(x => 1u << x);
+            return new InternalNode(
+                mask,
+                labels
+                    .Zip(ids, (label, id) => new KeyValuePair<ulong, byte>(id, label))
+                    .OrderBy(pair => pair.Value)
+                    .Select(pair => pair.Key),
+                childrenHashes
+            );
+        }
+        
+        public static IHashTrieNode ModifyChildren(
+            InternalNode node, byte h, ulong value, IEnumerable<byte[]> childrenHashes, byte[] valueHash
+        )
         {
             if (node == null)
             {
-                node = new InternalNode();
-                if (value == 0)
-                {
-                    node._children = new ulong[0];
-                    node.ChildrenMask = 0;
-                }
-                else
-                {
-                    node._children = new[]{value};
-                    node.ChildrenMask = 1u << h;
-                }
-
-                return node;
+                throw new ArgumentNullException(nameof(node));
             }
+
             var was = node.GetChildByHash(h);
             if (was == value)
             {
-                var copy = new InternalNode
-                {
-                    _children = node._children.ToArray(),
-                    ChildrenMask = node.ChildrenMask
-                };
-                return copy;
+                return node;
             }
+
+            List<byte[]> newHashes;
             var newNode = new InternalNode();
-            var pos = BitsUtils.PositionOf(node.ChildrenMask, h);
+            var pos = (int) BitsUtils.PositionOf(node.ChildrenMask, h);
             if (was == 0)
             {
                 newNode._children = new ulong[node._children.Length + 1];
                 for (var i = 0; i <= node._children.Length; ++i)
                     newNode._children[i] = i < pos ? node._children[i] : (i == pos ? value : node._children[i - 1]);
                 newNode.ChildrenMask = node.ChildrenMask | (1u << h);
+                newHashes = childrenHashes.ToList();
+                newHashes.Insert(pos, valueHash);
+                newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
                 return newNode;
             }
 
             if (value == 0)
             {
+                if (node._children.Length == 1) return null;
                 newNode._children = new ulong[node._children.Length - 1];
                 for (var i = 0; i + 1 < node._children.Length; ++i)
                     newNode._children[i] = i < pos ? node._children[i] : node._children[i + 1];
                 newNode.ChildrenMask = node.ChildrenMask ^ (1u << h);
+                newHashes = childrenHashes.ToList();
+                newHashes.RemoveAt(pos);
+                newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
                 return newNode;
             }
-            
+
             newNode._children = node._children.ToArray();
             newNode.ChildrenMask = node.ChildrenMask;
             newNode._children[pos] = value;
+            newHashes = childrenHashes.ToList();
+            newHashes[pos] = valueHash;
+            newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
             return newNode;
         }
     }
