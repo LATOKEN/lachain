@@ -9,6 +9,7 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Network
@@ -23,6 +24,7 @@ namespace Phorkus.Core.Network
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
         private readonly ITransactionPool _transactionPool;
+        private readonly IStateManager _stateManager;
         
         private readonly IDictionary<IRemotePeer, ulong> _peerHeights
             = new ConcurrentDictionary<IRemotePeer, ulong>();
@@ -38,7 +40,8 @@ namespace Phorkus.Core.Network
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool,
+            IStateManager stateManager)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -48,6 +51,7 @@ namespace Phorkus.Core.Network
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
             _transactionPool = transactionPool;
+            _stateManager = stateManager;
         }
 
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
@@ -118,7 +122,8 @@ namespace Phorkus.Core.Network
                     continue;
                 txs.Add(tx);
             }
-            var error = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
+
+            var error = _stateManager.SafeContext(() => _blockManager.Execute(block, txs, commit: true, checkStateHash: true));
             if (error == OperatingError.BlockAlreadyExists)
                 return;
             if (error != OperatingError.Ok)

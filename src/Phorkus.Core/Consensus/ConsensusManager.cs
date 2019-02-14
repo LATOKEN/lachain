@@ -140,23 +140,26 @@ namespace Phorkus.Core.Consensus
                         new BlockBuilder(_blockchainContext.CurrentBlock.Header, _keyPair.PublicKey)
                             .WithTransactions(_transactionPool).Build((ulong) _random.Next());
 
-                    var snapshotBefore = _stateManager.LastApprovedSnapshot;
-                    _logger.LogDebug("Executing transactions in no-check no-commit mode");
-                    var error = _blockManager.Execute(
-                        blockWithTransactions.Block, blockWithTransactions.Transactions,
-                        commit: false, checkStateHash: false
-                    );
-                    if (error != OperatingError.Ok)
-                        throw new InvalidOperationException($"Cannot assemble block: error {error}");
-                    blockWithTransactions.Block.Header.StateHash = _stateManager.LastApprovedSnapshot.StateHash;
-                    _logger.LogDebug(
-                        $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
-                        $" state_hash={blockWithTransactions.Block.Header.StateHash}"
-                    );
-                    _stateManager.RollbackTo(snapshotBefore);
-                    _logger.LogDebug(
-                        $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
-                    );
+                    _stateManager.SafeContext(() =>
+                    {
+                        var snapshotBefore = _stateManager.LastApprovedSnapshot;
+                        _logger.LogDebug("Executing transactions in no-check no-commit mode");
+                        var error = _blockManager.Execute(
+                            blockWithTransactions.Block, blockWithTransactions.Transactions,
+                            commit: false, checkStateHash: false
+                        );
+                        if (error != OperatingError.Ok)
+                            throw new InvalidOperationException($"Cannot assemble block: error {error}");
+                        blockWithTransactions.Block.Header.StateHash = _stateManager.LastApprovedSnapshot.StateHash;
+                        _logger.LogDebug(
+                            $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
+                            $" state_hash={blockWithTransactions.Block.Header.StateHash}"
+                        );
+                        _stateManager.RollbackTo(snapshotBefore);
+                        _logger.LogDebug(
+                            $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
+                        );
+                    });
 
                     _logger.LogDebug($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
@@ -269,13 +272,16 @@ namespace Phorkus.Core.Consensus
 
                 _context.State |= ConsensusState.BlockSent;
 
-                var result = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
-                if (result == OperatingError.Ok)
-                    _logger.LogDebug($"Block persist completed: {block.Hash}");
-                else
-                    _logger.LogWarning(
-                        $"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
-
+                _stateManager.SafeContext(() =>
+                {
+                    var result = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
+                    if (result == OperatingError.Ok)
+                        _logger.LogDebug($"Block persist completed: {block.Hash}");
+                    else
+                        _logger.LogWarning($"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
+                    return result;
+                });
+                
                 _context.LastBlockRecieved = DateTime.UtcNow;
                 InitializeConsensus(0);
             }

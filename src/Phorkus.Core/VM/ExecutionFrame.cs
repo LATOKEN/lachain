@@ -76,7 +76,7 @@ namespace Phorkus.Core.VM
             if (method is null)
                 return ExecutionStatus.MissingEntrypoint;
             InvocationContext.Exports.start();
-            Console.WriteLine($"Contract {CurrentAddress} exited with return value: {ReturnValue.ToHex()}");
+            //Console.WriteLine($"Contract {CurrentAddress} exited with return value: {ReturnValue.ToHex()}");
             return ExecutionStatus.Ok;
         }
         

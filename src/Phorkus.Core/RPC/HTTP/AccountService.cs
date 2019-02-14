@@ -128,9 +128,13 @@ namespace Phorkus.Core.RPC.HTTP
                 throw new ArgumentException("Invalid input specified", nameof(input));
             if (string.IsNullOrEmpty(sender))
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
-            _stateManager.NewSnapshot();
-            var status = _virtualMachine.InvokeContract(contractByHash, sender.HexToUInt160(), input.HexToBytes(), out var returnValue);
-            _stateManager.Rollback();
+            var (status, returnValue) = _stateManager.SafeContext(() =>
+            {
+                _stateManager.NewSnapshot();
+                var result = _virtualMachine.InvokeContract(contractByHash, sender.HexToUInt160(), input.HexToBytes(), out var returnResult);
+                _stateManager.Rollback();
+                return Tuple.Create(result, returnResult);
+            });
             var hex = returnValue?.ToHex();
             return new JObject
             {
