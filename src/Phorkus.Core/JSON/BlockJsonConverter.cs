@@ -11,7 +11,6 @@ namespace Phorkus.Core.JSON
         {
             var json = new JObject
             {
-                ["version"] = blockHeader.Version,
                 ["prevBlockHash"] = blockHeader.PrevBlockHash.Buffer.ToHex(),
                 ["merkleRoot"] = blockHeader.MerkleRoot.Buffer.ToHex(),
                 ["timestamp"] = blockHeader.Timestamp,

@@ -22,7 +22,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             if (error != OperatingError.Ok)
                 return error;
             /* try to transfer funds from sender to recipient */
-            if (!transaction.Value.IsZero() && !snapshot.Balances.TransferAvailableBalance(transaction.From, transaction.To,
+            if (!transaction.Value.IsZero() && !snapshot.Balances.TransferBalance(transaction.From, transaction.To,
                     new Money(transaction.Value)))
                 return OperatingError.InsufficientBalance;
             /* if we have invocation block than invoke contract method */
@@ -49,7 +49,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
                 return OperatingError.InvalidTransaction;
             if (transaction.Value is null)
                 return OperatingError.InvalidTransaction;
-            if (transaction.Deploy != null)
+            if (!transaction.Deploy.IsEmpty)
                 return OperatingError.InvalidTransaction;
             return _VerifyInvocation(transaction);
         }

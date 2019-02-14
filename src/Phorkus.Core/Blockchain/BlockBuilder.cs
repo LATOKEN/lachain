@@ -66,7 +66,6 @@ namespace Phorkus.Core.Blockchain
                 merkeRoot = MerkleTree.ComputeRoot(txs.Select(tx => tx.Hash).ToArray());
             var header = new BlockHeader
             {
-                Version = 0,
                 PrevBlockHash = _prevBlock != null ? _prevBlock.ToHash256() : UInt256Utils.Zero,
                 MerkleRoot = merkeRoot,
                 Timestamp = TimeUtils.CurrentTimeMillis() / 1000,

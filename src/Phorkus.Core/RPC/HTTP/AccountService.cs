@@ -33,16 +33,12 @@ namespace Phorkus.Core.RPC.HTTP
         }
         
         [JsonRpcMethod("getBalance")]
-        private JObject GetBalance(string address)
+        private string GetBalance(string address)
         {
             var addressUint160 = address.HexToBytes().ToUInt160();
             var availableBalance =
-                _stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(addressUint160);
-            var json = new JObject
-            {
-                ["available"] = availableBalance.ToUInt256().Buffer.ToHex(),
-            };
-            return json;
+                _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
+            return availableBalance.ToUInt256().Buffer.ToHex();
         }
 
         [JsonRpcMethod("verifyRawTransaction")]

@@ -25,20 +25,19 @@ namespace Phorkus.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgtibG9jay5wcm90bxoNZGVmYXVsdC5wcm90bxoObXVsdGlzaWcucHJvdG8i",
-            "zgEKC0Jsb2NrSGVhZGVyEg8KB3ZlcnNpb24YASABKA0SIQoPcHJldl9ibG9j",
-            "a19oYXNoGAIgASgLMgguVUludDI1NhIdCgttZXJrbGVfcm9vdBgDIAEoCzII",
-            "LlVJbnQyNTYSHAoKc3RhdGVfaGFzaBgIIAEoCzIILlVJbnQyNTYSEQoJdGlt",
-            "ZXN0YW1wGAQgASgEEg0KBWluZGV4GAUgASgEEh0KCXZhbGlkYXRvchgHIAEo",
-            "CzIKLlB1YmxpY0tleRINCgVub25jZRgGIAEoBCKfAQoFQmxvY2sSHAoGaGVh",
-            "ZGVyGAEgASgLMgwuQmxvY2tIZWFkZXISFgoEaGFzaBgCIAEoCzIILlVJbnQy",
-            "NTYSJAoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygLMgguVUludDI1NhIbCght",
-            "dWx0aXNpZxgDIAEoCzIJLk11bHRpU2lnEh0KC2F2ZXJhZ2VfZmVlGAUgASgL",
-            "MgguVUludDI1NkIjChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3JrdXMuUHJv",
-            "dG9iBnByb3RvMw=="));
+            "vQEKC0Jsb2NrSGVhZGVyEg0KBWluZGV4GAEgASgEEiEKD3ByZXZfYmxvY2tf",
+            "aGFzaBgCIAEoCzIILlVJbnQyNTYSHQoLbWVya2xlX3Jvb3QYAyABKAsyCC5V",
+            "SW50MjU2EhEKCXRpbWVzdGFtcBgEIAEoBBIcCgpzdGF0ZV9oYXNoGAUgASgL",
+            "MgguVUludDI1NhIdCgl2YWxpZGF0b3IYBiABKAsyCi5QdWJsaWNLZXkSDQoF",
+            "bm9uY2UYByABKAQinwEKBUJsb2NrEhwKBmhlYWRlchgBIAEoCzIMLkJsb2Nr",
+            "SGVhZGVyEhYKBGhhc2gYAiABKAsyCC5VSW50MjU2EiQKEnRyYW5zYWN0aW9u",
+            "X2hhc2hlcxgEIAMoCzIILlVJbnQyNTYSGwoIbXVsdGlzaWcYAyABKAsyCS5N",
+            "dWx0aVNpZxIdCgthdmVyYWdlX2ZlZRgFIAEoCzIILlVJbnQyNTZCIwoRY29t",
+            "LmxhdG9rZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.MultisigReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Version", "PrevBlockHash", "MerkleRoot", "StateHash", "Timestamp", "Index", "Validator", "Nonce" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BlockHeader), global::Phorkus.Proto.BlockHeader.Parser, new[]{ "Index", "PrevBlockHash", "MerkleRoot", "Timestamp", "StateHash", "Validator", "Nonce" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Block), global::Phorkus.Proto.Block.Parser, new[]{ "Header", "Hash", "TransactionHashes", "Multisig", "AverageFee" }, null, null, null)
           }));
     }
@@ -71,12 +70,11 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public BlockHeader(BlockHeader other) : this() {
-      version_ = other.version_;
+      index_ = other.index_;
       prevBlockHash_ = other.prevBlockHash_ != null ? other.prevBlockHash_.Clone() : null;
       merkleRoot_ = other.merkleRoot_ != null ? other.merkleRoot_.Clone() : null;
-      stateHash_ = other.stateHash_ != null ? other.stateHash_.Clone() : null;
       timestamp_ = other.timestamp_;
-      index_ = other.index_;
+      stateHash_ = other.stateHash_ != null ? other.stateHash_.Clone() : null;
       validator_ = other.validator_ != null ? other.validator_.Clone() : null;
       nonce_ = other.nonce_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -87,14 +85,14 @@ namespace Phorkus.Proto {
       return new BlockHeader(this);
     }
 
-    /// <summary>Field number for the "version" field.</summary>
-    public const int VersionFieldNumber = 1;
-    private uint version_;
+    /// <summary>Field number for the "index" field.</summary>
+    public const int IndexFieldNumber = 1;
+    private ulong index_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Version {
-      get { return version_; }
+    public ulong Index {
+      get { return index_; }
       set {
-        version_ = value;
+        index_ = value;
       }
     }
 
@@ -120,17 +118,6 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "state_hash" field.</summary>
-    public const int StateHashFieldNumber = 8;
-    private global::Phorkus.Proto.UInt256 stateHash_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt256 StateHash {
-      get { return stateHash_; }
-      set {
-        stateHash_ = value;
-      }
-    }
-
     /// <summary>Field number for the "timestamp" field.</summary>
     public const int TimestampFieldNumber = 4;
     private ulong timestamp_;
@@ -142,19 +129,19 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "index" field.</summary>
-    public const int IndexFieldNumber = 5;
-    private ulong index_;
+    /// <summary>Field number for the "state_hash" field.</summary>
+    public const int StateHashFieldNumber = 5;
+    private global::Phorkus.Proto.UInt256 stateHash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong Index {
-      get { return index_; }
+    public global::Phorkus.Proto.UInt256 StateHash {
+      get { return stateHash_; }
       set {
-        index_ = value;
+        stateHash_ = value;
       }
     }
 
     /// <summary>Field number for the "validator" field.</summary>
-    public const int ValidatorFieldNumber = 7;
+    public const int ValidatorFieldNumber = 6;
     private global::Phorkus.Proto.PublicKey validator_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.PublicKey Validator {
@@ -165,7 +152,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "nonce" field.</summary>
-    public const int NonceFieldNumber = 6;
+    public const int NonceFieldNumber = 7;
     private ulong nonce_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ulong Nonce {
@@ -188,12 +175,11 @@ namespace Phorkus.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Version != other.Version) return false;
+      if (Index != other.Index) return false;
       if (!object.Equals(PrevBlockHash, other.PrevBlockHash)) return false;
       if (!object.Equals(MerkleRoot, other.MerkleRoot)) return false;
-      if (!object.Equals(StateHash, other.StateHash)) return false;
       if (Timestamp != other.Timestamp) return false;
-      if (Index != other.Index) return false;
+      if (!object.Equals(StateHash, other.StateHash)) return false;
       if (!object.Equals(Validator, other.Validator)) return false;
       if (Nonce != other.Nonce) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -202,12 +188,11 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Version != 0) hash ^= Version.GetHashCode();
+      if (Index != 0UL) hash ^= Index.GetHashCode();
       if (prevBlockHash_ != null) hash ^= PrevBlockHash.GetHashCode();
       if (merkleRoot_ != null) hash ^= MerkleRoot.GetHashCode();
-      if (stateHash_ != null) hash ^= StateHash.GetHashCode();
       if (Timestamp != 0UL) hash ^= Timestamp.GetHashCode();
-      if (Index != 0UL) hash ^= Index.GetHashCode();
+      if (stateHash_ != null) hash ^= StateHash.GetHashCode();
       if (validator_ != null) hash ^= Validator.GetHashCode();
       if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
       if (_unknownFields != null) {
@@ -223,9 +208,9 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Version != 0) {
+      if (Index != 0UL) {
         output.WriteRawTag(8);
-        output.WriteUInt32(Version);
+        output.WriteUInt64(Index);
       }
       if (prevBlockHash_ != null) {
         output.WriteRawTag(18);
@@ -239,21 +224,17 @@ namespace Phorkus.Proto {
         output.WriteRawTag(32);
         output.WriteUInt64(Timestamp);
       }
-      if (Index != 0UL) {
-        output.WriteRawTag(40);
-        output.WriteUInt64(Index);
-      }
-      if (Nonce != 0UL) {
-        output.WriteRawTag(48);
-        output.WriteUInt64(Nonce);
+      if (stateHash_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(StateHash);
       }
       if (validator_ != null) {
-        output.WriteRawTag(58);
+        output.WriteRawTag(50);
         output.WriteMessage(Validator);
       }
-      if (stateHash_ != null) {
-        output.WriteRawTag(66);
-        output.WriteMessage(StateHash);
+      if (Nonce != 0UL) {
+        output.WriteRawTag(56);
+        output.WriteUInt64(Nonce);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -263,8 +244,8 @@ namespace Phorkus.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Version != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Version);
+      if (Index != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Index);
       }
       if (prevBlockHash_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(PrevBlockHash);
@@ -272,14 +253,11 @@ namespace Phorkus.Proto {
       if (merkleRoot_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MerkleRoot);
       }
-      if (stateHash_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(StateHash);
-      }
       if (Timestamp != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Timestamp);
       }
-      if (Index != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Index);
+      if (stateHash_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(StateHash);
       }
       if (validator_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Validator);
@@ -298,8 +276,8 @@ namespace Phorkus.Proto {
       if (other == null) {
         return;
       }
-      if (other.Version != 0) {
-        Version = other.Version;
+      if (other.Index != 0UL) {
+        Index = other.Index;
       }
       if (other.prevBlockHash_ != null) {
         if (prevBlockHash_ == null) {
@@ -313,17 +291,14 @@ namespace Phorkus.Proto {
         }
         MerkleRoot.MergeFrom(other.MerkleRoot);
       }
+      if (other.Timestamp != 0UL) {
+        Timestamp = other.Timestamp;
+      }
       if (other.stateHash_ != null) {
         if (stateHash_ == null) {
           stateHash_ = new global::Phorkus.Proto.UInt256();
         }
         StateHash.MergeFrom(other.StateHash);
-      }
-      if (other.Timestamp != 0UL) {
-        Timestamp = other.Timestamp;
-      }
-      if (other.Index != 0UL) {
-        Index = other.Index;
       }
       if (other.validator_ != null) {
         if (validator_ == null) {
@@ -346,7 +321,7 @@ namespace Phorkus.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            Version = input.ReadUInt32();
+            Index = input.ReadUInt64();
             break;
           }
           case 18: {
@@ -367,26 +342,22 @@ namespace Phorkus.Proto {
             Timestamp = input.ReadUInt64();
             break;
           }
-          case 40: {
-            Index = input.ReadUInt64();
+          case 42: {
+            if (stateHash_ == null) {
+              stateHash_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(stateHash_);
             break;
           }
-          case 48: {
-            Nonce = input.ReadUInt64();
-            break;
-          }
-          case 58: {
+          case 50: {
             if (validator_ == null) {
               validator_ = new global::Phorkus.Proto.PublicKey();
             }
             input.ReadMessage(validator_);
             break;
           }
-          case 66: {
-            if (stateHash_ == null) {
-              stateHash_ = new global::Phorkus.Proto.UInt256();
-            }
-            input.ReadMessage(stateHash_);
+          case 56: {
+            Nonce = input.ReadUInt64();
             break;
           }
         }

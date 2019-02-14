@@ -18,7 +18,7 @@ namespace Phorkus.Storage.State
         public ulong Version => _state.CurrentVersion;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Money GetAvailableBalance(UInt160 owner)
+        public Money GetBalance(UInt160 owner)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
             var value = _state.Get(key);
@@ -27,38 +27,38 @@ namespace Phorkus.Storage.State
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void SetAvailableBalance(UInt160 owner, Money value)
+        public void SetBalance(UInt160 owner, Money value)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
             _state.AddOrUpdate(key, value.ToUInt256().ToByteArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Money AddAvailableBalance(UInt160 owner, Money value)
+        public Money AddBalance(UInt160 owner, Money value)
         {
-            var balance = GetAvailableBalance(owner);
+            var balance = GetBalance(owner);
             balance += value;
-            SetAvailableBalance(owner, balance);
+            SetBalance(owner, balance);
             return balance;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Money SubAvailableBalance(UInt160 owner, Money value)
+        public Money SubBalance(UInt160 owner, Money value)
         {
-            var balance = GetAvailableBalance(owner);
+            var balance = GetBalance(owner);
             balance -= value;
-            SetAvailableBalance(owner, balance);
+            SetBalance(owner, balance);
             return balance;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TransferAvailableBalance(UInt160 from, UInt160 to, Money value)
+        public bool TransferBalance(UInt160 from, UInt160 to, Money value)
         {
-            var availableBalance = GetAvailableBalance(from);
+            var availableBalance = GetBalance(from);
             if (availableBalance.CompareTo(value) < 0)
                 return false;
-            SubAvailableBalance(from, value);
-            AddAvailableBalance(to, value);
+            SubBalance(from, value);
+            AddBalance(to, value);
             return true;
         }
         

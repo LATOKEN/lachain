@@ -53,7 +53,6 @@ namespace Phorkus.Core.Consensus
                 return null;
             var result = new BlockHeader
             {
-                Version = Version,
                 PrevBlockHash = PreviousBlockHash,
                 MerkleRoot = MerkleTree.ComputeRoot(CurrentProposal.TransactionHashes) ?? UInt256Utils.Zero,
                 StateHash = CurrentProposal.StateHash,

@@ -127,7 +127,7 @@ namespace Phorkus.Core.CLI
             if (!IsValidHexString(arguments[1]))
                 return null;
             return _stateManager.LastApprovedSnapshot.Balances
-                .GetAvailableBalance(arguments[1].HexToUInt160());
+                .GetBalance(arguments[1].HexToUInt160());
         }
         
         public string DeployContract(string[] arguments)

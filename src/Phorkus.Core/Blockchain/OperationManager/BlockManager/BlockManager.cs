@@ -161,11 +161,11 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
             /* check availabe LA balance */
-            var availableBalance = snapshot.Balances.GetAvailableBalance(transaction.Transaction.From);
+            var availableBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
             if (availableBalance.CompareTo(transaction.Transaction.Fee.ToMoney()) < 0)
                 return OperatingError.InsufficientBalance;
             /* transfer fee from wallet to validator */
-            snapshot.Balances.TransferAvailableBalance(transaction.Transaction.From, validatorAddress,
+            snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress,
                 transaction.Transaction.Fee.ToMoney());
             return OperatingError.Ok;
         }
@@ -197,8 +197,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             var header = block.Header;
             if (!Equals(block.Hash, header.ToHash256()))
                 return OperatingError.HashMismatched;
-            if (header.Version != 0)
-                return OperatingError.InvalidBlock;
             if (block.Header.Index != 0 && header.PrevBlockHash.IsZero())
                 return OperatingError.InvalidBlock;
             if (header.MerkleRoot is null)

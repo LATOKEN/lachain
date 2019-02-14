@@ -77,16 +77,16 @@ namespace Phorkus.Benchmark
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1));
-            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2));
+            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address1));
+            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
 
             _BenchTxProcessing(transactionBuilder, blockchainContext, transactionManager, blockManager,
                 blockchainManager, keyPair);
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1));
-            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2));
+            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address1));
+            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
             
             _BenchOneTxInBlock(transactionBuilder, blockchainContext, transactionManager, blockManager,
@@ -95,8 +95,8 @@ namespace Phorkus.Benchmark
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address1));
-            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(address2));
+            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address1));
+            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
         }
 
