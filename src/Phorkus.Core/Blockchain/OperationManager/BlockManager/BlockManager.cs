@@ -137,7 +137,6 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
             /* save block to repository */
             var snapshotBlock = _stateManager.NewSnapshot();
             snapshotBlock.Blocks.AddBlock(block);
-            _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms");
             _stateManager.Approve();
 
             if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
@@ -148,6 +147,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
             if (commit)
             {
+                _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms");
                 /* flush changes to database */
                 _stateManager.Commit();
                 OnBlockPersisted?.Invoke(this, block);
@@ -157,19 +157,16 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
 
         private OperatingError _TakeTransactionFee(UInt160 validatorAddress, AcceptedTransaction transaction, IBlockchainSnapshot snapshot)
         {
-            var asset = snapshot.Assets.GetAssetByName("LA");
-            if (asset is null)
-                return OperatingError.Ok;
             /* genesis block doesn't have LA asset and validators fee free */
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
             /* check availabe LA balance */
-            var availableBalance = snapshot.Balances.GetAvailableBalance(transaction.Transaction.From, asset.Hash);
+            var availableBalance = snapshot.Balances.GetAvailableBalance(transaction.Transaction.From);
             if (availableBalance.CompareTo(transaction.Transaction.Fee.ToMoney()) < 0)
                 return OperatingError.InsufficientBalance;
             /* transfer fee from wallet to validator */
             snapshot.Balances.TransferAvailableBalance(transaction.Transaction.From, validatorAddress,
-                asset.Hash, transaction.Transaction.Fee.ToMoney());
+                transaction.Transaction.Fee.ToMoney());
             return OperatingError.Ok;
         }
         

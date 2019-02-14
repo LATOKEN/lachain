@@ -2,7 +2,6 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -33,35 +32,15 @@ namespace Phorkus.Core.RPC.HTTP
             _transactionPool = transactionPool;
         }
         
-        [JsonRpcMethod("getAvailableAssets")]
-        private JObject GetAvailableAssets()
-        {
-            var assetRepository = _stateManager.LastApprovedSnapshot.Assets;
-            var assetHashesByName = _stateManager.LastApprovedSnapshot.Assets.GetAssetHashes()
-                .Select(assetHash => assetRepository.GetAssetByHash(assetHash));
-            var json = new JObject();
-            foreach (var asset in assetHashesByName)
-            {
-                if (asset is null)
-                    continue;
-                json[asset.Name] = asset.Hash.Buffer.ToHex();
-            }
-            return json;
-        }
-        
         [JsonRpcMethod("getBalance")]
-        private JObject GetBalance(string address, string assetHash)
+        private JObject GetBalance(string address)
         {
             var addressUint160 = address.HexToBytes().ToUInt160();
-            var assetUint160 = assetHash.HexToBytes().ToUInt160();
             var availableBalance =
-                _stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(addressUint160, assetUint160);
-            var withdrawingBalance =
-                _stateManager.LastApprovedSnapshot.Balances.GetWithdrawingBalance(addressUint160, assetUint160);
+                _stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(addressUint160);
             var json = new JObject
             {
                 ["available"] = availableBalance.ToUInt256().Buffer.ToHex(),
-                ["withdrawing"] = withdrawingBalance.ToUInt256().Buffer.ToHex()
             };
             return json;
         }

@@ -39,30 +39,28 @@ namespace Phorkus.Proto {
             "bnNhY3Rpb25zQnlIYXNoZXNSZXF1ZXN0EiQKEnRyYW5zYWN0aW9uX2hhc2hl",
             "cxgBIAMoCzIILlVJbnQyNTYiSgocR2V0VHJhbnNhY3Rpb25zQnlIYXNoZXNS",
             "ZXBseRIqCgx0cmFuc2FjdGlvbnMYASADKAsyFC5BY2NlcHRlZFRyYW5zYWN0",
-            "aW9uIiMKEFRocmVzaG9sZFJlcXVlc3QSDwoHbWVzc2FnZRgBIAEoDCK6AQoQ",
-            "Q29uc2Vuc3VzTWVzc2FnZRIxChNjaGFuZ2Vfdmlld19yZXF1ZXN0GAEgASgL",
-            "MhIuQ2hhbmdlVmlld1JlcXVlc3RIABI1ChVibG9ja19wcmVwYXJlX3JlcXVl",
-            "c3QYAiABKAsyFC5CbG9ja1ByZXBhcmVSZXF1ZXN0SAASMQoTYmxvY2tfcHJl",
-            "cGFyZV9yZXBseRgDIAEoCzISLkJsb2NrUHJlcGFyZVJlcGx5SABCCQoHcGF5",
-            "bG9hZCKBBgoOTmV0d29ya01lc3NhZ2USDQoFbWFnaWMYASABKA0SLgoRaGFu",
-            "ZHNoYWtlX3JlcXVlc3QYCiABKAsyES5IYW5kc2hha2VSZXF1ZXN0SAASKgoP",
-            "aGFuZHNoYWtlX3JlcGx5GAsgASgLMg8uSGFuZHNoYWtlUmVwbHlIABIkCgxw",
-            "aW5nX3JlcXVlc3QYDCABKAsyDC5QaW5nUmVxdWVzdEgAEiAKCnBpbmdfcmVw",
-            "bHkYDSABKAsyCi5QaW5nUmVwbHlIABJBChxnZXRfYmxvY2tzX2J5X2hhc2hl",
-            "c19yZXF1ZXN0GA4gASgLMhkuR2V0QmxvY2tzQnlIYXNoZXNSZXF1ZXN0SAAS",
-            "PQoaZ2V0X2Jsb2Nrc19ieV9oYXNoZXNfcmVwbHkYDyABKAsyFy5HZXRCbG9j",
-            "a3NCeUhhc2hlc1JlcGx5SAASTAoiZ2V0X2Jsb2Nrc19ieV9oZWlnaHRfcmFu",
-            "Z2VfcmVxdWVzdBgQIAEoCzIeLkdldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VSZXF1",
-            "ZXN0SAASSAogZ2V0X2Jsb2Nrc19ieV9oZWlnaHRfcmFuZ2VfcmVwbHkYESAB",
-            "KAsyHC5HZXRCbG9ja3NCeUhlaWdodFJhbmdlUmVwbHlIABJNCiJnZXRfdHJh",
-            "bnNhY3Rpb25zX2J5X2hhc2hlc19yZXF1ZXN0GBIgASgLMh8uR2V0VHJhbnNh",
-            "Y3Rpb25zQnlIYXNoZXNSZXF1ZXN0SAASSQogZ2V0X3RyYW5zYWN0aW9uc19i",
-            "eV9oYXNoZXNfcmVwbHkYEyABKAsyHS5HZXRUcmFuc2FjdGlvbnNCeUhhc2hl",
-            "c1JlcGx5SAASLgoRdGhyZXNob2xkX3JlcXVlc3QYFCABKAsyES5UaHJlc2hv",
-            "bGRSZXF1ZXN0SAASLgoRY29uc2Vuc3VzX21lc3NhZ2UYFSABKAsyES5Db25z",
-            "ZW5zdXNNZXNzYWdlSAASHQoJc2lnbmF0dXJlGGQgASgLMgouU2lnbmF0dXJl",
-            "QgkKB21lc3NhZ2VCIwoRY29tLmxhdG9rZW4ucHJvdG+qAg1QaG9ya3VzLlBy",
-            "b3RvYgZwcm90bzM="));
+            "aW9uIroBChBDb25zZW5zdXNNZXNzYWdlEjEKE2NoYW5nZV92aWV3X3JlcXVl",
+            "c3QYASABKAsyEi5DaGFuZ2VWaWV3UmVxdWVzdEgAEjUKFWJsb2NrX3ByZXBh",
+            "cmVfcmVxdWVzdBgCIAEoCzIULkJsb2NrUHJlcGFyZVJlcXVlc3RIABIxChNi",
+            "bG9ja19wcmVwYXJlX3JlcGx5GAMgASgLMhIuQmxvY2tQcmVwYXJlUmVwbHlI",
+            "AEIJCgdwYXlsb2FkItEFCg5OZXR3b3JrTWVzc2FnZRINCgVtYWdpYxgBIAEo",
+            "DRIuChFoYW5kc2hha2VfcmVxdWVzdBgKIAEoCzIRLkhhbmRzaGFrZVJlcXVl",
+            "c3RIABIqCg9oYW5kc2hha2VfcmVwbHkYCyABKAsyDy5IYW5kc2hha2VSZXBs",
+            "eUgAEiQKDHBpbmdfcmVxdWVzdBgMIAEoCzIMLlBpbmdSZXF1ZXN0SAASIAoK",
+            "cGluZ19yZXBseRgNIAEoCzIKLlBpbmdSZXBseUgAEkEKHGdldF9ibG9ja3Nf",
+            "YnlfaGFzaGVzX3JlcXVlc3QYDiABKAsyGS5HZXRCbG9ja3NCeUhhc2hlc1Jl",
+            "cXVlc3RIABI9ChpnZXRfYmxvY2tzX2J5X2hhc2hlc19yZXBseRgPIAEoCzIX",
+            "LkdldEJsb2Nrc0J5SGFzaGVzUmVwbHlIABJMCiJnZXRfYmxvY2tzX2J5X2hl",
+            "aWdodF9yYW5nZV9yZXF1ZXN0GBAgASgLMh4uR2V0QmxvY2tzQnlIZWlnaHRS",
+            "YW5nZVJlcXVlc3RIABJICiBnZXRfYmxvY2tzX2J5X2hlaWdodF9yYW5nZV9y",
+            "ZXBseRgRIAEoCzIcLkdldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VSZXBseUgAEk0K",
+            "ImdldF90cmFuc2FjdGlvbnNfYnlfaGFzaGVzX3JlcXVlc3QYEiABKAsyHy5H",
+            "ZXRUcmFuc2FjdGlvbnNCeUhhc2hlc1JlcXVlc3RIABJJCiBnZXRfdHJhbnNh",
+            "Y3Rpb25zX2J5X2hhc2hlc19yZXBseRgTIAEoCzIdLkdldFRyYW5zYWN0aW9u",
+            "c0J5SGFzaGVzUmVwbHlIABIuChFjb25zZW5zdXNfbWVzc2FnZRgVIAEoCzIR",
+            "LkNvbnNlbnN1c01lc3NhZ2VIABIdCglzaWduYXR1cmUYZCABKAsyCi5TaWdu",
+            "YXR1cmVCCQoHbWVzc2FnZUIjChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3Jr",
+            "dXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -76,9 +74,8 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetBlocksByHeightRangeReply), global::Phorkus.Proto.GetBlocksByHeightRangeReply.Parser, new[]{ "BlockHashes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsByHashesRequest), global::Phorkus.Proto.GetTransactionsByHashesRequest.Parser, new[]{ "TransactionHashes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.GetTransactionsByHashesReply), global::Phorkus.Proto.GetTransactionsByHashesReply.Parser, new[]{ "Transactions" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ThresholdRequest), global::Phorkus.Proto.ThresholdRequest.Parser, new[]{ "Message" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "ChangeViewRequest", "BlockPrepareRequest", "BlockPrepareReply" }, new[]{ "Payload" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "Magic", "HandshakeRequest", "HandshakeReply", "PingRequest", "PingReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "ThresholdRequest", "ConsensusMessage", "Signature" }, new[]{ "Message" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.NetworkMessage), global::Phorkus.Proto.NetworkMessage.Parser, new[]{ "Magic", "HandshakeRequest", "HandshakeReply", "PingRequest", "PingReply", "GetBlocksByHashesRequest", "GetBlocksByHashesReply", "GetBlocksByHeightRangeRequest", "GetBlocksByHeightRangeReply", "GetTransactionsByHashesRequest", "GetTransactionsByHashesReply", "ConsensusMessage", "Signature" }, new[]{ "Message" }, null, null)
           }));
     }
     #endregion
@@ -1431,135 +1428,6 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class ThresholdRequest : pb::IMessage<ThresholdRequest> {
-    private static readonly pb::MessageParser<ThresholdRequest> _parser = new pb::MessageParser<ThresholdRequest>(() => new ThresholdRequest());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ThresholdRequest> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[10]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThresholdRequest() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThresholdRequest(ThresholdRequest other) : this() {
-      message_ = other.message_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThresholdRequest Clone() {
-      return new ThresholdRequest(this);
-    }
-
-    /// <summary>Field number for the "message" field.</summary>
-    public const int MessageFieldNumber = 1;
-    private pb::ByteString message_ = pb::ByteString.Empty;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pb::ByteString Message {
-      get { return message_; }
-      set {
-        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as ThresholdRequest);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ThresholdRequest other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Message != other.Message) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Message.Length != 0) hash ^= Message.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (Message.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteBytes(Message);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (Message.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Message);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ThresholdRequest other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Message.Length != 0) {
-        Message = other.Message;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            Message = input.ReadBytes();
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
   public sealed partial class ConsensusMessage : pb::IMessage<ConsensusMessage> {
     private static readonly pb::MessageParser<ConsensusMessage> _parser = new pb::MessageParser<ConsensusMessage>(() => new ConsensusMessage());
     private pb::UnknownFieldSet _unknownFields;
@@ -1568,7 +1436,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1811,7 +1679,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Phorkus.Proto.NetworkingReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1860,9 +1728,6 @@ namespace Phorkus.Proto {
           break;
         case MessageOneofCase.GetTransactionsByHashesReply:
           GetTransactionsByHashesReply = other.GetTransactionsByHashesReply.Clone();
-          break;
-        case MessageOneofCase.ThresholdRequest:
-          ThresholdRequest = other.ThresholdRequest.Clone();
           break;
         case MessageOneofCase.ConsensusMessage:
           ConsensusMessage = other.ConsensusMessage.Clone();
@@ -1998,17 +1863,6 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "threshold_request" field.</summary>
-    public const int ThresholdRequestFieldNumber = 20;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.ThresholdRequest ThresholdRequest {
-      get { return messageCase_ == MessageOneofCase.ThresholdRequest ? (global::Phorkus.Proto.ThresholdRequest) message_ : null; }
-      set {
-        message_ = value;
-        messageCase_ = value == null ? MessageOneofCase.None : MessageOneofCase.ThresholdRequest;
-      }
-    }
-
     /// <summary>Field number for the "consensus_message" field.</summary>
     public const int ConsensusMessageFieldNumber = 21;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2045,7 +1899,6 @@ namespace Phorkus.Proto {
       GetBlocksByHeightRangeReply = 17,
       GetTransactionsByHashesRequest = 18,
       GetTransactionsByHashesReply = 19,
-      ThresholdRequest = 20,
       ConsensusMessage = 21,
     }
     private MessageOneofCase messageCase_ = MessageOneofCase.None;
@@ -2084,7 +1937,6 @@ namespace Phorkus.Proto {
       if (!object.Equals(GetBlocksByHeightRangeReply, other.GetBlocksByHeightRangeReply)) return false;
       if (!object.Equals(GetTransactionsByHashesRequest, other.GetTransactionsByHashesRequest)) return false;
       if (!object.Equals(GetTransactionsByHashesReply, other.GetTransactionsByHashesReply)) return false;
-      if (!object.Equals(ThresholdRequest, other.ThresholdRequest)) return false;
       if (!object.Equals(ConsensusMessage, other.ConsensusMessage)) return false;
       if (!object.Equals(Signature, other.Signature)) return false;
       if (MessageCase != other.MessageCase) return false;
@@ -2105,7 +1957,6 @@ namespace Phorkus.Proto {
       if (messageCase_ == MessageOneofCase.GetBlocksByHeightRangeReply) hash ^= GetBlocksByHeightRangeReply.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesRequest) hash ^= GetTransactionsByHashesRequest.GetHashCode();
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) hash ^= GetTransactionsByHashesReply.GetHashCode();
-      if (messageCase_ == MessageOneofCase.ThresholdRequest) hash ^= ThresholdRequest.GetHashCode();
       if (messageCase_ == MessageOneofCase.ConsensusMessage) hash ^= ConsensusMessage.GetHashCode();
       if (signature_ != null) hash ^= Signature.GetHashCode();
       hash ^= (int) messageCase_;
@@ -2166,10 +2017,6 @@ namespace Phorkus.Proto {
         output.WriteRawTag(154, 1);
         output.WriteMessage(GetTransactionsByHashesReply);
       }
-      if (messageCase_ == MessageOneofCase.ThresholdRequest) {
-        output.WriteRawTag(162, 1);
-        output.WriteMessage(ThresholdRequest);
-      }
       if (messageCase_ == MessageOneofCase.ConsensusMessage) {
         output.WriteRawTag(170, 1);
         output.WriteMessage(ConsensusMessage);
@@ -2218,9 +2065,6 @@ namespace Phorkus.Proto {
       }
       if (messageCase_ == MessageOneofCase.GetTransactionsByHashesReply) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(GetTransactionsByHashesReply);
-      }
-      if (messageCase_ == MessageOneofCase.ThresholdRequest) {
-        size += 2 + pb::CodedOutputStream.ComputeMessageSize(ThresholdRequest);
       }
       if (messageCase_ == MessageOneofCase.ConsensusMessage) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(ConsensusMessage);
@@ -2308,12 +2152,6 @@ namespace Phorkus.Proto {
             GetTransactionsByHashesReply = new global::Phorkus.Proto.GetTransactionsByHashesReply();
           }
           GetTransactionsByHashesReply.MergeFrom(other.GetTransactionsByHashesReply);
-          break;
-        case MessageOneofCase.ThresholdRequest:
-          if (ThresholdRequest == null) {
-            ThresholdRequest = new global::Phorkus.Proto.ThresholdRequest();
-          }
-          ThresholdRequest.MergeFrom(other.ThresholdRequest);
           break;
         case MessageOneofCase.ConsensusMessage:
           if (ConsensusMessage == null) {
@@ -2426,15 +2264,6 @@ namespace Phorkus.Proto {
             }
             input.ReadMessage(subBuilder);
             GetTransactionsByHashesReply = subBuilder;
-            break;
-          }
-          case 162: {
-            global::Phorkus.Proto.ThresholdRequest subBuilder = new global::Phorkus.Proto.ThresholdRequest();
-            if (messageCase_ == MessageOneofCase.ThresholdRequest) {
-              subBuilder.MergeFrom(ThresholdRequest);
-            }
-            input.ReadMessage(subBuilder);
-            ThresholdRequest = subBuilder;
             break;
           }
           case 170: {

@@ -26,12 +26,9 @@ namespace Phorkus.Proto {
           string.Concat(
             "Cg1kZWZhdWx0LnByb3RvIhkKB1VJbnQxNjASDgoGYnVmZmVyGAEgASgMIhkK",
             "B1VJbnQyNTYSDgoGYnVmZmVyGAEgASgMIhsKCVB1YmxpY0tleRIOCgZidWZm",
-            "ZXIYASABKAwiHAoKUHJpdmF0ZUtleRIOCgZidWZmZXIYASABKAwilAEKDFRo",
-            "cmVzaG9sZEtleRIgCgtwcml2YXRlX2tleRgBIAEoCzILLlByaXZhdGVLZXkS",
-            "HgoKdmFsaWRhdG9ycxgCIAMoCzIKLlB1YmxpY0tleRIeCgpwdWJsaWNfa2V5",
-            "GAMgASgLMgouUHVibGljS2V5EiIKDXByaXZhdGVfc2hhcmUYBCABKAsyCy5Q",
-            "cml2YXRlS2V5IhsKCVNpZ25hdHVyZRIOCgZidWZmZXIYASABKAxCIwoRY29t",
-            "LmxhdG9rZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "ZXIYASABKAwiHAoKUHJpdmF0ZUtleRIOCgZidWZmZXIYASABKAwiGwoJU2ln",
+            "bmF0dXJlEg4KBmJ1ZmZlchgBIAEoDEIjChFjb20ubGF0b2tlbi5wcm90b6oC",
+            "DVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -39,7 +36,6 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.UInt256), global::Phorkus.Proto.UInt256.Parser, new[]{ "Buffer" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PublicKey), global::Phorkus.Proto.PublicKey.Parser, new[]{ "Buffer" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.PrivateKey), global::Phorkus.Proto.PrivateKey.Parser, new[]{ "Buffer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ThresholdKey), global::Phorkus.Proto.ThresholdKey.Parser, new[]{ "PrivateKey", "Validators", "PublicKey", "PrivateShare" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Signature), global::Phorkus.Proto.Signature.Parser, new[]{ "Buffer" }, null, null, null)
           }));
     }
@@ -563,229 +559,6 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class ThresholdKey : pb::IMessage<ThresholdKey> {
-    private static readonly pb::MessageParser<ThresholdKey> _parser = new pb::MessageParser<ThresholdKey>(() => new ThresholdKey());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<ThresholdKey> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[4]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThresholdKey() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThresholdKey(ThresholdKey other) : this() {
-      privateKey_ = other.privateKey_ != null ? other.privateKey_.Clone() : null;
-      validators_ = other.validators_.Clone();
-      publicKey_ = other.publicKey_ != null ? other.publicKey_.Clone() : null;
-      privateShare_ = other.privateShare_ != null ? other.privateShare_.Clone() : null;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ThresholdKey Clone() {
-      return new ThresholdKey(this);
-    }
-
-    /// <summary>Field number for the "private_key" field.</summary>
-    public const int PrivateKeyFieldNumber = 1;
-    private global::Phorkus.Proto.PrivateKey privateKey_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.PrivateKey PrivateKey {
-      get { return privateKey_; }
-      set {
-        privateKey_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "validators" field.</summary>
-    public const int ValidatorsFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.PublicKey> _repeated_validators_codec
-        = pb::FieldCodec.ForMessage(18, global::Phorkus.Proto.PublicKey.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.PublicKey> validators_ = new pbc::RepeatedField<global::Phorkus.Proto.PublicKey>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.PublicKey> Validators {
-      get { return validators_; }
-    }
-
-    /// <summary>Field number for the "public_key" field.</summary>
-    public const int PublicKeyFieldNumber = 3;
-    private global::Phorkus.Proto.PublicKey publicKey_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.PublicKey PublicKey {
-      get { return publicKey_; }
-      set {
-        publicKey_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "private_share" field.</summary>
-    public const int PrivateShareFieldNumber = 4;
-    private global::Phorkus.Proto.PrivateKey privateShare_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.PrivateKey PrivateShare {
-      get { return privateShare_; }
-      set {
-        privateShare_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as ThresholdKey);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(ThresholdKey other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (!object.Equals(PrivateKey, other.PrivateKey)) return false;
-      if(!validators_.Equals(other.validators_)) return false;
-      if (!object.Equals(PublicKey, other.PublicKey)) return false;
-      if (!object.Equals(PrivateShare, other.PrivateShare)) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (privateKey_ != null) hash ^= PrivateKey.GetHashCode();
-      hash ^= validators_.GetHashCode();
-      if (publicKey_ != null) hash ^= PublicKey.GetHashCode();
-      if (privateShare_ != null) hash ^= PrivateShare.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      if (privateKey_ != null) {
-        output.WriteRawTag(10);
-        output.WriteMessage(PrivateKey);
-      }
-      validators_.WriteTo(output, _repeated_validators_codec);
-      if (publicKey_ != null) {
-        output.WriteRawTag(26);
-        output.WriteMessage(PublicKey);
-      }
-      if (privateShare_ != null) {
-        output.WriteRawTag(34);
-        output.WriteMessage(PrivateShare);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      if (privateKey_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PrivateKey);
-      }
-      size += validators_.CalculateSize(_repeated_validators_codec);
-      if (publicKey_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PublicKey);
-      }
-      if (privateShare_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PrivateShare);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(ThresholdKey other) {
-      if (other == null) {
-        return;
-      }
-      if (other.privateKey_ != null) {
-        if (privateKey_ == null) {
-          privateKey_ = new global::Phorkus.Proto.PrivateKey();
-        }
-        PrivateKey.MergeFrom(other.PrivateKey);
-      }
-      validators_.Add(other.validators_);
-      if (other.publicKey_ != null) {
-        if (publicKey_ == null) {
-          publicKey_ = new global::Phorkus.Proto.PublicKey();
-        }
-        PublicKey.MergeFrom(other.PublicKey);
-      }
-      if (other.privateShare_ != null) {
-        if (privateShare_ == null) {
-          privateShare_ = new global::Phorkus.Proto.PrivateKey();
-        }
-        PrivateShare.MergeFrom(other.PrivateShare);
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            if (privateKey_ == null) {
-              privateKey_ = new global::Phorkus.Proto.PrivateKey();
-            }
-            input.ReadMessage(privateKey_);
-            break;
-          }
-          case 18: {
-            validators_.AddEntriesFrom(input, _repeated_validators_codec);
-            break;
-          }
-          case 26: {
-            if (publicKey_ == null) {
-              publicKey_ = new global::Phorkus.Proto.PublicKey();
-            }
-            input.ReadMessage(publicKey_);
-            break;
-          }
-          case 34: {
-            if (privateShare_ == null) {
-              privateShare_ = new global::Phorkus.Proto.PrivateKey();
-            }
-            input.ReadMessage(privateShare_);
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
   public sealed partial class Signature : pb::IMessage<Signature> {
     private static readonly pb::MessageParser<Signature> _parser = new pb::MessageParser<Signature>(() => new Signature());
     private pb::UnknownFieldSet _unknownFields;
@@ -794,7 +567,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Phorkus.Proto.DefaultReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

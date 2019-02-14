@@ -113,30 +113,7 @@ namespace Phorkus.Core.CLI
                 ? ProtoUtils.ParsedObject(_blockManager.GetByHeight(blockHeight))
                 : ProtoUtils.ParsedObject(_blockManager.GetByHash(arguments[1].HexToUInt256()));
         }
-
-        public string GetBalances(string[] arguments)
-        {
-            if (arguments.Length != 2)
-                return null;
-            arguments[1] = EraseHexPrefix(arguments[1]);
-            if (!IsValidHexString(arguments[1]))
-                return null;
-            var assetNames = _stateManager.LastApprovedSnapshot.Assets.GetAssetNames();
-            var result = "Balances:";
-            foreach (var assetName in assetNames)
-            {
-                var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(assetName);
-                if (asset is null)
-                    continue;
-                var balance =
-                    _stateManager.LastApprovedSnapshot.Balances.GetAvailableBalance(
-                        arguments[1].HexToUInt160(), asset.Hash);
-                result += $"\n - {assetName}: {balance}";
-            }
-
-            return result;
-        }
-
+        
         /*
          * GetBalance
          * address, UInt160
@@ -144,16 +121,13 @@ namespace Phorkus.Core.CLI
         */
         public Money GetBalance(string[] arguments)
         {
-            if (arguments.Length != 3)
+            if (arguments.Length != 2)
                 return null;
             arguments[1] = EraseHexPrefix(arguments[1]);
             if (!IsValidHexString(arguments[1]))
                 return null;
-            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
-            if (asset == null)
-                return null;
             return _stateManager.LastApprovedSnapshot.Balances
-                .GetAvailableBalance(arguments[1].HexToUInt160(), asset.Hash);
+                .GetAvailableBalance(arguments[1].HexToUInt160());
         }
         
         public string DeployContract(string[] arguments)
@@ -161,11 +135,11 @@ namespace Phorkus.Core.CLI
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).ToHash160();
-            var contractCode = arguments[1].HexToBytes();
-            if (!_virtualMachine.VerifyContract(contractCode))
+            var byteCode = arguments[1].HexToBytes();
+            if (!_virtualMachine.VerifyContract(byteCode))
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
-            var tx = _transactionBuilder.DeployTransaction(from, null, contractCode, ContractVersion.Wasm);
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.Buffer.ToHex();
@@ -178,7 +152,7 @@ namespace Phorkus.Core.CLI
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
             if (contract is null)
                 return $"Unable to find contract by hash {contractHash.Buffer.ToHex()}";
-            Console.WriteLine("Code: " + contract.Wasm.ToByteArray().ToHex());
+            Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
             var status = _stateManager.SafeContext(() =>
             {
                 _stateManager.NewSnapshot();
@@ -188,14 +162,7 @@ namespace Phorkus.Core.CLI
             });
             return status == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
         }
-
-        public string InvokeContract(string[] arguments)
-        {
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(arguments[1].HexToUInt160());
-            
-            throw new NotImplementedException();
-        }
-
+        
         public string Help(string[] arguments)
         {
             var methods = GetType().GetMethods().Select(m =>
@@ -233,12 +200,11 @@ namespace Phorkus.Core.CLI
         public string SignTransaction(string[] arguments)
         {
             var to = arguments[1].HexToUInt160();
-            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
-            var value = Money.Parse(arguments[3]);
+            var value = Money.Parse(arguments[2]);
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
-            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value);
+            var tx = _transactionBuilder.TransferTransaction(from, to, value);
             if (arguments.Length >= 4)
-                tx.Fee = Money.Parse(arguments[4]).ToUInt256();
+                tx.Fee = Money.Parse(arguments[3]).ToUInt256();
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
         }
@@ -266,11 +232,10 @@ namespace Phorkus.Core.CLI
         public string SendTransaction(string[] arguments)
         {
             var to = arguments[1].HexToUInt160();
-            var asset = _stateManager.LastApprovedSnapshot.Assets.GetAssetByName(arguments[2]);
-            var value = Money.Parse(arguments[3]);
-            var fee = Money.Parse(arguments[4]);
+            var value = Money.Parse(arguments[2]);
+            var fee = Money.Parse(arguments[3]);
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
-            var tx = _transactionBuilder.ContractTransaction(from, to, asset, value);
+            var tx = _transactionBuilder.TransferTransaction(from, to, value);
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();

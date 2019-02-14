@@ -37,7 +37,8 @@ namespace Phorkus.Core.RPC.HTTP
             if (!HttpListener.IsSupported)
                 throw new Exception("Your platform doesn't support [HttpListener]");
             _httpListener = new HttpListener();
-            _httpListener.Prefixes.Add($"http://{rpcConfig.Host}:{rpcConfig.Port}/");
+            foreach (var host in rpcConfig.Hosts)
+                _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             _httpListener.Start();
             while (_httpListener.IsListening)

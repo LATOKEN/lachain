@@ -14,17 +14,14 @@ namespace Phorkus.Core.Blockchain.Genesis
     {
         public const ulong GenesisConsensusData = 2083236893UL;
 
-        private readonly IGenesisAssetsBuilder _genesisAssetsBuilder;
         private readonly ICrypto _crypto;
         private readonly ITransactionManager _transactionManager;
         private readonly KeyPair _keyPair;
 
         public GenesisBuilder(
-            IGenesisAssetsBuilder genesisAssetsBuilder,
             ICrypto crypto,
             ITransactionManager transactionManager)
         {
-            _genesisAssetsBuilder = genesisAssetsBuilder;
             _crypto = crypto;
             _transactionManager = transactionManager;
             /* TODO: "replace this private key with encrypted private key with threshold paillier cryptosystem" */
@@ -40,29 +37,11 @@ namespace Phorkus.Core.Blockchain.Genesis
 
             var address = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             
-            var btcToken = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "BTC", 21000000, 8);
-            var ethToken = _genesisAssetsBuilder.BuildPlatformTokenRegisterTransaction(address, "ETH", (uint)1e9, 18);
-            var laToken = _genesisAssetsBuilder.BuildGoverningTokenRegisterTransaction(address);
-            var minerTransaction = _genesisAssetsBuilder.BuildGenesisMinerTransaction();
-
             var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
                 year: 2019, month: 1, day: 1, hour: 00, minute: 00, second: 00).ToTimestamp();
-
-            /* distribute tokens (1 million for each holder) */
-            var tokenDistribution = _genesisAssetsBuilder.IssueTransactionsToOwners(
-                Money.FromDecimal(1_000_000m), laToken.Register.ToHash160()
-            );
-
-            var txsBefore = new[]
-            {
-                /* first transaction is always a miner transaction */
-                minerTransaction,
-                /* creates NEO */
-                laToken,
-                btcToken,
-                ethToken
-            };
-            var genesisTransactions = txsBefore.Concat(tokenDistribution).ToArray();
+            
+            var txsBefore = new Transaction[]{};
+            var genesisTransactions = txsBefore.ToArray();
             
             var nonce = 0ul;
             foreach (var tx in genesisTransactions)
@@ -72,8 +51,8 @@ namespace Phorkus.Core.Blockchain.Genesis
             }
             
             var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, _keyPair));
-            var AcceptedTransactions = signed as AcceptedTransaction[] ?? signed.ToArray();
-            var txHashes = AcceptedTransactions.Select(tx => tx.Hash).ToArray();
+            var acceptedTransactions = signed as AcceptedTransaction[] ?? signed.ToArray();
+            var txHashes = acceptedTransactions.Select(tx => tx.Hash).ToArray();
             
             var header = new BlockHeader
             {
@@ -93,7 +72,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Header = header
             };
             
-            _genesisBlock = new BlockWithTransactions(result, AcceptedTransactions.ToArray());
+            _genesisBlock = new BlockWithTransactions(result, acceptedTransactions.ToArray());
             return _genesisBlock;
         }
     }

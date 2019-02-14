@@ -1,17 +1,12 @@
 using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Logger;
-using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 
 namespace Phorkus.Core.CLI
@@ -53,7 +48,7 @@ namespace Phorkus.Core.CLI
             _virtualMachine = virtualMachine;
         }
 
-        private void _Worker(ThresholdKey thresholdKey, KeyPair keyPair)
+        private void _Worker(KeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(_transactionBuilder, _transactionPool,
                 _transactionManager, _blockManager, _validatorManager, _stateManager, _virtualMachine,
@@ -74,13 +69,14 @@ namespace Phorkus.Core.CLI
                     return;
                 try
                 {
-                    var result = theCommand.Invoke(_consoleCommands, new object[] { arguments.ToArray() });
+                    var result = theCommand.Invoke(_consoleCommands, new object[] {arguments.ToArray()});
                     if (result == null)
                     {
                         _logger.LogError("Wrong arguments!\n");
                         Console.Out.Write("null\n");
                         return;
                     }
+
                     Console.Out.Write(result.ToString() + '\n');
                 }
                 catch (Exception e)
@@ -96,7 +92,7 @@ namespace Phorkus.Core.CLI
             }
         }
 
-        public void Start(ThresholdKey thresholdKey, KeyPair keyPair)
+        public void Start(KeyPair keyPair)
         {
             Task.Factory.StartNew(() =>
             {
@@ -105,7 +101,7 @@ namespace Phorkus.Core.CLI
                     var thread = Thread.CurrentThread;
                     while (thread.IsAlive)
                     {
-                        _Worker(thresholdKey, keyPair);
+                        _Worker(keyPair);
                     }
                 }
                 catch (Exception e)

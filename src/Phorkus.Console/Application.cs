@@ -2,21 +2,16 @@
 using System.Threading;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
-using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.CLI;
 using Phorkus.Core.Config;
-using Phorkus.Core.CrossChain;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
 using Phorkus.Core.RPC;
-using Phorkus.Core.Threshold;
 using Phorkus.Core.Utils;
-using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Networking;
-using Phorkus.Proto;
 using Phorkus.Storage;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
@@ -52,29 +47,16 @@ namespace Phorkus.Console
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
-            var blockchainStateManager = _container.Resolve<IStateManager>();
-            var transactionPool = _container.Resolve<ITransactionPool>();
-            var transactionManager = _container.Resolve<ITransactionManager>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
-            var crossChain = _container.Resolve<ICrossChain>();
-            var withdrawalManager = _container.Resolve<IWithdrawalManager>();
-            var thresholdManager = _container.Resolve<IThresholdManager>();
             var commandManager = _container.Resolve<IConsoleManager>();
-            var transactionBuilder = _container.Resolve<ITransactionBuilder>();
-            var blockManager = _container.Resolve<IBlockManager>();
-            var virtualMachine = _container.Resolve<IVirtualMachine>();
             var rpcManager = _container.Resolve<IRpcManager>();
-            var stateManager = _container.Resolve<IStateManager>();
-            
-            var balanceRepository = blockchainStateManager.LastApprovedSnapshot.Balances;
-            var assetRepository = blockchainStateManager.LastApprovedSnapshot.Assets;
+            var stateManager = _container.Resolve<IStateManager>();            
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var storageConfig = configManager.GetConfig<StorageConfig>("storage");
             
             var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            var thresholdKey = new ThresholdKey();
             
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
@@ -96,20 +78,6 @@ namespace Phorkus.Console
             foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-            var assetNames = assetRepository.GetAssetNames().ToArray();
-            System.Console.WriteLine($" + genesis assets: {assetNames.Length}");
-            foreach (var assetName in assetNames)
-                System.Console.WriteLine($" + - {assetName}: {assetRepository.GetAssetByName(assetName)?.Hash}");
-            
-            // sendtransaction 0xfd893ce89186fc6861d339cb6ab5d75458e3daf3 LA 1000.999 1
-            // sendtransaction 0x6c809b2845b1334bd860988d24adccc9fab2a28d LA 1000.999 1
-            // sendtransaction 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 1000.999 0.0001
-            // sendtransaction 0x34a3bdffa1fa927888fe8df23d55058db4a65c4f LA 0.9999 0.0001
-            // sendtransaction 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 LA 100000.999 0.0001
-            // sendtransaction 0x6bc32575acb8754886dc283c2c8ac54b1bd93195 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576 LA 100000.999 0.0001
-            
-            // getbalance 0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576
-            // getbalance 0x6bc32575acb8754886dc283c2c8ac54b1bd93195
             
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
@@ -118,73 +86,20 @@ namespace Phorkus.Console
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
 
-            _TraceBalances(assetRepository, balanceRepository, address1);
-            System.Console.WriteLine("-------------------------------");
-            _TraceBalances(assetRepository, balanceRepository, address2);
-            System.Console.WriteLine("-------------------------------");
-
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            //crossChain.Start(thresholdKey, keyPair);
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
             consensusManager.Start();
             blockSynchronizer.Start();
-            withdrawalManager.Start(thresholdKey, keyPair);
-            commandManager.Start(thresholdKey, keyPair);
+            commandManager.Start(keyPair);
             rpcManager.Start();
             
-            // var sig = thresholdManager.SignData(keyPair, "secp256k1", "0xbadcab1e".HexToBytes());
-            
-            /*var transaction = transactionBuilder.WithdrawTransaction(
-                from: crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToUInt160(),
-                recipient: "0x0db604794551f5c12e4ffb2d8d4620db5ac2813d".HexToUInt160(),
-                blockchainType: BlockchainType.Ethereum,
-                value: "100000000000000000".HexToUInt256().ToMoney(),
-                transactionHash: null,
-                addressFormat: AddressFormat.Ripmd160,
-                timestamp: 0
-            );
-            var AcceptedTransaction = transactionManager.Sign(transaction, keyPair);
-            transactionPool.Add(AcceptedTransaction);*/
-            
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
-
-//            if (consensusConfig.PrivateKey.Equals("d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"))
-//            {
-//                _dirtyNonce = transactionManager.CalcNextTxNonce(address1);
-//                var rand = new Random();
-//                while (!_interrupt)
-//                {
-//                    var raw = transactionBuilder.TransferTransaction(address1, address2, "LA",
-//                        Money.FromDecimal(0.0000001m));
-//                    lock (typeof(Application))
-//                        raw.Nonce = _dirtyNonce++;
-//                    var tx = transactionManager.Sign(raw, keyPair);
-//                    transactionPool.Add(tx);
-//                    if (rand.Next() % 100 == 0)
-//                        System.Console.WriteLine($"Tx pool size: {transactionPool.Size()}");
-//                    Thread.Sleep(1);
-//                }                
-//            }
             
             while (!_interrupt)
                 Thread.Sleep(1000);
         }
         
-//        private static ulong _dirtyNonce;
-
-        private void _TraceBalances(IAssetSnapshot assetSnapshot, IBalanceSnapshot balanceSnapshot, UInt160 address)
-        {
-            foreach (var assetName in assetSnapshot.GetAssetNames())
-            {
-                var prettyName = assetName;
-                if (prettyName.Length < 3)
-                    prettyName = $"{prettyName} ";
-                System.Console.WriteLine(
-                    $"Balance of {prettyName} {address.Buffer.ToHex().Substring(0, 4)}: {balanceSnapshot.GetAvailableBalance(address, assetSnapshot.GetAssetByName(assetName)?.Hash)}");
-            }
-        }
-
         private bool _interrupt;
     }
 }

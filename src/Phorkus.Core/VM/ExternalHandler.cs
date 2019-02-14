@@ -25,9 +25,8 @@ namespace Phorkus.Core.VM
                 frame = null;
                 return ExecutionStatus.NoSuchContract;
             }
-
             var status = ExecutionFrame.FromInternalCall(
-                contract.Wasm.ToByteArray(), caller, address, input,
+                contract.ByteCode.ToByteArray(), caller, address, input,
                 VirtualMachine.BlockchainInterface, out frame
             );
             if (status != ExecutionStatus.Ok) return status;

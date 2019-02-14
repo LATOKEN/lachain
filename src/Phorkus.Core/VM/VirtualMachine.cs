@@ -87,12 +87,10 @@ namespace Phorkus.Core.VM
             returnValue = null;
             if (ExecutionFrames.Count != 0)
                 return ExecutionStatus.VmCorruption;
-            if (contract.Version != ContractVersion.Wasm)
-                return ExecutionStatus.IncompatibleCode;
             var status = ExecutionFrame.FromInvocation(
-                contract.Wasm.ToByteArray(),
+                contract.ByteCode.ToByteArray(),
                 sender,
-                contract.Hash,
+                contract.ContractAddress,
                 input,
                 BlockchainInterface, out var rootFrame);
             if (status != ExecutionStatus.Ok)

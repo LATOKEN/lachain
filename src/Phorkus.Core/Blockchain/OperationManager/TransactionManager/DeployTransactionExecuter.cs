@@ -23,18 +23,15 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
-            var deploy = transaction.Deploy;
             /* calculate contract hash and register it */
             var hash = transaction.From.Buffer.ToArray().Concat(BitConverter.GetBytes((uint) transaction.Nonce)).ToHash160();
             Console.WriteLine("Contract hash: " + hash.Buffer.ToHex());
             var contract = new Contract
             {
-                Hash = hash,
-                Version = deploy.Version,
-                Abi = { deploy.Abi },
-                Wasm = deploy.Wasm
+                ContractAddress = hash,
+                ByteCode = transaction.Deploy
             };
-            if (!_virtualMachine.VerifyContract(contract.Wasm.ToByteArray()))
+            if (!_virtualMachine.VerifyContract(contract.ByteCode.ToByteArray()))
                 return OperatingError.InvalidContract;
             snapshot.Contracts.AddContract(transaction.From, contract);
             return OperatingError.Ok;
@@ -44,15 +41,9 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         {
             if (transaction.Type != TransactionType.Deploy)
                 return OperatingError.InvalidTransaction;
-            var deploy = transaction.Deploy;
-            if (deploy?.Version is null)
-                return OperatingError.InvalidTransaction;
-            // TODO: abi
-            if (deploy?.Wasm is null)
+            if (transaction.Deploy is null)
                 return OperatingError.InvalidTransaction;
             var result = _VerifyContract(transaction);
-            if (result != OperatingError.Ok)
-                return result;
             return result;
         }
 

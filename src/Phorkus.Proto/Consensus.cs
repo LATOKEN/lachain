@@ -32,7 +32,7 @@ namespace Phorkus.Proto {
             "ZGF0b3ISFwoPbmV3X3ZpZXdfbnVtYmVyGAIgASgNIrkBChNCbG9ja1ByZXBh",
             "cmVSZXF1ZXN0Eh0KCXZhbGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchINCgVu",
             "b25jZRgCIAEoBBIkChJ0cmFuc2FjdGlvbl9oYXNoZXMYAyADKAsyCC5VSW50",
-            "MjU2EhwKCnN0YXRlX2hhc2gYByABKAsyCC5VSW50MjU2EhEKCXRpbWVzdGFt",
+            "MjU2EhwKCnN0YXRlX2hhc2gYBCABKAsyCC5VSW50MjU2EhEKCXRpbWVzdGFt",
             "cBgFIAEoBBIdCglzaWduYXR1cmUYBiABKAsyCi5TaWduYXR1cmUiUQoRQmxv",
             "Y2tQcmVwYXJlUmVwbHkSHQoJdmFsaWRhdG9yGAEgASgLMgouVmFsaWRhdG9y",
             "Eh0KCXNpZ25hdHVyZRgCIAEoCzIKLlNpZ25hdHVyZUIjChFjb20ubGF0b2tl",
@@ -560,7 +560,7 @@ namespace Phorkus.Proto {
     }
 
     /// <summary>Field number for the "state_hash" field.</summary>
-    public const int StateHashFieldNumber = 7;
+    public const int StateHashFieldNumber = 4;
     private global::Phorkus.Proto.UInt256 stateHash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Phorkus.Proto.UInt256 StateHash {
@@ -645,6 +645,10 @@ namespace Phorkus.Proto {
         output.WriteUInt64(Nonce);
       }
       transactionHashes_.WriteTo(output, _repeated_transactionHashes_codec);
+      if (stateHash_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(StateHash);
+      }
       if (Timestamp != 0UL) {
         output.WriteRawTag(40);
         output.WriteUInt64(Timestamp);
@@ -652,10 +656,6 @@ namespace Phorkus.Proto {
       if (signature_ != null) {
         output.WriteRawTag(50);
         output.WriteMessage(Signature);
-      }
-      if (stateHash_ != null) {
-        output.WriteRawTag(58);
-        output.WriteMessage(StateHash);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -743,6 +743,13 @@ namespace Phorkus.Proto {
             transactionHashes_.AddEntriesFrom(input, _repeated_transactionHashes_codec);
             break;
           }
+          case 34: {
+            if (stateHash_ == null) {
+              stateHash_ = new global::Phorkus.Proto.UInt256();
+            }
+            input.ReadMessage(stateHash_);
+            break;
+          }
           case 40: {
             Timestamp = input.ReadUInt64();
             break;
@@ -752,13 +759,6 @@ namespace Phorkus.Proto {
               signature_ = new global::Phorkus.Proto.Signature();
             }
             input.ReadMessage(signature_);
-            break;
-          }
-          case 58: {
-            if (stateHash_ == null) {
-              stateHash_ = new global::Phorkus.Proto.UInt256();
-            }
-            input.ReadMessage(stateHash_);
             break;
           }
         }

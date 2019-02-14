@@ -33,7 +33,7 @@ namespace Phorkus.Storage.State
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddContract(UInt160 sender, Contract contract)
         {
-            _state.AddOrUpdate(EntryPrefix.ContractByHash.BuildPrefix(contract.Hash), contract.ToByteArray());
+            _state.AddOrUpdate(EntryPrefix.ContractByHash.BuildPrefix(contract.ContractAddress), contract.ToByteArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

@@ -3,12 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Org.BouncyCastle.Math.EC;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
@@ -22,22 +20,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
         private readonly IStateManager _stateManager;
 
         public TransactionManager(
-            IValidatorManager validatorManager,
             ITransactionVerifier transactionVerifier,
-            IMultisigVerifier multisigVerifier,
             IVirtualMachine virtualMachine,
             ICrypto crypto,
             IStateManager stateManager)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
-                {TransactionType.Miner, new MinerTranscationExecuter()},
-                {TransactionType.Register, new RegisterTransactionExecuter(multisigVerifier)},
-                {TransactionType.Issue, new IssueTransactionExecuter()},
-                {TransactionType.Contract, new ContractTransactionExecuter(virtualMachine)},
-                {TransactionType.Deposit, new DepositTransactionExecuter(validatorManager)},
-                {TransactionType.Withdraw, new WithdrawTransactionExecuter(validatorManager)},
-                {TransactionType.Confirm, new ConfirmTransactionExecuter(validatorManager)},
+                {TransactionType.Transfer, new ContractTransactionExecuter(virtualMachine)},
                 {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine) }
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));

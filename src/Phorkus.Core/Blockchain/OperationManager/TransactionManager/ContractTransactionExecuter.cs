@@ -1,8 +1,8 @@
 ﻿using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
-using Phorkus.Utility.Utils;
 using Phorkus.Core.VM;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
 {
@@ -21,37 +21,35 @@ namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
-            var contract = transaction.Contract;
             /* try to transfer funds from sender to recipient */
-            if (!contract.Value.IsZero() && !snapshot.Balances.TransferAvailableBalance(transaction.From, contract.To,
-                    contract.Asset, new Money(contract.Value)))
+            if (!transaction.Value.IsZero() && !snapshot.Balances.TransferAvailableBalance(transaction.From, transaction.To,
+                    new Money(transaction.Value)))
                 return OperatingError.InsufficientBalance;
             /* if we have invocation block than invoke contract method */
-            if (contract.Input != null && !contract.Input.IsEmpty)
+            if (transaction.Invocation != null && !transaction.Invocation.IsEmpty)
                 return _InvokeContract(transaction, snapshot);
             return OperatingError.Ok;
         }
 
         private OperatingError _InvokeContract(Transaction transaction, IBlockchainSnapshot snapshot)
         {
-            var contract = snapshot.Contracts.GetContractByHash(transaction.Contract.To);
+            var contract = snapshot.Contracts.GetContractByHash(transaction.To);
             if (contract is null)
                 return OperatingError.ContractNotFound;
-            return _virtualMachine.InvokeContract(contract, transaction.From, transaction.Contract.Input.ToByteArray()) != ExecutionStatus.Ok
+            return _virtualMachine.InvokeContract(contract, transaction.From, transaction.Invocation.ToByteArray()) != ExecutionStatus.Ok
                 ? OperatingError.ContractFailed
                 : OperatingError.Ok;
         }
 
         public OperatingError Verify(Transaction transaction)
         {
-            if (transaction.Type != TransactionType.Contract)
+            if (transaction.Type != TransactionType.Transfer)
                 return OperatingError.InvalidTransaction;
-            var contract = transaction.Contract;
-            if (contract?.Asset is null || contract.Asset.IsZero())
+            if (transaction.To is null)
                 return OperatingError.InvalidTransaction;
-            if (contract.To is null)
+            if (transaction.Value is null)
                 return OperatingError.InvalidTransaction;
-            if (contract.Value is null)
+            if (transaction.Deploy != null)
                 return OperatingError.InvalidTransaction;
             return _VerifyInvocation(transaction);
         }

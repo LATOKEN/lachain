@@ -19,7 +19,6 @@
         TransactionPool = 0x0404,
         
         BalanceByOwnerAndAsset = 0x0501,
-        WithdrawingBalanceByOwnerAndAsset = 0x0511,
         
         StorageVersionIndex = 0x0601,
         PersistentTreeMap = 0x0602,

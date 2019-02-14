@@ -18,14 +18,10 @@ namespace Phorkus.Core.CLI
 
         string SignBlock(string[] arguments);
         
-        string GetBalances(string[] arguments);
-        
         Money GetBalance(string[] arguments);
 
         string DeployContract(string[] arguments);
 
-        string CallContract(string[] arguments);
-        
-        string InvokeContract(string[] arguments);
+        string CallContract(string[] arguments);        
     }
 }
