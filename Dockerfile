@@ -2,7 +2,6 @@ FROM microsoft/dotnet:sdk as build-env
 WORKDIR /phorkus
 COPY src/Phorkus.Console/Phorkus.Console.csproj ./Phorkus.Console/
 COPY src/Phorkus.Core/Phorkus.Core.csproj ./Phorkus.Core/
-COPY src/Phorkus.CrossChain/Phorkus.CrossChain.csproj ./Phorkus.CrossChain/
 COPY src/Phorkus.Crypto/Phorkus.Crypto.csproj ./Phorkus.Crypto/
 COPY src/Phorkus.Storage/Phorkus.Storage.csproj ./Phorkus.Storage/
 COPY src/Phorkus.Logger/Phorkus.Logger.csproj ./Phorkus.Logger/

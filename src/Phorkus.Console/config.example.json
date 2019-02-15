@@ -4,25 +4,29 @@
     "host": "tcp://192.168.88.69",
     "port": 5050,
     "peers": [
-//      "tcp://192.168.88.154:5050",
       "tcp://192.168.88.154:5051",
-//      "tcp://192.168.88.69:5050"
-//      "tcp://192.168.88.152:5050",
-//      "tcp://192.168.88.214:5050"
     ],
     "forceIPv6": false,
     "maxPeers": 100
   },
-  "blockchain": {
+  "genesis" : {
+    "balances": {
+      "0xe855e8f8e5f66a84c62800e9fc8fa06d77c35baf": "100.0",
+      "0x6c809b2845b1334bd860988d24adccc9fab2a28d": "123.321"
+    },
+    "privateKey": "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7070
   },
   "consensus": {
     "validators": [
-      "02affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5",
-      "0252b662232efa6affe522a78fbe06df7bb5809db64a165cffa1dbb3154722389a",
-      "038871c219368549f7765f94c0b7b3046612f08e626771e98e235f4abb7ae363b9",
-      "03948f774e1bb92cebe996b1b5ddbc74c9b5b3965d290a537a63561686f14d7364"
+      "02e5974f3e1e9599ff5af036b5d6057d80855e7182afb4c2fa1fe38bc6efb9072b"
     ],
-    "privateKey": "8a04748ce6329cf899cee3f3e0f4720d1a6d917a9183a11b323315de2ffbf84d"
+    "privateKey": "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
   },
   "storage": {
     "provider": "RocksDB",
