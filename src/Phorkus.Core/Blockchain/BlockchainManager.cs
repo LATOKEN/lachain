@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Blockchain.OperationManager.BlockManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
 using Phorkus.Proto;

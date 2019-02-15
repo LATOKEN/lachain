@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
+namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class InvalidTransactionException : Exception
     {

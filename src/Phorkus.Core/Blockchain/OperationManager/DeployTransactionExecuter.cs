@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using Phorkus.Core.Utils;
+using Phorkus.Core.VM;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
-using Phorkus.Core.VM;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
+namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class DeployTransactionExecuter : ITransactionExecuter
     {

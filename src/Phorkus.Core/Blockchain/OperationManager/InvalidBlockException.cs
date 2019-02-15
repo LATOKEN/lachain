@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
+namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class InvalidBlockException : Exception
     {

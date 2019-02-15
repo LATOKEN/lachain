@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
-using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
+namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class BlockManager : IBlockManager
     {
@@ -121,7 +121,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.BlockManager
                     if (_TakeTransactionFee(validatorAddress, transaction, snapshot) != OperatingError.Ok)
                         throw new Exception($"Unable to take fee for transaction {transaction.Hash.Buffer.ToHex()}");
                     snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
-                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}, expected {_transactionManager.CalcNextTxNonce(transaction.Transaction?.From)}), {result}");
+                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     _stateManager.Approve();
                     continue;
                 }

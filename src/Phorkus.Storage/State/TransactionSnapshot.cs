@@ -40,16 +40,15 @@ namespace Phorkus.Storage.State
         public void AddTransaction(AcceptedTransaction acceptedTransaction, TransactionStatus transactionStatus)
         {
             var expectedNonce = GetTotalTransactionCount(acceptedTransaction.Transaction.From);
-            if (transactionStatus == TransactionStatus.Executed && expectedNonce != acceptedTransaction.Transaction.Nonce)
-                throw new Exception("ho ho ho, this should never happen, transaction nonce mismatch");
+            if (expectedNonce != acceptedTransaction.Transaction.Nonce)
+                throw new Exception("This should never happen, transaction nonce mismatch");
             /* save transaction status */
             acceptedTransaction.Status = transactionStatus;
             /* write transaction to storage */
             _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(acceptedTransaction.Hash),
                 acceptedTransaction.ToByteArray());
             /* update current address nonce */
-            if (transactionStatus == TransactionStatus.Executed)
-                _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(acceptedTransaction.Transaction.From), BitConverter.GetBytes(expectedNonce + 1));
+            _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(acceptedTransaction.Transaction.From), BitConverter.GetBytes(expectedNonce + 1));
         }
     }
 }

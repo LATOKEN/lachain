@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
 using Phorkus.Crypto;
 using Phorkus.Proto;
@@ -13,8 +14,8 @@ namespace Phorkus.Core.VM
         public static byte[] Encode(string methodSignature, params dynamic[] values)
         {
             var encoder = new ContractEncoder(methodSignature);
-            foreach (var value in values)
-                encoder.Write(value);
+            encoder = values.Aggregate(encoder,
+                (current, value) => current.Write(value));
             return encoder.ToByteArray();
         }
         
@@ -28,6 +29,18 @@ namespace Phorkus.Core.VM
             _binaryWriter.Write(signature);
         }
 
+        public ContractEncoder Write(bool value)
+        {
+            _binaryWriter.Write(value);
+            return this;
+        }
+
+        public ContractEncoder Write(short value)
+        {
+            _binaryWriter.Write(value);
+            return this;
+        }
+        
         public ContractEncoder Write(int value)
         {
             _binaryWriter.Write(value);

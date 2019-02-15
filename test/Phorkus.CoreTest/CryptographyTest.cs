@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Org.BouncyCastle.Asn1.Sec;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.Genesis;
-using Phorkus.Core.Blockchain.OperationManager.TransactionManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;

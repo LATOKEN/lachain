@@ -1,10 +1,10 @@
-﻿using Phorkus.Proto;
+﻿using Phorkus.Core.VM;
+using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
-using Phorkus.Core.VM;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain.OperationManager.TransactionManager
+namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class ContractTransactionExecuter : ITransactionExecuter
     {
