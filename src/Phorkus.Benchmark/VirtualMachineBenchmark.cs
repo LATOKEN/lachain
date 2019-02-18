@@ -64,12 +64,13 @@ namespace Phorkus.Benchmark
                 /* give to sender 1 token */
                 var valueToTransfer = Money.Wei;
                 stateManager.CurrentSnapshot.Storage.SetValue(contract.ContractAddress, sender.ToUInt256(), (valueToTransfer * 3).ToUInt256());
+                var context = new InvocationContext(sender);
             
                 /* ERC-20: totalSupply (0x18160ddd) */
                 Console.WriteLine("\nERC-20: totalSupply()");
                 var input = ContractEncoder.Encode("totalSupply()");
                 Console.WriteLine("ABI: " + input.ToHex());
-                var status = virtualMachine.InvokeContract(contract, sender, input);
+                var status = virtualMachine.InvokeContract(contract, context, input);
                 if (status != ExecutionStatus.Ok)
                 {
                     stateManager.Rollback();
@@ -81,7 +82,7 @@ namespace Phorkus.Benchmark
                 Console.WriteLine($"\nERC-20: mint({sender.Buffer.ToHex()},{Money.FromDecimal(100)})");
                 input = ContractEncoder.Encode("mint(address,uint256)", sender, Money.FromDecimal(100));
                 Console.WriteLine("ABI: " + input.ToHex());
-                status = virtualMachine.InvokeContract(contract, sender, input);
+                status = virtualMachine.InvokeContract(contract, context, input);
                 if (status != ExecutionStatus.Ok)
                 {
                     stateManager.Rollback();
@@ -93,7 +94,7 @@ namespace Phorkus.Benchmark
                 Console.WriteLine("\nERC-20: totalSupply()");
                 Console.WriteLine("ABI: " + input.ToHex());
                 input = ContractEncoder.Encode("totalSupply()");
-                status = virtualMachine.InvokeContract(contract, sender, input);
+                status = virtualMachine.InvokeContract(contract, context, input);
                 if (status != ExecutionStatus.Ok)
                 {
                     stateManager.Rollback();
@@ -105,7 +106,7 @@ namespace Phorkus.Benchmark
                 Console.WriteLine($"\nERC-20: balanceOf({sender.Buffer.ToHex()})");
                 input = ContractEncoder.Encode("balanceOf(address)", sender);
                 Console.WriteLine("ABI: " + input.ToHex());
-                status = virtualMachine.InvokeContract(contract, sender, input);
+                status = virtualMachine.InvokeContract(contract, context, input);
                 if (status != ExecutionStatus.Ok)
                 {
                     stateManager.Rollback();

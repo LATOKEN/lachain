@@ -43,11 +43,11 @@ namespace Phorkus.Core.VM
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input)
+        public ExecutionStatus InvokeContract(Contract contract, InvocationContext context, byte[] input)
         {
             try
             {
-                return _InvokeContractUnsafe(contract, sender, input, out _);
+                return _InvokeContractUnsafe(contract, context, input, out _);
             }
             catch (Exception e)
             {
@@ -58,11 +58,11 @@ namespace Phorkus.Core.VM
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ExecutionStatus InvokeContract(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue)
+        public ExecutionStatus InvokeContract(Contract contract, InvocationContext context, byte[] input, out byte[] returnValue)
         {
             try
             {
-                return _InvokeContractUnsafe(contract, sender, input, out returnValue);
+                return _InvokeContractUnsafe(contract, context, input, out returnValue);
             }
             catch (HaltException e)
             {
@@ -82,14 +82,14 @@ namespace Phorkus.Core.VM
             }
         }
         
-        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, UInt160 sender, byte[] input, out byte[] returnValue)
+        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, InvocationContext context, byte[] input, out byte[] returnValue)
         {
             returnValue = null;
             if (ExecutionFrames.Count != 0)
                 return ExecutionStatus.VmCorruption;
             var status = ExecutionFrame.FromInvocation(
                 contract.ByteCode.ToByteArray(),
-                sender,
+                context,
                 contract.ContractAddress,
                 input,
                 BlockchainInterface, out var rootFrame);

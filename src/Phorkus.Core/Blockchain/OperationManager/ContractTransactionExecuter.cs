@@ -37,11 +37,11 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.InsufficientBalance;
             /* if we have invocation block than invoke contract method */
             if (transaction.Invocation != null && !transaction.Invocation.IsEmpty)
-                return _InvokeContract(transaction, snapshot);
+                return _InvokeContract(block, transaction, snapshot);
             return OperatingError.Ok;
         }
 
-        private OperatingError _InvokeContract(Transaction transaction, IBlockchainSnapshot snapshot)
+        private OperatingError _InvokeContract(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
             if (systemContract != null)
@@ -52,18 +52,19 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var input = transaction.Invocation.ToByteArray();
             if (_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
-            var status = _virtualMachine.InvokeContract(contract, transaction.From, input) != ExecutionStatus.Ok;
-           return status ? OperatingError.ContractFailed : OperatingError.Ok;
+            var context = new InvocationContext(transaction.From, transaction, block);
+            var status = _virtualMachine.InvokeContract(contract, context, input);
+            return status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
         }
-        
+
         private bool _IsConstructorCall(IReadOnlyList<byte> buffer)
         {
             if (buffer.Count < 4)
                 return false;
             return buffer[0] == 0 &&
-                buffer[1] == 0 &&
-                buffer[2] == 0 &&
-                buffer[3] == 0;
+                   buffer[1] == 0 &&
+                   buffer[2] == 0 &&
+                   buffer[3] == 0;
         }
 
         private OperatingError _InvokeSystemContract(Transaction transaction, IBlockchainSnapshot snapshot)
@@ -93,6 +94,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 Console.Error.WriteLine(e);
                 return OperatingError.ContractFailed;
             }
+
             return OperatingError.Ok;
         }
 

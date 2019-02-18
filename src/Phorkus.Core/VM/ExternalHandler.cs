@@ -25,8 +25,10 @@ namespace Phorkus.Core.VM
                 frame = null;
                 return ExecutionStatus.NoSuchContract;
             }
+            
+            var currentFrame = VirtualMachine.ExecutionFrames.Peek();
             var status = ExecutionFrame.FromInternalCall(
-                contract.ByteCode.ToByteArray(), caller, address, input,
+                contract.ByteCode.ToByteArray(), currentFrame.Context.NextContext(caller), address, input,
                 VirtualMachine.BlockchainInterface, out frame
             );
             if (status != ExecutionStatus.Ok) return status;
@@ -179,7 +181,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_GetSender(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Sender.Buffer.ToByteArray();
+            var data = frame.Context.Sender.Buffer.ToByteArray();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to GETSENDER");
@@ -241,15 +243,40 @@ namespace Phorkus.Core.VM
             SafeCopyToMemory(frame.Memory, new[]{ result ? (byte) 1 : (byte) 0 }, resultOffset);
         }
 
-        public static int Handler_Env_AllocateMemory(int dataLength)
+        public static void Handler_Env_GetTransferredFunds(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            return 0;
+            var data = frame.Context.TransactionHash.Buffer.ToByteArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new RuntimeException("Bad call to (get_transferred_funds)");
+        }
+       
+        public static void Handler_Env_GetBlockHash(int dataOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = frame.Context.BlockHash.Buffer.ToByteArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new RuntimeException("Bad call to (get_block_hash)");
         }
         
-        public static int Handler_Env_FreeMemory(int memoryOffset)
+        public static void Handler_Env_GetBlockHeight(int dataOffset)
         {
-            return 0;
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = BitConverter.GetBytes(frame.Context.BlockHeight);
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new RuntimeException("Bad call to (get_transferred_funds)");
+        }
+        
+        public static void Handler_Env_GetTransactionHash(int dataOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var data = frame.Context.TransactionHash.Buffer.ToByteArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new RuntimeException("Bad call to (get_transaction_hash)");
         }
 
         public IEnumerable<FunctionImport> GetFunctionImports()
@@ -277,10 +304,14 @@ namespace Phorkus.Core.VM
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetSender))),
                 new FunctionImport(EnvModule, "system_halt",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SystemHalt))),
-                new FunctionImport(EnvModule, "allocate_memory",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SystemHalt))),
-                new FunctionImport(EnvModule, "free_memory",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SystemHalt))),
+                new FunctionImport(EnvModule, "get_transferred_funds",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetTransferredFunds))),
+                new FunctionImport(EnvModule, "get_block_hash",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetBlockHash))),
+                new FunctionImport(EnvModule, "get_block_height",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetBlockHeight))),
+                new FunctionImport(EnvModule, "get_transaction_hash",
+                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetTransactionHash))),
                 /* crypto hash bindings */
                 new FunctionImport(EnvModule, "crypto_keccak256",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoKeccak256))),

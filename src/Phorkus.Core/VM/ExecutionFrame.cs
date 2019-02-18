@@ -11,14 +11,14 @@ namespace Phorkus.Core.VM
     public class ExecutionFrame : IDisposable
     {
         private ExecutionFrame(
-            Instance<JitEntryPoint> invocationContext, UInt160 sender,
+            Instance<JitEntryPoint> invocationContext, InvocationContext context,
             UInt160 currentAddress, byte[] input)
         {
             InvocationContext = invocationContext;
             Exports = InvocationContext.Exports.GetType() as System.Type;
             if (Exports is null)
                 throw new RuntimeException("ill-formed contract binary");
-            Sender = sender;
+            Context = context;
             CurrentAddress = currentAddress;
             Input = input;
             ReturnValue = new byte[] { };
@@ -30,22 +30,22 @@ namespace Phorkus.Core.VM
         } 
         
         public static ExecutionStatus FromInvocation(
-            byte[] code, UInt160 sender, UInt160 contract, byte[] input, IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
+            byte[] code, InvocationContext context, UInt160 contract, byte[] input, IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
             frame = new ExecutionFrame(
                 _CompileWasm<JitEntryPoint>(code, blockchainInterface.GetFunctionImports()),
-                sender, contract, input
+                context, contract, input
             );
             return ExecutionStatus.Ok;
         }
-
+        
         public static ExecutionStatus FromInternalCall(
-            byte[] code, UInt160 caller, UInt160 currentAddress, byte[] input,
+            byte[] code, InvocationContext context, UInt160 currentAddress, byte[] input,
             IBlockchainInterface blockchainInterface, out ExecutionFrame frame)
         {
             frame = new ExecutionFrame(
                 _CompileWasm<JitEntryPoint>(code, blockchainInterface.GetFunctionImports()),
-                caller, currentAddress, input
+                context, currentAddress, input
             );
             return ExecutionStatus.Ok;
         }
@@ -64,7 +64,7 @@ namespace Phorkus.Core.VM
             }
         }
 
-        public UInt160 Sender { get; }
+        public InvocationContext Context { get; }
         public UInt160 CurrentAddress { get; }
         
         public byte[] Input { get; }

@@ -44,7 +44,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var input = transaction.Invocation.ToByteArray();
             if (!_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
-            var status = _virtualMachine.InvokeContract(contract, transaction.From, input);
+            var status = _virtualMachine.InvokeContract(contract, new InvocationContext(transaction.From), input);
             return status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
         }
         

@@ -156,7 +156,7 @@ namespace Phorkus.Core.CLI
             var status = _stateManager.SafeContext(() =>
             {
                 _stateManager.NewSnapshot();
-                var result = _virtualMachine.InvokeContract(contract, from, new byte[]{});
+                var result = _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[]{});
                 _stateManager.Rollback();
                 return result;
             });

@@ -106,7 +106,7 @@ namespace Phorkus.Core.RPC.HTTP
             var (status, returnValue) = _stateManager.SafeContext(() =>
             {
                 _stateManager.NewSnapshot();
-                var result = _virtualMachine.InvokeContract(contractByHash, sender.HexToUInt160(), input.HexToBytes(), out var returnResult);
+                var result = _virtualMachine.InvokeContract(contractByHash, new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), out var returnResult);
                 _stateManager.Rollback();
                 return Tuple.Create(result, returnResult);
             });
