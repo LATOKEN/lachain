@@ -29,6 +29,7 @@
         ContractFailed,
         ContractNotFound,
         InvalidContract,
-        InsufficientBalance
+        InsufficientBalance,
+        InvalidInput
     }
 }

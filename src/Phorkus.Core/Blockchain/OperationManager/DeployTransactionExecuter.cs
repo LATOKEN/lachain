@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
@@ -16,7 +17,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             _virtualMachine = virtualMachine;
         }
-
+        
         public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
         {
             /* validate transaction before execution */
@@ -34,14 +35,36 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (!_virtualMachine.VerifyContract(contract.ByteCode.ToByteArray()))
                 return OperatingError.InvalidContract;
             snapshot.Contracts.AddContract(transaction.From, contract);
-            return OperatingError.Ok;
+            /* invoke contract constructor */
+            return _InvokeConstructor(contract, transaction);
+        }
+        
+        private OperatingError _InvokeConstructor(Contract contract, Transaction transaction)
+        {
+            var input = transaction.Invocation.ToByteArray();
+            if (!_IsConstructorCall(input))
+                return OperatingError.InvalidInput;
+            var status = _virtualMachine.InvokeContract(contract, transaction.From, input);
+            return status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+        }
+        
+        private bool _IsConstructorCall(IReadOnlyList<byte> buffer)
+        {
+            if (buffer.Count < 4)
+                return false;
+            return buffer[0] == 0 &&
+                   buffer[1] == 0 &&
+                   buffer[2] == 0 &&
+                   buffer[3] == 0;
         }
         
         public OperatingError Verify(Transaction transaction)
         {
             if (transaction.Type != TransactionType.Deploy)
                 return OperatingError.InvalidTransaction;
-            if (transaction.Deploy is null)
+            if (transaction.Deploy is null || transaction.Deploy.IsEmpty)
+                return OperatingError.InvalidTransaction;
+            if (transaction.Invocation is null || transaction.Invocation.IsEmpty)
                 return OperatingError.InvalidTransaction;
             var result = _VerifyContract(transaction);
             return result;

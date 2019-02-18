@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
-using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;

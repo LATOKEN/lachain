@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Numerics;
 using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.VM;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
+using Phorkus.WebAssembly.Instructions;
+using Block = Phorkus.Proto.Block;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
@@ -45,10 +49,21 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
             if (contract is null)
                 return OperatingError.ContractNotFound;
-            return _virtualMachine.InvokeContract(contract, transaction.From, transaction.Invocation.ToByteArray()) !=
-                   ExecutionStatus.Ok
-                ? OperatingError.ContractFailed
-                : OperatingError.Ok;
+            var input = transaction.Invocation.ToByteArray();
+            if (_IsConstructorCall(input))
+                return OperatingError.InvalidInput;
+            var status = _virtualMachine.InvokeContract(contract, transaction.From, input) != ExecutionStatus.Ok;
+           return status ? OperatingError.ContractFailed : OperatingError.Ok;
+        }
+        
+        private bool _IsConstructorCall(IReadOnlyList<byte> buffer)
+        {
+            if (buffer.Count < 4)
+                return false;
+            return buffer[0] == 0 &&
+                buffer[1] == 0 &&
+                buffer[2] == 0 &&
+                buffer[3] == 0;
         }
 
         private OperatingError _InvokeSystemContract(Transaction transaction, IBlockchainSnapshot snapshot)

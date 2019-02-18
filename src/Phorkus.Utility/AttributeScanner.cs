@@ -10,7 +10,7 @@ namespace Phorkus.Utility
         public static IEnumerable<Tuple<MethodInfo, TA>> FindAttributes<TA>(this Type classType)
             where TA : Attribute
         {
-            var attributeUsage = classType.GetCustomAttribute<AttributeUsageAttribute>();
+            var attributeUsage = typeof(TA).GetCustomAttribute<AttributeUsageAttribute>();
             if (attributeUsage is null)
                 throw new ArgumentException("Unable to find attribute usage attribute in class (" + classType + ")", nameof(classType));
             switch (attributeUsage.ValidOn)
