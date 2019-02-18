@@ -45,14 +45,14 @@ namespace Phorkus.Core.Blockchain.OperationManager.SystemContracts
         [ContractMethod(Lrc20Interface.MethodBalanceOf)]
         public UInt256 BalanceOf(UInt160 address)
         {
-            var balance = _contractContext.SnapshotManager.CurrentSnapshot.Balances.GetBalance(address);
+            var balance = _contractContext.Snapshot.Balances.GetBalance(address);
             return balance?.ToUInt256();
         }
         
         [ContractMethod(Lrc20Interface.MethodTransfer)]
         public bool Transfer(UInt160 recipient, UInt256 value)
         {
-            _contractContext.SnapshotManager.CurrentSnapshot.Balances.TransferBalance(_contractContext.Sender, recipient, value.ToMoney());
+            _contractContext.Snapshot.Balances.TransferBalance(_contractContext.Sender, recipient, value.ToMoney());
             return true;
         }
         

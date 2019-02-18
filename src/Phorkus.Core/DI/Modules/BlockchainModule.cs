@@ -1,4 +1,5 @@
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.CLI;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -27,11 +28,11 @@ namespace Phorkus.Core.DI.Modules
             /* operation manager */
             containerBuilder.RegisterSingleton<ITransactionManager, TransactionManager>();
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
-            /* pool */
+            containerBuilder.RegisterSingleton<IContractRegisterer, ContractRegisterer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
-            /* rpc */
+            /* RPC */
             containerBuilder.RegisterSingleton<IRpcManager, RpcManager>();
-            /* vm */
+            /* VM */
             containerBuilder.RegisterSingleton<IVirtualMachine, VirtualMachine>();
         }
     }

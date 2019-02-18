@@ -5,9 +5,9 @@ using System.Reflection;
 
 namespace Phorkus.Utility
 {
-    public class AttributeScanner
+    public static class AttributeScanner
     {
-        public IEnumerable<TA> FindAttributes<TA>(Type classType)
+        public static IEnumerable<Tuple<MethodInfo, TA>> FindAttributes<TA>(this Type classType)
             where TA : Attribute
         {
             var attributeUsage = classType.GetCustomAttribute<AttributeUsageAttribute>();
@@ -38,10 +38,10 @@ namespace Phorkus.Utility
             }
         }
 
-        public IEnumerable<TA> FindMethodAttributes<TA>(Type classType)
+        public static IEnumerable<Tuple<MethodInfo, TA>> FindMethodAttributes<TA>(this Type classType)
             where TA : Attribute
         {
-            return classType.GetMethods().Select(method => method.GetCustomAttribute<TA>()).Where(attribute => !(attribute is null)).ToList();
+            return classType.GetMethods().Select(method => Tuple.Create(method, method.GetCustomAttribute<TA>())).Where(tuple => !(tuple.Item2 is null)).ToList();
         }
     }
 }

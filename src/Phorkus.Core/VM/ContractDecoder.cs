@@ -11,6 +11,11 @@ namespace Phorkus.Core.VM
     {
         private readonly BinaryReader _binaryReader;
 
+        public ContractDecoder(byte[] input)
+        { 
+            _binaryReader = new BinaryReader(new MemoryStream(input));
+        }
+
         public ContractDecoder(BinaryReader binaryReader)
         {
             _binaryReader = binaryReader;

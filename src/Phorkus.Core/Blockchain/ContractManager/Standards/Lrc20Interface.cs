@@ -9,9 +9,9 @@
         public const string MethodApprove = "approve(address,uint256)";
         public const string MethodAllowance = "allowance(address,address)";
 
-        public const string PropertyName = "name";
-        public const string PropertyDecimals = "decimals";
-        public const string PropertySymbol = "symbol";
+        public const string PropertyName = "name()";
+        public const string PropertyDecimals = "decimals()";
+        public const string PropertySymbol = "symbol()";
 
         public const string EventTransfer = "Transfer(address,address,uint256)";
         public const string EventApproval = "Approval(address,address,uint256)";

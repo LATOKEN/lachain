@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
@@ -22,12 +23,13 @@ namespace Phorkus.Core.Blockchain.OperationManager
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
             IVirtualMachine virtualMachine,
+            IContractRegisterer contractRegisterer,
             ICrypto crypto,
             IStateManager stateManager)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
-                {TransactionType.Transfer, new ContractTransactionExecuter(virtualMachine)},
+                {TransactionType.Transfer, new ContractTransactionExecuter(contractRegisterer, virtualMachine)},
                 {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine) }
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
