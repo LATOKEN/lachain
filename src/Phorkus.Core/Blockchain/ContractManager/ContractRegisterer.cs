@@ -38,7 +38,7 @@ namespace Phorkus.Core.Blockchain.ContractManager
 
         public Type GetContractByAddress(UInt160 address)
         {
-            return _contracts.TryGetValue(address, out var result) ? result : throw new Exception("Unable to resolve contract by address (" + address.ToHex() + ")");
+            return _contracts.TryGetValue(address, out var result) ? result : null;
         }
         
         public Tuple<Type, MethodInfo, object[]> DecodeContract(UInt160 address, byte[] input)
