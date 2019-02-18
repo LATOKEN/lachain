@@ -2,35 +2,26 @@
 {
     public enum EntryPrefix : short
     {
-        Global = 0x0101,
-        
-        AssetByHash = 0x0201,
-        AssetHashByName = 0x0202,
-        AssetHashes = 0x0203,
-        AssetNames = 0x0204,
-        AssetSupplyByHash = 0x0205,
-        
+        /* block */
         BlockByHash = 0x0301,
         BlockHashByHeight = 0x0302,
         BlockHeight = 0x0303,
-        
+        /* transaction */
         TransactionByHash = 0x0401,
         TransactionCountByFrom = 0x0402,
         TransactionPool = 0x0404,
-        
+        /* balance */
         BalanceByOwnerAndAsset = 0x0501,
-        
+        /* store */
         StorageVersionIndex = 0x0601,
-        PersistentTreeMap = 0x0602,
+        /* node */
         PersistentHashMap = 0x0603,
-        
-        WithdrawalByHash = 0x0701,
-        WithdrawalByNonce = 0x0702,
-        WithdrawalByStateNonce = 0x0703,
-        WithdrawalNonce = 0x0704,
-        
+        /* contract */
         ContractByHash = 0x0801,
-        
-        ContractStorage = 0x903,
+        /* storage */
+        StorageByHash = 0x0903,
+        /* event */
+        EventByTransactionHashAndIndex = 0x0a01,
+        EventCountByTransactionHash = 0x0a02,
     }
 }

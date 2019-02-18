@@ -52,6 +52,11 @@ namespace Phorkus.Storage
             return BuildPrefix(prefix, buffer);
         }
 
+        public static byte[] BuildPrefix(this EntryPrefix prefix, UInt256 value, uint key)
+        {
+            return prefix.BuildPrefix(value).Concat(BitConverter.GetBytes(key)).ToArray();
+        }
+
         public static byte[] BuildPrefix(this EntryPrefix prefix, UInt160 key)
         {
             return BuildPrefix(prefix, key.ToByteArray());
@@ -63,11 +68,6 @@ namespace Phorkus.Storage
                 throw new ArgumentOutOfRangeException(nameof(keys));
             var buffer = keys.Select(k => k.Buffer as IEnumerable<byte>).Aggregate((k1, k2) => k1.Concat(k2));
             return BuildPrefix(prefix, buffer);
-        }
-        
-        public static byte[] BuildPrefix(this EntryPrefix prefix, UInt256 key)
-        {
-            return BuildPrefix(prefix, key.ToByteArray());
         }
 
         public static byte[] BuildPrefix(this EntryPrefix prefix)

@@ -3,6 +3,8 @@ using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.JSON;
+using Phorkus.Core.Utils;
+using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.RPC.HTTP
@@ -12,15 +14,18 @@ namespace Phorkus.Core.RPC.HTTP
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
+        private readonly IStateManager _stateManager;
 
         public BlockchainService(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext)
+            IBlockchainContext blockchainContext,
+            IStateManager stateManager)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _blockchainContext = blockchainContext;
+            _stateManager = stateManager;
         }
 
         [JsonRpcMethod("getBlockByHeight")]
@@ -52,7 +57,22 @@ namespace Phorkus.Core.RPC.HTTP
                 ["currentHeight"] = _blockchainContext.CurrentBlockHeight
             };
             return json;
+        }
 
+        [JsonRpcMethod("getEventsByTransactionHash")]
+        private JArray GetEventsByTransactionHash(string txHash)
+        {
+            var transactionHash = txHash.HexToUInt256();
+            var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(transactionHash);
+            var jArray = new JArray();
+            for (var i = 0; i < txEvents; i++)
+            {
+                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash, (uint) i);
+                if (ev is null)
+                    continue;
+                jArray.Add(ev.ToJson());
+            }
+            return jArray;
         }
     }
 }

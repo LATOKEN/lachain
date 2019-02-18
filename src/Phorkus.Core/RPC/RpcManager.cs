@@ -43,7 +43,7 @@ namespace Phorkus.Core.RPC
             // ReSharper disable once UnusedVariable
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
-                new BlockchainService(_transactionManager, _blockManager, _blockchainContext),
+                new BlockchainService(_transactionManager, _blockManager, _blockchainContext, _stateManager),
                 new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool)
             };
             

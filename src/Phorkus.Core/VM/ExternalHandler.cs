@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Google.Protobuf;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -278,7 +279,22 @@ namespace Phorkus.Core.VM
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transaction_hash)");
         }
-
+        
+        public static void Handle_Env_WriteEvent(int valueOffset, int valueLength)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength);
+            var ev = new Event
+            {
+                Contract = frame.CurrentAddress,
+                Data = ByteString.CopyFrom(value),
+                TransactionHash = frame.Context.TransactionHash,
+                Index = 0,
+                BlockHash = frame.Context.BlockHash
+            };
+            VirtualMachine.BlockchainSnapshot.Events.AddEvent(ev);
+        }
+        
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
             return new[]
@@ -312,6 +328,8 @@ namespace Phorkus.Core.VM
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetBlockHeight))),
                 new FunctionImport(EnvModule, "get_transaction_hash",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetTransactionHash))),
+                new FunctionImport(EnvModule, "write_event",
+                    typeof(ExternalHandler).GetMethod(nameof(Handle_Env_WriteEvent))),
                 /* crypto hash bindings */
                 new FunctionImport(EnvModule, "crypto_keccak256",
                     typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoKeccak256))),
