@@ -26,7 +26,7 @@ namespace Phorkus.ConsensusTest
                 _sender = sender;
                 _test = test;
             }
-            
+
             public void Broadcast(ConsensusMessage message)
             {
                 if (!message.PayloadCase.Equals(ConsensusMessage.PayloadOneofCase.BinaryBroadcast))
@@ -49,7 +49,7 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[i] = new BinaryBroadcast(N, F, new BinaryBroadcastId(0, 0, 0), broadcastSimulator);
             }
         }
-        
+
         [Test]
         public void TestBinaryBroadcastAllZero()
         {
@@ -63,13 +63,15 @@ namespace Phorkus.ConsensusTest
                     received[validator]++;
                 };
             }
+
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i].Input(0);
             }
+
             Assert.IsTrue(received.All(v => v == 1));
         }
-        
+
         [Test]
         public void TestBinaryBroadcastAllOne()
         {
@@ -83,10 +85,12 @@ namespace Phorkus.ConsensusTest
                     received[validator]++;
                 };
             }
+
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i].Input(1);
             }
+
             Assert.IsTrue(received.All(v => v == 1));
         }
 
@@ -102,6 +106,7 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[x] = null;
                 ++cnt;
             }
+
             var received = new int[N];
             for (var i = 0; i < N; ++i)
             {
@@ -113,10 +118,12 @@ namespace Phorkus.ConsensusTest
                     received[validator]++;
                 };
             }
+
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i]?.Input(1);
             }
+
             Assert.IsTrue(received.Zip(_broadcasts, (v, broadcast) => broadcast == null || v == 1).All(b => b));
         }
 
@@ -133,6 +140,7 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[x] = null;
                 ++cnt;
             }
+
             var received = new ISet<int>[N];
             for (var i = 0; i < N; ++i)
             {
@@ -141,7 +149,7 @@ namespace Phorkus.ConsensusTest
                 var validator = i;
                 _broadcasts[i].BinValueAdded += (sender, value) =>
                 {
-                    Assert.Contains(value, new []{0, 1});
+                    Assert.Contains(value, new[] {0, 1});
                     received[validator].Add(value);
                 };
             }
@@ -154,6 +162,7 @@ namespace Phorkus.ConsensusTest
                 inputs[i] = random.Next() % 2;
                 inputsCount[inputs[i]]++;
             }
+
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i]?.Input(inputs[i]);
@@ -167,8 +176,10 @@ namespace Phorkus.ConsensusTest
                 for (var v = 0; v < 2; ++v)
                 {
                     if (inputsCount[v] < F + 1) continue;
-                    Assert.Contains(v, received[i].ToList(), "all correct nodes should output value if at least F + 1 inputed it");
+                    Assert.Contains(v, received[i].ToList(),
+                        "all correct nodes should output value if at least F + 1 inputed it");
                 }
+
                 Assert.Greater(received[i].Count, 0, "all correct nodes should output something");
                 Assert.IsTrue(firstRecieved.SequenceEqual(received[i]), "all correct nodes should output same values");
             }

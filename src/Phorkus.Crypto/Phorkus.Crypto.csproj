@@ -8,4 +8,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="libmclbn384_256.so">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
