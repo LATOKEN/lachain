@@ -7,9 +7,9 @@ namespace Phorkus.Core.Blockchain
     {
         public Block Block { get; }
 
-        public IReadOnlyCollection<AcceptedTransaction> Transactions { get; }
+        public IReadOnlyCollection<TransactionReceipt> Transactions { get; }
 
-        public BlockWithTransactions(Block block, IReadOnlyCollection<AcceptedTransaction> transactions)
+        public BlockWithTransactions(Block block, IReadOnlyCollection<TransactionReceipt> transactions)
         {
             Block = block;
             Transactions = transactions;

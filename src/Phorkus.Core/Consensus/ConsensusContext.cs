@@ -64,7 +64,7 @@ namespace Phorkus.Core.Consensus
             return result;
         }
 
-        public IEnumerable<AcceptedTransaction> GetProposedTransactions()
+        public IEnumerable<TransactionReceipt> GetProposedTransactions()
         {
             return CurrentProposal?.Transactions?.Values;
         }

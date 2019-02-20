@@ -37,30 +37,30 @@ namespace Phorkus.Proto {
             "Cgl0b19oZWlnaHQYAiABKAQiPQobR2V0QmxvY2tzQnlIZWlnaHRSYW5nZVJl",
             "cGx5Eh4KDGJsb2NrX2hhc2hlcxgBIAMoCzIILlVJbnQyNTYiRgoeR2V0VHJh",
             "bnNhY3Rpb25zQnlIYXNoZXNSZXF1ZXN0EiQKEnRyYW5zYWN0aW9uX2hhc2hl",
-            "cxgBIAMoCzIILlVJbnQyNTYiSgocR2V0VHJhbnNhY3Rpb25zQnlIYXNoZXNS",
-            "ZXBseRIqCgx0cmFuc2FjdGlvbnMYASADKAsyFC5BY2NlcHRlZFRyYW5zYWN0",
-            "aW9uIroBChBDb25zZW5zdXNNZXNzYWdlEjEKE2NoYW5nZV92aWV3X3JlcXVl",
-            "c3QYASABKAsyEi5DaGFuZ2VWaWV3UmVxdWVzdEgAEjUKFWJsb2NrX3ByZXBh",
-            "cmVfcmVxdWVzdBgCIAEoCzIULkJsb2NrUHJlcGFyZVJlcXVlc3RIABIxChNi",
-            "bG9ja19wcmVwYXJlX3JlcGx5GAMgASgLMhIuQmxvY2tQcmVwYXJlUmVwbHlI",
-            "AEIJCgdwYXlsb2FkItEFCg5OZXR3b3JrTWVzc2FnZRINCgVtYWdpYxgBIAEo",
-            "DRIuChFoYW5kc2hha2VfcmVxdWVzdBgKIAEoCzIRLkhhbmRzaGFrZVJlcXVl",
-            "c3RIABIqCg9oYW5kc2hha2VfcmVwbHkYCyABKAsyDy5IYW5kc2hha2VSZXBs",
-            "eUgAEiQKDHBpbmdfcmVxdWVzdBgMIAEoCzIMLlBpbmdSZXF1ZXN0SAASIAoK",
-            "cGluZ19yZXBseRgNIAEoCzIKLlBpbmdSZXBseUgAEkEKHGdldF9ibG9ja3Nf",
-            "YnlfaGFzaGVzX3JlcXVlc3QYDiABKAsyGS5HZXRCbG9ja3NCeUhhc2hlc1Jl",
-            "cXVlc3RIABI9ChpnZXRfYmxvY2tzX2J5X2hhc2hlc19yZXBseRgPIAEoCzIX",
-            "LkdldEJsb2Nrc0J5SGFzaGVzUmVwbHlIABJMCiJnZXRfYmxvY2tzX2J5X2hl",
-            "aWdodF9yYW5nZV9yZXF1ZXN0GBAgASgLMh4uR2V0QmxvY2tzQnlIZWlnaHRS",
-            "YW5nZVJlcXVlc3RIABJICiBnZXRfYmxvY2tzX2J5X2hlaWdodF9yYW5nZV9y",
-            "ZXBseRgRIAEoCzIcLkdldEJsb2Nrc0J5SGVpZ2h0UmFuZ2VSZXBseUgAEk0K",
-            "ImdldF90cmFuc2FjdGlvbnNfYnlfaGFzaGVzX3JlcXVlc3QYEiABKAsyHy5H",
-            "ZXRUcmFuc2FjdGlvbnNCeUhhc2hlc1JlcXVlc3RIABJJCiBnZXRfdHJhbnNh",
-            "Y3Rpb25zX2J5X2hhc2hlc19yZXBseRgTIAEoCzIdLkdldFRyYW5zYWN0aW9u",
-            "c0J5SGFzaGVzUmVwbHlIABIuChFjb25zZW5zdXNfbWVzc2FnZRgVIAEoCzIR",
-            "LkNvbnNlbnN1c01lc3NhZ2VIABIdCglzaWduYXR1cmUYZCABKAsyCi5TaWdu",
-            "YXR1cmVCCQoHbWVzc2FnZUIjChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3Jr",
-            "dXMuUHJvdG9iBnByb3RvMw=="));
+            "cxgBIAMoCzIILlVJbnQyNTYiSQocR2V0VHJhbnNhY3Rpb25zQnlIYXNoZXNS",
+            "ZXBseRIpCgx0cmFuc2FjdGlvbnMYASADKAsyEy5UcmFuc2FjdGlvblJlY2Vp",
+            "cHQiugEKEENvbnNlbnN1c01lc3NhZ2USMQoTY2hhbmdlX3ZpZXdfcmVxdWVz",
+            "dBgBIAEoCzISLkNoYW5nZVZpZXdSZXF1ZXN0SAASNQoVYmxvY2tfcHJlcGFy",
+            "ZV9yZXF1ZXN0GAIgASgLMhQuQmxvY2tQcmVwYXJlUmVxdWVzdEgAEjEKE2Js",
+            "b2NrX3ByZXBhcmVfcmVwbHkYAyABKAsyEi5CbG9ja1ByZXBhcmVSZXBseUgA",
+            "QgkKB3BheWxvYWQi0QUKDk5ldHdvcmtNZXNzYWdlEg0KBW1hZ2ljGAEgASgN",
+            "Ei4KEWhhbmRzaGFrZV9yZXF1ZXN0GAogASgLMhEuSGFuZHNoYWtlUmVxdWVz",
+            "dEgAEioKD2hhbmRzaGFrZV9yZXBseRgLIAEoCzIPLkhhbmRzaGFrZVJlcGx5",
+            "SAASJAoMcGluZ19yZXF1ZXN0GAwgASgLMgwuUGluZ1JlcXVlc3RIABIgCgpw",
+            "aW5nX3JlcGx5GA0gASgLMgouUGluZ1JlcGx5SAASQQocZ2V0X2Jsb2Nrc19i",
+            "eV9oYXNoZXNfcmVxdWVzdBgOIAEoCzIZLkdldEJsb2Nrc0J5SGFzaGVzUmVx",
+            "dWVzdEgAEj0KGmdldF9ibG9ja3NfYnlfaGFzaGVzX3JlcGx5GA8gASgLMhcu",
+            "R2V0QmxvY2tzQnlIYXNoZXNSZXBseUgAEkwKImdldF9ibG9ja3NfYnlfaGVp",
+            "Z2h0X3JhbmdlX3JlcXVlc3QYECABKAsyHi5HZXRCbG9ja3NCeUhlaWdodFJh",
+            "bmdlUmVxdWVzdEgAEkgKIGdldF9ibG9ja3NfYnlfaGVpZ2h0X3JhbmdlX3Jl",
+            "cGx5GBEgASgLMhwuR2V0QmxvY2tzQnlIZWlnaHRSYW5nZVJlcGx5SAASTQoi",
+            "Z2V0X3RyYW5zYWN0aW9uc19ieV9oYXNoZXNfcmVxdWVzdBgSIAEoCzIfLkdl",
+            "dFRyYW5zYWN0aW9uc0J5SGFzaGVzUmVxdWVzdEgAEkkKIGdldF90cmFuc2Fj",
+            "dGlvbnNfYnlfaGFzaGVzX3JlcGx5GBMgASgLMh0uR2V0VHJhbnNhY3Rpb25z",
+            "QnlIYXNoZXNSZXBseUgAEi4KEWNvbnNlbnN1c19tZXNzYWdlGBUgASgLMhEu",
+            "Q29uc2Vuc3VzTWVzc2FnZUgAEh0KCXNpZ25hdHVyZRhkIAEoCzIKLlNpZ25h",
+            "dHVyZUIJCgdtZXNzYWdlQiMKEWNvbS5sYXRva2VuLnByb3RvqgINUGhvcmt1",
+            "cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, global::Phorkus.Proto.TransactionReflection.Descriptor, global::Phorkus.Proto.BlockReflection.Descriptor, global::Phorkus.Proto.NodeReflection.Descriptor, global::Phorkus.Proto.ConsensusReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -1343,11 +1343,11 @@ namespace Phorkus.Proto {
 
     /// <summary>Field number for the "transactions" field.</summary>
     public const int TransactionsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Phorkus.Proto.AcceptedTransaction> _repeated_transactions_codec
-        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.AcceptedTransaction.Parser);
-    private readonly pbc::RepeatedField<global::Phorkus.Proto.AcceptedTransaction> transactions_ = new pbc::RepeatedField<global::Phorkus.Proto.AcceptedTransaction>();
+    private static readonly pb::FieldCodec<global::Phorkus.Proto.TransactionReceipt> _repeated_transactions_codec
+        = pb::FieldCodec.ForMessage(10, global::Phorkus.Proto.TransactionReceipt.Parser);
+    private readonly pbc::RepeatedField<global::Phorkus.Proto.TransactionReceipt> transactions_ = new pbc::RepeatedField<global::Phorkus.Proto.TransactionReceipt>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Phorkus.Proto.AcceptedTransaction> Transactions {
+    public pbc::RepeatedField<global::Phorkus.Proto.TransactionReceipt> Transactions {
       get { return transactions_; }
     }
 

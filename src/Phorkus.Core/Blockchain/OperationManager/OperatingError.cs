@@ -29,7 +29,8 @@
         ContractFailed,
         ContractNotFound,
         InvalidContract,
+        OutOfGas,
         InsufficientBalance,
-        InvalidInput
+        InvalidInput,
     }
 }

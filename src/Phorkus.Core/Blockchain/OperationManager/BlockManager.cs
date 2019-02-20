@@ -57,7 +57,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
         
-        public OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions, bool checkStateHash, bool commit)
+        public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash, bool commit)
         {
             var currentTransactions = transactions.ToDictionary(tx => tx.Hash, tx => tx);
             var startTime = TimeUtils.CurrentTimeMillis();
@@ -132,7 +132,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
                 _stateManager.Approve();
             }
-            block.AverageFee = _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
+            block.GasPrice = _CalcEstimatedBlockFee(block.TransactionHashes);
             
             /* save block to repository */
             var snapshotBlock = _stateManager.NewSnapshot();
@@ -155,19 +155,21 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return OperatingError.Ok;
         }
 
-        private OperatingError _TakeTransactionFee(UInt160 validatorAddress, AcceptedTransaction transaction, IBlockchainSnapshot snapshot)
+        private OperatingError _TakeTransactionFee(UInt160 validatorAddress, TransactionReceipt transaction, IBlockchainSnapshot snapshot)
         {
-            /* genesis block doesn't have LA asset and validators fee free */
+            const ulong transactionGas = 21_000;
+            /* genesis block doesn't have LA asset and validators are fee free */
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
             /* check availabe LA balance */
-            var availableBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
-            if (availableBalance.CompareTo(transaction.Transaction.Fee.ToMoney()) < 0)
-                return OperatingError.InsufficientBalance;
+            if (transaction.Transaction.GasLimit > transactionGas)
+                return OperatingError.OutOfGas;
+            transaction.GasSpent += transactionGas;
+            var fee = new Money(transactionGas * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
-            snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress,
-                transaction.Transaction.Fee.ToMoney());
-            return OperatingError.Ok;
+            return snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress, fee)
+                ? OperatingError.Ok
+                : OperatingError.InsufficientBalance;
         }
         
         public Signature Sign(BlockHeader block, KeyPair keyPair)
@@ -211,36 +213,36 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return OperatingError.Ok;
         }
 
-        private Money _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
+        private ulong _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
         {
             var arrayOfHashes = txHashes as UInt256[] ?? txHashes.ToArray();
             if (arrayOfHashes.Length == 0)
-                return Money.Zero;
-            var sum = Money.Zero;
+                return 0;
+            var sum = 0UL;
             foreach (var txHash in arrayOfHashes)
             {
                 var tx = _transactionManager.GetByHash(txHash);
                 if (tx is null)
                 {
                     _logger.LogWarning($"Unable to calculate fee, transaction lost ({txHash})");
-                    return Money.Zero;
+                    return 0;
                 }
-                sum += tx.Transaction.Fee.ToMoney();
+                sum += tx.GasSpent * tx.Transaction.GasPrice;
             }
-            return sum / arrayOfHashes.Length;
+            return sum / (ulong) arrayOfHashes.Length;
         }
         
-        public Money CalcEstimatedFee(UInt256 blockHash)
+        public ulong CalcEstimatedFee(UInt256 blockHash)
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
-            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+            return block.GasPrice != 0 ? block.GasPrice : _CalcEstimatedBlockFee(block.TransactionHashes);
         }
 
-        public Money CalcEstimatedFee()
+        public ulong CalcEstimatedFee()
         {
             var currentHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentHeight);
-            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+            return block.GasPrice != 0 ? block.GasPrice : _CalcEstimatedBlockFee(block.TransactionHashes);
         }
     }
 }

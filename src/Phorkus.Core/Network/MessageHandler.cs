@@ -72,7 +72,7 @@ namespace Phorkus.Core.Network
 
         public void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request)
         {
-            var txs = new List<AcceptedTransaction>();
+            var txs = new List<TransactionReceipt>();
             foreach (var txHash in request.TransactionHashes)
             {
                 var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash)

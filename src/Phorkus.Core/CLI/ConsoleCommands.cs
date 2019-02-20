@@ -203,8 +203,6 @@ namespace Phorkus.Core.CLI
             var value = Money.Parse(arguments[2]);
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var tx = _transactionBuilder.TransferTransaction(from, to, value);
-            if (arguments.Length >= 4)
-                tx.Fee = Money.Parse(arguments[3]).ToUInt256();
             var signedTx = _transactionManager.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
         }
@@ -257,7 +255,7 @@ namespace Phorkus.Core.CLI
                 arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
             Console.WriteLine($"Tx Hash: {tx.ToHash256().Buffer.ToHex()}");
-            var accepted = new AcceptedTransaction
+            var accepted = new TransactionReceipt
             {
                 Transaction = tx,
                 Hash = tx.ToHash256(),

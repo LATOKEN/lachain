@@ -55,7 +55,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             }
             
             var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, keyPair));
-            var acceptedTransactions = signed as AcceptedTransaction[] ?? signed.ToArray();
+            var acceptedTransactions = signed as TransactionReceipt[] ?? signed.ToArray();
             var txHashes = acceptedTransactions.Select(tx => tx.Hash).ToArray();
             
             var header = new BlockHeader

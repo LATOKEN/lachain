@@ -7,6 +7,6 @@ namespace Phorkus.Core.Blockchain
     {
         bool TryBuildGenesisBlock();
 
-        void PersistBlockManually(Block block, IEnumerable<AcceptedTransaction> transactions);
+        void PersistBlockManually(Block block, IEnumerable<TransactionReceipt> transactions);
     }
 }

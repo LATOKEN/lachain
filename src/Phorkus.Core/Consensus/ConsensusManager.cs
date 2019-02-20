@@ -382,7 +382,7 @@ namespace Phorkus.Core.Consensus
             _context.CurrentProposal = new ConsensusProposal
             {
                 TransactionHashes = prepareRequest.TransactionHashes.ToArray(),
-                Transactions = new Dictionary<UInt256, AcceptedTransaction>(),
+                Transactions = new Dictionary<UInt256, TransactionReceipt>(),
                 Timestamp = prepareRequest.Timestamp,
                 Nonce = prepareRequest.Nonce,
                 StateHash = prepareRequest.StateHash

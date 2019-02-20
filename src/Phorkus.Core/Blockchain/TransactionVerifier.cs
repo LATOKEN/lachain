@@ -19,8 +19,8 @@ namespace Phorkus.Core.Blockchain
         private readonly IDictionary<UInt160, PublicKey> _publicKeyCache
             = new Dictionary<UInt160, PublicKey>();
 
-        private readonly Queue<AcceptedTransaction> _transactionQueue
-            = new Queue<AcceptedTransaction>();
+        private readonly Queue<TransactionReceipt> _transactionQueue
+            = new Queue<TransactionReceipt>();
 
         private readonly object _queueNotEmpty = new object();
 
@@ -32,16 +32,16 @@ namespace Phorkus.Core.Blockchain
             _logger = logger;
         }
 
-        public event EventHandler<AcceptedTransaction> OnTransactionVerified;
+        public event EventHandler<TransactionReceipt> OnTransactionVerified;
 
-        public void VerifyTransaction(AcceptedTransaction acceptedTransaction, PublicKey publicKey)
+        public void VerifyTransaction(TransactionReceipt acceptedTransaction, PublicKey publicKey)
         {
             var address = _crypto.ComputeAddress(publicKey.Buffer.ToByteArray()).ToUInt160();
             _publicKeyCache.Add(address, publicKey);
             VerifyTransaction(acceptedTransaction);
         }
 
-        public void VerifyTransaction(AcceptedTransaction acceptedTransaction)
+        public void VerifyTransaction(TransactionReceipt acceptedTransaction)
         {
             if (acceptedTransaction is null)
                 throw new ArgumentNullException(nameof(acceptedTransaction));
@@ -52,7 +52,7 @@ namespace Phorkus.Core.Blockchain
             }
         }
 
-        public bool VerifyTransactionImmediately(AcceptedTransaction transaction, PublicKey publicKey)
+        public bool VerifyTransactionImmediately(TransactionReceipt transaction, PublicKey publicKey)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace Phorkus.Core.Blockchain
             return true;
         }
 
-        public bool VerifyTransactionImmediately(AcceptedTransaction transaction, bool cacheEnabled = true)
+        public bool VerifyTransactionImmediately(TransactionReceipt transaction, bool cacheEnabled = true)
         {
             if (transaction is null)
                 throw new ArgumentNullException(nameof(transaction));
@@ -112,7 +112,7 @@ namespace Phorkus.Core.Blockchain
             {
                 try
                 {
-                    AcceptedTransaction tx;
+                    TransactionReceipt tx;
                     lock (_queueNotEmpty)
                     {
                         while (_transactionQueue.Count == 0)

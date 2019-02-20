@@ -4,7 +4,6 @@ using Google.Protobuf;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
-using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -26,7 +25,8 @@ namespace Phorkus.Core.Blockchain
                 To = to,
                 Value = value.ToUInt256(),
                 From = from,
-                Fee = _CalcEstimatedBlockFee(),
+                GasPrice = _CalcEstimatedBlockFee(),
+                GasLimit = 21_000,
                 Nonce = nonce
             };
             if (input != null)
@@ -43,33 +43,30 @@ namespace Phorkus.Core.Blockchain
                 Invocation = ByteString.CopyFrom(),
                 Deploy = ByteString.CopyFrom(byteCode.ToArray()),
                 From = from,
-                Fee = _CalcEstimatedBlockFee(),
+                GasPrice = _CalcEstimatedBlockFee(),
+                /* TODO: "calculate gas limit for input size" */
+                GasLimit = 200_000,
                 Nonce = nonce
             };
             return tx;
         }
-
-        private UInt256 _CalcEstimatedBlockFee()
+        
+        private ulong _CalcEstimatedBlockFee()
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(
                 _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
-            return block is null ? UInt256Utils.Zero : _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
+            return block is null ? 0 : _CalcEstimatedBlockFee(block.TransactionHashes);
         }
         
-        private Money _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
+        private ulong _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
         {
             var arrayOfHashes = txHashes as UInt256[] ?? txHashes.ToArray();
             if (arrayOfHashes.Length == 0)
-                return Money.Zero;
-            var sum = Money.Zero;
-            foreach (var txHash in arrayOfHashes)
-            {
-                var tx = _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(txHash);
-                if (tx is null)
-                    continue;
-                sum += tx.Transaction.Fee.ToMoney();
-            }
-            return sum / arrayOfHashes.Length;
+                return 0;
+            var sum = arrayOfHashes.Select(txHash => _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(txHash))
+                .Where(tx => !(tx is null))
+                .Aggregate(0UL, (current, tx) => current + tx.Transaction.GasPrice);
+            return sum / (ulong) arrayOfHashes.Length;
         }
     }
 }

@@ -51,7 +51,7 @@ namespace Phorkus.Core.RPC.HTTP
             {
                 ["hash"] = transaction.ToHash256().Buffer.ToHex()
             };
-            var accepted = new AcceptedTransaction
+            var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
                 Hash = transaction.ToHash256(),

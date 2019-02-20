@@ -17,11 +17,11 @@ namespace Phorkus.Storage.Repositories
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public AcceptedTransaction GetTransactionByHash(UInt256 txHash)
+        public TransactionReceipt GetTransactionByHash(UInt256 txHash)
         {
             var prefix = EntryPrefix.TransactionByHash.BuildPrefix(txHash);
             var raw = _rocksDbContext.Get(prefix);
-            return raw == null ? null : AcceptedTransaction.Parser.ParseFrom(raw);
+            return raw == null ? null : TransactionReceipt.Parser.ParseFrom(raw);
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -48,7 +48,7 @@ namespace Phorkus.Storage.Repositories
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void AddTransaction(AcceptedTransaction transaction)
+        public void AddTransaction(TransactionReceipt transaction)
         {
             /* write transaction to storage */
             var prefixTx = EntryPrefix.TransactionByHash.BuildPrefix(transaction.Hash);

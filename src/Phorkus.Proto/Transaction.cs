@@ -24,27 +24,28 @@ namespace Phorkus.Proto {
     static TransactionReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChF0cmFuc2FjdGlvbi5wcm90bxoNZGVmYXVsdC5wcm90byK+AQoLVHJhbnNh",
+            "ChF0cmFuc2FjdGlvbi5wcm90bxoNZGVmYXVsdC5wcm90byLNAQoLVHJhbnNh",
             "Y3Rpb24SHgoEdHlwZRgBIAEoDjIQLlRyYW5zYWN0aW9uVHlwZRIUCgJ0bxgC",
             "IAEoCzIILlVJbnQxNjASEgoKaW52b2NhdGlvbhgDIAEoDBIXCgV2YWx1ZRgE",
             "IAEoCzIILlVJbnQyNTYSDgoGZGVwbG95GAUgASgMEhYKBGZyb20YBiABKAsy",
-            "CC5VSW50MTYwEg0KBW5vbmNlGAcgASgEEhUKA2ZlZRgIIAEoCzIILlVJbnQy",
-            "NTYirAEKE0FjY2VwdGVkVHJhbnNhY3Rpb24SIQoLdHJhbnNhY3Rpb24YASAB",
-            "KAsyDC5UcmFuc2FjdGlvbhIWCgRoYXNoGAIgASgLMgguVUludDI1NhIdCglz",
-            "aWduYXR1cmUYAyABKAsyCi5TaWduYXR1cmUSFwoFYmxvY2sYBCABKAsyCC5V",
-            "SW50MjU2EiIKBnN0YXR1cxgFIAEoDjISLlRyYW5zYWN0aW9uU3RhdHVzKpAB",
-            "ChFUcmFuc2FjdGlvblN0YXR1cxIeChpUUkFOU0FDVElPTl9TVEFUVVNfVU5L",
-            "Tk9XThAAEhsKF1RSQU5TQUNUSU9OX1NUQVRVU19QT09MEAESHwobVFJBTlNB",
-            "Q1RJT05fU1RBVFVTX0VYRUNVVEVEEAISHQoZVFJBTlNBQ1RJT05fU1RBVFVT",
-            "X0ZBSUxFRBADKmsKD1RyYW5zYWN0aW9uVHlwZRIcChhUUkFOU0FDVElPTl9U",
-            "WVBFX1VOS05PV04QABIdChlUUkFOU0FDVElPTl9UWVBFX1RSQU5TRkVSEAES",
-            "GwoXVFJBTlNBQ1RJT05fVFlQRV9ERVBMT1kQAkIjChFjb20ubGF0b2tlbi5w",
-            "cm90b6oCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
+            "CC5VSW50MTYwEg0KBW5vbmNlGAcgASgEEhEKCWdhc19wcmljZRgJIAEoBBIR",
+            "CglnYXNfbGltaXQYCiABKAQivgEKElRyYW5zYWN0aW9uUmVjZWlwdBIhCgt0",
+            "cmFuc2FjdGlvbhgBIAEoCzIMLlRyYW5zYWN0aW9uEhYKBGhhc2gYAiABKAsy",
+            "CC5VSW50MjU2Eh0KCXNpZ25hdHVyZRgDIAEoCzIKLlNpZ25hdHVyZRIXCgVi",
+            "bG9jaxgEIAEoCzIILlVJbnQyNTYSIgoGc3RhdHVzGAUgASgOMhIuVHJhbnNh",
+            "Y3Rpb25TdGF0dXMSEQoJZ2FzX3NwZW50GAYgASgEKpABChFUcmFuc2FjdGlv",
+            "blN0YXR1cxIeChpUUkFOU0FDVElPTl9TVEFUVVNfVU5LTk9XThAAEhsKF1RS",
+            "QU5TQUNUSU9OX1NUQVRVU19QT09MEAESHwobVFJBTlNBQ1RJT05fU1RBVFVT",
+            "X0VYRUNVVEVEEAISHQoZVFJBTlNBQ1RJT05fU1RBVFVTX0ZBSUxFRBADKmsK",
+            "D1RyYW5zYWN0aW9uVHlwZRIcChhUUkFOU0FDVElPTl9UWVBFX1VOS05PV04Q",
+            "ABIdChlUUkFOU0FDVElPTl9UWVBFX1RSQU5TRkVSEAESGwoXVFJBTlNBQ1RJ",
+            "T05fVFlQRV9ERVBMT1kQAkIjChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3Jr",
+            "dXMuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionStatus), typeof(global::Phorkus.Proto.TransactionType), }, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "To", "Invocation", "Value", "Deploy", "From", "Nonce", "Fee" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.AcceptedTransaction), global::Phorkus.Proto.AcceptedTransaction.Parser, new[]{ "Transaction", "Hash", "Signature", "Block", "Status" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "To", "Invocation", "Value", "Deploy", "From", "Nonce", "GasPrice", "GasLimit" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionReceipt), global::Phorkus.Proto.TransactionReceipt.Parser, new[]{ "Transaction", "Hash", "Signature", "Block", "Status", "GasSpent" }, null, null, null)
           }));
     }
     #endregion
@@ -99,7 +100,8 @@ namespace Phorkus.Proto {
       deploy_ = other.deploy_;
       from_ = other.from_ != null ? other.from_.Clone() : null;
       nonce_ = other.nonce_;
-      fee_ = other.fee_ != null ? other.fee_.Clone() : null;
+      gasPrice_ = other.gasPrice_;
+      gasLimit_ = other.gasLimit_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -185,14 +187,25 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "fee" field.</summary>
-    public const int FeeFieldNumber = 8;
-    private global::Phorkus.Proto.UInt256 fee_;
+    /// <summary>Field number for the "gas_price" field.</summary>
+    public const int GasPriceFieldNumber = 9;
+    private ulong gasPrice_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt256 Fee {
-      get { return fee_; }
+    public ulong GasPrice {
+      get { return gasPrice_; }
       set {
-        fee_ = value;
+        gasPrice_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "gas_limit" field.</summary>
+    public const int GasLimitFieldNumber = 10;
+    private ulong gasLimit_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong GasLimit {
+      get { return gasLimit_; }
+      set {
+        gasLimit_ = value;
       }
     }
 
@@ -216,7 +229,8 @@ namespace Phorkus.Proto {
       if (Deploy != other.Deploy) return false;
       if (!object.Equals(From, other.From)) return false;
       if (Nonce != other.Nonce) return false;
-      if (!object.Equals(Fee, other.Fee)) return false;
+      if (GasPrice != other.GasPrice) return false;
+      if (GasLimit != other.GasLimit) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -230,7 +244,8 @@ namespace Phorkus.Proto {
       if (Deploy.Length != 0) hash ^= Deploy.GetHashCode();
       if (from_ != null) hash ^= From.GetHashCode();
       if (Nonce != 0UL) hash ^= Nonce.GetHashCode();
-      if (fee_ != null) hash ^= Fee.GetHashCode();
+      if (GasPrice != 0UL) hash ^= GasPrice.GetHashCode();
+      if (GasLimit != 0UL) hash ^= GasLimit.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -272,9 +287,13 @@ namespace Phorkus.Proto {
         output.WriteRawTag(56);
         output.WriteUInt64(Nonce);
       }
-      if (fee_ != null) {
-        output.WriteRawTag(66);
-        output.WriteMessage(Fee);
+      if (GasPrice != 0UL) {
+        output.WriteRawTag(72);
+        output.WriteUInt64(GasPrice);
+      }
+      if (GasLimit != 0UL) {
+        output.WriteRawTag(80);
+        output.WriteUInt64(GasLimit);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -305,8 +324,11 @@ namespace Phorkus.Proto {
       if (Nonce != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Nonce);
       }
-      if (fee_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Fee);
+      if (GasPrice != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(GasPrice);
+      }
+      if (GasLimit != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(GasLimit);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -349,11 +371,11 @@ namespace Phorkus.Proto {
       if (other.Nonce != 0UL) {
         Nonce = other.Nonce;
       }
-      if (other.fee_ != null) {
-        if (fee_ == null) {
-          fee_ = new global::Phorkus.Proto.UInt256();
-        }
-        Fee.MergeFrom(other.Fee);
+      if (other.GasPrice != 0UL) {
+        GasPrice = other.GasPrice;
+      }
+      if (other.GasLimit != 0UL) {
+        GasLimit = other.GasLimit;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -403,11 +425,12 @@ namespace Phorkus.Proto {
             Nonce = input.ReadUInt64();
             break;
           }
-          case 66: {
-            if (fee_ == null) {
-              fee_ = new global::Phorkus.Proto.UInt256();
-            }
-            input.ReadMessage(fee_);
+          case 72: {
+            GasPrice = input.ReadUInt64();
+            break;
+          }
+          case 80: {
+            GasLimit = input.ReadUInt64();
             break;
           }
         }
@@ -416,11 +439,11 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class AcceptedTransaction : pb::IMessage<AcceptedTransaction> {
-    private static readonly pb::MessageParser<AcceptedTransaction> _parser = new pb::MessageParser<AcceptedTransaction>(() => new AcceptedTransaction());
+  public sealed partial class TransactionReceipt : pb::IMessage<TransactionReceipt> {
+    private static readonly pb::MessageParser<TransactionReceipt> _parser = new pb::MessageParser<TransactionReceipt>(() => new TransactionReceipt());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<AcceptedTransaction> Parser { get { return _parser; } }
+    public static pb::MessageParser<TransactionReceipt> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -433,25 +456,26 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public AcceptedTransaction() {
+    public TransactionReceipt() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public AcceptedTransaction(AcceptedTransaction other) : this() {
+    public TransactionReceipt(TransactionReceipt other) : this() {
       transaction_ = other.transaction_ != null ? other.transaction_.Clone() : null;
       hash_ = other.hash_ != null ? other.hash_.Clone() : null;
       signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       block_ = other.block_ != null ? other.block_.Clone() : null;
       status_ = other.status_;
+      gasSpent_ = other.gasSpent_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public AcceptedTransaction Clone() {
-      return new AcceptedTransaction(this);
+    public TransactionReceipt Clone() {
+      return new TransactionReceipt(this);
     }
 
     /// <summary>Field number for the "transaction" field.</summary>
@@ -509,13 +533,24 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "gas_spent" field.</summary>
+    public const int GasSpentFieldNumber = 6;
+    private ulong gasSpent_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as AcceptedTransaction);
+    public ulong GasSpent {
+      get { return gasSpent_; }
+      set {
+        gasSpent_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(AcceptedTransaction other) {
+    public override bool Equals(object other) {
+      return Equals(other as TransactionReceipt);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(TransactionReceipt other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -527,6 +562,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(Signature, other.Signature)) return false;
       if (!object.Equals(Block, other.Block)) return false;
       if (Status != other.Status) return false;
+      if (GasSpent != other.GasSpent) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -538,6 +574,7 @@ namespace Phorkus.Proto {
       if (signature_ != null) hash ^= Signature.GetHashCode();
       if (block_ != null) hash ^= Block.GetHashCode();
       if (Status != 0) hash ^= Status.GetHashCode();
+      if (GasSpent != 0UL) hash ^= GasSpent.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -571,6 +608,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(40);
         output.WriteEnum((int) Status);
       }
+      if (GasSpent != 0UL) {
+        output.WriteRawTag(48);
+        output.WriteUInt64(GasSpent);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -594,6 +635,9 @@ namespace Phorkus.Proto {
       if (Status != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
       }
+      if (GasSpent != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(GasSpent);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -601,7 +645,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(AcceptedTransaction other) {
+    public void MergeFrom(TransactionReceipt other) {
       if (other == null) {
         return;
       }
@@ -631,6 +675,9 @@ namespace Phorkus.Proto {
       }
       if (other.Status != 0) {
         Status = other.Status;
+      }
+      if (other.GasSpent != 0UL) {
+        GasSpent = other.GasSpent;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -673,6 +720,10 @@ namespace Phorkus.Proto {
           }
           case 40: {
             status_ = (global::Phorkus.Proto.TransactionStatus) input.ReadEnum();
+            break;
+          }
+          case 48: {
+            GasSpent = input.ReadUInt64();
             break;
           }
         }

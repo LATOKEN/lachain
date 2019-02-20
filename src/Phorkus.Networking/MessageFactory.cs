@@ -155,7 +155,7 @@ namespace Phorkus.Networking
             };
         }
 
-        public NetworkMessage GetTransactionsByHashesReply(IEnumerable<AcceptedTransaction> transactions)
+        public NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions)
         {
             var reply = new GetTransactionsByHashesReply
             {

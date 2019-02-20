@@ -31,13 +31,13 @@ namespace Phorkus.Storage.State
             return raw == null ? 0UL : BitConverter.ToUInt64(raw, 0);
         }
         
-        public AcceptedTransaction GetTransactionByHash(UInt256 transactionHash)
+        public TransactionReceipt GetTransactionByHash(UInt256 transactionHash)
         {
             var raw = _state.Get(EntryPrefix.TransactionByHash.BuildPrefix(transactionHash));
-            return raw != null ? AcceptedTransaction.Parser.ParseFrom(raw) : null;
+            return raw != null ? TransactionReceipt.Parser.ParseFrom(raw) : null;
         }
         
-        public void AddTransaction(AcceptedTransaction acceptedTransaction, TransactionStatus transactionStatus)
+        public void AddTransaction(TransactionReceipt acceptedTransaction, TransactionStatus transactionStatus)
         {
             var expectedNonce = GetTotalTransactionCount(acceptedTransaction.Transaction.From);
             if (expectedNonce != acceptedTransaction.Transaction.Nonce)

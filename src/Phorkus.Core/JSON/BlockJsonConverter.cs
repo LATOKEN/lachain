@@ -29,7 +29,7 @@ namespace Phorkus.Core.JSON
                 ["hash"] = block.Hash.Buffer.ToHex(),
                 ["transactionHashes"] = new JArray(block.TransactionHashes.Select(txHash => txHash.Buffer.ToHex())),
                 ["multisig"] = null,
-                ["averageFee"] = block.AverageFee.Buffer.ToHex()
+                ["gasPrice"] = block.GasPrice
             };
             return json;
         }

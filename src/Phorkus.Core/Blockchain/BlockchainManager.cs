@@ -2,7 +2,6 @@
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
-using Phorkus.Core.Consensus;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
@@ -31,7 +30,7 @@ namespace Phorkus.Core.Blockchain
             _configManager = configManager;
             _stateManager = stateManager;
         }
-
+        
         public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
@@ -49,7 +48,7 @@ namespace Phorkus.Core.Blockchain
             return true;
         }
         
-        public void PersistBlockManually(Block block, IEnumerable<AcceptedTransaction> transactions)
+        public void PersistBlockManually(Block block, IEnumerable<TransactionReceipt> transactions)
         {
             var error = _blockManager.Execute(block, transactions, commit: true, checkStateHash: false);
             if (error != OperatingError.Ok)
