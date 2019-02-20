@@ -54,38 +54,38 @@ namespace Phorkus.Core.Blockchain.OperationManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Execute(Block block, TransactionReceipt transaction, IBlockchainSnapshot snapshot)
+        public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
             var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
             /* check transaction with this hash in database */
-            if (transactionRepository.GetTransactionByHash(transaction.Hash) != null)
+            if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(transaction);
+            var verifyError = Verify(receipt);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!transaction.Transaction.ToHash256().Equals(transaction.Hash))
+            if (!receipt.Transaction.ToHash256().Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check is transaction type supported */
-            if (!_transactionPersisters.ContainsKey(transaction.Transaction.Type))
+            if (!_transactionPersisters.ContainsKey(receipt.Transaction.Type))
                 return OperatingError.UnsupportedTransaction;
-            var persister = _transactionPersisters[transaction.Transaction.Type];
+            var persister = _transactionPersisters[receipt.Transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
             /* check transaction nonce */
-            var nonce = transactionRepository.GetTotalTransactionCount(transaction.Transaction.From);
-            if (nonce != transaction.Transaction.Nonce)
+            var nonce = transactionRepository.GetTotalTransactionCount(receipt.Transaction.From);
+            if (nonce != receipt.Transaction.Nonce)
                 return OperatingError.InvalidNonce;
             /* try to persist transaction */
-            var result = persister.Execute(block, transaction.Transaction, snapshot);
+            var result = persister.Execute(block, receipt, snapshot);
             if (result != OperatingError.Ok)
             {
-                OnTransactionFailed?.Invoke(this, transaction);
+                OnTransactionFailed?.Invoke(this, receipt);
                 return result;
             }
             /* finalize transaction state */
-            OnTransactionExecuted?.Invoke(this, transaction);
+            OnTransactionExecuted?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
         
@@ -118,9 +118,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (result != OperatingError.Ok)
                 return result;
             var transaction = acceptedTransaction.Transaction;
-            /* validate default transaction attributes */
-            if (transaction.GasLimit == 0 || transaction.GasPrice == 0)
-                return OperatingError.InvalidTransaction;
             /* verify transaction via persister */
             var persister = _transactionPersisters[transaction.Type];
             if (persister == null)

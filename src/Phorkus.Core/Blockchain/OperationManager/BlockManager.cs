@@ -164,7 +164,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             /* check availabe LA balance */
             if (transaction.Transaction.GasLimit > transactionGas)
                 return OperatingError.OutOfGas;
-            transaction.GasSpent += transactionGas;
+            transaction.GasUsed += transactionGas;
             var fee = new Money(transactionGas * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             return snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress, fee)
@@ -227,7 +227,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     _logger.LogWarning($"Unable to calculate fee, transaction lost ({txHash})");
                     return 0;
                 }
-                sum += tx.GasSpent * tx.Transaction.GasPrice;
+                sum += tx.GasUsed * tx.Transaction.GasPrice;
             }
             return sum / (ulong) arrayOfHashes.Length;
         }

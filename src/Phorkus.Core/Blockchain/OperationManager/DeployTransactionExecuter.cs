@@ -17,9 +17,10 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             _virtualMachine = virtualMachine;
         }
-        
-        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
+
+        public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
+            var transaction = receipt.Transaction;
             /* validate transaction before execution */
             var error = Verify(transaction);
             if (error != OperatingError.Ok)
@@ -36,16 +37,26 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.InvalidContract;
             snapshot.Contracts.AddContract(transaction.From, contract);
             /* invoke contract constructor */
-            return _InvokeConstructor(contract, transaction);
+            return _InvokeConstructor(contract, receipt);
         }
         
-        private OperatingError _InvokeConstructor(Contract contract, Transaction transaction)
+        private OperatingError _InvokeConstructor(Contract contract, TransactionReceipt receipt)
         {
-            var input = transaction.Invocation.ToByteArray();
+            var input = receipt.Transaction.Invocation.ToByteArray();
             if (!_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
-            var status = _virtualMachine.InvokeContract(contract, new InvocationContext(transaction.From), input);
-            return status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+            try
+            {
+                var status = _virtualMachine.InvokeContract(contract, new InvocationContext(receipt.Transaction.From), input);
+                if (status != ExecutionStatus.Ok)
+                    return OperatingError.ContractFailed;
+            }
+            catch (OutOfGasException e)
+            {
+                receipt.GasUsed += e.GasUsed;
+            }
+
+            return OperatingError.OutOfGas;
         }
         
         private bool _IsConstructorCall(IReadOnlyList<byte> buffer)

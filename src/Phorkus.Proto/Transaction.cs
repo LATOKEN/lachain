@@ -29,23 +29,23 @@ namespace Phorkus.Proto {
             "IAEoCzIILlVJbnQxNjASEgoKaW52b2NhdGlvbhgDIAEoDBIXCgV2YWx1ZRgE",
             "IAEoCzIILlVJbnQyNTYSDgoGZGVwbG95GAUgASgMEhYKBGZyb20YBiABKAsy",
             "CC5VSW50MTYwEg0KBW5vbmNlGAcgASgEEhEKCWdhc19wcmljZRgJIAEoBBIR",
-            "CglnYXNfbGltaXQYCiABKAQivgEKElRyYW5zYWN0aW9uUmVjZWlwdBIhCgt0",
+            "CglnYXNfbGltaXQYCiABKAQivQEKElRyYW5zYWN0aW9uUmVjZWlwdBIhCgt0",
             "cmFuc2FjdGlvbhgBIAEoCzIMLlRyYW5zYWN0aW9uEhYKBGhhc2gYAiABKAsy",
             "CC5VSW50MjU2Eh0KCXNpZ25hdHVyZRgDIAEoCzIKLlNpZ25hdHVyZRIXCgVi",
             "bG9jaxgEIAEoCzIILlVJbnQyNTYSIgoGc3RhdHVzGAUgASgOMhIuVHJhbnNh",
-            "Y3Rpb25TdGF0dXMSEQoJZ2FzX3NwZW50GAYgASgEKpABChFUcmFuc2FjdGlv",
-            "blN0YXR1cxIeChpUUkFOU0FDVElPTl9TVEFUVVNfVU5LTk9XThAAEhsKF1RS",
-            "QU5TQUNUSU9OX1NUQVRVU19QT09MEAESHwobVFJBTlNBQ1RJT05fU1RBVFVT",
-            "X0VYRUNVVEVEEAISHQoZVFJBTlNBQ1RJT05fU1RBVFVTX0ZBSUxFRBADKmsK",
-            "D1RyYW5zYWN0aW9uVHlwZRIcChhUUkFOU0FDVElPTl9UWVBFX1VOS05PV04Q",
-            "ABIdChlUUkFOU0FDVElPTl9UWVBFX1RSQU5TRkVSEAESGwoXVFJBTlNBQ1RJ",
-            "T05fVFlQRV9ERVBMT1kQAkIjChFjb20ubGF0b2tlbi5wcm90b6oCDVBob3Jr",
-            "dXMuUHJvdG9iBnByb3RvMw=="));
+            "Y3Rpb25TdGF0dXMSEAoIZ2FzX3VzZWQYBiABKAQqkAEKEVRyYW5zYWN0aW9u",
+            "U3RhdHVzEh4KGlRSQU5TQUNUSU9OX1NUQVRVU19VTktOT1dOEAASGwoXVFJB",
+            "TlNBQ1RJT05fU1RBVFVTX1BPT0wQARIfChtUUkFOU0FDVElPTl9TVEFUVVNf",
+            "RVhFQ1VURUQQAhIdChlUUkFOU0FDVElPTl9TVEFUVVNfRkFJTEVEEAMqawoP",
+            "VHJhbnNhY3Rpb25UeXBlEhwKGFRSQU5TQUNUSU9OX1RZUEVfVU5LTk9XThAA",
+            "Eh0KGVRSQU5TQUNUSU9OX1RZUEVfVFJBTlNGRVIQARIbChdUUkFOU0FDVElP",
+            "Tl9UWVBFX0RFUExPWRACQiMKEWNvbS5sYXRva2VuLnByb3RvqgINUGhvcmt1",
+            "cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Phorkus.Proto.TransactionStatus), typeof(global::Phorkus.Proto.TransactionType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Transaction), global::Phorkus.Proto.Transaction.Parser, new[]{ "Type", "To", "Invocation", "Value", "Deploy", "From", "Nonce", "GasPrice", "GasLimit" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionReceipt), global::Phorkus.Proto.TransactionReceipt.Parser, new[]{ "Transaction", "Hash", "Signature", "Block", "Status", "GasSpent" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TransactionReceipt), global::Phorkus.Proto.TransactionReceipt.Parser, new[]{ "Transaction", "Hash", "Signature", "Block", "Status", "GasUsed" }, null, null, null)
           }));
     }
     #endregion
@@ -469,7 +469,7 @@ namespace Phorkus.Proto {
       signature_ = other.signature_ != null ? other.signature_.Clone() : null;
       block_ = other.block_ != null ? other.block_.Clone() : null;
       status_ = other.status_;
-      gasSpent_ = other.gasSpent_;
+      gasUsed_ = other.gasUsed_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -533,14 +533,14 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "gas_spent" field.</summary>
-    public const int GasSpentFieldNumber = 6;
-    private ulong gasSpent_;
+    /// <summary>Field number for the "gas_used" field.</summary>
+    public const int GasUsedFieldNumber = 6;
+    private ulong gasUsed_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public ulong GasSpent {
-      get { return gasSpent_; }
+    public ulong GasUsed {
+      get { return gasUsed_; }
       set {
-        gasSpent_ = value;
+        gasUsed_ = value;
       }
     }
 
@@ -562,7 +562,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(Signature, other.Signature)) return false;
       if (!object.Equals(Block, other.Block)) return false;
       if (Status != other.Status) return false;
-      if (GasSpent != other.GasSpent) return false;
+      if (GasUsed != other.GasUsed) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -574,7 +574,7 @@ namespace Phorkus.Proto {
       if (signature_ != null) hash ^= Signature.GetHashCode();
       if (block_ != null) hash ^= Block.GetHashCode();
       if (Status != 0) hash ^= Status.GetHashCode();
-      if (GasSpent != 0UL) hash ^= GasSpent.GetHashCode();
+      if (GasUsed != 0UL) hash ^= GasUsed.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -608,9 +608,9 @@ namespace Phorkus.Proto {
         output.WriteRawTag(40);
         output.WriteEnum((int) Status);
       }
-      if (GasSpent != 0UL) {
+      if (GasUsed != 0UL) {
         output.WriteRawTag(48);
-        output.WriteUInt64(GasSpent);
+        output.WriteUInt64(GasUsed);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -635,8 +635,8 @@ namespace Phorkus.Proto {
       if (Status != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
       }
-      if (GasSpent != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(GasSpent);
+      if (GasUsed != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(GasUsed);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -676,8 +676,8 @@ namespace Phorkus.Proto {
       if (other.Status != 0) {
         Status = other.Status;
       }
-      if (other.GasSpent != 0UL) {
-        GasSpent = other.GasSpent;
+      if (other.GasUsed != 0UL) {
+        GasUsed = other.GasUsed;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -723,7 +723,7 @@ namespace Phorkus.Proto {
             break;
           }
           case 48: {
-            GasSpent = input.ReadUInt64();
+            GasUsed = input.ReadUInt64();
             break;
           }
         }

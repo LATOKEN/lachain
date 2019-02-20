@@ -5,7 +5,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 {
     public interface ITransactionExecuter
     {
-        OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot);
+        OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot);
         
         OperatingError Verify(Transaction transaction);
     }

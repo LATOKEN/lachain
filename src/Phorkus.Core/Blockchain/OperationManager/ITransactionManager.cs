@@ -13,7 +13,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         TransactionReceipt GetByHash(UInt256 transactionHash);
 
-        OperatingError Execute(Block block, TransactionReceipt transaction, IBlockchainSnapshot snapshot);
+        OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot);
         
         OperatingError Verify(TransactionReceipt transaction);
 
