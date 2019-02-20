@@ -56,7 +56,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
-        
+
+        public OperatingError EmulateExecution(Block block, IEnumerable<TransactionReceipt> transactions, out List<UInt256> removeTransactions)
+        {
+            throw new NotImplementedException();
+        }
+
         public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash, bool commit)
         {
             var currentTransactions = transactions.ToDictionary(tx => tx.Hash, tx => tx);
@@ -101,19 +106,11 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 /* try to find transaction by hash */
                 var transaction = currentTransactions[txHash];
+                transaction.GasUsed = 21_000;
                 var snapshot = _stateManager.NewSnapshot();
                 
-                /* try to take fee from sender */
-                var result = _TakeTransactionFee(validatorAddress, transaction, snapshot);
-                if (result != OperatingError.Ok)
-                {
-                    _stateManager.Rollback();
-                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
-                    continue;
-                }
-                
                 /* try to execute transaction */
-                result = _transactionManager.Execute(block, transaction, snapshot);
+                var result = _transactionManager.Execute(block, transaction, snapshot);
                 if (result != OperatingError.Ok)
                 {
                     _stateManager.Rollback();
@@ -123,6 +120,15 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
                     _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     _stateManager.Approve();
+                    continue;
+                }
+                
+                /* try to take fee from sender */
+                result = _TakeTransactionFee(validatorAddress, transaction, snapshot);
+                if (result != OperatingError.Ok)
+                {
+                    _stateManager.Rollback();
+                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
                 }
                 
@@ -157,15 +163,11 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
         private OperatingError _TakeTransactionFee(UInt160 validatorAddress, TransactionReceipt transaction, IBlockchainSnapshot snapshot)
         {
-            const ulong transactionGas = 21_000;
             /* genesis block doesn't have LA asset and validators are fee free */
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
             /* check availabe LA balance */
-            if (transaction.Transaction.GasLimit > transactionGas)
-                return OperatingError.OutOfGas;
-            transaction.GasUsed += transactionGas;
-            var fee = new Money(transactionGas * transaction.Transaction.GasPrice);
+            var fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice * (ulong) 1e9);
             /* transfer fee from wallet to validator */
             return snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress, fee)
                 ? OperatingError.Ok
