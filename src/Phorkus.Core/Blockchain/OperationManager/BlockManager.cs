@@ -167,7 +167,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
             /* check availabe LA balance */
-            var fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice * (ulong) 1e9);
+            var fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             return snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress, fee)
                 ? OperatingError.Ok
