@@ -70,7 +70,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
         private OperatingError _CheckGasLimit(TransactionReceipt receipt)
         {
-            const ulong inputDataGas = 100;
+            const ulong inputDataGas = 10;
             if (receipt.Transaction.Invocation.IsEmpty)
                 return OperatingError.Ok;
             receipt.GasUsed += (ulong) receipt.Transaction.Invocation.Length * inputDataGas;
