@@ -11,18 +11,20 @@ namespace Phorkus.Core.Blockchain
     public class BlockBuilder
     {
         private readonly BlockHeader _prevBlock;
+        private readonly UInt256 _stateHash;
+        private readonly PublicKey _validator;
         
-        private IReadOnlyCollection<TransactionReceipt> _transactions;
+        private ICollection<TransactionReceipt> _transactions;
         private MultiSig _multiSig;
-        private PublicKey _blockValidator;
 
-        public BlockBuilder(BlockHeader prevBlock, PublicKey blockValidator)
+        public BlockBuilder(BlockHeader prevBlock, PublicKey validator, UInt256 stateHash = null)
         {
             _prevBlock = prevBlock;
-            _blockValidator = blockValidator;
+            _stateHash = stateHash ?? UInt256Utils.Zero;
+            _validator = validator;
         }
 
-        public BlockBuilder WithTransactions(IReadOnlyCollection<TransactionReceipt> transactions)
+        public BlockBuilder WithTransactions(ICollection<TransactionReceipt> transactions)
         {
             _transactions = transactions;
             return this;
@@ -30,7 +32,7 @@ namespace Phorkus.Core.Blockchain
 
         public BlockBuilder WithTransactions(ITransactionPool transactionPool)
         {
-            _transactions = transactionPool.Peek();
+            _transactions = new List<TransactionReceipt>(transactionPool.Peek());
             return this;
         }
 
@@ -70,7 +72,8 @@ namespace Phorkus.Core.Blockchain
                 MerkleRoot = merkeRoot,
                 Timestamp = TimeUtils.CurrentTimeMillis() / 1000,
                 Index = _prevBlock?.Index + 1 ?? 0,
-                Validator = _blockValidator,
+                Validator = _validator,
+                StateHash = _stateHash,
                 Nonce = nonce
             };
             var block = new Block
