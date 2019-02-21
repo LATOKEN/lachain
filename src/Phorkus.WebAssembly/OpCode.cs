@@ -543,25 +543,25 @@
         /// <summary>
         /// Signed division (result is truncated toward zero).
         /// </summary>
-        [OpCodeCharacteristics("i32.div_s", 36000)]
+        [OpCodeCharacteristics("i32.div_s", 900)]
         Int32DivideSigned = 0x6d,
 
         /// <summary>
         /// Unsigned division (result is floored).
         /// </summary>
-        [OpCodeCharacteristics("i32.div_u", 36000)]
+        [OpCodeCharacteristics("i32.div_u", 900)]
         Int32DivideUnsigned = 0x6e,
 
         /// <summary>
         /// Signed remainder (result has the sign of the dividend).
         /// </summary>
-        [OpCodeCharacteristics("i32.rem_s", 36000)]
+        [OpCodeCharacteristics("i32.rem_s", 900)]
         Int32RemainderSigned = 0x6f,
 
         /// <summary>
         /// Unsigned remainder.
         /// </summary>
-        [OpCodeCharacteristics("i32.rem_u", 36000)]
+        [OpCodeCharacteristics("i32.rem_u", 900)]
         Int32RemainderUnsigned = 0x70,
 
         /// <summary>
@@ -651,25 +651,25 @@
         /// <summary>
         /// Signed division (result is truncated toward zero).
         /// </summary>
-        [OpCodeCharacteristics("i64.div_s", 36000)]
+        [OpCodeCharacteristics("i64.div_s", 900)]
         Int64DivideSigned = 0x7f,
 
         /// <summary>
         /// Unsigned division (result is floored).
         /// </summary>
-        [OpCodeCharacteristics("i64.div_u", 36000)]
+        [OpCodeCharacteristics("i64.div_u", 900)]
         Int64DivideUnsigned = 0x80,
 
         /// <summary>
         /// Signed remainder (result has the sign of the dividend).
         /// </summary>
-        [OpCodeCharacteristics("i64.rem_s", 36000)]
+        [OpCodeCharacteristics("i64.rem_s", 900)]
         Int64RemainderSigned = 0x81,
 
         /// <summary>
         /// Unsigned remainder.
         /// </summary>
-        [OpCodeCharacteristics("i64.rem_u", 36000)]
+        [OpCodeCharacteristics("i64.rem_u", 900)]
         Int64RemainderUnsigned = 0x82,
 
         /// <summary>
