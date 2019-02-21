@@ -11,11 +11,11 @@ namespace Phorkus.Core.RPC
     public class RpcManager : IRpcManager
     {
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionPool _transactionPool;
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
-        private readonly ITransactionPool _transactionPool;
         private readonly IVirtualMachine _virtualMachine;
 
         public RpcManager(
@@ -43,7 +43,7 @@ namespace Phorkus.Core.RPC
             // ReSharper disable once UnusedVariable
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
-                new BlockchainService(_transactionManager, _blockManager, _blockchainContext, _stateManager),
+                new BlockchainService(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
                 new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool)
             };
             
