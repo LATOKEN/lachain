@@ -93,7 +93,7 @@ namespace Phorkus.Core.RPC.HTTP
         }
         
         [JsonRpcMethod("invokeContract")]
-        private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit = 200_000)
+        private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 contract.HexToUInt160());
@@ -114,6 +114,8 @@ namespace Phorkus.Core.RPC.HTTP
             return new JObject
             {
                 ["status"] = result.Status.ToString(),
+                ["gasLimit"] = gasLimit,
+                ["gasUsed"] = result.GasUsed,
                 ["ok"] = result.Status == ExecutionStatus.Ok,
                 ["result"] = result.ReturnValue?.ToHex() ?? "0x"
             };

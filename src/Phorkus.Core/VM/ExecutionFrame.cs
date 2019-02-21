@@ -120,7 +120,6 @@ namespace Phorkus.Core.VM
             }
 
             var gasSpent = GasLimit - (ulong) gasLimitField.GetValue(null);
-            Console.WriteLine("Used gas: " + gasSpent);
             GasUsed = gasSpent;
             return ExecutionStatus.Ok;
         }

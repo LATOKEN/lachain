@@ -104,7 +104,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 if (!commit)
                     return OperatingError.Ok;
                 _logger.LogInformation(
-                    $"Persisted new block {block.Header.Index} with hash {block.Hash}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}g");
+                    $"Persisted new block {block.Header.Index} with hash {block.Hash}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}");
                 _stateManager.Commit();
                 OnBlockPersisted?.Invoke(this, block);
                 return OperatingError.Ok;
