@@ -23,7 +23,7 @@ namespace Phorkus.Core.VM
         private const uint CopyToMemoryGasPerByte = 10;
         private const uint GetCallValueGasCost = 100;
         private const uint GetCallSizeGasCost = 10;
-        private const uint TransferFundsGasCost = 21_000;
+        private const uint TransferFundsGasCost = 3_000_000;
         private const uint LoadStorageGasCost = 500_000;
         private const uint SaveStorageGasCost = 3_000_000;
         private const uint Keccak256GasCost = 100_000;

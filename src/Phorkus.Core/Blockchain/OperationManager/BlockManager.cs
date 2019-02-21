@@ -57,7 +57,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
 
-        public const ulong BlockGasLimit = 100_000;
+        public const ulong BlockGasLimit = 1_000_000_000_000;
 
         public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block,
             IEnumerable<TransactionReceipt> transactions)
@@ -66,8 +66,14 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 _logger.LogDebug("Executing transactions in no-check no-commit mode");
-                var error = _Execute(block, transactions, out var removedTransactions, out var relayedTransactions,
-                    false, out var gasUsed);
+                var error = _Execute(
+                    block,
+                    transactions,
+                    out var removedTransactions,
+                    out var relayedTransactions,
+                    false,
+                    out var gasUsed,
+                    out _);
                 if (error != OperatingError.Ok)
                     throw new InvalidOperationException($"Cannot assemble block: error {error}");
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
@@ -91,7 +97,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
-                var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed);
+                var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed, out var totalFee);
                 if (operatingError != OperatingError.Ok)
                     throw new InvalidBlockException(operatingError);
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
@@ -104,17 +110,23 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 if (!commit)
                     return OperatingError.Ok;
                 _logger.LogInformation(
-                    $"Persisted new block {block.Header.Index} with hash {block.Hash}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}");
+                    $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}, fee {totalFee}");
                 _stateManager.Commit();
                 OnBlockPersisted?.Invoke(this, block);
                 return OperatingError.Ok;
             });
         }
 
-        private OperatingError _Execute(Block block, IEnumerable<TransactionReceipt> transactions,
-            out List<TransactionReceipt> removeTransactions, out List<TransactionReceipt> relayTransactions,
-            bool writeFailed, out ulong gasUsed)
+        private OperatingError _Execute(
+            Block block,
+            IEnumerable<TransactionReceipt> transactions,
+            out List<TransactionReceipt> removeTransactions,
+            out List<TransactionReceipt> relayTransactions,
+            bool writeFailed,
+            out ulong gasUsed,
+            out Money totalFee)
         {
+            totalFee = Money.Zero;
             gasUsed = 0;
             
             var currentTransactions = transactions
@@ -155,19 +167,19 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
             /* confirm block transactions */
             var validatorAddress = _crypto.ComputeAddress(block.Header.Validator.Buffer.ToByteArray()).ToUInt160();
-
+            
             /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
                 /* try to find transaction by hash */
                 var transaction = currentTransactions[txHash];
-                transaction.GasUsed = 21_000;
+                transaction.GasUsed = 3_000_000;
                 var snapshot = _stateManager.NewSnapshot();
 
                 /* try to execute transaction */
                 var result = _transactionManager.Execute(block, transaction, snapshot);
                 if (transaction.GasUsed > BlockGasLimit)
-                    result = OperatingError.OutOfGas;
+                    result = OperatingError.GasLimitGreaterBlockLimit;
                 if (result != OperatingError.Ok)
                 {
                     removeTransactions.Add(transaction);
@@ -200,7 +212,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 }
 
                 /* try to take fee from sender */
-                result = _TakeTransactionFee(validatorAddress, transaction, snapshot);
+                result = _TakeTransactionFee(validatorAddress, transaction, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
                     removeTransactions.Add(transaction);
@@ -209,6 +221,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
                         $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
                 }
+
+                totalFee += fee;
 
                 /* mark transaction as executed */
                 if (_logger.IsEnabled(LogLevel.Debug))
@@ -229,13 +243,13 @@ namespace Phorkus.Core.Blockchain.OperationManager
         }
 
         private OperatingError _TakeTransactionFee(UInt160 validatorAddress, TransactionReceipt transaction,
-            IBlockchainSnapshot snapshot)
+            IBlockchainSnapshot snapshot, out Money fee)
         {
+            /* check availabe LA balance */
+            fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* genesis block doesn't have LA asset and validators are fee free */
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
-            /* check availabe LA balance */
-            var fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             return snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress, fee)
                 ? OperatingError.Ok

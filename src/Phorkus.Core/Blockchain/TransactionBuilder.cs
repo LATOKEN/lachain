@@ -26,7 +26,7 @@ namespace Phorkus.Core.Blockchain
                 Value = value.ToUInt256(),
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
-                GasLimit = 21_000,
+                GasLimit = 3_000_000,
                 Nonce = nonce
             };
             if (input != null)

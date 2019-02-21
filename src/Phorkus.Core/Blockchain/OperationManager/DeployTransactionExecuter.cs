@@ -30,7 +30,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return error;
             /* calculate contract hash and register it */
             var hash = transaction.From.Buffer.ToArray().Concat(BitConverter.GetBytes((uint) transaction.Nonce)).ToHash160();
-            Console.WriteLine("Contract hash: " + hash.Buffer.ToHex());
             var contract = new Contract
             {
                 ContractAddress = hash,

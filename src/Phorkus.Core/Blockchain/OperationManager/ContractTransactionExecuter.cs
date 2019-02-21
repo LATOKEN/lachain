@@ -59,7 +59,10 @@ namespace Phorkus.Core.Blockchain.OperationManager
             try
             {
                 var result = _virtualMachine.InvokeContract(contract, context, input, transaction.GasLimit - receipt.GasUsed);
-                return result.Status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+                if (result.Status != ExecutionStatus.Ok)
+                    return OperatingError.ContractFailed;
+                receipt.GasUsed += result.GasUsed;
+                return receipt.GasUsed > transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
             }
             catch (OutOfGasException e)
             {

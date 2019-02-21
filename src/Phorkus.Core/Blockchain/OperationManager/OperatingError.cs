@@ -21,6 +21,7 @@
         ContractNotFound,
         InvalidContract,
         OutOfGas,
+        GasLimitGreaterBlockLimit,
         InvalidGasLimit,
         InsufficientBalance,
         InvalidInput,
