@@ -6,8 +6,6 @@ namespace Phorkus.Core.VM
     {
         bool VerifyContract(byte[] code);
         
-        ExecutionStatus InvokeContract(Contract contract, InvocationContext context, byte[] input);
-        
-        ExecutionStatus InvokeContract(Contract contract, InvocationContext context, byte[] input, out byte[] returnValue);
+        InvocationResult InvokeContract(Contract contract, InvocationContext context, byte[] input, ulong gasLimit);
     }
 }

@@ -5,12 +5,10 @@ namespace Phorkus.Core.VM
     public class OutOfGasException : Exception
     {
         public ulong GasUsed { get; }
-        public ulong GasLimit { get; }
 
-        public OutOfGasException(ulong gasUsed, ulong gasLimit)
+        public OutOfGasException(ulong gasUsed)
         {
             GasUsed = gasUsed;
-            GasLimit = gasLimit;
         }
     }
 }

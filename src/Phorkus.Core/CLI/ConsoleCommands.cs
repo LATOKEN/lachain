@@ -153,14 +153,14 @@ namespace Phorkus.Core.CLI
             if (contract is null)
                 return $"Unable to find contract by hash {contractHash.Buffer.ToHex()}";
             Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
-            var status = _stateManager.SafeContext(() =>
+            var result = _stateManager.SafeContext(() =>
             {
                 _stateManager.NewSnapshot();
-                var result = _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[]{});
+                var invocationResult = _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[]{}, 200_000);
                 _stateManager.Rollback();
-                return result;
+                return invocationResult;
             });
-            return status == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
+            return result.Status == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
         }
         
         public string Help(string[] arguments)

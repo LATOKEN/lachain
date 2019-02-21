@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
+using Phorkus.Core.Blockchain;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Runtime;
@@ -17,20 +19,29 @@ namespace Phorkus.Core.VM
     {
         private const string EnvModule = "env";
 
-        private static ExecutionStatus DoInternalCall(UInt160 caller, UInt160 address, byte[] input,
-            out ExecutionFrame frame)
+        private static ExecutionStatus DoInternalCall(
+            UInt160 caller,
+            UInt160 address,
+            byte[] input,
+            out ExecutionFrame frame,
+            ulong gasLimit)
         {
             var contract = VirtualMachine.BlockchainSnapshot.Contracts.GetContractByHash(address);
             if (contract is null)
             {
                 frame = null;
-                return ExecutionStatus.NoSuchContract;
+                return ExecutionStatus.ContractNotFound;
             }
             
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
             var status = ExecutionFrame.FromInternalCall(
-                contract.ByteCode.ToByteArray(), currentFrame.Context.NextContext(caller), address, input,
-                VirtualMachine.BlockchainInterface, out frame
+                contract.ByteCode.ToByteArray(),
+                currentFrame.Context.NextContext(caller),
+                address,
+                input,
+                VirtualMachine.BlockchainInterface,
+                out frame,
+                gasLimit
             );
             if (status != ExecutionStatus.Ok) return status;
             VirtualMachine.ExecutionFrames.Push(frame);
@@ -109,15 +120,31 @@ namespace Phorkus.Core.VM
         }
 
         public static int Handler_Env_InvokeContract(
-            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset)
+            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset, int returnValueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var signatureBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
-            if (signatureBuffer is null || inputBuffer is null)
+            if (addressBuffer is null || inputBuffer is null)
                 throw new RuntimeException("Bad call to call function");
-            var address = signatureBuffer.Take(20).ToArray().ToUInt160();
-            var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame);
+            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            var valueBuffer = SafeCopyFromMemory(frame.Memory, valueOffset, 32).ToUInt256().ToMoney();
+            if (valueBuffer is null)
+                throw new RuntimeException("Bad call to call function");
+            if (valueBuffer > Money.Zero)
+            {
+                var result = VirtualMachine.BlockchainSnapshot.Balances.TransferBalance(
+                    frame.CurrentAddress, address, valueBuffer);
+                if (!result)
+                    throw new InsufficientFundsException();
+            }
+            var gasBuffer = SafeCopyFromMemory(frame.Memory, gasOffset, 8);
+            if (gasBuffer is null)
+                throw new RuntimeException("Bad call to call function");
+            var gasLimit = BitConverter.ToUInt64(gasBuffer, 0);
+            if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
+                gasLimit = frame.GasLimit - frame.GasUsed;
+            var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame, gasLimit);
             if (status != ExecutionStatus.Ok)
                 throw new RuntimeException("Cannot invoke call: " + status);
             status = newFrame.Execute(); 
