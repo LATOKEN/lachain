@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
@@ -208,7 +209,7 @@ namespace Phorkus.Benchmark
                 var signed = transactionSigner.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
                 var blockWithTxs = new BlockBuilder(latestBlock.Header, keyPair.PublicKey)
-                    .WithTransactions(new[] {signed})
+                    .WithTransactions((ICollection<TransactionReceipt>) new[] {signed})
                     .Build(123456);
                 var block = blockWithTxs.Block;
                 block.Multisig = new MultiSig

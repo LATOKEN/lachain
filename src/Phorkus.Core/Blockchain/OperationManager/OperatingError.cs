@@ -24,5 +24,6 @@
         InvalidGasLimit,
         InsufficientBalance,
         InvalidInput,
+        BlockGasOverflow,
     }
 }

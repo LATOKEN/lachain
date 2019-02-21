@@ -18,6 +18,8 @@ namespace Phorkus.Core.Blockchain
         
         IReadOnlyCollection<TransactionReceipt> Peek(int limit = -1);
 
+        void Relay(IEnumerable<TransactionReceipt> receipts);
+        
         uint Size();
         
         void Delete(UInt256 transactionHash);

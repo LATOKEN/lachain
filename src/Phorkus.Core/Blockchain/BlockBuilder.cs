@@ -24,6 +24,12 @@ namespace Phorkus.Core.Blockchain
             _validator = validator;
         }
 
+        public BlockBuilder WithTransactions(IReadOnlyCollection<TransactionReceipt> transactions)
+        {
+            _transactions = new List<TransactionReceipt>(transactions);
+            return this;
+        }
+
         public BlockBuilder WithTransactions(ICollection<TransactionReceipt> transactions)
         {
             _transactions = transactions;

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
@@ -15,7 +14,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         Block GetByHash(UInt256 blockHash);
         
-        Tuple<OperatingError, List<TransactionReceipt>, UInt256> Emulate(Block block, IEnumerable<TransactionReceipt> transactions);
+        Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block, IEnumerable<TransactionReceipt> transactions);
         
         OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash, bool commit);        
         
