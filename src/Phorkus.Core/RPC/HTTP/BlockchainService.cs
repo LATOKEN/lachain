@@ -96,7 +96,7 @@ namespace Phorkus.Core.RPC.HTTP
         }
         
         
-        [JsonRpcMethod("getTransactionPool")]
+        [JsonRpcMethod("getTransactionPoolByHash")]
         private JObject GetTransactionPoolByHash(string txHash)
         {
             var transaction = _transactionPool.GetByHash(HexUtils.HexToUInt256(txHash));
