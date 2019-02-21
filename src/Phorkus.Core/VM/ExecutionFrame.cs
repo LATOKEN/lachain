@@ -30,8 +30,8 @@ namespace Phorkus.Core.VM
         public abstract class JitEntryPoint
         {
             public abstract void start();
-        } 
-        
+        }
+
         public static ExecutionStatus FromInvocation(
             byte[] code,
             InvocationContext context,
@@ -47,7 +47,7 @@ namespace Phorkus.Core.VM
             );
             return ExecutionStatus.Ok;
         }
-        
+
         public static ExecutionStatus FromInternalCall(
             byte[] code,
             InvocationContext context,
@@ -78,13 +78,24 @@ namespace Phorkus.Core.VM
 
         public InvocationContext Context { get; }
         public UInt160 CurrentAddress { get; }
-        
-        public byte[] Input { get; }
+
         public byte[] ReturnValue { get; set; }
-        
+        public byte[] Input { get; }
+
         public ulong GasLimit { get; }
         public ulong GasUsed { get; private set; }
-        
+
+        internal void UseGas(uint gas)
+        {
+            var gasLimitField = Exports.GetField("💩 GasLimit");
+            var currentGas = (ulong) gasLimitField.GetValue(null);
+            checked
+            {
+                currentGas -= gas;
+            }
+            gasLimitField.SetValue(null, currentGas);
+        }
+
         public ExecutionStatus Execute()
         {
             var method = Exports.GetMethod("start");
@@ -107,12 +118,13 @@ namespace Phorkus.Core.VM
                 GasUsed = GasLimit - (ulong) gasLimitField.GetValue(null);
                 return ExecutionStatus.JitCorruption;
             }
+
             var gasSpent = GasLimit - (ulong) gasLimitField.GetValue(null);
             Console.WriteLine("Used gas: " + gasSpent);
             GasUsed = gasSpent;
             return ExecutionStatus.Ok;
         }
-        
+
         public void Dispose()
         {
             InvocationContext?.Dispose();
