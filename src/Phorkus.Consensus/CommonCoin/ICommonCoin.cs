@@ -2,7 +2,7 @@
 
 namespace Phorkus.Consensus.CommonCoin
 {
-    public interface ICommonCoin : IConsensusMessageHandler
+    public interface ICommonCoin : IConsensusProtocol
     {
         void RequestCoin();
         event EventHandler<bool> CoinTossed;

@@ -4,7 +4,7 @@ namespace Phorkus.Consensus
 {
     public interface IMessageDispatcher
     {
-        IConsensusMessageHandler RegistgerAlgorithm(IConsensusMessageHandler algo, IProtocolIdentifier id);
+        IConsensusProtocol RegistgerAlgorithm(IConsensusProtocol algo, IProtocolIdentifier id);
         void DispatchMessage(ConsensusMessage message);
     }
 }

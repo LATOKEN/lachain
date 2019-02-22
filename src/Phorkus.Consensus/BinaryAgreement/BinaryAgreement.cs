@@ -32,5 +32,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             throw new NotImplementedException();
         }
+
+        public event EventHandler Terminated;
     }
 }

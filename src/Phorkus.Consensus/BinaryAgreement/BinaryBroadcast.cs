@@ -14,6 +14,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private readonly int[] _recievedCount;
         private readonly int _faulty;
         private readonly bool[] _broadcasted;
+        private bool _terminated;
 
         public BinaryBroadcast(int n, int f, BinaryBroadcastId broadcastId, IConsensusBroadcaster consensusBroadcaster)
         {
@@ -26,19 +27,23 @@ namespace Phorkus.Consensus.BinaryAgreement
                 _recievedValues[i] = new HashSet<int>();
             _recievedCount = new int[2];
             _broadcasted = new bool[2];
+            _terminated = false;
         }
         
         public void Input(int value)
         {
+            if (_terminated) return;
             if (value < 0 || value > 1) throw new ArgumentOutOfRangeException(nameof(value));
             _broadcasted[value] = true;
             _consensusBroadcaster.Broadcast(CreateBValMessage(value));
         }
 
         public event EventHandler<int> BinValueAdded;
+        public event EventHandler Terminated;
         
         public void HandleMessage(ConsensusMessage message)
         {
+            if (_terminated) return;
             if (message.PayloadCase != ConsensusMessage.PayloadOneofCase.BinaryBroadcast)
                 throw new ArgumentException($"consensus message of type {message.PayloadCase} misrouted to BinaryBroadcast protcol");
             var sender = message.Validator.ValidatorIndex;
@@ -59,6 +64,18 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (newMask == _binValuesMask) return;
             _binValuesMask = newMask;
             BinValueAdded?.Invoke(this, b);
+            if (newMask == 3)
+            {
+                _terminated = true;
+                Terminated?.Invoke(this, null);
+            }
+        }
+
+        public void Terminate()
+        {
+            if (_terminated) return;
+            _terminated = true;
+            Terminated?.Invoke(this, null);
         }
 
         private ConsensusMessage CreateBValMessage(int value)
