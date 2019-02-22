@@ -338,18 +338,19 @@ namespace Phorkus.Core.VM
                 throw new RuntimeException("Bad call to (get_transaction_hash)");
         }
         
-        public static void Handle_Env_WriteEvent(int valueOffset, int valueLength)
+        public static void Handle_Env_WriteEvent(int signatureOffset, int valueOffset, int valueLength)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(WriteEventPerByteGas * (uint) valueLength);
+            frame.UseGas(WriteEventPerByteGas * (uint) (valueLength + 32));
+            var signature = SafeCopyFromMemory(frame.Memory, signatureOffset, 32);
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength);
             var ev = new Event
             {
                 Contract = frame.CurrentAddress,
                 Data = ByteString.CopyFrom(value),
                 TransactionHash = frame.Context.TransactionHash,
-                Index = 0,
-                SignatureHash = UInt256Utils.Zero
+                Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
+                SignatureHash = signature.ToUInt256()
             };
             VirtualMachine.BlockchainSnapshot.Events.AddEvent(ev);
         }
