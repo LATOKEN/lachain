@@ -39,7 +39,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.InvalidContract;
             snapshot.Contracts.AddContract(transaction.From, contract);
             /* invoke contract constructor */
-            return _InvokeConstructor(contract, receipt);
+            return _InvokeConstructor(contract, receipt, block);
         }
         
         private OperatingError _CheckGasLimit(TransactionReceipt receipt)
@@ -52,14 +52,14 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return receipt.GasUsed > receipt.Transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
         }
         
-        private OperatingError _InvokeConstructor(Contract contract, TransactionReceipt receipt)
+        private OperatingError _InvokeConstructor(Contract contract, TransactionReceipt receipt, Block block)
         {
             var input = receipt.Transaction.Invocation.ToByteArray();
             if (!_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
             try
             {
-                var result = _virtualMachine.InvokeContract(contract, new InvocationContext(receipt.Transaction.From), input, receipt.Transaction.GasLimit - receipt.GasUsed);
+                var result = _virtualMachine.InvokeContract(contract, new InvocationContext(receipt.Transaction.From, receipt.Transaction, block), input, receipt.Transaction.GasLimit - receipt.GasUsed);
                 return result.Status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
             }
             catch (OutOfGasException e)

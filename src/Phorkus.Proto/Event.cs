@@ -24,15 +24,15 @@ namespace Phorkus.Proto {
     static EventReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgtldmVudC5wcm90bxoNZGVmYXVsdC5wcm90byKCAQoFRXZlbnQSGgoIY29u",
+            "CgtldmVudC5wcm90bxoNZGVmYXVsdC5wcm90byKGAQoFRXZlbnQSGgoIY29u",
             "dHJhY3QYASABKAsyCC5VSW50MTYwEgwKBGRhdGEYAiABKAwSIgoQdHJhbnNh",
-            "Y3Rpb25faGFzaBgDIAEoCzIILlVJbnQyNTYSDQoFaW5kZXgYBCABKA0SHAoK",
-            "YmxvY2tfaGFzaBgFIAEoCzIILlVJbnQyNTZCIwoRY29tLmxhdG9rZW4ucHJv",
-            "dG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
+            "Y3Rpb25faGFzaBgDIAEoCzIILlVJbnQyNTYSDQoFaW5kZXgYBCABKA0SIAoO",
+            "c2lnbmF0dXJlX2hhc2gYBSABKAsyCC5VSW50MjU2QiMKEWNvbS5sYXRva2Vu",
+            "LnByb3RvqgINUGhvcmt1cy5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Event), global::Phorkus.Proto.Event.Parser, new[]{ "Contract", "Data", "TransactionHash", "Index", "BlockHash" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Event), global::Phorkus.Proto.Event.Parser, new[]{ "Contract", "Data", "TransactionHash", "Index", "SignatureHash" }, null, null, null)
           }));
     }
     #endregion
@@ -68,7 +68,7 @@ namespace Phorkus.Proto {
       data_ = other.data_;
       transactionHash_ = other.transactionHash_ != null ? other.transactionHash_.Clone() : null;
       index_ = other.index_;
-      blockHash_ = other.blockHash_ != null ? other.blockHash_.Clone() : null;
+      signatureHash_ = other.signatureHash_ != null ? other.signatureHash_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -121,14 +121,14 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "block_hash" field.</summary>
-    public const int BlockHashFieldNumber = 5;
-    private global::Phorkus.Proto.UInt256 blockHash_;
+    /// <summary>Field number for the "signature_hash" field.</summary>
+    public const int SignatureHashFieldNumber = 5;
+    private global::Phorkus.Proto.UInt256 signatureHash_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.UInt256 BlockHash {
-      get { return blockHash_; }
+    public global::Phorkus.Proto.UInt256 SignatureHash {
+      get { return signatureHash_; }
       set {
-        blockHash_ = value;
+        signatureHash_ = value;
       }
     }
 
@@ -149,7 +149,7 @@ namespace Phorkus.Proto {
       if (Data != other.Data) return false;
       if (!object.Equals(TransactionHash, other.TransactionHash)) return false;
       if (Index != other.Index) return false;
-      if (!object.Equals(BlockHash, other.BlockHash)) return false;
+      if (!object.Equals(SignatureHash, other.SignatureHash)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -160,7 +160,7 @@ namespace Phorkus.Proto {
       if (Data.Length != 0) hash ^= Data.GetHashCode();
       if (transactionHash_ != null) hash ^= TransactionHash.GetHashCode();
       if (Index != 0) hash ^= Index.GetHashCode();
-      if (blockHash_ != null) hash ^= BlockHash.GetHashCode();
+      if (signatureHash_ != null) hash ^= SignatureHash.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -190,9 +190,9 @@ namespace Phorkus.Proto {
         output.WriteRawTag(32);
         output.WriteUInt32(Index);
       }
-      if (blockHash_ != null) {
+      if (signatureHash_ != null) {
         output.WriteRawTag(42);
-        output.WriteMessage(BlockHash);
+        output.WriteMessage(SignatureHash);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -214,8 +214,8 @@ namespace Phorkus.Proto {
       if (Index != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Index);
       }
-      if (blockHash_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BlockHash);
+      if (signatureHash_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(SignatureHash);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -246,11 +246,11 @@ namespace Phorkus.Proto {
       if (other.Index != 0) {
         Index = other.Index;
       }
-      if (other.blockHash_ != null) {
-        if (blockHash_ == null) {
-          blockHash_ = new global::Phorkus.Proto.UInt256();
+      if (other.signatureHash_ != null) {
+        if (signatureHash_ == null) {
+          signatureHash_ = new global::Phorkus.Proto.UInt256();
         }
-        BlockHash.MergeFrom(other.BlockHash);
+        SignatureHash.MergeFrom(other.SignatureHash);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -286,10 +286,10 @@ namespace Phorkus.Proto {
             break;
           }
           case 42: {
-            if (blockHash_ == null) {
-              blockHash_ = new global::Phorkus.Proto.UInt256();
+            if (signatureHash_ == null) {
+              signatureHash_ = new global::Phorkus.Proto.UInt256();
             }
-            input.ReadMessage(blockHash_);
+            input.ReadMessage(signatureHash_);
             break;
           }
         }

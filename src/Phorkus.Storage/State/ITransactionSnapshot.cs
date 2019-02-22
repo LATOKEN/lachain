@@ -8,6 +8,6 @@ namespace Phorkus.Storage.State
         
         TransactionReceipt GetTransactionByHash(UInt256 transactionHash);
         
-        void AddTransaction(TransactionReceipt transactionReceipt, TransactionStatus transactionStatus);
+        void AddTransaction(TransactionReceipt receipt, TransactionStatus status);
     }
 }

@@ -26,7 +26,9 @@ namespace Phorkus.Storage.State
         {
             var total = GetTotalTransactionEvents(@event.TransactionHash);
             @event.Index = total;
-            var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash, @event.Index);
+            _state.AddOrUpdate(EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash),
+                BitConverter.GetBytes(total + 1));
+            var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash, total);
             _state.AddOrUpdate(prefix, @event.ToByteArray());
         }
 

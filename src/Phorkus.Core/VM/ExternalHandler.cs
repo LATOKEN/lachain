@@ -349,7 +349,7 @@ namespace Phorkus.Core.VM
                 Data = ByteString.CopyFrom(value),
                 TransactionHash = frame.Context.TransactionHash,
                 Index = 0,
-                BlockHash = frame.Context.BlockHash
+                SignatureHash = UInt256Utils.Zero
             };
             VirtualMachine.BlockchainSnapshot.Events.AddEvent(ev);
         }

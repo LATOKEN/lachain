@@ -81,7 +81,6 @@ namespace Phorkus.Core.RPC.HTTP
             return jArray;
         }
         
-        
         [JsonRpcMethod("getTransactionPool")]
         private JArray GetTransactionPool()
         {
