@@ -11,7 +11,7 @@ namespace Phorkus.Core.JSON
             var json = new JObject
             {
                 ["type"] = transaction.Type.ToString(),
-                ["to"] = transaction.To.ToString(),
+                ["to"] = transaction.To?.ToHex(),
                 ["invocation"] = transaction.Invocation?.ToHex(),
                 ["value"] = transaction.Value.Buffer.ToHex(),
                 ["from"] = transaction.From.Buffer?.ToHex(),
