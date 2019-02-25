@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using Phorkus.Core.VM;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain
 {
@@ -34,23 +36,42 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode)
+        public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[] input)
         {
             var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var tx = new Transaction
             {
                 Type = TransactionType.Deploy,
-                Invocation = ByteString.CopyFrom(),
+                Invocation = ByteString.CopyFrom(input ?? new byte[0]),
                 Deploy = ByteString.CopyFrom(byteCode.ToArray()),
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
-                GasLimit = 200_000,
+                GasLimit = 200_000_000,
                 Nonce = nonce
             };
             return tx;
         }
-        
+
+        public Transaction TokenTransferTransaction(UInt160 contract, UInt160 from, UInt160 to, Money value)
+        {
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
+            var abi = ContractEncoder.Encode("transfer(address,uint256)", to, value);
+            var tx = new Transaction
+            {
+                Type = TransactionType.Transfer,
+                To = contract,
+                Invocation = ByteString.CopyFrom(abi),
+                From = from,
+                GasPrice = _CalcEstimatedBlockFee(),
+                /* TODO: "calculate gas limit for input size" */
+                GasLimit = 200_000_000_000,
+                Nonce = nonce,
+                Value = UInt256Utils.Zero
+            };
+            return tx;
+        }
+
         private ulong _CalcEstimatedBlockFee()
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(

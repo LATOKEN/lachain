@@ -191,7 +191,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                         snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
                         _stateManager.Approve();
                     }
-
+                    
                     _logger.LogWarning(
                         $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;

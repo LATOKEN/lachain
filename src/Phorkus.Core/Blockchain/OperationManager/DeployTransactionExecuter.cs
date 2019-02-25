@@ -54,6 +54,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         private OperatingError _InvokeConstructor(Contract contract, TransactionReceipt receipt, Block block)
         {
+            if (receipt.Transaction.Invocation.IsEmpty)
+                return OperatingError.Ok;
             var input = receipt.Transaction.Invocation.ToByteArray();
             if (!_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
@@ -86,7 +88,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.InvalidTransaction;
             if (transaction.Deploy is null || transaction.Deploy.IsEmpty)
                 return OperatingError.InvalidTransaction;
-            if (transaction.Invocation is null || transaction.Invocation.IsEmpty)
+            if (transaction.Invocation is null)
                 return OperatingError.InvalidTransaction;
             var result = _VerifyContract(transaction);
             return result;
