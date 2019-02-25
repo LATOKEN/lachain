@@ -12,7 +12,7 @@
         PrevBlockHashMismatched,
         InvalidBlock,
         QuorumNotReached,
-        InvalidState,
+        InvalidStateHash,
         TransactionLost,
         InvalidMultisig,
         BlockAlreadyExists,

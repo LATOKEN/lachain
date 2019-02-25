@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Utils;
@@ -75,7 +76,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     out var gasUsed,
                     out _);
                 if (error != OperatingError.Ok)
-                    throw new InvalidOperationException($"Cannot assemble block: error {error}");
+                    throw new InvalidOperationException($"Cannot assemble block, {error}");
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 _logger.LogDebug(
                     $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
@@ -103,7 +104,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
                 {
                     _stateManager.RollbackTo(snapshotBefore);
-                    return OperatingError.InvalidState;
+                    return OperatingError.InvalidStateHash;
                 }
 
                 /* flush changes to database */
@@ -138,7 +139,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             /* verify next block */
             var error = Verify(block);
             if (error != OperatingError.Ok)
-                return error;
+                return error;            
 
             /* check next block index */
             var currentBlockHeader = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
@@ -147,12 +148,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var exists = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
             if (exists != null)
                 return OperatingError.BlockAlreadyExists;
-
+            
             /* check prev block hash */
             var latestBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentBlockHeader);
             if (latestBlock != null && !block.Header.PrevBlockHash.Equals(latestBlock.Hash))
                 return OperatingError.PrevBlockHashMismatched;
-
+            
             /* verify block signatures */
             error = VerifySignatures(block);
             if (error != OperatingError.Ok)
