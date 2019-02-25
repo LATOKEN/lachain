@@ -11,6 +11,11 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
             _privateKey = privateKey;
         }
 
+        public PublicKeyShare GetPublicKeyShare()
+        {
+            return new PublicKeyShare(G1.Generator * _privateKey);
+        }
+
         public SignatureShare HashAndSign(byte[] message)
         {
             var mappedMessage = new G2();

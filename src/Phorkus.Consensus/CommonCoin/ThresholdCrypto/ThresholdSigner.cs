@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
 {
-    internal class ThresholdSigner : IThresholdSigner
+    public class ThresholdSigner : IThresholdSigner
     {
         private readonly byte[] _dataToSign;
         private readonly PrivateKeyShare _privateKeyShare;

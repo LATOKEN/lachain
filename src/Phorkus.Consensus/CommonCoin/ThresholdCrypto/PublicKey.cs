@@ -4,18 +4,18 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
 {
     public class PublicKey
     {
-        private readonly G1 _pubKey;
+        public G1 RawKey { get; }
 
         public PublicKey(G1 pubKey)
         {
-            _pubKey = pubKey;
+            RawKey = pubKey;
         }
 
         public bool ValidateSignature(Signature signature, byte[] message)
         {
             var mappedMessage = new G2();
             mappedMessage.SetHashOf(message);
-            return Mcl.Pairing(_pubKey, mappedMessage).Equals(Mcl.Pairing(G1.Generator, signature.RawSignature));
+            return Mcl.Pairing(RawKey, mappedMessage).Equals(Mcl.Pairing(G1.Generator, signature.RawSignature));
         }
     }
 }

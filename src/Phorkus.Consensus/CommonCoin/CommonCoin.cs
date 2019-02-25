@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Phorkus.Consensus.CommonCoin.ThresholdCrypto;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Proto;
@@ -20,7 +21,7 @@ namespace Phorkus.Consensus.CommonCoin
             _thresholdSigner = new ThresholdSigner(
                 _coinId.ToByteArray(), 
                 new PrivateKeyShare(Fr.FromInt(0)), // TODO: pass keys
-                new PublicKeySet()
+                new PublicKeySet(Enumerable.Empty<PublicKeyShare>(), 0)
             );
 
             dispatcher.RegistgerAlgorithm(this, coinId);
