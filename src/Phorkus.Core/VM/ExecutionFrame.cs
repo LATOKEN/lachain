@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Phorkus.Proto;
@@ -42,7 +43,7 @@ namespace Phorkus.Core.VM
             ulong gasLimit)
         {
             frame = new ExecutionFrame(
-                _CompileWasm<JitEntryPoint>(code, blockchainInterface.GetFunctionImports()),
+                _CompileWasm(contract, code, blockchainInterface.GetFunctionImports()),
                 context, contract, input, gasLimit
             );
             return ExecutionStatus.Ok;
@@ -58,7 +59,7 @@ namespace Phorkus.Core.VM
             ulong gasLimit)
         {
             frame = new ExecutionFrame(
-                _CompileWasm<JitEntryPoint>(code, blockchainInterface.GetFunctionImports()),
+                _CompileWasm(currentAddress, code, blockchainInterface.GetFunctionImports()),
                 context, currentAddress, input, gasLimit
             );
             return ExecutionStatus.Ok;
@@ -128,12 +129,20 @@ namespace Phorkus.Core.VM
         {
             InvocationContext?.Dispose();
         }
-
-        private static Instance<T> _CompileWasm<T>(byte[] buffer, IEnumerable<RuntimeImport> imports = null)
-            where T : class
+        
+        private static readonly ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>> ByteCodeCache
+            = new ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>>();
+        
+        private static Instance<JitEntryPoint> _CompileWasm(UInt160 contract, byte[] buffer, IEnumerable<RuntimeImport> imports = null)
         {
+            if (ByteCodeCache.TryGetValue(contract, out var instance))
+                return instance();
             using (var stream = new MemoryStream(buffer, 0, buffer.Length, false))
-                return Compile.FromBinary<T>(stream, imports)();
+            {
+                var func = Compile.FromBinary<JitEntryPoint>(stream, imports);
+                ByteCodeCache.TryAdd(contract, func);
+                return func();
+            }
         }
     }
 }
