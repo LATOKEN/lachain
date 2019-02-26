@@ -16,11 +16,15 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
             // TODO: ctor
             _keys = pubKeyShares.ToArray();
             _keyIndex = _keys.Select((share, i) => (share, i)).ToDictionary(t => t.Item1, t => t.Item2);
-            SharedPublicKey =
-                new PublicKey(
-                    _keys.Aggregate((res, keyShare) => new PublicKeyShare(res.RawKey + keyShare.RawKey)).RawKey
-                );
+            SharedPublicKey = new PublicKey(AssemblePublicKey(_keys.Select(share => share.RawKey), _keys.Length));
             Threshold = faulty;
+        }
+
+        private static G1 AssemblePublicKey(IEnumerable<G1> shares, int n)
+        {
+            var xs = Enumerable.Range(1, n).Select(Fr.FromInt).ToArray();
+            var ys = shares.ToArray();
+            return Mcl.LagrangeInterpolateG1(xs, ys);
         }
 
         public int Count => _keyIndex.Count;
@@ -41,7 +45,7 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
             var ys = keyValuePairs.Take(Threshold + 1).Select(pair => pair.Value.RawSignature).ToArray();
             if (xs.Length <= Threshold || ys.Length <= Threshold)
                 throw new ArgumentException("not enough shares for signature");
-            return new Signature(Mcl.LagrangeInterpolate(xs, ys));
+            return new Signature(Mcl.LagrangeInterpolateG2(xs, ys));
         }
     }
 }

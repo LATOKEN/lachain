@@ -205,5 +205,15 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             G2[] yVec,
             long k
         );
+        
+        [DllImport(Libmcl)]
+        internal static extern void mclBn_G1LagrangeInterpolation(
+            ref G1 res,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            Fr[] xVec,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            G1[] yVec,
+            long k
+        );
     }
 }

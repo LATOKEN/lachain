@@ -1,27 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phorkus.Consensus.CommonCoin
 {
     public class CoinId : IProtocolIdentifier
     {
-        public CoinId(uint epoch, uint agreementId, uint tossId)
+        public CoinId(uint era, uint agreement, uint epoch)
         {
+            Era = era;
+            Agreement = agreement;
             Epoch = epoch;
-            AgreementId = agreementId;
-            TossId = tossId;
         }
 
+        public uint Era { get; }
+        public uint Agreement { get; }
         public uint Epoch { get; }
-        public uint AgreementId { get; }
-        public uint TossId { get; }
 
-        public byte[] ToByteArray()
+        public IEnumerable<byte> ToByteArray()
         {
-            return BitConverter.GetBytes(Epoch)
-                .Concat(BitConverter.GetBytes(AgreementId))
-                .Concat(BitConverter.GetBytes(TossId))
-                .ToArray();
+            return BitConverter.GetBytes(Era)
+                .Concat(BitConverter.GetBytes(Agreement))
+                .Concat(BitConverter.GetBytes(Epoch));
         }
     }
 }

@@ -24,20 +24,24 @@ namespace Phorkus.Proto {
     static ConsensusReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg9jb25zZW5zdXMucHJvdG8aDWRlZmF1bHQucHJvdG8iYQoJVmFsaWRhdG9y",
+            "Cg9jb25zZW5zdXMucHJvdG8aDWRlZmF1bHQucHJvdG8iXwoJVmFsaWRhdG9y",
             "Eg8KB3ZlcnNpb24YASABKA0SGwoJcHJldl9oYXNoGAIgASgLMgguVUludDI1",
-            "NhIXCg92YWxpZGF0b3JfaW5kZXgYAyABKA0SDQoFZXBvY2gYBCABKA0iQgoP",
-            "QmluYXJ5QnJvYWRjYXN0Eg0KBXZhbHVlGAEgASgIEhEKCWFncmVlbWVudBgC",
-            "IAEoDRINCgVyb3VuZBgDIAEoDSJqChBDb25zZW5zdXNNZXNzYWdlEh0KCXZh",
-            "bGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchIsChBiaW5hcnlfYnJvYWRjYXN0",
-            "GAIgASgLMhAuQmluYXJ5QnJvYWRjYXN0SABCCQoHcGF5bG9hZEIjChFjb20u",
-            "bGF0b2tlbi5wcm90b6oCDVBob3JrdXMuUHJvdG9iBnByb3RvMw=="));
+            "NhIXCg92YWxpZGF0b3JfaW5kZXgYAyABKA0SCwoDZXJhGAQgASgNIkkKFkJp",
+            "bmFyeUJyb2FkY2FzdFBheWxvYWQSDQoFdmFsdWUYASABKAgSEQoJYWdyZWVt",
+            "ZW50GAIgASgNEg0KBWVwb2NoGAMgASgNIk4KEUNvbW1vbkNvaW5QYXlsb2Fk",
+            "EhcKD3NpZ25hdHVyZV9zaGFyZRgBIAEoDBIRCglhZ3JlZW1lbnQYAiABKA0S",
+            "DQoFZXBvY2gYAyABKA0inAEKEENvbnNlbnN1c01lc3NhZ2USHQoJdmFsaWRh",
+            "dG9yGAEgASgLMgouVmFsaWRhdG9yEjMKEGJpbmFyeV9icm9hZGNhc3QYAiAB",
+            "KAsyFy5CaW5hcnlCcm9hZGNhc3RQYXlsb2FkSAASKQoLY29tbW9uX2NvaW4Y",
+            "AyABKAsyEi5Db21tb25Db2luUGF5bG9hZEgAQgkKB3BheWxvYWRCIwoRY29t",
+            "LmxhdG9rZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Validator), global::Phorkus.Proto.Validator.Parser, new[]{ "Version", "PrevHash", "ValidatorIndex", "Epoch" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BinaryBroadcast), global::Phorkus.Proto.BinaryBroadcast.Parser, new[]{ "Value", "Agreement", "Round" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Validator", "BinaryBroadcast" }, new[]{ "Payload" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.Validator), global::Phorkus.Proto.Validator.Parser, new[]{ "Version", "PrevHash", "ValidatorIndex", "Era" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.BinaryBroadcastPayload), global::Phorkus.Proto.BinaryBroadcastPayload.Parser, new[]{ "Value", "Agreement", "Epoch" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.CommonCoinPayload), global::Phorkus.Proto.CommonCoinPayload.Parser, new[]{ "SignatureShare", "Agreement", "Epoch" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Validator", "BinaryBroadcast", "CommonCoin" }, new[]{ "Payload" }, null, null)
           }));
     }
     #endregion
@@ -72,7 +76,7 @@ namespace Phorkus.Proto {
       version_ = other.version_;
       prevHash_ = other.prevHash_ != null ? other.prevHash_.Clone() : null;
       validatorIndex_ = other.validatorIndex_;
-      epoch_ = other.epoch_;
+      era_ = other.era_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -114,14 +118,14 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "epoch" field.</summary>
-    public const int EpochFieldNumber = 4;
-    private uint epoch_;
+    /// <summary>Field number for the "era" field.</summary>
+    public const int EraFieldNumber = 4;
+    private uint era_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Epoch {
-      get { return epoch_; }
+    public uint Era {
+      get { return era_; }
       set {
-        epoch_ = value;
+        era_ = value;
       }
     }
 
@@ -141,7 +145,7 @@ namespace Phorkus.Proto {
       if (Version != other.Version) return false;
       if (!object.Equals(PrevHash, other.PrevHash)) return false;
       if (ValidatorIndex != other.ValidatorIndex) return false;
-      if (Epoch != other.Epoch) return false;
+      if (Era != other.Era) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -151,7 +155,7 @@ namespace Phorkus.Proto {
       if (Version != 0) hash ^= Version.GetHashCode();
       if (prevHash_ != null) hash ^= PrevHash.GetHashCode();
       if (ValidatorIndex != 0) hash ^= ValidatorIndex.GetHashCode();
-      if (Epoch != 0) hash ^= Epoch.GetHashCode();
+      if (Era != 0) hash ^= Era.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -177,9 +181,9 @@ namespace Phorkus.Proto {
         output.WriteRawTag(24);
         output.WriteUInt32(ValidatorIndex);
       }
-      if (Epoch != 0) {
+      if (Era != 0) {
         output.WriteRawTag(32);
-        output.WriteUInt32(Epoch);
+        output.WriteUInt32(Era);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -198,8 +202,8 @@ namespace Phorkus.Proto {
       if (ValidatorIndex != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(ValidatorIndex);
       }
-      if (Epoch != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Epoch);
+      if (Era != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Era);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -224,8 +228,8 @@ namespace Phorkus.Proto {
       if (other.ValidatorIndex != 0) {
         ValidatorIndex = other.ValidatorIndex;
       }
-      if (other.Epoch != 0) {
-        Epoch = other.Epoch;
+      if (other.Era != 0) {
+        Era = other.Era;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -254,7 +258,7 @@ namespace Phorkus.Proto {
             break;
           }
           case 32: {
-            Epoch = input.ReadUInt32();
+            Era = input.ReadUInt32();
             break;
           }
         }
@@ -263,11 +267,11 @@ namespace Phorkus.Proto {
 
   }
 
-  public sealed partial class BinaryBroadcast : pb::IMessage<BinaryBroadcast> {
-    private static readonly pb::MessageParser<BinaryBroadcast> _parser = new pb::MessageParser<BinaryBroadcast>(() => new BinaryBroadcast());
+  public sealed partial class BinaryBroadcastPayload : pb::IMessage<BinaryBroadcastPayload> {
+    private static readonly pb::MessageParser<BinaryBroadcastPayload> _parser = new pb::MessageParser<BinaryBroadcastPayload>(() => new BinaryBroadcastPayload());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<BinaryBroadcast> Parser { get { return _parser; } }
+    public static pb::MessageParser<BinaryBroadcastPayload> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -280,23 +284,23 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BinaryBroadcast() {
+    public BinaryBroadcastPayload() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BinaryBroadcast(BinaryBroadcast other) : this() {
+    public BinaryBroadcastPayload(BinaryBroadcastPayload other) : this() {
       value_ = other.value_;
       agreement_ = other.agreement_;
-      round_ = other.round_;
+      epoch_ = other.epoch_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public BinaryBroadcast Clone() {
-      return new BinaryBroadcast(this);
+    public BinaryBroadcastPayload Clone() {
+      return new BinaryBroadcastPayload(this);
     }
 
     /// <summary>Field number for the "value" field.</summary>
@@ -321,24 +325,24 @@ namespace Phorkus.Proto {
       }
     }
 
-    /// <summary>Field number for the "round" field.</summary>
-    public const int RoundFieldNumber = 3;
-    private uint round_;
+    /// <summary>Field number for the "epoch" field.</summary>
+    public const int EpochFieldNumber = 3;
+    private uint epoch_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Round {
-      get { return round_; }
+    public uint Epoch {
+      get { return epoch_; }
       set {
-        round_ = value;
+        epoch_ = value;
       }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as BinaryBroadcast);
+      return Equals(other as BinaryBroadcastPayload);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(BinaryBroadcast other) {
+    public bool Equals(BinaryBroadcastPayload other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -347,7 +351,7 @@ namespace Phorkus.Proto {
       }
       if (Value != other.Value) return false;
       if (Agreement != other.Agreement) return false;
-      if (Round != other.Round) return false;
+      if (Epoch != other.Epoch) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -356,7 +360,7 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (Value != false) hash ^= Value.GetHashCode();
       if (Agreement != 0) hash ^= Agreement.GetHashCode();
-      if (Round != 0) hash ^= Round.GetHashCode();
+      if (Epoch != 0) hash ^= Epoch.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -378,9 +382,9 @@ namespace Phorkus.Proto {
         output.WriteRawTag(16);
         output.WriteUInt32(Agreement);
       }
-      if (Round != 0) {
+      if (Epoch != 0) {
         output.WriteRawTag(24);
-        output.WriteUInt32(Round);
+        output.WriteUInt32(Epoch);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -396,8 +400,8 @@ namespace Phorkus.Proto {
       if (Agreement != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Agreement);
       }
-      if (Round != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Round);
+      if (Epoch != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Epoch);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -406,7 +410,7 @@ namespace Phorkus.Proto {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(BinaryBroadcast other) {
+    public void MergeFrom(BinaryBroadcastPayload other) {
       if (other == null) {
         return;
       }
@@ -416,8 +420,8 @@ namespace Phorkus.Proto {
       if (other.Agreement != 0) {
         Agreement = other.Agreement;
       }
-      if (other.Round != 0) {
-        Round = other.Round;
+      if (other.Epoch != 0) {
+        Epoch = other.Epoch;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -439,7 +443,192 @@ namespace Phorkus.Proto {
             break;
           }
           case 24: {
-            Round = input.ReadUInt32();
+            Epoch = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class CommonCoinPayload : pb::IMessage<CommonCoinPayload> {
+    private static readonly pb::MessageParser<CommonCoinPayload> _parser = new pb::MessageParser<CommonCoinPayload>(() => new CommonCoinPayload());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<CommonCoinPayload> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CommonCoinPayload() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CommonCoinPayload(CommonCoinPayload other) : this() {
+      signatureShare_ = other.signatureShare_;
+      agreement_ = other.agreement_;
+      epoch_ = other.epoch_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public CommonCoinPayload Clone() {
+      return new CommonCoinPayload(this);
+    }
+
+    /// <summary>Field number for the "signature_share" field.</summary>
+    public const int SignatureShareFieldNumber = 1;
+    private pb::ByteString signatureShare_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pb::ByteString SignatureShare {
+      get { return signatureShare_; }
+      set {
+        signatureShare_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "agreement" field.</summary>
+    public const int AgreementFieldNumber = 2;
+    private uint agreement_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public uint Agreement {
+      get { return agreement_; }
+      set {
+        agreement_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "epoch" field.</summary>
+    public const int EpochFieldNumber = 3;
+    private uint epoch_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public uint Epoch {
+      get { return epoch_; }
+      set {
+        epoch_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as CommonCoinPayload);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(CommonCoinPayload other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SignatureShare != other.SignatureShare) return false;
+      if (Agreement != other.Agreement) return false;
+      if (Epoch != other.Epoch) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SignatureShare.Length != 0) hash ^= SignatureShare.GetHashCode();
+      if (Agreement != 0) hash ^= Agreement.GetHashCode();
+      if (Epoch != 0) hash ^= Epoch.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (SignatureShare.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteBytes(SignatureShare);
+      }
+      if (Agreement != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Agreement);
+      }
+      if (Epoch != 0) {
+        output.WriteRawTag(24);
+        output.WriteUInt32(Epoch);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (SignatureShare.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(SignatureShare);
+      }
+      if (Agreement != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Agreement);
+      }
+      if (Epoch != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Epoch);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(CommonCoinPayload other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SignatureShare.Length != 0) {
+        SignatureShare = other.SignatureShare;
+      }
+      if (other.Agreement != 0) {
+        Agreement = other.Agreement;
+      }
+      if (other.Epoch != 0) {
+        Epoch = other.Epoch;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            SignatureShare = input.ReadBytes();
+            break;
+          }
+          case 16: {
+            Agreement = input.ReadUInt32();
+            break;
+          }
+          case 24: {
+            Epoch = input.ReadUInt32();
             break;
           }
         }
@@ -456,7 +645,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -477,6 +666,9 @@ namespace Phorkus.Proto {
       switch (other.PayloadCase) {
         case PayloadOneofCase.BinaryBroadcast:
           BinaryBroadcast = other.BinaryBroadcast.Clone();
+          break;
+        case PayloadOneofCase.CommonCoin:
+          CommonCoin = other.CommonCoin.Clone();
           break;
       }
 
@@ -502,11 +694,22 @@ namespace Phorkus.Proto {
     /// <summary>Field number for the "binary_broadcast" field.</summary>
     public const int BinaryBroadcastFieldNumber = 2;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Phorkus.Proto.BinaryBroadcast BinaryBroadcast {
-      get { return payloadCase_ == PayloadOneofCase.BinaryBroadcast ? (global::Phorkus.Proto.BinaryBroadcast) payload_ : null; }
+    public global::Phorkus.Proto.BinaryBroadcastPayload BinaryBroadcast {
+      get { return payloadCase_ == PayloadOneofCase.BinaryBroadcast ? (global::Phorkus.Proto.BinaryBroadcastPayload) payload_ : null; }
       set {
         payload_ = value;
         payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.BinaryBroadcast;
+      }
+    }
+
+    /// <summary>Field number for the "common_coin" field.</summary>
+    public const int CommonCoinFieldNumber = 3;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.CommonCoinPayload CommonCoin {
+      get { return payloadCase_ == PayloadOneofCase.CommonCoin ? (global::Phorkus.Proto.CommonCoinPayload) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.CommonCoin;
       }
     }
 
@@ -515,6 +718,7 @@ namespace Phorkus.Proto {
     public enum PayloadOneofCase {
       None = 0,
       BinaryBroadcast = 2,
+      CommonCoin = 3,
     }
     private PayloadOneofCase payloadCase_ = PayloadOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -543,6 +747,7 @@ namespace Phorkus.Proto {
       }
       if (!object.Equals(Validator, other.Validator)) return false;
       if (!object.Equals(BinaryBroadcast, other.BinaryBroadcast)) return false;
+      if (!object.Equals(CommonCoin, other.CommonCoin)) return false;
       if (PayloadCase != other.PayloadCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -552,6 +757,7 @@ namespace Phorkus.Proto {
       int hash = 1;
       if (validator_ != null) hash ^= Validator.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.BinaryBroadcast) hash ^= BinaryBroadcast.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.CommonCoin) hash ^= CommonCoin.GetHashCode();
       hash ^= (int) payloadCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -574,6 +780,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(18);
         output.WriteMessage(BinaryBroadcast);
       }
+      if (payloadCase_ == PayloadOneofCase.CommonCoin) {
+        output.WriteRawTag(26);
+        output.WriteMessage(CommonCoin);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -587,6 +797,9 @@ namespace Phorkus.Proto {
       }
       if (payloadCase_ == PayloadOneofCase.BinaryBroadcast) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(BinaryBroadcast);
+      }
+      if (payloadCase_ == PayloadOneofCase.CommonCoin) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(CommonCoin);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -608,9 +821,15 @@ namespace Phorkus.Proto {
       switch (other.PayloadCase) {
         case PayloadOneofCase.BinaryBroadcast:
           if (BinaryBroadcast == null) {
-            BinaryBroadcast = new global::Phorkus.Proto.BinaryBroadcast();
+            BinaryBroadcast = new global::Phorkus.Proto.BinaryBroadcastPayload();
           }
           BinaryBroadcast.MergeFrom(other.BinaryBroadcast);
+          break;
+        case PayloadOneofCase.CommonCoin:
+          if (CommonCoin == null) {
+            CommonCoin = new global::Phorkus.Proto.CommonCoinPayload();
+          }
+          CommonCoin.MergeFrom(other.CommonCoin);
           break;
       }
 
@@ -633,12 +852,21 @@ namespace Phorkus.Proto {
             break;
           }
           case 18: {
-            global::Phorkus.Proto.BinaryBroadcast subBuilder = new global::Phorkus.Proto.BinaryBroadcast();
+            global::Phorkus.Proto.BinaryBroadcastPayload subBuilder = new global::Phorkus.Proto.BinaryBroadcastPayload();
             if (payloadCase_ == PayloadOneofCase.BinaryBroadcast) {
               subBuilder.MergeFrom(BinaryBroadcast);
             }
             input.ReadMessage(subBuilder);
             BinaryBroadcast = subBuilder;
+            break;
+          }
+          case 26: {
+            global::Phorkus.Proto.CommonCoinPayload subBuilder = new global::Phorkus.Proto.CommonCoinPayload();
+            if (payloadCase_ == PayloadOneofCase.CommonCoin) {
+              subBuilder.MergeFrom(CommonCoin);
+            }
+            input.ReadMessage(subBuilder);
+            CommonCoin = subBuilder;
             break;
           }
         }

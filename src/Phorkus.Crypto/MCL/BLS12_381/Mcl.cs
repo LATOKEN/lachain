@@ -20,11 +20,19 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             _initCalled = true;
         }
 
-        public static G2 LagrangeInterpolate(Fr[] xs, G2[] ys)
+        public static G2 LagrangeInterpolateG2(Fr[] xs, G2[] ys)
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
             var res = new G2();
             MclImports.mclBn_G2LagrangeInterpolation(ref res, xs, ys, xs.Length);
+            return res;
+        }
+        
+        public static G1 LagrangeInterpolateG1(Fr[] xs, G1[] ys)
+        {
+            if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
+            var res = new G1();
+            MclImports.mclBn_G1LagrangeInterpolation(ref res, xs, ys, xs.Length);
             return res;
         }
 

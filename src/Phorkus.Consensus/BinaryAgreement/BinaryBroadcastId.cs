@@ -1,27 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phorkus.Consensus.BinaryAgreement
 {
     public class BinaryBroadcastId : IProtocolIdentifier
     {
-        public BinaryBroadcastId(uint epoch, uint agreement, uint round)
+        public BinaryBroadcastId(uint era, uint agreement, uint epoch)
         {
-            Epoch = epoch;
+            Era = era;
             Agreement = agreement;
-            Round = round;
+            Epoch = epoch;
         }
 
-        public uint Epoch { get; }
+        public uint Era { get; }
         public uint Agreement { get; }
-        public uint Round { get; }
-        
-        public byte[] ToByteArray()
+        public uint Epoch { get; }
+
+        public IEnumerable<byte> ToByteArray()
         {
-            return BitConverter.GetBytes(Epoch)
+            return BitConverter.GetBytes(Era)
                 .Concat(BitConverter.GetBytes(Agreement))
-                .Concat(BitConverter.GetBytes(Round))
-                .ToArray();
+                .Concat(BitConverter.GetBytes(Epoch));
         }
     }
 }

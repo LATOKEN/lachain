@@ -14,13 +14,20 @@ namespace Phorkus.Crypto.MCL.BLS12_381
         {
             // Some fixed generator can be obtained via hashing any message
             // (all non trivial elements are generators since group has prime order)
-            Mcl.Init();
             var res = new G2();
             res.SetHashOf(new byte[] {0xfe, 0xed, 0xfa, 0xce});
             return res;
         }
+        
+        public static G2 GetZero()
+        {
+            var res = new G2();
+            res.Clear();
+            return res;
+        }
 
         public static G2 Generator = GetGenerator();
+        public static G2 Zero = GetZero();
 
         public void Clear()
         {

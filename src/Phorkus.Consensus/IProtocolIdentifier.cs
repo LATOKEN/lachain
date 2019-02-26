@@ -1,8 +1,10 @@
-﻿namespace Phorkus.Consensus
+﻿using System.Collections.Generic;
+
+namespace Phorkus.Consensus
 {
     public interface IProtocolIdentifier
     {
-        uint Epoch { get; }
-        byte[] ToByteArray();
+        uint Era { get; }
+        IEnumerable<byte> ToByteArray();
     }
 }

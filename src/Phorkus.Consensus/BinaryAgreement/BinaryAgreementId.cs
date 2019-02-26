@@ -1,22 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phorkus.Consensus.BinaryAgreement
 {
     public class BinaryAgreementId : IProtocolIdentifier
     {
-        public BinaryAgreementId(uint epoch, uint agreementId)
+        public BinaryAgreementId(uint era, uint agreement)
         {
-            Epoch = epoch;
-            AgreementId = agreementId;
+            Era = era;
+            Agreement = agreement;
         }
 
-        public uint Epoch { get; }
-        public uint AgreementId { get; }
+        public uint Era { get; }
+        public uint Agreement { get; }
         
-        public byte[] ToByteArray()
+        public IEnumerable<byte> ToByteArray()
         {
-            return BitConverter.GetBytes(Epoch).Concat(BitConverter.GetBytes(AgreementId)).ToArray();
+            return BitConverter.GetBytes(Era).Concat(BitConverter.GetBytes(Agreement));
         }
     }
 }
