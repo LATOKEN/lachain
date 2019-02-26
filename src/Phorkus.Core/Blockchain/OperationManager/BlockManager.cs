@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Utils;
+using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
@@ -57,9 +58,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
-
-        public const ulong BlockGasLimit = 1_000_000_000_000;
-
+        
         public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block,
             IEnumerable<TransactionReceipt> transactions)
         {
@@ -174,12 +173,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 /* try to find transaction by hash */
                 var transaction = currentTransactions[txHash];
-                transaction.GasUsed = 3_000_000;
+                transaction.GasUsed = GasMetering.DefaultTxTransferGasCost;
                 var snapshot = _stateManager.NewSnapshot();
 
                 /* try to execute transaction */
                 var result = _transactionManager.Execute(block, transaction, snapshot);
-                if (transaction.GasUsed > BlockGasLimit)
+                if (transaction.GasUsed > GasMetering.DefaultBlockGasLimit)
                     result = OperatingError.GasLimitGreaterBlockLimit;
                 if (result != OperatingError.Ok)
                 {
@@ -199,7 +198,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
                 /* check block gas limit after execution */
                 gasUsed += transaction.GasUsed;
-                if (gasUsed > BlockGasLimit)
+                if (gasUsed > GasMetering.DefaultBlockGasLimit)
                 {
                     removeTransactions.Add(transaction);
                     relayTransactions.Add(transaction);
@@ -208,7 +207,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     if (writeFailed)
                         throw new InvalidBlockException(OperatingError.BlockGasOverflow);
                     _logger.LogWarning(
-                        $"Unable to take transaction {txHash.Buffer.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{BlockGasLimit}");
+                        $"Unable to take transaction {txHash.Buffer.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
                     continue;
                 }
 

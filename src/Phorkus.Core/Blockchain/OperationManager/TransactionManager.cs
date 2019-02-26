@@ -118,7 +118,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (result != OperatingError.Ok)
                 return result;
             var transaction = acceptedTransaction.Transaction;
-            if (transaction.GasLimit < 3_000_000)
+            if (transaction.GasLimit < GasMetering.DefaultTxTransferGasCost)
                 return OperatingError.InvalidGasLimit;
             /* verify transaction via persister */
             var persister = _transactionPersisters[transaction.Type];

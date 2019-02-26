@@ -86,13 +86,13 @@ namespace Phorkus.Core.VM
         public ulong GasLimit { get; }
         public ulong GasUsed { get; private set; }
 
-        internal void UseGas(uint gas)
+        internal void UseGas(ulong gas)
         {
             var gasLimitField = Exports.GetField("💩 GasLimit");
             var currentGas = (ulong) gasLimitField.GetValue(null);
             checked
             {
-                currentGas -= gas;
+                currentGas -= (ulong) gas;
             }
             gasLimitField.SetValue(null, currentGas);
         }

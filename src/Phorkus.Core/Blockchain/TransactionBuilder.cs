@@ -28,7 +28,7 @@ namespace Phorkus.Core.Blockchain
                 Value = value.ToUInt256(),
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
-                GasLimit = 3_000_000,
+                GasLimit = GasMetering.DefaultBlockGasLimit,
                 Nonce = nonce
             };
             if (input != null)
@@ -47,7 +47,7 @@ namespace Phorkus.Core.Blockchain
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
-                GasLimit = 200_000_000,
+                GasLimit = GasMetering.DefaultBlockGasLimit,
                 Nonce = nonce
             };
             return tx;
@@ -65,7 +65,7 @@ namespace Phorkus.Core.Blockchain
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
-                GasLimit = 200_000_000_000,
+                GasLimit = GasMetering.DefaultBlockGasLimit,
                 Nonce = nonce,
                 Value = UInt256Utils.Zero
             };

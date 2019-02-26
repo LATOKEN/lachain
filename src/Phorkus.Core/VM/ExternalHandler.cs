@@ -18,21 +18,6 @@ namespace Phorkus.Core.VM
     public class ExternalHandler : IExternalHandler
     {
         private const string EnvModule = "env";
-
-        private const uint CopyFromMemoryGasPerByte = 10;
-        private const uint CopyToMemoryGasPerByte = 10;
-        private const uint GetCallValueGasCost = 100;
-        private const uint GetCallSizeGasCost = 10;
-        private const uint TransferFundsGasCost = 3_000_000;
-        private const uint LoadStorageGasCost = 500_000;
-        private const uint SaveStorageGasCost = 3_000_000;
-        private const uint Keccak256GasCost = 100_000;
-        private const uint Sha256GasCost = 100_000;
-        private const uint Ripemd160GasCost = 100_000;
-        private const uint Murmur3GasCost = 100_000;
-        private const uint RecoverGasCost = 100_000;
-        private const uint VerifyGasCost = 60_000;
-        private const uint WriteEventPerByteGas = SaveStorageGasCost / 32;
         
         private static ExecutionStatus DoInternalCall(
             UInt160 caller,
@@ -70,7 +55,7 @@ namespace Phorkus.Core.VM
                 return null;
             if (offset + length > memory.Size)
                 return null;
-            frame.UseGas(CopyFromMemoryGasPerByte * (uint) length);
+            frame.UseGas(GasMetering.CopyFromMemoryGasPerByte * (ulong) length);
             var buffer = new byte[length];
             try
             {
@@ -89,7 +74,7 @@ namespace Phorkus.Core.VM
             var frame = VirtualMachine.ExecutionFrames.Peek();
             if (offset < 0 || offset + data.Length > memory.Size)
                 return false;
-            frame.UseGas(CopyToMemoryGasPerByte * (uint) data.Length);
+            frame.UseGas(GasMetering.CopyToMemoryGasPerByte * (ulong) data.Length);
             try
             {
                 Marshal.Copy(data, 0, IntPtr.Add(memory.Start, offset), data.Length);
@@ -105,7 +90,7 @@ namespace Phorkus.Core.VM
         public static int Handler_Env_GetCallValue(int offset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(GetCallValueGasCost);
+            frame.UseGas(GasMetering.GetCallValueGasCost);
             if (offset < 0 || offset >= frame.Input.Length)
                 throw new RuntimeException("Bad getcallvalue call");
             return frame.Input[offset];
@@ -114,7 +99,7 @@ namespace Phorkus.Core.VM
         public static int Handler_Env_GetCallSize()
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(GetCallSizeGasCost);
+            frame.UseGas(GasMetering.GetCallSizeGasCost);
             return frame.Input.Length;
         }
 
@@ -151,7 +136,7 @@ namespace Phorkus.Core.VM
                 throw new RuntimeException("Bad call to call function");
             if (value > Money.Zero)
             {
-                frame.UseGas(TransferFundsGasCost);
+                frame.UseGas(GasMetering.TransferFundsGasCost);
                 var result = VirtualMachine.BlockchainSnapshot.Balances.TransferBalance(
                     frame.CurrentAddress, address, value);
                 if (!result)
@@ -180,7 +165,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_LoadStorage(int keyOffset, int keyLength, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(LoadStorageGasCost);
+            frame.UseGas(GasMetering.LoadStorageGasCost);
             if (keyLength > 32)
                 throw new Exception("Key length can't be greater than 32 bytes");
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
@@ -196,7 +181,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_SaveStorage(int keyOffset, int keyLength, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(SaveStorageGasCost);
+            frame.UseGas(GasMetering.SaveStorageGasCost);
             if (keyLength > 32)
                 throw new Exception("Key length can't be greater than 32 bytes");
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
@@ -246,7 +231,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_CryptoKeccak256(int dataOffset, int dataLength, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(Keccak256GasCost);
+            frame.UseGas(GasMetering.Keccak256GasCost + GasMetering.Keccak256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Keccak256();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
@@ -255,7 +240,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_CryptoSha256(int dataOffset, int dataLength, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(Sha256GasCost);
+            frame.UseGas(GasMetering.Sha256GasGasCost + GasMetering.Sha256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Sha256();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
@@ -264,7 +249,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_CryptoRipemd160(int dataOffset, int dataLength, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(Ripemd160GasCost);
+            frame.UseGas(GasMetering.Ripemd160GasCost + GasMetering.Ripemd160GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Ripemd160();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
@@ -273,7 +258,7 @@ namespace Phorkus.Core.VM
         public static void Handler_Env_CryptoMurmur3(int dataOffset, int dataLength, int resultOffset, int seed)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(Murmur3GasCost);
+            frame.UseGas(GasMetering.Murmur3GasCost + GasMetering.Murmur3GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Murmur3((uint) seed);
             SafeCopyToMemory(frame.Memory, result, resultOffset);
@@ -283,7 +268,7 @@ namespace Phorkus.Core.VM
             int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(RecoverGasCost);
+            frame.UseGas(GasMetering.RecoverGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength);
             var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length);
             var publicKey = VirtualMachine.Crypto.RecoverSignature(message, sig);
@@ -294,7 +279,7 @@ namespace Phorkus.Core.VM
             int publicKeyOffset, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(VerifyGasCost);
+            frame.UseGas(GasMetering.VerifyGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength);
             var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length);
             var publicKey = SafeCopyFromMemory(frame.Memory, publicKeyOffset, CryptoUtils.PublicKeyLength);
@@ -341,7 +326,7 @@ namespace Phorkus.Core.VM
         public static void Handle_Env_WriteEvent(int signatureOffset, int valueOffset, int valueLength)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(WriteEventPerByteGas * (uint) (valueLength + 32));
+            frame.UseGas(GasMetering.WriteEventPerByteGas * (uint) (valueLength + 32));
             var signature = SafeCopyFromMemory(frame.Memory, signatureOffset, 32);
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength);
             var ev = new Event
