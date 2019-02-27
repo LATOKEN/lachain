@@ -58,7 +58,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
-        
+
         public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block,
             IEnumerable<TransactionReceipt> transactions)
         {
@@ -97,7 +97,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
-                var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed, out var totalFee);
+                var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed,
+                    out var totalFee);
                 if (operatingError != OperatingError.Ok)
                     throw new InvalidBlockException(operatingError);
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
@@ -128,7 +129,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             totalFee = Money.Zero;
             gasUsed = 0;
-            
+
             var currentTransactions = transactions
                 .ToDictionary(tx => tx.Hash, tx => tx);
 
@@ -138,7 +139,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             /* verify next block */
             var error = Verify(block);
             if (error != OperatingError.Ok)
-                return error;            
+                return error;
 
             /* check next block index */
             var currentBlockHeader = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
@@ -147,12 +148,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var exists = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
             if (exists != null)
                 return OperatingError.BlockAlreadyExists;
-            
+
             /* check prev block hash */
             var latestBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentBlockHeader);
             if (latestBlock != null && !block.Header.PrevBlockHash.Equals(latestBlock.Hash))
                 return OperatingError.PrevBlockHashMismatched;
-            
+
             /* verify block signatures */
             error = VerifySignatures(block);
             if (error != OperatingError.Ok)
@@ -167,7 +168,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
             /* confirm block transactions */
             var validatorAddress = _crypto.ComputeAddress(block.Header.Validator.Buffer.ToByteArray()).ToUInt160();
-            
+
             /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
@@ -190,7 +191,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                         snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
                         _stateManager.Approve();
                     }
-                    
+
                     _logger.LogWarning(
                         $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
@@ -212,7 +213,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 }
 
                 /* try to take fee from sender */
-                result = _TakeTransactionFee(validatorAddress, transaction, snapshot, out var fee);
+                result = _TakeTransactionFee(transaction, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
                     removeTransactions.Add(transaction);
@@ -242,7 +243,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return OperatingError.Ok;
         }
 
-        private OperatingError _TakeTransactionFee(UInt160 validatorAddress, TransactionReceipt transaction,
+        private OperatingError _TakeTransactionFee(TransactionReceipt transaction,
             IBlockchainSnapshot snapshot, out Money fee)
         {
             /* check availabe LA balance */
@@ -251,9 +252,11 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
             /* transfer fee from wallet to validator */
-            return snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress, fee)
-                ? OperatingError.Ok
-                : OperatingError.InsufficientBalance;
+            var sharedFee = fee / _validatorManager.Validators.Count;
+            return _validatorManager.Validators.Any(validator =>
+                !snapshot.Balances.TransferBalance(transaction.Transaction.From, validator.ToHash160(), sharedFee))
+                ? OperatingError.InsufficientBalance
+                : OperatingError.Ok;
         }
 
         public Signature Sign(BlockHeader block, KeyPair keyPair)
