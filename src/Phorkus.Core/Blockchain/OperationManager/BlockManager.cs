@@ -259,6 +259,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
+        
 
         public Signature Sign(BlockHeader block, KeyPair keyPair)
         {
