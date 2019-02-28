@@ -162,13 +162,11 @@ namespace Phorkus.Core.VM
             return 0;
         }
         
-        public static void Handler_Env_LoadStorage(int keyOffset, int keyLength, int valueOffset)
+        public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
             frame.UseGas(GasMetering.LoadStorageGasCost);
-            if (keyLength > 32)
-                throw new Exception("Key length can't be greater than 32 bytes");
-            var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
                 throw new RuntimeException("Bad call to LOADSTORAGE");
             if (key.Length < 32)
@@ -178,13 +176,11 @@ namespace Phorkus.Core.VM
                 throw new RuntimeException("Cannot copy storageload result to memory");
         }
 
-        public static void Handler_Env_SaveStorage(int keyOffset, int keyLength, int valueOffset)
+        public static void Handler_Env_SaveStorage(int keyOffset, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
             frame.UseGas(GasMetering.SaveStorageGasCost);
-            if (keyLength > 32)
-                throw new Exception("Key length can't be greater than 32 bytes");
-            var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
                 throw new RuntimeException("Bad call to SAVESTORAGE");
             if (key.Length < 32)
