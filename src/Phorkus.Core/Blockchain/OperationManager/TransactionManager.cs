@@ -30,7 +30,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
                 {TransactionType.Transfer, new ContractTransactionExecuter(contractRegisterer, virtualMachine)},
-                {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine) }
+                {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine)}
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
@@ -84,11 +84,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 OnTransactionFailed?.Invoke(this, receipt);
                 return result;
             }
+
             /* finalize transaction state */
             OnTransactionExecuted?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public TransactionReceipt Sign(Transaction transaction, KeyPair keyPair)
         {
@@ -118,7 +119,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (result != OperatingError.Ok)
                 return result;
             var transaction = acceptedTransaction.Transaction;
-            if (transaction.GasLimit < GasMetering.DefaultTxTransferGasCost)
+            if (transaction.GasLimit > GasMetering.DefaultBlockGasLimit ||
+                transaction.GasLimit < GasMetering.DefaultTxTransferGasCost)
                 return OperatingError.InvalidGasLimit;
             /* verify transaction via persister */
             var persister = _transactionPersisters[transaction.Type];
@@ -126,7 +128,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.UnsupportedTransaction;
             return persister.Verify(transaction);
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, PublicKey publicKey)
         {
@@ -134,7 +136,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
-               _verifiedTransactions.TryRemove(transaction.Hash, out _);
+            _verifiedTransactions.TryRemove(transaction.Hash, out _);
             return OperatingError.Ok;
         }
 
@@ -148,7 +150,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _verifiedTransactions.TryRemove(transaction.Hash, out _);
             return OperatingError.Ok;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong CalcNextTxNonce(UInt160 from)
         {

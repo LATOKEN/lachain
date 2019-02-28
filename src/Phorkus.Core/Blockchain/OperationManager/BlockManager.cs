@@ -165,10 +165,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 if (!currentTransactions.ContainsKey(txHash))
                     return OperatingError.TransactionLost;
             }
-
-            /* confirm block transactions */
-            var validatorAddress = _crypto.ComputeAddress(block.Header.Validator.Buffer.ToByteArray()).ToUInt160();
-
+            
             /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
@@ -179,11 +176,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
                 /* try to execute transaction */
                 var result = _transactionManager.Execute(block, transaction, snapshot);
-                if (transaction.GasUsed > GasMetering.DefaultBlockGasLimit)
-                    result = OperatingError.GasLimitGreaterBlockLimit;
                 if (result != OperatingError.Ok)
                 {
-                    removeTransactions.Add(transaction);
                     _stateManager.Rollback();
                     if (writeFailed)
                     {
@@ -260,7 +254,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 : OperatingError.Ok;
         }
         
-
         public Signature Sign(BlockHeader block, KeyPair keyPair)
         {
             return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
