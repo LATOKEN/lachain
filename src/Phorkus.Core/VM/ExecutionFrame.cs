@@ -92,7 +92,7 @@ namespace Phorkus.Core.VM
             var currentGas = (ulong) gasLimitField.GetValue(null);
             checked
             {
-                currentGas -= (ulong) gas;
+                currentGas -= gas;
             }
             gasLimitField.SetValue(null, currentGas);
         }
@@ -140,7 +140,7 @@ namespace Phorkus.Core.VM
             using (var stream = new MemoryStream(buffer, 0, buffer.Length, false))
             {
                 var func = Compile.FromBinary<JitEntryPoint>(stream, imports);
-                ByteCodeCache.TryAdd(contract, func);
+                //ByteCodeCache.TryAdd(contract, func);
                 return func();
             }
         }
