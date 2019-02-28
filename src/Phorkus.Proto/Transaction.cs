@@ -68,7 +68,7 @@ namespace Phorkus.Proto {
   #endregion
 
   #region Messages
-  public sealed partial class Transaction : pb::IMessage<Transaction> {
+  public sealed partial class  Transaction : pb::IMessage<Transaction> {
     private static readonly pb::MessageParser<Transaction> _parser = new pb::MessageParser<Transaction>(() => new Transaction());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

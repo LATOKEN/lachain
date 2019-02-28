@@ -254,7 +254,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
             /* transfer fee from wallet to validator */
             var sharedFee = fee / _validatorManager.Validators.Count;
             return _validatorManager.Validators.Any(validator =>
-                !snapshot.Balances.TransferBalance(transaction.Transaction.From, validator.ToHash160(), sharedFee))
+                !snapshot.Balances.TransferBalance(transaction.Transaction.From,
+                    _crypto.ComputeAddress(validator.Buffer.ToByteArray()).ToUInt160(), sharedFee))
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
