@@ -1,4 +1,5 @@
 ﻿using System;
+using Phorkus.Consensus.Messages;
 using Phorkus.Proto;
 
 namespace Phorkus.Consensus
@@ -7,6 +8,6 @@ namespace Phorkus.Consensus
     {
         IProtocolIdentifier Id { get; }
         void HandleMessage(ConsensusMessage message);
-        event EventHandler Terminated;
+        void HandleInternalMessage(InternalMessage message);
     }
 }

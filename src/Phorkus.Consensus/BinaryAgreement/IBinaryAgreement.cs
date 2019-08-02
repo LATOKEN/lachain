@@ -6,6 +6,5 @@ namespace Phorkus.Consensus.BinaryAgreement
     {
         void ProposeValue(bool value);
         bool IsFinished();
-        event EventHandler<bool> AgreementReached;
     }
 }
