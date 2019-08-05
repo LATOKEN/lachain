@@ -16,6 +16,7 @@ namespace Phorkus.Consensus.CommonCoin
         private readonly CoinId _coinId;
         private readonly IConsensusBroadcaster _broadcaster;
         private bool _terminated;
+        private bool _result;
 
         public CommonCoin(
             PublicKeySet publicKeySet, PrivateKeyShare privateKeyShare,
@@ -32,6 +33,12 @@ namespace Phorkus.Consensus.CommonCoin
         {
             var signatureShare = _thresholdSigner.Sign();
             _broadcaster.Broadcast(CreateCoinMessage(signatureShare));
+        }
+
+        public bool Terminated(out bool coin)
+        {
+            coin = _result;
+            return _terminated;
         }
 
         public IProtocolIdentifier Id => _coinId;
@@ -53,13 +60,20 @@ namespace Phorkus.Consensus.CommonCoin
                 return; // potential fault evidence
 
             if (signature == null) return;
-            _terminated = true;
             _broadcaster.MessageSelf(new CoinTossed(_coinId, signature.Parity()));
         }
 
         public void HandleInternalMessage(InternalMessage message)
         {
-            throw new InvalidOperationException("Binary broadcast protocol handles not any internal messages");
+            switch (message)
+            {
+                case CoinTossed coinTossed:
+                    _result = coinTossed.CoinValue;
+                    _terminated = true;
+                    break;
+                default:
+                    throw new InvalidOperationException($"Binary broadcast protocol handles messages of type {message.GetType()}");
+            }
         }
 
         private ConsensusMessage CreateCoinMessage(Signature share)

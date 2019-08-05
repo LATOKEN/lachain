@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Phorkus.Consensus.CommonCoin.ThresholdCrypto;
 using Phorkus.Consensus.Messages;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -24,6 +23,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private readonly List<BoolSet> _confReceived;
         private bool _terminated;
         private bool _auxSent;
+        private BoolSet _result;
 
         public IProtocolIdentifier Id => _broadcastId;
 
@@ -57,6 +57,12 @@ namespace Phorkus.Consensus.BinaryAgreement
             _consensusBroadcaster.Broadcast(CreateBValMessage(b));
         }
 
+        public bool Terminated(out BoolSet values)
+        {
+            values = _result;
+            return _terminated;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandleMessage(ConsensusMessage message)
         {
@@ -81,7 +87,15 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         public void HandleInternalMessage(InternalMessage message)
         {
-            throw new InvalidOperationException("Binary broadcast protocol handles not any internal messages");
+            switch (message)
+            {
+                 case BroadcastCompleted completed:
+                     _result = completed.Values;
+                     _terminated = true;
+                     break;
+                 default:
+                    throw new InvalidOperationException("Binary broadcast protocol handles not any internal messages");
+            }
         }
 
         private void HandleBValMessage(Validator validator, BValMessage bval)
@@ -160,7 +174,6 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_terminated || !_auxSent) return;
             var goodConfs = _confReceived.Count(set => _binValues.Contains(set));
             if (goodConfs < _players - _faulty) return;
-            _terminated = true;
             _consensusBroadcaster.MessageSelf(new BroadcastCompleted(_broadcastId, _binValues));
         }
 

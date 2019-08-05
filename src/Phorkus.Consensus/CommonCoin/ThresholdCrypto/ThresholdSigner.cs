@@ -35,7 +35,7 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
             if (idx < 0 || idx >= _publicKeySet.Count) return false;
             if (_collectedShares[idx] != null) return false;
             if (!IsShareValid(pubKey, sigShare)) return false;
-            if (_collectedSharesNumber >= _publicKeySet.Threshold)
+            if (_collectedSharesNumber > _publicKeySet.Threshold)
             {
                 result = _signature;
                 return true;

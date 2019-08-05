@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.CommonCoin.ThresholdCrypto;
+using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Proto;
 
@@ -27,13 +28,18 @@ namespace Phorkus.ConsensusTest
 
             public void Broadcast(ConsensusMessage message)
             {
-                if (!message.PayloadCase.Equals(ConsensusMessage.PayloadOneofCase.CommonCoin))
+                if (!message.PayloadCase.Equals(ConsensusMessage.PayloadOneofCase.Coin))
                     throw new ArgumentException(nameof(message));
                 message.Validator.ValidatorIndex = _sender;
                 for (var i = 0; i < N; ++i)
                 {
                     _test._coins[i]?.HandleMessage(message);
                 }
+            }
+
+            public void MessageSelf(InternalMessage message)
+            {
+                _test._coins[_sender].HandleInternalMessage(message);
             }
         }
 
@@ -59,17 +65,15 @@ namespace Phorkus.ConsensusTest
         {
             for (var i = 0; i < N; ++i)
             {
-                var copyI = i;
-                _coins[i].CoinTossed += (sender, b) =>
-                {
-                    Console.WriteLine($"{copyI}-th coin is {(b ? 1 : 0)}");
-                };
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
                 _coins[i].RequestCoin();
             }
+
+            var results = new bool[N];
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.IsTrue(_coins[i].Terminated(out results[i]));
+            }
+            Assert.AreEqual(results.Distinct().Count(), 1, "all guys should get same coin");
         }
     }
 }

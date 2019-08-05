@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.BinaryAgreement;
+using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -31,7 +32,7 @@ namespace Phorkus.ConsensusTest
 
             public void Broadcast(ConsensusMessage message)
             {
-                if (!message.PayloadCase.Equals(ConsensusMessage.PayloadOneofCase.BinaryBroadcast) &&
+                if (!message.PayloadCase.Equals(ConsensusMessage.PayloadOneofCase.Bval) &&
                     !message.PayloadCase.Equals(ConsensusMessage.PayloadOneofCase.Aux))
                     throw new ArgumentException(nameof(message) + " is carrying type " + message.PayloadCase);
                 message.Validator.ValidatorIndex = _sender;
@@ -39,6 +40,11 @@ namespace Phorkus.ConsensusTest
                 {
                     _test._broadcasts[i]?.HandleMessage(message);
                 }
+            }
+
+            public void MessageSelf(InternalMessage message)
+            {
+                _test._broadcasts[_sender].HandleInternalMessage(message);
             }
         }
 
@@ -59,19 +65,16 @@ namespace Phorkus.ConsensusTest
             var received = new int[N];
             for (var i = 0; i < N; ++i)
             {
-                var validator = i;
-                _broadcasts[i].ValuesDecided += (sender, values) =>
-                {
-                    Assert.AreEqual(new BoolSet(false), values);
-                    received[validator]++;
-                };
+                _broadcasts[i].Input(false);
             }
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i].Input(0);
+                var validator = i;
+                Assert.IsTrue(_broadcasts[i].Terminated(out var res), "Protocol must be terminated");
+                Assert.AreEqual(new BoolSet(false), res);
+                received[validator]++;
             }
-
             Assert.IsTrue(received.All(v => v == 1));
         }
 
@@ -79,18 +82,16 @@ namespace Phorkus.ConsensusTest
         public void TestBinaryBroadcastAllOne()
         {
             var received = new int[N];
-            for (var i = 0; i < N; ++i)
-            {
-                var validator = i;
-                _broadcasts[i].ValuesDecided += (sender, values) =>
-                {
-                    Assert.AreEqual(new BoolSet(true), values);
-                    received[validator]++;
-                };
-            }
 
             for (var i = 0; i < N; ++i)
-                _broadcasts[i].Input(1);
+                _broadcasts[i].Input(true);
+
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated");
+                Assert.AreEqual(new BoolSet(true), values);
+                received[i]++;
+            }
 
             Assert.IsTrue(received.All(v => v == 1));
         }
@@ -108,21 +109,17 @@ namespace Phorkus.ConsensusTest
                 ++cnt;
             }
 
+            for (var i = 0; i < N; ++i)
+                _broadcasts[i]?.Input(true);
+
             var received = new int[N];
             for (var i = 0; i < N; ++i)
             {
                 if (_broadcasts[i] == null) continue;
-                var validator = i;
-                _broadcasts[i].ValuesDecided += (sender, values) =>
-                {
-                    Assert.AreEqual(new BoolSet(true), values);
-                    received[validator]++;
-                };
+                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated"); 
+                Assert.AreEqual(new BoolSet(true), values);
+                received[i]++;
             }
-
-            for (var i = 0; i < N; ++i)
-                _broadcasts[i]?.Input(1);
-
             Assert.IsTrue(received.Zip(_broadcasts, (v, broadcast) => broadcast == null || v == 1).All(b => b));
         }
 
@@ -140,18 +137,6 @@ namespace Phorkus.ConsensusTest
                 ++cnt;
             }
 
-            var received = new ISet<int>[N];
-            for (var i = 0; i < N; ++i)
-            {
-                if (_broadcasts[i] == null) continue;
-                received[i] = new SortedSet<int>();
-                var validator = i;
-                _broadcasts[i].ValuesDecided += (sender, value) =>
-                {
-                    foreach (var b in value.Values())
-                        received[validator].Add(b ? 1 : 0);
-                };
-            }
 
             var inputs = new int[N];
             int[] inputsCount = {0, 0};
@@ -164,7 +149,17 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i]?.Input(inputs[i]);
+                _broadcasts[i]?.Input(inputs[i] == 1);
+            }
+
+            var received = new ISet<int>[N];
+            for (var i = 0; i < N; ++i)
+            {
+                if (_broadcasts[i] == null) continue;
+                received[i] = new SortedSet<int>();
+                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated");
+                foreach (var b in values.Values())
+                    received[i].Add(b ? 1 : 0);
             }
 
             ISet<int> firstReceived = null;
@@ -201,8 +196,8 @@ namespace Phorkus.ConsensusTest
             {
                 switch (message.PayloadCase)
                 {
-                    case ConsensusMessage.PayloadOneofCase.BinaryBroadcast:
-                        message.BinaryBroadcast.Value = _random.Next() % 2 == 1;
+                    case ConsensusMessage.PayloadOneofCase.Bval:
+                        message.Bval.Value = _random.Next() % 2 == 1;
                         break;
                     case ConsensusMessage.PayloadOneofCase.Aux:
                         message.Aux.Value = _random.Next() % 2 == 1;
@@ -216,6 +211,11 @@ namespace Phorkus.ConsensusTest
                 {
                     _test._broadcasts[i]?.HandleMessage(message);
                 }
+            }
+
+            public void MessageSelf(InternalMessage message)
+            {
+                _test._broadcasts[_sender].HandleInternalMessage(message);
             }
         }
 
@@ -236,19 +236,6 @@ namespace Phorkus.ConsensusTest
                 ++cnt;
             }
 
-            var received = new ISet<int>[N];
-            for (var i = 0; i < N; ++i)
-            {
-                if (corrupted[i]) continue;
-                received[i] = new SortedSet<int>();
-                var validator = i;
-                _broadcasts[i].ValuesDecided += (sender, values) =>
-                {
-                    foreach (var b in values.Values())
-                        received[validator].Add(b ? 1 : 0);
-                };
-            }
-
             var inputs = new int[N];
             int[] inputsCount = {0, 0};
             for (var i = 0; i < N; ++i)
@@ -260,7 +247,17 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i]?.Input(inputs[i]);
+                _broadcasts[i]?.Input(inputs[i] == 1);
+            }
+            
+            var received = new ISet<int>[N];
+            for (var i = 0; i < N; ++i)
+            {
+                if (corrupted[i]) continue;
+                received[i] = new SortedSet<int>();
+                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated");
+                foreach (var b in values.Values())
+                    received[i].Add(b ? 1 : 0);
             }
 
             ISet<int> firstReceived = null;
