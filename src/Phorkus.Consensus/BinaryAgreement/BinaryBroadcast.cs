@@ -46,6 +46,12 @@ namespace Phorkus.Consensus.BinaryAgreement
             _terminated = false;
             _auxSent = false;
             _confReceived = new List<BoolSet>();
+
+        }
+
+        public uint GetMyId()
+        {
+            return _consensusBroadcaster.GetMyId();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -100,7 +106,8 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         private void HandleBValMessage(Validator validator, BValMessage bval)
         {
-            if (_auxSent) return;
+            // todo investigate reason for this
+//            if (_auxSent) return;
             if (
                 validator.Era != _broadcastId.Era || bval.Epoch != _broadcastId.Epoch ||
                 bval.Agreement != _broadcastId.Agreement
@@ -110,7 +117,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             var sender = validator.ValidatorIndex;
             var b = bval.Value ? 1 : 0;
 
-            if (_receivedValues[sender].Contains(b)) return; // potential fault evidence
+//            if (_receivedValues[sender].Contains(b)) return; // potential fault evidence
             _receivedValues[sender].Add(b);
             ++_receivedCount[b];
 
@@ -122,8 +129,12 @@ namespace Phorkus.Consensus.BinaryAgreement
 
             if (_receivedCount[b] < 2 * _faulty + 1) return;
 
+//            todo wtf
             if (_binValues.Contains(b == 1)) return;
             _binValues = _binValues.Add(b == 1);
+//            Console.Error.WriteLine($"Player {GetMyId()} added {b}");
+            // investigate
+//            if (true)
             if (_binValues.Count() == 1)
             {
                 _auxSent = true;
@@ -144,8 +155,14 @@ namespace Phorkus.Consensus.BinaryAgreement
 
             var sender = validator.ValidatorIndex;
             var b = aux.Value ? 1 : 0;
+            
+//            Console.Error.WriteLine($"Player {GetMyId()} received {b} from {sender}");
 
-            if (_validatorSentAux[sender]) return; // potential fault evidence
+            if (_validatorSentAux[sender])
+            {
+                return; // potential fault evidence
+            }
+
             _validatorSentAux[sender] = true;
 
             _receivedAux[b]++;
@@ -179,7 +196,7 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         private void RevisitAuxMessages()
         {
-            if (_terminated || _auxSent) return;
+            if (_terminated) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < _players - _faulty) return;
             BroadcastConf(_binValues);
         }
@@ -234,6 +251,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
+                    
                     Era = _broadcastId.Era
                 },
                 Conf = new ConfMessage

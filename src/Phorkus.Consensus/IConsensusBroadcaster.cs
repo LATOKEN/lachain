@@ -14,5 +14,11 @@ namespace Phorkus.Consensus
          * This method is used to send internal messages to self
          */
         void MessageSelf(InternalMessage message);
+        
+        
+        /*
+         * This method used to RETURN PARTY ID GO FIND BETTER ONE
+         */
+        uint GetMyId();
     }
 }
