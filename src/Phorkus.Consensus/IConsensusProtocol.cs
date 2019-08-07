@@ -1,13 +1,14 @@
-﻿using System;
-using Phorkus.Consensus.Messages;
-using Phorkus.Proto;
+﻿using Phorkus.Consensus.Messages;
 
 namespace Phorkus.Consensus
 {
     public interface IConsensusProtocol
     {
         IProtocolIdentifier Id { get; }
-        void HandleMessage(ConsensusMessage message);
-        void HandleInternalMessage(InternalMessage message);
+        void ReceiveMessage(MessageEnvelope message);
+
+        void Start();
+
+        bool Terminated { get; }
     }
 }
