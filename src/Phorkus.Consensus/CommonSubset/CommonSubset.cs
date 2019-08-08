@@ -11,19 +11,19 @@ namespace Phorkus.Consensus.CommonSubset
         private CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
         private ISet<IShare> _result;
-        private int _n;
-        private int _f;
+        private readonly int _n;
+        private readonly int _f;
         private IShare _share;
         
-        private bool?[] _binaryAgreementInput;
-        private bool?[] _binaryAgreementResult;
+        private readonly bool?[] _binaryAgreementInput;
+        private readonly bool?[] _binaryAgreementResult;
         private bool _filledBinaryAgreements = false;
         private int _cntBinaryAgreementsCompleted = 0;
 
-        private IShare[] _reliableBroadcastResult;
+        private readonly IShare[] _reliableBroadcastResult;
 
         // todo move broadcaster to AbstractProtocol
-        private IConsensusBroadcaster _broadcaster;
+        private readonly IConsensusBroadcaster _broadcaster;
 
 
         public override IProtocolIdentifier Id => _commonSubsetId;
@@ -65,6 +65,12 @@ namespace Phorkus.Consensus.CommonSubset
                     case ProtocolResult<CommonSubsetId, ISet<IShare>> _:
 //                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
                         Terminated = true;
+                        break;
+                    case ProtocolResult<ReliableBroadcastId, IShare> result:
+                        HandleReliableBroadcast(result);
+                        break;
+                    case ProtocolResult<BinaryAgreementId, bool> result:
+                        HandleBinaryAgreementResult(result);
                         break;
                     default:
                         throw new InvalidOperationException(
@@ -111,6 +117,7 @@ namespace Phorkus.Consensus.CommonSubset
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= _n - _f)
             {
+                _filledBinaryAgreements = true;
                 for (var i = 0; i < _n; ++i)
                 {
                     if (_binaryAgreementInput[i] == null)

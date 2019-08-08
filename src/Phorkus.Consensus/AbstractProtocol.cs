@@ -62,6 +62,6 @@ namespace Phorkus.Consensus
             }
         }
 
-        public abstract void ProcessMessage(MessageEnvelope message);
+        public abstract void ProcessMessage(MessageEnvelope envelope);
     }
 }
