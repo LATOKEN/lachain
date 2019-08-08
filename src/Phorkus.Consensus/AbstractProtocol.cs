@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using Phorkus.Consensus.Messages;
 
@@ -10,6 +11,20 @@ namespace Phorkus.Consensus
         private readonly object _queueLock = new object();
         public bool Terminated { get; protected set; }
         public abstract IProtocolIdentifier Id { get; }
+
+        private Thread _thread;
+
+        protected AbstractProtocol()
+        {
+            _thread = new Thread(Start);
+            _thread.IsBackground = true;
+            _thread.Start();
+        }
+
+        public void WaitFinish()
+        {
+            _thread.Join();
+        }
 
         public void Start()
         {
@@ -24,7 +39,17 @@ namespace Phorkus.Consensus
                 }
 
                 _queue.TryDequeue(out var msg);
-                ProcessMessage(msg);
+                try
+                {
+                    ProcessMessage(msg);
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine(e);
+                    Terminated = true;
+                    break;
+                }
+                
             }
         }
 

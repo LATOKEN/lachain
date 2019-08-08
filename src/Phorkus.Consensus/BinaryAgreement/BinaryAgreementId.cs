@@ -19,5 +19,31 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             return BitConverter.GetBytes(Era).Concat(BitConverter.GetBytes(Agreement));
         }
+
+        protected bool Equals(BinaryAgreementId other)
+        {
+            return Era == other.Era && Agreement == other.Agreement;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((BinaryAgreementId) obj);
+        }
+        
+        public bool Equals(IProtocolIdentifier other)
+        {
+            return Equals((object) other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (Era.GetHashCode() * 397) ^ Agreement.GetHashCode();
+            }
+        }
     }
 }

@@ -58,12 +58,21 @@ namespace Phorkus.Consensus.BinaryAgreement
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:
+                        Console.Error.WriteLine(
+                            $"{_consensusBroadcaster.GetMyId()}: BVal from {message.Validator.ValidatorIndex}"
+                        );
                         HandleBValMessage(message.Validator, message.Bval);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Aux:
+                        Console.Error.WriteLine(
+                            $"{_consensusBroadcaster.GetMyId()}: Aux from {message.Validator.ValidatorIndex}"
+                        );
                         HandleAuxMessage(message.Validator, message.Aux);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Conf:
+                        Console.Error.WriteLine(
+                            $"{_consensusBroadcaster.GetMyId()}: Conf from {message.Validator.ValidatorIndex}"
+                        );
                         HandleConfMessage(message.Validator, message.Conf);
                         return;
                     default:
@@ -78,14 +87,16 @@ namespace Phorkus.Consensus.BinaryAgreement
                 switch (message)
                 {
                     case ProtocolRequest<BinaryBroadcastId, bool> broadcastRequested:
+                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast requested");
                         _requested = true;
                         CheckResult();
                         var b = broadcastRequested.Input ? 1 : 0;
                         _isBroadcast[b] = true;
                         _consensusBroadcaster.Broadcast(CreateBValMessage(b));
                         break;
-                    case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
-
+                    case ProtocolResult<BinaryBroadcastId, BoolSet> _:
+                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
+                        Terminated = true;
                         break;
                     default:
                         throw new InvalidOperationException(

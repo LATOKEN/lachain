@@ -1,69 +1,83 @@
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using NUnit.Framework;
-//using Phorkus.Consensus;
-//using Phorkus.Consensus.BinaryAgreement;
-//using Phorkus.Proto;
-//using Phorkus.Utility.Utils;
-//
-//namespace Phorkus.ConsensusTest
-//{
-//    [TestFixture]
-//    public class BinaryBroadcastTest
-//    {
-//        private IConsensusProtocol[] _broadcasts;
-//        private const int N = 7;
-//        private const int F = 2;
-//
-//        [SetUp]
-//        public void SetUp()
-//        {
-//            _broadcasts = new IConsensusProtocol[N];
-//            for (uint i = 0; i < N; ++i)
-//            {
-//                var broadcastSimulator = new BroadcastSimulator(i, this);
-//                _broadcasts[i] = new BinaryBroadcast(N, F, new BinaryBroadcastId(0, 0, 0), broadcastSimulator);
-//            }
-//        }
-//
-//        [Test]
-//        public void TestBinaryBroadcastAllZero()
-//        {
-//            var received = new int[N];
-//            for (var i = 0; i < N; ++i)
-//            {
-//                _broadcasts[i].Input(false);
-//            }
-//
-//            for (var i = 0; i < N; ++i)
-//            {
-//                var validator = i;
-//                Assert.IsTrue(_broadcasts[i].Terminated(out var res), "Protocol must be terminated");
-//                Assert.AreEqual(new BoolSet(false), res);
-//                received[validator]++;
-//            }
-//            Assert.IsTrue(received.All(v => v == 1));
-//        }
-//
-//        [Test]
-//        public void TestBinaryBroadcastAllOne()
-//        {
-//            var received = new int[N];
-//
-//            for (var i = 0; i < N; ++i)
-//                _broadcasts[i].Input(true);
-//
-//            for (var i = 0; i < N; ++i)
-//            {
-//                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated");
-//                Assert.AreEqual(new BoolSet(true), values);
-//                received[i]++;
-//            }
-//
-//            Assert.IsTrue(received.All(v => v == 1));
-//        }
-//
+using NUnit.Framework;
+using Phorkus.Consensus;
+using Phorkus.Consensus.BinaryAgreement;
+using Phorkus.Consensus.Messages;
+using Phorkus.Utility.Utils;
+
+namespace Phorkus.ConsensusTest
+{
+    [TestFixture]
+    public class BinaryBroadcastTest
+    {
+        private PlayerSet _playerSet;
+        private IConsensusProtocol[] _broadcasts;
+        private IConsensusBroadcaster[] _broadcasters;
+        private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
+        private const int N = 7;
+        private const int F = 2;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _playerSet = new PlayerSet();
+            _broadcasts = new IConsensusProtocol[N];
+            _broadcasters = new IConsensusBroadcaster[N];
+            _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
+            for (uint i = 0; i < N; ++i)
+            {
+                _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
+                _broadcasters[i] = new BroadcastSimulator(i, _playerSet);
+                _broadcasts[i] = new BinaryBroadcast(N, F, new BinaryBroadcastId(0, 0, 0), _broadcasters[i]);
+                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+            }
+        }
+
+        [Test]
+        public void TestBinaryBroadcastAllZero()
+        {
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, false
+                ));
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].WaitFinish();
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
+                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result);
+            }
+        }
+
+        [Test]
+        public void TestBinaryBroadcastAllOne()
+        {
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, true
+                ));
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].WaitFinish();
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
+            }
+        }
+
 //        [Test]
 //        public void TestRandomFailures()
 //        {
@@ -84,10 +98,11 @@
 //            for (var i = 0; i < N; ++i)
 //            {
 //                if (_broadcasts[i] == null) continue;
-//                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated"); 
+//                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated");
 //                Assert.AreEqual(new BoolSet(true), values);
 //                received[i]++;
 //            }
+//
 //            Assert.IsTrue(received.Zip(_broadcasts, (v, broadcast) => broadcast == null || v == 1).All(b => b));
 //        }
 //
@@ -222,7 +237,7 @@
 //            {
 //                _broadcasts[i]?.Input(inputs[i] == 1);
 //            }
-//            
+//
 //            var received = new ISet<int>[N];
 //            for (var i = 0; i < N; ++i)
 //            {
@@ -241,5 +256,5 @@
 //                Assert.Greater(received[i].Count, 0, "all correct nodes should output something");
 //            }
 //        }
-//    }
-//}
+    }
+}

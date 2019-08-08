@@ -8,6 +8,7 @@ namespace Phorkus.Consensus
         void ReceiveMessage(MessageEnvelope message);
 
         void Start();
+        void WaitFinish();
 
         bool Terminated { get; }
     }
