@@ -11,7 +11,7 @@ namespace Phorkus.Consensus.BinaryAgreement
     public class BinaryBroadcast : AbstractProtocol
     {
         private readonly BinaryBroadcastId _broadcastId;
-        private readonly IConsensusBroadcaster _consensusBroadcaster;
+        private readonly IConsensusBroadcaster _broadcaster;
         private BoolSet _binValues;
         private readonly int _faulty, _players;
         private readonly ISet<int>[] _receivedValues;
@@ -27,10 +27,10 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         public override IProtocolIdentifier Id => _broadcastId;
 
-        public BinaryBroadcast(int n, int f, BinaryBroadcastId broadcastId, IConsensusBroadcaster consensusBroadcaster)
+        public BinaryBroadcast(int n, int f, BinaryBroadcastId broadcastId, IConsensusBroadcaster broadcaster)
         {
             _broadcastId = broadcastId;
-            _consensusBroadcaster = consensusBroadcaster;
+            _broadcaster = broadcaster;
             _players = n;
             _faulty = f;
             _requested = ResultStatus.NotRequested;
@@ -54,7 +54,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (envelope.External)
             {
-                var message = envelope.ConsensusMessage;
+                var message = envelope.ExternalMessage;
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:
@@ -92,7 +92,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                         CheckResult();
                         var b = broadcastRequested.Input ? 1 : 0;
                         _isBroadcast[b] = true;
-                        _consensusBroadcaster.Broadcast(CreateBValMessage(b));
+                        _broadcaster.Broadcast(CreateBValMessage(b));
                         break;
                     case ProtocolResult<BinaryBroadcastId, BoolSet> _:
 //                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
@@ -125,7 +125,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (!_isBroadcast[b] && _receivedCount[b] >= _faulty + 1)
             {
                 _isBroadcast[b] = true;
-                _consensusBroadcaster.Broadcast(CreateBValMessage(b));
+                _broadcaster.Broadcast(CreateBValMessage(b));
             }
 
             if (_receivedCount[b] < 2 * _faulty + 1) return;
@@ -137,7 +137,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_binValues.Count() == 1)
             {
                 _auxSent = true;
-                _consensusBroadcaster.Broadcast(CreateAuxMessage(b));
+                _broadcaster.Broadcast(CreateAuxMessage(b));
             }
 
             RevisitAuxMessages();
@@ -193,7 +193,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private void RevisitAuxMessages()
         {
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < _players - _faulty) return;
-            _consensusBroadcaster.Broadcast(CreateConfMessage(_binValues));
+            _broadcaster.Broadcast(CreateConfMessage(_binValues));
         }
 
         private ConsensusMessage CreateBValMessage(int value)
@@ -203,7 +203,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _consensusBroadcaster.GetMyId(),
+                    ValidatorIndex = _broadcaster.GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Bval = new BValMessage
@@ -223,7 +223,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _consensusBroadcaster.GetMyId(),
+                    ValidatorIndex = _broadcaster.GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Aux = new AuxMessage
@@ -243,7 +243,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _consensusBroadcaster.GetMyId(),
+                    ValidatorIndex = _broadcaster.GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Conf = new ConfMessage
@@ -262,7 +262,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_requested == ResultStatus.Requested)
             {
                 _requested = ResultStatus.Sent;
-                _consensusBroadcaster.InternalResponse(
+                _broadcaster.InternalResponse(
                     new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _binValues));
             }
         }

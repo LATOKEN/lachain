@@ -4,21 +4,21 @@ namespace Phorkus.Consensus.Messages
 {
     public class MessageEnvelope
     {
-        public ConsensusMessage ConsensusMessage { get; }
+        public ConsensusMessage ExternalMessage { get; }
         public IInternalMessage InternalMessage { get; }
 
         public MessageEnvelope(ConsensusMessage msg)
         {
-            ConsensusMessage = msg;
+            ExternalMessage = msg;
             InternalMessage = null;
         }
 
         public MessageEnvelope(IInternalMessage msg)
         {
             InternalMessage = msg;
-            ConsensusMessage = null;
+            ExternalMessage = null;
         }
 
-        public bool External => ConsensusMessage != null;
+        public bool External => ExternalMessage != null;
     }
 }

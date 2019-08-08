@@ -42,7 +42,7 @@ namespace Phorkus.Consensus.CommonCoin
         {
             if (envelope.External)
             {
-                var message = envelope.ConsensusMessage;
+                var message = envelope.ExternalMessage;
                 // These checks are somewhat redundant, but whatever
                 if (message.PayloadCase != ConsensusMessage.PayloadOneofCase.Coin)
                     throw new ArgumentException(
