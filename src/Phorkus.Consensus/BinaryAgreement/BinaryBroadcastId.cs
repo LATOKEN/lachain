@@ -52,5 +52,10 @@ namespace Phorkus.Consensus.BinaryAgreement
                 return hashCode;
             }
         }
+        
+        public override string ToString()
+        {
+            return $"BB (Er={Era}, A={Agreement}, Ep={Epoch})";
+        }
     }
 }

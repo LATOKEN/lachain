@@ -41,6 +41,11 @@ namespace Phorkus.Consensus.CommonCoin
             if (obj.GetType() != this.GetType()) return false;
             return Equals((CoinId) obj);
         }
+        
+        public override string ToString()
+        {
+            return $"CC (Er={Era}, A={Agreement}, Ep={Epoch})";
+        }
 
         public override int GetHashCode()
         {

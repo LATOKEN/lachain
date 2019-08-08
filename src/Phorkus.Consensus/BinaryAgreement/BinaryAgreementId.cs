@@ -45,5 +45,10 @@ namespace Phorkus.Consensus.BinaryAgreement
                 return (Era.GetHashCode() * 397) ^ Agreement.GetHashCode();
             }
         }
+        
+        public override string ToString()
+        {
+            return $"BA (E={Era}, A={Agreement})";
+        }
     }
 }

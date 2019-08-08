@@ -32,16 +32,18 @@ namespace Phorkus.ConsensusTest
         {
             foreach (var protocol in protocols)
             {
+                if (_registry.ContainsKey(protocol.Id)) 
+                    throw new InvalidOperationException($"Protocol with id ({protocol.Id}) already registered");
                 _registry[protocol.Id] = protocol;
             }
         }
 
-        public virtual void Broadcast(ConsensusMessage message)
+        public void Broadcast(ConsensusMessage message)
         {
             _playerSet.BroadcastMessage(message);
         }
 
-        public virtual void Dispatch(ConsensusMessage message)
+        public void Dispatch(ConsensusMessage message)
         {
             switch (message.PayloadCase)
             {
@@ -66,7 +68,7 @@ namespace Phorkus.ConsensusTest
             }
         }
 
-        public virtual void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request)
+        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request)
             where TId : IProtocolIdentifier
         {
             if (request.From != null)
@@ -80,9 +82,10 @@ namespace Phorkus.ConsensusTest
             _registry[request.To]?.ReceiveMessage(new MessageEnvelope(request));
         }
 
-        public virtual void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
+        public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
+            Console.Error.WriteLine($"Player {GetMyId()}: result from {result.From}");
             if (_callback.TryGetValue(result.From, out var senderId))
             {
                 _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result));
@@ -92,7 +95,7 @@ namespace Phorkus.ConsensusTest
             _registry[result.From]?.ReceiveMessage(new MessageEnvelope(result));
         }
 
-        public virtual uint GetMyId()
+        public uint GetMyId()
         {
             return _sender;
         }
