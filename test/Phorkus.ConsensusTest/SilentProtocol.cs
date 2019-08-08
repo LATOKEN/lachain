@@ -10,10 +10,6 @@ namespace Phorkus.ConsensusTest
             Id = id;
         }
         
-        public override void ProcessMessage(MessageEnvelope envelope)
-        {
-        }
-
         public IProtocolIdentifier Id { get; }
         public void ReceiveMessage(MessageEnvelope message)
         {

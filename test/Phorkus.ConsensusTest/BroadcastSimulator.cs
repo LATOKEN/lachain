@@ -79,16 +79,18 @@ namespace Phorkus.ConsensusTest
                 _callback[request.To] = request.From;
             }
 
+            Console.Error.WriteLine($"Party {GetMyId()} received internal request from {request.From}");
             _registry[request.To]?.ReceiveMessage(new MessageEnvelope(request));
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
-            Console.Error.WriteLine($"Player {GetMyId()}: result from {result.From}");
+//            Console.Error.WriteLine($"Player {GetMyId()}: result from {result.From}");
             if (_callback.TryGetValue(result.From, out var senderId))
             {
                 _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result));
+                Console.Error.WriteLine($"Player {GetMyId()} sent response to batya {senderId}");
             }
 
             // message is also delivered to self
