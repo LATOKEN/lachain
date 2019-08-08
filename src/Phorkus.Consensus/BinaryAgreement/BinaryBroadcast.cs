@@ -22,7 +22,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private readonly bool[] _isBroadcast;
         private readonly List<BoolSet> _confReceived;
         private bool _auxSent;
-        private bool _requested;
+        private ResultStatus _requested;
         private BoolSet? _result;
 
         public override IProtocolIdentifier Id => _broadcastId;
@@ -33,7 +33,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             _consensusBroadcaster = consensusBroadcaster;
             _players = n;
             _faulty = f;
-            _requested = false;
+            _requested = ResultStatus.NotRequested;
 
             _binValues = new BoolSet();
             _receivedValues = new ISet<int>[n];
@@ -58,21 +58,21 @@ namespace Phorkus.Consensus.BinaryAgreement
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:
-                        Console.Error.WriteLine(
-                            $"{_consensusBroadcaster.GetMyId()}: BVal from {message.Validator.ValidatorIndex}"
-                        );
+//                        Console.Error.WriteLine(
+//                            $"{_consensusBroadcaster.GetMyId()}: BVal from {message.Validator.ValidatorIndex}"
+//                        );
                         HandleBValMessage(message.Validator, message.Bval);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Aux:
-                        Console.Error.WriteLine(
-                            $"{_consensusBroadcaster.GetMyId()}: Aux from {message.Validator.ValidatorIndex}"
-                        );
+//                        Console.Error.WriteLine(
+//                            $"{_consensusBroadcaster.GetMyId()}: Aux from {message.Validator.ValidatorIndex}"
+//                        );
                         HandleAuxMessage(message.Validator, message.Aux);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Conf:
-                        Console.Error.WriteLine(
-                            $"{_consensusBroadcaster.GetMyId()}: Conf from {message.Validator.ValidatorIndex}"
-                        );
+//                        Console.Error.WriteLine(
+//                            $"{_consensusBroadcaster.GetMyId()}: Conf from {message.Validator.ValidatorIndex}"
+//                        );
                         HandleConfMessage(message.Validator, message.Conf);
                         return;
                     default:
@@ -87,15 +87,15 @@ namespace Phorkus.Consensus.BinaryAgreement
                 switch (message)
                 {
                     case ProtocolRequest<BinaryBroadcastId, bool> broadcastRequested:
-                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast requested");
-                        _requested = true;
+//                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast requested");
+                        _requested = ResultStatus.Requested;
                         CheckResult();
                         var b = broadcastRequested.Input ? 1 : 0;
                         _isBroadcast[b] = true;
                         _consensusBroadcaster.Broadcast(CreateBValMessage(b));
                         break;
                     case ProtocolResult<BinaryBroadcastId, BoolSet> _:
-                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
+//                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
                         Terminated = true;
                         break;
                     default:
@@ -259,8 +259,9 @@ namespace Phorkus.Consensus.BinaryAgreement
         private void CheckResult()
         {
             if (_result == null) return;
-            if (_requested)
+            if (_requested == ResultStatus.Requested)
             {
+                _requested = ResultStatus.Sent;
                 _consensusBroadcaster.InternalResponse(
                     new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _binValues));
             }

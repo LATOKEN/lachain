@@ -13,7 +13,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private readonly BinaryAgreementId _agreementId;
         private readonly IConsensusBroadcaster _consensusBroadcaster;
         private bool? _result;
-        private bool _requested;
+        private ResultStatus _requested;
 
         private ulong _currentEpoch;
         private bool _estimate;
@@ -28,15 +28,17 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             _agreementId = agreementId;
             _consensusBroadcaster = consensusBroadcaster;
-            _requested = false;
+            _requested = ResultStatus.NotRequested;
             _currentEpoch = 0;
         }
 
         private void CheckResult()
         {
             if (_result == null) return;
-            if (_requested)
+            if (_requested == ResultStatus.Requested)
             {
+                Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()} checked result succ");
+                _requested = ResultStatus.Sent;
                 _consensusBroadcaster.InternalResponse(new ProtocolResult<BinaryAgreementId, bool>(_agreementId, (bool) _result));
             }
         }
@@ -107,9 +109,9 @@ namespace Phorkus.Consensus.BinaryAgreement
             switch (message)
             {
                 case ProtocolRequest<BinaryAgreementId, bool> agreementRequested:
-                    if (_currentEpoch != 0 || _requested)
+                    if (_currentEpoch != 0 || _requested != ResultStatus.NotRequested)
                         throw new InvalidOperationException("Cannot propose value: protocol is already running");
-                    _requested = true;
+                    _requested = ResultStatus.Requested;
                     _estimate = agreementRequested.Input;
                     TryProgressEpoch();
                     break;
