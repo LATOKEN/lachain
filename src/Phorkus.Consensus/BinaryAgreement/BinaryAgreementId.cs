@@ -15,6 +15,8 @@ namespace Phorkus.Consensus.BinaryAgreement
         public ulong Era { get; }
         public ulong Agreement { get; }
         
+        public int ValidatorId { get; }
+        
         public IEnumerable<byte> ToByteArray()
         {
             return BitConverter.GetBytes(Era).Concat(BitConverter.GetBytes(Agreement));

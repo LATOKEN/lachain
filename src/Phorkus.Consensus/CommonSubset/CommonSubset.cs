@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
+using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Phorkus.Consensus.CommonSubset
 {
@@ -13,6 +14,13 @@ namespace Phorkus.Consensus.CommonSubset
         private int _n;
         private int _f;
         private IShare _share;
+        
+        private bool?[] _binaryAgreementInput;
+        private bool?[] _binaryAgreementResult;
+        private bool _filledBinaryAgreements = false;
+        private int _cntBinaryAgreementsCompleted = 0;
+
+        private IShare[] _reliableBroadcastResult;
 
         // todo move broadcaster to AbstractProtocol
         private IConsensusBroadcaster _broadcaster;
@@ -25,6 +33,11 @@ namespace Phorkus.Consensus.CommonSubset
             _n = n;
             _f = f;
             _broadcaster = broadcaster;
+            
+            _binaryAgreementInput = new bool?[n];
+            _binaryAgreementResult = new bool?[n];
+            
+            _reliableBroadcastResult = new IShare[n];
         }
         
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -49,7 +62,7 @@ namespace Phorkus.Consensus.CommonSubset
 //                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast requested");
                         HandleInputMessage(commonSubsetRequested);
                         break;
-                    case ProtocolResult<BinaryBroadcastId, ISet<IShare>> _:
+                    case ProtocolResult<CommonSubsetId, ISet<IShare>> _:
 //                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
                         Terminated = true;
                         break;
@@ -69,20 +82,75 @@ namespace Phorkus.Consensus.CommonSubset
             
             // request results from RBC_j
             
-            // request results from BA_j
-            
             CheckResult();
         }
 
 
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, IShare> result)
         {
-           throw new NotImplementedException();
+            int j = result.Id.ValidatorId;
+
+            _reliableBroadcastResult[j] = result.Result;
+                
+            if (_binaryAgreementInput[j] == null)
+            {
+                _binaryAgreementInput[j] = true;
+                // todo send true to BA_j
+            }
+            
+            CheckCompletion();
+            
+            throw new NotImplementedException();
         }
 
         private void HandleBinaryAgreementResult(ProtocolResult<BinaryAgreementId, bool> result)
         {
-           throw new NotImplementedException(); 
+            // todo check for double send of result
+            ++_cntBinaryAgreementsCompleted;
+            _binaryAgreementResult[result.Id.ValidatorId] = result.Result;
+
+            if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= _n - _f)
+            {
+                for (var i = 0; i < _n; ++i)
+                {
+                    if (_binaryAgreementInput[i] == null)
+                    {
+                        _binaryAgreementInput[i] = false;
+                        // todo send false to BA_i
+                    }
+                }
+            }
+
+            CheckCompletion();
+            
+            throw new NotImplementedException(); 
+        }
+
+        private void CheckCompletion()
+        {
+            if (_result != null) return;
+            
+            if (_cntBinaryAgreementsCompleted < _n) return;
+            
+            for (var i = 0; i < _n; ++i)
+            {
+                if (_binaryAgreementResult[i] == true)
+                {
+                    if (_reliableBroadcastResult[i] == null) return;
+                }
+            }
+            
+            _result = new HashSet<IShare>();
+            
+            for (var i = 0; i < _n; ++i)
+            {
+                if (_binaryAgreementResult[i] == true)
+                {
+                    _result.Add(_reliableBroadcastResult[i]);
+                }
+            }
+            
+            CheckResult();
         }
 
         private void CheckResult()

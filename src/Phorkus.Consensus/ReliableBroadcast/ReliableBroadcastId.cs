@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Phorkus.Consensus.CommonSubset
+namespace Phorkus.Consensus.ReliableBroadcast
 {
-    public class CommonSubsetId : IProtocolIdentifier
+    public class ReliableBroadcastId: IProtocolIdentifier
     {
+        public int ValidatorId { get; }
+        
         public bool Equals(IProtocolIdentifier other)
         {
             throw new NotImplementedException();
