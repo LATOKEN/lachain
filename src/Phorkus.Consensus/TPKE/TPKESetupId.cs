@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Consensus.HoneyBadger;
 
-namespace Phorkus.Consensus.CommonSubset
+namespace Phorkus.Consensus.TPKE
+
 {
-    public class CommonSubsetId : IProtocolIdentifier
+    public class TPKESetupId : IProtocolIdentifier
     {
-        public CommonSubsetId(HoneyBadgerId honeyBadgerId)
+        public TPKESetupId(HoneyBadgerId honeyBadgerId)
         {
             Era = honeyBadgerId.Era;
         }
+        
         public bool Equals(IProtocolIdentifier other)
         {
             throw new NotImplementedException();
