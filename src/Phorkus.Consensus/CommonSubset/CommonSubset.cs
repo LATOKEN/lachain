@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
@@ -13,7 +14,6 @@ namespace Phorkus.Consensus.CommonSubset
         private ISet<IShare> _result;
         private readonly int _n;
         private readonly int _f;
-        private IShare _share;
         
         private readonly bool?[] _binaryAgreementInput;
         private readonly bool?[] _binaryAgreementResult;
@@ -81,14 +81,33 @@ namespace Phorkus.Consensus.CommonSubset
 
         private void HandleInputMessage(ProtocolRequest<CommonSubsetId, IShare> request)
         {
-            _share = request.Input;
             _requested = ResultStatus.Requested;
             
-            // provide input to RBC_i
-            
-            // request results from RBC_j
+            // todo set id to i-th rbc
+            _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, IShare>(Id, null, request.Input));
+
+            for (var j = 0; j < _n; ++j)
+            {
+                if (j != _broadcaster.GetMyId())
+                {
+                    // todo set id to j-th protocol
+                    _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, IShare>(Id, null, null));
+                }
+            }
             
             CheckResult();
+            
+            throw new NotImplementedException();
+        }
+
+        private void SendInputToBinaryAgreement(int j)
+        {
+            if (!_binaryAgreementInput[j].HasValue)
+                throw new NoNullAllowedException();
+            // todo set id to j
+            _broadcaster.InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(Id, null, _binaryAgreementInput[j].Value));
+            
+            throw new NotImplementedException();
         }
 
 
@@ -97,16 +116,13 @@ namespace Phorkus.Consensus.CommonSubset
             int j = result.Id.ValidatorId;
 
             _reliableBroadcastResult[j] = result.Result;
-                
             if (_binaryAgreementInput[j] == null)
             {
                 _binaryAgreementInput[j] = true;
-                // todo send true to BA_j
+                SendInputToBinaryAgreement(j);
             }
             
             CheckCompletion();
-            
-            throw new NotImplementedException();
         }
 
         private void HandleBinaryAgreementResult(ProtocolResult<BinaryAgreementId, bool> result)
@@ -123,14 +139,12 @@ namespace Phorkus.Consensus.CommonSubset
                     if (_binaryAgreementInput[i] == null)
                     {
                         _binaryAgreementInput[i] = false;
-                        // todo send false to BA_i
+                        SendInputToBinaryAgreement(i);
                     }
                 }
             }
 
             CheckCompletion();
-            
-            throw new NotImplementedException(); 
         }
 
         private void CheckCompletion()

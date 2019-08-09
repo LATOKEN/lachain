@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
-using Phorkus.Consensus.CommonCoin.ThresholdCrypto;
+using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Crypto.MCL.BLS12_381;
 
 namespace Phorkus.ConsensusTest

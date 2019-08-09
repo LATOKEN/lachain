@@ -6,7 +6,7 @@ using System.Threading;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.CommonCoin;
-using Phorkus.Consensus.CommonCoin.ThresholdCrypto;
+using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 

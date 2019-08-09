@@ -4,6 +4,7 @@ using Phorkus.Consensus;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.Messages;
+using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
@@ -80,6 +81,16 @@ namespace Phorkus.ConsensusTest
             }
 
             Console.Error.WriteLine($"Party {GetMyId()} received internal request from {request.From}");
+//            if (!_registry.ContainsKey(request.To))
+//            {
+//                switch (request.To)
+//                {
+//                    case ReliableBroadcastId rbcId:
+//                        new ReliableBroadcast();
+//                        break;
+//                }
+//                RegisterProtocols(new []{});
+//            }
             _registry[request.To]?.ReceiveMessage(new MessageEnvelope(request));
         }
 

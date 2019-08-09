@@ -1,4 +1,4 @@
-﻿namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
+﻿namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
 {
     public interface IThresholdSigner
     {

@@ -3,7 +3,7 @@ using System.Linq;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
+namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
 {
     public class Signature
     {

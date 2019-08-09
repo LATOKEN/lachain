@@ -1,6 +1,6 @@
 ﻿using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Phorkus.Consensus.CommonCoin.ThresholdCrypto
+namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
 {
     public class PrivateKeyShare
     {

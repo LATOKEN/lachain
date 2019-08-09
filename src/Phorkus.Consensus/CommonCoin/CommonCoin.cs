@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using Google.Protobuf;
-using Phorkus.Consensus.CommonCoin.ThresholdCrypto;
+using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.Messages;
 using Phorkus.Proto;
-using Signature = Phorkus.Consensus.CommonCoin.ThresholdCrypto.Signature;
+using Signature = Phorkus.Consensus.CommonCoin.ThresholdSignature.Signature;
 
 namespace Phorkus.Consensus.CommonCoin
 {
