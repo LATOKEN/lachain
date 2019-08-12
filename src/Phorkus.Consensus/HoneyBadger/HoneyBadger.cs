@@ -13,27 +13,29 @@ namespace Phorkus.Consensus.HoneyBadger
         // todo investigate where id should come from
         private HoneyBadgerId _honeyBadgerId;
         private ResultStatus _requested;
-        private bool[] _taken;
+        private readonly bool[] _taken;
 
         private IRawShare _rawShare;
         private IEncryptedShare _encryptedShare;
-        private IRawShare[] _shares;
+        private readonly IRawShare[] _shares;
         
-        private IConsensusBroadcaster _broadcaster;
-        private int _n;
-        private int _f;
+        private readonly IConsensusBroadcaster _broadcaster;
+        private readonly int _n;
+        private readonly int _f;
         private ISet<IRawShare> _result;
 
-        private ISet<IPartiallyDecryptedShare>[] _decryptedShares;
+        private readonly ISet<IPartiallyDecryptedShare>[] _decryptedShares;
 
         private TPKEPubKey _pubKey;
         private TPKEPrivKey _privKey;
 
-        public HoneyBadger(int n, int f, IConsensusBroadcaster broadcaster)
+        public HoneyBadger(int n, int f, HoneyBadgerId honeyBadgerId, IConsensusBroadcaster broadcaster)
         {
-            _broadcaster = broadcaster;
             _n = n;
             _f = f;
+
+            _honeyBadgerId = honeyBadgerId;
+            _broadcaster = broadcaster;
             
             _decryptedShares = new HashSet<IPartiallyDecryptedShare>[_n];
             for (var i = 0; i < _n; ++i)
@@ -69,12 +71,10 @@ namespace Phorkus.Consensus.HoneyBadger
                 var message = envelope.InternalMessage;
                 switch (message)
                 {
-                    case ProtocolRequest<HoneyBadgerId, IRawShare> commonSubsetRequested:
-//                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast requested");
-                        HandleInputMessage(commonSubsetRequested);
+                    case ProtocolRequest<HoneyBadgerId, IRawShare> honeyBadgerRequested:
+                        HandleInputMessage(honeyBadgerRequested);
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> _:
-//                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
                         Terminated = true;
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<IEncryptedShare>> result:
@@ -90,55 +90,6 @@ namespace Phorkus.Consensus.HoneyBadger
             }
         }
 
-        private void HandleDecMessage(Validator messageValidator, DecMessage messageDec)
-        {
-            IPartiallyDecryptedShare share = _pubKey.Decode(messageDec);
-            _decryptedShares[share.Id].Add(share);
-            CheckDecryptedShares(share.Id);
-        }
-
-        private void CheckDecryptedShares(int id)
-        {
-            if (!_taken[id]) return;
-            if (_decryptedShares[id].Count < _f + 1) return;
-            if (_shares[id] != null) return;
-            _shares[id] = _pubKey.FullDecrypt(_decryptedShares[id]);
-
-            CheckAllSharesDecrypted();
-        }
-
-        private void CheckAllSharesDecrypted()
-        {
-            if (_result != null) return;
-            
-            for (var i = 0; i < _n; ++i)
-                if (_taken[i] && _shares[i] == null)
-                    return;
-            
-            for (var i = 0; i < _n; ++i)
-                if (_taken[i])
-                    _result.Add(_shares[i]);
-
-            CheckResult();
-        }
-        
-        private void CheckResult()
-        {
-            if (_result == null) return;
-            if (_requested != ResultStatus.Requested) return;
-            _requested = ResultStatus.Sent;
-            _broadcaster.InternalResponse(
-                new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
-        }
-
-        private void HandleTPKESetup(ProtocolResult<TPKESetupId, Tuple<TPKEPubKey, TPKEPrivKey>> response)
-        {
-            _pubKey = response.Result.Item1;
-            _privKey = response.Result.Item2;
-
-            CheckEncryption();
-        }
-
         private void HandleInputMessage(ProtocolRequest<HoneyBadgerId, IRawShare> request)
         {
             _rawShare = request.Input;
@@ -149,7 +100,15 @@ namespace Phorkus.Consensus.HoneyBadger
             CheckEncryption();
             CheckResult();
         }
+        
+        private void HandleTPKESetup(ProtocolResult<TPKESetupId, Tuple<TPKEPubKey, TPKEPrivKey>> response)
+        {
+            _pubKey = response.Result.Item1;
+            _privKey = response.Result.Item2;
 
+            CheckEncryption();
+        }
+       
         private void CheckEncryption()
         {
             if (_pubKey == null) return;
@@ -185,5 +144,50 @@ namespace Phorkus.Consensus.HoneyBadger
             };
             return message;
         }
+        
+        private void HandleDecMessage(Validator messageValidator, DecMessage messageDec)
+        {
+            IPartiallyDecryptedShare share = _pubKey.Decode(messageDec);
+            // todo check share validity
+            _decryptedShares[share.Id].Add(share);
+            CheckDecryptedShares(share.Id);
+        }
+
+        private void CheckDecryptedShares(int id)
+        {
+            if (!_taken[id]) return;
+            if (_decryptedShares[id].Count < _f + 1) return;
+            if (_shares[id] != null) return;
+            _shares[id] = _pubKey.FullDecrypt(_decryptedShares[id]);
+
+            CheckAllSharesDecrypted();
+        }
+
+        private void CheckAllSharesDecrypted()
+        {
+            if (_result != null) return;
+
+            for (var i = 0; i < _n; ++i)
+                if (_taken[i] && _shares[i] == null)
+                    return;
+            
+            _result = new HashSet<IRawShare>();
+            
+            for (var i = 0; i < _n; ++i)
+                if (_taken[i])
+                    _result.Add(_shares[i]);
+
+            CheckResult();
+        }
+        
+        private void CheckResult()
+        {
+            if (_result == null) return;
+            if (_requested != ResultStatus.Requested) return;
+            _requested = ResultStatus.Sent;
+            _broadcaster.InternalResponse(
+                new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
+        }
+
     }
 }

@@ -6,25 +6,23 @@ namespace Phorkus.Consensus.BinaryAgreement
 {
     public class BinaryAgreementId : IProtocolIdentifier
     {
-        public BinaryAgreementId(ulong era, ulong agreement)
+        public BinaryAgreementId(ulong era, ulong associatedValidatorId)
         {
             Era = era;
-            Agreement = agreement;
+            AssociatedValidatorId = associatedValidatorId;
         }
 
         public ulong Era { get; }
-        public ulong Agreement { get; }
-        
-        public int ValidatorId { get; }
+        public ulong AssociatedValidatorId { get; }
         
         public IEnumerable<byte> ToByteArray()
         {
-            return BitConverter.GetBytes(Era).Concat(BitConverter.GetBytes(Agreement));
+            return BitConverter.GetBytes(Era).Concat(BitConverter.GetBytes(AssociatedValidatorId));
         }
 
         protected bool Equals(BinaryAgreementId other)
         {
-            return Era == other.Era && Agreement == other.Agreement;
+            return Era == other.Era && AssociatedValidatorId == other.AssociatedValidatorId;
         }
 
         public override bool Equals(object obj)
@@ -44,13 +42,13 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             unchecked
             {
-                return (Era.GetHashCode() * 397) ^ Agreement.GetHashCode();
+                return (Era.GetHashCode() * 397) ^ AssociatedValidatorId.GetHashCode();
             }
         }
         
         public override string ToString()
         {
-            return $"BA (E={Era}, A={Agreement})";
+            return $"BA (E={Era}, A={AssociatedValidatorId})";
         }
     }
 }

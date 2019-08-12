@@ -77,7 +77,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                     }
 
                     // here we start new BB assuming that current estimate is correct
-                    var broadcastId = new BinaryBroadcastId(_agreementId.Era, _agreementId.Agreement, _currentEpoch);
+                    var broadcastId = new BinaryBroadcastId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
                     _consensusBroadcaster.InternalRequest(
                         new ProtocolRequest<BinaryBroadcastId, bool>(Id, broadcastId, _estimate)
                     );
@@ -89,7 +89,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                     if (!_broadcasts.ContainsKey(_currentEpoch - 1))
                         return; // we cannot progress since BB is not completed
                     _currentValues = _broadcasts[_currentEpoch - 1];
-                    var coinId = new CoinId(_agreementId.Era, _agreementId.Agreement, _currentEpoch);
+                    var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
                     _consensusBroadcaster.InternalRequest(new ProtocolRequest<CoinId, object>(Id, coinId, null));
                     _currentEpoch += 1;
                 }

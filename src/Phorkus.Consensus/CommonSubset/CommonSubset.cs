@@ -29,10 +29,12 @@ namespace Phorkus.Consensus.CommonSubset
 
         public override IProtocolIdentifier Id => _commonSubsetId;
 
-        public CommonSubset(int n, int f, IConsensusBroadcaster broadcaster)
+        public CommonSubset(int n, int f, CommonSubsetId commonSubsetId, IConsensusBroadcaster broadcaster)
         {
             _n = n;
             _f = f;
+
+            _commonSubsetId = commonSubsetId;
             _broadcaster = broadcaster;
             
             _binaryAgreementInput = new bool?[n];
@@ -60,11 +62,9 @@ namespace Phorkus.Consensus.CommonSubset
                 switch (message)
                 {
                     case ProtocolRequest<CommonSubsetId, IEncryptedShare> commonSubsetRequested:
-//                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast requested");
                         HandleInputMessage(commonSubsetRequested);
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<IEncryptedShare>> _:
-//                        Console.Error.WriteLine($"{_consensusBroadcaster.GetMyId()}: broadcast completed");
                         Terminated = true;
                         break;
                     case ProtocolResult<ReliableBroadcastId, IEncryptedShare> result:
@@ -101,12 +101,13 @@ namespace Phorkus.Consensus.CommonSubset
             throw new NotImplementedException();
         }
 
-        private void SendInputToBinaryAgreement(int j)
+        private void SendInputToBinaryAgreement(ulong j)
         {
             if (!_binaryAgreementInput[j].HasValue)
                 throw new NoNullAllowedException();
-            // todo set id to j
-            _broadcaster.InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(Id, null, _binaryAgreementInput[j].Value));
+            
+            var id = new BinaryAgreementId( _commonSubsetId.Era, j);
+            _broadcaster.InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
             
             throw new NotImplementedException();
         }
@@ -114,7 +115,7 @@ namespace Phorkus.Consensus.CommonSubset
 
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, IEncryptedShare> result)
         {
-            int j = result.Id.ValidatorId;
+            ulong j = result.Id.AssociatedValidatorId;
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)
@@ -130,7 +131,7 @@ namespace Phorkus.Consensus.CommonSubset
         {
             // todo check for double send of result
             ++_cntBinaryAgreementsCompleted;
-            _binaryAgreementResult[result.Id.ValidatorId] = result.Result;
+            _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= _n - _f)
             {
@@ -140,7 +141,7 @@ namespace Phorkus.Consensus.CommonSubset
                     if (_binaryAgreementInput[i] == null)
                     {
                         _binaryAgreementInput[i] = false;
-                        SendInputToBinaryAgreement(i);
+                        SendInputToBinaryAgreement((ulong)i);
                     }
                 }
             }

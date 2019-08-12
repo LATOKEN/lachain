@@ -5,7 +5,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
 {
     public class ReliableBroadcastId: IProtocolIdentifier
     {
-        public int ValidatorId { get; }
+        public ulong AssociatedValidatorId { get; }
         
         public bool Equals(IProtocolIdentifier other)
         {
