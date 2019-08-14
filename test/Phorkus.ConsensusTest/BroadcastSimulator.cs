@@ -11,7 +11,7 @@ namespace Phorkus.ConsensusTest
 {
     public class BroadcastSimulator : IConsensusBroadcaster
     {
-        private readonly uint _sender;
+        private readonly int _sender;
 
         private readonly Dictionary<IProtocolIdentifier, IConsensusProtocol> _registry =
             new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
@@ -21,7 +21,7 @@ namespace Phorkus.ConsensusTest
 
         private readonly PlayerSet _playerSet;
 
-        public BroadcastSimulator(uint sender, PlayerSet playerSet)
+        public BroadcastSimulator(int sender, PlayerSet playerSet)
         {
             _sender = sender;
             _playerSet = playerSet;
@@ -108,7 +108,7 @@ namespace Phorkus.ConsensusTest
             _registry[result.From]?.ReceiveMessage(new MessageEnvelope(result));
         }
 
-        public uint GetMyId()
+        public int GetMyId()
         {
             return _sender;
         }

@@ -4,7 +4,7 @@ using NUnit.Framework;
 using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Phorkus.ConsensusTest
+namespace Phorkus.CryptoTest
 {
     public class ThresholdCryptoTest
     {

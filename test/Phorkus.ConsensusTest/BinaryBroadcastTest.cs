@@ -26,7 +26,7 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
-            for (uint i = 0; i < N; ++i)
+            for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
                 _broadcasters[i] = new BroadcastSimulator(i, _playerSet);
