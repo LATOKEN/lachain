@@ -5,6 +5,7 @@ using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
+using Phorkus.Consensus.TPKE;
 using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
@@ -44,6 +45,11 @@ namespace Phorkus.ConsensusTest
             _playerSet.BroadcastMessage(message);
         }
 
+        public void SendToValidator(ConsensusMessage message, int index)
+        {
+            _playerSet.SendToPlayer(message, index);
+        }
+
         public void Dispatch(ConsensusMessage message)
         {
             switch (message.PayloadCase)
@@ -63,6 +69,9 @@ namespace Phorkus.ConsensusTest
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     _registry[new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch)]
                         ?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.PrivateKey:
+                    _registry[new TPKESetupId((int) message.Validator.Era)]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");

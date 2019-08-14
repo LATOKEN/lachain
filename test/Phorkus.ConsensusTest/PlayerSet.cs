@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Org.BouncyCastle.Crypto.Engines;
 using Phorkus.Consensus;
 using Phorkus.Proto;
 
@@ -19,6 +20,11 @@ namespace Phorkus.ConsensusTest
             {
                 t.Dispatch(consensusMessage);
             }
+        }
+
+        public void SendToPlayer(ConsensusMessage consensusMessage, int index)
+        {
+            _broadcasters[index].Dispatch(consensusMessage);
         }
     }
 }
