@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -21,6 +22,29 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             var res = new G1();
             res.Clear();
             return res;
+        }
+
+        public static byte[] ToBytes(G1 g)
+        {
+            const int BUF_SIZE = 200;
+            var buf = new byte[BUF_SIZE];
+            var len = MclImports.mclBnG1_serialize(buf, BUF_SIZE, ref g);
+            if (len == 0)
+            {
+                throw new Exception("Failed to serialize G1");
+            }
+            return buf.Take((int) len).ToArray();
+        }
+
+        public static G1 FromBytes(byte[] buf)
+        {
+            G1 g = new G1();
+            if (MclImports.mclBnG1_deserialize(ref g, buf, buf.Length) == 0)
+            {
+                throw new Exception("Failed to deserialize G1");
+            }
+
+            return g;
         }
 
         public static G1 Generator = GetGenerator();

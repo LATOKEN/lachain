@@ -1,6 +1,6 @@
 using System;
 
-namespace Phorkus.Consensus.TPKE
+namespace Phorkus.Crypto
 {
     public class TPKEPrivKey
     {

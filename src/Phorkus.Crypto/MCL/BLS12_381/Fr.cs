@@ -17,6 +17,30 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             MclImports.mclBnFr_setStr(ref res, bytes, bytes.Length, 512);
             return res;
         }
+        
+        public static byte[] ToBytes(Fr fr)
+        {
+            const int BUF_SIZE = 200;
+            var buf = new byte[BUF_SIZE];
+            var len = MclImports.mclBnFr_serialize(buf, BUF_SIZE, ref fr);
+            if (len == 0)
+            {
+                throw new Exception("Failed to serialize G1");
+            }
+            return buf.Take((int) len).ToArray();
+        }
+
+        public static Fr FromBytes(byte[] buf)
+        {
+            Fr fr = new Fr();
+            if (MclImports.mclBnFr_deserialize(ref fr, buf, buf.Length) == 0)
+            {
+                throw new Exception("Failed to deserialize G1");
+            }
+
+            return fr;
+        }
+
 
         public static Fr FromHex(string s)
         {

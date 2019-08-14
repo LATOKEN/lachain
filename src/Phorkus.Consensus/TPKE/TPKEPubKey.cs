@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Phorkus.Proto;
 
-namespace Phorkus.Consensus.TPKE
+namespace Phorkus.Crypto
 {
     public class TPKEPubKey
     {
