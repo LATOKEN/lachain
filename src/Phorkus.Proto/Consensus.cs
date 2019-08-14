@@ -31,13 +31,15 @@ namespace Phorkus.Proto {
             "ZRIOCgZ2YWx1ZXMYASADKAgSEQoJYWdyZWVtZW50GAIgASgEEg0KBWVwb2No",
             "GAMgASgEIk4KEUNvbW1vbkNvaW5NZXNzYWdlEhcKD3NpZ25hdHVyZV9zaGFy",
             "ZRgBIAEoDBIRCglhZ3JlZW1lbnQYAiABKAQSDQoFZXBvY2gYAyABKAQiHQoK",
-            "RGVjTWVzc2FnZRIPCgdtZXNzYWdlGAEgASgMItQBChBDb25zZW5zdXNNZXNz",
-            "YWdlEh0KCXZhbGlkYXRvchgBIAEoCzIKLlZhbGlkYXRvchIcCgRidmFsGAIg",
-            "ASgLMgwuQlZhbE1lc3NhZ2VIABIaCgNhdXgYAyABKAsyCy5BdXhNZXNzYWdl",
-            "SAASHAoEY29uZhgEIAEoCzIMLkNvbmZNZXNzYWdlSAASIgoEY29pbhgFIAEo",
-            "CzISLkNvbW1vbkNvaW5NZXNzYWdlSAASGgoDZGVjGAYgASgLMgsuRGVjTWVz",
-            "c2FnZUgAQgkKB3BheWxvYWRCIwoRY29tLmxhdG9rZW4ucHJvdG+qAg1QaG9y",
-            "a3VzLlByb3RvYgZwcm90bzM="));
+            "RGVjTWVzc2FnZRIPCgdtZXNzYWdlGAEgASgMIkUKDlRQS0VQcml2YXRlS2V5",
+            "EhIKCnB1YmxpY19rZXkYASABKAwSEwoLcHJpdmF0ZV9rZXkYAiABKAwSCgoC",
+            "aWQYAyABKAQi/AEKEENvbnNlbnN1c01lc3NhZ2USHQoJdmFsaWRhdG9yGAEg",
+            "ASgLMgouVmFsaWRhdG9yEhwKBGJ2YWwYAiABKAsyDC5CVmFsTWVzc2FnZUgA",
+            "EhoKA2F1eBgDIAEoCzILLkF1eE1lc3NhZ2VIABIcCgRjb25mGAQgASgLMgwu",
+            "Q29uZk1lc3NhZ2VIABIiCgRjb2luGAUgASgLMhIuQ29tbW9uQ29pbk1lc3Nh",
+            "Z2VIABIaCgNkZWMYBiABKAsyCy5EZWNNZXNzYWdlSAASJgoLcHJpdmF0ZV9r",
+            "ZXkYByABKAsyDy5UUEtFUHJpdmF0ZUtleUgAQgkKB3BheWxvYWRCIwoRY29t",
+            "LmxhdG9rZW4ucHJvdG+qAg1QaG9ya3VzLlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Phorkus.Proto.DefaultReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -47,7 +49,8 @@ namespace Phorkus.Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConfMessage), global::Phorkus.Proto.ConfMessage.Parser, new[]{ "Values", "Agreement", "Epoch" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.CommonCoinMessage), global::Phorkus.Proto.CommonCoinMessage.Parser, new[]{ "SignatureShare", "Agreement", "Epoch" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.DecMessage), global::Phorkus.Proto.DecMessage.Parser, new[]{ "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Validator", "Bval", "Aux", "Conf", "Coin", "Dec" }, new[]{ "Payload" }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.TPKEPrivateKey), global::Phorkus.Proto.TPKEPrivateKey.Parser, new[]{ "PublicKey", "PrivateKey", "Id" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Phorkus.Proto.ConsensusMessage), global::Phorkus.Proto.ConsensusMessage.Parser, new[]{ "Validator", "Bval", "Aux", "Conf", "Coin", "Dec", "PrivateKey" }, new[]{ "Payload" }, null, null)
           }));
     }
     #endregion
@@ -1063,6 +1066,179 @@ namespace Phorkus.Proto {
 
   }
 
+  public sealed partial class TPKEPrivateKey : pb::IMessage<TPKEPrivateKey> {
+    private static readonly pb::MessageParser<TPKEPrivateKey> _parser = new pb::MessageParser<TPKEPrivateKey>(() => new TPKEPrivateKey());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<TPKEPrivateKey> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public TPKEPrivateKey() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public TPKEPrivateKey(TPKEPrivateKey other) : this() {
+      publicKey_ = other.publicKey_;
+      privateKey_ = other.privateKey_;
+      id_ = other.id_;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public TPKEPrivateKey Clone() {
+      return new TPKEPrivateKey(this);
+    }
+
+    /// <summary>Field number for the "public_key" field.</summary>
+    public const int PublicKeyFieldNumber = 1;
+    private pb::ByteString publicKey_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pb::ByteString PublicKey {
+      get { return publicKey_; }
+      set {
+        publicKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "private_key" field.</summary>
+    public const int PrivateKeyFieldNumber = 2;
+    private pb::ByteString privateKey_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pb::ByteString PrivateKey {
+      get { return privateKey_; }
+      set {
+        privateKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 3;
+    private ulong id_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ulong Id {
+      get { return id_; }
+      set {
+        id_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as TPKEPrivateKey);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(TPKEPrivateKey other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (PublicKey != other.PublicKey) return false;
+      if (PrivateKey != other.PrivateKey) return false;
+      if (Id != other.Id) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (PublicKey.Length != 0) hash ^= PublicKey.GetHashCode();
+      if (PrivateKey.Length != 0) hash ^= PrivateKey.GetHashCode();
+      if (Id != 0UL) hash ^= Id.GetHashCode();
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (PublicKey.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteBytes(PublicKey);
+      }
+      if (PrivateKey.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteBytes(PrivateKey);
+      }
+      if (Id != 0UL) {
+        output.WriteRawTag(24);
+        output.WriteUInt64(Id);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (PublicKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(PublicKey);
+      }
+      if (PrivateKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(PrivateKey);
+      }
+      if (Id != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Id);
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(TPKEPrivateKey other) {
+      if (other == null) {
+        return;
+      }
+      if (other.PublicKey.Length != 0) {
+        PublicKey = other.PublicKey;
+      }
+      if (other.PrivateKey.Length != 0) {
+        PrivateKey = other.PrivateKey;
+      }
+      if (other.Id != 0UL) {
+        Id = other.Id;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            PublicKey = input.ReadBytes();
+            break;
+          }
+          case 18: {
+            PrivateKey = input.ReadBytes();
+            break;
+          }
+          case 24: {
+            Id = input.ReadUInt64();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class ConsensusMessage : pb::IMessage<ConsensusMessage> {
     private static readonly pb::MessageParser<ConsensusMessage> _parser = new pb::MessageParser<ConsensusMessage>(() => new ConsensusMessage());
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1070,7 +1246,7 @@ namespace Phorkus.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Phorkus.Proto.ConsensusReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1103,6 +1279,9 @@ namespace Phorkus.Proto {
           break;
         case PayloadOneofCase.Dec:
           Dec = other.Dec.Clone();
+          break;
+        case PayloadOneofCase.PrivateKey:
+          PrivateKey = other.PrivateKey.Clone();
           break;
       }
 
@@ -1179,6 +1358,17 @@ namespace Phorkus.Proto {
       }
     }
 
+    /// <summary>Field number for the "private_key" field.</summary>
+    public const int PrivateKeyFieldNumber = 7;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Phorkus.Proto.TPKEPrivateKey PrivateKey {
+      get { return payloadCase_ == PayloadOneofCase.PrivateKey ? (global::Phorkus.Proto.TPKEPrivateKey) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.PrivateKey;
+      }
+    }
+
     private object payload_;
     /// <summary>Enum of possible cases for the "payload" oneof.</summary>
     public enum PayloadOneofCase {
@@ -1188,6 +1378,7 @@ namespace Phorkus.Proto {
       Conf = 4,
       Coin = 5,
       Dec = 6,
+      PrivateKey = 7,
     }
     private PayloadOneofCase payloadCase_ = PayloadOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1220,6 +1411,7 @@ namespace Phorkus.Proto {
       if (!object.Equals(Conf, other.Conf)) return false;
       if (!object.Equals(Coin, other.Coin)) return false;
       if (!object.Equals(Dec, other.Dec)) return false;
+      if (!object.Equals(PrivateKey, other.PrivateKey)) return false;
       if (PayloadCase != other.PayloadCase) return false;
       return true;
     }
@@ -1233,6 +1425,7 @@ namespace Phorkus.Proto {
       if (payloadCase_ == PayloadOneofCase.Conf) hash ^= Conf.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Coin) hash ^= Coin.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Dec) hash ^= Dec.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.PrivateKey) hash ^= PrivateKey.GetHashCode();
       hash ^= (int) payloadCase_;
       return hash;
     }
@@ -1268,6 +1461,10 @@ namespace Phorkus.Proto {
         output.WriteRawTag(50);
         output.WriteMessage(Dec);
       }
+      if (payloadCase_ == PayloadOneofCase.PrivateKey) {
+        output.WriteRawTag(58);
+        output.WriteMessage(PrivateKey);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1290,6 +1487,9 @@ namespace Phorkus.Proto {
       }
       if (payloadCase_ == PayloadOneofCase.Dec) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Dec);
+      }
+      if (payloadCase_ == PayloadOneofCase.PrivateKey) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PrivateKey);
       }
       return size;
     }
@@ -1320,6 +1520,9 @@ namespace Phorkus.Proto {
           break;
         case PayloadOneofCase.Dec:
           Dec = other.Dec;
+          break;
+        case PayloadOneofCase.PrivateKey:
+          PrivateKey = other.PrivateKey;
           break;
       }
 
@@ -1383,6 +1586,15 @@ namespace Phorkus.Proto {
             }
             input.ReadMessage(subBuilder);
             Dec = subBuilder;
+            break;
+          }
+          case 58: {
+            global::Phorkus.Proto.TPKEPrivateKey subBuilder = new global::Phorkus.Proto.TPKEPrivateKey();
+            if (payloadCase_ == PayloadOneofCase.PrivateKey) {
+              subBuilder.MergeFrom(PrivateKey);
+            }
+            input.ReadMessage(subBuilder);
+            PrivateKey = subBuilder;
             break;
           }
         }

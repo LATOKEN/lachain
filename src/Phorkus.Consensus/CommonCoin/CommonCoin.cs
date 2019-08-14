@@ -13,7 +13,6 @@ namespace Phorkus.Consensus.CommonCoin
         private readonly IThresholdSigner _thresholdSigner;
         private readonly PublicKeySet _publicKeySet;
         private readonly CoinId _coinId;
-        private readonly IConsensusBroadcaster _broadcaster;
         private bool? _result;
         private int _requested;
 
@@ -22,11 +21,10 @@ namespace Phorkus.Consensus.CommonCoin
         public CommonCoin(
             PublicKeySet publicKeySet, PrivateKeyShare privateKeyShare,
             CoinId coinId, IConsensusBroadcaster broadcaster
-        )
+        ) : base(broadcaster)
         {
             _publicKeySet = publicKeySet ?? throw new ArgumentNullException(nameof(publicKeySet));
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
-            _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
             _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), privateKeyShare, publicKeySet);
         }
 
@@ -90,7 +88,7 @@ namespace Phorkus.Consensus.CommonCoin
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _broadcaster.GetMyId(),
+                    ValidatorIndex = (ulong) GetMyId(),
                     Era = _coinId.Era
                 },
                 Coin = new CommonCoinMessage

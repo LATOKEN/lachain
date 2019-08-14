@@ -27,6 +27,6 @@ namespace Phorkus.Consensus
         /*
          * This method is used to get validator id
          */
-        uint GetMyId();
+        int GetMyId();
     }
 }

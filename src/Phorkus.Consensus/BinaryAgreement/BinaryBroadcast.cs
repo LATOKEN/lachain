@@ -11,7 +11,6 @@ namespace Phorkus.Consensus.BinaryAgreement
     public class BinaryBroadcast : AbstractProtocol
     {
         private readonly BinaryBroadcastId _broadcastId;
-        private readonly IConsensusBroadcaster _broadcaster;
         private BoolSet _binValues;
         private readonly int _faulty, _players;
         private readonly ISet<int>[] _receivedValues;
@@ -28,9 +27,9 @@ namespace Phorkus.Consensus.BinaryAgreement
         public override IProtocolIdentifier Id => _broadcastId;
 
         public BinaryBroadcast(int n, int f, BinaryBroadcastId broadcastId, IConsensusBroadcaster broadcaster)
+        : base(broadcaster)
         {
             _broadcastId = broadcastId;
-            _broadcaster = broadcaster;
             _players = n;
             _faulty = f;
             _requested = ResultStatus.NotRequested;
@@ -203,7 +202,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _broadcaster.GetMyId(),
+                    ValidatorIndex = (ulong) GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Bval = new BValMessage
@@ -223,7 +222,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _broadcaster.GetMyId(),
+                    ValidatorIndex = (ulong) GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Aux = new AuxMessage
@@ -243,7 +242,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = _broadcaster.GetMyId(),
+                    ValidatorIndex = (ulong) GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Conf = new ConfMessage

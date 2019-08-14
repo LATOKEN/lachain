@@ -12,7 +12,7 @@ namespace Phorkus.Consensus.CommonSubset
     {
         private CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
-        private ISet<IEncryptedShare> _result;
+        private ISet<EncryptedShare> _result;
         private readonly int _n;
         private readonly int _f;
         
@@ -21,26 +21,22 @@ namespace Phorkus.Consensus.CommonSubset
         private bool _filledBinaryAgreements = false;
         private int _cntBinaryAgreementsCompleted = 0;
 
-        private readonly IEncryptedShare[] _reliableBroadcastResult;
-
-        // todo move broadcaster to AbstractProtocol
-        private readonly IConsensusBroadcaster _broadcaster;
+        private readonly EncryptedShare[] _reliableBroadcastResult;
 
 
         public override IProtocolIdentifier Id => _commonSubsetId;
 
-        public CommonSubset(int n, int f, CommonSubsetId commonSubsetId, IConsensusBroadcaster broadcaster)
+        public CommonSubset(int n, int f, CommonSubsetId commonSubsetId, IConsensusBroadcaster broadcaster): base(broadcaster)
         {
             _n = n;
             _f = f;
 
             _commonSubsetId = commonSubsetId;
-            _broadcaster = broadcaster;
             
             _binaryAgreementInput = new bool?[n];
             _binaryAgreementResult = new bool?[n];
             
-            _reliableBroadcastResult = new IEncryptedShare[n];
+            _reliableBroadcastResult = new EncryptedShare[n];
         }
         
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -61,13 +57,13 @@ namespace Phorkus.Consensus.CommonSubset
                 var message = envelope.InternalMessage;
                 switch (message)
                 {
-                    case ProtocolRequest<CommonSubsetId, IEncryptedShare> commonSubsetRequested:
+                    case ProtocolRequest<CommonSubsetId, EncryptedShare> commonSubsetRequested:
                         HandleInputMessage(commonSubsetRequested);
                         break;
-                    case ProtocolResult<CommonSubsetId, ISet<IEncryptedShare>> _:
+                    case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> _:
                         Terminated = true;
                         break;
-                    case ProtocolResult<ReliableBroadcastId, IEncryptedShare> result:
+                    case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
                         HandleReliableBroadcast(result);
                         break;
                     case ProtocolResult<BinaryAgreementId, bool> result:
@@ -80,19 +76,19 @@ namespace Phorkus.Consensus.CommonSubset
             }
         }
 
-        private void HandleInputMessage(ProtocolRequest<CommonSubsetId, IEncryptedShare> request)
+        private void HandleInputMessage(ProtocolRequest<CommonSubsetId, EncryptedShare> request)
         {
             _requested = ResultStatus.Requested;
             
             // todo set id to i-th rbc
-            _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, IEncryptedShare>(Id, null, request.Input));
+            _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(Id, null, request.Input));
 
             for (var j = 0; j < _n; ++j)
             {
                 if (j != _broadcaster.GetMyId())
                 {
                     // todo set id to j-th protocol
-                    _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, IEncryptedShare>(Id, null, null));
+                    _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(Id, null, null));
                 }
             }
             
@@ -113,7 +109,7 @@ namespace Phorkus.Consensus.CommonSubset
         }
 
 
-        private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, IEncryptedShare> result)
+        private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
             ulong j = result.Id.AssociatedValidatorId;
 
@@ -163,7 +159,7 @@ namespace Phorkus.Consensus.CommonSubset
                 }
             }
             
-            _result = new HashSet<IEncryptedShare>();
+            _result = new HashSet<EncryptedShare>();
             
             for (var i = 0; i < _n; ++i)
             {
@@ -182,7 +178,7 @@ namespace Phorkus.Consensus.CommonSubset
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
             _broadcaster.InternalResponse(
-                new ProtocolResult<CommonSubsetId, ISet<IEncryptedShare>>(_commonSubsetId, _result));
+                new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>(_commonSubsetId, _result));
         }
     }
 }
