@@ -19,6 +19,9 @@ namespace Phorkus.Crypto.MCL.BLS12_381
         internal static extern void mclBnFr_setInt32(ref Fr y, int x);
 
         [DllImport(Libmcl)]
+        internal static extern int mclBnFr_setByCSPRNG(ref Fr y);
+
+        [DllImport(Libmcl)]
         public static extern int mclBnFr_setStr(
             ref Fr x,
             [In] [MarshalAs(UnmanagedType.LPArray)]

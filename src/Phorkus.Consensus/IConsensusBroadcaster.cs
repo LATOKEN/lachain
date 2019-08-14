@@ -13,6 +13,8 @@ namespace Phorkus.Consensus
          */
         void Broadcast(ConsensusMessage message);
 
+        void SendToValidator(ConsensusMessage message, int index);
+
         /*
          * This method is used when external consensus message is incoming
          */

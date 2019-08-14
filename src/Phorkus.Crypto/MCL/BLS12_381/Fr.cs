@@ -40,7 +40,13 @@ namespace Phorkus.Crypto.MCL.BLS12_381
 
             return fr;
         }
-
+        
+        public static Fr GetRandom()
+        {
+            var fr = new Fr();
+            MclImports.mclBnFr_setByCSPRNG(ref fr);
+            return fr;
+        }
 
         public static Fr FromHex(string s)
         {
@@ -163,5 +169,6 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             z.Div(x, y);
             return z;
         }
+
     }
 }
