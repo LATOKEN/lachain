@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Crypto
 {
@@ -168,10 +169,7 @@ namespace Phorkus.Crypto
                 var hash = new byte[Hash2Size];
                 Array.Copy(current.LeftChild.Hash.ToByteArray(), 0, hash, 0, HashSize);
                 Array.Copy(current.RightChild.Hash.ToByteArray(), 0, hash, HashSize, HashSize);
-                current.Hash = new UInt256
-                {
-                    Buffer = ByteString.CopyFrom(hash)
-                };
+                current.Hash = hash.Keccak256().ToUInt256();
             }
 
             return Build(parents); //TailCall

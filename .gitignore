@@ -266,3 +266,5 @@ neo-cli/config.json
 src/NeoSharp.Application/appsettings.json
 src/Phorkus.Console/config.json
 src/Phorkus.Benchmark/config.json
+
+src/Phorkus.Proto/*.cs
