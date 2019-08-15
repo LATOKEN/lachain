@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Phorkus.Consensus.CommonSubset;
 using Phorkus.Consensus.Messages;
@@ -162,7 +163,7 @@ namespace Phorkus.Consensus.HoneyBadger
             if (!_taken[id]) return;
             if (_decryptedShares[id].Count < _f + 1) return;
             if (_shares[id] != null) return;
-            _shares[id] = _pubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id]);
+            _shares[id] = _pubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
             CheckAllSharesDecrypted();
         }

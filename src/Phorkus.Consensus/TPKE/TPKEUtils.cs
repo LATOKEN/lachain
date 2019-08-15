@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using Org.BouncyCastle.Security;
+using Phorkus.Crypto;
 using Phorkus.Crypto.MCL.BLS12_381;
 
 namespace Phorkus.Consensus.TPKE
@@ -10,12 +12,15 @@ namespace Phorkus.Consensus.TPKE
     {
         public static byte[] G(G1 g)
         {
-            throw new NotImplementedException();
+            return G1.ToBytes(g).Keccak256();
         }
 
         public static G2 H(G1 g, byte[] w)
         {
-            throw new NotImplementedException();
+            var join = G1.ToBytes(g).Concat(w).ToArray();
+            var res = new G2();
+            res.SetHashOf(join);
+            return res;
         }
 
         public static byte[] XOR(byte[] lhs, byte[] rhs)

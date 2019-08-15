@@ -43,6 +43,7 @@ namespace Phorkus.Crypto.MCL.BLS12_381
         
         public static Fr GetRandom()
         {
+            // todo replace with cryptographic random
             var fr = new Fr();
             MclImports.mclBnFr_setByCSPRNG(ref fr);
             return fr;

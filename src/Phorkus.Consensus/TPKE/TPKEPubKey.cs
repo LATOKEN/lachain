@@ -9,7 +9,7 @@ namespace Phorkus.Consensus.TPKE
     public class TPKEPubKey 
     {
         public G1 Y;
-        static int LEN = 1000;
+        static int LEN = 32;
         public int t;
 
         public TPKEPubKey(G1 _Y, int _t)
@@ -20,21 +20,14 @@ namespace Phorkus.Consensus.TPKE
 
         public EncryptedShare Encrypt(IRawShare rawShare)
         {
-            // todo replace with cryptographic random
-            var rand = new Random();
-            var temp = new byte[LEN];
-            rand.NextBytes(temp);
-            var r = Fr.FromBytes(temp);
+            var r = Fr.GetRandom();
 
-            G1 U = new G1();
-            U.Mul(G1.Generator, r);
+            G1 U = G1.Generator * r;
 
-            G1 T = new G1();
-            T.Mul(Y, r);
+            G1 T = Y * r;
             byte[] V = TPKEUtils.XOR(TPKEUtils.G(T), rawShare.ToBytes());
-            
-            G2 W = new G2();
-            W.Mul(TPKEUtils.H(U, V), r);
+
+            G2 W = TPKEUtils.H(U, V) * r;
             
             return new EncryptedShare(U, V, W, rawShare.Id);
         }
@@ -49,15 +42,24 @@ namespace Phorkus.Consensus.TPKE
             throw new NotImplementedException();
         }
 
-        public IRawShare FullDecrypt(EncryptedShare share, ISet<PartiallyDecryptedShare> us)
+        public IRawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
         {
             if (us.Count < t)
             {
                 throw new Exception("Unsufficient number of shares!");
             } 
             
-            // todo add lagrange interpolation
-            throw new NotImplementedException();
+            var ys = new List<G1>();
+            var xs = new List<Fr>();
+
+            foreach (var part in us)
+            {
+                xs.Add(Fr.FromInt(part.Id + 1));
+                ys.Add(part.Ui);
+            }
+
+            var U = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
+            return new RawShare(TPKEUtils.XOR(TPKEUtils.G(U), share.V), share.Id);
         }
     }
 }

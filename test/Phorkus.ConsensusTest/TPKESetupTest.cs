@@ -46,12 +46,8 @@ namespace Phorkus.ConsensusTest
             }
         }
 
-        [Test]
-        [Repeat(100)]
-        public void TestBinaryBroadcastAllZero()
+        private void RunAllHonest()
         {
-            var rnd = new Random();
-            
             SetUpAllHonest();
             for (var i = 0; i < N; ++i)
             {
@@ -69,18 +65,34 @@ namespace Phorkus.ConsensusTest
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
             }
-            
-            // test that pub key can be recovered correctly using interpolation
+        }
+
+        private ISet<int> ChooseRandomPlayers(int t)
+        {
+            var rnd = new Random();
             ISet<int> S = new HashSet<int>();
-            while (S.Count < T)
+            while (S.Count < t)
             {
                 S.Add(rnd.Next(0, N - 1));
             }
 
+            return S;
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void TestLagrangeInterpolation()
+        {
+            var rnd = new Random();
+            
+            RunAllHonest();
+            
+            // test that pub key can be recovered correctly using interpolation
+
             var ys = new List<G1>();
             var xs = new List<Fr>();
 
-            foreach (var i in S)
+            foreach (var i in ChooseRandomPlayers(T))
             {
                xs.Add(Fr.FromInt(i + 1));
                ys.Add(_resultInterceptors[i].Result.PrivKey.Y);
@@ -90,6 +102,31 @@ namespace Phorkus.ConsensusTest
             var B = _resultInterceptors[0].Result.PubKey.Y;
 //            Console.Error.WriteLine(B.GetStr(0));
             Assert.True(B.Equals(A), "interpolated pubkey equals to real pubkey");
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void TestEncryptionDecryption()
+        {
+            var rnd = new Random();
+            var data = new byte[32];
+            rnd.NextBytes(data);
+            
+            RunAllHonest();
+            var pubKey = _resultInterceptors[0].Result.PubKey;
+            
+            var share = new RawShare(data, 555);
+            var enc = pubKey.Encrypt(share);
+           
+            var parts = new List<PartiallyDecryptedShare>();
+            foreach (var i in ChooseRandomPlayers(T))
+            {
+                parts.Add(_resultInterceptors[i].Result.PrivKey.Decrypt(enc));
+            }
+
+            var dec = pubKey.FullDecrypt(enc, parts);
+            
+            Assert.True(share.Equals(dec));
         }
     }
 }

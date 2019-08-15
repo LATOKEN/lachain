@@ -17,9 +17,7 @@ namespace Tests
         [Repeat(100)]
         public void DeserializationG1Test()
         {
-            var rnd = new Random();
-            var x = new Fr();
-            x.SetInt(rnd.Next());
+            var x = Fr.GetRandom();
             var A = G1.Generator * x;
             
             byte[] enc = G1.ToBytes(A);
@@ -31,8 +29,7 @@ namespace Tests
         [Repeat(100)]
         public void DeserializationFrTest()
         {
-            var rnd = new Random();
-            var a = Fr.FromInt(rnd.Next());
+            var a = Fr.GetRandom();
             byte[] enc = Fr.ToBytes(a);
             var b = Fr.FromBytes(enc);
             Assert.True(a.Equals(b));
@@ -42,17 +39,29 @@ namespace Tests
         [Repeat(100)]
         public void AdditionG1Test()
         {
-            var rnd = new Random();
-
-            // todo add really random Fr
-            var a = Fr.FromInt(rnd.Next());
-            var b = Fr.FromInt(rnd.Next());
+            var a = Fr.GetRandom();
+            var b = Fr.GetRandom();
 
             var A = G1.Generator * a;
             var B = G1.Generator * b;
             var C = G1.Generator * (a + b);
             
             Assert.True(C.Equals(A + B), $"Addition of {a}G + {b}G failed");
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void PairingTest()
+        {
+            var a = Fr.GetRandom();
+            var b = Fr.GetRandom();
+
+            var A = G1.Generator * a;
+            var B = G2.Generator * b;
+
+            var X = Mcl.Pairing(A, B);
+            var Y = GT.Pow(Mcl.Pairing(G1.Generator, G2.Generator), (a * b));
+            Assert.True(X.Equals(Y));
         }
     }
 }

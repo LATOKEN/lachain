@@ -105,9 +105,16 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             return z;
         }
 
-        public void Pow(GT x, Fr y)
+        private void PowInternal(GT x, Fr y)
         {
             MclImports.mclBnGT_pow(ref this, ref x, ref y);
+        }
+        
+        public static GT Pow(GT x, Fr y)
+        {
+            var g = new GT();
+            g.PowInternal(x, y);
+            return g;
         }
 
         public void Pairing(G1 x, G2 y)
