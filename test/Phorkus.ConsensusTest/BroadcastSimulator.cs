@@ -70,7 +70,16 @@ namespace Phorkus.ConsensusTest
                     _registry[new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch)]
                         ?.ReceiveMessage(new MessageEnvelope(message));
                     break;
-                case ConsensusMessage.PayloadOneofCase.PrivateKey:
+                case ConsensusMessage.PayloadOneofCase.TpkeKeys:
+                    _registry[new TPKESetupId((int) message.Validator.Era)]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.PolynomialValue:
+                    _registry[new TPKESetupId((int) message.Validator.Era)]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
+                    _registry[new TPKESetupId((int) message.Validator.Era)]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
                     _registry[new TPKESetupId((int) message.Validator.Era)]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 default:

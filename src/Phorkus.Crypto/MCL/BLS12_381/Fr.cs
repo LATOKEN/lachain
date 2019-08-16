@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Phorkus.Utility.Utils;
 
 namespace Phorkus.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct Fr
     {
+        public static Fr Zero = FromInt(0);
         public static Fr FromBytes(IEnumerable<byte> array)
         {
             var res = new Fr();

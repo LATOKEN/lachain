@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Phorkus.Crypto.MCL.BLS12_381
 {
@@ -41,6 +44,63 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             var res = new GT();
             MclImports.mclBn_pairing(ref res, ref x, ref y);
             return res;
+        }
+
+//        public static Fr GetValue(IEnumerable<Fr> P, int at)
+//        {
+//            var res = Fr.FromInt(0);
+//            var by = Fr.FromInt(at);
+//            var cur = Fr.FromInt(1);
+//
+//            foreach (var coeff in P)
+//            {
+//                res += cur * coeff;
+//                cur *= by;
+//            }
+//
+//            return res;
+//        }
+
+        public static dynamic GetValue(IEnumerable<dynamic> P, int at, dynamic zero)
+        {
+            var res = zero;
+            var by = Fr.FromInt(at);
+            var cur = Fr.FromInt(1);
+
+            foreach (var coeff in P)
+            {
+                res += coeff * cur;
+                cur *= by;
+            }
+            return res;
+        }
+        
+        
+//        public static G2 GetValue(IEnumerable<G2> P, int at)
+//        {
+//            var res = G2.Zero;
+//            var by = Fr.FromInt(at);
+//            var cur = Fr.FromInt(1);
+//
+//            foreach (var coeff in P)
+//            {
+//                res += coeff * cur;
+//                cur *= by;
+//            }
+//
+//            return res;
+//        }
+
+
+        public static byte[] CalculateHash(G1[] gs)
+        {
+            var temp = new byte[0];
+            foreach (var g in gs)
+            {
+                temp = temp.Concat(G1.ToBytes(g)).ToArray();
+            }
+
+            return temp.Keccak256();
         }
     }
 }

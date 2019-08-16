@@ -74,6 +74,12 @@ namespace Phorkus.Crypto.MCL.BLS12_381
 
         [DllImport(Libmcl)]
         internal static extern int mclBnG1_isZero(ref G1 x);
+        
+        [DllImport(Libmcl)]
+        internal static extern long mclBnG2_serialize([Out] [MarshalAs(UnmanagedType.LPArray, SizeConst = 200)] byte[] buf, long maxBufSize, ref G2 x);
+
+        [DllImport(Libmcl)]
+        internal static extern long mclBnG2_deserialize(ref G2 x, [In] [MarshalAs(UnmanagedType.LPArray)] byte[] buf, long bufSize);
 
         [DllImport(Libmcl)]
         internal static extern long mclBnG1_serialize([Out] [MarshalAs(UnmanagedType.LPArray, SizeConst = 200)] byte[] buf, long maxBufSize, ref G1 x);

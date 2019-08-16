@@ -1,9 +1,8 @@
 using System;
 using NUnit.Framework;
-using Org.BouncyCastle.Crypto.Digests;
 using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Tests
+namespace Phorkus.CryptoTest
 {
     public class Tests
     {
@@ -20,8 +19,23 @@ namespace Tests
             var x = Fr.GetRandom();
             var A = G1.Generator * x;
             
-            byte[] enc = G1.ToBytes(A);
+            var enc = G1.ToBytes(A);
+            Console.Error.Write($"G1 len = {enc.Length}");
             var B = G1.FromBytes(enc);
+            Assert.True(A.Equals(B));
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void DeserializationG2Test()
+        {
+            var x = Fr.GetRandom();
+            var A = G2.Generator * x;
+            
+            var enc = G2.ToBytes(A);
+            Console.Error.Write($"G2 len = {enc.Length}");
+            
+            var B = G2.FromBytes(enc);
             Assert.True(A.Equals(B));
         }
 
@@ -30,7 +44,8 @@ namespace Tests
         public void DeserializationFrTest()
         {
             var a = Fr.GetRandom();
-            byte[] enc = Fr.ToBytes(a);
+            var enc = Fr.ToBytes(a);
+            Console.Error.WriteLine($"Fr len = {enc.Length}");
             var b = Fr.FromBytes(enc);
             Assert.True(a.Equals(b));
         }

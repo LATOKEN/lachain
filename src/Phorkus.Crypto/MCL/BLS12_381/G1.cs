@@ -8,6 +8,7 @@ namespace Phorkus.Crypto.MCL.BLS12_381
     [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct G1
     {
+        public const int BYTE_SIZE = 48;
         public static G1 GetGenerator()
         {
             // Some fixed generator can be obtained via hashing any message
@@ -131,6 +132,11 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             var z = new G1();
             z.Mul(x, y);
             return z;
+        }
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
         }
     }
 }

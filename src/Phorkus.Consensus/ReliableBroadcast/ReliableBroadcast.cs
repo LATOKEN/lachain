@@ -9,7 +9,7 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
-using STH1123.ReedSolomon;
+//using STH1123.ReedSolomon;
 
 namespace Phorkus.Consensus.ReliableBroadcast
 {
@@ -21,6 +21,15 @@ namespace Phorkus.Consensus.ReliableBroadcast
             throw new NotImplementedException();
         }
         private readonly ReliableBroadcastId _broadcastId;
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public override void ProcessMessage(MessageEnvelope envelope)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override IProtocolIdentifier Id => _broadcastId;
+        /*
         private readonly IConsensusBroadcaster _broadcaster;
         private readonly IConsensusBroadcaster _consensusBroadcaster;
 
@@ -32,7 +41,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private ResultStatus _requested;
         private BoolSet? _result;
         
-//        public override IProtocolIdentifier Id => _broadcastId;
         
         public override IProtocolIdentifier Id { get; }
         
@@ -202,5 +210,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
             }
             return blocksTest;
         }
+        */
     }
 }

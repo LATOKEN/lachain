@@ -10,6 +10,7 @@ namespace Phorkus.Crypto.MCL.BLS12_381
     [StructLayout(LayoutKind.Explicit, Size = 288)]
     public struct G2
     {
+        public const int BYTE_SIZE = 96;
         public static G2 GetGenerator()
         {
             // Some fixed generator can be obtained via hashing any message
@@ -24,6 +25,29 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             var res = new G2();
             res.Clear();
             return res;
+        }
+        
+        public static byte[] ToBytes(G2 g)
+        {
+            const int BUF_SIZE = 200;
+            var buf = new byte[BUF_SIZE];
+            var len = MclImports.mclBnG2_serialize(buf, BUF_SIZE, ref g);
+            if (len == 0)
+            {
+                throw new Exception("Failed to serialize G2");
+            }
+            return buf.Take((int) len).ToArray();
+        }
+
+        public static G2 FromBytes(byte[] buf)
+        {
+            var g = new G2();
+            if (MclImports.mclBnG2_deserialize(ref g, buf, buf.Length) == 0)
+            {
+                throw new Exception("Failed to deserialize G2");
+            }
+
+            return g;
         }
 
         public static G2 Generator = GetGenerator();
@@ -56,14 +80,15 @@ namespace Phorkus.Crypto.MCL.BLS12_381
 
         public byte[] ToBytes()
         {
-            var bytes = new byte[96];
-            var size = MclImports.mclBnG2_getStr(bytes, bytes.Length, ref this, 512);
-            if (size == 0)
-            {
-                throw new InvalidOperationException("mclBnG2_getStr:");
-            }
+            return ToBytes(this);
+//            var bytes = new byte[96];
+//            var size = MclImports.mclBnG2_getStr(bytes, bytes.Length, ref this, 512);
+//            if (size == 0)
+//            {
+//                throw new InvalidOperationException("mclBnG2_getStr:");
+//            }
 
-            return bytes;
+//            return bytes;
         }
 
         public string ToHex(bool prefix = true)
@@ -87,12 +112,12 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             return res;
         }
 
-        public static G2 FromBytes(byte[] bytes)
-        {
-            var res = new G2();
-            MclImports.mclBnG2_setStr(ref res, bytes, bytes.Length, 512);
-            return res;
-        }
+//        public static G2 FromBytes(byte[] bytes)
+//        {
+//            var res = new G2();
+//            MclImports.mclBnG2_setStr(ref res, bytes, bytes.Length, 512);
+//            return res;
+//        }
 
         public void Neg(G2 x)
         {
