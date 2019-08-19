@@ -19,7 +19,8 @@ namespace Phorkus.Consensus.TPKE
 
         private Fr[] _P;
         private Fr[] _received;
-        private G1[][] _hiddenPolynomials;
+        private G1[][] _hiddenPolyG1;
+        private G2[][] _hiddenPolyG2;
         private byte[][][] _confirmationHash;
         private bool allValuesReceived = false;
         private bool allHiddenPolynomialsReceived = false;
@@ -42,7 +43,8 @@ namespace Phorkus.Consensus.TPKE
             for (var i = 0; i < n; ++i)
                 _received[i] = Fr.FromInt(0);
             
-            _hiddenPolynomials = new G1[n][];
+            _hiddenPolyG1 = new G1[n][];
+            _hiddenPolyG2 = new G2[n][];
             _confirmationHash = new byte[n][][];
         }
 
@@ -124,7 +126,8 @@ namespace Phorkus.Consensus.TPKE
 
             for (var j = 0; j < _t; ++j)
             {
-                msg.HiddenPolynomial.Coeffs.Add(ByteString.CopyFrom(G1.ToBytes(G1.Generator * _P[j])));
+                msg.HiddenPolynomial.CoeffsG1.Add(ByteString.CopyFrom(G1.ToBytes(G1.Generator * _P[j])));
+                msg.HiddenPolynomial.CoeffsG2.Add(ByteString.CopyFrom(G2.ToBytes(G2.Generator * _P[j])));
             }
             
             _broadcaster.Broadcast(msg);
@@ -148,18 +151,22 @@ namespace Phorkus.Consensus.TPKE
         private void HandleHiddenPolynomial(Validator messageValidator, TPKEHiddenPolynomialMsg msg)
         {
             var id = messageValidator.ValidatorIndex;
-            if (msg.Coeffs.Count != _t)
+            if (msg.CoeffsG1.Count != _t || msg.CoeffsG2.Count != _t)
             {
-                throw new Exception($"Expected length of coeffs to be {_t}, but got {msg.Coeffs.Count}");
+                throw new Exception($"Expected length of coeffs to be {_t}, but got {msg.CoeffsG1.Count}");
             }
 
-            var tmp = new List<G1>();
+            var tmpG1 = new List<G1>();
+            var tmpG2 = new List<G2>();
             for (var i = 0; i < _t; ++i)
             {
-                tmp.Add(G1.FromBytes(msg.Coeffs[i].ToByteArray()));
+                tmpG1.Add(G1.FromBytes(msg.CoeffsG1[i].ToByteArray()));
+                tmpG2.Add(G2.FromBytes(msg.CoeffsG2[i].ToByteArray()));
             }
-
-            _hiddenPolynomials[id] = tmp.ToArray();
+            
+            _hiddenPolyG1[id] = tmpG1.ToArray();
+            _hiddenPolyG2[id] = tmpG2.ToArray();
+            
             
             CheckAllPolynomialsReceived();
         }
@@ -181,7 +188,7 @@ namespace Phorkus.Consensus.TPKE
 
             for (var i = 0; i < _n; ++i)
             {
-                var hsh = Mcl.CalculateHash(_hiddenPolynomials[i]);
+                var hsh = Mcl.CalculateHash(_hiddenPolyG1[i], _hiddenPolyG2[i]);
                 msg.ConfirmationHash.Hashes.Add(ByteString.CopyFrom(hsh));
             }
             
@@ -220,7 +227,11 @@ namespace Phorkus.Consensus.TPKE
         {
             if (allHiddenPolynomialsReceived) return;
             for (var i = 0; i < _n; ++i)
-                if (_hiddenPolynomials[i] == null)
+                if (_hiddenPolyG1[i] == null)
+                    return;
+            
+            for (var i = 0; i < _n; ++i)
+                if (_hiddenPolyG2[i] == null)
                     return;
 
             allHiddenPolynomialsReceived = true;
@@ -247,7 +258,11 @@ namespace Phorkus.Consensus.TPKE
             
             // verify values
             for (var i = 0; i < _n; ++i)
-                if (!(G1.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolynomials[i].AsDynamic(), GetMyId() + 1, G1.Zero)))
+                if (!(G1.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolyG1[i].AsDynamic(), GetMyId() + 1, G1.Zero)))
+                    throw new Exception($"Party {i} sent inconsistent hidden polynomial!");
+            
+            for (var i = 0; i < _n; ++i)
+                if (!(G2.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolyG2[i].AsDynamic(), GetMyId() + 1, G2.Zero)))
                     throw new Exception($"Party {i} sent inconsistent hidden polynomial!");
             
             // verify hashes
@@ -260,7 +275,7 @@ namespace Phorkus.Consensus.TPKE
 
             var Y = G1.Zero;
             for (var i = 0; i < _n; ++i)
-                Y += _hiddenPolynomials[i][0];
+                Y += _hiddenPolyG1[i][0];
             
             var pubKey = new TPKEPubKey(Y, _t);
 
@@ -270,8 +285,19 @@ namespace Phorkus.Consensus.TPKE
             
             var privKey = new TPKEPrivKey(value, GetMyId());
 
+            var tmp = new List<G2>();
+            for (var i = 0; i < _n; ++i)
+            {
+                var cur = G2.Zero;
+                for (var j = 0; j < _n; ++j)
+                {
+                    cur += Mcl.GetValue(_hiddenPolyG2[j].AsDynamic(), i + 1, G2.Zero);
+                }
+                tmp.Add(cur);
+            }
+            var verificationKey =  new TPKEVerificationKey(Y, _t, tmp.ToArray());
             
-            _result = new TPKEKeys(pubKey, privKey, null);
+            _result = new TPKEKeys(pubKey, privKey, verificationKey);
             CheckResult();
         }
 

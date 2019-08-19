@@ -78,7 +78,7 @@ namespace Phorkus.ConsensusTest
         }
 
         [Test]
-        [Repeat(100)]
+        [Repeat(10)]
         public void TestLagrangeInterpolation()
         {
             
@@ -102,7 +102,7 @@ namespace Phorkus.ConsensusTest
         }
 
         [Test]
-        [Repeat(100)]
+        [Repeat(10)]
         public void TestEncryptionDecryption()
         {
             var data = new byte[32];
@@ -125,27 +125,28 @@ namespace Phorkus.ConsensusTest
             Assert.True(share.Equals(dec));
         }
 
-//        [Test]
-//        public void TestVerification()
-//        {
-//            var data = new byte[32];
-//            _rnd.NextBytes(data);
+        [Test]
+        [Repeat(10)]
+        public void TestVerification()
+        {
+            var data = new byte[32];
+            _rnd.NextBytes(data);
             
-//            RunAllHonest();
-//            var pubKey = _resultInterceptors[0].Result.PubKey;
+            RunAllHonest();
+            var pubKey = _resultInterceptors[0].Result.PubKey;
             
-//            var share = new RawShare(data, 555);
-//            var enc = pubKey.Encrypt(share);
+            var share = new RawShare(data, 555);
+            var enc = pubKey.Encrypt(share);
 
-//            for (int j = 0; j < N; ++j)
-//            {
-//                var vk = _resultInterceptors[j].Result.VerificationKey;
-//                for (var i = 0; i < N; ++i)
-//                {
-//                    var part = _resultInterceptors[i].Result.PrivKey.Decrypt(enc);
-//                    Assert.True(vk.Verify(enc, part));
-//                }
-//            }
-//        }
+            for (int j = 0; j < N; ++j)
+            {
+                var vk = _resultInterceptors[j].Result.VerificationKey;
+                for (var i = 0; i < N; ++i)
+                {
+                    var part = _resultInterceptors[i].Result.PrivKey.Decrypt(enc);
+                    Assert.True(vk.Verify(enc, part));
+                }
+            }
+        }
     }
 }

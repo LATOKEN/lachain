@@ -92,12 +92,17 @@ namespace Phorkus.Crypto.MCL.BLS12_381
 //        }
 
 
-        public static byte[] CalculateHash(G1[] gs)
+        public static byte[] CalculateHash(G1[] g1, G2[] g2)
         {
             var temp = new byte[0];
-            foreach (var g in gs)
+            foreach (var g in g1)
             {
                 temp = temp.Concat(G1.ToBytes(g)).ToArray();
+            }
+            
+            foreach (var g in g2)
+            {
+                temp = temp.Concat(G2.ToBytes(g)).ToArray();
             }
 
             return temp.Keccak256();
