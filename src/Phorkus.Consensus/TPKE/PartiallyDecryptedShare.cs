@@ -7,14 +7,15 @@ namespace Phorkus.Consensus.TPKE
     public class PartiallyDecryptedShare
     {
         public G1 Ui { get; }
-        public int Id { get; }
+        public int DecryptorId { get; }
 
         public int ShareId { get; }
 
-        public PartiallyDecryptedShare(G1 _ui, int _id, int shareId)
+
+        public PartiallyDecryptedShare(G1 _ui, int decryptorId, int shareId)
         {
             Ui = _ui;
-            Id = _id;
+            DecryptorId = decryptorId;
             ShareId = shareId;
         }
     }

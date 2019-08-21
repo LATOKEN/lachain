@@ -13,8 +13,6 @@ namespace Phorkus.Consensus.CommonSubset
         private CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
         private ISet<EncryptedShare> _result;
-        private readonly int _n;
-        private readonly int _f;
         
         private readonly bool?[] _binaryAgreementInput;
         private readonly bool?[] _binaryAgreementResult;
@@ -26,17 +24,14 @@ namespace Phorkus.Consensus.CommonSubset
 
         public override IProtocolIdentifier Id => _commonSubsetId;
 
-        public CommonSubset(int n, int f, CommonSubsetId commonSubsetId, IConsensusBroadcaster broadcaster): base(broadcaster)
+        public CommonSubset(CommonSubsetId commonSubsetId, IWallet wallet, IConsensusBroadcaster broadcaster): base(wallet, broadcaster)
         {
-            _n = n;
-            _f = f;
-
             _commonSubsetId = commonSubsetId;
             
-            _binaryAgreementInput = new bool?[n];
-            _binaryAgreementResult = new bool?[n];
+            _binaryAgreementInput = new bool?[N];
+            _binaryAgreementResult = new bool?[N];
             
-            _reliableBroadcastResult = new EncryptedShare[n];
+            _reliableBroadcastResult = new EncryptedShare[N];
         }
         
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -83,7 +78,7 @@ namespace Phorkus.Consensus.CommonSubset
             // todo set id to i-th rbc
             _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(Id, null, request.Input));
 
-            for (var j = 0; j < _n; ++j)
+            for (var j = 0; j < N; ++j)
             {
                 if (j != _broadcaster.GetMyId())
                 {
@@ -129,10 +124,10 @@ namespace Phorkus.Consensus.CommonSubset
             ++_cntBinaryAgreementsCompleted;
             _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
 
-            if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= _n - _f)
+            if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= N - F)
             {
                 _filledBinaryAgreements = true;
-                for (var i = 0; i < _n; ++i)
+                for (var i = 0; i < N; ++i)
                 {
                     if (_binaryAgreementInput[i] == null)
                     {
@@ -149,9 +144,9 @@ namespace Phorkus.Consensus.CommonSubset
         {
             if (_result != null) return;
             
-            if (_cntBinaryAgreementsCompleted < _n) return;
+            if (_cntBinaryAgreementsCompleted < N) return;
             
-            for (var i = 0; i < _n; ++i)
+            for (var i = 0; i < N; ++i)
             {
                 if (_binaryAgreementResult[i] == true)
                 {
@@ -161,7 +156,7 @@ namespace Phorkus.Consensus.CommonSubset
             
             _result = new HashSet<EncryptedShare>();
             
-            for (var i = 0; i < _n; ++i)
+            for (var i = 0; i < N; ++i)
             {
                 if (_binaryAgreementResult[i] == true)
                 {

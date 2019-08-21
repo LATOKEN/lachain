@@ -16,12 +16,19 @@ namespace Phorkus.Consensus
 
         private Thread _thread;
 
-        protected AbstractProtocol(IConsensusBroadcaster broadcaster)
+        private IWallet _wallet;
+
+        public int N => _wallet.N;
+        public int F => _wallet.F;
+    
+
+        protected AbstractProtocol(IWallet wallet, IConsensusBroadcaster broadcaster)
         {
             _thread = new Thread(Start);
             _thread.IsBackground = true;
             _thread.Start();
             _broadcaster = broadcaster;
+            _wallet = wallet;
         }
 
         public int GetMyId()

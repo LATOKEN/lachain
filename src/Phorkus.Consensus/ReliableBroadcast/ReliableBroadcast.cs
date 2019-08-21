@@ -15,7 +15,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
 {
     public class ReliableBroadcast : AbstractProtocol
     {
-        public ReliableBroadcast(ReliableBroadcastId reliableBroadcastId, IConsensusBroadcaster broadcaster) : base(
+        public ReliableBroadcast(ReliableBroadcastId reliableBroadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet,
             broadcaster)
         {
             throw new NotImplementedException();

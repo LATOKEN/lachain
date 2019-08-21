@@ -19,13 +19,13 @@ namespace Phorkus.Consensus.CommonCoin
         public override IProtocolIdentifier Id => _coinId;
 
         public CommonCoin(
-            PublicKeySet publicKeySet, PrivateKeyShare privateKeyShare,
-            CoinId coinId, IConsensusBroadcaster broadcaster
-        ) : base(broadcaster)
+//            PublicKeySet publicKeySet, PrivateKeyShare privateKeyShare,
+            CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
+        ) : base(wallet, broadcaster)
         {
-            _publicKeySet = publicKeySet ?? throw new ArgumentNullException(nameof(publicKeySet));
+            _publicKeySet = wallet.PublicKeySet ?? throw new ArgumentNullException(nameof(wallet.PublicKeySet));
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
-            _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), privateKeyShare, publicKeySet);
+            _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), wallet.PrivateKeyShare, _publicKeySet);
         }
 
         public void CheckResult()

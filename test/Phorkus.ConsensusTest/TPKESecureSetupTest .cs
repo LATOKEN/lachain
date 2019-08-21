@@ -18,6 +18,7 @@ namespace Phorkus.ConsensusTest
         private const int N = 10;
         private const int T = 5;
         private Random _rnd;
+        private IWallet[] _wallets;
 
         [SetUp]
         public void SetUp()
@@ -27,10 +28,12 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<TPKESetupId, TPKEKeys>[N];
+            _wallets = new IWallet[N];
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, TPKEKeys>();
-                _broadcasters[i] = new BroadcastSimulator(i, _playerSet);
+                _wallets[i] = new Wallet(N, T);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet);
             }
             
             Mcl.Init();
@@ -40,7 +43,7 @@ namespace Phorkus.ConsensusTest
         {
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new TPKESecureSetup(N, T, new TPKESetupId(0), _broadcasters[i]);
+                _broadcasts[i] = new TPKESecureSetup(new TPKESetupId(0), _wallets[i], _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }

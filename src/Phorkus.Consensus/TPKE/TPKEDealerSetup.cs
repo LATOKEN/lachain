@@ -15,16 +15,12 @@ namespace Phorkus.Consensus.TPKE
         private TPKEPrivKey _privKey;
         private TPKEPubKey _pubKey;
         private TPKEVerificationKey _verificationKey;
-        private int _n;
-        private int _t;
         private TPKEKeys _result;
         
         public override IProtocolIdentifier Id => _tpkeSetupId;
 
-        public TPKEDealerSetup(int n, int t, TPKESetupId tpkeSetupId, IConsensusBroadcaster broadcaster) : base(broadcaster)
+        public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, broadcaster)
         {
-            _n = n;
-            _t = t;
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;
         }
@@ -76,7 +72,7 @@ namespace Phorkus.Consensus.TPKE
             _privKey = new TPKEPrivKey(Fr.FromBytes(privEnc), GetMyId());
 
             byte[] pubEnc = tpkeKeys.PublicKey.ToByteArray();
-            _pubKey = new TPKEPubKey(G1.FromBytes(pubEnc), _t);
+            _pubKey = new TPKEPubKey(G1.FromBytes(pubEnc), F);
 
             _verificationKey = TPKEVerificationKey.FromProto(tpkeKeys.VerificationKey);
             _result = new TPKEKeys(_pubKey, _privKey, _verificationKey);
@@ -95,21 +91,21 @@ namespace Phorkus.Consensus.TPKE
 
         private void Deal()
         {
-            var P = new Fr[_t];
-            for (var i = 0; i < _t; ++i)
+            var P = new Fr[F];
+            for (var i = 0; i < F; ++i)
             {
                 P[i] = Fr.GetRandom();
             }
             
-            var pubKey = new TPKEPubKey(G1.Generator * P[0], _t);
+            var pubKey = new TPKEPubKey(G1.Generator * P[0], F);
 
             var Zs = new List<G2>();
-            for (var i = 0; i < _n; ++i)
+            for (var i = 0; i < N; ++i)
             {
                 var at = Fr.FromInt(i + 1);
                 var res = Fr.FromInt(0);
                 var cur = Fr.FromInt(1);
-                for (var j = 0; j < _t; ++j)
+                for (var j = 0; j < F; ++j)
                 {
                     res += P[j] * cur;
                     cur *= at;
@@ -117,14 +113,14 @@ namespace Phorkus.Consensus.TPKE
                 Zs.Add(G2.Generator * res);
             }
             
-            var verificationKey = new TPKEVerificationKey(G1.Generator * P[0], _t, Zs.ToArray());
+            var verificationKey = new TPKEVerificationKey(G1.Generator * P[0], F, Zs.ToArray());
 
-            for (var i = 0; i < _n; ++i)
+            for (var i = 0; i < N; ++i)
             {
                 var at = Fr.FromInt(i + 1);
                 var res = Fr.FromInt(0);
                 var cur = Fr.FromInt(1);
-                for (var j = 0; j < _t; ++j)
+                for (var j = 0; j < F; ++j)
                 {
                     res += P[j] * cur;
                     cur *= at;

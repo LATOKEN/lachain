@@ -12,7 +12,6 @@ namespace Phorkus.Consensus.BinaryAgreement
     {
         private readonly BinaryBroadcastId _broadcastId;
         private BoolSet _binValues;
-        private readonly int _faulty, _players;
         private readonly ISet<int>[] _receivedValues;
         private readonly int[] _receivedCount;
         private readonly bool[] _validatorSentAux;
@@ -26,19 +25,17 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         public override IProtocolIdentifier Id => _broadcastId;
 
-        public BinaryBroadcast(int n, int f, BinaryBroadcastId broadcastId, IConsensusBroadcaster broadcaster)
-        : base(broadcaster)
+        public BinaryBroadcast(BinaryBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster)
+        : base(wallet, broadcaster)
         {
             _broadcastId = broadcastId;
-            _players = n;
-            _faulty = f;
             _requested = ResultStatus.NotRequested;
 
             _binValues = new BoolSet();
-            _receivedValues = new ISet<int>[n];
-            _validatorSentAux = new bool[n];
-            _validatorSentConf = new bool[n];
-            for (var i = 0; i < n; ++i)
+            _receivedValues = new ISet<int>[N];
+            _validatorSentAux = new bool[N];
+            _validatorSentConf = new bool[N];
+            for (var i = 0; i < N; ++i)
                 _receivedValues[i] = new HashSet<int>();
             _receivedCount = new int[2];
             _receivedAux = new int[2];
@@ -110,13 +107,13 @@ namespace Phorkus.Consensus.BinaryAgreement
             _receivedValues[sender].Add(b);
             ++_receivedCount[b];
 
-            if (!_isBroadcast[b] && _receivedCount[b] >= _faulty + 1)
+            if (!_isBroadcast[b] && _receivedCount[b] >= F + 1)
             {
                 _isBroadcast[b] = true;
                 _broadcaster.Broadcast(CreateBValMessage(b));
             }
 
-            if (_receivedCount[b] < 2 * _faulty + 1) return;
+            if (_receivedCount[b] < 2 * F + 1) return;
 
             // todo wtf
             if (_binValues.Contains(b == 1)) return;
@@ -173,14 +170,14 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (!_auxSent) return;
             var goodConfs = _confReceived.Count(set => _binValues.Contains(set));
-            if (goodConfs < _players - _faulty) return;
+            if (goodConfs < N - F) return;
             _result = _binValues;
             CheckResult();
         }
 
         private void RevisitAuxMessages()
         {
-            if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < _players - _faulty) return;
+            if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             _broadcaster.Broadcast(CreateConfMessage(_binValues));
         }
 

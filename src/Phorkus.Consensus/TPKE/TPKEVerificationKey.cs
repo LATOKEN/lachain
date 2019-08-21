@@ -58,7 +58,7 @@ namespace Phorkus.Consensus.TPKE
                 return false;
             }
 
-            if (!Mcl.Pairing(part.Ui, G2.Generator).Equals(Mcl.Pairing(share.U, Zs[part.Id])))
+            if (!Mcl.Pairing(part.Ui, G2.Generator).Equals(Mcl.Pairing(share.U, Zs[part.DecryptorId])))
             {
                 return false;
             }

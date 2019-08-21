@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Google.Protobuf;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Proto;
 
@@ -32,14 +33,20 @@ namespace Phorkus.Consensus.TPKE
             return new EncryptedShare(U, V, W, rawShare.Id);
         }
 
-        public PartiallyDecryptedShare Decode(DecMessage message)
+        public PartiallyDecryptedShare Decode(TPKEPartiallyDecryptedShareMsg message)
         {
-            throw new NotImplementedException();
+            var Ui = G1.FromBytes(message.Share.ToByteArray());
+            return new PartiallyDecryptedShare(Ui, message.DecryptorId, message.ShareId);
         }
 
-        public DecMessage Encode(PartiallyDecryptedShare share)
+        public TPKEPartiallyDecryptedShareMsg Encode(PartiallyDecryptedShare share)
         {
-            throw new NotImplementedException();
+            return new TPKEPartiallyDecryptedShareMsg
+            {
+                Share = ByteString.CopyFrom(G1.ToBytes(share.Ui)),
+                DecryptorId = share.DecryptorId,
+                ShareId = share.ShareId
+            };
         }
 
         public IRawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
@@ -54,7 +61,7 @@ namespace Phorkus.Consensus.TPKE
 
             foreach (var part in us)
             {
-                xs.Add(Fr.FromInt(part.Id + 1));
+                xs.Add(Fr.FromInt(part.DecryptorId + 1));
                 ys.Add(part.Ui);
             }
 

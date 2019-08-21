@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.CommonCoin;
@@ -19,6 +16,7 @@ namespace Phorkus.ConsensusTest
         private IConsensusBroadcaster[] _broadcasters;
         private PlayerSet _playerSet;
         private ProtocolInvoker<CoinId, bool>[] _resultInterceptors;
+        private IWallet[] _wallets;
 
         [SetUp]
         public void SetUp()
@@ -31,12 +29,16 @@ namespace Phorkus.ConsensusTest
             _coins = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CoinId, bool>[N];
+            _wallets = new IWallet[N];
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, bool>();
-                _broadcasters[i] = new BroadcastSimulator(i, _playerSet);
+                _wallets[i] = new Wallet(N, F);
+                _wallets[i].PrivateKeyShare = shares[i];
+                _wallets[i].PublicKeySet = pubKeys;
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet);
                 _coins[i] = new CommonCoin(
-                    pubKeys, shares[i], new CoinId(0, 0, 0), _broadcasters[i]
+                    new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_coins[i], _resultInterceptors[i]});
             }

@@ -8,7 +8,7 @@ using Phorkus.Utility.Utils;
 
 namespace Phorkus.Consensus.BinaryAgreement
 {
-    class BinaryAgreement : AbstractProtocol
+    public class BinaryAgreement : AbstractProtocol
     {
         private readonly BinaryAgreementId _agreementId;
         private bool? _result;
@@ -23,8 +23,8 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         public override IProtocolIdentifier Id => _agreementId;
 
-        public BinaryAgreement(BinaryAgreementId agreementId, IConsensusBroadcaster broadcaster)
-        : base(broadcaster)
+        public BinaryAgreement(BinaryAgreementId agreementId, IWallet wallet, IConsensusBroadcaster broadcaster)
+        : base(wallet, broadcaster)
         {
             _agreementId = agreementId;
             _requested = ResultStatus.NotRequested;

@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
+using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.ConsensusTest
@@ -18,18 +19,22 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
         private const int N = 7;
         private const int F = 2;
+        private IWallet[] _wallets;
 
         [SetUp]
         public void SetUp()
         {
+            Mcl.Init();
             _playerSet = new PlayerSet();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
+            _wallets = new IWallet[N];
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
-                _broadcasters[i] = new BroadcastSimulator(i, _playerSet);
+                _wallets[i] = new Wallet(N, F);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet);
             }
         }
 
@@ -37,7 +42,7 @@ namespace Phorkus.ConsensusTest
         {
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new BinaryBroadcast(N, F, new BinaryBroadcastId(0, 0, 0), _broadcasters[i]);
+                _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _wallets[i], _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
@@ -58,7 +63,7 @@ namespace Phorkus.ConsensusTest
             {
                 if (_broadcasts[i] == null)
                 {
-                    _broadcasts[i] = new BinaryBroadcast(N, F, new BinaryBroadcastId(0, 0, 0), _broadcasters[i]);
+                    _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _wallets[i], _broadcasters[i]);
                 }
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }

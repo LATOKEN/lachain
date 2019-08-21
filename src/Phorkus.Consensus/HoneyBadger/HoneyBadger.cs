@@ -22,8 +22,6 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private readonly EncryptedShare[] _receivedShares;
         
-        private readonly int _n;
-        private readonly int _f;
         private ISet<IRawShare> _result;
         
         
@@ -31,25 +29,23 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private TPKEPubKey _pubKey;
         private TPKEPrivKey _privKey;
+        private TPKEVerificationKey _verificationKey;
 
         public override IProtocolIdentifier Id => _honeyBadgerId;
 
-        public HoneyBadger(int n, int f, HoneyBadgerId honeyBadgerId, IConsensusBroadcaster broadcaster) : base(broadcaster)
+        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, broadcaster)
         {
-            _n = n;
-            _f = f;
-
             _honeyBadgerId = honeyBadgerId;
             
-            _receivedShares = new EncryptedShare[_n];
-            _decryptedShares = new HashSet<PartiallyDecryptedShare>[_n];
-            for (var i = 0; i < _n; ++i)
+            _receivedShares = new EncryptedShare[N];
+            _decryptedShares = new ISet<PartiallyDecryptedShare>[N];
+            for (var i = 0; i < N; ++i)
             {
                 _decryptedShares[i] = new HashSet<PartiallyDecryptedShare>();
             }
             
-            _taken = new bool[_n];
-            _shares = new IRawShare[_n];
+            _taken = new bool[N];
+            _shares = new IRawShare[N];
             _result = new HashSet<IRawShare>();
             _requested = ResultStatus.NotRequested;
         }
@@ -61,8 +57,8 @@ namespace Phorkus.Consensus.HoneyBadger
                 var message = envelope.ExternalMessage;
                 switch (message.PayloadCase)
                 {
-                    case ConsensusMessage.PayloadOneofCase.Dec:
-                        HandleDecMessage(message.Validator, message.Dec);
+                    case ConsensusMessage.PayloadOneofCase.Decrypted:
+                        HandleDecMessage(message.Validator, message.Decrypted);
                         break;
                     default:
                         throw new ArgumentException(
@@ -84,7 +80,7 @@ namespace Phorkus.Consensus.HoneyBadger
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
                         HandleCommonSubset(result);
                         break;
-                    case ProtocolResult<TPKESetupId, Tuple<TPKEPubKey, TPKEPrivKey>> response:
+                    case ProtocolResult<TPKESetupId, TPKEKeys> response:
                         HandleTPKESetup(response);
                         break;
                     default:
@@ -105,10 +101,11 @@ namespace Phorkus.Consensus.HoneyBadger
             CheckResult();
         }
         
-        private void HandleTPKESetup(ProtocolResult<TPKESetupId, Tuple<TPKEPubKey, TPKEPrivKey>> response)
+        private void HandleTPKESetup(ProtocolResult<TPKESetupId, TPKEKeys> response)
         {
-            _pubKey = response.Result.Item1;
-            _privKey = response.Result.Item2;
+            _pubKey = response.Result.PubKey;
+            _privKey = response.Result.PrivKey;
+            _verificationKey = response.Result.VerificationKey;
 
             CheckEncryption();
         }
@@ -130,10 +127,11 @@ namespace Phorkus.Consensus.HoneyBadger
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
                 _decryptedShares[share.Id].Add(dec);
-                _broadcaster.Broadcast(CreateDecMessage(dec));
+                _broadcaster.Broadcast(message: CreateDecMessage(dec));
                 CheckDecryptedShares(share.Id);
             }
-            throw new NotImplementedException();
+            
+            CheckResult();
         }
 
         private ConsensusMessage CreateDecMessage(PartiallyDecryptedShare share)
@@ -145,23 +143,24 @@ namespace Phorkus.Consensus.HoneyBadger
                    ValidatorIndex = (ulong) GetMyId(),
                    Era = _honeyBadgerId.Era
                },
-               Dec = _pubKey.Encode(share)
+               Decrypted =_pubKey.Encode(share)
             };
             return message;
         }
         
-        private void HandleDecMessage(Validator messageValidator, DecMessage messageDec)
+        private void HandleDecMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMsg msg)
         {
-            PartiallyDecryptedShare share = _pubKey.Decode(messageDec);
-            // todo check share validity
-            _decryptedShares[share.Id].Add(share);
-            CheckDecryptedShares(share.Id);
+            PartiallyDecryptedShare share = _pubKey.Decode(msg);
+            if (!_verificationKey.Verify(_receivedShares[share.DecryptorId], share)) return;
+            // possible fault evidence
+            _decryptedShares[share.DecryptorId].Add(share);
+            CheckDecryptedShares(share.DecryptorId);
         }
 
         private void CheckDecryptedShares(int id)
         {
             if (!_taken[id]) return;
-            if (_decryptedShares[id].Count < _f + 1) return;
+            if (_decryptedShares[id].Count < F + 1) return;
             if (_shares[id] != null) return;
             _shares[id] = _pubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
@@ -172,13 +171,13 @@ namespace Phorkus.Consensus.HoneyBadger
         {
             if (_result != null) return;
 
-            for (var i = 0; i < _n; ++i)
+            for (var i = 0; i < N; ++i)
                 if (_taken[i] && _shares[i] == null)
                     return;
             
             _result = new HashSet<IRawShare>();
             
-            for (var i = 0; i < _n; ++i)
+            for (var i = 0; i < N; ++i)
                 if (_taken[i])
                     _result.Add(_shares[i]);
 
