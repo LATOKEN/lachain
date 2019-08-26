@@ -9,7 +9,7 @@ using Phorkus.Proto;
 
 namespace Phorkus.Consensus.HoneyBadger
 {
-    class HoneyBadger : AbstractProtocol
+    public class HoneyBadger : AbstractProtocol
     {
         // todo investigate where id should come from
         private HoneyBadgerId _honeyBadgerId;
@@ -27,11 +27,12 @@ namespace Phorkus.Consensus.HoneyBadger
         
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
 
-        private TPKEPubKey _pubKey;
-        private TPKEPrivKey _privKey;
-        private TPKEVerificationKey _verificationKey;
+        private TPKEPubKey PubKey => _wallet.TpkePubKey;
+        private TPKEPrivKey PrivKey => _wallet.TpkePrivKey;
+        private TPKEVerificationKey VerificationKey => _wallet.TpkeVerificationKey;
 
         public override IProtocolIdentifier Id => _honeyBadgerId;
+        private bool _takenSet = false;
 
         public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, broadcaster)
         {
@@ -46,8 +47,8 @@ namespace Phorkus.Consensus.HoneyBadger
             
             _taken = new bool[N];
             _shares = new IRawShare[N];
-            _result = new HashSet<IRawShare>();
             _requested = ResultStatus.NotRequested;
+
         }
         
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -80,9 +81,6 @@ namespace Phorkus.Consensus.HoneyBadger
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
                         HandleCommonSubset(result);
                         break;
-                    case ProtocolResult<TPKESetupId, TPKEKeys> response:
-                        HandleTPKESetup(response);
-                        break;
                     default:
                         throw new InvalidOperationException(
                             "CommonSubset protocol failed to handle internal message");
@@ -94,28 +92,17 @@ namespace Phorkus.Consensus.HoneyBadger
         {
             _rawShare = request.Input;
             _requested = ResultStatus.Requested;
-            
-            _broadcaster.InternalRequest(new ProtocolRequest<TPKESetupId, Object>(Id, new TPKESetupId(_honeyBadgerId), null));
 
             CheckEncryption();
             CheckResult();
         }
-        
-        private void HandleTPKESetup(ProtocolResult<TPKESetupId, TPKEKeys> response)
-        {
-            _pubKey = response.Result.PubKey;
-            _privKey = response.Result.PrivKey;
-            _verificationKey = response.Result.VerificationKey;
-
-            CheckEncryption();
-        }
        
         private void CheckEncryption()
         {
-            if (_pubKey == null) return;
+            if (PubKey == null) return;
             if (_rawShare == null) return;
             if (_encryptedShare != null) return;
-            _encryptedShare = _pubKey.Encrypt(_rawShare);
+            _encryptedShare = PubKey.Encrypt(_rawShare);
             _broadcaster.InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId), _encryptedShare));
         }
 
@@ -123,14 +110,20 @@ namespace Phorkus.Consensus.HoneyBadger
         {
             foreach (EncryptedShare share in result.Result)
             {
-                var dec = _privKey.Decrypt(share);
+                var dec = PrivKey.Decrypt(share);
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
-                _decryptedShares[share.Id].Add(dec);
-                _broadcaster.Broadcast(message: CreateDecMessage(dec));
+    
+                _broadcaster.Broadcast(CreateDecMessage(dec));
+            }
+
+            _takenSet = true;
+            
+            foreach (EncryptedShare share in result.Result)
+            {
                 CheckDecryptedShares(share.Id);
             }
-            
+
             CheckResult();
         }
 
@@ -143,32 +136,36 @@ namespace Phorkus.Consensus.HoneyBadger
                    ValidatorIndex = (ulong) GetMyId(),
                    Era = _honeyBadgerId.Era
                },
-               Decrypted =_pubKey.Encode(share)
+               Decrypted =PubKey.Encode(share)
             };
             return message;
         }
         
         private void HandleDecMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMsg msg)
         {
-            PartiallyDecryptedShare share = _pubKey.Decode(msg);
-            if (!_verificationKey.Verify(_receivedShares[share.DecryptorId], share)) return;
+            PartiallyDecryptedShare share = PubKey.Decode(msg);
+//            if (!VerificationKey.Verify(_receivedShares[share.DecryptorId], share)) return;
             // possible fault evidence
-            _decryptedShares[share.DecryptorId].Add(share);
-            CheckDecryptedShares(share.DecryptorId);
+            _decryptedShares[share.ShareId].Add(share);
+            CheckDecryptedShares(share.ShareId);
         }
 
         private void CheckDecryptedShares(int id)
         {
+            if (!_takenSet) return;
             if (!_taken[id]) return;
             if (_decryptedShares[id].Count < F + 1) return;
+
             if (_shares[id] != null) return;
-            _shares[id] = _pubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
+            
+            _shares[id] = PubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
             CheckAllSharesDecrypted();
         }
 
         private void CheckAllSharesDecrypted()
         {
+            if (!_takenSet) return;
             if (_result != null) return;
 
             for (var i = 0; i < N; ++i)

@@ -5,14 +5,41 @@ namespace Phorkus.Consensus.ReliableBroadcast
 {
     public class ReliableBroadcastId: IProtocolIdentifier
     {
-        public ulong AssociatedValidatorId { get; }
-        
-        public bool Equals(IProtocolIdentifier other)
+        protected bool Equals(ReliableBroadcastId other)
         {
-            throw new NotImplementedException();
+            return AssociatedValidatorId == other.AssociatedValidatorId && Era == other.Era;
         }
 
+        public bool Equals(IProtocolIdentifier other)
+        {
+            return Equals((object) other);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((ReliableBroadcastId) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (AssociatedValidatorId.GetHashCode() * 397) ^ Era.GetHashCode();
+            }
+        }
+
+        public int AssociatedValidatorId { get; }
+        
         public ulong Era { get; }
+
+        public ReliableBroadcastId(int validator, int era)
+        {
+            AssociatedValidatorId = validator;
+            Era = (ulong) era;
+        }
         public IEnumerable<byte> ToByteArray()
         {
             throw new NotImplementedException();

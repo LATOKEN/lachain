@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using Phorkus.Consensus;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.CommonCoin;
+using Phorkus.Consensus.CommonSubset;
+using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Consensus.TPKE;
@@ -74,6 +76,24 @@ namespace Phorkus.ConsensusTest
                         new CommonCoin(coinId, _wallet, this),
                     });
                     break;
+                case ReliableBroadcastId rbcId:
+                    RegisterProtocols(new []
+                    {
+                       new MockReliableBroadcast(rbcId, _wallet, this),  
+                    });
+                    break;
+                case BinaryAgreementId baId:
+                    RegisterProtocols(new []
+                    {
+                        new BinaryAgreement(baId, _wallet, this), 
+                    });
+                    break;
+                case CommonSubsetId acsId:
+                    RegisterProtocols(new []
+                    {
+                        new CommonSubset(acsId, _wallet, this), 
+                    });
+                    break;
                 default:
                     throw new Exception($"Unknown protocol type {id}");
             }
@@ -124,6 +144,16 @@ namespace Phorkus.ConsensusTest
                     var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idConfirmationHash); 
                     _registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
+                    var idEncryptedShare = new ReliableBroadcastId(message.EncryptedShare.Id,(int) message.Validator.Era);
+                    CheckRequest(idEncryptedShare);
+                    _registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.Decrypted:
+                    var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
+                    CheckRequest(hbbftId);
+                    _registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");

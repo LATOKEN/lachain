@@ -1,4 +1,5 @@
 using Phorkus.Consensus.CommonCoin.ThresholdSignature;
+using Phorkus.Consensus.TPKE;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Consensus
@@ -7,6 +8,9 @@ namespace Phorkus.Consensus
     {
         public int N { get; }
         public int F { get; }
+        public TPKEPubKey TpkePubKey { get; set; }
+        public TPKEPrivKey TpkePrivKey { get; set; }
+        public TPKEVerificationKey TpkeVerificationKey { get; set; }
 
         public PublicKeySet PublicKeySet { get; set; }
         public PrivateKeyShare PrivateKeyShare { get; set;  }

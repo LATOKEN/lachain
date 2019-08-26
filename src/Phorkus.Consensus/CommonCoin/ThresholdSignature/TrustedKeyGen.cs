@@ -18,9 +18,9 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
             _degree = f;
             _parties = n;
             _coeffs = new Fr[_degree + 1];
-            
+
             for (var i = 0; i <= f; ++i)
-                _coeffs[i] = Fr.FromInt(rng.Next());
+                _coeffs[i] = Fr.GetRandom();
         }
         
         public IEnumerable<PrivateKeyShare> GetPrivateShares()

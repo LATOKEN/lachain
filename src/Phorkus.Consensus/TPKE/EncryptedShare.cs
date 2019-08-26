@@ -19,6 +19,7 @@ namespace Phorkus.Consensus.TPKE
             Id = id;
         }
         
+        
         public bool Equals(EncryptedShare other)
         {
             throw new System.NotImplementedException();

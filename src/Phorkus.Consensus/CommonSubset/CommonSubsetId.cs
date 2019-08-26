@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Phorkus.Consensus.HoneyBadger;
 
 namespace Phorkus.Consensus.CommonSubset
@@ -11,15 +12,45 @@ namespace Phorkus.Consensus.CommonSubset
         {
             Era = honeyBadgerId.Era;
         }
-        public bool Equals(IProtocolIdentifier other)
+
+        public CommonSubsetId(int era)
         {
-            throw new NotImplementedException();
+            Era = (ulong) era;
         }
 
         public ulong Era { get; }
         public IEnumerable<byte> ToByteArray()
         {
-            throw new NotImplementedException();
+            return Encoding.ASCII.GetBytes(Era.ToString());
         }
+
+        public override string ToString()
+        {
+            return $"CommonSubsetId {nameof(Era)}: {Era}";
+        }
+
+        public bool Equals(IProtocolIdentifier other)
+        {
+            return Equals((object) other);
+        }
+
+        protected bool Equals(CommonSubsetId other)
+        {
+            return Era == other.Era;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((CommonSubsetId) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Era.GetHashCode();
+        }
+
     }
 }

@@ -27,7 +27,7 @@ namespace Phorkus.Consensus.TPKE
         {
             if (lhs.Length != rhs.Length)
             {
-                throw new InvalidParameterException("Byte arrays must have same length.");
+                throw new InvalidParameterException($"Byte arrays must have same length but got {lhs.Length} vs {rhs.Length}.");
             }
             
             byte[] res = new byte[lhs.Length];

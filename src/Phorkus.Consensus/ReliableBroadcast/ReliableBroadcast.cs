@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using Google.Protobuf;
-using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
-using Phorkus.Crypto;
-using Phorkus.Proto;
-using Phorkus.Utility.Utils;
+
 //using STH1123.ReedSolomon;
 
 namespace Phorkus.Consensus.ReliableBroadcast

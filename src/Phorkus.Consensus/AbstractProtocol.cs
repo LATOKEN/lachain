@@ -16,7 +16,7 @@ namespace Phorkus.Consensus
 
         private Thread _thread;
 
-        private IWallet _wallet;
+        protected IWallet _wallet;
 
         public int N => _wallet.N;
         public int F => _wallet.F;

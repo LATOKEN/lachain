@@ -53,7 +53,6 @@ namespace Phorkus.ConsensusTest
         }
 
         [Test]
-        [Repeat(100)]
         public void TestBinaryAgreementAllZero()
         {
             SetUpAllHonest();
@@ -78,7 +77,6 @@ namespace Phorkus.ConsensusTest
         }
         
         [Test]
-        [Repeat(100)]
         public void TestBinaryAgreementAllOnes()
         {
             SetUpAllHonest();
