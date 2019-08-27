@@ -31,7 +31,6 @@ namespace Phorkus.ConsensusTest
         [SetUp]
         public void SetUp()
         {
-            Console.SetError(File.CreateText("/tmp/log.txt"));
             _rnd = new Random();
             Mcl.Init();
             _playerSet = new PlayerSet();
@@ -66,6 +65,20 @@ namespace Phorkus.ConsensusTest
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
+        
+        private void SetUpSomeSilent(ISet<int> s)
+        {
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i] = new HoneyBadger(new HoneyBadgerId(10), _wallets[i], _broadcasters[i]);
+                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+                    foreach (var j in s)
+                    {
+                        (_broadcasters[i] as BroadcastSimulator).Silent(j);
+                    }
+            }
+        }
+        
 
         [Test]
         public void TestAllHonest()
@@ -90,6 +103,41 @@ namespace Phorkus.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(N, _resultInterceptors[i].Result.Count);
+            }
+        }
+        
+        [Test]
+        public void TestSomeSilent()
+        {
+            var s = new HashSet<int>();
+            while (s.Count < F)
+            {
+                s.Add(_rnd.Next(0, N - 1));
+            }
+            
+            SetUpSomeSilent(s);
+            for (var i = 0; i < N; ++i)
+            {
+                var share = new RawShare(new byte[32], i);
+                _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as HoneyBadgerId, share
+                ));
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+                if (s.Contains(i)) continue;
+                _broadcasts[i].WaitFinish();
+            }
+            
+
+            for (var i = 0; i < N; ++i)
+            {
+                if (s.Contains(i)) continue;
+                
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(N - F, _resultInterceptors[i].Result.Count);
             }
         }
     }

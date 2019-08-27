@@ -49,12 +49,21 @@ namespace Phorkus.Consensus.TPKE
             };
         }
 
-        public IRawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
+        public RawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
         {
             if (us.Count < t)
             {
                 throw new Exception("Unsufficient number of shares!");
             } 
+            
+            var ids = new HashSet<int>();
+            foreach (var part in us)
+            {
+                if (ids.Contains(part.DecryptorId))
+                    throw new Exception($"Id {part.DecryptorId} was provided more than once!");
+                if (part.ShareId != share.Id)
+                    throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
+            }
             
             var ys = new List<G1>();
             var xs = new List<Fr>();

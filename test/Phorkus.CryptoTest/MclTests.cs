@@ -4,7 +4,7 @@ using Phorkus.Crypto.MCL.BLS12_381;
 
 namespace Phorkus.CryptoTest
 {
-    public class Tests
+    public class MclTests
     {
         [SetUp]
         public void Setup()

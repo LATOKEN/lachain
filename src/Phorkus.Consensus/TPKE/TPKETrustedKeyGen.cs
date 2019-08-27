@@ -30,7 +30,7 @@ namespace Phorkus.Consensus.TPKE
 
         public TPKEPrivKey GetPrivKey(int i)
         {
-            return new TPKEPrivKey(Mcl.GetValue(_coeffs.AsDynamic(), i + 1, Fr.Zero), _degree);
+            return new TPKEPrivKey(Mcl.GetValue(_coeffs.AsDynamic(), i + 1, Fr.Zero), i);
         }
 
         public TPKEVerificationKey GetVerificationKey()

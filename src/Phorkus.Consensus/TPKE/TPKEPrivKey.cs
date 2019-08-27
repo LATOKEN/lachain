@@ -5,6 +5,7 @@ namespace Phorkus.Consensus.TPKE
 {
     public class TPKEPrivKey
     {
+        // todo add degree to fields?
         public Fr x;
         public G1 Y;
         public int Id { get; }

@@ -113,6 +113,8 @@ namespace Phorkus.Consensus.HoneyBadger
                 var dec = PrivKey.Decrypt(share);
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
+                // todo think about async access to protocol method. This may pose threat to protocol internal invariants
+                CheckDecryptedShares(share.Id);
     
                 _broadcaster.Broadcast(CreateDecMessage(dec));
             }
@@ -136,16 +138,34 @@ namespace Phorkus.Consensus.HoneyBadger
                    ValidatorIndex = (ulong) GetMyId(),
                    Era = _honeyBadgerId.Era
                },
-               Decrypted =PubKey.Encode(share)
+               Decrypted = PubKey.Encode(share)
             };
             return message;
+        }
+
+        private bool VerifyReceivedSharesByIndex(int i)
+        {
+            if (_receivedShares[i] == null) return false;
+            
+            foreach (var part in _decryptedShares[i])
+                if (!VerificationKey.Verify(_receivedShares[i], part))
+                {
+                    Console.Error.WriteLine($"{GetMyId()}: Verification failed {i}");
+                    return false;
+                }
+
+            return true;
         }
         
         private void HandleDecMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMsg msg)
         {
             PartiallyDecryptedShare share = PubKey.Decode(msg);
-//            if (!VerificationKey.Verify(_receivedShares[share.DecryptorId], share)) return;
-            // possible fault evidence
+            if (_receivedShares[share.ShareId] != null)
+                if (!VerificationKey.Verify(_receivedShares[share.ShareId], share))
+                {
+                    // possible fault evidence
+                    return;
+                }
             _decryptedShares[share.ShareId].Add(share);
             CheckDecryptedShares(share.ShareId);
         }
