@@ -39,7 +39,7 @@ namespace Phorkus.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
                 _wallets[i] = new Wallet(N, F) {PrivateKeyShare = shares[i], PublicKeySet = pubKeys};
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
             }
         }
 

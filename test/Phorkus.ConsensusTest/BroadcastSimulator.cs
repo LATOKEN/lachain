@@ -10,7 +10,6 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Proto;
-using Phorkus.Utility.Utils;
 
 namespace Phorkus.ConsensusTest
 {
@@ -29,14 +28,17 @@ namespace Phorkus.ConsensusTest
         private readonly IWallet _wallet;
 
         private readonly ISet<int> _silenced;
+        
+        public bool MixMessages { get; }
 
-        public BroadcastSimulator(int sender, IWallet wallet, PlayerSet playerSet)
+        public BroadcastSimulator(int sender, IWallet wallet, PlayerSet playerSet, bool mixMessages)
         {
             _sender = sender;
             _playerSet = playerSet;
             _playerSet.AddPlayer(this);
             _wallet = wallet;
             _silenced = new HashSet<int>();
+            MixMessages = mixMessages;
         }
 
         public void Silent(int id)

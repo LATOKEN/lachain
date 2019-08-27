@@ -41,7 +41,8 @@ namespace Phorkus.ConsensusTest
             var keygen = new TrustedKeyGen(N, F, new Random(0x0badfee0));
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
-            var tpkeKeygen = new TPKETrustedKeyGen(N, F);
+            // todo is this correct f?
+            var tpkeKeygen = new TPKETrustedKeyGen(N, F );
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
@@ -53,7 +54,7 @@ namespace Phorkus.ConsensusTest
                     TpkePubKey = tpkeKeygen.GetPubKey(),
                     TpkeVerificationKey = tpkeKeygen.GetVerificationKey()
                 };
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
             }
         }
 

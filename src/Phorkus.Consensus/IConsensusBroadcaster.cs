@@ -30,5 +30,7 @@ namespace Phorkus.Consensus
          * This method is used to get validator id
          */
         int GetMyId();
+
+        bool MixMessages { get; }
     }
 }

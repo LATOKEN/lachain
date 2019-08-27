@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Threading;
-using Org.BouncyCastle.Crypto.Engines;
 using Phorkus.Consensus.Messages;
 
 namespace Phorkus.Consensus
 {
     public abstract class AbstractProtocol : IConsensusProtocol
     {
-        private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
+//        private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
+        private readonly RandomSamplingQueue<MessageEnvelope> _queue = new RandomSamplingQueue<MessageEnvelope>();
         private readonly object _queueLock = new object();
         public bool Terminated { get; protected set; }
         public abstract IProtocolIdentifier Id { get; }
@@ -53,7 +52,16 @@ namespace Phorkus.Consensus
                     }
                 }
 
-                _queue.TryDequeue(out var msg);
+                MessageEnvelope msg;
+                if (_broadcaster.MixMessages)
+                {
+                    _queue.TrySample(out msg);
+                }
+                else
+                {
+                    _queue.TryDequeue(out msg);
+                }
+
                 try
                 {
                     ProcessMessage(msg);

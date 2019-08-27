@@ -36,7 +36,7 @@ namespace Phorkus.ConsensusTest
                 _wallets[i] = new Wallet(N, F);
                 _wallets[i].PrivateKeyShare = shares[i];
                 _wallets[i].PublicKeySet = pubKeys;
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
                 _coins[i] = new CommonCoin(
                     new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
                 );
