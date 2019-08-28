@@ -109,7 +109,12 @@ namespace Phorkus.Consensus.BinaryAgreement
             {
                 case ProtocolRequest<BinaryAgreementId, bool> agreementRequested:
                     if (_currentEpoch != 0 || _requested != ResultStatus.NotRequested)
+                    {
+                        break;
+                        // todo fix back or add some logic to handle parents fault
                         throw new InvalidOperationException("Cannot propose value: protocol is already running");
+                    }
+
                     _requested = ResultStatus.Requested;
                     _estimate = agreementRequested.Input;
                     TryProgressEpoch();

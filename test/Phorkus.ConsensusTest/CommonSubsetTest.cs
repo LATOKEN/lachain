@@ -55,14 +55,69 @@ namespace Phorkus.ConsensusTest
             }
         }
 
+        private void CheckOutput(EncryptedShare[] inputs, ISet<EncryptedShare>[] outputs, ISet<int> faulty = null)
+        {
+            if (faulty == null)
+                faulty = new HashSet<int>();
+            
+            Assert.True(faulty.Count <= F);
+
+            var numberOfInputs = 0;
+            for (var i = 0; i < N; ++i)
+                if (!faulty.Contains(i) && inputs[i] != null)
+                    numberOfInputs++;
+            
+            // unsufficient number of inputs
+            if (numberOfInputs < N - F)
+                Assert.Pass();
+
+            EncryptedShare[] canon = null;
+
+            // Validity
+            for (var i = 0; i < N; ++i)
+            {
+                if (faulty.Contains(i)) continue;
+
+                var set = outputs[i];
+
+                foreach (var share in set)
+                {
+                    Assert.True(inputs.Contains(share));
+                }
+
+                Assert.True(set.Count >= N - F);
+                
+                var cnt = 0;
+                foreach (var share in set)
+                {
+                    if (!faulty.Contains(share.Id))
+                        cnt++;
+                }
+
+                Assert.True(cnt >= N - 2 * F);
+
+                // Agreement -- all correct nodes output the same
+                if (canon == null)
+                    canon = set.ToArray();
+                else
+                {
+                    Assert.True(canon.SequenceEqual(set.ToArray()));
+                }
+            }
+            
+        }
+
         [Test]
         public void TestAllCommonSubset()
         {
             SetUpAllHonest();
+            
+            var inputs = new List<EncryptedShare>();
             for (var i = 0; i < N; ++i)
             {
 //                var share = (i == 0) ? new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i) : null;
                 var share = new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i);
+                inputs.Add(share);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as CommonSubsetId, share
                 ));
@@ -73,12 +128,18 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[i].WaitFinish();
             }
 
+            var outputs = new List<ISet<EncryptedShare>>();
+
             for (var i = 0; i < N; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(N, _resultInterceptors[i].Result.Count);
+                
+                outputs.Add(_resultInterceptors[i].Result);
             }
+            
+            CheckOutput(inputs.ToArray(), outputs.ToArray());
         }
     }
 }

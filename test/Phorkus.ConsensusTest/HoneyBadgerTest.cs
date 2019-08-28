@@ -54,7 +54,7 @@ namespace Phorkus.ConsensusTest
                     TpkePubKey = tpkeKeygen.GetPubKey(),
                     TpkeVerificationKey = tpkeKeygen.GetVerificationKey()
                 };
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, true);
             }
         }
 

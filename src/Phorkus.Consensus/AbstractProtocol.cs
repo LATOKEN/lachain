@@ -44,24 +44,24 @@ namespace Phorkus.Consensus
         {
             while (!Terminated)
             {
+                MessageEnvelope msg;
                 lock (_queueLock)
                 {
                     while (_queue.IsEmpty)
                     {
                         Monitor.Wait(_queueLock);
                     }
-                }
 
-                MessageEnvelope msg;
-                if (_broadcaster.MixMessages)
-                {
-                    _queue.TrySample(out msg);
-                }
-                else
-                {
-                    _queue.TryDequeue(out msg);
-                }
+                    if (_broadcaster.MixMessages)
+                    {
+                        _queue.TrySample(out msg);
+                    }
+                    else
+                    {
+                        _queue.TryDequeue(out msg);
+                    }
 
+                }
                 try
                 {
                     ProcessMessage(msg);

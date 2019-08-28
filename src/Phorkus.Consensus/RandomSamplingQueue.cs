@@ -25,7 +25,10 @@ namespace Phorkus.Consensus
                 Enqueue(res);
             }
 
-            return TryDequeue(out result);
+            var success = TryDequeue(out result);
+//            if (success && _rnd.Next(0, 5) != 0)
+//                Enqueue(result);
+            return success;
         }
 
         public void Enqueue(T item)
