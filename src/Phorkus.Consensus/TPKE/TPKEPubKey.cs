@@ -33,15 +33,15 @@ namespace Phorkus.Consensus.TPKE
             return new EncryptedShare(U, V, W, rawShare.Id);
         }
 
-        public PartiallyDecryptedShare Decode(TPKEPartiallyDecryptedShareMsg message)
+        public PartiallyDecryptedShare Decode(TPKEPartiallyDecryptedShareMessage message)
         {
             var Ui = G1.FromBytes(message.Share.ToByteArray());
             return new PartiallyDecryptedShare(Ui, message.DecryptorId, message.ShareId);
         }
 
-        public TPKEPartiallyDecryptedShareMsg Encode(PartiallyDecryptedShare share)
+        public TPKEPartiallyDecryptedShareMessage Encode(PartiallyDecryptedShare share)
         {
-            return new TPKEPartiallyDecryptedShareMsg
+            return new TPKEPartiallyDecryptedShareMessage
             {
                 Share = ByteString.CopyFrom(G1.ToBytes(share.Ui)),
                 DecryptorId = share.DecryptorId,

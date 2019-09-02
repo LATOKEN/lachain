@@ -71,7 +71,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                    Era = Id.Era,
                    ValidatorIndex = GetMyId()
                },
-               EncryptedShare = new TPKEEncryptedShareMsg
+               EncryptedShare = new TPKEEncryptedShareMessage
                {
                    U = ByteString.CopyFrom(G1.ToBytes(share.U)),
                    V = ByteString.CopyFrom(share.V),
@@ -82,7 +82,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             _broadcaster.Broadcast(msg);
         }
         
-        private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMsg messageEncryptedShare)
+        private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMessage messageEncryptedShare)
         {
             var U = G1.FromBytes(messageEncryptedShare.U.ToByteArray());
             var V = messageEncryptedShare.V.ToByteArray();

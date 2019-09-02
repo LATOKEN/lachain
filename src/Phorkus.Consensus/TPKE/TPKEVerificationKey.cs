@@ -22,9 +22,9 @@ namespace Phorkus.Consensus.TPKE
             Zs = zs;
         }
 
-        public TPKEVerificationKeyMsg ToProto()
+        public TPKEVerificationKeyMessage ToProto()
         {
-            var tmp = new TPKEVerificationKeyMsg
+            var tmp = new TPKEVerificationKeyMessage
             {
                 Y = ByteString.CopyFrom(G1.ToBytes(Y)),
                 T = t
@@ -38,7 +38,7 @@ namespace Phorkus.Consensus.TPKE
             return tmp;
         }
 
-        public static TPKEVerificationKey FromProto(TPKEVerificationKeyMsg enc)
+        public static TPKEVerificationKey FromProto(TPKEVerificationKeyMessage enc)
         {
             var Y = G1.FromBytes(enc.Y.ToByteArray());
             var t = enc.T;

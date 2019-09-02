@@ -157,7 +157,7 @@ namespace Phorkus.Consensus.HoneyBadger
             return true;
         }
         
-        private void HandleDecMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMsg msg)
+        private void HandleDecMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMessage msg)
         {
             PartiallyDecryptedShare share = PubKey.Decode(msg);
             if (_receivedShares[share.ShareId] != null)

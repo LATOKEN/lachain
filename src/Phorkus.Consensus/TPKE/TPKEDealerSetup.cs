@@ -60,7 +60,7 @@ namespace Phorkus.Consensus.TPKE
         }
 
         private void 
-            HandlePrivateKey(Validator validator, TPKEKeysMsg tpkeKeys)
+            HandlePrivateKey(Validator validator, TPKEKeysMessage tpkeKeys)
         {
             Console.Error.WriteLine($"{GetMyId()}: Got private key!");
             if (GetMyId() != (int) tpkeKeys.Id)
@@ -143,7 +143,7 @@ namespace Phorkus.Consensus.TPKE
                     ValidatorIndex = GetMyId(),
                     Era = Id.Era
                 },
-                TpkeKeys = new TPKEKeysMsg
+                TpkeKeys = new TPKEKeysMessage
                 {
                     PublicKey = ByteString.CopyFrom(G1.ToBytes(pubKey.Y)),
                     PrivateKey = ByteString.CopyFrom(Fr.ToBytes(privKey.x)),
