@@ -15,10 +15,10 @@ namespace Phorkus.Consensus.CommonSubset
 
         public CommonSubsetId(int era)
         {
-            Era = (ulong) era;
+            Era = (long) era;
         }
 
-        public ulong Era { get; }
+        public long Era { get; }
         public IEnumerable<byte> ToByteArray()
         {
             return Encoding.ASCII.GetBytes(Era.ToString());

@@ -6,14 +6,14 @@ namespace Phorkus.Consensus.BinaryAgreement
 {
     public class BinaryAgreementId : IProtocolIdentifier
     {
-        public BinaryAgreementId(ulong era, ulong associatedValidatorId)
+        public BinaryAgreementId(long era, long associatedValidatorId)
         {
             Era = era;
             AssociatedValidatorId = associatedValidatorId;
         }
 
-        public ulong Era { get; }
-        public ulong AssociatedValidatorId { get; }
+        public long Era { get; }
+        public long AssociatedValidatorId { get; }
         
         public IEnumerable<byte> ToByteArray()
         {

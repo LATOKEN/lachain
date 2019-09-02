@@ -33,12 +33,12 @@ namespace Phorkus.Consensus.ReliableBroadcast
 
         public int AssociatedValidatorId { get; }
         
-        public ulong Era { get; }
+        public long Era { get; }
 
         public ReliableBroadcastId(int validator, int era)
         {
             AssociatedValidatorId = validator;
-            Era = (ulong) era;
+            Era = (long) era;
         }
         public IEnumerable<byte> ToByteArray()
         {

@@ -5,7 +5,7 @@ namespace Phorkus.Consensus
 {
     public interface IProtocolIdentifier : IEquatable<IProtocolIdentifier>
     {
-        ulong Era { get; }
+        long Era { get; }
         IEnumerable<byte> ToByteArray();
     }
 }

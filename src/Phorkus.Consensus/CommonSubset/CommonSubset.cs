@@ -95,7 +95,7 @@ namespace Phorkus.Consensus.CommonSubset
             if (!_binaryAgreementInput[j].HasValue)
                 throw new NoNullAllowedException();
             
-            var id = new BinaryAgreementId( _commonSubsetId.Era, (ulong) j);
+            var id = new BinaryAgreementId( _commonSubsetId.Era,  j);
             _broadcaster.InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
         }
 

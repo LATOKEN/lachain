@@ -140,7 +140,7 @@ namespace Phorkus.Consensus.TPKE
             {
                 Validator = new Validator
                 {
-                    ValidatorIndex = (ulong) GetMyId(),
+                    ValidatorIndex = GetMyId(),
                     Era = Id.Era
                 },
                 TpkeKeys = new TPKEKeysMsg

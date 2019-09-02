@@ -188,7 +188,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = (ulong) GetMyId(),
+                    ValidatorIndex = GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Bval = new BValMessage
@@ -208,7 +208,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = (ulong) GetMyId(),
+                    ValidatorIndex = GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Aux = new AuxMessage
@@ -228,7 +228,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                 Validator = new Validator
                 {
                     // TODO: somehow fill validator field
-                    ValidatorIndex = (ulong) GetMyId(),
+                    ValidatorIndex = GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Conf = new ConfMessage

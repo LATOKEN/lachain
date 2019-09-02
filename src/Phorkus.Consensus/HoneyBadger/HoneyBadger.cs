@@ -135,7 +135,7 @@ namespace Phorkus.Consensus.HoneyBadger
             {
                Validator = new Validator
                {
-                   ValidatorIndex = (ulong) GetMyId(),
+                   ValidatorIndex = GetMyId(),
                    Era = _honeyBadgerId.Era
                },
                Decrypted = PubKey.Encode(share)

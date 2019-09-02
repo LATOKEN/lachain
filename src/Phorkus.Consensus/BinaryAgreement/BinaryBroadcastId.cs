@@ -6,16 +6,16 @@ namespace Phorkus.Consensus.BinaryAgreement
 {
     public class BinaryBroadcastId : IProtocolIdentifier
     {
-        public BinaryBroadcastId(ulong era, ulong agreement, ulong epoch)
+        public BinaryBroadcastId(long era, long agreement, long epoch)
         {
             Era = era;
             Agreement = agreement;
             Epoch = epoch;
         }
 
-        public ulong Era { get; }
-        public ulong Agreement { get; }
-        public ulong Epoch { get; }
+        public long Era { get; }
+        public long Agreement { get; }
+        public long Epoch { get; }
 
         public IEnumerable<byte> ToByteArray()
         {

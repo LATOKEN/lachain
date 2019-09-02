@@ -6,16 +6,16 @@ namespace Phorkus.Consensus.CommonCoin
 {
     public class CoinId : IProtocolIdentifier
     {
-        public CoinId(ulong era, ulong agreement, ulong epoch)
+        public CoinId(long era, long agreement, long epoch)
         {
             Era = era;
             Agreement = agreement;
             Epoch = epoch;
         }
 
-        public ulong Era { get; }
-        public ulong Agreement { get; }
-        public ulong Epoch { get; }
+        public long Era { get; }
+        public long Agreement { get; }
+        public long Epoch { get; }
 
         public IEnumerable<byte> ToByteArray()
         {

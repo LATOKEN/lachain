@@ -14,12 +14,12 @@ namespace Phorkus.Consensus.BinaryAgreement
         private bool? _result;
         private ResultStatus _requested;
 
-        private ulong _currentEpoch;
+        private long _currentEpoch;
         private bool _estimate;
         private BoolSet _currentValues;
 
-        private readonly Dictionary<ulong, bool> _coins = new Dictionary<ulong, bool>();
-        private readonly Dictionary<ulong, BoolSet> _broadcasts = new Dictionary<ulong, BoolSet>();
+        private readonly Dictionary<long, bool> _coins = new Dictionary<long, bool>();
+        private readonly Dictionary<long, BoolSet> _broadcasts = new Dictionary<long, BoolSet>();
 
         public override IProtocolIdentifier Id => _agreementId;
 

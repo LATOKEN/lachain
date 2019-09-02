@@ -7,9 +7,9 @@ namespace Phorkus.ConsensusTest
 {
     public class InvokerId : IProtocolIdentifier
     {
-        private static ulong _counter;
-        public ulong Era => 0;
-        public ulong Id { get; }
+        private static long _counter;
+        public long Era => 0;
+        public long Id { get; }
 
         public InvokerId()
         {

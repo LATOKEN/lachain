@@ -103,7 +103,7 @@ namespace Phorkus.Consensus.TPKE
                     Validator = new Validator
                     {
                         Era = _tpkeSetupId.Era,
-                        ValidatorIndex = (ulong) GetMyId()
+                        ValidatorIndex = GetMyId()
                     },
                     PolynomialValue = new TPKEPolynomialValueMsg
                     {
@@ -118,7 +118,7 @@ namespace Phorkus.Consensus.TPKE
                 Validator = new Validator
                 {
                     Era = _tpkeSetupId.Era,
-                    ValidatorIndex = (ulong) GetMyId()
+                    ValidatorIndex = GetMyId()
                 },
                 HiddenPolynomial = new TPKEHiddenPolynomialMsg()
             };
@@ -179,7 +179,7 @@ namespace Phorkus.Consensus.TPKE
             {
                 Validator = new Validator
                 {
-                    ValidatorIndex = (ulong) GetMyId(),
+                    ValidatorIndex = GetMyId(),
                     Era = Id.Era
                 },
                 ConfirmationHash = new TPKEConfirmationHashMsg()

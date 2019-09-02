@@ -69,7 +69,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                Validator = new Validator
                {
                    Era = Id.Era,
-                   ValidatorIndex = (ulong) GetMyId()
+                   ValidatorIndex = GetMyId()
                },
                EncryptedShare = new TPKEEncryptedShareMsg
                {

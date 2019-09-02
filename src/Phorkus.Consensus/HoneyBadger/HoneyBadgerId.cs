@@ -9,7 +9,7 @@ namespace Phorkus.Consensus.HoneyBadger
     {
         public HoneyBadgerId(int era)
         {
-            Era = (ulong) era;
+            Era = (long) era;
         }
         
         protected bool Equals(HoneyBadgerId other)
@@ -35,7 +35,7 @@ namespace Phorkus.Consensus.HoneyBadger
             return Era.GetHashCode();
         }
 
-        public ulong Era { get; }
+        public long Era { get; }
         public IEnumerable<byte> ToByteArray()
         {
             throw new NotImplementedException();

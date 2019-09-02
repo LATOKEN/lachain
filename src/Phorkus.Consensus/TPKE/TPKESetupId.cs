@@ -15,10 +15,10 @@ namespace Phorkus.Consensus.TPKE
         
         public TPKESetupId(int era)
         {
-            Era = (ulong) era;
+            Era = (long) era;
         }
 
-        public ulong Era { get; }
+        public long Era { get; }
         public IEnumerable<byte> ToByteArray()
         {
             throw new NotImplementedException();
