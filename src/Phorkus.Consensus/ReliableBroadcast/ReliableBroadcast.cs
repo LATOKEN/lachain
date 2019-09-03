@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -47,7 +47,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
         public override void ProcessMessage(MessageEnvelope envelope)
         {
             
-            //CreateValMessage(GetTestVector(N * 64));
+            CreateValMessage(GetTestVector(N * 64));
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
