@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,6 +56,7 @@ namespace Phorkus.Crypto
             Hash = hash;
         }
 
+        
         /// <summary>
         /// Get leafs form node
         /// </summary>
@@ -122,7 +123,7 @@ namespace Phorkus.Crypto
         {
             if (hashes.Count == 0)
                 throw new ArgumentException();
-
+            
             Root = Build(hashes.Select(p => new MerkleTreeNode(p)).ToArray());
             var depth = 1;
             for (var i = Root; i.LeftChild != null; i = i.LeftChild)
@@ -299,4 +300,6 @@ namespace Phorkus.Crypto
             return null;
         }
     }
+    
 }
+

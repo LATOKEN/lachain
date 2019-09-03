@@ -1,118 +1,128 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using Google.Protobuf;
+using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
-
-//using STH1123.ReedSolomon;
+using Phorkus.Consensus.TPKE;
+using Phorkus.Crypto;
+using Phorkus.Proto;
+using Phorkus.Utility.Utils;
+using STH1123.ReedSolomon;
 
 namespace Phorkus.Consensus.ReliableBroadcast
 {
     public class ReliableBroadcast : AbstractProtocol
     {
-        public ReliableBroadcast(ReliableBroadcastId reliableBroadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet,
-            broadcaster)
-        {
-            throw new NotImplementedException();
-        }
         private readonly ReliableBroadcastId _broadcastId;
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public override void ProcessMessage(MessageEnvelope envelope)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override IProtocolIdentifier Id => _broadcastId;
-        /*
-        private readonly IConsensusBroadcaster _broadcaster;
-        private readonly IConsensusBroadcaster _consensusBroadcaster;
-
         private readonly bool[] _isBroadcast;
-        
-        
-        private readonly int _faulty, _players;
         private readonly ISet<int>[] _receivedValues;
         private ResultStatus _requested;
         private BoolSet? _result;
         
+        public override IProtocolIdentifier Id => _broadcastId;
         
-        public override IProtocolIdentifier Id { get; }
-        
-        public ReliableBroadcast(int n, int f, ReliableBroadcastId broadcastId, IConsensusBroadcaster broadcaster)
+        public ReliableBroadcast(ReliableBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) : 
+            base(wallet, broadcaster)
         {
             _broadcastId = broadcastId;
-            _broadcaster = broadcaster;
-            _players = n;
-            _faulty = f;
             _requested = ResultStatus.NotRequested;
-            _receivedValues = new ISet<int>[n];
-            for (var i = 0; i < n; ++i)
+            _receivedValues = new ISet<int>[N];
+            for (var i = 0; i < N; ++i)
                 _receivedValues[i] = new HashSet<int>();
             _isBroadcast = new bool[2];
             _result = null;
+        }
+
+        private byte[] GetTestVector(int size=1000)
+        {
+            var vector = new byte[size];
+            var rnd = new Random();
+            rnd.NextBytes(vector);
+            return vector;
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
+            
+            //CreateValMessage(GetTestVector(N * 64));
             if (envelope.External)
             {
-//                var message = envelope.ExternalMessage;
-//                switch (message.PayloadCase)
-//                {
-//                    case ConsensusMessage.PayloadOneofCase.Val:
-//                        HandleValMessage(message.Validator, message.Val);
-//                        return;
-//                    case ConsensusMessage.PayloadOneofCase.ECHO:
-//                        HandleECHOMessage(message.Validator, message.ECHO);
-//                        return;
-//                    default:
-//                        throw new ArgumentException(
-//                            $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol"
-//                        );
-//                }
+                var message = envelope.ExternalMessage;
+                switch (message.PayloadCase)
+                {
+                    case ConsensusMessage.PayloadOneofCase.ValMessage:
+                        HandleValMessage(message.Validator, message.ValMessage);
+                        break;
+                    case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                        HandleECHOMessage(message.Validator, message.EchoMessage);
+                        break;
+                    default:
+                        throw new ArgumentException(
+                            $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol"
+                        );
+                }
             }
             else
             {
                 var message = envelope.InternalMessage;
                 switch (message)
-                {
-//                    case ProtocolRequest<BinaryBroadcastId, bool> broadcastRequested:
-//                        _requested = true;
-//                        
-//                        var b = broadcastRequested.Input ? 1 : 0;
-//                        _isBroadcast[b] = true;
-//                        _consensusBroadcaster.Broadcast(CreateValMessage(b));
-//                        break;
-//                    case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
-//                        break;
-//                    default:
-//                        throw new InvalidOperationException(
-//                            "Binary broadcast protocol handles not any internal messages");
+                {    
+                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested:
+                        HandleInputMessage(broadcastRequested);
+                        break;
+                    case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
+                        Terminated = true;
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            "Binary broadcast protocol handles not any internal messages");
                 }
             }
         }
 
-        private void HandleValMessage(Validator validator, ValMessage valMessage)
+        private void HandleECHOMessage(Validator messageValidator, object echo)
         {
             throw new NotImplementedException();
         }
-        private void HandleECHOMessage(Validator validator, ECHOMessage echoMessage)
+
+        private void HandleValMessage(Validator messageValidator, object val)
         {
             throw new NotImplementedException();
+        }
+
+        private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
+        {
+            
+            throw new NotImplementedException();
+        }
+
+
+        private int[] ByteToIntDefineSize(byte[] bytes, int sizeMax, int zeroCount)
+        {
+            var result = new int[bytes.Length + zeroCount];
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                if(bytes[i] < sizeMax)
+                    result[i] = bytes[i];
+            }
+            return result;
         }
         
-        private ConsensusMessage CreateValMessage(UInt64 input)
+        private ConsensusMessage CreateValMessage(byte[] input)
         {
-            var root = CalculateRoot(new List<UInt256>());
-            var branch = CreateBranch();
-            var block = CreateBlocks(BitConverter.GetBytes(input));
+            // if call from sender context
+            var blocks = CreateBlocks(input);
+            var root = CalculateRoot(blocks);
+            var branch = CreateBranch(blocks, 0);
             
             var message = new ConsensusMessage
             {
                 Validator = new Validator
                 {
-                    // TODO: somehow fill validator field
-                    ValidatorIndex = _broadcaster.GetMyId(),
+                    ValidatorIndex = GetMyId(),
                     Era = _broadcastId.Era
                 },
                 Init = new InitRBCProtocolMessage
@@ -120,89 +130,108 @@ namespace Phorkus.Consensus.ReliableBroadcast
                     Val = new ValMessage
                     {
                         RootMerkleTree = root,
-                        BranchMerkleTree = ByteString.CopyFrom(),
-                        BlockErasureCoding = ByteString.CopyFrom()                        
+                        BranchMerkleTree = ByteString.CopyFrom(branch.ToByteArray()),
+                        BlockErasureCoding = ByteString.CopyFrom(blocks.ToByteArray())                        
                     }
                 }
             };
             return message;
         }
 
-
-
-        private class Branch
+        // blocks - list of block on which create MT
+        // playerIndex - it is the player index for which create branch (i.e. path) 
+        private static List<UInt256> CreateBranch(List<UInt256> blocks, int playerIndex)
         {
+            var mt = MerkleTree.ComputeTree(blocks.ToArray());
+            var branch = new List<UInt256>();
+            var currnode = mt.Search(blocks[playerIndex]);
             
+            while (!currnode.IsRoot){
+                branch.Add(currnode.Hash);
+                currnode = currnode.Parent;
+            }
+            return branch;
         }
 
-        private class Block
-        {
-            
-        }
 
-        private class Root : List<byte>
+        private List<UInt256> CreateBlocks(byte[] input)
         {
-            
-        }
-        private static Branch CreateBranch()
-        {
-            return new Branch();
-        }
+            var additionalBits = 16;
+            var initDataBuffer = ByteToIntDefineSize(input, 256, additionalBits);
+            var field = new GenericGF(285, 256, 0);
+            var rse = new ReedSolomonEncoder(field);
 
-        private List<Block> CreateBlocks(byte[] v)
-        {
-            List<UInt256> blocks = SeparateVector(v, _players);
-            CalculateRoot(blocks);
+            var encodeArray = new List<int[]>();
+            if (initDataBuffer.Length > 256)
+            {
+                generalDivide(initDataBuffer, encodeArray, N);
+            }
+
+            for (var i = 0; i < encodeArray.Count; i++)
+            {
+                rse.Encode(encodeArray[i], additionalBits);
+            }
             
-            GenericGF field = new GenericGF(285, 256, 0);
-            ReedSolomonEncoder rse = new ReedSolomonEncoder(field);
-            int[] data = new int[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-            rse.Encode(data, 9);
-            Console.WriteLine(data.ToString());
+//            ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
+//            
+//            var tip = new []{0,1,2,3,4};
+//            
+//            if (rsd.Decode(initdata, additionalBits, null))
+//            {
+//                Console.WriteLine("Data corrected.");
+//                //Console.WriteLine(String.Join(", ", afterRecieve.ToArray()));
+//            }
+//            else
+//            {
+//                Console.WriteLine("Too many errors-erasures to correct.");
+//            }
             
-            return new List<Block>();
+            return BuildShares(initDataBuffer, N);
         }
-        
         
         private static UInt256 CalculateRoot(List<UInt256> blocks)
         {
             return MerkleTree.ComputeRoot(blocks.ToArray());
         }        
-
-        private List<UInt256> SeparateVector(byte[] v, int numberParts)
+        
+        private List<UInt256> BuildShares(Int32[] v, int playersCount)
         {
-            byte[] aa = v.Keccak256().ToUInt256().ToBigInteger().ToByteArray();
-            
-            
-            
-            v.Keccak256().ToUInt256();
-            v.ToUInt256();
-
-            int lenPart = v.Length / numberParts;
-            List<byte[]> a;
-            byte[] buffer;
-            for (var i = 0; i < lenPart; i++)
-            {
-                buffer = v + i;
-                a.Add(buffer);
-            }
-            
-            
             if (!v.Any())
-                return new List<int>();
-            // the logic for separate the input of the vector of bytes
-            var blocksTestInt = new List<int>();
-            var blocksTest = new List<UInt256>();
-
-            var rnd = new Random();
-            
-            for (var i = 0; i < _players; i++)
             {
-                blocksTestInt.Add(rnd.Next());
-                blocksTest.Add(blocksTestInt[i].ToByteArray().ToUInt256());
+                return new List<UInt256>();
             }
-            return blocksTest;
+            var shareSize = v.Length / playersCount + 1;
+            
+            var a = new List<UInt256>();
+            
+            for (var i = 0; i < playersCount; i++)
+            {
+                var buffer = new byte[shareSize];
+                for (var j = 0; j < shareSize; j++)
+                {
+                    buffer[j] = BitConverter.GetBytes(v[i * playersCount + j])[0];
+                }
+                a.Add(buffer.Keccak256().ToUInt256());
+            }
+            return a;
         }
-        */
+        
+        private void generalDivide(int[] source, List<int[]> result, int parts, int fillSybol=0)
+        {
+            var bufferLength = source.Length;
+            var partLength = bufferLength / parts;
+            var partsCount = bufferLength / partLength;
+            var tmp = new int[partLength];
+            if (bufferLength % partLength != 0)
+            {
+                throw new ArgumentException("The length of source parameter should be divided by the length of part ", nameof(source));
+            }
+            for (int i = 0; i < partsCount; i++)
+            {
+                tmp = source.Skip(partLength * i).Take(partLength).ToArray();
+                result.Add(tmp);
+            }
+        }
     }
+    
 }
