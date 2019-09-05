@@ -23,7 +23,7 @@ namespace Phorkus.ConsensusTest
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
             new Dictionary<IProtocolIdentifier, IProtocolIdentifier>();
 
-        private readonly PlayerSet _playerSet;
+        private readonly DeliverySerivce _deliverySerivce;
 
         private readonly IWallet _wallet;
 
@@ -31,11 +31,11 @@ namespace Phorkus.ConsensusTest
         
         public bool MixMessages { get; }
 
-        public BroadcastSimulator(int sender, IWallet wallet, PlayerSet playerSet, bool mixMessages)
+        public BroadcastSimulator(int sender, IWallet wallet, DeliverySerivce deliverySerivce, bool mixMessages)
         {
             _sender = sender;
-            _playerSet = playerSet;
-            _playerSet.AddPlayer(this);
+            _deliverySerivce = deliverySerivce;
+            _deliverySerivce.AddPlayer(GetMyId(), this);
             _wallet = wallet;
             _silenced = new HashSet<int>();
             MixMessages = mixMessages;
@@ -59,12 +59,12 @@ namespace Phorkus.ConsensusTest
 
         public void Broadcast(ConsensusMessage message)
         {
-            _playerSet.BroadcastMessage(message);
+            _deliverySerivce.BroadcastMessage(message);
         }
 
         public void SendToValidator(ConsensusMessage message, int index)
         {
-            _playerSet.SendToPlayer(message, index);
+            _deliverySerivce.SendToPlayer(index, message);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

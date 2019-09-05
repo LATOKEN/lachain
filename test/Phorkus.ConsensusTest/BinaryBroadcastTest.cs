@@ -13,7 +13,7 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class BinaryBroadcastTest
     {
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
@@ -25,7 +25,7 @@ namespace Phorkus.ConsensusTest
         public void SetUp()
         {
             Mcl.Init();
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
@@ -34,7 +34,7 @@ namespace Phorkus.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
                 _wallets[i] = new Wallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
             }
         }
 

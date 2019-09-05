@@ -13,7 +13,7 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class BinaryAgreementTest 
     {
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors;
@@ -27,7 +27,7 @@ namespace Phorkus.ConsensusTest
         {
             _rnd = new Random();
             Mcl.Init();
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryAgreementId, bool>[N];
@@ -39,7 +39,7 @@ namespace Phorkus.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
                 _wallets[i] = new Wallet(N, F) {PrivateKeyShare = shares[i], PublicKeySet = pubKeys};
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet,true);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce,true);
             }
         }
 
@@ -67,6 +67,7 @@ namespace Phorkus.ConsensusTest
             {
                 _broadcasts[i].WaitFinish();
             }
+            _deliverySerivce.WaitFinish();
 
             for (var i = 0; i < N; ++i)
             {
@@ -91,6 +92,7 @@ namespace Phorkus.ConsensusTest
             {
                 _broadcasts[i].WaitFinish();
             }
+            _deliverySerivce.WaitFinish();
 
             for (var i = 0; i < N; ++i)
             {
@@ -119,6 +121,7 @@ namespace Phorkus.ConsensusTest
             {
                 _broadcasts[i].WaitFinish();
             }
+            _deliverySerivce.WaitFinish();
             
             for (var i = 0; i < N; ++i)
             {

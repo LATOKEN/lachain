@@ -11,7 +11,7 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class TPKESecureSetupTest  
     {
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<TPKESetupId, TPKEKeys>[] _resultInterceptors;
@@ -24,7 +24,7 @@ namespace Phorkus.ConsensusTest
         public void SetUp()
         {
             _rnd = new Random();
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<TPKESetupId, TPKEKeys>[N];
@@ -33,7 +33,7 @@ namespace Phorkus.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, TPKEKeys>();
                 _wallets[i] = new Wallet(N, T);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
             }
             
             Mcl.Init();

@@ -14,7 +14,7 @@ namespace Phorkus.ConsensusTest
         private const int N = 7, F = 2;
         private IConsensusProtocol[] _coins;
         private IConsensusBroadcaster[] _broadcasters;
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private ProtocolInvoker<CoinId, bool>[] _resultInterceptors;
         private IWallet[] _wallets;
 
@@ -25,7 +25,7 @@ namespace Phorkus.ConsensusTest
             var keygen = new TrustedKeyGen(N, F, new Random(0x0badfee0));
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _coins = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CoinId, bool>[N];
@@ -36,7 +36,7 @@ namespace Phorkus.ConsensusTest
                 _wallets[i] = new Wallet(N, F);
                 _wallets[i].PrivateKeyShare = shares[i];
                 _wallets[i].PublicKeySet = pubKeys;
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
                 _coins[i] = new CommonCoin(
                     new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
                 );

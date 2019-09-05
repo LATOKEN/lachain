@@ -16,7 +16,7 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class CommonSubsetTest 
     {
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[] _resultInterceptors;
@@ -30,7 +30,7 @@ namespace Phorkus.ConsensusTest
         {
             _rnd = new Random();
             Mcl.Init();
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[N];
@@ -42,7 +42,7 @@ namespace Phorkus.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
                 _wallets[i] = new Wallet(N, F) {PrivateKeyShare = shares[i], PublicKeySet = pubKeys};
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
             }
         }
 

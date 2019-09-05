@@ -19,7 +19,7 @@ namespace Phorkus.ConsensusTest
         private const int F = 2;
         private int sender = 0;
             
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
@@ -29,7 +29,7 @@ namespace Phorkus.ConsensusTest
         [SetUp]
         public void SetUp()
         {        
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
@@ -40,7 +40,7 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _wallets[i] = new Wallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, mixMessages: false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, mixMessages: false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
                        

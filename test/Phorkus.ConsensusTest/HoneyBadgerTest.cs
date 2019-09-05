@@ -19,7 +19,7 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class HoneyBadgerTest 
     {
-        private PlayerSet _playerSet;
+        private DeliverySerivce _deliverySerivce;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
@@ -33,7 +33,7 @@ namespace Phorkus.ConsensusTest
         {
             _rnd = new Random();
             Mcl.Init();
-            _playerSet = new PlayerSet();
+            _deliverySerivce = new DeliverySerivce();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[N];
@@ -54,7 +54,7 @@ namespace Phorkus.ConsensusTest
                     TpkePubKey = tpkeKeygen.GetPubKey(),
                     TpkeVerificationKey = tpkeKeygen.GetVerificationKey()
                 };
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _playerSet, true);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, true);
             }
         }
 

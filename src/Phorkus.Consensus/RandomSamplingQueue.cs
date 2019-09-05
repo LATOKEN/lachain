@@ -9,31 +9,47 @@ namespace Phorkus.Consensus
         private readonly Random _rnd = new Random();
 
         public bool IsEmpty => _queue.IsEmpty;
+        public int Count => _queue.Count;
 
         public bool TryDequeue(out T result)
         {
             return _queue.TryDequeue(out result);
         }
 
-        public bool TrySample(out T result)
+        private bool TryTake(int k, out T result)
         {
-            var size = _queue.Count;
-            var k = _rnd.Next(0, size - 1);
+            if (k >= _queue.Count)
+            {
+                result = default(T);
+                return false;
+            }
+
             for (var i = 0; i < k; ++i)
             {
                 TryDequeue(out var res);
                 Enqueue(res);
             }
 
-            var success = TryDequeue(out result);
-//            if (success && _rnd.Next(0, 5) != 0)
-//                Enqueue(result);
-            return success;
+            return TryDequeue(out result);
+        }
+
+        public bool TrySample(out T result)
+        {
+            var size = _queue.Count;
+            var k = _rnd.Next(0, size - 1);
+            return TryTake(k, out result);
+        }
+        
+        public bool TryTakeLast(out T result)
+        {
+            var size = _queue.Count;
+            return TryTake(size - 1, out result);
         }
 
         public void Enqueue(T item)
         {
             _queue.Enqueue(item);
         }
+
     }
 }
