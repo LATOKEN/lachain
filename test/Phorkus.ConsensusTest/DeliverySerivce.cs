@@ -54,15 +54,19 @@ namespace Phorkus.ConsensusTest
                     {
                         Monitor.Wait(_queueLock);
                     }
-                    
+
                     if (Terminated)
+                    {
+//                        if (!_queue.IsEmpty)
+//                            throw new Exception("Closing deliveryService too early!");
                         return;
+                    }
                     
                     if (!_queue.TryTakeLast(out tuple))
 //                    if (!_queue.TryDequeue(out tuple))
 //                    if (!_queue.TrySample(out tuple))
                     {
-                        throw new Exception("Can sample from queue!");
+                        throw new Exception("Can't sample from queue!");
                     }
 
                     Console.Error.WriteLine($"remaining in queue: {_queue.Count}");

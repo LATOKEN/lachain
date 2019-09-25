@@ -45,6 +45,7 @@ namespace Phorkus.ConsensusTest
         }
 
         [Test]
+        [Repeat(1000)]
         public void TestAllHonest()
         {
             for (var i = 0; i < N; ++i)
@@ -58,6 +59,7 @@ namespace Phorkus.ConsensusTest
             {
                 _coins[i].WaitFinish();
             }
+            _deliverySerivce.WaitFinish();
 
             var results = new bool[N];
             for (var i = 0; i < N; ++i)

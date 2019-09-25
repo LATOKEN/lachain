@@ -83,5 +83,10 @@ namespace Phorkus.Utility.Utils
         {
             return _mask.CompareTo(other._mask);
         }
+
+        public override string ToString()
+        {
+            return $"BoolSet({_mask})";
+        }
     }
 }

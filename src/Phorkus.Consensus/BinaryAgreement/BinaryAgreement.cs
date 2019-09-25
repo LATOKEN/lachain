@@ -19,7 +19,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private BoolSet _currentValues;
 
         private readonly Dictionary<long, bool> _coins = new Dictionary<long, bool>();
-        private readonly Dictionary<long, BoolSet> _broadcasts = new Dictionary<long, BoolSet>();
+        private readonly Dictionary<long, BoolSet> _binaryBroadcastsResults = new Dictionary<long, BoolSet>();
 
         public override IProtocolIdentifier Id => _agreementId;
 
@@ -36,9 +36,9 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_result == null) return;
             if (_requested == ResultStatus.Requested)
             {
-                Console.Error.WriteLine($"{_broadcaster.GetMyId()} checked result succ");
-                _requested = ResultStatus.Sent;
+                Console.Error.WriteLine($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
                 _broadcaster.InternalResponse(new ProtocolResult<BinaryAgreementId, bool>(_agreementId, (bool) _result));
+                _requested = ResultStatus.Sent;
             }
         }
 
@@ -51,8 +51,18 @@ namespace Phorkus.Consensus.BinaryAgreement
                 if (_currentEpoch % 2 == 0)
                 {
                     // epoch mod 2 = 0 -> we have not yet initiated BB
+                    
                     if (_currentEpoch != 0 && !_coins.ContainsKey(_currentEpoch - 1))
+                    {
+//                        throw new Exception($"Player {GetMyId()}: can not progress epoch, blocked, coin not present!.");
+                        Console.Error.WriteLine($"Player {GetMyId()}: can not progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present!.");
                         return; // we cannot progress since coin is not tossed and estimate is not correct
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"Player {GetMyId()}: epoch progressed, coin (Ep={_currentEpoch - 1} is present.");
+                    }
+                    
 
                     // we have right to calculate new estimate and proceed
                     if (_currentEpoch != 0)
@@ -85,11 +95,18 @@ namespace Phorkus.Consensus.BinaryAgreement
                 else
                 {
                     // epoch mod 2 = 1 -> we have not yet tossed coin
-                    if (!_broadcasts.ContainsKey(_currentEpoch - 1))
+                    if (!_binaryBroadcastsResults.ContainsKey(_currentEpoch - 1))
+                    {
+//                        throw new Exception($"Player {GetMyId()}: can not progress epoch, blocked, BB not present!.");
+                        Console.Error.WriteLine($"Player {GetMyId()}: can not progress epoch, blocked, BB (Ep={_currentEpoch-1}) not present!.");
                         return; // we cannot progress since BB is not completed
-                    _currentValues = _broadcasts[_currentEpoch - 1];
+                    }
+                    Console.Error.WriteLine($"Player {GetMyId()}: epoch progressed, BB (Ep={_currentEpoch - 1} is present.");
+                    
+                    _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
                     _broadcaster.InternalRequest(new ProtocolRequest<CoinId, object>(Id, coinId, null));
+                    Console.Error.WriteLine($"Player {GetMyId()}: send request for coin {coinId}");
                     _currentEpoch += 1;
                 }
             }
@@ -124,7 +141,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                     break;
                 case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
                 {
-                    _broadcasts[broadcastCompleted.Id.Epoch] = broadcastCompleted.Result;
+                    _binaryBroadcastsResults[broadcastCompleted.Id.Epoch] = broadcastCompleted.Result;
                     TryProgressEpoch();
                     return;
                 }

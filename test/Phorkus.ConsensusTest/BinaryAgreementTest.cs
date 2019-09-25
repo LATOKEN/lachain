@@ -17,8 +17,8 @@ namespace Phorkus.ConsensusTest
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors;
-        private const int N = 7;
         private const int F = 2;
+        private const int N = 3 * F + 1;
         private IWallet[] _wallets;
         private Random _rnd;
 
@@ -122,6 +122,7 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[i].WaitFinish();
             }
             _deliverySerivce.WaitFinish();
+            
             
             for (var i = 0; i < N; ++i)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.Messages;
@@ -14,12 +15,11 @@ namespace Phorkus.Consensus.CommonCoin
         private readonly PublicKeySet _publicKeySet;
         private readonly CoinId _coinId;
         private bool? _result;
-        private int _requested;
+        private ResultStatus _requested = ResultStatus.NotRequested;
 
         public override IProtocolIdentifier Id => _coinId;
 
         public CommonCoin(
-//            PublicKeySet publicKeySet, PrivateKeyShare privateKeyShare,
             CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
         ) : base(wallet, broadcaster)
         {
@@ -31,11 +31,13 @@ namespace Phorkus.Consensus.CommonCoin
         public void CheckResult()
         {
             if (_result == null) return;
-            if (_requested != 1) return;
+            if (_requested != ResultStatus.Requested) return;
             _broadcaster.InternalResponse(new ProtocolResult<CoinId, bool>(_coinId, (bool) _result));
-            _requested = 2;
+            Console.Error.WriteLine($"Player {GetMyId()}: made coin by {_coinId} and sent.");
+            _requested = ResultStatus.Sent;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
             if (envelope.External)
@@ -53,7 +55,10 @@ namespace Phorkus.Consensus.CommonCoin
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(_publicKeySet[(int) message.Validator.ValidatorIndex], signatureShare,
                     out var signature))
+                {
+                    Console.Error.WriteLine($"Player {GetMyId()}: faulty behaviour from player {message.Validator}");
                     return; // potential fault evidence
+                }
 
                 if (signature == null) return;
                 _result = signature.Parity();
@@ -66,7 +71,7 @@ namespace Phorkus.Consensus.CommonCoin
                 {
                     case ProtocolRequest<CoinId, object> _:
                         var signatureShare = _thresholdSigner.Sign();
-                        _requested = 1;
+                        _requested = ResultStatus.Requested;
                         CheckResult();
                         _broadcaster.Broadcast(CreateCoinMessage(signatureShare));
                         break;

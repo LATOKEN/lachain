@@ -24,8 +24,7 @@ namespace Phorkus.Consensus
 
         protected AbstractProtocol(IWallet wallet, IConsensusBroadcaster broadcaster)
         {
-            _thread = new Thread(Start);
-            _thread.IsBackground = true;
+            _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
             _broadcaster = broadcaster;
             _wallet = wallet;
