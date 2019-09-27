@@ -187,11 +187,15 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         private BoolSet ChoseMinimalSet()
         {
+            return _binValues;
+            // todo investigate if choosing mimimal set speed up execution 
+            // this should not break protocol integrity
+            
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F)
                 throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient auxs!");
             if (_confReceived.Count(set => _binValues.Contains(set)) < N - F)
                 throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient confs!");
-            
+
             foreach (var b in _binValues.Values())
             {
                 if (_receivedAux[b ? 1 : 0] >= N - F) // && _confReceived.Where(set => _binValues.Contains(set)).Count(set => set.Contains(b)) >= N - F)

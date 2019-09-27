@@ -89,7 +89,8 @@ namespace Phorkus.Consensus.BinaryAgreement
                             if (_currentEpoch > _resultEpoch)
                             {
                                 _wasRepeat = true;
-                                CheckResult();
+                                Terminate();
+//                                CheckResult();
                             }
                         }
                         else

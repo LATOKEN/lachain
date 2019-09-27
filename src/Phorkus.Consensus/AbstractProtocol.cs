@@ -69,11 +69,9 @@ namespace Phorkus.Consensus
         {
             lock (_queueLock)
             {
-                if (!Terminated)
-                {
-                    Terminated = true;
-                    Monitor.Pulse(_queueLock);
-                }
+                if (Terminated) return;
+                Terminated = true;
+                Monitor.Pulse(_queueLock);
             }
         }
 
