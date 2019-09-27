@@ -141,12 +141,6 @@ namespace Phorkus.ConsensusTest
             {
                 _broadcasts[i].WaitResult();
             }
-
-            for (var i = 0; i < N; ++i)
-            {
-                _resultInterceptors[i].WaitFinish();
-            }
-            
             
             Console.Error.WriteLine("All players produced result");
             _deliverySerivce.WaitFinish();
@@ -168,7 +162,6 @@ namespace Phorkus.ConsensusTest
 
             Console.Error.WriteLine("Result validated");
 
-            return;
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i].Terminate();

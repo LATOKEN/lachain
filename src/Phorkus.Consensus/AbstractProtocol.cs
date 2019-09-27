@@ -44,11 +44,13 @@ namespace Phorkus.Consensus
 
         public void WaitResult()
         {
-            while (!ResultEmitted)
+            lock (_resultLock)
             {
-                lock (_resultLock)
+                if (ResultEmitted) return;
+                Monitor.Wait(_resultLock);
+                if (!ResultEmitted)
                 {
-                    Monitor.Wait(_resultLock);
+                    throw new Exception("Should set ResultEmitted to true before pulse.");
                 }
             }
         }
@@ -57,11 +59,9 @@ namespace Phorkus.Consensus
         {
             lock (_resultLock)
             {
-                if (!ResultEmitted)
-                {
-                    ResultEmitted = true;
-                    Monitor.Pulse(_resultLock);
-                }
+                if (ResultEmitted) return;
+                ResultEmitted = true;
+                Monitor.Pulse(_resultLock);
             }
         }
 
