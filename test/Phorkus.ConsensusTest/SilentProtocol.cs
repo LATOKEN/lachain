@@ -23,6 +23,16 @@ namespace Phorkus.ConsensusTest
         {
         }
 
+        public void WaitResult()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Terminate()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public bool Terminated => true;
     }
 }

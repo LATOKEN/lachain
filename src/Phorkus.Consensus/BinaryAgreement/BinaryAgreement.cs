@@ -17,6 +17,8 @@ namespace Phorkus.Consensus.BinaryAgreement
         private long _currentEpoch;
         private bool _estimate;
         private BoolSet _currentValues;
+        private bool _wasRepeat;
+        private long _resultEpoch;
 
         private readonly Dictionary<long, bool> _coins = new Dictionary<long, bool>();
         private readonly Dictionary<long, BoolSet> _binaryBroadcastsResults = new Dictionary<long, BoolSet>();
@@ -29,6 +31,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             _agreementId = agreementId;
             _requested = ResultStatus.NotRequested;
             _currentEpoch = 0;
+            _wasRepeat = false;
         }
 
         private void CheckResult()
@@ -36,9 +39,10 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_result == null) return;
             if (_requested == ResultStatus.Requested)
             {
-                Console.Error.WriteLine($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
                 _broadcaster.InternalResponse(new ProtocolResult<BinaryAgreementId, bool>(_agreementId, (bool) _result));
                 _requested = ResultStatus.Sent;
+                SetResult();
+                Console.Error.WriteLine($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
             }
         }
 
@@ -46,7 +50,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private void TryProgressEpoch()
         {
             CheckResult();
-            while (_result == null)
+            while (_result == null || !_wasRepeat)
             {
                 if (_currentEpoch % 2 == 0)
                 {
@@ -68,15 +72,24 @@ namespace Phorkus.Consensus.BinaryAgreement
                     if (_currentEpoch != 0)
                     {
                         var s = _coins[_currentEpoch - 1];
-                        if (_currentValues.Count() == 1)
+                        _estimate = _currentValues.Values().First();
+                        
+                        if (_currentValues.Count() == 1 && _result == null)
                         {
-                            _estimate = _currentValues.Values().First();
-                            if (_estimate == s)
+                                if (_estimate == s)
+                                {
+                                    // we are winners!!!!!!!!!!!!!!1
+                                    _resultEpoch = _currentEpoch;
+                                    _result = _estimate;
+                                    CheckResult();
+                                    Console.Error.WriteLine($"Player {GetMyId()} at {_agreementId}: result = {_result} achieved at Ep={_currentEpoch}");
+                                }
+                        } else if (_result == s)
+                        {
+                            if (_currentEpoch > _resultEpoch)
                             {
-                                // we are winners!!!!!!!!!!!!!!1
-                                _result = _estimate;
+                                _wasRepeat = true;
                                 CheckResult();
-                                return;
                             }
                         }
                         else
@@ -84,6 +97,9 @@ namespace Phorkus.Consensus.BinaryAgreement
                             _estimate = s;
                         }
                     }
+
+                    if (_result != null)
+                        _estimate = _result.Value;
 
                     // here we start new BB assuming that current estimate is correct
                     var broadcastId = new BinaryBroadcastId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
@@ -137,7 +153,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                     TryProgressEpoch();
                     break;
                 case ProtocolResult<BinaryAgreementId, bool> _:
-                    Terminated = true;
+//                    Terminated = true;
                     break;
                 case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
                 {

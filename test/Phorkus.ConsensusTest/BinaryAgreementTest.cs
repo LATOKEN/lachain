@@ -17,12 +17,12 @@ namespace Phorkus.ConsensusTest
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors;
-        private const int F = 2;
-        private const int N = 3 * F + 1;
+        private int F = 1;
+        private int N = 3 * 1 + 1;
         private IWallet[] _wallets;
         private Random _rnd;
 
-        [SetUp]
+//        [SetUp]
         public void SetUp()
         {
             _rnd = new Random();
@@ -45,6 +45,7 @@ namespace Phorkus.ConsensusTest
 
         private void SetUpAllHonest()
         {
+            SetUp();
             for (uint i = 0; i < N; ++i)
             {
                 _broadcasts[i] = new BinaryAgreement(new BinaryAgreementId(0, 0), _wallets[i], _broadcasters[i]);
@@ -65,13 +66,24 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i].WaitFinish();
+                _broadcasts[i].WaitResult();
             }
+            Console.Error.WriteLine("-------------------------------------------------------------------------- ZHOPA ####################################################33");
             _deliverySerivce.WaitFinish();
+            Console.Error.WriteLine("-------------------------------------------------------------------------- ZHOPA ####################################################33");
+            
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].Terminate();
+                Console.Error.WriteLine($"boy {i} terminated");
+                _broadcasts[i].WaitFinish();
+                Console.Error.WriteLine($"boy {i} finished");
+            }
+            Console.Error.WriteLine("-------------------------------------------------------------------------- ZHOPA ####################################################33");
 
             for (var i = 0; i < N; ++i)
             {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(false, _resultInterceptors[i].Result);
             }
@@ -90,6 +102,12 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
+                _broadcasts[i].WaitResult();
+            }
+            
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].Terminate();
                 _broadcasts[i].WaitFinish();
             }
             _deliverySerivce.WaitFinish();
@@ -102,10 +120,12 @@ namespace Phorkus.ConsensusTest
             }
         }
         
-        [Test]
-        [Repeat(100)]
-        public void TestBinaryAgreementRandom()
+        
+        public void RunBinaryAgreementRandom(int n, int f)
         {
+            N = n;
+            F = f;
+            Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
             SetUpAllHonest();
             var used = new BoolSet();
             for (var i = 0; i < N; ++i)
@@ -119,14 +139,22 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i].WaitFinish();
+                _broadcasts[i].WaitResult();
             }
-            _deliverySerivce.WaitFinish();
+
+            for (var i = 0; i < N; ++i)
+            {
+                _resultInterceptors[i].WaitFinish();
+            }
             
+            
+            Console.Error.WriteLine("All players produced result");
+            _deliverySerivce.WaitFinish();
+            Console.Error.WriteLine("Delivery service shut down");
             
             for (var i = 0; i < N; ++i)
             {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
             }
 
@@ -137,7 +165,39 @@ namespace Phorkus.ConsensusTest
                 Assert.AreEqual(res, _resultInterceptors[i].Result);
             }
             Assert.True(used.Contains(res));
+
+            Console.Error.WriteLine("Result validated");
+
+            return;
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].Terminate();
+                Console.Error.WriteLine($"boy {i} terminated");
+                _broadcasts[i].WaitFinish();
+                Console.Error.WriteLine($"boy {i} finished");
+            }
+            Console.Error.WriteLine("Ended protocols!");
         }
 
+        [Test]
+        [Repeat(100)]
+        public void RandomTest41()
+        {
+            RunBinaryAgreementRandom(4, 1);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void RandomTest72()
+        {
+            RunBinaryAgreementRandom(7, 2);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void RandomTest103()
+        {
+            RunBinaryAgreementRandom(10, 3);
+        }
     }
 }

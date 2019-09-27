@@ -188,11 +188,13 @@ namespace Phorkus.Consensus.BinaryAgreement
         private BoolSet ChoseMinimalSet()
         {
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F)
-                throw new Exception($"Player {GetMyId()} at {_broadcastId}: cant chose minimal set!");
+                throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient auxs!");
+            if (_confReceived.Count(set => _binValues.Contains(set)) < N - F)
+                throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient confs!");
             
             foreach (var b in _binValues.Values())
             {
-                if (_receivedAux[b ? 1 : 0] >= N - F)
+                if (_receivedAux[b ? 1 : 0] >= N - F) // && _confReceived.Where(set => _binValues.Contains(set)).Count(set => set.Contains(b)) >= N - F)
                     return new BoolSet(b);
             }
 
@@ -202,6 +204,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void RevisitConfMessages()
         {
+            // todo investigate relation between _confReceived, _binValues and _result
             var goodConfs = _confReceived.Count(set => _binValues.Contains(set));
             if (goodConfs < N - F) return;
             if (_result != null) return;

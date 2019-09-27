@@ -9,6 +9,9 @@ namespace Phorkus.Consensus
 
         void Start();
         void WaitFinish();
+        void WaitResult();
+
+        void Terminate();
 
         bool Terminated { get; }
     }

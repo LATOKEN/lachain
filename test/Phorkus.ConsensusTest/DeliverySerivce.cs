@@ -16,9 +16,11 @@ namespace Phorkus.ConsensusTest
 //        private readonly ConcurrentQueue<Tuple<int, ConsensusMessage>> _queue = new ConcurrentQueue<Tuple<int, ConsensusMessage>>();
         private readonly RandomSamplingQueue<Tuple<int, ConsensusMessage>> _queue = new RandomSamplingQueue<Tuple<int, ConsensusMessage>>();
         private readonly object _queueLock = new object();
+        private readonly object _queueClear = new object();
         private bool Terminated { get; set; }
 
         private readonly Thread _thread;
+        private bool _stopped;
 
         public DeliverySerivce()
         {
@@ -35,9 +37,19 @@ namespace Phorkus.ConsensusTest
         
         public void WaitFinish()
         {
-            Terminated = true;
+            lock (_queueClear)
+            {
+                lock (_queueLock)
+                {
+                    Monitor.Pulse(_queueLock);
+                }
+                _stopped = true;
+                Monitor.Wait(_queueClear);
+            }
+            
             lock (_queueLock)
             {
+                Terminated = true;
                 Monitor.Pulse(_queueLock);
             }
             _thread.Join();
@@ -48,17 +60,24 @@ namespace Phorkus.ConsensusTest
             while (!Terminated)
             {
                 Tuple<int, ConsensusMessage> tuple;
-                lock (_queueLock) 
+                lock (_queueLock)
                 {
                     while (_queue.IsEmpty && !Terminated)
                     {
+                        if (_stopped)
+                        {
+                            lock (_queueClear)
+                            {
+                                Monitor.Pulse(_queueClear);
+                            }
+                        }
                         Monitor.Wait(_queueLock);
                     }
 
                     if (Terminated)
                     {
-//                        if (!_queue.IsEmpty)
-//                            throw new Exception("Closing deliveryService too early!");
+                        if (!_queue.IsEmpty)
+                            throw new Exception("Closing deliveryService too early!");
                         return;
                     }
                     
@@ -69,7 +88,7 @@ namespace Phorkus.ConsensusTest
                         throw new Exception("Can't sample from queue!");
                     }
 
-                    Console.Error.WriteLine($"remaining in queue: {_queue.Count}");
+//                    Console.Error.WriteLine($"remaining in queue: {_queue.Count}");
                 }
 
 
@@ -96,6 +115,7 @@ namespace Phorkus.ConsensusTest
 
         private void ReceiveMessage(int index, ConsensusMessage message)
         {
+            if (_stopped) return;
             lock (_queueLock)
             {
                 _queue.Enqueue(new Tuple<int, ConsensusMessage>(index, message));

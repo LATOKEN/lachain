@@ -8,8 +8,10 @@ namespace Phorkus.Consensus
     public abstract class AbstractProtocol : IConsensusProtocol
     {
         private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
-//        private readonly RandomSamplingQueue<MessageEnvelope> _queue = new RandomSamplingQueue<MessageEnvelope>();
         private readonly object _queueLock = new object();
+        private readonly object _resultLock = new object();
+        public bool ResultEmitted { get; protected set; }
+        
         public bool Terminated { get; protected set; }
         public abstract IProtocolIdentifier Id { get; }
         protected readonly IConsensusBroadcaster _broadcaster;
@@ -40,6 +42,41 @@ namespace Phorkus.Consensus
             _thread.Join();
         }
 
+        public void WaitResult()
+        {
+            while (!ResultEmitted)
+            {
+                lock (_resultLock)
+                {
+                    Monitor.Wait(_resultLock);
+                }
+            }
+        }
+
+        public void SetResult()
+        {
+            lock (_resultLock)
+            {
+                if (!ResultEmitted)
+                {
+                    ResultEmitted = true;
+                    Monitor.Pulse(_resultLock);
+                }
+            }
+        }
+
+        public void Terminate()
+        {
+            lock (_queueLock)
+            {
+                if (!Terminated)
+                {
+                    Terminated = true;
+                    Monitor.Pulse(_queueLock);
+                }
+            }
+        }
+
         public void Start()
         {
             while (!Terminated)
@@ -47,19 +84,15 @@ namespace Phorkus.Consensus
                 MessageEnvelope msg;
                 lock (_queueLock)
                 {
-                    while (_queue.IsEmpty)
+                    while (_queue.IsEmpty && !Terminated)
                     {
                         Monitor.Wait(_queueLock);
                     }
 
-//                    if (_broadcaster.MixMessages)
-//                    {
-//                        _queue.TrySample(out msg);
-//                    }
-//                    else
-//                    {
-                        _queue.TryDequeue(out msg);
-//                    }
+                    if (Terminated)
+                        return;
+
+                    _queue.TryDequeue(out msg);
                 }
                 try
                 {
