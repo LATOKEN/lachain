@@ -188,7 +188,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private BoolSet ChoseMinimalSet()
         {
             return _binValues;
-            // todo investigate if choosing mimimal set speed up execution 
+            // todo investigate if choosing minimal set speed up execution 
             // this should not break protocol integrity
             
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F)

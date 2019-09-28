@@ -21,9 +21,11 @@ namespace Phorkus.ConsensusTest
 
         private readonly Thread _thread;
         private bool _stopped;
+        public DeliveryServiceMode Mode { get; set; }
 
         public DeliverySerivce()
         {
+            Mode = DeliveryServiceMode.TAKE_FIRST;
             _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
         }
@@ -80,10 +82,16 @@ namespace Phorkus.ConsensusTest
                             throw new Exception("Closing deliveryService too early!");
                         return;
                     }
-                    
-                    if (!_queue.TryTakeLast(out tuple))
-//                    if (!_queue.TryDequeue(out tuple))
-//                    if (!_queue.TrySample(out tuple))
+
+                    var success = Mode switch
+                    {
+                        DeliveryServiceMode.TAKE_FIRST => _queue.TryDequeue(out tuple),
+                        DeliveryServiceMode.TAKE_LAST => _queue.TryTakeLast(out tuple),
+                        DeliveryServiceMode.TAKE_RANDOM => _queue.TrySample(out tuple),
+                        _ => throw new NotImplementedException($"Unknown mode {Mode}")
+                    };
+
+                    if (!success)
                     {
                         throw new Exception("Can't sample from queue!");
                     }
@@ -91,10 +99,6 @@ namespace Phorkus.ConsensusTest
 //                    Console.Error.WriteLine($"remaining in queue: {_queue.Count}");
                 }
 
-
-//                _queue.TryDequeue(out var tuple);
-//                _queue.TrySample(out var tuple);
-//                _queue.TryTakeLast(out var tuple);
                 
                 var index = tuple.Item1;
                 var message = tuple.Item2;
@@ -109,7 +113,6 @@ namespace Phorkus.ConsensusTest
                     Terminated = true;
                     break;
                 }
-                
             }
         }
 

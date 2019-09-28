@@ -121,12 +121,15 @@ namespace Phorkus.ConsensusTest
         }
         
         
-        public void RunBinaryAgreementRandom(int n, int f)
+        public void RunBinaryAgreementRandom(int n, int f, DeliveryServiceMode mode)
         {
             N = n;
             F = f;
-            Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
             SetUpAllHonest();
+            _deliverySerivce.Mode = mode;
+            
+            Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
+            
             var used = new BoolSet();
             for (var i = 0; i < N; ++i)
             {
@@ -174,23 +177,30 @@ namespace Phorkus.ConsensusTest
 
         [Test]
         [Repeat(100)]
-        public void RandomTest41()
+        public void RandomTestLast41()
         {
-            RunBinaryAgreementRandom(4, 1);
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST);
         }
         
         [Test]
         [Repeat(100)]
-        public void RandomTest72()
+        public void RandomTestRandom41()
         {
-            RunBinaryAgreementRandom(7, 2);
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM);
         }
         
         [Test]
         [Repeat(100)]
-        public void RandomTest103()
+        public void RandomTestLast72()
         {
-            RunBinaryAgreementRandom(10, 3);
+            RunBinaryAgreementRandom(7, 2, DeliveryServiceMode.TAKE_LAST);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void RandomTestLast103()
+        {
+            RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST);
         }
     }
 }
