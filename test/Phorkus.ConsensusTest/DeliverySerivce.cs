@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using NUnit.Framework;
 using Org.BouncyCastle.Crypto.Engines;
 using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
@@ -11,12 +12,17 @@ namespace Phorkus.ConsensusTest
 {
     public class DeliverySerivce
     {
-//        private readonly List<IConsensusBroadcaster> _broadcasters = new List<IConsensusBroadcaster>();
+        public readonly ISet<int> _mutedPlayers = new HashSet<int>();
         private readonly IDictionary<int, IConsensusBroadcaster> _broadcasters = new Dictionary<int, IConsensusBroadcaster>();
-//        private readonly ConcurrentQueue<Tuple<int, ConsensusMessage>> _queue = new ConcurrentQueue<Tuple<int, ConsensusMessage>>();
         private readonly RandomSamplingQueue<Tuple<int, ConsensusMessage>> _queue = new RandomSamplingQueue<Tuple<int, ConsensusMessage>>();
         private readonly object _queueLock = new object();
         private readonly object _queueClear = new object();
+        public double RepeatProbability
+        {
+            get => _queue.RepeatProbability;
+            set => _queue.RepeatProbability = value;
+        }
+
         private bool Terminated { get; set; }
 
         private readonly Thread _thread;
@@ -30,29 +36,34 @@ namespace Phorkus.ConsensusTest
             _thread.Start();
         }
         
-        // todo replace array with map and provide index to this function
         public void AddPlayer(int index, IConsensusBroadcaster player)
         {
             _broadcasters.Add(index, player);
         }
 
+        public void MutePlayer(int index)
+        {
+            _mutedPlayers.Add(index);
+        }
         
         public void WaitFinish()
         {
             lock (_queueClear)
             {
-                lock (_queueLock)
-                {
-                    Monitor.Pulse(_queueLock);
-                }
+                if (_stopped) return;
                 _stopped = true;
+                if (_queue.IsEmpty) return;
                 Monitor.Wait(_queueClear);
+                Console.Error.WriteLine("_queueClear received.");
             }
+            
             
             lock (_queueLock)
             {
+                if (Terminated) return;
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
+                Console.Error.WriteLine("_queueLock pulsed.");
             }
             _thread.Join();
         }
@@ -102,6 +113,8 @@ namespace Phorkus.ConsensusTest
                 
                 var index = tuple.Item1;
                 var message = tuple.Item2;
+                
+                if (_mutedPlayers.Contains(index)) continue;
                 
                 try
                 {

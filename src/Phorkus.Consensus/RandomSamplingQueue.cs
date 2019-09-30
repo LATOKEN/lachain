@@ -10,10 +10,16 @@ namespace Phorkus.Consensus
 
         public bool IsEmpty => _queue.IsEmpty;
         public int Count => _queue.Count;
+        public double RepeatProbability { get; set; } = 0;
 
         public bool TryDequeue(out T result)
         {
-            return _queue.TryDequeue(out result);
+            var success = _queue.TryDequeue(out result);
+            if (success && _rnd.NextDouble() < RepeatProbability)
+            {
+                _queue.Enqueue(result);
+            }
+            return success;
         }
 
         private bool TryTake(int k, out T result)

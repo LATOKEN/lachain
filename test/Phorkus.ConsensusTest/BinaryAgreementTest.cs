@@ -121,13 +121,18 @@ namespace Phorkus.ConsensusTest
         }
         
         
-        public void RunBinaryAgreementRandom(int n, int f, DeliveryServiceMode mode)
+        public void RunBinaryAgreementRandom(int n, int f, DeliveryServiceMode mode, int muteCnt = 0, double repeatProbability = .0)
         {
             N = n;
             F = f;
             SetUpAllHonest();
+            _deliverySerivce.RepeatProbability = repeatProbability;
             _deliverySerivce.Mode = mode;
-            
+            while (_deliverySerivce._mutedPlayers.Count < muteCnt)
+            {
+                _deliverySerivce.MutePlayer(_rnd.Next(0, N - 1));
+            }
+
             Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
             
             var used = new BoolSet();
@@ -142,7 +147,8 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i].WaitResult();
+                if (_deliverySerivce._mutedPlayers.Contains(i)) continue;
+                    _broadcasts[i].WaitResult();
             }
             
             Console.Error.WriteLine("All players produced result");
@@ -151,17 +157,22 @@ namespace Phorkus.ConsensusTest
             
             for (var i = 0; i < N; ++i)
             {
-//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                if (_deliverySerivce._mutedPlayers.Contains(i)) continue;
+                
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
+//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
             }
 
-            var res = _resultInterceptors[0].Result;
+            bool? res = null;
             for (var i = 0; i < N; ++i)
             {
+                if (_deliverySerivce._mutedPlayers.Contains(i)) continue;
                 var ans = _resultInterceptors[i].Result;
+                if (res == null)
+                    res = ans;
                 Assert.AreEqual(res, _resultInterceptors[i].Result);
             }
-            Assert.True(used.Contains(res));
+            Assert.True(used.Contains(res.Value));
 
             Console.Error.WriteLine("Result validated");
 
@@ -191,6 +202,27 @@ namespace Phorkus.ConsensusTest
         
         [Test]
         [Repeat(100)]
+        public void RandomTestRandomWithRepeat41()
+        {
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 0, .01);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void RandomTestRandomWithMuted41()
+        {
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 1);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void RandomTestLastWithMuted41()
+        {
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST, 1);
+        }
+        
+        [Test]
+        [Repeat(100)]
         public void RandomTestLast72()
         {
             RunBinaryAgreementRandom(7, 2, DeliveryServiceMode.TAKE_LAST);
@@ -198,9 +230,23 @@ namespace Phorkus.ConsensusTest
         
         [Test]
         [Repeat(100)]
+        public void RandomTestLastWithMuted72()
+        {
+            RunBinaryAgreementRandom(7, 2, DeliveryServiceMode.TAKE_LAST, 2);
+        }
+        
+        [Test]
+        [Repeat(100)]
         public void RandomTestLast103()
         {
             RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void RandomTestLastWithMuted103()
+        {
+            RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST, 3);
         }
     }
 }
