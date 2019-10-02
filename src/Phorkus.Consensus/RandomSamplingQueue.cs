@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Phorkus.Consensus
 {
@@ -12,16 +14,18 @@ namespace Phorkus.Consensus
         public int Count => _queue.Count;
         public double RepeatProbability { get; set; } = 0;
 
-        public bool TryDequeue(out T result)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryDequeue(out T result, double repeatProb=.0)
         {
             var success = _queue.TryDequeue(out result);
-            if (success && _rnd.NextDouble() < RepeatProbability)
+            if (success && _rnd.NextDouble() < repeatProb)
             {
-                _queue.Enqueue(result);
+                Enqueue(result);
             }
             return success;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private bool TryTake(int k, out T result)
         {
             if (k >= _queue.Count)
@@ -36,9 +40,10 @@ namespace Phorkus.Consensus
                 Enqueue(res);
             }
 
-            return TryDequeue(out result);
+            return TryDequeue(out result, repeatProb: RepeatProbability);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TrySample(out T result)
         {
             var size = _queue.Count;
@@ -46,12 +51,14 @@ namespace Phorkus.Consensus
             return TryTake(k, out result);
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryTakeLast(out T result)
         {
             var size = _queue.Count;
             return TryTake(size - 1, out result);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Enqueue(T item)
         {
             _queue.Enqueue(item);

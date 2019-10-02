@@ -204,7 +204,7 @@ namespace Phorkus.ConsensusTest
         [Repeat(100)]
         public void RandomTestRandomWithRepeat41()
         {
-            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 0, .01);
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 0, .2);
         }
         
         [Test]

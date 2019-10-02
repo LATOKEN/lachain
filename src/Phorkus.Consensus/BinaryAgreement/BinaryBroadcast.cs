@@ -159,6 +159,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             var b = aux.Value ? 1 : 0;
             if (_playerSentAux[sender])
             {
+                Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: double receive message {aux} from {sender}");
                 return; // potential fault evidence
             }
 
@@ -178,7 +179,11 @@ namespace Phorkus.Consensus.BinaryAgreement
 
             var sender = validator.ValidatorIndex;
 
-            if (_validatorSentConf[sender]) return; // potential fault evidence
+            if (_validatorSentConf[sender]) 
+            {
+                Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: double receive message {conf} from {sender}");
+                return; // potential fault evidence
+            }
             _validatorSentConf[sender] = true;
 
             _confReceived.Add(new BoolSet(conf.Values));

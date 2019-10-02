@@ -18,7 +18,6 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<CoinId, bool>[] _resultInterceptors;
         private IWallet[] _wallets;
 
-        [SetUp]
         public void SetUp()
         {
             Mcl.Init();
@@ -44,9 +43,7 @@ namespace Phorkus.ConsensusTest
             }
         }
 
-        [Test]
-        [Repeat(1000)]
-        public void TestAllHonest()
+        public void Run()
         {
             for (var i = 0; i < N; ++i)
             {
@@ -70,6 +67,23 @@ namespace Phorkus.ConsensusTest
             }
 
             Assert.AreEqual(results.Distinct().Count(), 1, "all guys should get same coin");
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void TestAllHonest()
+        {
+            SetUp();
+            Run();
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void TestAllHonestWithRepeat()
+        {
+            SetUp();
+            _deliverySerivce.RepeatProbability = 0.9;
+            Run();
         }
     }
 }
