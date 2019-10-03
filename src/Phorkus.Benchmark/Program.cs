@@ -10,8 +10,8 @@ namespace Phorkus.Benchmark
         {
             if (args.Length == 0)
             {
-                args = new string[] { "virtualmachine" };
-//                Console.WriteLine("Usage: dotnet Phorkus.Benchmark.dll <storage/blockchain>");
+                args = new[] { "blockchain" };
+//                Console.WriteLine("Usage: dotnet Phorkus.Benchmark.dll <storage/blockchain/virtualmachine>");
 //                return;
             }
 

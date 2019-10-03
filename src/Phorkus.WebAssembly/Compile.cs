@@ -4,11 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Reflection.Metadata;
 using System.Text;
-using System.Threading;
-using ICSharpCode.Decompiler.CSharp;
-using ICSharpCode.Decompiler.Disassembler;
 
 namespace Phorkus.WebAssembly
 {
@@ -17,11 +13,19 @@ namespace Phorkus.WebAssembly
     /// </summary>
     public static class Compile
     {
+        public const ulong DefaultGasLimit = 4_000_000_000;
+        
+        /// <summary>
+        /// Gas threshold to inject gas mettering code.
+        /// </summary>
+        public const ulong GasThreshold = 100_000_000;
+
         /// <summary>
         /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
         /// </summary>
         /// <param name="path">The path to the file that contains a WebAssembly binary stream.</param>
         /// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
+        /// <param name="gasLimit"></param>
         /// <returns>The module.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="path"/> cannot be null.</exception>
         /// <exception cref="ArgumentException">
@@ -35,12 +39,12 @@ namespace Phorkus.WebAssembly
         /// The specified path, file name, or both exceed the system-defined maximum length.
         /// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
         /// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-        public static Func<Instance<TExports>> FromBinary<TExports>(string path, IEnumerable<RuntimeImport> imports = null)
+        public static Func<Instance<TExports>> FromBinary<TExports>(string path, IEnumerable<RuntimeImport> imports = null, ulong gasLimit = DefaultGasLimit)
         where TExports : class
         {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
             {
-                return FromBinary<TExports>(stream, imports);
+                return FromBinary<TExports>(stream, imports, gasLimit);
             }
         }
 
@@ -49,9 +53,10 @@ namespace Phorkus.WebAssembly
         /// </summary>
         /// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
         /// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
+        /// <param name="gasLimit"></param>
         /// <returns>A function that creates instances on demand.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
-        public static Func<Instance<TExports>> FromBinary<TExports>(Stream input, IEnumerable<RuntimeImport> imports = null)
+        public static Func<Instance<TExports>> FromBinary<TExports>(Stream input, IEnumerable<RuntimeImport> imports = null, ulong gasLimit = DefaultGasLimit)
         where TExports : class
         {
             var exportInfo = typeof(TExports).GetTypeInfo();
@@ -63,7 +68,7 @@ namespace Phorkus.WebAssembly
             {
                 try
                 {
-                    constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports), imports);
+                    constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports), imports, gasLimit);
                 }
                 catch (OverflowException x)
 #if DEBUG
@@ -165,7 +170,8 @@ namespace Phorkus.WebAssembly
             Reader reader,
             System.Type instanceContainer,
             System.Type exportContainer,
-            IEnumerable<RuntimeImport> imports
+            IEnumerable<RuntimeImport> imports,
+            ulong gasLimit
             )
         {
             if (reader.ReadUInt32() != Module.Magic)
@@ -224,18 +230,17 @@ namespace Phorkus.WebAssembly
             var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
             MethodInfo importedMemoryProvider = null;
             FieldBuilder memory = null;
+            var gasLimitField = exportsBuilder.DefineField("💩 GasLimit", typeof(ulong), FieldAttributes.Public | FieldAttributes.Static);
 
             ILGenerator instanceConstructorIL;
             {
                 var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, System.Type.EmptyTypes);
                 instanceConstructorIL = instanceConstructor.GetILGenerator();
+                var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+                if (usableConstructor != null)
                 {
-                    var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
-                    if (usableConstructor != null)
-                    {
-                        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                        instanceConstructorIL.Emit(OpCodes.Call, usableConstructor);
-                    }
+                    instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                    instanceConstructorIL.Emit(OpCodes.Call, usableConstructor);
                 }
             }
             
@@ -793,30 +798,26 @@ namespace Phorkus.WebAssembly
                                 {
                                     il.DeclareLocal(local.ToSystemType());
                                 }
-                                
+
+                                var gasSum = 0UL;
                                 foreach (var instruction in Instruction.Parse(reader))
                                 {
-                                    /*var debug = " ";
-                                    for (var i = 1; i <= callStackLevel; i++)
-                                        debug += "-";
-                                    debug += " " + instruction.OpCode;
-                                    if (instruction.OpCode == OpCode.Call)
+                                    gasSum += instruction.Gas;
+                                    
+                                    if (gasSum > GasThreshold || gasSum > 0 && instruction.FlowControl)
                                     {
-                                        var index = ((Instructions.Call) instruction).Index;
-                                        if (index > importedFunctions)
-                                            callStackLevel++;
-                                        debug += " (" + (debugNames[index] != null ? debugNames[index] : index.ToString()) + ")";
+                                        context.Emit(OpCodes.Ldsfld, gasLimitField);
+                                        context.Emit(OpCodes.Ldc_I4, (uint) gasSum);
+                                        context.Emit(OpCodes.Sub_Ovf_Un);
+                                        context.Emit(OpCodes.Stsfld, gasLimitField);
+                                        gasSum = 0;
                                     }
-                                    else if (instruction.OpCode == OpCode.End)
-                                    {
-                                        if (callStackLevel > 0)
-                                            --callStackLevel;
-                                    }
-                                    il.EmitWriteLine(debug);*/
+                                    
                                     instruction.Compile(context);
+                                    
                                     context.Previous = instruction.OpCode;
                                 }
-
+                                
                                 if (reader.Offset - startingOffset != byteLength)
                                     throw new ModuleLoadException($"Instruction sequence reader ended after readering {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
                             }
@@ -942,7 +943,11 @@ namespace Phorkus.WebAssembly
                 instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                 instanceConstructorIL.Emit(OpCodes.Call, startFunction);
             }
-
+            
+            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+            instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int) gasLimit);
+            instanceConstructorIL.Emit(OpCodes.Conv_U4);
+            instanceConstructorIL.Emit(OpCodes.Stfld, gasLimitField);
             instanceConstructorIL.Emit(OpCodes.Ret); //Finish the constructor.
             var exportInfo = exportsBuilder.CreateTypeInfo();
 

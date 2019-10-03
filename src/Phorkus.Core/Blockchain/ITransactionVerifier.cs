@@ -6,13 +6,13 @@ namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionVerifier
     {
-        event EventHandler<AcceptedTransaction> OnTransactionVerified;
+        event EventHandler<TransactionReceipt> OnTransactionVerified;
         
-        void VerifyTransaction(AcceptedTransaction acceptedTransaction, PublicKey publicKey);
-        void VerifyTransaction(AcceptedTransaction acceptedTransaction);
+        void VerifyTransaction(TransactionReceipt acceptedTransaction, PublicKey publicKey);
+        void VerifyTransaction(TransactionReceipt acceptedTransaction);
 
-        bool VerifyTransactionImmediately(AcceptedTransaction transaction, PublicKey publicKey);
-        bool VerifyTransactionImmediately(AcceptedTransaction transaction, bool cacheEnabled = true);
+        bool VerifyTransactionImmediately(TransactionReceipt transaction, PublicKey publicKey);
+        bool VerifyTransactionImmediately(TransactionReceipt transaction, bool cacheEnabled = true);
         
         void Start();
         void Stop();

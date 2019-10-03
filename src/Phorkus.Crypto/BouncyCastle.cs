@@ -138,8 +138,7 @@ namespace Phorkus.Crypto
 
         public byte[] ComputeAddress(byte[] publicKey)
         {
-            var decodedKey = DecodePublicKey(publicKey, false, out _, out _);
-            return decodedKey.Ripemd160();
+            return DecodePublicKey(publicKey, false, out _, out _).Skip(1).Keccak256().Skip(12).ToArray();
         }
 
         private static BigInteger CalculateE(BigInteger n, byte[] message)

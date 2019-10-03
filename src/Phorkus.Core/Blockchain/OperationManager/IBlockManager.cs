@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Utility;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
@@ -15,7 +14,9 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         Block GetByHash(UInt256 blockHash);
         
-        OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions, bool checkStateHash, bool commit);
+        Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block, IEnumerable<TransactionReceipt> transactions);
+        
+        OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash, bool commit);        
         
         Signature Sign(BlockHeader block, KeyPair keyPair);
         
@@ -25,8 +26,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         OperatingError Verify(Block block);
 
-        Money CalcEstimatedFee(UInt256 blockHash);
+        ulong CalcEstimatedFee(UInt256 blockHash);
         
-        Money CalcEstimatedFee();
+        ulong CalcEstimatedFee();
     }
 }

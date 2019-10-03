@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
+using Phorkus.Core.Blockchain;
 using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 using Phorkus.WebAssembly;
 using Phorkus.WebAssembly.Runtime;
@@ -16,33 +18,44 @@ namespace Phorkus.Core.VM
     public class ExternalHandler : IExternalHandler
     {
         private const string EnvModule = "env";
-
-        private static ExecutionStatus DoInternalCall(UInt160 caller, UInt160 address, byte[] input,
-            out ExecutionFrame frame)
+        
+        private static ExecutionStatus DoInternalCall(
+            UInt160 caller,
+            UInt160 address,
+            byte[] input,
+            out ExecutionFrame frame,
+            ulong gasLimit)
         {
             var contract = VirtualMachine.BlockchainSnapshot.Contracts.GetContractByHash(address);
             if (contract is null)
             {
                 frame = null;
-                return ExecutionStatus.NoSuchContract;
+                return ExecutionStatus.ContractNotFound;
             }
-            
+
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
             var status = ExecutionFrame.FromInternalCall(
-                contract.ByteCode.ToByteArray(), currentFrame.Context.NextContext(caller), address, input,
-                VirtualMachine.BlockchainInterface, out frame
+                contract.ByteCode.ToByteArray(),
+                currentFrame.Context.NextContext(caller),
+                address,
+                input,
+                VirtualMachine.BlockchainInterface,
+                out frame,
+                gasLimit
             );
             if (status != ExecutionStatus.Ok) return status;
             VirtualMachine.ExecutionFrames.Push(frame);
             return status;
         }
-
+        
         private static byte[] SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)
         {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
             if (length < 0 || offset < 0)
                 return null;
             if (offset + length > memory.Size)
                 return null;
+            frame.UseGas(GasMetering.CopyFromMemoryGasPerByte * (ulong) length);
             var buffer = new byte[length];
             try
             {
@@ -58,8 +71,10 @@ namespace Phorkus.Core.VM
 
         private static bool SafeCopyToMemory(UnmanagedMemory memory, byte[] data, int offset)
         {
+            var frame = VirtualMachine.ExecutionFrames.Peek();
             if (offset < 0 || offset + data.Length > memory.Size)
                 return false;
+            frame.UseGas(GasMetering.CopyToMemoryGasPerByte * (ulong) data.Length);
             try
             {
                 Marshal.Copy(data, 0, IntPtr.Add(memory.Start, offset), data.Length);
@@ -71,24 +86,23 @@ namespace Phorkus.Core.VM
 
             return true;
         }
-        
+
         public static int Handler_Env_GetCallValue(int offset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.GetCallValueGasCost);
             if (offset < 0 || offset >= frame.Input.Length)
-            {
                 throw new RuntimeException("Bad getcallvalue call");
-            }
-
             return frame.Input[offset];
         }
 
         public static int Handler_Env_GetCallSize()
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.GetCallSizeGasCost);
             return frame.Input.Length;
         }
-        
+
         public static void Handler_Env_CopyCallValue(int from, int to, int offset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -97,10 +111,9 @@ namespace Phorkus.Core.VM
             if (!SafeCopyToMemory(frame.Memory, frame.Input.Skip(from).Take(to - from).ToArray(), offset))
                 throw new RuntimeException("Copy to contract memory failed");
         }
-        
+
         public static void Handler_Env_WriteLog(int offset, int length)
         {
-            // TODO: check signs
             var frame = VirtualMachine.ExecutionFrames.Peek();
             var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
             if (buffer == null)
@@ -109,18 +122,37 @@ namespace Phorkus.Core.VM
         }
 
         public static int Handler_Env_InvokeContract(
-            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int returnValueOffset)
+            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset,
+            int returnValueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var signatureBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
-            if (signatureBuffer is null || inputBuffer is null)
+            if (addressBuffer is null || inputBuffer is null)
                 throw new RuntimeException("Bad call to call function");
-            var address = signatureBuffer.Take(20).ToArray().ToUInt160();
-            var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame);
+            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32).ToUInt256().ToMoney();
+            if (value is null)
+                throw new RuntimeException("Bad call to call function");
+            if (value > Money.Zero)
+            {
+                frame.UseGas(GasMetering.TransferFundsGasCost);
+                var result = VirtualMachine.BlockchainSnapshot.Balances.TransferBalance(
+                    frame.CurrentAddress, address, value);
+                if (!result)
+                    throw new InsufficientFundsException();
+            }
+
+            var gasBuffer = SafeCopyFromMemory(frame.Memory, gasOffset, 8);
+            if (gasBuffer is null)
+                throw new RuntimeException("Bad call to call function");
+            var gasLimit = BitConverter.ToUInt64(gasBuffer, 0);
+            if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
+                gasLimit = frame.GasLimit - frame.GasUsed;
+            var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame, gasLimit);
             if (status != ExecutionStatus.Ok)
                 throw new RuntimeException("Cannot invoke call: " + status);
-            status = newFrame.Execute(); 
+            status = newFrame.Execute();
             if (status != ExecutionStatus.Ok)
                 throw new RuntimeException("Cannot invoke call: " + status);
             newFrame = VirtualMachine.ExecutionFrames.Pop();
@@ -130,12 +162,11 @@ namespace Phorkus.Core.VM
             return 0;
         }
         
-        public static void Handler_Env_LoadStorage(int keyOffset, int keyLength, int valueOffset)
+        public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            if (keyLength > 32)
-                throw new Exception("Key length can't be greater than 32 bytes");
-            var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
+            frame.UseGas(GasMetering.LoadStorageGasCost);
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
                 throw new RuntimeException("Bad call to LOADSTORAGE");
             if (key.Length < 32)
@@ -144,13 +175,12 @@ namespace Phorkus.Core.VM
             if (!SafeCopyToMemory(frame.Memory, value.Buffer.ToByteArray(), valueOffset))
                 throw new RuntimeException("Cannot copy storageload result to memory");
         }
-        
-        public static void Handler_Env_SaveStorage(int keyOffset, int keyLength, int valueOffset)
+
+        public static void Handler_Env_SaveStorage(int keyOffset, int valueOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            if (keyLength > 32)
-                throw new Exception("Key length can't be greater than 32 bytes");
-            var key = SafeCopyFromMemory(frame.Memory, keyOffset, keyLength);
+            frame.UseGas(GasMetering.SaveStorageGasCost);
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
                 throw new RuntimeException("Bad call to SAVESTORAGE");
             if (key.Length < 32)
@@ -158,7 +188,8 @@ namespace Phorkus.Core.VM
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32);
             if (value is null)
                 throw new RuntimeException("Bad call to SAVESTORAGE");
-            VirtualMachine.BlockchainSnapshot.Storage.SetValue(frame.CurrentAddress, key.ToUInt256(), value.ToUInt256());
+            VirtualMachine.BlockchainSnapshot.Storage.SetValue(frame.CurrentAddress, key.ToUInt256(),
+                value.ToUInt256());
         }
 
         private static byte[] _AlignTo32(byte[] buffer)
@@ -169,7 +200,7 @@ namespace Phorkus.Core.VM
             Array.Copy(buffer, 0, result, 0, buffer.Length);
             return result;
         }
-        
+
         public static void Handler_Env_SetReturn(int offset, int length)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -178,7 +209,7 @@ namespace Phorkus.Core.VM
                 throw new RuntimeException("Bad call to SETRETURN");
             frame.ReturnValue = ret;
         }
-        
+
         public static void Handler_Env_GetSender(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -187,61 +218,69 @@ namespace Phorkus.Core.VM
             if (!ret)
                 throw new RuntimeException("Bad call to GETSENDER");
         }
-        
+
         public static void Handler_Env_SystemHalt(int haltCode)
         {
             throw new HaltException(haltCode);
         }
-
+        
         public static void Handler_Env_CryptoKeccak256(int dataOffset, int dataLength, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.Keccak256GasCost + GasMetering.Keccak256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Keccak256();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
-        
+
         public static void Handler_Env_CryptoSha256(int dataOffset, int dataLength, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.Sha256GasGasCost + GasMetering.Sha256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Sha256();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
-        
+
         public static void Handler_Env_CryptoRipemd160(int dataOffset, int dataLength, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.Ripemd160GasCost + GasMetering.Ripemd160GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Ripemd160();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
-        
+
         public static void Handler_Env_CryptoMurmur3(int dataOffset, int dataLength, int resultOffset, int seed)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.Murmur3GasCost + GasMetering.Murmur3GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
             var result = data.Murmur3((uint) seed);
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
         
-        public static void Handler_Env_CryptoRecover(int messageOffset, int messageLength, int signatureOffset, int resultOffset)
+        public static void Handler_Env_CryptoRecover(int messageOffset, int messageLength, int signatureOffset,
+            int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.RecoverGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength);
             var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length);
             var publicKey = VirtualMachine.Crypto.RecoverSignature(message, sig);
             SafeCopyToMemory(frame.Memory, publicKey, resultOffset);
         }
-        
-        public static void Handler_Env_CryptoVerify(int messageOffset, int messageLength, int signatureOffset, int publicKeyOffset, int resultOffset)
+
+        public static void Handler_Env_CryptoVerify(int messageOffset, int messageLength, int signatureOffset,
+            int publicKeyOffset, int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.VerifyGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength);
             var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length);
             var publicKey = SafeCopyFromMemory(frame.Memory, publicKeyOffset, CryptoUtils.PublicKeyLength);
             var result = VirtualMachine.Crypto.VerifySignature(message, sig, publicKey);
-            SafeCopyToMemory(frame.Memory, new[]{ result ? (byte) 1 : (byte) 0 }, resultOffset);
+            SafeCopyToMemory(frame.Memory, new[] {result ? (byte) 1 : (byte) 0}, resultOffset);
         }
 
         public static void Handler_Env_GetTransferredFunds(int dataOffset)
@@ -252,7 +291,7 @@ namespace Phorkus.Core.VM
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transferred_funds)");
         }
-       
+
         public static void Handler_Env_GetBlockHash(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -261,7 +300,7 @@ namespace Phorkus.Core.VM
             if (!ret)
                 throw new RuntimeException("Bad call to (get_block_hash)");
         }
-        
+
         public static void Handler_Env_GetBlockHeight(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -270,7 +309,7 @@ namespace Phorkus.Core.VM
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transferred_funds)");
         }
-        
+
         public static void Handler_Env_GetTransactionHash(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
@@ -280,21 +319,23 @@ namespace Phorkus.Core.VM
                 throw new RuntimeException("Bad call to (get_transaction_hash)");
         }
         
-        public static void Handle_Env_WriteEvent(int valueOffset, int valueLength)
+        public static void Handle_Env_WriteEvent(int signatureOffset, int valueOffset, int valueLength)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
+            frame.UseGas(GasMetering.WriteEventPerByteGas * (uint) (valueLength + 32));
+            var signature = SafeCopyFromMemory(frame.Memory, signatureOffset, 32);
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength);
             var ev = new Event
             {
                 Contract = frame.CurrentAddress,
                 Data = ByteString.CopyFrom(value),
                 TransactionHash = frame.Context.TransactionHash,
-                Index = 0,
-                BlockHash = frame.Context.BlockHash
+                Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
+                SignatureHash = signature.ToUInt256()
             };
             VirtualMachine.BlockchainSnapshot.Events.AddEvent(ev);
         }
-        
+
         public IEnumerable<FunctionImport> GetFunctionImports()
         {
             return new[]

@@ -6,18 +6,20 @@ namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionPool
     {
-        IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions { get; }
+        IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions { get; }
 
-        AcceptedTransaction GetByHash(UInt256 hash);
+        TransactionReceipt GetByHash(UInt256 hash);
 
         void Restore();
 
         OperatingError Add(Transaction transaction, Signature signature);
         
-        OperatingError Add(AcceptedTransaction transaction);
+        OperatingError Add(TransactionReceipt transaction);
         
-        IReadOnlyCollection<AcceptedTransaction> Peek(int limit = -1);
+        IReadOnlyCollection<TransactionReceipt> Peek(int limit = -1);
 
+        void Relay(IEnumerable<TransactionReceipt> receipts);
+        
         uint Size();
         
         void Delete(UInt256 transactionHash);

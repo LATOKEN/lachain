@@ -10,7 +10,7 @@ namespace Phorkus.Core.VM
     public class ContractEncoder
     {
         private readonly BinaryWriter _binaryWriter;
-
+        
         public static byte[] Encode(string methodSignature, params dynamic[] values)
         {
             var encoder = new ContractEncoder(methodSignature);
@@ -25,7 +25,9 @@ namespace Phorkus.Core.VM
                 new MemoryStream());
             var buffer = Encoding.ASCII.GetBytes(methodSignature)
                 .Keccak256();
-            var signature = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
+            var signature = 0;
+            if (!methodSignature.StartsWith("constructor("))
+                signature = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
             _binaryWriter.Write(signature);
         }
 

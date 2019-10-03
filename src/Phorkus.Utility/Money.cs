@@ -141,6 +141,12 @@ namespace Phorkus.Utility
             return remainder > 0 ? new Money(_value - remainder + D) : new Money(_value - remainder);
         }
 
+        public static Money FromDecimal(ulong value)
+        {
+            // (decimal) D is exact, multiplication is not
+            return new Money(new BigInteger(value * (decimal) D));
+        }
+        
         public static Money FromDecimal(decimal value)
         {
             // (decimal) D is exact, multiplication is not

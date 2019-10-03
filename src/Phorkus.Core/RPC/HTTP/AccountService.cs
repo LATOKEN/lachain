@@ -9,6 +9,7 @@ using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
+using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.RPC.HTTP
@@ -31,7 +32,7 @@ namespace Phorkus.Core.RPC.HTTP
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
         }
-        
+
         [JsonRpcMethod("getBalance")]
         private string GetBalance(string address)
         {
@@ -51,7 +52,7 @@ namespace Phorkus.Core.RPC.HTTP
             {
                 ["hash"] = transaction.ToHash256().Buffer.ToHex()
             };
-            var accepted = new AcceptedTransaction
+            var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
                 Hash = transaction.ToHash256(),
@@ -61,11 +62,11 @@ namespace Phorkus.Core.RPC.HTTP
             json["result"] = result.ToString();
             if (result != OperatingError.Ok)
                 json["status"] = false;
-            else 
+            else
                 json["status"] = true;
             return json;
         }
-        
+
         [JsonRpcMethod("sendRawTransaction")]
         private JObject SendRawTransaction(string rawTransation, string signature)
         {
@@ -78,12 +79,12 @@ namespace Phorkus.Core.RPC.HTTP
                 transaction, signature.HexToBytes().ToSignature());
             if (result != OperatingError.Ok)
                 json["failed"] = true;
-            else 
+            else
                 json["failed"] = false;
             json["result"] = result.ToString();
             return json;
         }
-        
+
         [JsonRpcMethod("getTotalTransactionCount")]
         private ulong GetTotalTransactionCount(string from)
         {
@@ -93,7 +94,7 @@ namespace Phorkus.Core.RPC.HTTP
         }
         
         [JsonRpcMethod("invokeContract")]
-        private JObject InvokeContract(string contract, string sender, string input)
+        private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 contract.HexToUInt160());
@@ -103,19 +104,21 @@ namespace Phorkus.Core.RPC.HTTP
                 throw new ArgumentException("Invalid input specified", nameof(input));
             if (string.IsNullOrEmpty(sender))
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
-            var (status, returnValue) = _stateManager.SafeContext(() =>
+            var result = _stateManager.SafeContext(() =>
             {
                 _stateManager.NewSnapshot();
-                var result = _virtualMachine.InvokeContract(contractByHash, new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), out var returnResult);
+                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
+                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
                 _stateManager.Rollback();
-                return Tuple.Create(result, returnResult);
+                return invocationResult;
             });
-            var hex = returnValue?.ToHex();
             return new JObject
             {
-                ["status"] = status.ToString(),
-                ["ok"] = status == ExecutionStatus.Ok,
-                ["result"] = hex ?? "0x"
+                ["status"] = result.Status.ToString(),
+                ["gasLimit"] = gasLimit,
+                ["gasUsed"] = result.GasUsed,
+                ["ok"] = result.Status == ExecutionStatus.Ok,
+                ["result"] = result.ReturnValue?.ToHex() ?? "0x"
             };
         }
     }

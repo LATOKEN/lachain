@@ -45,8 +45,8 @@ namespace Phorkus.CoreTest
                 ContractAddress = UInt160Utils.Zero,
                 ByteCode = ByteString.CopyFrom(byteCode),
             };
-            
-            var status = virtualMachine.InvokeContract(contract, new InvocationContext(sender), input);           
+
+            var status = virtualMachine.InvokeContract(contract, new InvocationContext(sender), input, 100_000_000);
             System.Console.WriteLine("Contract executed with status: " + status);
         }
     }

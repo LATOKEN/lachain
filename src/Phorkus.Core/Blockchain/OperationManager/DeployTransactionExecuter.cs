@@ -17,16 +17,19 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             _virtualMachine = virtualMachine;
         }
-        
-        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
+
+        public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
+            var error = _CheckGasLimit(receipt);
+            if (error != OperatingError.Ok)
+                return error;
+            var transaction = receipt.Transaction;
             /* validate transaction before execution */
-            var error = Verify(transaction);
+            error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
             /* calculate contract hash and register it */
             var hash = transaction.From.Buffer.ToArray().Concat(BitConverter.GetBytes((uint) transaction.Nonce)).ToHash160();
-            Console.WriteLine("Contract hash: " + hash.Buffer.ToHex());
             var contract = new Contract
             {
                 ContractAddress = hash,
@@ -36,16 +39,37 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.InvalidContract;
             snapshot.Contracts.AddContract(transaction.From, contract);
             /* invoke contract constructor */
-            return _InvokeConstructor(contract, transaction);
+            return _InvokeConstructor(contract, receipt, block);
         }
         
-        private OperatingError _InvokeConstructor(Contract contract, Transaction transaction)
+        private OperatingError _CheckGasLimit(TransactionReceipt receipt)
         {
-            var input = transaction.Invocation.ToByteArray();
+            const ulong inputDataGas = 10;
+            if (receipt.Transaction.Invocation.IsEmpty)
+                return OperatingError.Ok;
+            var totalLength = receipt.Transaction.Invocation.Length + receipt.Transaction.Deploy.Length;
+            receipt.GasUsed += (ulong) totalLength * inputDataGas;
+            return receipt.GasUsed > receipt.Transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
+        }
+        
+        private OperatingError _InvokeConstructor(Contract contract, TransactionReceipt receipt, Block block)
+        {
+            if (receipt.Transaction.Invocation.IsEmpty)
+                return OperatingError.Ok;
+            var input = receipt.Transaction.Invocation.ToByteArray();
             if (!_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
-            var status = _virtualMachine.InvokeContract(contract, new InvocationContext(transaction.From), input);
-            return status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+            try
+            {
+                var result = _virtualMachine.InvokeContract(contract, new InvocationContext(receipt.Transaction.From, receipt.Transaction, block), input, receipt.Transaction.GasLimit - receipt.GasUsed);
+                return result.Status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+            }
+            catch (OutOfGasException e)
+            {
+                receipt.GasUsed += e.GasUsed;
+            }
+
+            return OperatingError.OutOfGas;
         }
         
         private bool _IsConstructorCall(IReadOnlyList<byte> buffer)
@@ -64,7 +88,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 return OperatingError.InvalidTransaction;
             if (transaction.Deploy is null || transaction.Deploy.IsEmpty)
                 return OperatingError.InvalidTransaction;
-            if (transaction.Invocation is null || transaction.Invocation.IsEmpty)
+            if (transaction.Invocation is null)
                 return OperatingError.InvalidTransaction;
             var result = _VerifyContract(transaction);
             return result;

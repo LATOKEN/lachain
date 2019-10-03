@@ -11,17 +11,18 @@ namespace Phorkus.Core.JSON
             var json = new JObject
             {
                 ["type"] = transaction.Type.ToString(),
-                ["to"] = transaction.To.ToString(),
+                ["to"] = transaction.To?.ToHex(),
                 ["invocation"] = transaction.Invocation?.ToHex(),
                 ["value"] = transaction.Value.Buffer.ToHex(),
                 ["from"] = transaction.From.Buffer?.ToHex(),
                 ["nonce"] = transaction.Nonce,
-                ["fee"] = transaction.Fee?.Buffer?.ToHex()
+                ["gasLimit"] = transaction.GasLimit,
+                ["gasPrice"] = transaction.GasPrice,
             };
             return json;
         }
         
-        public static JObject ToJson(this AcceptedTransaction acceptedTransaction)
+        public static JObject ToJson(this TransactionReceipt acceptedTransaction)
         {
             var json = new JObject
             {

@@ -31,24 +31,24 @@ namespace Phorkus.Storage.State
             return raw == null ? 0UL : BitConverter.ToUInt64(raw, 0);
         }
         
-        public AcceptedTransaction GetTransactionByHash(UInt256 transactionHash)
+        public TransactionReceipt GetTransactionByHash(UInt256 transactionHash)
         {
             var raw = _state.Get(EntryPrefix.TransactionByHash.BuildPrefix(transactionHash));
-            return raw != null ? AcceptedTransaction.Parser.ParseFrom(raw) : null;
+            return raw != null ? TransactionReceipt.Parser.ParseFrom(raw) : null;
         }
         
-        public void AddTransaction(AcceptedTransaction acceptedTransaction, TransactionStatus transactionStatus)
+        public void AddTransaction(TransactionReceipt receipt, TransactionStatus status)
         {
-            var expectedNonce = GetTotalTransactionCount(acceptedTransaction.Transaction.From);
-            if (expectedNonce != acceptedTransaction.Transaction.Nonce)
+            var expectedNonce = GetTotalTransactionCount(receipt.Transaction.From);
+            if (expectedNonce != receipt.Transaction.Nonce)
                 throw new Exception("This should never happen, transaction nonce mismatch");
             /* save transaction status */
-            acceptedTransaction.Status = transactionStatus;
+            receipt.Status = status;
             /* write transaction to storage */
-            _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(acceptedTransaction.Hash),
-                acceptedTransaction.ToByteArray());
+            _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(receipt.Hash),
+                receipt.ToByteArray());
             /* update current address nonce */
-            _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(acceptedTransaction.Transaction.From), BitConverter.GetBytes(expectedNonce + 1));
+            _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(receipt.Transaction.From), BitConverter.GetBytes(expectedNonce + 1));
         }
     }
 }

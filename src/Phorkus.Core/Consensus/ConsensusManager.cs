@@ -136,31 +136,24 @@ namespace Phorkus.Core.Consensus
                         Thread.Sleep(timeToAwait);
                     _logger.LogDebug("Wait completed");
 
+                    /* try build block with transactions from pool */
                     var blockWithTransactions =
                         new BlockBuilder(_blockchainContext.CurrentBlock.Header, _keyPair.PublicKey)
                             .WithTransactions(_transactionPool).Build((ulong) _random.Next());
-
-                    _stateManager.SafeContext(() =>
-                    {
-                        var snapshotBefore = _stateManager.LastApprovedSnapshot;
-                        _logger.LogDebug("Executing transactions in no-check no-commit mode");
-                        var error = _blockManager.Execute(
-                            blockWithTransactions.Block, blockWithTransactions.Transactions,
-                            commit: false, checkStateHash: false
-                        );
-                        if (error != OperatingError.Ok)
-                            throw new InvalidOperationException($"Cannot assemble block: error {error}");
-                        blockWithTransactions.Block.Header.StateHash = _stateManager.LastApprovedSnapshot.StateHash;
-                        _logger.LogDebug(
-                            $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
-                            $" state_hash={blockWithTransactions.Block.Header.StateHash}"
-                        );
-                        _stateManager.RollbackTo(snapshotBefore);
-                        _logger.LogDebug(
-                            $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
-                        );
-                    });
-
+                    /* run block emulator that calculates state hash and removes bad transactions */
+                    var (operatingError, removeTransactions, stateHash, relayTransactions) =
+                        _blockManager.Emulate(blockWithTransactions.Block, blockWithTransactions.Transactions);
+                    if (operatingError != OperatingError.Ok)
+                        throw new InvalidOperationException($"Cannot assemble block: error {operatingError}");
+                    /* relay transcations */
+                    _transactionPool.Relay(relayTransactions);
+                    /* reassemble block with new transactions */
+                    foreach (var tx in removeTransactions)
+                        blockWithTransactions.Transactions.Remove(tx);
+                    blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlock.Header, _keyPair.PublicKey,
+                            stateHash)
+                        .WithTransactions(blockWithTransactions.Transactions).Build((ulong) _random.Next());
+                    /* update current proposal with new block */
                     _logger.LogDebug($"Produced block with hash {blockWithTransactions.Block.Hash}");
                     _context.UpdateCurrentProposal(blockWithTransactions);
                     _context.CurrentProposal = new ConsensusProposal
@@ -233,6 +226,7 @@ namespace Phorkus.Core.Consensus
                     continue;
                 }
 
+                /* TODO: "check block state hash and emulate block execution" */
 
                 // When all transaction are collected and validated, we are able to sign block
                 _logger.LogDebug("Send prepare response");
@@ -272,16 +266,13 @@ namespace Phorkus.Core.Consensus
 
                 _context.State |= ConsensusState.BlockSent;
 
-                _stateManager.SafeContext(() =>
-                {
-                    var result = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
-                    if (result == OperatingError.Ok)
-                        _logger.LogDebug($"Block persist completed: {block.Hash}");
-                    else
-                        _logger.LogWarning($"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
-                    return result;
-                });
-                
+                var result = _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
+                if (result == OperatingError.Ok)
+                    _logger.LogDebug($"Block persist completed: {block.Hash}");
+                else
+                    _logger.LogWarning(
+                        $"Block {block.Header.Index} hasn't been persisted: {block.Hash}, cuz error {result}");
+
                 _context.LastBlockRecieved = DateTime.UtcNow;
                 InitializeConsensus(0);
             }
@@ -382,7 +373,7 @@ namespace Phorkus.Core.Consensus
             _context.CurrentProposal = new ConsensusProposal
             {
                 TransactionHashes = prepareRequest.TransactionHashes.ToArray(),
-                Transactions = new Dictionary<UInt256, AcceptedTransaction>(),
+                Transactions = new Dictionary<UInt256, TransactionReceipt>(),
                 Timestamp = prepareRequest.Timestamp,
                 Nonce = prepareRequest.Nonce,
                 StateHash = prepareRequest.StateHash

@@ -14,7 +14,7 @@ namespace Phorkus.Core.JSON
                 ["data"] = block.Data.ToHex(),
                 ["transactionHash"] = block.TransactionHash.ToHex(),
                 ["index"] = block.Index,
-                ["blockHash"] = block.BlockHash.ToHex()
+                ["signatureHash"] = block.SignatureHash.ToHex()
             };
             return json;
         }

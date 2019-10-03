@@ -43,26 +43,37 @@ namespace Phorkus.Core.VM
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ExecutionStatus InvokeContract(Contract contract, InvocationContext context, byte[] input)
+        public InvocationResult InvokeContract(Contract contract, InvocationContext context, byte[] input, ulong gasLimit)
         {
+            var executionStatus = ExecutionStatus.Ok;
+            byte[] returnValue = null;
+            var gasUsed = 0UL;
             try
             {
-                return _InvokeContractUnsafe(contract, context, input, out _);
+                if (ExecutionFrames.Count != 0)
+                    return InvocationResult.FactoryDefault(ExecutionStatus.VmStackCorruption);
+                var status = ExecutionFrame.FromInvocation(
+                    contract.ByteCode.ToByteArray(),
+                    context,
+                    contract.ContractAddress,
+                    input,
+                    BlockchainInterface,
+                    out var rootFrame,
+                    gasLimit);
+                if (status != ExecutionStatus.Ok)
+                    return InvocationResult.FactoryDefault(status);
+                ExecutionFrames.Push(rootFrame);
+                var result = rootFrame.Execute();
+                if (result == ExecutionStatus.Ok)
+                    returnValue = rootFrame.ReturnValue;
+                gasUsed = rootFrame.GasUsed;
+                ExecutionFrames.Pop();
             }
-            catch (Exception e)
+            catch (OutOfGasException e)
             {
                 ExecutionFrames.Clear();
-                Console.Error.WriteLine(e);
-                return ExecutionStatus.UnknownError;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public ExecutionStatus InvokeContract(Contract contract, InvocationContext context, byte[] input, out byte[] returnValue)
-        {
-            try
-            {
-                return _InvokeContractUnsafe(contract, context, input, out returnValue);
+                gasUsed = e.GasUsed;
+                executionStatus = ExecutionStatus.GasOverflow;
             }
             catch (HaltException e)
             {
@@ -71,36 +82,21 @@ namespace Phorkus.Core.VM
                 {
                     (byte) e.HaltCode
                 };
-                return ExecutionStatus.ExecutionHalted;
+                executionStatus = ExecutionStatus.ExecutionHalted;
             }
             catch (Exception e)
             {
-                ExecutionFrames.Clear();
                 Console.Error.WriteLine(e);
-                returnValue = null;
-                return ExecutionStatus.UnknownError;
+                ExecutionFrames.Clear();
+                executionStatus = ExecutionStatus.UnknownError;
             }
-        }
-        
-        private static ExecutionStatus _InvokeContractUnsafe(Contract contract, InvocationContext context, byte[] input, out byte[] returnValue)
-        {
-            returnValue = null;
-            if (ExecutionFrames.Count != 0)
-                return ExecutionStatus.VmCorruption;
-            var status = ExecutionFrame.FromInvocation(
-                contract.ByteCode.ToByteArray(),
-                context,
-                contract.ContractAddress,
-                input,
-                BlockchainInterface, out var rootFrame);
-            if (status != ExecutionStatus.Ok)
-                return status;
-            ExecutionFrames.Push(rootFrame);
-            var result = rootFrame.Execute();
-            if (result == ExecutionStatus.Ok)
-                returnValue = rootFrame.ReturnValue;
-            ExecutionFrames.Pop();
-            return result;
+
+            return new InvocationResult
+            {
+                GasUsed = gasUsed,
+                Status = executionStatus,
+                ReturnValue = returnValue
+            };
         }
     }
 }

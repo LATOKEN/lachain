@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.VM;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
-using Phorkus.WebAssembly.Instructions;
-using Block = Phorkus.Proto.Block;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
@@ -25,24 +22,30 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _virtualMachine = virtualMachine;
         }
 
-        public OperatingError Execute(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
+        public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
+            /* check gas limit */
+            var error = _CheckGasLimit(receipt);
+            if (error != OperatingError.Ok)
+                return error;
+            var transaction = receipt.Transaction;
             /* validate transaction before execution */
-            var error = Verify(transaction);
+            error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
             /* try to transfer funds from sender to recipient */
-            if (!transaction.Value.IsZero() && !snapshot.Balances.TransferBalance(transaction.From, transaction.To,
-                    new Money(transaction.Value)))
+            if (!transaction.Value.IsZero() &&
+                !snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
                 return OperatingError.InsufficientBalance;
             /* if we have invocation block than invoke contract method */
             if (transaction.Invocation != null && !transaction.Invocation.IsEmpty)
-                return _InvokeContract(block, transaction, snapshot);
+                return _InvokeContract(block, receipt, snapshot);
             return OperatingError.Ok;
         }
 
-        private OperatingError _InvokeContract(Block block, Transaction transaction, IBlockchainSnapshot snapshot)
+        private OperatingError _InvokeContract(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
+            var transaction = receipt.Transaction;
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
             if (systemContract != null)
                 return _InvokeSystemContract(transaction, snapshot);
@@ -53,8 +56,28 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
             var context = new InvocationContext(transaction.From, transaction, block);
-            var status = _virtualMachine.InvokeContract(contract, context, input);
-            return status != ExecutionStatus.Ok ? OperatingError.ContractFailed : OperatingError.Ok;
+            try
+            {
+                var result = _virtualMachine.InvokeContract(contract, context, input, transaction.GasLimit - receipt.GasUsed);
+                if (result.Status != ExecutionStatus.Ok)
+                    return OperatingError.ContractFailed;
+                receipt.GasUsed += result.GasUsed;
+                return receipt.GasUsed > transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
+            }
+            catch (OutOfGasException e)
+            {
+                receipt.GasUsed += e.GasUsed;
+            }
+            return OperatingError.OutOfGas;
+        }
+
+        private OperatingError _CheckGasLimit(TransactionReceipt receipt)
+        {
+            const ulong inputDataGas = 10;
+            if (receipt.Transaction.Invocation.IsEmpty)
+                return OperatingError.Ok;
+            receipt.GasUsed += (ulong) receipt.Transaction.Invocation.Length * inputDataGas;
+            return receipt.GasUsed > receipt.Transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
         }
 
         private bool _IsConstructorCall(IReadOnlyList<byte> buffer)

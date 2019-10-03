@@ -10,13 +10,13 @@ namespace Phorkus.Storage.Repositories
         /// </summary>
         /// <param name="txHash">Identifier / hash of the transaction</param>
         /// <returns>Transaction with the specified id / hash</returns>
-        AcceptedTransaction GetTransactionByHash(UInt256 txHash);
+        TransactionReceipt GetTransactionByHash(UInt256 txHash);
         
         /// <summary>
         /// Adds a transaction to the repository
         /// </summary>
         /// <param name="transaction">Transaction to add</param>
-        void AddTransaction(AcceptedTransaction transaction);
+        void AddTransaction(TransactionReceipt transaction);
         
         /// <summary>
         /// Returns transaction hashes that hasn't been committed to block

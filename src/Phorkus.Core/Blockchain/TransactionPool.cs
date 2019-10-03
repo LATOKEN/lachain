@@ -22,12 +22,12 @@ namespace Phorkus.Core.Blockchain
         private readonly INetworkManager _networkManager;
         private readonly INetworkBroadcaster _networkBroadcaster;
         
-        private readonly ConcurrentDictionary<UInt256, AcceptedTransaction> _transactions
-            = new ConcurrentDictionary<UInt256, AcceptedTransaction>();
+        private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
+            = new ConcurrentDictionary<UInt256, TransactionReceipt>();
         
-        private readonly ConcurrentQueue<AcceptedTransaction> _transactionsQueue
-            = new ConcurrentQueue<AcceptedTransaction>();
-
+        private readonly ConcurrentQueue<TransactionReceipt> _transactionsQueue = new ConcurrentQueue<TransactionReceipt>();
+        private readonly ConcurrentQueue<TransactionReceipt> _relayQueue = new ConcurrentQueue<TransactionReceipt>();
+        
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
@@ -44,9 +44,9 @@ namespace Phorkus.Core.Blockchain
             Restore();
         }
 
-        public IReadOnlyDictionary<UInt256, AcceptedTransaction> Transactions => _transactions;
+        public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
-        public AcceptedTransaction GetByHash(UInt256 hash)
+        public TransactionReceipt GetByHash(UInt256 hash)
         {
             return _transactions.TryGetValue(hash, out var tx) ? tx : _poolRepository.GetTransactionByHash(hash);
         }
@@ -67,7 +67,7 @@ namespace Phorkus.Core.Blockchain
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(Transaction transaction, Signature signature)
         {
-            var acceptedTx = new AcceptedTransaction
+            var acceptedTx = new TransactionReceipt
             {
                 Transaction = transaction,
                 Hash = transaction.ToHash256(),
@@ -78,7 +78,7 @@ namespace Phorkus.Core.Blockchain
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Add(AcceptedTransaction transaction)
+        public OperatingError Add(TransactionReceipt transaction)
         {
             if (transaction is null)
                 throw new ArgumentNullException(nameof(transaction));
@@ -106,21 +106,36 @@ namespace Phorkus.Core.Blockchain
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IReadOnlyCollection<AcceptedTransaction> Peek(int limit = -1)
+        public IReadOnlyCollection<TransactionReceipt> Peek(int limit = -1)
         {
             if (limit < 0)
                 limit = PeekLimit;
-            var result = new List<AcceptedTransaction>();
-            var txToPeek = Math.Min(_transactionsQueue.Count, limit);
+            var result = new List<TransactionReceipt>();
+            var txToPeek = Math.Min(_transactionsQueue.Count + _relayQueue.Count, limit);
             for (var i = 0; i < txToPeek; i++)
             {
-                if (!_transactionsQueue.TryDequeue(out var transaction) || !_transactions.TryRemove(transaction.Hash, out _))
+                /* replayed transactions has higher precedence */
+                if (!_relayQueue.TryDequeue(out var receipt) && !_transactionsQueue.TryDequeue(out receipt))
                     continue;
-                result.Add(transaction);
+                /* remove transaction hash */
+                if (!_transactions.TryRemove(receipt.Hash, out _))
+                    continue;
+                result.Add(receipt);
             }
-            return result.OrderByDescending(tx => tx.Transaction.Fee, new UInt256Comparer()).Where(tx => _transactionManager.GetByHash(tx.Hash) == null).ToList();
+            return result.OrderByDescending(tx => tx.Transaction.GasPrice).Where(tx => _transactionManager.GetByHash(tx.Hash) == null).ToList();
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Relay(IEnumerable<TransactionReceipt> receipts)
+        {
+            foreach (var receipt in receipts)
+            {
+                if (!_transactions.TryAdd(receipt.Hash, receipt))
+                    continue;
+                _relayQueue.Enqueue(receipt);
+            }
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public uint Size()
         {

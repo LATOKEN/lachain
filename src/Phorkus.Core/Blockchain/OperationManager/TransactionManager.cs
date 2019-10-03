@@ -30,7 +30,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
                 {TransactionType.Transfer, new ContractTransactionExecuter(contractRegisterer, virtualMachine)},
-                {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine) }
+                {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine)}
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
@@ -43,54 +43,55 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private readonly ConcurrentDictionary<UInt256, UInt256> _verifiedTransactions
             = new ConcurrentDictionary<UInt256, UInt256>();
 
-        public event EventHandler<AcceptedTransaction> OnTransactionPersisted;
-        public event EventHandler<AcceptedTransaction> OnTransactionFailed;
-        public event EventHandler<AcceptedTransaction> OnTransactionExecuted;
-        public event EventHandler<AcceptedTransaction> OnTransactionSigned;
+        public event EventHandler<TransactionReceipt> OnTransactionPersisted;
+        public event EventHandler<TransactionReceipt> OnTransactionFailed;
+        public event EventHandler<TransactionReceipt> OnTransactionExecuted;
+        public event EventHandler<TransactionReceipt> OnTransactionSigned;
 
-        public AcceptedTransaction GetByHash(UInt256 transactionHash)
+        public TransactionReceipt GetByHash(UInt256 transactionHash)
         {
             return _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(transactionHash);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Execute(Block block, AcceptedTransaction transaction, IBlockchainSnapshot snapshot)
+        public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
             var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
             /* check transaction with this hash in database */
-            if (transactionRepository.GetTransactionByHash(transaction.Hash) != null)
+            if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(transaction);
+            var verifyError = Verify(receipt);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!transaction.Transaction.ToHash256().Equals(transaction.Hash))
+            if (!receipt.Transaction.ToHash256().Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check is transaction type supported */
-            if (!_transactionPersisters.ContainsKey(transaction.Transaction.Type))
+            if (!_transactionPersisters.ContainsKey(receipt.Transaction.Type))
                 return OperatingError.UnsupportedTransaction;
-            var persister = _transactionPersisters[transaction.Transaction.Type];
+            var persister = _transactionPersisters[receipt.Transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
             /* check transaction nonce */
-            var nonce = transactionRepository.GetTotalTransactionCount(transaction.Transaction.From);
-            if (nonce != transaction.Transaction.Nonce)
+            var nonce = transactionRepository.GetTotalTransactionCount(receipt.Transaction.From);
+            if (nonce != receipt.Transaction.Nonce)
                 return OperatingError.InvalidNonce;
             /* try to persist transaction */
-            var result = persister.Execute(block, transaction.Transaction, snapshot);
+            var result = persister.Execute(block, receipt, snapshot);
             if (result != OperatingError.Ok)
             {
-                OnTransactionFailed?.Invoke(this, transaction);
+                OnTransactionFailed?.Invoke(this, receipt);
                 return result;
             }
+
             /* finalize transaction state */
-            OnTransactionExecuted?.Invoke(this, transaction);
+            OnTransactionExecuted?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public AcceptedTransaction Sign(Transaction transaction, KeyPair keyPair)
+        public TransactionReceipt Sign(Transaction transaction, KeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
             var message = transaction.ToHash256().Buffer.ToByteArray();
@@ -99,7 +100,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var pubKey = _crypto.RecoverSignature(message, signature);
             if (!pubKey.SequenceEqual(keyPair.PublicKey.Buffer.ToByteArray()))
                 throw new InvalidKeyPairException();
-            var signed = new AcceptedTransaction
+            var signed = new TransactionReceipt
             {
                 Transaction = transaction,
                 Hash = transaction.ToHash256(),
@@ -110,7 +111,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Verify(AcceptedTransaction acceptedTransaction)
+        public OperatingError Verify(TransactionReceipt acceptedTransaction)
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.Transaction.ToHash256()))
                 return OperatingError.HashMismatched;
@@ -118,18 +119,18 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (result != OperatingError.Ok)
                 return result;
             var transaction = acceptedTransaction.Transaction;
-            /* validate default transaction attributes */
-            if (transaction.Fee is null)
-                return OperatingError.InvalidTransaction;
+            if (transaction.GasLimit > GasMetering.DefaultBlockGasLimit ||
+                transaction.GasLimit < GasMetering.DefaultTxTransferGasCost)
+                return OperatingError.InvalidGasLimit;
             /* verify transaction via persister */
             var persister = _transactionPersisters[transaction.Type];
             if (persister == null)
                 return OperatingError.UnsupportedTransaction;
             return persister.Verify(transaction);
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignature(AcceptedTransaction transaction, PublicKey publicKey)
+        public OperatingError VerifySignature(TransactionReceipt transaction, PublicKey publicKey)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey)
@@ -140,7 +141,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignature(AcceptedTransaction transaction, bool cacheEnabled = true)
+        public OperatingError VerifySignature(TransactionReceipt transaction, bool cacheEnabled = true)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, cacheEnabled)
@@ -149,7 +150,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _verifiedTransactions.TryRemove(transaction.Hash, out _);
             return OperatingError.Ok;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong CalcNextTxNonce(UInt160 from)
         {

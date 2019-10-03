@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Utils;
+using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
@@ -21,7 +23,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private readonly IMultisigVerifier _multisigVerifier;
         private readonly Logger.ILogger<IBlockManager> _logger;
         private readonly IStateManager _stateManager;
-        
+
         public BlockManager(
             ITransactionManager transactionManager,
             ICrypto crypto,
@@ -46,7 +48,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
         }
-        
+
         public Block GetByHash(UInt256 blockHash)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
@@ -56,18 +58,89 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
-        
-        public OperatingError Execute(Block block, IEnumerable<AcceptedTransaction> transactions, bool checkStateHash, bool commit)
+
+        public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block,
+            IEnumerable<TransactionReceipt> transactions)
         {
-            var currentTransactions = transactions.ToDictionary(tx => tx.Hash, tx => tx);
-            var startTime = TimeUtils.CurrentTimeMillis();
-            var snapshotBefore = _stateManager.LastApprovedSnapshot;
-            
+            var (operatingError, removeTransactions, stateHash, relayTransactions) = _stateManager.SafeContext(() =>
+            {
+                var snapshotBefore = _stateManager.LastApprovedSnapshot;
+                _logger.LogDebug("Executing transactions in no-check no-commit mode");
+                var error = _Execute(
+                    block,
+                    transactions,
+                    out var removedTransactions,
+                    out var relayedTransactions,
+                    false,
+                    out var gasUsed,
+                    out _);
+                if (error != OperatingError.Ok)
+                    throw new InvalidOperationException($"Cannot assemble block, {error}");
+                var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
+                _logger.LogDebug(
+                    $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
+                    $" stateHash={currentStateHash}, gasUsed={gasUsed}"
+                );
+                _stateManager.RollbackTo(snapshotBefore);
+                _logger.LogDebug(
+                    $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
+                );
+                return Tuple.Create(error, removedTransactions, currentStateHash, relayedTransactions);
+            });
+            return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);
+        }
+
+        public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash,
+            bool commit)
+        {
+            return _stateManager.SafeContext(() =>
+            {
+                var snapshotBefore = _stateManager.LastApprovedSnapshot;
+                var startTime = TimeUtils.CurrentTimeMillis();
+                var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed,
+                    out var totalFee);
+                if (operatingError != OperatingError.Ok)
+                    throw new InvalidBlockException(operatingError);
+                if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
+                {
+                    _stateManager.RollbackTo(snapshotBefore);
+                    return OperatingError.InvalidStateHash;
+                }
+
+                /* flush changes to database */
+                if (!commit)
+                    return OperatingError.Ok;
+                _logger.LogInformation(
+                    $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}, fee {totalFee}");
+                _stateManager.Commit();
+                OnBlockPersisted?.Invoke(this, block);
+                return OperatingError.Ok;
+            });
+        }
+
+        private OperatingError _Execute(
+            Block block,
+            IEnumerable<TransactionReceipt> transactions,
+            out List<TransactionReceipt> removeTransactions,
+            out List<TransactionReceipt> relayTransactions,
+            bool writeFailed,
+            out ulong gasUsed,
+            out Money totalFee)
+        {
+            totalFee = Money.Zero;
+            gasUsed = 0;
+
+            var currentTransactions = transactions
+                .ToDictionary(tx => tx.Hash, tx => tx);
+
+            removeTransactions = new List<TransactionReceipt>();
+            relayTransactions = new List<TransactionReceipt>();
+
             /* verify next block */
             var error = Verify(block);
             if (error != OperatingError.Ok)
                 return error;
-            
+
             /* check next block index */
             var currentBlockHeader = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             if (!_IsGenesisBlock(block) && currentBlockHeader + 1 != block.Header.Index)
@@ -75,17 +148,17 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var exists = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
             if (exists != null)
                 return OperatingError.BlockAlreadyExists;
-            
+
             /* check prev block hash */
             var latestBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentBlockHeader);
             if (latestBlock != null && !block.Header.PrevBlockHash.Equals(latestBlock.Hash))
                 return OperatingError.PrevBlockHashMismatched;
-            
+
             /* verify block signatures */
             error = VerifySignatures(block);
             if (error != OperatingError.Ok)
                 return error;
-            
+
             /* check do we have all transcations specified */
             foreach (var txHash in block.TransactionHashes)
             {
@@ -93,81 +166,92 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     return OperatingError.TransactionLost;
             }
             
-            /* confirm block transactions */
-            var validatorAddress = _crypto.ComputeAddress(block.Header.Validator.Buffer.ToByteArray()).ToUInt160();
-            
             /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
                 /* try to find transaction by hash */
                 var transaction = currentTransactions[txHash];
+                transaction.GasUsed = GasMetering.DefaultTxTransferGasCost;
                 var snapshot = _stateManager.NewSnapshot();
-                
-                /* try to take fee from sender */
-                var result = _TakeTransactionFee(validatorAddress, transaction, snapshot);
-                if (result != OperatingError.Ok)
-                {
-                    _stateManager.Rollback();
-                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
-                    continue;
-                }
-                
+
                 /* try to execute transaction */
-                result = _transactionManager.Execute(block, transaction, snapshot);
+                var result = _transactionManager.Execute(block, transaction, snapshot);
                 if (result != OperatingError.Ok)
                 {
                     _stateManager.Rollback();
-                    snapshot = _stateManager.NewSnapshot();
-                    if (_TakeTransactionFee(validatorAddress, transaction, snapshot) != OperatingError.Ok)
-                        throw new Exception($"Unable to take fee for transaction {transaction.Hash.Buffer.ToHex()}");
-                    snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
-                    _logger.LogWarning($"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
-                    _stateManager.Approve();
+                    if (writeFailed)
+                    {
+                        snapshot = _stateManager.NewSnapshot();
+                        snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
+                        _stateManager.Approve();
+                    }
+
+                    _logger.LogWarning(
+                        $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
                 }
-                
+
+                /* check block gas limit after execution */
+                gasUsed += transaction.GasUsed;
+                if (gasUsed > GasMetering.DefaultBlockGasLimit)
+                {
+                    removeTransactions.Add(transaction);
+                    relayTransactions.Add(transaction);
+                    _stateManager.Rollback();
+                    /* this should never happen cuz that mean that someone applied overflowed block */
+                    if (writeFailed)
+                        throw new InvalidBlockException(OperatingError.BlockGasOverflow);
+                    _logger.LogWarning(
+                        $"Unable to take transaction {txHash.Buffer.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
+                    continue;
+                }
+
+                /* try to take fee from sender */
+                result = _TakeTransactionFee(transaction, snapshot, out var fee);
+                if (result != OperatingError.Ok)
+                {
+                    removeTransactions.Add(transaction);
+                    _stateManager.Rollback();
+                    _logger.LogWarning(
+                        $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
+                    continue;
+                }
+
+                totalFee += fee;
+
                 /* mark transaction as executed */
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.LogDebug($"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
+                    _logger.LogDebug(
+                        $"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
                 snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
                 _stateManager.Approve();
             }
-            block.AverageFee = _CalcEstimatedBlockFee(block.TransactionHashes).ToUInt256();
-            
+
+            block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
+
             /* save block to repository */
             var snapshotBlock = _stateManager.NewSnapshot();
             snapshotBlock.Blocks.AddBlock(block);
             _stateManager.Approve();
 
-            if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
-            {
-                _stateManager.RollbackTo(snapshotBefore);
-                return OperatingError.InvalidState;
-            }
-
-            if (commit)
-            {
-                _logger.LogInformation($"Persisted new block {block.Header.Index} with hash {block.Hash} and txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms");
-                /* flush changes to database */
-                _stateManager.Commit();
-                OnBlockPersisted?.Invoke(this, block);
-            }
             return OperatingError.Ok;
         }
 
-        private OperatingError _TakeTransactionFee(UInt160 validatorAddress, AcceptedTransaction transaction, IBlockchainSnapshot snapshot)
+        private OperatingError _TakeTransactionFee(TransactionReceipt transaction,
+            IBlockchainSnapshot snapshot, out Money fee)
         {
-            /* genesis block doesn't have LA asset and validators fee free */
+            /* check availabe LA balance */
+            fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
+            /* genesis block doesn't have LA asset and validators are fee free */
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
                 return OperatingError.Ok;
-            /* check availabe LA balance */
-            var availableBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
-            if (availableBalance.CompareTo(transaction.Transaction.Fee.ToMoney()) < 0)
-                return OperatingError.InsufficientBalance;
             /* transfer fee from wallet to validator */
-            snapshot.Balances.TransferBalance(transaction.Transaction.From, validatorAddress,
-                transaction.Transaction.Fee.ToMoney());
-            return OperatingError.Ok;
+            var sharedFee = fee / _validatorManager.Validators.Count;
+            return _validatorManager.Validators.Any(validator =>
+                !snapshot.Balances.TransferBalance(transaction.Transaction.From,
+                    _crypto.ComputeAddress(validator.Buffer.ToByteArray()).ToUInt160(), sharedFee))
+                ? OperatingError.InsufficientBalance
+                : OperatingError.Ok;
         }
         
         public Signature Sign(BlockHeader block, KeyPair keyPair)
@@ -211,36 +295,34 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return OperatingError.Ok;
         }
 
-        private Money _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
+        private static ulong _CalcEstimatedBlockFee(IEnumerable<TransactionReceipt> txs)
         {
-            var arrayOfHashes = txHashes as UInt256[] ?? txHashes.ToArray();
-            if (arrayOfHashes.Length == 0)
-                return Money.Zero;
-            var sum = Money.Zero;
-            foreach (var txHash in arrayOfHashes)
-            {
-                var tx = _transactionManager.GetByHash(txHash);
-                if (tx is null)
-                {
-                    _logger.LogWarning($"Unable to calculate fee, transaction lost ({txHash})");
-                    return Money.Zero;
-                }
-                sum += tx.Transaction.Fee.ToMoney();
-            }
-            return sum / arrayOfHashes.Length;
-        }
-        
-        public Money CalcEstimatedFee(UInt256 blockHash)
-        {
-            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
-            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+            var txsArray = txs as TransactionReceipt[] ?? txs.ToArray();
+            if (txsArray.Length == 0)
+                return 0;
+            var sum = txsArray.Aggregate(0UL, (current, tx) => current + tx.GasUsed * tx.Transaction.GasPrice);
+            return sum / (ulong) txsArray.Length;
         }
 
-        public Money CalcEstimatedFee()
+        public ulong CalcEstimatedFee(UInt256 blockHash)
+        {
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
+            if (block.GasPrice != 0)
+                return block.GasPrice;
+            var txs = block.TransactionHashes.Select(txHash => _transactionManager.GetByHash(txHash))
+                .Where(tx => tx != null);
+            return _CalcEstimatedBlockFee(txs);
+        }
+
+        public ulong CalcEstimatedFee()
         {
             var currentHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentHeight);
-            return block.AverageFee != null ? block.AverageFee.ToMoney() : _CalcEstimatedBlockFee(block.TransactionHashes);
+            if (block.GasPrice != 0)
+                return block.GasPrice;
+            var txs = block.TransactionHashes.Select(txHash => _transactionManager.GetByHash(txHash))
+                .Where(tx => tx != null);
+            return _CalcEstimatedBlockFee(txs);
         }
     }
 }

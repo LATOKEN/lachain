@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
-using Phorkus.Core.Consensus;
+using Phorkus.Core.Utils;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
@@ -31,7 +33,7 @@ namespace Phorkus.Core.Blockchain
             _configManager = configManager;
             _stateManager = stateManager;
         }
-
+        
         public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
@@ -48,8 +50,20 @@ namespace Phorkus.Core.Blockchain
             _stateManager.Commit();
             return true;
         }
-        
-        public void PersistBlockManually(Block block, IEnumerable<AcceptedTransaction> transactions)
+
+        public UInt256 CalcStateHash(Block block, IEnumerable<TransactionReceipt> transactionReceipts)
+        {
+            var(operatingError, removeTransactions, stateHash, relayTransactions) = _blockManager.Emulate(block, transactionReceipts);
+            if (operatingError != OperatingError.Ok)
+                throw new InvalidBlockException(operatingError);
+            if (removeTransactions.Count > 0)
+                throw new InvalidBlockException(OperatingError.InvalidTransaction);
+            if (relayTransactions.Count > 0)
+                throw new InvalidBlockException(OperatingError.BlockGasOverflow);
+            return stateHash;
+        }
+
+        public void PersistBlockManually(Block block, IEnumerable<TransactionReceipt> transactions)
         {
             var error = _blockManager.Execute(block, transactions, commit: true, checkStateHash: false);
             if (error != OperatingError.Ok)

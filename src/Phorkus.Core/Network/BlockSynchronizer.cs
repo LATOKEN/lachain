@@ -75,7 +75,7 @@ namespace Phorkus.Core.Network
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
         
-        public uint HandleTransactionsFromPeer(IEnumerable<AcceptedTransaction> transactions, IRemotePeer remotePeer)
+        public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, IRemotePeer remotePeer)
         {
             var persisted = 0u;
             foreach (var tx in transactions)
@@ -114,7 +114,7 @@ namespace Phorkus.Core.Network
                     return;
             }
             /* persist block to database */
-            var txs = new List<AcceptedTransaction>();
+            var txs = new List<TransactionReceipt>();
             foreach (var txHash in block.TransactionHashes)
             {
                 var tx = _transactionPool.GetByHash(txHash);
