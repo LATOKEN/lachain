@@ -24,10 +24,9 @@ namespace Phorkus.Consensus.BinaryAgreement
         private ResultStatus _requested;
         private BoolSet? _result;
 
-        public override IProtocolIdentifier Id => _broadcastId;
 
         public BinaryBroadcast(BinaryBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster)
-        : base(wallet, broadcaster)
+        : base(wallet, broadcastId, broadcaster)
         {
             _broadcastId = broadcastId;
             _requested = ResultStatus.NotRequested;

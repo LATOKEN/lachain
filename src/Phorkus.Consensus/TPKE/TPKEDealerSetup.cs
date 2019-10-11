@@ -17,9 +17,8 @@ namespace Phorkus.Consensus.TPKE
         private TPKEVerificationKey _verificationKey;
         private TPKEKeys _result;
         
-        public override IProtocolIdentifier Id => _tpkeSetupId;
 
-        public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, broadcaster)
+        public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, tpkeSetupId, broadcaster)
         {
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;

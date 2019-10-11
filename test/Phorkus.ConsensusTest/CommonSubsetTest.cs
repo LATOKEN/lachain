@@ -17,21 +17,20 @@ namespace Phorkus.ConsensusTest
     public class CommonSubsetTest 
     {
         private DeliverySerivce _deliverySerivce;
-        private IConsensusProtocol[] _broadcasts;
+        private IConsensusProtocol[] _acs;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[] _resultInterceptors;
-        private const int N = 7;
-        private const int F = 2;
+        private int N = 7;
+        private int F = 2;
         private IWallet[] _wallets;
         private Random _rnd;
 
-        [SetUp]
-        public void SetUp()
+        private void SetUpAllHonest()
         {
             _rnd = new Random();
             Mcl.Init();
             _deliverySerivce = new DeliverySerivce();
-            _broadcasts = new IConsensusProtocol[N];
+            _acs = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[N];
             _wallets = new IWallet[N];
@@ -44,14 +43,11 @@ namespace Phorkus.ConsensusTest
                 _wallets[i] = new Wallet(N, F) {PrivateKeyShare = shares[i], PublicKeySet = pubKeys};
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
             }
-        }
-
-        private void SetUpAllHonest()
-        {
+            
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new CommonSubset(new CommonSubsetId(10), _wallets[i], _broadcasters[i]);
-                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+                _acs[i] = new CommonSubset(new CommonSubsetId(10), _wallets[i], _broadcasters[i]);
+                _broadcasters[i].RegisterProtocols(new[] {_acs[i], _resultInterceptors[i]});
             }
         }
 
@@ -107,10 +103,13 @@ namespace Phorkus.ConsensusTest
             
         }
 
-        [Test]
-        public void TestAllCommonSubset()
+        public void TestAllCommonSubset(int n, DeliveryServiceMode mode = DeliveryServiceMode.TAKE_FIRST)
         {
+            N = n;
             SetUpAllHonest();
+            _deliverySerivce.Mode = mode;
+            
+            Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
             
             var inputs = new List<EncryptedShare>();
             for (var i = 0; i < N; ++i)
@@ -119,20 +118,43 @@ namespace Phorkus.ConsensusTest
                 var share = new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i);
                 inputs.Add(share);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as CommonSubsetId, share
+                    _resultInterceptors[i].Id, _acs[i].Id as CommonSubsetId, share
                 ));
             }
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i].WaitFinish();
+                if (_deliverySerivce._mutedPlayers.Contains(i)) continue;
+                _acs[i].WaitResult();
             }
+            Console.Error.WriteLine("All players produced result");
+            _deliverySerivce.WaitFinish();
+            Console.Error.WriteLine("Delivery service shut down");
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasters[i].Terminate();
+                foreach (var id in _wallets[i].ProtocolIds)
+                {
+                    Assert.NotNull(id);
+                    var protocol = _broadcasters[i].Registry.GetValueOrDefault(id);
+                    if (protocol == null)
+                    {
+                        Console.Error.WriteLine($"Didn't found protocol with id {id}'");
+                        continue;
+                    }
+                    protocol.Terminate();
+                    Console.Error.WriteLine($"boy {id} terminated");
+                    protocol.WaitFinish();
+                    Console.Error.WriteLine($"boy {id} finished");
+                }
+            }
+            Console.Error.WriteLine("Ended protocols!");
 
             var outputs = new List<ISet<EncryptedShare>>();
 
             for (var i = 0; i < N; ++i)
             {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.IsTrue(_acs[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(N, _resultInterceptors[i].Result.Count);
                 
@@ -140,6 +162,20 @@ namespace Phorkus.ConsensusTest
             }
             
             CheckOutput(inputs.ToArray(), outputs.ToArray());
+        }
+
+        [Test]
+        [Repeat(10)]
+        public void TestSimple7()
+        {
+            TestAllCommonSubset(7);
+        }
+        
+        [Test]
+        [Repeat(10)]
+        public void TestRandom7()
+        {
+            TestAllCommonSubset(7, DeliveryServiceMode.TAKE_RANDOM);
         }
     }
 }

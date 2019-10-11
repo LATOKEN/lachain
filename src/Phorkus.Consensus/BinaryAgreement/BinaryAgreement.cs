@@ -23,10 +23,9 @@ namespace Phorkus.Consensus.BinaryAgreement
         private readonly Dictionary<long, bool> _coins = new Dictionary<long, bool>();
         private readonly Dictionary<long, BoolSet> _binaryBroadcastsResults = new Dictionary<long, BoolSet>();
 
-        public override IProtocolIdentifier Id => _agreementId;
 
         public BinaryAgreement(BinaryAgreementId agreementId, IWallet wallet, IConsensusBroadcaster broadcaster)
-        : base(wallet, broadcaster)
+        : base(wallet, agreementId, broadcaster)
         {
             _agreementId = agreementId;
             _requested = ResultStatus.NotRequested;

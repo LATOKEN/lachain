@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Utility.Utils;
@@ -14,6 +15,7 @@ namespace Phorkus.Consensus
 
         public PublicKeySet PublicKeySet { get; set; }
         public PrivateKeyShare PrivateKeyShare { get; set;  }
+        public ISet<IProtocolIdentifier> ProtocolIds { get; } = new HashSet<IProtocolIdentifier>();
 
         public Wallet(int n, int f)
         {

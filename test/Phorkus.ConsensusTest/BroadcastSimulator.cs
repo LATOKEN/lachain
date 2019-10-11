@@ -17,7 +17,7 @@ namespace Phorkus.ConsensusTest
     {
         private readonly int _sender;
 
-        private readonly Dictionary<IProtocolIdentifier, IConsensusProtocol> _registry =
+        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
             new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
@@ -28,6 +28,14 @@ namespace Phorkus.ConsensusTest
         private readonly IWallet _wallet;
 
         private readonly ISet<int> _silenced;
+
+        public bool Terminated { set; get; } = false;
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Terminate()
+        {
+            Terminated = true;
+        }
         
         public bool MixMessages { get; }
 
@@ -51,9 +59,9 @@ namespace Phorkus.ConsensusTest
         {
             foreach (var protocol in protocols)
             {
-                if (_registry.ContainsKey(protocol.Id))
+                if (Registry.ContainsKey(protocol.Id))
                     throw new InvalidOperationException($"Protocol with id ({protocol.Id}) already registered");
-                _registry[protocol.Id] = protocol;
+                Registry[protocol.Id] = protocol;
             }
         }
 
@@ -70,8 +78,13 @@ namespace Phorkus.ConsensusTest
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void CheckRequest(IProtocolIdentifier id)
         {
-            if (_registry.ContainsKey(id)) return;
+            if (Registry.ContainsKey(id)) return;
             Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
+            if (Terminated)
+            {
+                Console.Error.WriteLine($"{_sender}: but already terminated.");
+                return;
+            }
             switch (id)
             {
                 case BinaryBroadcastId bbId:
@@ -123,52 +136,52 @@ namespace Phorkus.ConsensusTest
                 case ConsensusMessage.PayloadOneofCase.Bval:
                     var idBval = new BinaryBroadcastId(message.Validator.Era, message.Bval.Agreement, message.Bval.Epoch);
                     CheckRequest(idBval);
-                    _registry[idBval]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idBval]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Aux:
                     var idAux = new BinaryBroadcastId(message.Validator.Era, message.Aux.Agreement, message.Aux.Epoch);
                     CheckRequest(idAux);
-                    _registry[idAux]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idAux]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Conf:
                     var idConf = new BinaryBroadcastId(message.Validator.Era, message.Conf.Agreement, message.Conf.Epoch);
                     CheckRequest(idConf);
-                    _registry[idConf]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idConf]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
                     CheckRequest(idCoin);
-                    _registry[idCoin]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idCoin]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.TpkeKeys:
                     var idTpkeKeys = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idTpkeKeys);
-                    _registry[idTpkeKeys]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idTpkeKeys]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.PolynomialValue:
                     var idPolynomialValue = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idPolynomialValue);
-                    _registry[idPolynomialValue]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idPolynomialValue]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
                     var idHiddenPolynomial = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idHiddenPolynomial);
-                    _registry[idHiddenPolynomial]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idHiddenPolynomial]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
                     var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idConfirmationHash); 
-                    _registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EncryptedShare:
                     var idEncryptedShare = new ReliableBroadcastId(message.EncryptedShare.Id,(int) message.Validator.Era);
                     CheckRequest(idEncryptedShare);
-                    _registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
                     CheckRequest(hbbftId);
-                    _registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");
@@ -189,7 +202,7 @@ namespace Phorkus.ConsensusTest
 
             Console.Error.WriteLine($"Party {GetMyId()} received internal request from {request.From}");
             CheckRequest(request.To);
-            _registry[request.To]?.ReceiveMessage(new MessageEnvelope(request));
+            Registry[request.To]?.ReceiveMessage(new MessageEnvelope(request));
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
@@ -198,12 +211,12 @@ namespace Phorkus.ConsensusTest
 //            Console.Error.WriteLine($"Player {GetMyId()}: result from {result.From}");
             if (_callback.TryGetValue(result.From, out var senderId))
             {
-                _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result));
+                Registry[senderId]?.ReceiveMessage(new MessageEnvelope(result));
                 Console.Error.WriteLine($"Player {GetMyId()} sent response to batya {senderId}");
             }
 
             // message is also delivered to self
-            _registry[result.From]?.ReceiveMessage(new MessageEnvelope(result));
+            Registry[result.From]?.ReceiveMessage(new MessageEnvelope(result));
         }
 
         public int GetMyId()

@@ -21,10 +21,9 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private ResultStatus _requested;
         private BoolSet? _result;
         
-        public override IProtocolIdentifier Id => _broadcastId;
         
         public ReliableBroadcast(ReliableBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) : 
-            base(wallet, broadcaster)
+            base(wallet, broadcastId, broadcaster)
         {
             _broadcastId = broadcastId;
             _requested = ResultStatus.NotRequested;

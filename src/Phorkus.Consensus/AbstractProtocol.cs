@@ -13,7 +13,7 @@ namespace Phorkus.Consensus
         public bool ResultEmitted { get; protected set; }
         
         public bool Terminated { get; protected set; }
-        public abstract IProtocolIdentifier Id { get; }
+        public IProtocolIdentifier Id { get; }
         protected readonly IConsensusBroadcaster _broadcaster;
 
         private Thread _thread;
@@ -22,14 +22,16 @@ namespace Phorkus.Consensus
 
         public int N => _wallet.N;
         public int F => _wallet.F;
-    
 
-        protected AbstractProtocol(IWallet wallet, IConsensusBroadcaster broadcaster)
+
+        protected AbstractProtocol(IWallet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
         {
             _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
             _broadcaster = broadcaster;
+            Id = id;
             _wallet = wallet;
+            _wallet.ProtocolIds.Add(Id);
         }
 
         public int GetMyId()

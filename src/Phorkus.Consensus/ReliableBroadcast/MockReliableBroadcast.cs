@@ -12,13 +12,13 @@ namespace Phorkus.Consensus.ReliableBroadcast
     public class MockReliableBroadcast : AbstractProtocol
     {
         private readonly ReliableBroadcastId _reliableBroadcastId;
-        public override IProtocolIdentifier Id => _reliableBroadcastId;
         private ResultStatus _requested = ResultStatus.NotRequested;
         private EncryptedShare _result;
+        private bool _receivedAlready = false;
 
         
         public MockReliableBroadcast(ReliableBroadcastId reliableReliableBroadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) 
-            : base(wallet, broadcaster)
+            : base(wallet, reliableReliableBroadcastId, broadcaster)
         {
             _reliableBroadcastId = reliableReliableBroadcastId;
         }
@@ -84,6 +84,13 @@ namespace Phorkus.Consensus.ReliableBroadcast
         
         private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMessage messageEncryptedShare)
         {
+            if (_receivedAlready)
+            {
+                Console.Error.WriteLine($"Player {GetMyId()} at {_reliableBroadcastId}: double receive of message from {messageValidator}!");
+                return;
+            }
+
+            _receivedAlready = true;
             var U = G1.FromBytes(messageEncryptedShare.U.ToByteArray());
             var V = messageEncryptedShare.V.ToByteArray();
             var W = G2.FromBytes(messageEncryptedShare.W.ToByteArray());

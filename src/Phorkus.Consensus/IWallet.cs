@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.TPKE;
 
@@ -19,5 +20,7 @@ namespace Phorkus.Consensus
         PublicKeySet PublicKeySet { get; set; }
         
         PrivateKeyShare PrivateKeyShare { get; set; }
+        
+        ISet<IProtocolIdentifier> ProtocolIds { get; }
     }
 }

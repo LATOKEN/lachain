@@ -28,9 +28,8 @@ namespace Phorkus.Consensus.TPKE
         private bool allConfirmationHashesReceived = false;
         private bool allHashSent = false;
         
-        public override IProtocolIdentifier Id => _tpkeSetupId;
 
-        public TPKESecureSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, broadcaster)
+        public TPKESecureSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, tpkeSetupId, broadcaster)
         {
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;

@@ -31,10 +31,9 @@ namespace Phorkus.Consensus.HoneyBadger
         private TPKEPrivKey PrivKey => _wallet.TpkePrivKey;
         private TPKEVerificationKey VerificationKey => _wallet.TpkeVerificationKey;
 
-        public override IProtocolIdentifier Id => _honeyBadgerId;
         private bool _takenSet = false;
 
-        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, broadcaster)
+        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
             

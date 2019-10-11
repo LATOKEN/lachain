@@ -148,7 +148,7 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 if (_deliverySerivce._mutedPlayers.Contains(i)) continue;
-                    _broadcasts[i].WaitResult();
+                _broadcasts[i].WaitResult();
             }
             
             Console.Error.WriteLine("All players produced result");

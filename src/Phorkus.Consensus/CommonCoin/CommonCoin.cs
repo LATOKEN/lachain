@@ -17,11 +17,10 @@ namespace Phorkus.Consensus.CommonCoin
         private bool? _result;
         private ResultStatus _requested = ResultStatus.NotRequested;
 
-        public override IProtocolIdentifier Id => _coinId;
 
         public CommonCoin(
             CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
-        ) : base(wallet, broadcaster)
+        ) : base(wallet, coinId, broadcaster)
         {
             _publicKeySet = wallet.PublicKeySet ?? throw new ArgumentNullException(nameof(wallet.PublicKeySet));
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
