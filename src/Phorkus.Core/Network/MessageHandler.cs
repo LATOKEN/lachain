@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Logger;
@@ -13,23 +14,23 @@ namespace Phorkus.Core.Network
     public class MessageHandler : IMessageHandler
     {
         private readonly IBlockSynchronizer _blockSynchronizer;
-        private readonly IConsensusManager _consensusManager;
         private readonly ILogger<MessageHandler> _logger;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
+        private readonly IConsensusBroadcaster _consensusBroadcaster;
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
-            IConsensusManager consensusManager, 
             ILogger<MessageHandler> logger,
             ITransactionPool transactionPool,
-            IStateManager stateManager)
+            IStateManager stateManager,
+            IConsensusBroadcaster consensusBroadcaster)
         {
             _blockSynchronizer = blockSynchronizer;
-            _consensusManager = consensusManager;
             _logger = logger;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
+            _consensusBroadcaster = consensusBroadcaster;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -76,10 +77,11 @@ namespace Phorkus.Core.Network
             foreach (var txHash in request.TransactionHashes)
             {
                 var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash)
-                     ?? _transactionPool.GetByHash(txHash);
-                if (tx != null) 
+                         ?? _transactionPool.GetByHash(txHash);
+                if (tx != null)
                     txs.Add(tx);
             }
+
             envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
         }
 
@@ -90,21 +92,7 @@ namespace Phorkus.Core.Network
 
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
-            switch (message.PayloadCase)
-            {
-                case Proto.ConsensusMessage.PayloadOneofCase.BlockPrepareRequest:
-                    _consensusManager.OnPrepareRequestReceived(message.BlockPrepareRequest);
-                    break;
-                case Proto.ConsensusMessage.PayloadOneofCase.BlockPrepareReply:
-                    _consensusManager.OnPrepareResponseReceived(message.BlockPrepareReply);
-                    break;
-                case Proto.ConsensusMessage.PayloadOneofCase.ChangeViewRequest:
-                    _consensusManager.OnChangeViewReceived(message.ChangeViewRequest);
-                    break;
-                default:
-                    _logger.LogWarning("Ignored unknown consensus payload of type " + message.PayloadCase);
-                    break;
-            }
+            _consensusBroadcaster.Dispatch(message);
         }
     }
 }

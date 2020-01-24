@@ -16,6 +16,7 @@
     <PackageReference Include="SimpleInjector" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Phorkus.Consensus\Phorkus.Consensus.csproj" />
     <ProjectReference Include="..\Phorkus.Crypto\Phorkus.Crypto.csproj" />
     <ProjectReference Include="..\Phorkus.Logger\Phorkus.Logger.csproj" />
     <ProjectReference Include="..\Phorkus.Networking\Phorkus.Networking.csproj" />
@@ -23,8 +24,5 @@
     <ProjectReference Include="..\Phorkus.Storage\Phorkus.Storage.csproj" />
     <ProjectReference Include="..\Phorkus.Utility\Phorkus.Utility.csproj" />
     <ProjectReference Include="..\Phorkus.WebAssembly\Phorkus.WebAssembly.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="Consensus\ConsensusBroadcaster.cs" />
   </ItemGroup>
 </Project>
