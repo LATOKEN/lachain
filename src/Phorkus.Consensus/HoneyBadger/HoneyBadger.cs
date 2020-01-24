@@ -61,7 +61,7 @@ namespace Phorkus.Consensus.HoneyBadger
                         break;
                     default:
                         throw new ArgumentException(
-                            $"consensus message of type {message.PayloadCase} routed to CommonSubset protocol"
+                            $"consensus message of type {message.PayloadCase} routed to {GetType().Name} protocol"
                         );
                 }
             }
@@ -81,7 +81,7 @@ namespace Phorkus.Consensus.HoneyBadger
                         break;
                     default:
                         throw new InvalidOperationException(
-                            "CommonSubset protocol failed to handle internal message");
+                            $"protocol {GetType().Name} failed to handle internal message of type ${message.GetType()}");
                 }
             }
         }
