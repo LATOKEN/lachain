@@ -5,8 +5,8 @@ namespace Phorkus.Consensus.Messages
         public ProtocolRequest(IProtocolIdentifier from, TIdType id, TInputType input)
         {
             From = from;
-            Input = input;
             To = id;
+            Input = input;
         }
 
         public TInputType Input { get; }

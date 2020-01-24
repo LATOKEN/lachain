@@ -14,7 +14,7 @@ namespace Phorkus.ConsensusTest
         private const int N = 7, F = 2;
         private IConsensusProtocol[] _coins;
         private IConsensusBroadcaster[] _broadcasters;
-        private DeliverySerivce _deliverySerivce;
+        private DeliveryService _deliveryService;
         private ProtocolInvoker<CoinId, bool>[] _resultInterceptors;
         private IWallet[] _wallets;
 
@@ -24,7 +24,7 @@ namespace Phorkus.ConsensusTest
             var keygen = new TrustedKeyGen(N, F, new Random(0x0badfee0));
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
-            _deliverySerivce = new DeliverySerivce();
+            _deliveryService = new DeliveryService();
             _coins = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CoinId, bool>[N];
@@ -35,7 +35,7 @@ namespace Phorkus.ConsensusTest
                 _wallets[i] = new Wallet(N, F);
                 _wallets[i].PrivateKeyShare = shares[i];
                 _wallets[i].PublicKeySet = pubKeys;
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
                 _coins[i] = new CommonCoin(
                     new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
                 );
@@ -56,9 +56,9 @@ namespace Phorkus.ConsensusTest
             {
                 _coins[i].WaitFinish();
             }
-            _deliverySerivce.WaitFinish();
+            _deliveryService.WaitFinish();
 
-            var results = new bool[N];
+            var results = new bool[N]; // bit vector to reach agreement
             for (var i = 0; i < N; ++i)
             {
                 Assert.IsTrue(_coins[i].Terminated, $"protocol {i} did not terminate");
@@ -82,7 +82,7 @@ namespace Phorkus.ConsensusTest
         public void TestAllHonestWithRepeat()
         {
             SetUp();
-            _deliverySerivce.RepeatProbability = 0.9;
+            _deliveryService.RepeatProbability = 0.9;
             Run();
         }
     }

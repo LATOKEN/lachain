@@ -47,7 +47,6 @@ namespace Phorkus.Consensus.HoneyBadger
             _taken = new bool[N];
             _shares = new IRawShare[N];
             _requested = ResultStatus.NotRequested;
-
         }
         
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -58,7 +57,7 @@ namespace Phorkus.Consensus.HoneyBadger
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Decrypted:
-                        HandleDecMessage(message.Validator, message.Decrypted);
+                        HandleDecryptedMessage(message.Validator, message.Decrypted);
                         break;
                     default:
                         throw new ArgumentException(
@@ -104,6 +103,15 @@ namespace Phorkus.Consensus.HoneyBadger
             _encryptedShare = PubKey.Encrypt(_rawShare);
             _broadcaster.InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId), _encryptedShare));
         }
+        
+        private void CheckResult()
+        {
+            if (_result == null) return;
+            if (_requested != ResultStatus.Requested) return;
+            _requested = ResultStatus.Sent;
+            _broadcaster.InternalResponse(
+                new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
+        }
 
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
@@ -115,7 +123,7 @@ namespace Phorkus.Consensus.HoneyBadger
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
     
-                _broadcaster.Broadcast(CreateDecMessage(dec));
+                _broadcaster.Broadcast(CreateDecryptedMessage(dec));
             }
 
             _takenSet = true;
@@ -128,7 +136,7 @@ namespace Phorkus.Consensus.HoneyBadger
             CheckResult();
         }
 
-        private ConsensusMessage CreateDecMessage(PartiallyDecryptedShare share)
+        private ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
         {
             var message = new ConsensusMessage
             {
@@ -141,22 +149,8 @@ namespace Phorkus.Consensus.HoneyBadger
             };
             return message;
         }
-
-        private bool VerifyReceivedSharesByIndex(int i)
-        {
-            if (_receivedShares[i] == null) return false;
-            
-            foreach (var part in _decryptedShares[i])
-                if (!VerificationKey.Verify(_receivedShares[i], part))
-                {
-                    Console.Error.WriteLine($"{GetMyId()}: Verification failed {i}");
-                    return false;
-                }
-
-            return true;
-        }
         
-        private void HandleDecMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMessage msg)
+        private void HandleDecryptedMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMessage msg)
         {
             PartiallyDecryptedShare share = PubKey.Decode(msg);
             if (_receivedShares[share.ShareId] != null)
@@ -199,15 +193,19 @@ namespace Phorkus.Consensus.HoneyBadger
 
             CheckResult();
         }
-        
-        private void CheckResult()
-        {
-            if (_result == null) return;
-            if (_requested != ResultStatus.Requested) return;
-            _requested = ResultStatus.Sent;
-            _broadcaster.InternalResponse(
-                new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
-        }
 
+        private bool VerifyReceivedSharesByIndex(int i)
+        {
+            if (_receivedShares[i] == null) return false;
+            
+            foreach (var part in _decryptedShares[i])
+                if (!VerificationKey.Verify(_receivedShares[i], part))
+                {
+                    Console.Error.WriteLine($"{GetMyId()}: Verification failed {i}");
+                    return false;
+                }
+
+            return true;
+        }
     }
 }

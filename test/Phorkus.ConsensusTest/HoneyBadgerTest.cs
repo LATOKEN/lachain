@@ -1,25 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using NUnit.Framework;
 using Phorkus.Consensus;
-using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.CommonCoin.ThresholdSignature;
-using Phorkus.Consensus.CommonSubset;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
-using Phorkus.Utility.Utils;
 
 namespace Phorkus.ConsensusTest
 {
     [TestFixture]
     public class HoneyBadgerTest 
     {
-        private DeliverySerivce _deliverySerivce;
+        private DeliveryService _deliveryService;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
@@ -33,7 +28,7 @@ namespace Phorkus.ConsensusTest
         {
             _rnd = new Random();
             Mcl.Init();
-            _deliverySerivce = new DeliverySerivce();
+            _deliveryService = new DeliveryService();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[N];
@@ -42,7 +37,7 @@ namespace Phorkus.ConsensusTest
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
             // todo is this correct f?
-            var tpkeKeygen = new TPKETrustedKeyGen(N, F );
+            var tpkeKeygen = new TPKETrustedKeyGen(N, F);
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
@@ -54,7 +49,7 @@ namespace Phorkus.ConsensusTest
                     TpkePubKey = tpkeKeygen.GetPubKey(),
                     TpkeVerificationKey = tpkeKeygen.GetVerificationKey()
                 };
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, true);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, true);
             }
         }
 
@@ -75,11 +70,10 @@ namespace Phorkus.ConsensusTest
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
                     foreach (var j in s)
                     {
-                        (_broadcasters[i] as BroadcastSimulator).Silent(j);
+                        (_broadcasters[i] as BroadcastSimulator)?.Silent(j);
                     }
             }
         }
-        
 
         [Test]
         public void TestAllHonest()
@@ -97,7 +91,6 @@ namespace Phorkus.ConsensusTest
             {
                 _broadcasts[i].WaitFinish();
             }
-            
 
             for (var i = 0; i < N; ++i)
             {

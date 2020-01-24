@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Linq;
 using NUnit.Framework;
-using Org.BouncyCastle.Crypto.Digests;
 using Phorkus.Consensus;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
-using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {
@@ -19,7 +15,7 @@ namespace Phorkus.ConsensusTest
         private const int F = 2;
         private int sender = 0;
             
-        private DeliverySerivce _deliverySerivce;
+        private DeliveryService _deliveryService;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
@@ -29,7 +25,7 @@ namespace Phorkus.ConsensusTest
         [SetUp]
         public void SetUp()
         {        
-            _deliverySerivce = new DeliverySerivce();
+            _deliveryService = new DeliveryService();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
@@ -40,7 +36,7 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _wallets[i] = new Wallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, mixMessages: false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, mixMessages: false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
                        

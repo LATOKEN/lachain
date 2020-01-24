@@ -23,7 +23,7 @@ namespace Phorkus.ConsensusTest
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
             new Dictionary<IProtocolIdentifier, IProtocolIdentifier>();
 
-        private readonly DeliverySerivce _deliverySerivce;
+        private readonly DeliveryService _deliveryService;
 
         private readonly IWallet _wallet;
 
@@ -39,11 +39,11 @@ namespace Phorkus.ConsensusTest
         
         public bool MixMessages { get; }
 
-        public BroadcastSimulator(int sender, IWallet wallet, DeliverySerivce deliverySerivce, bool mixMessages)
+        public BroadcastSimulator(int sender, IWallet wallet, DeliveryService deliveryService, bool mixMessages)
         {
             _sender = sender;
-            _deliverySerivce = deliverySerivce;
-            _deliverySerivce.AddPlayer(GetMyId(), this);
+            _deliveryService = deliveryService;
+            _deliveryService.AddPlayer(GetMyId(), this);
             _wallet = wallet;
             _silenced = new HashSet<int>();
             MixMessages = mixMessages;
@@ -67,12 +67,12 @@ namespace Phorkus.ConsensusTest
 
         public void Broadcast(ConsensusMessage message)
         {
-            _deliverySerivce.BroadcastMessage(message);
+            _deliveryService.BroadcastMessage(message);
         }
 
         public void SendToValidator(ConsensusMessage message, int index)
         {
-            _deliverySerivce.SendToPlayer(index, message);
+            _deliveryService.SendToPlayer(index, message);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -102,7 +102,8 @@ namespace Phorkus.ConsensusTest
                 case ReliableBroadcastId rbcId:
                     RegisterProtocols(new []
                     {
-                       new MockReliableBroadcast(rbcId, _wallet, this),  
+                       //new MockReliableBroadcast(rbcId, _wallet, this),
+                       new ReliableBroadcast(rbcId, _wallet, this)
                     });
                     break;
                 case BinaryAgreementId baId:
@@ -170,18 +171,28 @@ namespace Phorkus.ConsensusTest
                     break;
                 case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
                     var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
-                    CheckRequest(idConfirmationHash); 
+                    CheckRequest(idConfirmationHash);
                     Registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                    var idEncryptedShare = new ReliableBroadcastId(message.EncryptedShare.Id,(int) message.Validator.Era);
-                    CheckRequest(idEncryptedShare);
-                    Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
                     CheckRequest(hbbftId);
                     Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.ValMessage:
+                    var reliableBroadcastId = new ReliableBroadcastId( (int) message.Validator.ValidatorIndex, (int) message.Validator.Era);
+                    CheckRequest(reliableBroadcastId);
+                    Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                    var rbIdEchoMsg = new ReliableBroadcastId( (int) message.Validator.ValidatorIndex, (int) message.Validator.Era);
+                    CheckRequest(rbIdEchoMsg);
+                    Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
+                    var idEncryptedShare = new ReliableBroadcastId(message.EncryptedShare.Id,(int) message.Validator.Era);
+                    CheckRequest(idEncryptedShare);
+                    Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");

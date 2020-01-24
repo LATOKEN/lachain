@@ -19,7 +19,7 @@ namespace Phorkus.ConsensusTest
         private int F = 3;
         private int sender = 0;
             
-        private DeliverySerivce _deliverySerivce;
+        private DeliveryService _deliveryService;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
@@ -29,7 +29,7 @@ namespace Phorkus.ConsensusTest
         [SetUp]
         public void SetUp()
         {        
-            _deliverySerivce = new DeliverySerivce();
+            _deliveryService = new DeliveryService();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
@@ -40,7 +40,7 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _wallets[i] = new Wallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, mixMessages: false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, mixMessages: false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
                        
@@ -59,8 +59,8 @@ namespace Phorkus.ConsensusTest
         {
             N = n;
             SetUpAllHonest();
-            _deliverySerivce.Mode = mode;
-            _deliverySerivce.RepeatProbability = repeatProbability;
+            _deliveryService.Mode = mode;
+            _deliveryService.RepeatProbability = repeatProbability;
             
             var share = new EncryptedShare(G1.Generator, new byte[]{}, G2.Generator, sender);
             for (var i = 0; i < N; ++i)

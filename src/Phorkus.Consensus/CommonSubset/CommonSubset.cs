@@ -21,8 +21,6 @@ namespace Phorkus.Consensus.CommonSubset
 
         private readonly EncryptedShare[] _reliableBroadcastResult;
 
-
-
         public CommonSubset(CommonSubsetId commonSubsetId, IWallet wallet, IConsensusBroadcaster broadcaster)
            : base(wallet, commonSubsetId, broadcaster)
         {
@@ -33,7 +31,6 @@ namespace Phorkus.Consensus.CommonSubset
             
             _reliableBroadcastResult = new EncryptedShare[N];
         }
-        
         public override void ProcessMessage(MessageEnvelope envelope)
         {
             if (envelope.External)
@@ -86,7 +83,6 @@ namespace Phorkus.Consensus.CommonSubset
                         new ReliableBroadcastId(j, (int) _commonSubsetId.Era), null));
                 }
             }
-            
             CheckResult();
         }
 
@@ -99,11 +95,10 @@ namespace Phorkus.Consensus.CommonSubset
             _broadcaster.InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
         }
 
-
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
             var j = result.Id.AssociatedValidatorId;
-            Console.Error.WriteLine($"Player ${GetMyId()} at ${_commonSubsetId}: ${j}-th rbc completed.");
+            Console.Error.WriteLine($"Player ${GetMyId()} at ${_commonSubsetId}: ${j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)

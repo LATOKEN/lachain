@@ -1,9 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
-using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto;
@@ -17,9 +17,17 @@ namespace Phorkus.Consensus.ReliableBroadcast
     {
         private readonly ReliableBroadcastId _broadcastId;
         private readonly bool[] _isBroadcast;
-        private readonly ISet<int>[] _receivedValues;
+        //private readonly ISet<int>[] _receivedValues;
+        private readonly Dictionary<long, ArrayList > _receivedValues;
         private ResultStatus _requested;
         private BoolSet? _result;
+
+        private readonly bool[] _sentReadyMsg;
+        private int _countValMsg;
+        private int _countCorrectECHOMsg;
+        private int _countReadyMsg;
+        
+        
         
         
         public ReliableBroadcast(ReliableBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) : 
@@ -27,29 +35,27 @@ namespace Phorkus.Consensus.ReliableBroadcast
         {
             _broadcastId = broadcastId;
             _requested = ResultStatus.NotRequested;
-            _receivedValues = new ISet<int>[N];
-            for (var i = 0; i < N; ++i)
-                _receivedValues[i] = new HashSet<int>();
+            //_receivedValues = new ISet<int>[N];
+            _receivedValues = new Dictionary<long, ArrayList>();
             _isBroadcast = new bool[2];
+            _sentReadyMsg = new bool[N];
             _result = null;
-        }
 
-        private byte[] GetTestVector(int size=1000)
-        {
-            var vector = new byte[size];
-            var rnd = new Random();
-            rnd.NextBytes(vector);
-            return vector;
+            _countValMsg = 0;
+            _countCorrectECHOMsg = 0;
+            _countReadyMsg = 0;
+            
         }
+        
         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
-            
             CreateValMessage(GetTestVector(N * 64));
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
@@ -58,9 +64,12 @@ namespace Phorkus.Consensus.ReliableBroadcast
                     case ConsensusMessage.PayloadOneofCase.EchoMessage:
                         HandleECHOMessage(message.Validator, message.EchoMessage);
                         break;
+                    case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                        HandleReadyMessage(message.Validator, message.ReadyMessage);
+                        break;
                     default:
                         throw new ArgumentException(
-                            $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol"
+                            $"consensus message of type {message.PayloadCase} routed to ReliableBroadcast protocol"
                         );
                 }
             }
@@ -68,8 +77,9 @@ namespace Phorkus.Consensus.ReliableBroadcast
             {
                 var message = envelope.InternalMessage;
                 switch (message)
-                {    
+                {
                     case ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested:
+                        var tmp = broadcastRequested.From; 
                         HandleInputMessage(broadcastRequested);
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
@@ -81,22 +91,95 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 }
             }
         }
-
-        private void HandleECHOMessage(Validator messageValidator, object echo)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void HandleValMessage(Validator messageValidator, object val)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
         {
-            
-            throw new NotImplementedException();
+            //if (broadcastRequested.Input.Id.Equals(_broadcastId.AssociatedValidatorId))
+            if (broadcastRequested.From.GetHashCode().Equals(_broadcastId.GetHashCode()))
+            {
+                _broadcaster.Broadcast(CreateValMessage(GetTestVector(N * 64)));
+            }
         }
+
+        private void HandleValMessage(Validator messageValidator, ValMessage val)
+        {
+            var validatorIndex = messageValidator.ValidatorIndex;
+            // Save: blocks, root, branch <-> senderId
+            
+            Dictionary<int, ArrayList > receivedValues = new Dictionary<int, ArrayList >();
+            receivedValues[(int) messageValidator.ValidatorIndex] = new ArrayList
+            {
+                val.BlockErasureCoding,
+                val.BranchMerkleTree,
+                val.RootMerkleTree
+            };
+            // broadcast ECHO messages
+            _broadcaster.Broadcast(CreateECHOMessage(messageValidator, val));
+        }
+        private void HandleECHOMessage(Validator messageValidator, ECHOMessage echo)
+        {
+            var era = messageValidator.Era;
+            var tmp = new ArrayList
+            {
+                echo.BlockErasureCoding.ToByteArray(),
+                echo.BranchMerkleTree.ToByteArray(),
+                echo.RootMerkleTree.ToByteArray()
+            };
+            if (checkECHOMsg(tmp))
+            {
+                _receivedValues.Add(messageValidator.ValidatorIndex, tmp);
+                _countCorrectECHOMsg++;
+            }
+
+            var rootMerkleTree = echo.RootMerkleTree.ToByteArray().ToUInt256();
+            if (_countCorrectECHOMsg > N - F)
+            {
+                if (Interpolate() && RecomputeMerkleTree())
+                {
+                    if(!_sentReadyMsg[messageValidator.ValidatorIndex])
+                    {
+                        // here I sent ready msg for  players of ValidatorIndex
+                        _broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
+                        _sentReadyMsg[messageValidator.ValidatorIndex] = true;
+                    }
+                }
+                else
+                {
+                    discard();    
+                }
+            }
+            else
+            {
+                discard();
+            }
+        }
+
+        private void HandleReadyMessage(Validator validator, ReadyMessage readyMessage)
+        {
+            
+        }
+
+        private static bool Interpolate()
+        {
+            return true;
+        }
+
+        private static bool RecomputeMerkleTree()
+        {
+            return true;
+        }
+        void discard()
+        {
+            
+        }
+        bool checkECHOMsg(ArrayList toCheck)
+        {
+            return true;
+        }
+        
+
+
+
 
 
         private int[] ByteToIntDefineSize(byte[] bytes, int sizeMax, int zeroCount)
@@ -124,21 +207,57 @@ namespace Phorkus.Consensus.ReliableBroadcast
                     ValidatorIndex = GetMyId(),
                     Era = _broadcastId.Era
                 },
-                Init = new InitRBCProtocolMessage
-                {
-                    Val = new ValMessage
+                ValMessage = new ValMessage
                     {
                         RootMerkleTree = root,
                         BranchMerkleTree = ByteString.CopyFrom(branch.ToByteArray()),
                         BlockErasureCoding = ByteString.CopyFrom(blocks.ToByteArray())                        
                     }
+
+            };
+            return message;
+        }
+
+        private ConsensusMessage CreateReadyMessage(UInt256 root)
+        {   
+            var message = new ConsensusMessage
+            {
+                Validator = new Validator
+                {
+                    ValidatorIndex = GetMyId(),
+                    Era = _broadcastId.Era
+                },
+                ReadyMessage = new ReadyMessage
+                {
+                    RootMerkleTree = root
                 }
+            };
+            return message;
+        }
+        
+        private ConsensusMessage CreateECHOMessage(Validator messageValidator, ValMessage valMessage)
+        {
+            
+            var message = new ConsensusMessage
+            {
+                Validator = new Validator
+                {
+                    ValidatorIndex = GetMyId(),
+                    Era = _broadcastId.Era
+                },
+                EchoMessage = new ECHOMessage
+                {
+                    RootMerkleTree = valMessage.RootMerkleTree,
+                    BranchMerkleTree = ByteString.CopyFrom(valMessage.BranchMerkleTree.ToByteArray()),
+                    BlockErasureCoding = ByteString.CopyFrom(valMessage.BlockErasureCoding.ToByteArray())
+                }
+
             };
             return message;
         }
 
         // blocks - list of block on which create MT
-        // playerIndex - it is the player index for which create branch (i.e. path) 
+        // playerIndex - it is the player index for which create branch (i.e. path)
         private static List<UInt256> CreateBranch(List<UInt256> blocks, int playerIndex)
         {
             var mt = MerkleTree.ComputeTree(blocks.ToArray());
@@ -165,25 +284,12 @@ namespace Phorkus.Consensus.ReliableBroadcast
             {
                 generalDivide(initDataBuffer, encodeArray, N);
             }
-
-            for (var i = 0; i < encodeArray.Count; i++)
+            foreach (var t in encodeArray)
             {
-                rse.Encode(encodeArray[i], additionalBits);
+                rse.Encode(t, additionalBits);
             }
             
-//            ReedSolomonDecoder rsd = new ReedSolomonDecoder(field);
-//            
-//            var tip = new []{0,1,2,3,4};
-//            
-//            if (rsd.Decode(initdata, additionalBits, null))
-//            {
-//                Console.WriteLine("Data corrected.");
-//                //Console.WriteLine(String.Join(", ", afterRecieve.ToArray()));
-//            }
-//            else
-//            {
-//                Console.WriteLine("Too many errors-erasures to correct.");
-//            }
+
             
             return BuildShares(initDataBuffer, N);
         }
@@ -230,6 +336,14 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 tmp = source.Skip(partLength * i).Take(partLength).ToArray();
                 result.Add(tmp);
             }
+        }
+        
+        private byte[] GetTestVector(int size=1000)
+        {
+            var vector = new byte[size];
+            var rnd = new Random();
+            rnd.NextBytes(vector);
+            return vector;
         }
     }
     

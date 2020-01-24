@@ -16,7 +16,7 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class CommonSubsetTest 
     {
-        private DeliverySerivce _deliverySerivce;
+        private DeliveryService _deliveryService;
         private IConsensusProtocol[] _acs;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[] _resultInterceptors;
@@ -29,7 +29,7 @@ namespace Phorkus.ConsensusTest
         {
             _rnd = new Random();
             Mcl.Init();
-            _deliverySerivce = new DeliverySerivce();
+            _deliveryService = new DeliveryService();
             _acs = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[N];
@@ -41,7 +41,7 @@ namespace Phorkus.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
                 _wallets[i] = new Wallet(N, F) {PrivateKeyShare = shares[i], PublicKeySet = pubKeys};
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliverySerivce, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
             }
             
             for (uint i = 0; i < N; ++i)
@@ -50,6 +50,33 @@ namespace Phorkus.ConsensusTest
                 _broadcasters[i].RegisterProtocols(new[] {_acs[i], _resultInterceptors[i]});
             }
         }
+        
+        // private void SetUpReliableBroadcast()
+        // {        
+        //     _deliveryService = new DeliveryService();
+        //     _broadcasts = new IConsensusProtocol[N];
+        //     _broadcasters = new IConsensusBroadcaster[N];
+        //     _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
+        //     _rnd = new Random();
+        //     _wallets = new IWallet[N];
+        //     
+        //     Mcl.Init();
+        //     for (var i = 0; i < N; ++i)
+        //     {
+        //         _wallets[i] = new Wallet(N, F);
+        //         _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, mixMessages: false);
+        //         _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
+        //     }
+        // }
+        // private void SetUpAllHonest()
+        // {
+        //     for (uint i = 0; i < N; ++i)
+        //     {
+        //         var sender = 0;
+        //         _broadcasts[i] = new ReliableBroadcast.ReliableBroadcast(new ReliableBroadcastId(sender, 0), _wallets[i], _broadcasters[i]);
+        //         _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+        //     }
+        // }
 
         private void CheckOutput(EncryptedShare[] inputs, ISet<EncryptedShare>[] outputs, ISet<int> faulty = null)
         {
@@ -107,7 +134,7 @@ namespace Phorkus.ConsensusTest
         {
             N = n;
             SetUpAllHonest();
-            _deliverySerivce.Mode = mode;
+            _deliveryService.Mode = mode;
             
             Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
             
@@ -124,11 +151,11 @@ namespace Phorkus.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                if (_deliverySerivce._mutedPlayers.Contains(i)) continue;
+                if (_deliveryService._mutedPlayers.Contains(i)) continue;
                 _acs[i].WaitResult();
             }
             Console.Error.WriteLine("All players produced result");
-            _deliverySerivce.WaitFinish();
+            _deliveryService.WaitFinish();
             Console.Error.WriteLine("Delivery service shut down");
             for (var i = 0; i < N; ++i)
             {

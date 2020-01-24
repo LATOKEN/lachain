@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using NUnit.Framework;
-using Org.BouncyCastle.Crypto.Engines;
 using Phorkus.Consensus;
-using Phorkus.Consensus.Messages;
 using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {
-    public class DeliverySerivce
+    public class DeliveryService
     {
         public readonly ISet<int> _mutedPlayers = new HashSet<int>();
         private readonly IDictionary<int, IConsensusBroadcaster> _broadcasters = new Dictionary<int, IConsensusBroadcaster>();
@@ -28,7 +24,7 @@ namespace Phorkus.ConsensusTest
         private bool _stopped;
         public DeliveryServiceMode Mode { get; set; }
 
-        public DeliverySerivce()
+        public DeliveryService()
         {
             Mode = DeliveryServiceMode.TAKE_FIRST;
             _thread = new Thread(Start) {IsBackground = true};
@@ -106,8 +102,6 @@ namespace Phorkus.ConsensusTest
                         if (Terminated) return;
                     }
                 }
-
-                
             }
         }
 

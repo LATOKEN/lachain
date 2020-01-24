@@ -66,7 +66,7 @@ namespace Phorkus.ConsensusTest
         public void ReceiveMessage(MessageEnvelope message)
         {
             if (message.External || !(message.InternalMessage is ProtocolResult<TId, TResult> result)) return;
-//            Console.Error.WriteLine($"{Id}: got result from {result.From}");
+            //Console.Error.WriteLine($"{Id}: got result from {result.From}");
             ResultSet++;
             Result = result.Result;
         }
