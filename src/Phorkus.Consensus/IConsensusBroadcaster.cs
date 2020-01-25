@@ -31,10 +31,7 @@ namespace Phorkus.Consensus
          */
         int GetMyId();
 
-        bool MixMessages { get; }
-
         Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; }
-        bool Terminated { set; get; }
 
         void Terminate();
     }

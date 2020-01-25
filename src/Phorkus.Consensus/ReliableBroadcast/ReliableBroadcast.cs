@@ -51,7 +51,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
         [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
-            CreateValMessage(GetTestVector(N * 64));
+            //CreateValMessage(GetTestVector(N * 64));
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
@@ -131,7 +131,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 _countCorrectECHOMsg++;
             }
 
-            var rootMerkleTree = echo.RootMerkleTree.ToByteArray().ToUInt256();
+            var rootMerkleTree = echo.RootMerkleTree;
             if (_countCorrectECHOMsg > N - F)
             {
                 if (Interpolate() && RecomputeMerkleTree())
@@ -156,9 +156,29 @@ namespace Phorkus.Consensus.ReliableBroadcast
 
         private void HandleReadyMessage(Validator validator, ReadyMessage readyMessage)
         {
-            
+            var rootMerkleTree = readyMessage.RootMerkleTree;
+            if (checkREADYMsg(readyMessage.RootMerkleTree.ToByteArray()))
+            {
+                _countReadyMsg++;
+                if (_countReadyMsg == F + 1)
+                {
+                    _broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
+                }
+                else if(_countReadyMsg == 2 * F + 1)
+                {
+                    if (_countCorrectECHOMsg == N - 2 * F)
+                    {
+                        Decode();
+                    }
+                }
+            }            
         }
 
+        private static void Decode()
+        {
+
+        }
+        
         private static bool Interpolate()
         {
             return true;
@@ -176,11 +196,11 @@ namespace Phorkus.Consensus.ReliableBroadcast
         {
             return true;
         }
-        
 
-
-
-
+        bool checkREADYMsg(byte[] toCheck)
+        {
+            return true;
+        }
 
         private int[] ByteToIntDefineSize(byte[] bytes, int sizeMax, int zeroCount)
         {
