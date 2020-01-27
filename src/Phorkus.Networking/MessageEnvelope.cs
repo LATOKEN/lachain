@@ -6,7 +6,7 @@ namespace Phorkus.Networking
     {
         public MessageFactory MessageFactory { get; set; }
 
-        public PublicKey PublicKey { get; set; }
+        public ECDSAPublicKey PublicKey { get; set; }
         
         public IRemotePeer RemotePeer { get; set; }
 

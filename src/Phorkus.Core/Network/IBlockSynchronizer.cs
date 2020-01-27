@@ -17,7 +17,7 @@ namespace Phorkus.Core.Network
 
         void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer);
 
-        bool IsSynchronizingWith(IEnumerable<PublicKey> peers);
+        bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers);
         
         void Start();
     }

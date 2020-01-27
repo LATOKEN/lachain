@@ -28,16 +28,16 @@ namespace Phorkus.Core.Blockchain
                 .ToList();
         }
         
-        public IReadOnlyCollection<PublicKey> Validators { get; }
+        public IReadOnlyCollection<ECDSAPublicKey> Validators { get; }
 
         public uint Quorum => (uint) (Validators.Count * 2 / 3);
 
-        public PublicKey GetPublicKey(uint validatorIndex)
+        public ECDSAPublicKey GetPublicKey(uint validatorIndex)
         {
             return Validators.ElementAt((int) validatorIndex);
         }
 
-        public uint GetValidatorIndex(PublicKey publicKey)
+        public uint GetValidatorIndex(ECDSAPublicKey publicKey)
         {
             var index = 0u;
             foreach (var validator in Validators)
@@ -61,7 +61,7 @@ namespace Phorkus.Core.Blockchain
             return false;
         }
 
-        public bool CheckValidator(PublicKey publicKey)
+        public bool CheckValidator(ECDSAPublicKey publicKey)
         {
             return Validators.Contains(publicKey);
         }

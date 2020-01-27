@@ -6,19 +6,19 @@ namespace Phorkus.Crypto
 {
     public class KeyPair : IEquatable<KeyPair>
     {
-        public readonly PrivateKey PrivateKey;
-        public readonly PublicKey PublicKey;
+        public readonly ECDSAPrivateKey PrivateKey;
+        public readonly ECDSAPublicKey PublicKey;
 
-        public KeyPair(PrivateKey privateKey, PublicKey publicKey)
+        public KeyPair(ECDSAPrivateKey privateKey, ECDSAPublicKey publicKey)
         {
             PrivateKey = privateKey;
             PublicKey = publicKey;
         }
 
-        public KeyPair(PrivateKey privateKey, ICrypto crypto)
+        public KeyPair(ECDSAPrivateKey privateKey, ICrypto crypto)
         {
             PrivateKey = privateKey;
-            PublicKey = new PublicKey
+            PublicKey = new ECDSAPublicKey
             {
                 Buffer = ByteString.CopyFrom(crypto.ComputePublicKey(privateKey.Buffer.ToByteArray(), true))
             };

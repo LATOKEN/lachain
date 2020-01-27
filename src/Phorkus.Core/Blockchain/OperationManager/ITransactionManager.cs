@@ -17,7 +17,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         OperatingError Verify(TransactionReceipt transaction);
 
-        OperatingError VerifySignature(TransactionReceipt transaction, PublicKey publicKey);
+        OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey);
         
         OperatingError VerifySignature(TransactionReceipt transaction, bool cacheEnabled = true);
         

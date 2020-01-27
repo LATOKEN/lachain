@@ -16,8 +16,8 @@ namespace Phorkus.Core.Blockchain
         private readonly ILogger<ITransactionVerifier> _logger;
         private readonly ICrypto _crypto;
 
-        private readonly IDictionary<UInt160, PublicKey> _publicKeyCache
-            = new Dictionary<UInt160, PublicKey>();
+        private readonly IDictionary<UInt160, ECDSAPublicKey> _publicKeyCache
+            = new Dictionary<UInt160, ECDSAPublicKey>();
 
         private readonly Queue<TransactionReceipt> _transactionQueue
             = new Queue<TransactionReceipt>();
@@ -34,7 +34,7 @@ namespace Phorkus.Core.Blockchain
 
         public event EventHandler<TransactionReceipt> OnTransactionVerified;
 
-        public void VerifyTransaction(TransactionReceipt acceptedTransaction, PublicKey publicKey)
+        public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey)
         {
             var address = _crypto.ComputeAddress(publicKey.Buffer.ToByteArray()).ToUInt160();
             _publicKeyCache.Add(address, publicKey);
@@ -52,7 +52,7 @@ namespace Phorkus.Core.Blockchain
             }
         }
 
-        public bool VerifyTransactionImmediately(TransactionReceipt transaction, PublicKey publicKey)
+        public bool VerifyTransactionImmediately(TransactionReceipt transaction, ECDSAPublicKey publicKey)
         {
             try
             {

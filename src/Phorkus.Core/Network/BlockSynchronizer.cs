@@ -146,7 +146,7 @@ namespace Phorkus.Core.Network
             }
         }
 
-        public bool IsSynchronizingWith(IEnumerable<PublicKey> peers)
+        public bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers)
         {
             var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)

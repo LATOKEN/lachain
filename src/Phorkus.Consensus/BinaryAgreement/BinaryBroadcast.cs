@@ -192,27 +192,25 @@ namespace Phorkus.Consensus.BinaryAgreement
         private BoolSet ChoseMinimalSet()
         {
             return _binValues;
-            // todo investigate if choosing minimal set speed up execution 
-            // this should not break protocol integrity
-            
-            if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F)
-                throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient auxs!");
-            if (_confReceived.Count(set => _binValues.Contains(set)) < N - F)
-                throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient confs!");
-
-            foreach (var b in _binValues.Values())
-            {
-                if (_receivedAux[b ? 1 : 0] >= N - F) // && _confReceived.Where(set => _binValues.Contains(set)).Count(set => set.Contains(b)) >= N - F)
-                    return new BoolSet(b);
-            }
-
-            return _binValues;
+            // TODO: investigate if choosing minimal set speed up execution. This should not break protocol integrity
+            // if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F)
+            //     throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient auxs!");
+            // if (_confReceived.Count(set => _binValues.Contains(set)) < N - F)
+            //     throw new Exception($"Player {GetMyId()} at {_broadcastId}: can't choose minimal set: unsufficient confs!");
+            //
+            // foreach (var b in _binValues.Values())
+            // {
+            //     if (_receivedAux[b ? 1 : 0] >= N - F) // && _confReceived.Where(set => _binValues.Contains(set)).Count(set => set.Contains(b)) >= N - F)
+            //         return new BoolSet(b);
+            // }
+            //
+            // return _binValues;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void RevisitConfMessages()
         {
-            // todo investigate relation between _confReceived, _binValues and _result
+            // TODO: investigate relation between _confReceived, _binValues and _result
             var goodConfs = _confReceived.Count(set => _binValues.Contains(set));
             if (goodConfs < N - F) return;
             if (_result != null) return;

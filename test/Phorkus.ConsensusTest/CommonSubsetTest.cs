@@ -163,7 +163,7 @@ namespace Phorkus.ConsensusTest
                 foreach (var id in _wallets[i].ProtocolIds)
                 {
                     Assert.NotNull(id);
-                    var protocol = _broadcasters[i].Registry.GetValueOrDefault(id);
+                    var protocol = _broadcasters[i].GetProtocolById(id);
                     if (protocol == null)
                     {
                         Console.Error.WriteLine($"Didn't found protocol with id {id}'");

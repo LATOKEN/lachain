@@ -130,7 +130,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignature(TransactionReceipt transaction, PublicKey publicKey)
+        public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey)

@@ -17,7 +17,7 @@ namespace Phorkus.ConsensusTest
     {
         private readonly int _sender;
 
-        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
+        private Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
             new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
@@ -29,15 +29,20 @@ namespace Phorkus.ConsensusTest
 
         private readonly ISet<int> _silenced;
 
-        public bool Terminated { set; get; } = false;
+        private bool Terminated { set; get; } = false;
+
+        public IConsensusProtocol GetProtocolById(IProtocolIdentifier id)
+        {
+            return Registry[id];
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {
             Terminated = true;
         }
-        
-        public bool MixMessages { get; }
+
+        private bool MixMessages { get; }
 
         public BroadcastSimulator(int sender, IWallet wallet, DeliveryService deliveryService, bool mixMessages)
         {
@@ -85,6 +90,7 @@ namespace Phorkus.ConsensusTest
                 Console.Error.WriteLine($"{_sender}: but already terminated.");
                 return;
             }
+
             switch (id)
             {
                 case BinaryBroadcastId bbId:
@@ -100,22 +106,22 @@ namespace Phorkus.ConsensusTest
                     });
                     break;
                 case ReliableBroadcastId rbcId:
-                    RegisterProtocols(new []
+                    RegisterProtocols(new[]
                     {
-                       //new MockReliableBroadcast(rbcId, _wallet, this),
-                       new ReliableBroadcast(rbcId, _wallet, this)
+                        //new MockReliableBroadcast(rbcId, _wallet, this),
+                        new ReliableBroadcast(rbcId, _wallet, this)
                     });
                     break;
                 case BinaryAgreementId baId:
-                    RegisterProtocols(new []
+                    RegisterProtocols(new[]
                     {
-                        new BinaryAgreement(baId, _wallet, this), 
+                        new BinaryAgreement(baId, _wallet, this),
                     });
                     break;
                 case CommonSubsetId acsId:
-                    RegisterProtocols(new []
+                    RegisterProtocols(new[]
                     {
-                        new CommonSubset(acsId, _wallet, this), 
+                        new CommonSubset(acsId, _wallet, this),
                     });
                     break;
                 default:
@@ -125,17 +131,18 @@ namespace Phorkus.ConsensusTest
             Console.Error.WriteLine($"{_sender}: created protocol {id}.");
         }
 
-    public void Dispatch(ConsensusMessage message)
-    {
-        if (_silenced.Contains((int) message.Validator.ValidatorIndex))
-            return;
-        if (_silenced.Contains(GetMyId()))
-            return;
-        
-        switch (message.PayloadCase)
+        public void Dispatch(ConsensusMessage message)
+        {
+            if (_silenced.Contains((int) message.Validator.ValidatorIndex))
+                return;
+            if (_silenced.Contains(GetMyId()))
+                return;
+
+            switch (message.PayloadCase)
             {
                 case ConsensusMessage.PayloadOneofCase.Bval:
-                    var idBval = new BinaryBroadcastId(message.Validator.Era, message.Bval.Agreement, message.Bval.Epoch);
+                    var idBval = new BinaryBroadcastId(message.Validator.Era, message.Bval.Agreement,
+                        message.Bval.Epoch);
                     CheckRequest(idBval);
                     Registry[idBval]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
@@ -145,7 +152,8 @@ namespace Phorkus.ConsensusTest
                     Registry[idAux]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Conf:
-                    var idConf = new BinaryBroadcastId(message.Validator.Era, message.Conf.Agreement, message.Conf.Epoch);
+                    var idConf = new BinaryBroadcastId(message.Validator.Era, message.Conf.Agreement,
+                        message.Conf.Epoch);
                     CheckRequest(idConf);
                     Registry[idConf]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
@@ -180,17 +188,20 @@ namespace Phorkus.ConsensusTest
                     Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId( (int) message.Validator.ValidatorIndex, (int) message.Validator.Era);
+                    var reliableBroadcastId = new ReliableBroadcastId((int) message.Validator.ValidatorIndex,
+                        (int) message.Validator.Era);
                     CheckRequest(reliableBroadcastId);
                     Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId( (int) message.Validator.ValidatorIndex, (int) message.Validator.Era);
+                    var rbIdEchoMsg = new ReliableBroadcastId((int) message.Validator.ValidatorIndex,
+                        (int) message.Validator.Era);
                     CheckRequest(rbIdEchoMsg);
                     Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                    var idEncryptedShare = new ReliableBroadcastId(message.EncryptedShare.Id,(int) message.Validator.Era);
+                    var idEncryptedShare =
+                        new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
                     CheckRequest(idEncryptedShare);
                     Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
                     break;

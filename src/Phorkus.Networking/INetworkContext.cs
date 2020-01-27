@@ -9,7 +9,7 @@ namespace Phorkus.Networking
         
         Node LocalNode { get; }
 
-        IRemotePeer GetPeerByPublicKey(PublicKey publicKey);
+        IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey);
     }
     
 }

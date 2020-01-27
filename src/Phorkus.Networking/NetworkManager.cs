@@ -35,7 +35,7 @@ namespace Phorkus.Networking
 
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
-        private readonly ConcurrentDictionary<PublicKey, bool> _authorizedKeys = new ConcurrentDictionary<PublicKey, bool>();
+        private readonly ConcurrentDictionary<ECDSAPublicKey, bool> _authorizedKeys = new ConcurrentDictionary<ECDSAPublicKey, bool>();
         private readonly ICrypto _crypto;
 
         private MessageFactory _messageFactory;
@@ -48,7 +48,7 @@ namespace Phorkus.Networking
             _crypto = crypto;
         }
 
-        public IRemotePeer GetPeerByPublicKey(PublicKey publicKey)
+        public IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey)
         {
             foreach (var worker in _clientWorkers)
             {
@@ -166,7 +166,7 @@ namespace Phorkus.Networking
             var rawPublicKey = _crypto.RecoverSignature(bytes, signature.Buffer.ToByteArray());
             if (rawPublicKey == null)
                 throw new Exception("Unable to recover public key from signature");
-            var publicKey = new PublicKey
+            var publicKey = new ECDSAPublicKey
             {
                 Buffer = ByteString.CopyFrom(rawPublicKey)
             };

@@ -3,9 +3,9 @@ using Phorkus.Proto;
 
 namespace Phorkus.Utility
 {
-    public class PublicKeyComparer : IComparer<PublicKey>
+    public class PublicKeyComparer : IComparer<ECDSAPublicKey>
     {
-        public int Compare(PublicKey x, PublicKey y)
+        public int Compare(ECDSAPublicKey x, ECDSAPublicKey y)
         {
             if (x == null) return y == null ? 0 : -1;
             if (y == null) return 1;

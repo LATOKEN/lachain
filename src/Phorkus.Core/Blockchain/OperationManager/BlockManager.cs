@@ -260,7 +260,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 .ToSignature();
         }
 
-        public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, PublicKey publicKey)
+        public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
             var result = _crypto.VerifySignature(blockHeader.ToHash256().Buffer.ToByteArray(),
                 signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());

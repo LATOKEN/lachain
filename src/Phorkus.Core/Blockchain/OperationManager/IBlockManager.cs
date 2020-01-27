@@ -20,7 +20,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         Signature Sign(BlockHeader block, KeyPair keyPair);
         
-        OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, PublicKey publicKey);
+        OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey);
         
         OperatingError VerifySignatures(Block block);
         

@@ -8,10 +8,10 @@ namespace Phorkus.Core.Blockchain
     {
         event EventHandler<TransactionReceipt> OnTransactionVerified;
         
-        void VerifyTransaction(TransactionReceipt acceptedTransaction, PublicKey publicKey);
+        void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey);
         void VerifyTransaction(TransactionReceipt acceptedTransaction);
 
-        bool VerifyTransactionImmediately(TransactionReceipt transaction, PublicKey publicKey);
+        bool VerifyTransactionImmediately(TransactionReceipt transaction, ECDSAPublicKey publicKey);
         bool VerifyTransactionImmediately(TransactionReceipt transaction, bool cacheEnabled = true);
         
         void Start();

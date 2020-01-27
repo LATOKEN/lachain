@@ -17,7 +17,7 @@ namespace Phorkus.Networking
         bool IsConnected(PeerAddress address);
 
         IRemotePeer Connect(PeerAddress address);
-        IRemotePeer GetPeerByPublicKey(PublicKey publicKey);
+        IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey);
         bool IsReady { get; }
 
         void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler);

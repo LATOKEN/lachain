@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Logger;
@@ -17,20 +16,21 @@ namespace Phorkus.Core.Network
         private readonly ILogger<MessageHandler> _logger;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
-        private readonly IConsensusBroadcaster _consensusBroadcaster;
+        private readonly IConsensusManager _consensusManager;
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
             ILogger<MessageHandler> logger,
             ITransactionPool transactionPool,
             IStateManager stateManager,
-            IConsensusBroadcaster consensusBroadcaster)
+            IConsensusManager consensusManager
+        )
         {
             _blockSynchronizer = blockSynchronizer;
             _logger = logger;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
-            _consensusBroadcaster = consensusBroadcaster;
+            _consensusManager = consensusManager;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -92,7 +92,7 @@ namespace Phorkus.Core.Network
 
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
-            _consensusBroadcaster.Dispatch(message);
+            _consensusManager.Dispatch(message);
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Phorkus.Networking
         
         public int Port { get; set; }
 
-        public PublicKey PublicKey { get; set; }
+        public ECDSAPublicKey PublicKey { get; set; }
 
         public static PeerAddress FromNode(Node node)
         {

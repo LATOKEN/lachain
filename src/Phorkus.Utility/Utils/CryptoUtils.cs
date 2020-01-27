@@ -8,21 +8,21 @@ namespace Phorkus.Utility.Utils
     {
         public const int PublicKeyLength = 33;
         
-        public static PublicKey ToPublicKey(this byte[] buffer)
+        public static ECDSAPublicKey ToPublicKey(this byte[] buffer)
         {
             if (buffer.Length != PublicKeyLength)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
-            return new PublicKey
+            return new ECDSAPublicKey
             {
                 Buffer = ByteString.CopyFrom(buffer)
             };
         }
 
-        public static PrivateKey ToPrivateKey(this byte[] buffer)
+        public static ECDSAPrivateKey ToPrivateKey(this byte[] buffer)
         {
             /*if (buffer.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(buffer));*/
-            return new PrivateKey
+            return new ECDSAPrivateKey
             {
                 Buffer = ByteString.CopyFrom(buffer)
             };
