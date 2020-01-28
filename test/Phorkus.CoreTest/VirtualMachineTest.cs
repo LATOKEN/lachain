@@ -1,5 +1,5 @@
 ﻿using Google.Protobuf;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using Phorkus.Core.Config;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
@@ -10,7 +10,6 @@ using Phorkus.Utility.Utils;
 
 namespace Phorkus.CoreTest
 {
-    [TestClass]
     public class VirtualMachineTest
     {
         private readonly IContainer _container;
@@ -31,7 +30,7 @@ namespace Phorkus.CoreTest
             _container = containerBuilder.Build();
         }
         
-        [TestMethod]
+        [Test]
         public void Test_VirtualMachine_InvokeContract()
         {
             var virtualMachine = _container.Resolve<IVirtualMachine>();

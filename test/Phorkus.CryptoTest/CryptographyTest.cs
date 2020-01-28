@@ -1,20 +1,13 @@
-using Google.Protobuf;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using Org.BouncyCastle.Asn1.Sec;
-using Phorkus.Core.Blockchain;
-using Phorkus.Core.Blockchain.Genesis;
-using Phorkus.Core.Config;
-using Phorkus.Core.Utils;
 using Phorkus.Crypto;
-using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.CoreTest
+namespace Phorkus.CryptoTest
 {
-    [TestClass]
     public class CryptographyTest
     {
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_SignRoundTrip()
         {
             var crypto = new BouncyCastle();
@@ -35,17 +28,17 @@ namespace Phorkus.CoreTest
             }
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_Sign()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_VerifySignature()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_RecoverSignature()
         {
             var crypto = new BouncyCastle();
@@ -77,37 +70,37 @@ namespace Phorkus.CoreTest
             System.Console.WriteLine("Restored address: " + crypto.ComputeAddress(publicKey2).ToHex());
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_ComputeAddress()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_ComputePublicKey()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_DecodePublicKey()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_AesEncrypt()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_AesDecrypt()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_SCrypt()
         {
         }
 
-        [TestMethod]
+        [Test]
         public void Test_BouncyCastle_GenerateRandomBytes()
         {
         }
