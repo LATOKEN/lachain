@@ -7,9 +7,9 @@ namespace Phorkus.Consensus.HoneyBadger
 {
     public class HoneyBadgerId : IProtocolIdentifier
     {
-        public HoneyBadgerId(int era)
+        public HoneyBadgerId(long era)
         {
-            Era = (long) era;
+            Era = era;
         }
         
         protected bool Equals(HoneyBadgerId other)

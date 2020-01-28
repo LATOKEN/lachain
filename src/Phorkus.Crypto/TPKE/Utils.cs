@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 using Phorkus.Crypto.MCL.BLS12_381;
 
@@ -6,12 +9,16 @@ namespace Phorkus.Crypto.TPKE
 {
     internal static class Utils 
     {
-        public static byte[] G(G1 g)
+        public static byte[] XorWithHash(G1 g, byte[] data)
         {
-            return G1.ToBytes(g).Keccak256();
+            var prng = new DigestRandomGenerator(new Sha3Digest());
+            prng.AddSeedMaterial(G1.ToBytes(g));
+            var pseudoRandomBytes = new byte[data.Length];
+            prng.NextBytes(pseudoRandomBytes);
+            return Xor(pseudoRandomBytes, data);
         }
 
-        public static G2 H(G1 g, byte[] w)
+        public static G2 HashToG2(G1 g, IEnumerable<byte> w)
         {
             var join = G1.ToBytes(g).Concat(w).ToArray();
             var res = new G2();
@@ -19,7 +26,7 @@ namespace Phorkus.Crypto.TPKE
             return res;
         }
 
-        public static byte[] XOR(byte[] lhs, byte[] rhs)
+        private static byte[] Xor(byte[] lhs, byte[] rhs)
         {
             if (lhs.Length != rhs.Length)
             {

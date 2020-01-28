@@ -20,7 +20,7 @@ namespace Phorkus.Crypto.TPKE
 
         public PartiallyDecryptedShare Decrypt(EncryptedShare share)
         {
-            var H = Utils.H(share.U, share.V);
+            var H = Utils.HashToG2(share.U, share.V);
             if (!Mcl.Pairing(G1.Generator, share.W).Equals(Mcl.Pairing(share.U, H)))
             {
                 // todo add appropriate catch

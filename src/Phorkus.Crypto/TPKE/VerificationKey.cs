@@ -52,7 +52,7 @@ namespace Phorkus.Crypto.TPKE
         public bool Verify(EncryptedShare share, PartiallyDecryptedShare part)
         {
             // todo check part.Id
-            if (!Mcl.Pairing(G1.Generator, share.W).Equals(Mcl.Pairing(share.U, Utils.H(share.U, share.V))))
+            if (!Mcl.Pairing(G1.Generator, share.W).Equals(Mcl.Pairing(share.U, Utils.HashToG2(share.U, share.V))))
             {
                 return false;
             }

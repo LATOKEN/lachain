@@ -12,33 +12,29 @@ namespace Phorkus.Crypto.TPKE
     public class PublicKey
     {
         public G1 Y;
-        static int LEN = 32;
-        public int t;
+        private readonly int _t;
 
-        public PublicKey(G1 _Y, int _t)
+        public PublicKey(G1 y, int t)
         {
-            Y = _Y;
-            t = _t;
+            Y = y;
+            _t = t;
         }
 
         public EncryptedShare Encrypt(IRawShare rawShare)
         {
             var r = Fr.GetRandom();
-
-            G1 U = G1.Generator * r;
-
-            G1 T = Y * r;
-            byte[] V = Utils.XOR(Utils.G(T), rawShare.ToBytes());
-
-            G2 W = Utils.H(U, V) * r;
-
-            return new EncryptedShare(U, V, W, rawShare.Id);
+            var u = G1.Generator * r;
+            var shareBytes = rawShare.ToBytes();
+            var t = Y * r;
+            var v = Utils.XorWithHash(t, shareBytes);
+            var w = Utils.HashToG2(u, v) * r;
+            return new EncryptedShare(u, v, w, rawShare.Id);
         }
 
         public PartiallyDecryptedShare Decode(TPKEPartiallyDecryptedShareMessage message)
         {
-            var Ui = G1.FromBytes(message.Share.ToByteArray());
-            return new PartiallyDecryptedShare(Ui, message.DecryptorId, message.ShareId);
+            var u = G1.FromBytes(message.Share.ToByteArray());
+            return new PartiallyDecryptedShare(u, message.DecryptorId, message.ShareId);
         }
 
         public TPKEPartiallyDecryptedShareMessage Encode(PartiallyDecryptedShare share)
@@ -53,9 +49,9 @@ namespace Phorkus.Crypto.TPKE
 
         public RawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
         {
-            if (us.Count < t)
+            if (us.Count < _t)
             {
-                throw new Exception("Unsufficient number of shares!");
+                throw new Exception("Insufficient number of shares!");
             }
 
             var ids = new HashSet<int>();
@@ -65,6 +61,7 @@ namespace Phorkus.Crypto.TPKE
                     throw new Exception($"Id {part.DecryptorId} was provided more than once!");
                 if (part.ShareId != share.Id)
                     throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
+                ids.Add(part.DecryptorId);
             }
 
             var ys = new List<G1>();
@@ -76,13 +73,13 @@ namespace Phorkus.Crypto.TPKE
                 ys.Add(part.Ui);
             }
 
-            var U = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
-            return new RawShare(Utils.XOR(Utils.G(U), share.V), share.Id);
+            var u = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
+            return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
         }
 
         public byte[] ToByteArray()
         {
-            return BitConverter.GetBytes(t).Concat(G1.ToBytes(Y)).ToArray();
+            return BitConverter.GetBytes(_t).Concat(G1.ToBytes(Y)).ToArray();
         }
 
         public static PublicKey FromBytes(byte[] buffer)

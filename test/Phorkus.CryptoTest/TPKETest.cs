@@ -10,8 +10,8 @@ namespace Phorkus.CryptoTest
     public class TPKETest 
     {
         const int N = 7, F = 2;
-        public Random _rnd;
-        private const int id = 132;
+        private Random _rnd;
+        private const int Id = 132;
         
         [SetUp]
         public void SetUp()
@@ -35,7 +35,7 @@ namespace Phorkus.CryptoTest
             
             var data = new byte[32];
             _rnd.NextBytes(data);
-            var share = new RawShare(data, id);
+            var share = new RawShare(data, Id);
 
             var enc = pubKey.Encrypt(share);
             
@@ -58,6 +58,27 @@ namespace Phorkus.CryptoTest
             Assert.AreEqual(share.Id, share2.Id);
             for (var i = 0; i < 32; ++i)
                 Assert.AreEqual(share.Data[i], share2.Data[i]);
+        }
+        
+        [Test]
+        [Repeat(100)]
+        public void CheckVerificationKeySerialization()
+        {
+            
+            var Y = G1.Generator * Fr.GetRandom();
+            var t = _rnd.Next();
+            var n = _rnd.Next(0, 10);
+            var Zs = new List<G2>();
+            for (var i = 0; i < n; ++i)
+            {
+                Zs.Add(G2.Generator * Fr.GetRandom());
+            }
+            
+            var vk = new VerificationKey(Y, t, Zs.ToArray());
+            var enc = vk.ToProto();
+            var vk2 = VerificationKey.FromProto(enc);
+            
+            Assert.True(vk.Equals(vk2));
         }
     }
 }
