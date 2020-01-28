@@ -1,10 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Consensus;
+using Phorkus.Core.Blockchain;
+using Phorkus.Core.Config;
+using Phorkus.Crypto;
+using Phorkus.Crypto.ThresholdSignature;
+using Phorkus.Crypto.TPKE;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
+using PublicKey = Phorkus.Crypto.TPKE.PublicKey;
 
 namespace Phorkus.Core.Consensus
 {
@@ -12,26 +20,41 @@ namespace Phorkus.Core.Consensus
     {
         private readonly ILogger<IConsensusBroadcaster> _logger;
         private readonly INetworkManager _networkManager;
-        private readonly ECDSAPublicKey[] _validatorsKeys;
-        private readonly int _myIndex;
+        private readonly IValidatorManager _validatorManager;
         private bool _terminated;
         private readonly IWallet _wallet;
-        public long CurrentEra { get; private set; }
+        private readonly KeyPair _keyPair;
+        private long CurrentEra { get; set; }
 
-        private Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
+        private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
 
         public ConsensusManager(
-            long startingEra, INetworkManager networkManager, ECDSAPublicKey[] validatorsKeys,
-            int myIndex, IWallet wallet, ILogger<IConsensusBroadcaster> logger
+            INetworkManager networkManager,
+            IValidatorManager validatorManager,
+            IConfigManager configManager,
+            ICrypto crypto,
+            ILogger<IConsensusBroadcaster> logger
         )
         {
+            var config = configManager.GetConfig<ConsensusConfig>("consensus");
             _networkManager = networkManager;
-            _wallet = wallet;
-            _validatorsKeys = validatorsKeys;
-            _myIndex = myIndex;
+            _validatorManager = validatorManager;
+            var tpkePrivateKey = PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes());
+            var maxFaulty = (config.ValidatorsEcdsaPublicKeys.Count - 1) / 3;
+            _wallet = new Wallet(config.ValidatorsEcdsaPublicKeys.Count, maxFaulty)
+            {
+                TpkePrivateKey = tpkePrivateKey,
+                TpkePublicKey = PublicKey.FromBytes(config.TpkePublicKey.HexToBytes()),
+                TpkeVerificationKey = VerificationKey.FromBytes(config.TpkeVerificationKey.HexToBytes()),
+                ThresholdSignaturePrivateKeyShare =
+                    PrivateKeyShare.FromBytes(config.ThresholdSignaturePrivateKey.HexToBytes()),
+                ThresholdSignaturePublicKeySet = new PublicKeySet(
+                    config.ThresholdSignaturePublicKeySet.Select(s => PublicKeyShare.FromBytes(s.HexToBytes())),
+                    maxFaulty)
+            };
             _logger = logger;
             _terminated = false;
-            CurrentEra = startingEra;
+            _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
         }
 
         public void AdvanceEra(long newEra)
@@ -40,6 +63,7 @@ namespace Phorkus.Core.Consensus
             {
                 throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
             }
+
             CurrentEra = newEra;
         }
 
@@ -50,12 +74,17 @@ namespace Phorkus.Core.Consensus
             InitializeEra(era);
             _eras[era].Dispatch(message);
         }
-        
+
+        public void Start(long startingEra)
+        {
+            CurrentEra = startingEra;
+        }
+
         public void Terminate()
         {
             _terminated = true;
         }
-        
+
         /**
          * Initialize consensus broadcaster for era if necessary. May throw if era is too far in the past or future
          */
@@ -70,7 +99,7 @@ namespace Phorkus.Core.Consensus
                 return;
             }
 
-            _eras[era] = new EraBroadcaster(era, _networkManager, _validatorsKeys, _myIndex, _wallet, _logger);
+            _eras[era] = new EraBroadcaster(era, _networkManager, _validatorManager, _keyPair, _wallet, _logger);
             _logger.LogDebug($"Created broadcaster for era {era}");
         }
     }

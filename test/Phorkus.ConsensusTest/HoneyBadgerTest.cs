@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Phorkus.Consensus;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.ThresholdSignature;
+using TrustedKeyGen = Phorkus.Crypto.TPKE.TrustedKeyGen;
 
 namespace Phorkus.ConsensusTest
 {
@@ -33,20 +34,20 @@ namespace Phorkus.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[N];
             _wallets = new IWallet[N];
-            var keygen = new TrustedKeyGen(N, F, new Random(0x0badfee0));
+            var keygen = new Crypto.ThresholdSignature.TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
             // todo is this correct f?
-            var tpkeKeygen = new TPKETrustedKeyGen(N, F);
+            var tpkeKeygen = new TrustedKeyGen(N, F);
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
                 _wallets[i] = new Wallet(N, F)
                 {
-                    PrivateKeyShare = shares[i],
-                    PublicKeySet = pubKeys,
-                    TpkePrivKey = tpkeKeygen.GetPrivKey(i),
-                    TpkePubKey = tpkeKeygen.GetPubKey(),
+                    ThresholdSignaturePrivateKeyShare = shares[i],
+                    ThresholdSignaturePublicKeySet = pubKeys,
+                    TpkePrivateKey = tpkeKeygen.GetPrivKey(i),
+                    TpkePublicKey = tpkeKeygen.GetPubKey(),
                     TpkeVerificationKey = tpkeKeygen.GetVerificationKey()
                 };
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, true);

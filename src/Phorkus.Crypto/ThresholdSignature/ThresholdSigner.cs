@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
+namespace Phorkus.Crypto.ThresholdSignature
 {
     public class ThresholdSigner : IThresholdSigner
     {

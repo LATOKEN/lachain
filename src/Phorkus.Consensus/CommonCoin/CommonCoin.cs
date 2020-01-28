@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.Messages;
+using Phorkus.Crypto.ThresholdSignature;
 using Phorkus.Proto;
-using Signature = Phorkus.Consensus.CommonCoin.ThresholdSignature.Signature;
+using Signature = Phorkus.Crypto.ThresholdSignature.Signature;
 
 namespace Phorkus.Consensus.CommonCoin
 {
@@ -22,9 +22,9 @@ namespace Phorkus.Consensus.CommonCoin
             CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
-            _publicKeySet = wallet.PublicKeySet ?? throw new ArgumentNullException(nameof(wallet.PublicKeySet));
+            _publicKeySet = wallet.ThresholdSignaturePublicKeySet ?? throw new ArgumentNullException(nameof(wallet.ThresholdSignaturePublicKeySet));
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
-            _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), wallet.PrivateKeyShare, _publicKeySet);
+            _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), wallet.ThresholdSignaturePrivateKeyShare, _publicKeySet);
         }
 
         public void CheckResult()

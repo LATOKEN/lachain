@@ -4,7 +4,7 @@ using System.Data;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
-using Phorkus.Consensus.TPKE;
+using Phorkus.Crypto.TPKE;
 
 namespace Phorkus.Consensus.CommonSubset
 {

@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Linq;
 using NUnit.Framework;
-using Org.BouncyCastle.Crypto.Digests;
 using Phorkus.Consensus;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
-using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
-using Phorkus.Proto;
+using Phorkus.Crypto.TPKE;
 
 namespace Phorkus.ConsensusTest
 {

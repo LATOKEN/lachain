@@ -4,7 +4,7 @@ using System.Linq;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
+namespace Phorkus.Crypto.ThresholdSignature
 {
     public class TrustedKeyGen
     {
@@ -12,7 +12,7 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
         private readonly int _degree;
         private readonly int _parties;
 
-        public TrustedKeyGen(int n, int f, Random rng)
+        public TrustedKeyGen(int n, int f)
         {
             if (n <= 3 * f) throw new ArgumentException($"n should be greater than 3*f, but {n} <= 3 * {f} = {3 * f}");
             _degree = f;

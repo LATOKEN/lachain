@@ -1,8 +1,7 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
-using Phorkus.Consensus.TPKE;
+using Phorkus.Crypto.ThresholdSignature;
+using Phorkus.Crypto.TPKE;
+using PublicKey = Phorkus.Crypto.TPKE.PublicKey;
 
 namespace Phorkus.Consensus
 {
@@ -11,16 +10,16 @@ namespace Phorkus.Consensus
         int N { get; }
         int F { get; }
         
-        TPKEPubKey TpkePubKey { get; set; }
+        PublicKey TpkePublicKey { get; set; }
         
-        TPKEPrivKey TpkePrivKey { get; set; }
+        PrivateKey TpkePrivateKey { get; set; }
 
-        TPKEVerificationKey TpkeVerificationKey { get; set; }
+        VerificationKey TpkeVerificationKey { get; set; }
         
-        PublicKeySet PublicKeySet { get; set; }
+        PublicKeySet ThresholdSignaturePublicKeySet { get; set; }
         
-        PrivateKeyShare PrivateKeyShare { get; set; }
+        PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; set; }
         
-        ISet<IProtocolIdentifier> ProtocolIds { get; }
+        ISet<IProtocolIdentifier> ProtocolIds { get; } // TODO: delete this
     }
 }

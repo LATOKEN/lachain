@@ -2,10 +2,9 @@ using System;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Phorkus.Consensus.Messages;
-using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.TPKE;
 using Phorkus.Proto;
-
 
 namespace Phorkus.Consensus.ReliableBroadcast
 {

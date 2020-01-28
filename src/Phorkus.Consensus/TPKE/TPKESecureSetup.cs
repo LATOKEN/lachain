@@ -4,6 +4,7 @@ using System.Linq;
 using Google.Protobuf;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.TPKE;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
@@ -16,7 +17,7 @@ namespace Phorkus.Consensus.TPKE
     {
         private readonly TPKESetupId _tpkeSetupId;
         private ResultStatus _requested;
-        private TPKEKeys _result;
+        private Keys _result;
 
         private Fr[] _P;
         private Fr[] _received;
@@ -76,7 +77,7 @@ namespace Phorkus.Consensus.TPKE
                     case ProtocolRequest<TPKESetupId, object> request:
                         HandleInputMessage(request);
                         break;
-                    case ProtocolResult<TPKESetupId, TPKEKeys> _:
+                    case ProtocolResult<TPKESetupId, Keys> _:
                         Terminated = true;
                         break;
                     default:
@@ -275,13 +276,13 @@ namespace Phorkus.Consensus.TPKE
             for (var i = 0; i < N; ++i)
                 Y += _hiddenPolyG1[i][0];
             
-            var pubKey = new TPKEPubKey(Y, F);
+            var pubKey = new PublicKey(Y, F);
 
             var value = Fr.FromInt(0);
             for (var i = 0; i < N; ++i)
                 value += _received[i];
             
-            var privKey = new TPKEPrivKey(value, GetMyId());
+            var privKey = new PrivateKey(value, GetMyId());
 
             var tmp = new List<G2>();
             for (var i = 0; i < N; ++i)
@@ -293,9 +294,9 @@ namespace Phorkus.Consensus.TPKE
                 }
                 tmp.Add(cur);
             }
-            var verificationKey =  new TPKEVerificationKey(Y, F, tmp.ToArray());
+            var verificationKey =  new VerificationKey(Y, F, tmp.ToArray());
             
-            _result = new TPKEKeys(pubKey, privKey, verificationKey);
+            _result = new Keys(pubKey, privKey, verificationKey);
             CheckResult();
         }
 
@@ -305,7 +306,7 @@ namespace Phorkus.Consensus.TPKE
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
             _broadcaster.InternalResponse(
-                new ProtocolResult<TPKESetupId, TPKEKeys>(_tpkeSetupId, _result));
+                new ProtocolResult<TPKESetupId, Keys>(_tpkeSetupId, _result));
         }
     }
 }

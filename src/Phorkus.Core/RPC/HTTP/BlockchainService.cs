@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using AustinHarris.JsonRpc;
+﻿using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.JSON;
 using Phorkus.Core.Utils;
-using Phorkus.Proto;
 using Phorkus.Storage.State;
+using Phorkus.Utility.JSON;
 using Phorkus.Utility.Utils;
 using HexUtils = Phorkus.Core.Utils.HexUtils;
 

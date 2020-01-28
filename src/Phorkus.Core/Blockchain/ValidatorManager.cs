@@ -21,7 +21,7 @@ namespace Phorkus.Core.Blockchain
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             if (config is null)
                 throw new ArgumentNullException(nameof(config));
-            Validators = config.ValidatorsKeys
+            Validators = config.ValidatorsEcdsaPublicKeys
                 .Select(key => key.HexToBytes())
                 .OrderBy(key => key.Sha256().ToHex())
                 .Select(key => key.ToPublicKey())

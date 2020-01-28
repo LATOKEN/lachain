@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.TPKE;
 using Phorkus.Proto;
 
 namespace Phorkus.Consensus.TPKE
@@ -12,10 +13,10 @@ namespace Phorkus.Consensus.TPKE
         private const int DEALER_ID = 0;
         private TPKESetupId _tpkeSetupId;
         private ResultStatus _requested;
-        private TPKEPrivKey _privKey;
-        private TPKEPubKey _pubKey;
-        private TPKEVerificationKey _verificationKey;
-        private TPKEKeys _result;
+        private PrivateKey _privKey;
+        private PublicKey _pubKey;
+        private VerificationKey _verificationKey;
+        private Keys _result;
         
 
         public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, tpkeSetupId, broadcaster)
@@ -48,7 +49,7 @@ namespace Phorkus.Consensus.TPKE
                     case ProtocolRequest<TPKESetupId, object> request:
                         HandleInputMessage(request);
                         break;
-                    case ProtocolResult<TPKESetupId, TPKEKeys> _:
+                    case ProtocolResult<TPKESetupId, Keys> _:
                         Terminated = true;
                         break;
                     default:
@@ -68,13 +69,13 @@ namespace Phorkus.Consensus.TPKE
             }
 
             byte[] privEnc = tpkeKeys.PrivateKey.ToByteArray();
-            _privKey = new TPKEPrivKey(Fr.FromBytes(privEnc), GetMyId());
+            _privKey = new PrivateKey(Fr.FromBytes(privEnc), GetMyId());
 
             byte[] pubEnc = tpkeKeys.PublicKey.ToByteArray();
-            _pubKey = new TPKEPubKey(G1.FromBytes(pubEnc), F);
+            _pubKey = new PublicKey(G1.FromBytes(pubEnc), F);
 
-            _verificationKey = TPKEVerificationKey.FromProto(tpkeKeys.VerificationKey);
-            _result = new TPKEKeys(_pubKey, _privKey, _verificationKey);
+            _verificationKey = VerificationKey.FromProto(tpkeKeys.VerificationKey);
+            _result = new Keys(_pubKey, _privKey, _verificationKey);
 
             CheckResult();
         }
@@ -96,7 +97,7 @@ namespace Phorkus.Consensus.TPKE
                 P[i] = Fr.GetRandom();
             }
             
-            var pubKey = new TPKEPubKey(G1.Generator * P[0], F);
+            var pubKey = new PublicKey(G1.Generator * P[0], F);
 
             var Zs = new List<G2>();
             for (var i = 0; i < N; ++i)
@@ -112,7 +113,7 @@ namespace Phorkus.Consensus.TPKE
                 Zs.Add(G2.Generator * res);
             }
             
-            var verificationKey = new TPKEVerificationKey(G1.Generator * P[0], F, Zs.ToArray());
+            var verificationKey = new VerificationKey(G1.Generator * P[0], F, Zs.ToArray());
 
             for (var i = 0; i < N; ++i)
             {
@@ -125,7 +126,7 @@ namespace Phorkus.Consensus.TPKE
                     cur *= at;
                 }
                 
-                var privKey = new TPKEPrivKey(res, i);
+                var privKey = new PrivateKey(res, i);
                 
                 // todo add full serialziation for pub and priv key
                 var msg = CreateTPKEPrivateKeyMessage(pubKey, privKey, verificationKey, i);
@@ -133,7 +134,7 @@ namespace Phorkus.Consensus.TPKE
             }
         }
         
-        private ConsensusMessage CreateTPKEPrivateKeyMessage(TPKEPubKey pubKey, TPKEPrivKey privKey, TPKEVerificationKey verificationKey, int to)
+        private ConsensusMessage CreateTPKEPrivateKeyMessage(PublicKey pubKey, PrivateKey privKey, VerificationKey verificationKey, int to)
         {
             var message = new ConsensusMessage
             {
@@ -160,7 +161,7 @@ namespace Phorkus.Consensus.TPKE
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
             _broadcaster.InternalResponse(
-                new ProtocolResult<TPKESetupId, TPKEKeys>(_tpkeSetupId, _result));
+                new ProtocolResult<TPKESetupId, Keys>(_tpkeSetupId, _result));
         }
     }
 }

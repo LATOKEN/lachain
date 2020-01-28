@@ -5,6 +5,7 @@ using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.TPKE;
 
 namespace Phorkus.ConsensusTest
 {
@@ -14,7 +15,7 @@ namespace Phorkus.ConsensusTest
         private DeliveryService _deliveryService;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<TPKESetupId, TPKEKeys>[] _resultInterceptors;
+        private ProtocolInvoker<TPKESetupId, Keys>[] _resultInterceptors;
         private const int N = 10;
         private const int T = 5;
         private Random _rnd;
@@ -27,11 +28,11 @@ namespace Phorkus.ConsensusTest
             _deliveryService = new DeliveryService();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
-            _resultInterceptors = new ProtocolInvoker<TPKESetupId, TPKEKeys>[N];
+            _resultInterceptors = new ProtocolInvoker<TPKESetupId, Keys>[N];
             _wallets = new IWallet[N];
             for (var i = 0; i < N; ++i)
             {
-                _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, TPKEKeys>();
+                _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, Keys>();
                 _wallets[i] = new Wallet(N, T);
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
             }

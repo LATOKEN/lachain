@@ -1,6 +1,6 @@
 ﻿using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
+namespace Phorkus.Crypto.ThresholdSignature
 {
     public class PrivateKeyShare
     {
@@ -22,6 +22,16 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
             mappedMessage.SetHashOf(message);
             mappedMessage.Mul(mappedMessage, _privateKey);
             return new SignatureShare(mappedMessage);
+        }
+
+        public byte[] ToByteArray()
+        {
+            return Fr.ToBytes(_privateKey);
+        }
+
+        public static PrivateKeyShare FromBytes(byte[] buffer)
+        {
+            return new PrivateKeyShare(Fr.FromBytes(buffer));
         }
     }
 }

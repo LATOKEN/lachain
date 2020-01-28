@@ -3,8 +3,8 @@ using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
-using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.TPKE;
 
 namespace Phorkus.ConsensusTest
 {

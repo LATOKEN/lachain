@@ -1,13 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
-using Phorkus.Consensus;
-using Phorkus.Consensus.BinaryAgreement;
-using Phorkus.Consensus.Messages;
-using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
-using Phorkus.Utility.Utils;
+using Phorkus.Crypto.TPKE;
 
 namespace Phorkus.ConsensusTest
 {
@@ -37,9 +32,9 @@ namespace Phorkus.ConsensusTest
                 Zs.Add(G2.Generator * Fr.GetRandom());
             }
             
-            var vk = new TPKEVerificationKey(Y, t, Zs.ToArray());
+            var vk = new VerificationKey(Y, t, Zs.ToArray());
             var enc = vk.ToProto();
-            var vk2 = TPKEVerificationKey.FromProto(enc);
+            var vk2 = VerificationKey.FromProto(enc);
             
             Assert.True(vk.Equals(vk2));
         }

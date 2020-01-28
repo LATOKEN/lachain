@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
-using Phorkus.Proto;
-using Phorkus.Utility.Utils;
+using Phorkus.Crypto.TPKE;
 
 namespace Phorkus.CryptoTest
 {
@@ -27,11 +24,11 @@ namespace Phorkus.CryptoTest
         [Repeat(100)]
         public void ThresholdKeyGen()
         {
-            var keygen = new TPKETrustedKeyGen(N, F);
+            var keygen = new TrustedKeyGen(N, F);
 
             var pubKey = keygen.GetPubKey();
             var verificationKey = keygen.GetVerificationKey();
-            var privKeyTmp = new List<TPKEPrivKey>();
+            var privKeyTmp = new List<PrivateKey>();
             for (var i = 0; i < N; ++i)
                 privKeyTmp.Add(keygen.GetPrivKey(i));
             var privKey = privKeyTmp.ToArray();

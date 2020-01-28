@@ -133,10 +133,5 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             z.Mul(x, y);
             return z;
         }
-
-        public byte[] ToBytes()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

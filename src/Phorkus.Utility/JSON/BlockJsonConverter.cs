@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.JSON
+namespace Phorkus.Utility.JSON
 {
     public static class BlockJsonConverter
     {

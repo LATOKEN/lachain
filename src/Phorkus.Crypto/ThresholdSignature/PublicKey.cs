@@ -1,6 +1,6 @@
 ﻿using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
+namespace Phorkus.Crypto.ThresholdSignature
 {
     public class PublicKey
     {
@@ -16,6 +16,16 @@ namespace Phorkus.Consensus.CommonCoin.ThresholdSignature
             var mappedMessage = new G2();
             mappedMessage.SetHashOf(message);
             return Mcl.Pairing(RawKey, mappedMessage).Equals(Mcl.Pairing(G1.Generator, signature.RawSignature));
+        }
+
+        public byte[] ToByteArray()
+        {
+            return G1.ToBytes(RawKey);
+        }
+
+        public static PublicKey FromBytes(byte[] buffer)
+        {
+            return new PublicKey(G1.FromBytes(buffer));
         }
     }
 }

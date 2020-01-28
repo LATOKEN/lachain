@@ -1,14 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
+﻿using System.Linq;
 using Org.BouncyCastle.Security;
-using Phorkus.Crypto;
 using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Phorkus.Consensus.TPKE
+namespace Phorkus.Crypto.TPKE
 {
-    static class TPKEUtils 
+    internal static class Utils 
     {
         public static byte[] G(G1 g)
         {

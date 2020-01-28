@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using Phorkus.Crypto.MCL.BLS12_381;
+﻿using Phorkus.Crypto.MCL.BLS12_381;
 
-namespace Phorkus.Consensus.TPKE
+namespace Phorkus.Crypto.TPKE
 {
     public class PartiallyDecryptedShare
     {

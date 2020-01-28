@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
-using Phorkus.Consensus.CommonCoin.ThresholdSignature;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Crypto.ThresholdSignature;
 
 namespace Phorkus.CryptoTest
 {
@@ -13,7 +13,7 @@ namespace Phorkus.CryptoTest
         {
             Mcl.Init();
             const int n = 7, f = 2;
-            var keygen = new TrustedKeyGen(n, f, new Random(123321));
+            var keygen = new TrustedKeyGen(n, f);
             var shares = keygen.GetPrivateShares().ToArray();
             var data = BitConverter.GetBytes(0xdeadbeef);
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);

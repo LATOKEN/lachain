@@ -1,21 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Proto;
 
-namespace Phorkus.Consensus.TPKE
+namespace Phorkus.Crypto.TPKE
 {
-    public class TPKEVerificationKey : IEquatable<TPKEVerificationKey>
+    public class VerificationKey : IEquatable<VerificationKey>
     {
         public G1 Y;
         public int t;
         public G2[] Zs;
 
-        public TPKEVerificationKey(G1 _Y, int _t, G2[] zs)
+        public VerificationKey(G1 _Y, int _t, G2[] zs)
         {
             Y = _Y;
             t = _t;
@@ -38,7 +36,7 @@ namespace Phorkus.Consensus.TPKE
             return tmp;
         }
 
-        public static TPKEVerificationKey FromProto(TPKEVerificationKeyMessage enc)
+        public static VerificationKey FromProto(TPKEVerificationKeyMessage enc)
         {
             var Y = G1.FromBytes(enc.Y.ToByteArray());
             var t = enc.T;
@@ -47,13 +45,14 @@ namespace Phorkus.Consensus.TPKE
             {
                 Zs.Add(G2.FromBytes(z.ToByteArray()));
             }
-            return new TPKEVerificationKey(Y, t, Zs.ToArray());
+
+            return new VerificationKey(Y, t, Zs.ToArray());
         }
 
         public bool Verify(EncryptedShare share, PartiallyDecryptedShare part)
         {
             // todo check part.Id
-            if (!Mcl.Pairing(G1.Generator, share.W).Equals(Mcl.Pairing(share.U, TPKEUtils.H(share.U, share.V))))
+            if (!Mcl.Pairing(G1.Generator, share.W).Equals(Mcl.Pairing(share.U, Utils.H(share.U, share.V))))
             {
                 return false;
             }
@@ -66,7 +65,7 @@ namespace Phorkus.Consensus.TPKE
             return true;
         }
 
-        public bool Equals(TPKEVerificationKey other)
+        public bool Equals(VerificationKey other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -78,7 +77,7 @@ namespace Phorkus.Consensus.TPKE
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((TPKEVerificationKey) obj);
+            return Equals((VerificationKey) obj);
         }
 
         public override int GetHashCode()
@@ -90,6 +89,45 @@ namespace Phorkus.Consensus.TPKE
                 hashCode = (hashCode * 397) ^ (Zs != null ? Zs.GetHashCode() : 0);
                 return hashCode;
             }
+        }
+
+
+        private static byte[] EncodeG2Delimited(G2 x)
+        {
+            var bytes = G2.ToBytes(x);
+            return BitConverter.GetBytes(bytes.Length).Concat(bytes).ToArray();
+        }
+
+        private static int DecodeG2Delimited(byte[] buffer, int index, out G2 result)
+        {
+            var len = BitConverter.ToInt32(buffer, index);
+            result = G2.FromBytes(buffer.Skip(index + 4).Take(len).ToArray());
+            return len + 4;
+        }
+
+        public byte[] ToByteArray()
+        {
+            var encT = BitConverter.GetBytes(t);
+            var encY = G1.ToBytes(Y);
+            encY = BitConverter.GetBytes(encY.Length).Concat(encY).ToArray();
+            var encZs = Zs.Select(EncodeG2Delimited).Aggregate((x, y) => x.Concat(y).ToArray());
+            return encT.Concat(encY).Concat(encZs).ToArray();
+        }
+
+        public static VerificationKey FromBytes(byte[] buffer)
+        {
+            var decT = BitConverter.ToInt32(buffer, 0);
+            var idx = 4;
+            var len = BitConverter.ToInt32(buffer, idx);
+            idx += 4;
+            var decY = G1.FromBytes(buffer.Skip(idx).Take(len).ToArray());
+            var decZs = new List<G2>();
+            for (idx += len; idx < buffer.Length;)
+            {
+                idx += DecodeG2Delimited(buffer, idx, out var decZ);
+                decZs.Add(decZ);
+            }
+            return new VerificationKey(decY, decT, decZs.ToArray());
         }
     }
 }

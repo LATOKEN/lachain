@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Threading;
 using Phorkus.Core.Blockchain;
-using Phorkus.Core.Consensus;
 using Phorkus.Core.CLI;
 using Phorkus.Core.Config;
+using Phorkus.Core.Consensus;
 using Phorkus.Core.DI;
 using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
@@ -56,7 +56,7 @@ namespace Phorkus.Console
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var storageConfig = configManager.GetConfig<StorageConfig>("storage");
             
-            var keyPair = new KeyPair(consensusConfig.PrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            var keyPair = new KeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
             
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
@@ -89,7 +89,7 @@ namespace Phorkus.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
-            consensusManager.Start();
+            consensusManager.Start(1);
             blockSynchronizer.Start();
             commandManager.Start(keyPair);
             rpcManager.Start();

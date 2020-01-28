@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using Google.Protobuf;
+using Phorkus.Consensus;
+using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Proto;
 
-namespace Phorkus.Consensus.TPKE
+namespace Phorkus.Crypto.TPKE
 {
-    public class TPKEPubKey 
+    public class PublicKey
     {
         public G1 Y;
         static int LEN = 32;
         public int t;
 
-        public TPKEPubKey(G1 _Y, int _t)
+        public PublicKey(G1 _Y, int _t)
         {
             Y = _Y;
             t = _t;
@@ -26,10 +28,10 @@ namespace Phorkus.Consensus.TPKE
             G1 U = G1.Generator * r;
 
             G1 T = Y * r;
-            byte[] V = TPKEUtils.XOR(TPKEUtils.G(T), rawShare.ToBytes());
+            byte[] V = Utils.XOR(Utils.G(T), rawShare.ToBytes());
 
-            G2 W = TPKEUtils.H(U, V) * r;
-            
+            G2 W = Utils.H(U, V) * r;
+
             return new EncryptedShare(U, V, W, rawShare.Id);
         }
 
@@ -54,8 +56,8 @@ namespace Phorkus.Consensus.TPKE
             if (us.Count < t)
             {
                 throw new Exception("Unsufficient number of shares!");
-            } 
-            
+            }
+
             var ids = new HashSet<int>();
             foreach (var part in us)
             {
@@ -64,7 +66,7 @@ namespace Phorkus.Consensus.TPKE
                 if (part.ShareId != share.Id)
                     throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
             }
-            
+
             var ys = new List<G1>();
             var xs = new List<Fr>();
 
@@ -75,7 +77,19 @@ namespace Phorkus.Consensus.TPKE
             }
 
             var U = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
-            return new RawShare(TPKEUtils.XOR(TPKEUtils.G(U), share.V), share.Id);
+            return new RawShare(Utils.XOR(Utils.G(U), share.V), share.Id);
+        }
+
+        public byte[] ToByteArray()
+        {
+            return BitConverter.GetBytes(t).Concat(G1.ToBytes(Y)).ToArray();
+        }
+
+        public static PublicKey FromBytes(byte[] buffer)
+        {
+            var decT = BitConverter.ToInt32(buffer, 0);
+            var decY = G1.FromBytes(buffer.Skip(4).ToArray());
+            return new PublicKey(decY, decT);
         }
     }
 }

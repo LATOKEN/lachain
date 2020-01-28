@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Data.Common;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Phorkus.Crypto.MCL.BLS12_381
@@ -48,6 +46,18 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             }
 
             return g;
+        }
+        
+        public static byte[] ToBytesDelimited(G2 g)
+        {
+            var buffer = ToBytes(g);
+            return BitConverter.GetBytes(buffer.Length).Concat(buffer).ToArray();
+        }
+
+        public static G2 FromBytesDelimited(byte[] buffer)
+        {
+            var len = BitConverter.ToInt32(buffer, 0);
+            return FromBytes(buffer.Skip(4).Take(len).ToArray());
         }
 
         public static G2 Generator = GetGenerator();

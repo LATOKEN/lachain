@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Org.BouncyCastle.Asn1.Pkcs;
 using Phorkus.Consensus.CommonSubset;
 using Phorkus.Consensus.Messages;
-using Phorkus.Consensus.TPKE;
+using Phorkus.Crypto.TPKE;
 using Phorkus.Proto;
 
 namespace Phorkus.Consensus.HoneyBadger
@@ -27,9 +26,9 @@ namespace Phorkus.Consensus.HoneyBadger
         
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
 
-        private TPKEPubKey PubKey => _wallet.TpkePubKey;
-        private TPKEPrivKey PrivKey => _wallet.TpkePrivKey;
-        private TPKEVerificationKey VerificationKey => _wallet.TpkeVerificationKey;
+        private PublicKey PubKey => _wallet.TpkePublicKey;
+        private PrivateKey PrivKey => _wallet.TpkePrivateKey;
+        private VerificationKey VerificationKey => _wallet.TpkeVerificationKey;
 
         private bool _takenSet = false;
 

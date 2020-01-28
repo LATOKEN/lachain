@@ -6,7 +6,7 @@ namespace Phorkus.Core.Consensus
     {
         void AdvanceEra(long newEra);
         void Dispatch(ConsensusMessage message);
-
+        void Start(long startingEra);
         void Terminate();
     }
 }
