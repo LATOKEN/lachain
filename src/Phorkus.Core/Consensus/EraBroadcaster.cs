@@ -18,12 +18,16 @@ using MessageEnvelope = Phorkus.Consensus.Messages.MessageEnvelope;
 
 namespace Phorkus.Core.Consensus
 {
+    /**
+     * Stores and dispatches messages between set of protocol of one player within one era (block)
+     */
     public class EraBroadcaster : IConsensusBroadcaster
     {
         private readonly ILogger<IConsensusBroadcaster> _logger;
-        private readonly INetworkManager _networkManager;
         private readonly IValidatorManager _validatorManager;
         private readonly long _era;
+        private readonly IMessageDeliverer _messageDeliverer;
+        private readonly IMessageFactory _messageFactory;
         private readonly IWallet _wallet;
         private readonly KeyPair _keyPair;
         private bool _terminated;
@@ -41,11 +45,12 @@ namespace Phorkus.Core.Consensus
             new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         public EraBroadcaster(
-            long era, INetworkManager networkManager, IValidatorManager validatorManager,
-            KeyPair keyPair, IWallet wallet, ILogger<IConsensusBroadcaster> logger
+            long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
+            KeyPair keyPair, IWallet wallet, ICrypto crypto, ILogger<IConsensusBroadcaster> logger
         )
         {
-            _networkManager = networkManager;
+            _messageDeliverer = messageDeliverer;
+            _messageFactory = new MessageFactory(keyPair, crypto);
             _validatorManager = validatorManager;
             _keyPair = keyPair;
             _wallet = wallet;
@@ -64,10 +69,10 @@ namespace Phorkus.Core.Consensus
 
         public void Broadcast(ConsensusMessage message)
         {
-            var payload = _networkManager.MessageFactory.ConsensusMessage(message);
+            var payload = _messageFactory.ConsensusMessage(message);
             foreach (var publicKey in _validatorManager.Validators)
             {
-                _networkManager.GetPeerByPublicKey(publicKey).Send(payload);
+                _messageDeliverer.SendTo(publicKey, payload);
             }
         }
 
@@ -78,8 +83,8 @@ namespace Phorkus.Core.Consensus
                 throw new ArgumentException("Validator index must be positive", nameof(index));
             }
 
-            var payload = _networkManager.MessageFactory.ConsensusMessage(message);
-            _networkManager.GetPeerByPublicKey(_validatorManager.GetPublicKey((uint) index)).Send(payload);
+            var payload = _messageFactory.ConsensusMessage(message);
+            _messageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index), payload);
         }
 
         public void Dispatch(ConsensusMessage message)

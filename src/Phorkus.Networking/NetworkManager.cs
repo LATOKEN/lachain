@@ -9,22 +9,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Phorkus.Crypto;
+using Phorkus.Logger;
 using Phorkus.Networking.ZeroMQ;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Networking
 {
-    public class NetworkManager : INetworkManager, INetworkBroadcaster, INetworkContext
+    public class NetworkManager : INetworkManager, INetworkBroadcaster, INetworkContext, IMessageDeliverer
     {
         public event OnClientConnectedDelegate OnClientConnected;
         public event OnClientClosedDelegate OnClientClosed;
+        public event OnClientHandshakeDelegate OnClientHandshake;
 
         public IDictionary<PeerAddress, IRemotePeer> ActivePeers
         {
             get
             {
-                return _clientWorkers.Where(entry => entry.Value.Node != null && _authorizedKeys.Keys.Contains(entry.Value.Node.PublicKey))
+                return _clientWorkers.Where(entry =>
+                        entry.Value.Node != null && _authorizedKeys.Keys.Contains(entry.Value.Node.PublicKey))
                     .ToDictionary(entry => entry.Value.Address, entry => entry.Value as IRemotePeer);
             }
         }
@@ -35,17 +38,22 @@ namespace Phorkus.Networking
 
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
-        private readonly ConcurrentDictionary<ECDSAPublicKey, bool> _authorizedKeys = new ConcurrentDictionary<ECDSAPublicKey, bool>();
+
+        private readonly ConcurrentDictionary<ECDSAPublicKey, bool> _authorizedKeys =
+            new ConcurrentDictionary<ECDSAPublicKey, bool>();
+
         private readonly ICrypto _crypto;
+        private readonly ILogger<INetworkManager> _logger;
 
         private MessageFactory _messageFactory;
         private ServerWorker _serverWorker;
         private IMessageHandler _messageHandler;
         private NetworkConfig _networkConfig;
 
-        public NetworkManager(ICrypto crypto)
+        public NetworkManager(ICrypto crypto, ILogger<INetworkManager> logger)
         {
             _crypto = crypto;
+            _logger = logger;
         }
 
         public IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey)
@@ -58,16 +66,17 @@ namespace Phorkus.Networking
                 if (pk.Equals(publicKey))
                     return worker.Value;
             }
-            throw new Exception("Unable to resolve peer by public key");
+
+            return null;
         }
 
         public bool IsConnected(PeerAddress address)
         {
             return _clientWorkers.ContainsKey(address);
         }
-        
+
         private readonly object _hasPeersToConnect = new object();
-        
+
         private bool _IsSelfConnect(IPAddress ipAddress)
         {
             var localHost = new IPAddress(0x0100007f);
@@ -84,6 +93,7 @@ namespace Phorkus.Networking
                 {
                     continue;
                 }
+
                 foreach (var ip in ni.GetIPProperties().UnicastAddresses)
                 {
                     Console.WriteLine(ip.Address);
@@ -94,9 +104,10 @@ namespace Phorkus.Networking
                     return true;
                 }
             }
+
             return false;
         }
-        
+
         public IRemotePeer Connect(PeerAddress address)
         {
             lock (_hasPeersToConnect)
@@ -136,10 +147,7 @@ namespace Phorkus.Networking
                     _clientWorkers.Remove(address);
                 }
             };
-            remotePeer.OnError += (worker, message) =>
-            {
-                Console.Error.WriteLine("Error: " + message);
-            };
+            remotePeer.OnError += (worker, message) => { Console.Error.WriteLine("Error: " + message); };
             if (_authorizedKeys.Keys.Contains(address.PublicKey))
                 return;
             remotePeer.Send(_messageFactory.HandshakeRequest(LocalNode));
@@ -182,6 +190,7 @@ namespace Phorkus.Networking
             return envelope;
         }
 
+        // TODO: handshake is unsafe, need to do actual challenge and response 
         private void _HandshakeRequest(Signature signature, HandshakeRequest request)
         {
             if (signature is null)
@@ -199,6 +208,7 @@ namespace Phorkus.Networking
             peer?.Send(_messageFactory.HandshakeReply(LocalNode));
         }
 
+        // TODO: handshake is unsafe, need to do actual challenge and response 
         private void _HandshakeReply(Signature signature, HandshakeReply reply)
         {
             if (signature is null)
@@ -215,6 +225,7 @@ namespace Phorkus.Networking
                 return;
             _clientWorkers[address].Node = reply.Node;
             _authorizedKeys.TryAdd(publicKey, true);
+            OnClientHandshake?.Invoke(reply.Node);
         }
 
         private void _HandleMessageUnsafe(NetworkMessage message)
@@ -304,7 +315,7 @@ namespace Phorkus.Networking
         }
 
         public bool IsReady => _serverWorker != null && _serverWorker.IsActive;
-        
+
         public void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler)
         {
             _messageHandler = messageHandler;
@@ -326,9 +337,24 @@ namespace Phorkus.Networking
             _serverWorker.OnClose += _HandleClose;
             _serverWorker.OnError += _HandleError;
             _serverWorker.Start();
+            OnClientHandshake += SendQueuedMessages;
             Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
             foreach (var peer in networkConfig.Peers)
                 Connect(PeerAddress.Parse(peer));
+            
+        }
+
+        private void SendQueuedMessages(Node node)
+        {
+            _logger.LogDebug($"Handshake with node {node.Address} with public key {node.PublicKey} is done, sending queued messages");
+            var publicKey = node.PublicKey;
+            var peer = GetPeerByPublicKey(publicKey) ?? throw new InvalidOperationException("Peer did handshake but is not longer available");
+            if (!_messageQueue.TryRemove(publicKey, out var messages)) return;
+            foreach (var message in messages)
+            {
+                peer.Send(message);
+            }
+            _logger.LogDebug($"Sent {messages.Count} queued messages to node {node.Address}");
         }
 
         private void _ConnectWorker()
@@ -354,6 +380,16 @@ namespace Phorkus.Networking
                     }
                 }
             }
+        }
+
+        // TODO: Implement some delivery persistence and policies
+        private readonly ConcurrentDictionary<ECDSAPublicKey, List<NetworkMessage>> _messageQueue =
+            new ConcurrentDictionary<ECDSAPublicKey, List<NetworkMessage>>();
+
+        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
+        {
+            _messageQueue.GetOrAdd(publicKey, new List<NetworkMessage>()).Add(networkMessage);
+            GetPeerByPublicKey(publicKey)?.Send(networkMessage);
         }
 
         public void Stop()

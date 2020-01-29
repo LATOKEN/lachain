@@ -154,10 +154,10 @@ namespace Phorkus.Core.Network
             if (_networkContext.ActivePeers.Values.Count == 0)
             {
                 /* if we dont have peers for 1 second than we don't need them */
-                var diff = TimeUtils.CurrentTimeMillis() - lastActiveTime;
+                var diff = TimeUtils.CurrentTimeMillis() - _lastActiveTime;
                 return diff <= 1000;
             }
-            lastActiveTime = TimeUtils.CurrentTimeMillis();
+            _lastActiveTime = TimeUtils.CurrentTimeMillis();
             var messageFactory = _networkManager.MessageFactory;
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
@@ -170,7 +170,7 @@ namespace Phorkus.Core.Network
             return myHeight < maxHeight;
         }
 
-        private ulong lastActiveTime = TimeUtils.CurrentTimeMillis();
+        private ulong _lastActiveTime = TimeUtils.CurrentTimeMillis();
         
         private void _Worker()
         {

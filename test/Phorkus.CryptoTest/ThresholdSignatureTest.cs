@@ -17,7 +17,7 @@ namespace Phorkus.CryptoTest
             var shares = keygen.GetPrivateShares().ToArray();
             var data = BitConverter.GetBytes(0xdeadbeef);
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
-            var signers = new IThresholdSigner[7];
+            var signers = new IThresholdSigner[n];
             for (var i = 0; i < n; ++i)
             {
                 signers[i] = new ThresholdSigner(data, shares[i], pubKeys);

@@ -22,8 +22,9 @@ namespace Phorkus.Core.Consensus
     public class ConsensusManager : IConsensusManager
     {
         private readonly ILogger<IConsensusBroadcaster> _logger;
-        private readonly INetworkManager _networkManager;
+        private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
+        private readonly ICrypto _crypto;
         private bool _terminated;
         private readonly IWallet _wallet;
         private readonly KeyPair _keyPair;
@@ -32,7 +33,7 @@ namespace Phorkus.Core.Consensus
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
 
         public ConsensusManager(
-            INetworkManager networkManager,
+            IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
             IConfigManager configManager,
             ICrypto crypto,
@@ -40,8 +41,9 @@ namespace Phorkus.Core.Consensus
         )
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
-            _networkManager = networkManager;
+            _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
+            _crypto = crypto;
             var tpkePrivateKey = PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes());
             var maxFaulty = (config.ValidatorsEcdsaPublicKeys.Count - 1) / 3;
             _wallet =
@@ -76,19 +78,17 @@ namespace Phorkus.Core.Consensus
         public void Dispatch(ConsensusMessage message)
         {
             var era = message.Validator.Era;
-            EnsureEra(era);
-            _eras[era].Dispatch(message);
+            EnsureEra(era).Dispatch(message);
         }
 
         public void Start(long startingEra)
         {
             CurrentEra = startingEra;
-            EnsureEra(CurrentEra);
-            var broadcaster = _eras[CurrentEra];
+            var broadcaster = EnsureEra(CurrentEra);
             var rootId = new HoneyBadgerId(CurrentEra);
             var rootProtocol = new HoneyBadger(rootId, _wallet, broadcaster);
-            _eras[CurrentEra].RegisterProtocols(new[] {rootProtocol});
-            _eras[CurrentEra].InternalRequest(
+            broadcaster.RegisterProtocols(new[] {rootProtocol});
+            broadcaster.InternalRequest(
                 new ProtocolRequest<HoneyBadgerId, IRawShare>(null, rootId, new RawShare(new byte[] { }, 0))
             );
         }
@@ -113,7 +113,7 @@ namespace Phorkus.Core.Consensus
             }
 
             _logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _networkManager, _validatorManager, _keyPair, _wallet, _logger);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _keyPair, _wallet, _crypto, _logger);
         }
     }
 }
