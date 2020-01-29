@@ -21,7 +21,7 @@ namespace Phorkus.Core.CLI
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
         private readonly ICrypto _crypto;
-        private readonly ILogger<IConsoleManager> _logger;
+        private readonly ILogger<ConsoleManager> _logger = LoggerFactory.GetLoggerForClass<ConsoleManager>();
         private IConsoleCommands _consoleCommands;
 
         public bool IsWorking { get; set; }
@@ -34,8 +34,8 @@ namespace Phorkus.Core.CLI
             ICrypto crypto,
             IBlockManager blockManager,
             IValidatorManager validatorManager,
-            IStateManager stateManager,
-            ILogger<IConsoleManager> logger)
+            IStateManager stateManager
+        )
         {
             _blockManager = blockManager;
             _transactionBuilder = transactionBuilder;
@@ -44,7 +44,6 @@ namespace Phorkus.Core.CLI
             _crypto = crypto;
             _validatorManager = validatorManager;
             _stateManager = stateManager;
-            _logger = logger;
             _virtualMachine = virtualMachine;
         }
 

@@ -7,9 +7,4 @@
     <ProjectReference Include="..\Phorkus.Core\Phorkus.Core.csproj" />
     <ProjectReference Include="..\Phorkus.Logger\Phorkus.Logger.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="nlog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 </Project>

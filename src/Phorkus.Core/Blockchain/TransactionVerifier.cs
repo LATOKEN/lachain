@@ -13,7 +13,7 @@ namespace Phorkus.Core.Blockchain
 {
     public class TransactionVerifier : ITransactionVerifier
     {
-        private readonly ILogger<ITransactionVerifier> _logger;
+        private readonly ILogger<TransactionVerifier> _logger = LoggerFactory.GetLoggerForClass<TransactionVerifier>();
         private readonly ICrypto _crypto;
 
         private readonly IDictionary<UInt160, ECDSAPublicKey> _publicKeyCache
@@ -24,12 +24,9 @@ namespace Phorkus.Core.Blockchain
 
         private readonly object _queueNotEmpty = new object();
 
-        public TransactionVerifier(
-            ILogger<ITransactionVerifier> logger,
-            ICrypto crypto)
+        public TransactionVerifier(ICrypto crypto)
         {
             _crypto = crypto;
-            _logger = logger;
         }
 
         public event EventHandler<TransactionReceipt> OnTransactionVerified;

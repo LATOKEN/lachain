@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace Phorkus.Logger
 {
@@ -125,18 +125,5 @@ namespace Phorkus.Logger
         /// <param name="message">Format string of the log message.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         void Log(LogLevel logLevel, Exception exception, string message, params object[] args);
-
-        /// <summary>
-        /// Formats the message and creates a scope.
-        /// </summary>
-        /// <param name="messageFormat">Format string of the log message in message template format. Example: <code>"User {User} logged in from {Address}"</code></param>
-        /// <param name="args">An object array that contains zero or more objects to format.</param>
-        /// <returns>A disposable scope object. Can be null.</returns>
-        /// <example>
-        /// using(BeginScope("Processing request from {Address}", address))
-        /// {
-        /// }
-        /// </example>
-        IDisposable BeginScope(string messageFormat, params object[] args);
     }
 }

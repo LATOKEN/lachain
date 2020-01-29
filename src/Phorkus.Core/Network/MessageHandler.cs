@@ -13,21 +13,19 @@ namespace Phorkus.Core.Network
     public class MessageHandler : IMessageHandler
     {
         private readonly IBlockSynchronizer _blockSynchronizer;
-        private readonly ILogger<MessageHandler> _logger;
+        private readonly ILogger<MessageHandler> _logger = LoggerFactory.GetLoggerForClass<MessageHandler>();
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
-            ILogger<MessageHandler> logger,
             ITransactionPool transactionPool,
             IStateManager stateManager,
             IConsensusManager consensusManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
-            _logger = logger;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
             _consensusManager = consensusManager;

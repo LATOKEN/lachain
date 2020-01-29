@@ -4,6 +4,7 @@ using System.Linq;
 using Phorkus.Consensus.CommonSubset;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Logger;
 using Phorkus.Proto;
 
 namespace Phorkus.Consensus.HoneyBadger
@@ -20,34 +21,36 @@ namespace Phorkus.Consensus.HoneyBadger
         private readonly IRawShare[] _shares;
 
         private readonly EncryptedShare[] _receivedShares;
-        
+
         private ISet<IRawShare> _result;
-        
-        
+
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
 
-        private PublicKey PubKey => _wallet.TpkePublicKey;
-        private PrivateKey PrivKey => _wallet.TpkePrivateKey;
-        private VerificationKey VerificationKey => _wallet.TpkeVerificationKey;
+        private PublicKey PubKey => Wallet.TpkePublicKey;
+        private PrivateKey PrivKey => Wallet.TpkePrivateKey;
+        private VerificationKey VerificationKey => Wallet.TpkeVerificationKey;
 
         private bool _takenSet = false;
+        private readonly ILogger<HoneyBadger> _logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
 
-        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, honeyBadgerId, broadcaster)
+
+        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
+            wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
-            
+
             _receivedShares = new EncryptedShare[N];
             _decryptedShares = new ISet<PartiallyDecryptedShare>[N];
             for (var i = 0; i < N; ++i)
             {
                 _decryptedShares[i] = new HashSet<PartiallyDecryptedShare>();
             }
-            
+
             _taken = new bool[N];
             _shares = new IRawShare[N];
             _requested = ResultStatus.NotRequested;
         }
-        
+
         public override void ProcessMessage(MessageEnvelope envelope)
         {
             if (envelope.External)
@@ -93,22 +96,24 @@ namespace Phorkus.Consensus.HoneyBadger
             CheckEncryption();
             CheckResult();
         }
-       
+
         private void CheckEncryption()
         {
             if (PubKey == null) return;
             if (_rawShare == null) return;
             if (_encryptedShare != null) return;
             _encryptedShare = PubKey.Encrypt(_rawShare);
-            _broadcaster.InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId), _encryptedShare));
+            Broadcaster.InternalRequest(
+                new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId),
+                    _encryptedShare));
         }
-        
+
         private void CheckResult()
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
-            _broadcaster.InternalResponse(
+            Broadcaster.InternalResponse(
                 new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
         }
 
@@ -121,12 +126,12 @@ namespace Phorkus.Consensus.HoneyBadger
                 _receivedShares[share.Id] = share;
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
-    
-                _broadcaster.Broadcast(CreateDecryptedMessage(dec));
+
+                Broadcaster.Broadcast(CreateDecryptedMessage(dec));
             }
 
             _takenSet = true;
-            
+
             foreach (EncryptedShare share in result.Result)
             {
                 CheckDecryptedShares(share.Id);
@@ -139,16 +144,16 @@ namespace Phorkus.Consensus.HoneyBadger
         {
             var message = new ConsensusMessage
             {
-               Validator = new Validator
-               {
-                   ValidatorIndex = GetMyId(),
-                   Era = _honeyBadgerId.Era
-               },
-               Decrypted = PubKey.Encode(share)
+                Validator = new Validator
+                {
+                    ValidatorIndex = GetMyId(),
+                    Era = _honeyBadgerId.Era
+                },
+                Decrypted = PubKey.Encode(share)
             };
             return message;
         }
-        
+
         private void HandleDecryptedMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMessage msg)
         {
             PartiallyDecryptedShare share = PubKey.Decode(msg);
@@ -158,6 +163,7 @@ namespace Phorkus.Consensus.HoneyBadger
                     // possible fault evidence
                     return;
                 }
+
             _decryptedShares[share.ShareId].Add(share);
             CheckDecryptedShares(share.ShareId);
         }
@@ -169,7 +175,7 @@ namespace Phorkus.Consensus.HoneyBadger
             if (_decryptedShares[id].Count < F + 1) return;
 
             if (_shares[id] != null) return;
-            
+
             _shares[id] = PubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
             CheckAllSharesDecrypted();
@@ -183,9 +189,9 @@ namespace Phorkus.Consensus.HoneyBadger
             for (var i = 0; i < N; ++i)
                 if (_taken[i] && _shares[i] == null)
                     return;
-            
+
             _result = new HashSet<IRawShare>();
-            
+
             for (var i = 0; i < N; ++i)
                 if (_taken[i])
                     _result.Add(_shares[i]);
@@ -196,11 +202,11 @@ namespace Phorkus.Consensus.HoneyBadger
         private bool VerifyReceivedSharesByIndex(int i)
         {
             if (_receivedShares[i] == null) return false;
-            
+
             foreach (var part in _decryptedShares[i])
                 if (!VerificationKey.Verify(_receivedShares[i], part))
                 {
-                    Console.Error.WriteLine($"{GetMyId()}: Verification failed {i}");
+                    _logger.LogDebug($"{GetMyId()}: Verification failed {i}");
                     return false;
                 }
 

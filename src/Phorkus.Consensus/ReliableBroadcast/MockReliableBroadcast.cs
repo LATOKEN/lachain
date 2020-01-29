@@ -4,6 +4,7 @@ using Google.Protobuf;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Logger;
 using Phorkus.Proto;
 
 namespace Phorkus.Consensus.ReliableBroadcast
@@ -15,8 +16,11 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private EncryptedShare _result;
         private bool _receivedAlready = false;
 
-        
-        public MockReliableBroadcast(ReliableBroadcastId reliableReliableBroadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) 
+        private readonly ILogger<MockReliableBroadcast> _logger =
+            LoggerFactory.GetLoggerForClass<MockReliableBroadcast>();
+
+        public MockReliableBroadcast(ReliableBroadcastId reliableReliableBroadcastId, IWallet wallet,
+            IConsensusBroadcaster broadcaster)
             : base(wallet, reliableReliableBroadcastId, broadcaster)
         {
             _reliableBroadcastId = reliableReliableBroadcastId;
@@ -65,27 +69,28 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if (share == null) return;
             var msg = new ConsensusMessage
             {
-               Validator = new Validator
-               {
-                   Era = Id.Era,
-                   ValidatorIndex = GetMyId()
-               },
-               EncryptedShare = new TPKEEncryptedShareMessage
-               {
-                   U = ByteString.CopyFrom(G1.ToBytes(share.U)),
-                   V = ByteString.CopyFrom(share.V),
-                   W = ByteString.CopyFrom(G2.ToBytes(share.W)),
-                   Id = share.Id
-               }
+                Validator = new Validator
+                {
+                    Era = Id.Era,
+                    ValidatorIndex = GetMyId()
+                },
+                EncryptedShare = new TPKEEncryptedShareMessage
+                {
+                    U = ByteString.CopyFrom(G1.ToBytes(share.U)),
+                    V = ByteString.CopyFrom(share.V),
+                    W = ByteString.CopyFrom(G2.ToBytes(share.W)),
+                    Id = share.Id
+                }
             };
-            _broadcaster.Broadcast(msg);
+            Broadcaster.Broadcast(msg);
         }
-        
+
         private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMessage messageEncryptedShare)
         {
             if (_receivedAlready)
             {
-                Console.Error.WriteLine($"Player {GetMyId()} at {_reliableBroadcastId}: double receive of message from {messageValidator}!");
+                _logger.LogDebug(
+                    $"Player {GetMyId()} at {_reliableBroadcastId}: double receive of message from {messageValidator}!");
                 return;
             }
 
@@ -103,7 +108,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
-            _broadcaster.InternalResponse(
+            Broadcaster.InternalResponse(
                 new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_reliableBroadcastId, _result));
         }
     }

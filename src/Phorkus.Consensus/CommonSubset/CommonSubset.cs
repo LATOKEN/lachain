@@ -5,6 +5,7 @@ using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Logger;
 
 namespace Phorkus.Consensus.CommonSubset
 {
@@ -13,24 +14,26 @@ namespace Phorkus.Consensus.CommonSubset
         private CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
         private ISet<EncryptedShare> _result;
-        
+
         private readonly bool?[] _binaryAgreementInput;
         private readonly bool?[] _binaryAgreementResult;
         private bool _filledBinaryAgreements = false;
         private int _cntBinaryAgreementsCompleted = 0;
 
         private readonly EncryptedShare[] _reliableBroadcastResult;
+        private readonly ILogger<CommonSubset> _logger = LoggerFactory.GetLoggerForClass<CommonSubset>();
 
         public CommonSubset(CommonSubsetId commonSubsetId, IWallet wallet, IConsensusBroadcaster broadcaster)
-           : base(wallet, commonSubsetId, broadcaster)
+            : base(wallet, commonSubsetId, broadcaster)
         {
             _commonSubsetId = commonSubsetId;
-            
+
             _binaryAgreementInput = new bool?[N];
             _binaryAgreementResult = new bool?[N];
-            
+
             _reliableBroadcastResult = new EncryptedShare[N];
         }
+
         public override void ProcessMessage(MessageEnvelope envelope)
         {
             if (envelope.External)
@@ -71,18 +74,19 @@ namespace Phorkus.Consensus.CommonSubset
         private void HandleInputMessage(ProtocolRequest<CommonSubsetId, EncryptedShare> request)
         {
             _requested = ResultStatus.Requested;
-            
-            _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>
+
+            Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>
                 (Id, new ReliableBroadcastId(GetMyId(), (int) _commonSubsetId.Era), request.Input));
 
             for (var j = 0; j < N; ++j)
             {
                 if (j != GetMyId())
                 {
-                    _broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(Id, 
+                    Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(Id,
                         new ReliableBroadcastId(j, (int) _commonSubsetId.Era), null));
                 }
             }
+
             CheckResult();
         }
 
@@ -90,15 +94,16 @@ namespace Phorkus.Consensus.CommonSubset
         {
             if (!_binaryAgreementInput[j].HasValue)
                 throw new NoNullAllowedException();
-            
-            var id = new BinaryAgreementId( _commonSubsetId.Era,  j);
-            _broadcaster.InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
+
+            var id = new BinaryAgreementId(_commonSubsetId.Era, j);
+            Broadcaster.InternalRequest(
+                new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
         }
 
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
             var j = result.Id.AssociatedValidatorId;
-            Console.Error.WriteLine($"Player ${GetMyId()} at ${_commonSubsetId}: ${j}-th RBC completed.");
+            _logger.LogDebug($"Player ${GetMyId()} at ${_commonSubsetId}: ${j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)
@@ -106,7 +111,7 @@ namespace Phorkus.Consensus.CommonSubset
                 _binaryAgreementInput[j] = true;
                 SendInputToBinaryAgreement(j);
             }
-            
+
             CheckCompletion();
         }
 
@@ -115,7 +120,8 @@ namespace Phorkus.Consensus.CommonSubset
             // todo check for double send of result
             ++_cntBinaryAgreementsCompleted;
             _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
-            Console.Error.WriteLine($"Player ${GetMyId()} at ${_commonSubsetId}: ${result.Id.AssociatedValidatorId}-th bb completed.");
+            _logger.LogDebug(
+                $"Player ${GetMyId()} at ${_commonSubsetId}: ${result.Id.AssociatedValidatorId}-th bb completed.");
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= N - F)
             {
@@ -136,9 +142,9 @@ namespace Phorkus.Consensus.CommonSubset
         private void CheckCompletion()
         {
             if (_result != null) return;
-            
+
             if (_cntBinaryAgreementsCompleted < N) return;
-            
+
             for (var i = 0; i < N; ++i)
             {
                 if (_binaryAgreementResult[i] == true)
@@ -146,9 +152,9 @@ namespace Phorkus.Consensus.CommonSubset
                     if (_reliableBroadcastResult[i] == null) return;
                 }
             }
-            
+
             _result = new HashSet<EncryptedShare>();
-            
+
             for (var i = 0; i < N; ++i)
             {
                 if (_binaryAgreementResult[i] == true)
@@ -156,7 +162,7 @@ namespace Phorkus.Consensus.CommonSubset
                     _result.Add(_reliableBroadcastResult[i]);
                 }
             }
-            
+
             CheckResult();
         }
 
@@ -166,8 +172,8 @@ namespace Phorkus.Consensus.CommonSubset
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
             SetResult();
-            Console.Error.WriteLine($"{GetMyId()} ACS terminated.");
-            _broadcaster.InternalResponse(
+            _logger.LogDebug($"{GetMyId()} ACS terminated.");
+            Broadcaster.InternalResponse(
                 new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>(_commonSubsetId, _result));
         }
     }

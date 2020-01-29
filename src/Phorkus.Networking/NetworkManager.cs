@@ -43,17 +43,16 @@ namespace Phorkus.Networking
             new ConcurrentDictionary<ECDSAPublicKey, bool>();
 
         private readonly ICrypto _crypto;
-        private readonly ILogger<INetworkManager> _logger;
+        private readonly ILogger<NetworkManager> _logger = LoggerFactory.GetLoggerForClass<NetworkManager>();
 
         private MessageFactory _messageFactory;
         private ServerWorker _serverWorker;
         private IMessageHandler _messageHandler;
         private NetworkConfig _networkConfig;
 
-        public NetworkManager(ICrypto crypto, ILogger<INetworkManager> logger)
+        public NetworkManager(ICrypto crypto)
         {
             _crypto = crypto;
-            _logger = logger;
         }
 
         public IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey)
@@ -341,19 +340,21 @@ namespace Phorkus.Networking
             Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
             foreach (var peer in networkConfig.Peers)
                 Connect(PeerAddress.Parse(peer));
-            
         }
 
         private void SendQueuedMessages(Node node)
         {
-            _logger.LogDebug($"Handshake with node {node.Address} with public key {node.PublicKey} is done, sending queued messages");
+            _logger.LogDebug(
+                $"Handshake with node {node.Address} with public key {node.PublicKey} is done, sending queued messages");
             var publicKey = node.PublicKey;
-            var peer = GetPeerByPublicKey(publicKey) ?? throw new InvalidOperationException("Peer did handshake but is not longer available");
+            var peer = GetPeerByPublicKey(publicKey) ??
+                       throw new InvalidOperationException("Peer did handshake but is not longer available");
             if (!_messageQueue.TryRemove(publicKey, out var messages)) return;
             foreach (var message in messages)
             {
                 peer.Send(message);
             }
+
             _logger.LogDebug($"Sent {messages.Count} queued messages to node {node.Address}");
         }
 

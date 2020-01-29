@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf;
-using Microsoft.Extensions.Logging;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
+using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
@@ -21,7 +20,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private readonly IValidatorManager _validatorManager;
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IMultisigVerifier _multisigVerifier;
-        private readonly Logger.ILogger<IBlockManager> _logger;
+        private readonly ILogger<BlockManager> _logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private readonly IStateManager _stateManager;
 
         public BlockManager(
@@ -29,7 +28,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             ICrypto crypto,
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
-            IMultisigVerifier multisigVerifier, Logger.ILogger<IBlockManager> logger,
+            IMultisigVerifier multisigVerifier,
             IStateManager stateManager)
         {
             _transactionManager = transactionManager;
@@ -37,7 +36,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _validatorManager = validatorManager;
             _genesisBuilder = genesisBuilder;
             _multisigVerifier = multisigVerifier;
-            _logger = logger;
             _stateManager = stateManager;
         }
 
@@ -165,7 +163,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 if (!currentTransactions.ContainsKey(txHash))
                     return OperatingError.TransactionLost;
             }
-            
+
             /* execute transactions */
             foreach (var txHash in block.TransactionHashes)
             {
@@ -220,9 +218,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 totalFee += fee;
 
                 /* mark transaction as executed */
-                if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.LogDebug(
-                        $"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
+                _logger.LogDebug(
+                    $"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
                 snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
                 _stateManager.Approve();
             }
@@ -253,7 +250,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
-        
+
         public Signature Sign(BlockHeader block, KeyPair keyPair)
         {
             return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())

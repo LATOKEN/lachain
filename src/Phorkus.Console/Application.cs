@@ -27,7 +27,6 @@ namespace Phorkus.Console
             var containerBuilder = new SimpleInjectorContainerBuilder(
                 new ConfigManager("config.json"));
 
-            containerBuilder.RegisterModule<LoggingModule>();
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<CryptographyModule>();

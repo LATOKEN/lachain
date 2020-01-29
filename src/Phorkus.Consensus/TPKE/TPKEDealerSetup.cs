@@ -4,22 +4,24 @@ using Google.Protobuf;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Logger;
 using Phorkus.Proto;
 
 namespace Phorkus.Consensus.TPKE
 {
     public class TPKEDealerSetup : AbstractProtocol
     {
-        private const int DEALER_ID = 0;
+        private const int DealerId = 0;
         private TPKESetupId _tpkeSetupId;
         private ResultStatus _requested;
         private PrivateKey _privKey;
         private PublicKey _pubKey;
         private VerificationKey _verificationKey;
         private Keys _result;
-        
+        private readonly ILogger<TPKEDealerSetup> _logger = LoggerFactory.GetLoggerForClass<TPKEDealerSetup>();
 
-        public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(wallet, tpkeSetupId, broadcaster)
+        public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
+            wallet, tpkeSetupId, broadcaster)
         {
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;
@@ -59,13 +61,13 @@ namespace Phorkus.Consensus.TPKE
             }
         }
 
-        private void 
+        private void
             HandlePrivateKey(Validator validator, TPKEKeysMessage tpkeKeys)
         {
-            Console.Error.WriteLine($"{GetMyId()}: Got private key!");
+            _logger.LogDebug($"{GetMyId()}: Got private key!");
             if (GetMyId() != (int) tpkeKeys.Id)
             {
-               throw new Exception($"Id mismatch: expected {GetMyId()}, got {tpkeKeys.Id}"); 
+                throw new Exception($"Id mismatch: expected {GetMyId()}, got {tpkeKeys.Id}");
             }
 
             byte[] privEnc = tpkeKeys.PrivateKey.ToByteArray();
@@ -84,7 +86,7 @@ namespace Phorkus.Consensus.TPKE
         private void HandleInputMessage(ProtocolRequest<TPKESetupId, Object> request)
         {
             _requested = ResultStatus.Requested;
-            if (GetMyId() == DEALER_ID)
+            if (GetMyId() == DealerId)
                 Deal();
             CheckResult();
         }
@@ -96,7 +98,7 @@ namespace Phorkus.Consensus.TPKE
             {
                 P[i] = Fr.GetRandom();
             }
-            
+
             var pubKey = new PublicKey(G1.Generator * P[0], F);
 
             var Zs = new List<G2>();
@@ -110,9 +112,10 @@ namespace Phorkus.Consensus.TPKE
                     res += P[j] * cur;
                     cur *= at;
                 }
+
                 Zs.Add(G2.Generator * res);
             }
-            
+
             var verificationKey = new VerificationKey(G1.Generator * P[0], F, Zs.ToArray());
 
             for (var i = 0; i < N; ++i)
@@ -125,16 +128,17 @@ namespace Phorkus.Consensus.TPKE
                     res += P[j] * cur;
                     cur *= at;
                 }
-                
+
                 var privKey = new PrivateKey(res, i);
-                
+
                 // todo add full serialziation for pub and priv key
                 var msg = CreateTPKEPrivateKeyMessage(pubKey, privKey, verificationKey, i);
-                _broadcaster.SendToValidator(msg, i);
+                Broadcaster.SendToValidator(msg, i);
             }
         }
-        
-        private ConsensusMessage CreateTPKEPrivateKeyMessage(PublicKey pubKey, PrivateKey privKey, VerificationKey verificationKey, int to)
+
+        private ConsensusMessage CreateTPKEPrivateKeyMessage(PublicKey pubKey, PrivateKey privKey,
+            VerificationKey verificationKey, int to)
         {
             var message = new ConsensusMessage
             {
@@ -160,7 +164,7 @@ namespace Phorkus.Consensus.TPKE
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
             _requested = ResultStatus.Sent;
-            _broadcaster.InternalResponse(
+            Broadcaster.InternalResponse(
                 new ProtocolResult<TPKESetupId, Keys>(_tpkeSetupId, _result));
         }
     }

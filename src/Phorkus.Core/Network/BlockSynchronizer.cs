@@ -19,24 +19,23 @@ namespace Phorkus.Core.Network
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly IBlockchainContext _blockchainContext;
-        private readonly ILogger<IBlockSynchronizer> _logger;
+        private readonly ILogger<BlockSynchronizer> _logger = LoggerFactory.GetLoggerForClass<BlockSynchronizer>();
         private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
-        
+
         private readonly IDictionary<IRemotePeer, ulong> _peerHeights
             = new ConcurrentDictionary<IRemotePeer, ulong>();
-        
+
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
-        
+
         public BlockSynchronizer(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             IBlockchainContext blockchainContext,
-            ILogger<IBlockSynchronizer> logger,
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
@@ -46,7 +45,6 @@ namespace Phorkus.Core.Network
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _blockchainContext = blockchainContext;
-            _logger = logger;
             _networkContext = networkContext;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
@@ -72,9 +70,10 @@ namespace Phorkus.Core.Network
 
                 if (DateTime.UtcNow.CompareTo(endWait) > 0) break;
             }
+
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
-        
+
         public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, IRemotePeer remotePeer)
         {
             var persisted = 0u;
@@ -86,19 +85,21 @@ namespace Phorkus.Core.Network
                     _logger.LogWarning($"Unable to verify transaction ({error})");
                     continue;
                 }
+
                 if (_transactionPool.Add(tx) == OperatingError.Ok)
                     persisted++;
             }
+
             lock (_peerHasTransactions)
                 Monitor.PulseAll(_peerHasTransactions);
             return persisted;
         }
-        
+
         public uint WaitForBlocks(IEnumerable<UInt256> blockHashes, TimeSpan timeout)
         {
             throw new NotImplementedException();
         }
-        
+
         public void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout)
         {
             var myHeight = _blockchainContext.CurrentBlockHeight;
@@ -113,6 +114,7 @@ namespace Phorkus.Core.Network
                 if (totalFound != haveNotTxs.Count)
                     return;
             }
+
             /* persist block to database */
             var txs = new List<TransactionReceipt>();
             foreach (var txHash in block.TransactionHashes)
@@ -123,18 +125,21 @@ namespace Phorkus.Core.Network
                 txs.Add(tx);
             }
 
-            var error = _stateManager.SafeContext(() => _blockManager.Execute(block, txs, commit: true, checkStateHash: true));
+            var error = _stateManager.SafeContext(() =>
+                _blockManager.Execute(block, txs, commit: true, checkStateHash: true));
             if (error == OperatingError.BlockAlreadyExists)
                 return;
             if (error != OperatingError.Ok)
             {
-                _logger.LogWarning($"Unable to persist block {block.Header.Index} (current height {_blockchainContext.CurrentBlockHeight}), got error {error}, dropping peer");
+                _logger.LogWarning(
+                    $"Unable to persist block {block.Header.Index} (current height {_blockchainContext.CurrentBlockHeight}), got error {error}, dropping peer");
                 return;
             }
+
             lock (_peerHasBlocks)
                 Monitor.PulseAll(_peerHasBlocks);
         }
-        
+
         public void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer)
         {
             lock (_peerHasBlocks)
@@ -157,6 +162,7 @@ namespace Phorkus.Core.Network
                 var diff = TimeUtils.CurrentTimeMillis() - _lastActiveTime;
                 return diff <= 1000;
             }
+
             _lastActiveTime = TimeUtils.CurrentTimeMillis();
             var messageFactory = _networkManager.MessageFactory;
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
@@ -171,13 +177,13 @@ namespace Phorkus.Core.Network
         }
 
         private ulong _lastActiveTime = TimeUtils.CurrentTimeMillis();
-        
+
         private void _Worker()
         {
             var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
-            
+
             if (_networkContext.ActivePeers.Values.Count == 0)
                 return;
 
@@ -187,16 +193,16 @@ namespace Phorkus.Core.Network
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             if (_peerHeights.Count == 0)
                 return;
-            
+
             var maxHeight = _peerHeights.Values.Max(v => v);
             if (myHeight >= maxHeight)
                 return;
 
             var peers = _peerHeights.Where(entry => entry.Value == maxHeight).Select(entry => entry.Key);
-            
+
             foreach (var peer in peers)
                 peer.Send(messageFactory.GetBlocksByHeightRangeRequest(myHeight + 1, maxHeight));
-            
+
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
         }

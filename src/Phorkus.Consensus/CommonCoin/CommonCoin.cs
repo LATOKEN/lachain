@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.ThresholdSignature;
+using Phorkus.Logger;
 using Phorkus.Proto;
 using Signature = Phorkus.Crypto.ThresholdSignature.Signature;
 
@@ -16,23 +17,25 @@ namespace Phorkus.Consensus.CommonCoin
         private readonly CoinId _coinId;
         private bool? _result;
         private ResultStatus _requested = ResultStatus.NotRequested;
-
+        private readonly ILogger<CommonCoin> _logger = LoggerFactory.GetLoggerForClass<CommonCoin>();
 
         public CommonCoin(
             CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
-            _publicKeySet = wallet.ThresholdSignaturePublicKeySet ?? throw new ArgumentNullException(nameof(wallet.ThresholdSignaturePublicKeySet));
+            _publicKeySet = wallet.ThresholdSignaturePublicKeySet ??
+                            throw new ArgumentNullException(nameof(wallet.ThresholdSignaturePublicKeySet));
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
-            _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), wallet.ThresholdSignaturePrivateKeyShare, _publicKeySet);
+            _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), wallet.ThresholdSignaturePrivateKeyShare,
+                _publicKeySet);
         }
 
         public void CheckResult()
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
-            _broadcaster.InternalResponse(new ProtocolResult<CoinId, bool>(_coinId, (bool) _result));
-            Console.Error.WriteLine($"Player {GetMyId()}: made coin by {_coinId} and sent.");
+            Broadcaster.InternalResponse(new ProtocolResult<CoinId, bool>(_coinId, (bool) _result));
+            _logger.LogDebug($"Player {GetMyId()}: made coin by {_coinId} and sent.");
             _requested = ResultStatus.Sent;
         }
 
@@ -55,7 +58,7 @@ namespace Phorkus.Consensus.CommonCoin
                 if (!_thresholdSigner.AddShare(_publicKeySet[(int) message.Validator.ValidatorIndex], signatureShare,
                     out var signature))
                 {
-                    Console.Error.WriteLine($"Player {GetMyId()}: faulty behaviour from player {message.Validator}");
+                    _logger.LogDebug($"Player {GetMyId()}: faulty behaviour from player {message.Validator}");
                     return; // potential fault evidence
                 }
 
@@ -72,7 +75,7 @@ namespace Phorkus.Consensus.CommonCoin
                         var signatureShare = _thresholdSigner.Sign();
                         _requested = ResultStatus.Requested;
                         CheckResult();
-                        _broadcaster.Broadcast(CreateCoinMessage(signatureShare));
+                        Broadcaster.Broadcast(CreateCoinMessage(signatureShare));
                         break;
                     case ProtocolResult<CoinId, bool> _:
                         Terminated = true;

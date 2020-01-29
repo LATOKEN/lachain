@@ -97,7 +97,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             //if (broadcastRequested.Input.Id.Equals(_broadcastId.AssociatedValidatorId))
             if (broadcastRequested.From.GetHashCode().Equals(_broadcastId.GetHashCode()))
             {
-                _broadcaster.Broadcast(CreateValMessage(GetTestVector(N * 64)));
+                Broadcaster.Broadcast(CreateValMessage(GetTestVector(N * 64)));
             }
         }
 
@@ -114,7 +114,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 val.RootMerkleTree
             };
             // broadcast ECHO messages
-            _broadcaster.Broadcast(CreateECHOMessage(messageValidator, val));
+            Broadcaster.Broadcast(CreateECHOMessage(messageValidator, val));
         }
         private void HandleECHOMessage(Validator messageValidator, ECHOMessage echo)
         {
@@ -139,7 +139,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                     if(!_sentReadyMsg[messageValidator.ValidatorIndex])
                     {
                         // here I sent ready msg for  players of ValidatorIndex
-                        _broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
+                        Broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
                         _sentReadyMsg[messageValidator.ValidatorIndex] = true;
                     }
                 }
@@ -162,7 +162,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 _countReadyMsg++;
                 if (_countReadyMsg == F + 1)
                 {
-                    _broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
+                    Broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
                 }
                 else if(_countReadyMsg == 2 * F + 1)
                 {

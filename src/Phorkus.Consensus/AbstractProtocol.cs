@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using Phorkus.Consensus.Messages;
+using Phorkus.Logger;
 
 namespace Phorkus.Consensus
 {
@@ -10,33 +11,29 @@ namespace Phorkus.Consensus
         private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
         private readonly object _queueLock = new object();
         private readonly object _resultLock = new object();
-        public bool ResultEmitted { get; protected set; }
-        
+        private bool ResultEmitted { get; set; }
         public bool Terminated { get; protected set; }
         public IProtocolIdentifier Id { get; }
-        protected readonly IConsensusBroadcaster _broadcaster;
-
-        private Thread _thread;
-
-        protected IWallet _wallet;
-
-        public int N => _wallet.N;
-        public int F => _wallet.F;
-
+        protected readonly IConsensusBroadcaster Broadcaster;
+        private readonly Thread _thread;
+        protected readonly IWallet Wallet;
+        protected int N => Wallet.N;
+        protected int F => Wallet.F;
+        private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
 
         protected AbstractProtocol(IWallet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
         {
             _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
-            _broadcaster = broadcaster;
+            Broadcaster = broadcaster;
             Id = id;
-            _wallet = wallet;
-            _wallet.ProtocolIds.Add(Id);
+            Wallet = wallet;
+            Wallet.ProtocolIds.Add(Id);
         }
 
         public int GetMyId()
         {
-            return _broadcaster.GetMyId();
+            return Broadcaster.GetMyId();
         }
 
         public void WaitFinish()
@@ -94,17 +91,17 @@ namespace Phorkus.Consensus
 
                     _queue.TryDequeue(out msg);
                 }
+
                 try
                 {
                     ProcessMessage(msg);
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine(e);
+                    _logger.LogDebug(e, "Exception occured while processing protocol message");
                     Terminated = true;
                     break;
                 }
-                
             }
         }
 

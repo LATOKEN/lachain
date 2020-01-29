@@ -21,7 +21,7 @@ namespace Phorkus.Core.Consensus
 {
     public class ConsensusManager : IConsensusManager
     {
-        private readonly ILogger<IConsensusBroadcaster> _logger;
+        private readonly ILogger<ConsensusManager> _logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly ICrypto _crypto;
@@ -36,8 +36,7 @@ namespace Phorkus.Core.Consensus
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
             IConfigManager configManager,
-            ICrypto crypto,
-            ILogger<IConsensusBroadcaster> logger
+            ICrypto crypto
         )
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -59,7 +58,6 @@ namespace Phorkus.Core.Consensus
                             config.ThresholdSignaturePublicKeySet.Select(s => PublicKeyShare.FromBytes(s.HexToBytes())),
                             maxFaulty)
                     };
-            _logger = logger;
             _terminated = false;
             _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
         }
@@ -113,7 +111,8 @@ namespace Phorkus.Core.Consensus
             }
 
             _logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _keyPair, _wallet, _crypto, _logger);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _keyPair, _wallet,
+                _crypto);
         }
     }
 }

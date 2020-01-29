@@ -23,7 +23,7 @@ namespace Phorkus.Core.Consensus
      */
     public class EraBroadcaster : IConsensusBroadcaster
     {
-        private readonly ILogger<IConsensusBroadcaster> _logger;
+        private readonly ILogger<EraBroadcaster> _logger = LoggerFactory.GetLoggerForClass<EraBroadcaster>();
         private readonly IValidatorManager _validatorManager;
         private readonly long _era;
         private readonly IMessageDeliverer _messageDeliverer;
@@ -46,7 +46,7 @@ namespace Phorkus.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            KeyPair keyPair, IWallet wallet, ICrypto crypto, ILogger<IConsensusBroadcaster> logger
+            KeyPair keyPair, IWallet wallet, ICrypto crypto
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -54,7 +54,6 @@ namespace Phorkus.Core.Consensus
             _validatorManager = validatorManager;
             _keyPair = keyPair;
             _wallet = wallet;
-            _logger = logger;
             _terminated = false;
             _era = era;
         }

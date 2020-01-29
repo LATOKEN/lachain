@@ -1,22 +1,19 @@
 ﻿using System;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
+using NLog;
 
 namespace Phorkus.Logger
 {
-    public class LoggerAdapter<TCategory> : ILogger<TCategory>
+    public class LoggerAdapter<T> : ILogger<T>
     {
-        #region Privte fields
+        #region Private fields
 
-        private readonly ILoggerFactoryExtended _factory;
-        private readonly ILogger _logger;
+        private readonly NLog.Logger _logger;
 
         #endregion
 
-        public LoggerAdapter(ILoggerFactoryExtended factory)
+        public LoggerAdapter(NLog.Logger logger)
         {
-            _factory = factory;
-            _logger = factory.CreateLogger<TCategory>();
+            _logger = logger;
         }
 
         public bool IsEnabled(LogLevel logLevel)
@@ -57,13 +54,13 @@ namespace Phorkus.Logger
         /// <inheritdoc />
         public void LogInformation(Exception exception, string message, params object[] args)
         {
-            Log(LogLevel.Information, exception, message, args);
+            Log(LogLevel.Info, exception, message, args);
         }
 
         /// <inheritdoc />
         public void LogInformation(string message, params object[] args)
         {
-            Log(LogLevel.Information, message, args);
+            Log(LogLevel.Info, message, args);
         }
 
         //------------------------------------------WARNING------------------------------------------//
@@ -71,13 +68,13 @@ namespace Phorkus.Logger
         /// <inheritdoc />
         public void LogWarning(Exception exception, string message, params object[] args)
         {
-            Log(LogLevel.Warning, exception, message, args);
+            Log(LogLevel.Warn, exception, message, args);
         }
 
         /// <inheritdoc />
         public void LogWarning(string message, params object[] args)
         {
-            Log(LogLevel.Warning, message, args);
+            Log(LogLevel.Warn, message, args);
         }
 
         //------------------------------------------ERROR------------------------------------------//
@@ -99,13 +96,13 @@ namespace Phorkus.Logger
         /// <inheritdoc />
         public void LogCritical(Exception exception, string message, params object[] args)
         {
-            Log(LogLevel.Critical, exception, message, args);
+            Log(LogLevel.Fatal, exception, message, args);
         }
 
         /// <inheritdoc />
         public void LogCritical(string message, params object[] args)
         {
-            Log(LogLevel.Critical, message, args);
+            Log(LogLevel.Fatal, message, args);
         }
 
         /// <inheritdoc />
@@ -117,30 +114,7 @@ namespace Phorkus.Logger
         /// <inheritdoc />
         public void Log(LogLevel logLevel, Exception exception, string message, params object[] args)
         {
-            _factory?.RaiseOnLog(new LogEntry()
-            {
-                Category = typeof(TCategory).Name,
-                Level = logLevel,
-                Message = message,
-                Exception = exception
-            });
-
-            _logger.Log(logLevel, 0, new FormattedLogValues(message, args), exception, MessageFormatter);
-        }
-
-        //------------------------------------------Scope------------------------------------------//
-
-        /// <inheritdoc />
-        public IDisposable BeginScope(string messageFormat, params object[] args)
-        {
-            return _logger.BeginScope(new FormattedLogValues(messageFormat, args));
-        }
-
-        //------------------------------------------HELPERS------------------------------------------//
-
-        private static string MessageFormatter(object state, Exception error)
-        {
-            return state.ToString();
+            _logger.Log(logLevel, exception, message, args);
         }
     }
 }

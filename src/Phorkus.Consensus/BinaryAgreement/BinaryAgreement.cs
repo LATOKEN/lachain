@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Grpc.Core.Logging;
 using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.Messages;
+using Phorkus.Logger;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Consensus.BinaryAgreement
@@ -22,10 +24,10 @@ namespace Phorkus.Consensus.BinaryAgreement
 
         private readonly Dictionary<long, bool> _coins = new Dictionary<long, bool>();
         private readonly Dictionary<long, BoolSet> _binaryBroadcastsResults = new Dictionary<long, BoolSet>();
-
+        private readonly ILogger<BinaryAgreement> _logger = LoggerFactory.GetLoggerForClass<BinaryAgreement>();
 
         public BinaryAgreement(BinaryAgreementId agreementId, IWallet wallet, IConsensusBroadcaster broadcaster)
-        : base(wallet, agreementId, broadcaster)
+            : base(wallet, agreementId, broadcaster)
         {
             _agreementId = agreementId;
             _requested = ResultStatus.NotRequested;
@@ -38,10 +40,11 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_result == null) return;
             if (_requested == ResultStatus.Requested)
             {
-                _broadcaster.InternalResponse(new ProtocolResult<BinaryAgreementId, bool>(_agreementId, (bool) _result));
+                Broadcaster.InternalResponse(
+                    new ProtocolResult<BinaryAgreementId, bool>(_agreementId, (bool) _result));
                 _requested = ResultStatus.Sent;
                 SetResult();
-                Console.Error.WriteLine($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
+                _logger.LogDebug($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
             }
         }
 
@@ -54,36 +57,36 @@ namespace Phorkus.Consensus.BinaryAgreement
                 if (_currentEpoch % 2 == 0)
                 {
                     // epoch mod 2 = 0 -> we have not yet initiated BB
-                    
+
                     if (_currentEpoch != 0 && !_coins.ContainsKey(_currentEpoch - 1))
                     {
 //                        throw new Exception($"Player {GetMyId()}: can not progress epoch, blocked, coin not present!.");
-                        Console.Error.WriteLine($"Player {GetMyId()}: can not progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present!.");
+                        _logger.LogDebug(
+                            $"Player {GetMyId()}: can not progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present!.");
                         return; // we cannot progress since coin is not tossed and estimate is not correct
                     }
-                    else
-                    {
-                        Console.Error.WriteLine($"Player {GetMyId()}: epoch progressed, coin (Ep={_currentEpoch - 1} is present.");
-                    }
-                    
+
+                    _logger.LogDebug($"Player {GetMyId()}: epoch progressed, coin (Ep={_currentEpoch - 1} is present.");
 
                     // we have right to calculate new estimate and proceed
                     if (_currentEpoch != 0)
                     {
                         var s = _coins[_currentEpoch - 1];
                         _estimate = _currentValues.Values().First();
-                        
+
                         if (_currentValues.Count() == 1 && _result == null)
                         {
-                                if (_estimate == s)
-                                {
-                                    // we are winners!!!!!!!!!!!!!!1
-                                    _resultEpoch = _currentEpoch;
-                                    _result = _estimate;
-                                    CheckResult();
-                                    Console.Error.WriteLine($"Player {GetMyId()} at {_agreementId}: result = {_result} achieved at Ep={_currentEpoch}");
-                                }
-                        } else if (_result == s)
+                            if (_estimate == s)
+                            {
+                                // we are winners!
+                                _resultEpoch = _currentEpoch;
+                                _result = _estimate;
+                                CheckResult();
+                                _logger.LogDebug(
+                                    $"Player {GetMyId()} at {_agreementId}: result = {_result} achieved at Ep={_currentEpoch}");
+                            }
+                        }
+                        else if (_result == s)
                         {
                             if (_currentEpoch > _resultEpoch)
                             {
@@ -102,8 +105,9 @@ namespace Phorkus.Consensus.BinaryAgreement
                         _estimate = _result.Value;
 
                     // here we start new BB assuming that current estimate is correct
-                    var broadcastId = new BinaryBroadcastId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
-                    _broadcaster.InternalRequest(
+                    var broadcastId = new BinaryBroadcastId(_agreementId.Era, _agreementId.AssociatedValidatorId,
+                        _currentEpoch);
+                    Broadcaster.InternalRequest(
                         new ProtocolRequest<BinaryBroadcastId, bool>(Id, broadcastId, _estimate)
                     );
                     _currentEpoch += 1;
@@ -114,15 +118,18 @@ namespace Phorkus.Consensus.BinaryAgreement
                     if (!_binaryBroadcastsResults.ContainsKey(_currentEpoch - 1))
                     {
 //                        throw new Exception($"Player {GetMyId()}: can not progress epoch, blocked, BB not present!.");
-                        Console.Error.WriteLine($"Player {GetMyId()}: can not progress epoch, blocked, BB (Ep={_currentEpoch-1}) not present!.");
+                        _logger.LogDebug(
+                            $"Player {GetMyId()}: can not progress epoch, blocked, BB (Ep={_currentEpoch - 1}) not present!.");
                         return; // we cannot progress since BB is not completed
                     }
-                    Console.Error.WriteLine($"Player {GetMyId()}: epoch progressed, BB (Ep={_currentEpoch - 1} is present.");
-                    
+
+                    Console.Error.WriteLine(
+                        $"Player {GetMyId()}: epoch progressed, BB (Ep={_currentEpoch - 1} is present.");
+
                     _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
-                    _broadcaster.InternalRequest(new ProtocolRequest<CoinId, object>(Id, coinId, null));
-                    Console.Error.WriteLine($"Player {GetMyId()}: send request for coin {coinId}");
+                    Broadcaster.InternalRequest(new ProtocolRequest<CoinId, object>(Id, coinId, null));
+                    _logger.LogDebug($"Player {GetMyId()}: send request for coin {coinId}");
                     _currentEpoch += 1;
                 }
             }

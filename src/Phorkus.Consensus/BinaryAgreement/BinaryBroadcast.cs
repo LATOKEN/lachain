@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Consensus.Messages;
+using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
@@ -23,6 +24,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         private bool _confSent;
         private ResultStatus _requested;
         private BoolSet? _result;
+        private readonly ILogger<BinaryBroadcast> _logger = LoggerFactory.GetLoggerForClass<BinaryBroadcast>();
 
 
         public BinaryBroadcast(BinaryBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster)
@@ -99,7 +101,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             var b = value ? 1 : 0;
             _wasBvalBroadcasted[b] = true;
-            _broadcaster.Broadcast(CreateBValMessage(b));
+            Broadcaster.Broadcast(CreateBValMessage(b));
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -119,7 +121,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_receivedValues[sender].Contains(b))
             {
                 // todo write fault evidence management = logging
-                Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: double receive message {bval} from {sender}");
+                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {bval} from {sender}");
                 return; // potential fault evidence
             }
             _receivedValues[sender].Add(b);
@@ -137,7 +139,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             // todo investigate
             if (_binValues.Count() == 1)
             {
-                _broadcaster.Broadcast(CreateAuxMessage(b));
+                Broadcaster.Broadcast(CreateAuxMessage(b));
                 _auxSent = true;
             }
 
@@ -158,7 +160,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             var b = aux.Value ? 1 : 0;
             if (_playerSentAux[sender])
             {
-                Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: double receive message {aux} from {sender}");
+                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {aux} from {sender}");
                 return; // potential fault evidence
             }
 
@@ -180,7 +182,7 @@ namespace Phorkus.Consensus.BinaryAgreement
 
             if (_validatorSentConf[sender]) 
             {
-                Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: double receive message {conf} from {sender}");
+                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {conf} from {sender}");
                 return; // potential fault evidence
             }
             _validatorSentConf[sender] = true;
@@ -216,9 +218,9 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_result != null) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             _result = ChoseMinimalSet();
-            Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
-            Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: my current bin_values = {_binValues}");
-            Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
+            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
+            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: my current bin_values = {_binValues}");
+            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
             CheckResult();
         }
 
@@ -227,8 +229,8 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (_confSent) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
-            Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: conf message sent with set {_binValues}");
-            _broadcaster.Broadcast(CreateConfMessage(_binValues));
+            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: conf message sent with set {_binValues}");
+            Broadcaster.Broadcast(CreateConfMessage(_binValues));
             _confSent = true;
             RevisitConfMessages();
         }
@@ -301,9 +303,9 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
-            _broadcaster.InternalResponse(
+            Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));
-            Console.Error.WriteLine($"Player {GetMyId()} at {_broadcastId}: made result {_result.Value.ToString()}");
+            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: made result {_result.Value.ToString()}");
             _requested = ResultStatus.Sent;
         }
     }
