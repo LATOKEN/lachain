@@ -24,7 +24,7 @@ namespace Phorkus.Core.CLI
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
         private readonly KeyPair _keyPair;
         private readonly IVirtualMachine _virtualMachine;
@@ -37,7 +37,6 @@ namespace Phorkus.Core.CLI
             IValidatorManager validatorManager,
             IStateManager stateManager,
             IVirtualMachine virtualMachine,
-            ICrypto crypto,
             KeyPair keyPair)
         {
             _blockManager = blockManager;
@@ -46,7 +45,6 @@ namespace Phorkus.Core.CLI
             _transactionManager = transactionManager;
             _validatorManager = validatorManager;
             _stateManager = stateManager;
-            _crypto = crypto;
             _keyPair = keyPair;
             _virtualMachine = virtualMachine;
         }
@@ -113,7 +111,7 @@ namespace Phorkus.Core.CLI
                 ? ProtoUtils.ParsedObject(_blockManager.GetByHeight(blockHeight))
                 : ProtoUtils.ParsedObject(_blockManager.GetByHash(arguments[1].HexToUInt256()));
         }
-        
+
         /*
          * GetBalance
          * address, UInt160
@@ -129,7 +127,7 @@ namespace Phorkus.Core.CLI
             return _stateManager.LastApprovedSnapshot.Balances
                 .GetBalance(arguments[1].HexToUInt160());
         }
-        
+
         public string DeployContract(string[] arguments)
         {
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
@@ -144,7 +142,7 @@ namespace Phorkus.Core.CLI
             _transactionPool.Add(signedTx);
             return signedTx.Hash.Buffer.ToHex();
         }
-        
+
         public string CallContract(string[] arguments)
         {
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
@@ -156,13 +154,16 @@ namespace Phorkus.Core.CLI
             var result = _stateManager.SafeContext(() =>
             {
                 _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[]{}, 200_000);
+                var invocationResult =
+                    _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[] { }, 200_000);
                 _stateManager.Rollback();
                 return invocationResult;
             });
-            return result.Status == ExecutionStatus.Ok ? "Contract has been successfully executed" : "Contract execution failed";
+            return result.Status == ExecutionStatus.Ok
+                ? "Contract has been successfully executed"
+                : "Contract execution failed";
         }
-        
+
         public string Help(string[] arguments)
         {
             var methods = GetType().GetMethods().Select(m =>
@@ -248,9 +249,11 @@ namespace Phorkus.Core.CLI
         /// <returns></returns>
         public string VerifyTransaction(string[] arguments)
         {
-            arguments[1] = "0x080322160a14e855e8f8e5f66a84c62800e9fc8fa06d77c35baf323b0a160a14309ef5b9fed49a18eb3ea1d090c79df690936b9812160a146bc32575acb8754886dc283c2c8ac54b1bd931951a090a072386f26fc100007200";
-            arguments[2] = "0x01aa279be6f82767f7d1c75a966b33c13d2ae573f7f39ccf7557d86cc0cdb8aa5731b2639ff6ef7555232fd1ed6e27e281e5ae96de22b49083df380fb892485761";
-            
+            arguments[1] =
+                "0x080322160a14e855e8f8e5f66a84c62800e9fc8fa06d77c35baf323b0a160a14309ef5b9fed49a18eb3ea1d090c79df690936b9812160a146bc32575acb8754886dc283c2c8ac54b1bd931951a090a072386f26fc100007200";
+            arguments[2] =
+                "0x01aa279be6f82767f7d1c75a966b33c13d2ae573f7f39ccf7557d86cc0cdb8aa5731b2639ff6ef7555232fd1ed6e27e281e5ae96de22b49083df380fb892485761";
+
             var tx = Transaction.Parser.ParseFrom(
                 arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();

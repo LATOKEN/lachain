@@ -11,13 +11,10 @@ namespace Phorkus.Core.Blockchain
 {
     public class ValidatorManager : IValidatorManager
     {
-        private readonly ICrypto _crypto;
-        
-        public ValidatorManager(
-            IConfigManager configManager,
-            ICrypto crypto)
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
+
+        public ValidatorManager(IConfigManager configManager)
         {
-            _crypto = crypto;
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             if (config is null)
                 throw new ArgumentNullException(nameof(config));
@@ -27,7 +24,7 @@ namespace Phorkus.Core.Blockchain
                 .Select(key => key.ToPublicKey())
                 .ToList();
         }
-        
+
         public IReadOnlyCollection<ECDSAPublicKey> Validators { get; }
 
         public uint Quorum => (uint) (Validators.Count * 2 / 3);
@@ -46,6 +43,7 @@ namespace Phorkus.Core.Blockchain
                     return index;
                 ++index;
             }
+
             throw new Exception("Unable to determine validator's index");
         }
 

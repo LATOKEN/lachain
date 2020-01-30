@@ -20,7 +20,7 @@ namespace Phorkus.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly ILogger<ConsoleManager> _logger = LoggerFactory.GetLoggerForClass<ConsoleManager>();
         private IConsoleCommands _consoleCommands;
 
@@ -31,7 +31,6 @@ namespace Phorkus.Core.CLI
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
             IVirtualMachine virtualMachine,
-            ICrypto crypto,
             IBlockManager blockManager,
             IValidatorManager validatorManager,
             IStateManager stateManager
@@ -41,7 +40,6 @@ namespace Phorkus.Core.CLI
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
-            _crypto = crypto;
             _validatorManager = validatorManager;
             _stateManager = stateManager;
             _virtualMachine = virtualMachine;
@@ -49,9 +47,10 @@ namespace Phorkus.Core.CLI
 
         private void _Worker(KeyPair keyPair)
         {
-            _consoleCommands = new ConsoleCommands(_transactionBuilder, _transactionPool,
-                _transactionManager, _blockManager, _validatorManager, _stateManager, _virtualMachine,
-                _crypto, keyPair);
+            _consoleCommands = new ConsoleCommands(
+                _transactionBuilder, _transactionPool, _transactionManager,
+                _blockManager, _validatorManager, _stateManager, _virtualMachine, keyPair
+            );
             try
             {
                 Console.Write(" > ");

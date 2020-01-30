@@ -17,14 +17,13 @@ namespace Phorkus.Core.Blockchain.OperationManager
     {
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IReadOnlyDictionary<TransactionType, ITransactionExecuter> _transactionPersisters;
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
 
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
             IVirtualMachine virtualMachine,
             IContractRegisterer contractRegisterer,
-            ICrypto crypto,
             IStateManager stateManager)
         {
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
@@ -33,7 +32,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine)}
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
-            _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
 
             transactionVerifier.OnTransactionVerified += (sender, transaction) =>

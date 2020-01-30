@@ -50,7 +50,7 @@ namespace Phorkus.Core.Consensus
         )
         {
             _messageDeliverer = messageDeliverer;
-            _messageFactory = new MessageFactory(keyPair, crypto);
+            _messageFactory = new MessageFactory(keyPair);
             _validatorManager = validatorManager;
             _keyPair = keyPair;
             _wallet = wallet;

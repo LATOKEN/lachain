@@ -42,18 +42,13 @@ namespace Phorkus.Networking
         private readonly ConcurrentDictionary<ECDSAPublicKey, bool> _authorizedKeys =
             new ConcurrentDictionary<ECDSAPublicKey, bool>();
 
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly ILogger<NetworkManager> _logger = LoggerFactory.GetLoggerForClass<NetworkManager>();
 
         private MessageFactory _messageFactory;
         private ServerWorker _serverWorker;
         private IMessageHandler _messageHandler;
         private NetworkConfig _networkConfig;
-
-        public NetworkManager(ICrypto crypto)
-        {
-            _crypto = crypto;
-        }
 
         public IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey)
         {
@@ -319,7 +314,7 @@ namespace Phorkus.Networking
         {
             _messageHandler = messageHandler;
             _networkConfig = networkConfig ?? throw new ArgumentNullException(nameof(networkConfig));
-            _messageFactory = new MessageFactory(keyPair, _crypto);
+            _messageFactory = new MessageFactory(keyPair);
             _serverWorker = new ServerWorker(networkConfig);
             LocalNode = new Node
             {

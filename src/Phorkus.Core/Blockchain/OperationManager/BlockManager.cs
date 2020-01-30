@@ -16,7 +16,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
     public class BlockManager : IBlockManager
     {
         private readonly ITransactionManager _transactionManager;
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IValidatorManager _validatorManager;
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IMultisigVerifier _multisigVerifier;
@@ -25,14 +25,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
         public BlockManager(
             ITransactionManager transactionManager,
-            ICrypto crypto,
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
             IMultisigVerifier multisigVerifier,
             IStateManager stateManager)
         {
             _transactionManager = transactionManager;
-            _crypto = crypto;
             _validatorManager = validatorManager;
             _genesisBuilder = genesisBuilder;
             _multisigVerifier = multisigVerifier;

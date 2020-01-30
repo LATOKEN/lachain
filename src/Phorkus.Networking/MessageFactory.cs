@@ -9,12 +9,11 @@ namespace Phorkus.Networking
     public class MessageFactory : IMessageFactory
     {
         private readonly KeyPair _keyPair;
-        private readonly ICrypto _crypto;
-        
-        public MessageFactory(KeyPair keyPair, ICrypto crypto)
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
+
+        public MessageFactory(KeyPair keyPair)
         {
             _keyPair = keyPair;
-            _crypto = crypto;
         }
 
         public NetworkMessage HandshakeRequest(Node node)
@@ -88,7 +87,7 @@ namespace Phorkus.Networking
         {
             var request = new GetBlocksByHashesRequest
             {
-                BlockHashes = { blockHashes }
+                BlockHashes = {blockHashes}
             };
             var sig = _SignMessage(request);
             return new NetworkMessage
@@ -102,7 +101,7 @@ namespace Phorkus.Networking
         {
             var reply = new GetBlocksByHashesReply
             {
-                Blocks = { blocks }
+                Blocks = {blocks}
             };
             var sig = _SignMessage(reply);
             return new NetworkMessage
@@ -131,7 +130,7 @@ namespace Phorkus.Networking
         {
             var reply = new GetBlocksByHeightRangeReply
             {
-                BlockHashes = { blockHashes }
+                BlockHashes = {blockHashes}
             };
             var sig = _SignMessage(reply);
             return new NetworkMessage
@@ -145,7 +144,7 @@ namespace Phorkus.Networking
         {
             var request = new GetTransactionsByHashesRequest
             {
-                TransactionHashes = { transactionHashes }
+                TransactionHashes = {transactionHashes}
             };
             var sig = _SignMessage(request);
             return new NetworkMessage
@@ -159,7 +158,7 @@ namespace Phorkus.Networking
         {
             var reply = new GetTransactionsByHashesReply
             {
-                Transactions = { transactions }
+                Transactions = {transactions}
             };
             var sig = _SignMessage(reply);
             return new NetworkMessage

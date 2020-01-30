@@ -7,16 +7,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class MultisigVerifier : IMultisigVerifier
     {
-        private readonly IValidatorManager _validatorManager;
-        private readonly ICrypto _crypto;
-
-        public MultisigVerifier(
-            IValidatorManager validatorManager,
-            ICrypto crypto)
-        {
-            _validatorManager = validatorManager;
-            _crypto = crypto;
-        }
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         public OperatingError VerifyMultisig(MultiSig multisig, UInt256 hash)
         {
@@ -51,6 +42,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     // ignore
                 }
             }
+
             /* TODO: "don't forget to enable this validation" */
             /*if ((int) multisig.Quorum < (int) _validatorManager.Quorum)
                 return OperatingError.InvalidMultisig;*/

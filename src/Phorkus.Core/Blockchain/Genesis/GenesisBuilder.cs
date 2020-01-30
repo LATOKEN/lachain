@@ -15,15 +15,13 @@ namespace Phorkus.Core.Blockchain.Genesis
         public const ulong GenesisConsensusData = 2083236893UL;
 
         private readonly IConfigManager _configManager;
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly ITransactionManager _transactionManager;
 
         public GenesisBuilder(
             IConfigManager configManager,
-            ICrypto crypto,
             ITransactionManager transactionManager)
         {
-            _crypto = crypto;
             _transactionManager = transactionManager;
             _configManager = configManager;
         }

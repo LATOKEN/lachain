@@ -24,7 +24,7 @@ namespace Phorkus.Core.Consensus
         private readonly ILogger<ConsensusManager> _logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
-        private readonly ICrypto _crypto;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private bool _terminated;
         private readonly IWallet _wallet;
         private readonly KeyPair _keyPair;
@@ -35,14 +35,12 @@ namespace Phorkus.Core.Consensus
         public ConsensusManager(
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
-            IConfigManager configManager,
-            ICrypto crypto
+            IConfigManager configManager
         )
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
-            _crypto = crypto;
             var tpkePrivateKey = PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes());
             var maxFaulty = (config.ValidatorsEcdsaPublicKeys.Count - 1) / 3;
             _wallet =
@@ -59,7 +57,7 @@ namespace Phorkus.Core.Consensus
                             maxFaulty)
                     };
             _terminated = false;
-            _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), _crypto);
         }
 
         public void AdvanceEra(long newEra)
