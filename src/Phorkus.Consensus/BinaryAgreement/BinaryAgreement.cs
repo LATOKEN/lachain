@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Grpc.Core.Logging;
 using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.Messages;
 using Phorkus.Logger;
@@ -66,7 +65,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                         return; // we cannot progress since coin is not tossed and estimate is not correct
                     }
 
-                    _logger.LogDebug($"Player {GetMyId()}: epoch progressed, coin (Ep={_currentEpoch - 1} is present.");
+                    _logger.LogDebug($"Player {GetMyId()}: epoch progressed, coin (Ep={_currentEpoch - 1}) is present.");
 
                     // we have right to calculate new estimate and proceed
                     if (_currentEpoch != 0)
@@ -123,8 +122,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                         return; // we cannot progress since BB is not completed
                     }
 
-                    Console.Error.WriteLine(
-                        $"Player {GetMyId()}: epoch progressed, BB (Ep={_currentEpoch - 1} is present.");
+                    _logger.LogDebug($"Player {GetMyId()}: epoch progressed, BB (Ep={_currentEpoch - 1} is present.");
 
                     _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);

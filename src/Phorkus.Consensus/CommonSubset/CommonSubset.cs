@@ -96,6 +96,7 @@ namespace Phorkus.Consensus.CommonSubset
                 throw new NoNullAllowedException();
 
             var id = new BinaryAgreementId(_commonSubsetId.Era, j);
+            _logger.LogDebug($"Sending input {_binaryAgreementInput[j]} to {id}");
             Broadcaster.InternalRequest(
                 new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
         }
@@ -103,7 +104,7 @@ namespace Phorkus.Consensus.CommonSubset
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
             var j = result.Id.AssociatedValidatorId;
-            _logger.LogDebug($"Player ${GetMyId()} at ${_commonSubsetId}: ${j}-th RBC completed.");
+            _logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: ${j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)

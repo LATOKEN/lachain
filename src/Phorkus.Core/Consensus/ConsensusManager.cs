@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Phorkus.Consensus;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
@@ -80,14 +81,21 @@ namespace Phorkus.Core.Consensus
         public void Start(long startingEra)
         {
             CurrentEra = startingEra;
+            new Thread(Run).Start();
+        }
+
+        private void Run()
+        {
+            Thread.Sleep(5000);
             var broadcaster = EnsureEra(CurrentEra);
             var rootId = new HoneyBadgerId(CurrentEra);
             var rootProtocol = new HoneyBadger(rootId, _wallet, broadcaster);
             broadcaster.RegisterProtocols(new[] {rootProtocol});
             broadcaster.InternalRequest(
                 new ProtocolRequest<HoneyBadgerId, IRawShare>(null, rootId, new RawShare(new byte[] { }, 0))
-            );
+            );            
         }
+        
 
         public void Terminate()
         {
@@ -109,8 +117,7 @@ namespace Phorkus.Core.Consensus
             }
 
             _logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _keyPair, _wallet,
-                _crypto);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _keyPair, _wallet);
         }
     }
 }

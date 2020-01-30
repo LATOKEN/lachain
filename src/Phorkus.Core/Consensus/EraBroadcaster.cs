@@ -46,7 +46,7 @@ namespace Phorkus.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            KeyPair keyPair, IWallet wallet, ICrypto crypto
+            KeyPair keyPair, IWallet wallet
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -71,7 +71,14 @@ namespace Phorkus.Core.Consensus
             var payload = _messageFactory.ConsensusMessage(message);
             foreach (var publicKey in _validatorManager.Validators)
             {
-                _messageDeliverer.SendTo(publicKey, payload);
+                if (publicKey.Equals(_keyPair.PublicKey))
+                {
+                    Dispatch(message);
+                }
+                else
+                {
+                    _messageDeliverer.SendTo(publicKey, payload);
+                }
             }
         }
 
@@ -149,6 +156,7 @@ namespace Phorkus.Core.Consensus
                     CheckRequest(rbIdEchoMsg);
                     _registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
+                // TODO: this is only for mock RBC
                 case ConsensusMessage.PayloadOneofCase.EncryptedShare:
                     var idEncryptedShare =
                         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
@@ -233,7 +241,7 @@ namespace Phorkus.Core.Consensus
                     RegisterProtocols(new[] {new CommonCoin(coinId, _wallet, this)});
                     break;
                 case ReliableBroadcastId rbcId:
-                    RegisterProtocols(new[] {new ReliableBroadcast(rbcId, _wallet, this)});
+                    RegisterProtocols(new[] {new MockReliableBroadcast(rbcId, _wallet, this)});
                     break;
                 case BinaryAgreementId baId:
                     RegisterProtocols(new[] {new BinaryAgreement(baId, _wallet, this)});

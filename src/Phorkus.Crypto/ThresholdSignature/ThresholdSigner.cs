@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Grpc.Core.Logging;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Phorkus.Logger;
 
 namespace Phorkus.Crypto.ThresholdSignature
 {
     public class ThresholdSigner : IThresholdSigner
     {
+        private readonly ILogger<ThresholdSigner> _logger = LoggerFactory.GetLoggerForClass<ThresholdSigner>();
         private readonly byte[] _dataToSign;
         private readonly PrivateKeyShare _privateKeyShare;
         private readonly PublicKeySet _publicKeySet;
@@ -32,15 +36,30 @@ namespace Phorkus.Crypto.ThresholdSignature
         {
             result = null;
             var idx = _publicKeySet.GetIndex(pubKey);
-            if (idx < 0 || idx >= _publicKeySet.Count) return false;
-            if (_collectedShares[idx] != null) return false;
-            if (!IsShareValid(pubKey, sigShare)) return false;
+            if (idx < 0 || idx >= _publicKeySet.Count)
+            {
+                _logger.LogDebug($"Public key {pubKey} is not recognized (index {idx})");
+                return false;
+            }
+
+            if (_collectedShares[idx] != null)
+            {
+                _logger.LogDebug($"Signature share {idx} input twice");
+                return false;
+            }
+
+            if (!IsShareValid(pubKey, sigShare))
+            {
+                _logger.LogDebug($"Signature share {idx} is not valid: {sigShare}");
+                return false;
+            }
             if (_collectedSharesNumber > _publicKeySet.Threshold)
             {
                 result = _signature;
                 return true;
             }
 
+            _logger.LogDebug($"Collected signature share ${idx}");
             _collectedShares[idx] = sigShare;
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;
@@ -48,6 +67,7 @@ namespace Phorkus.Crypto.ThresholdSignature
                 _collectedShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share))
                     .Where(pair => pair.Value != null).ToArray()
             );
+            _logger.LogDebug($"Combined signature {signature}");
             if (!_publicKeySet.SharedPublicKey.ValidateSignature(signature, _dataToSign))
                 throw new Exception("Fatal error: all shares are valid but combined signature is not");
             _signature = signature;

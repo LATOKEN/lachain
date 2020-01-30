@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.ThresholdSignature;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.CryptoTest
 {
@@ -32,7 +33,7 @@ namespace Phorkus.CryptoTest
                 for (var j = 0; j < n; ++j)
                 {
                     success[i] &= signers[i].AddShare(pubKeys[j], signatureShares[j], out var sig);
-                    if (sigs[i] == null && sig != null) 
+                    if (sigs[i] == null && sig != null)
                         sigs[i] = sig;
                 }
             }

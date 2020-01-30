@@ -8,6 +8,7 @@
     <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Phorkus.Logger\Phorkus.Logger.csproj" />
     <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
     <ProjectReference Include="..\Phorkus.Utility\Phorkus.Utility.csproj" />
   </ItemGroup>
