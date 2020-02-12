@@ -86,7 +86,7 @@ namespace Phorkus.Utility.Utils
 
         public override string ToString()
         {
-            return $"BoolSet({_mask})";
+            return $"BoolSet({String.Join(", ", Values())})";
         }
     }
 }

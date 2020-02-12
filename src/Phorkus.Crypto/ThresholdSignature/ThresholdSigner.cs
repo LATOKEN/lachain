@@ -4,6 +4,7 @@ using System.Linq;
 using Grpc.Core.Logging;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Phorkus.Logger;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Crypto.ThresholdSignature
 {
@@ -50,7 +51,7 @@ namespace Phorkus.Crypto.ThresholdSignature
 
             if (!IsShareValid(pubKey, sigShare))
             {
-                _logger.LogDebug($"Signature share {idx} is not valid: {sigShare}");
+                _logger.LogDebug($"Signature share {idx} is not valid: {sigShare.ToBytes().ToHex()}");
                 return false;
             }
             if (_collectedSharesNumber > _publicKeySet.Threshold)
@@ -59,7 +60,7 @@ namespace Phorkus.Crypto.ThresholdSignature
                 return true;
             }
 
-            _logger.LogDebug($"Collected signature share ${idx}");
+            _logger.LogDebug($"Collected signature share #{idx}");
             _collectedShares[idx] = sigShare;
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;

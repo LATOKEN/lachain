@@ -1,5 +1,17 @@
 version: '2.4'
 services:
+  node0:
+    build:
+      context: ./
+      args:
+        CONFIG: src/Phorkus.Console/config0.json
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    ports:
+    - "5051:5051"
+    network_mode: "host"
+
   node1:
     build:
       context: ./
@@ -9,7 +21,7 @@ services:
     stdin_open: true
     tty: true
     ports:
-    - "5051:5051"
+    - "5052:5052"
     network_mode: "host"
 
   node2:
@@ -21,7 +33,7 @@ services:
     stdin_open: true
     tty: true
     ports:
-    - "5052:5052"
+    - "5053:5053"
     network_mode: "host"
 
   node3:
@@ -29,18 +41,6 @@ services:
       context: ./
       args:
         CONFIG: src/Phorkus.Console/config3.json
-      dockerfile: Dockerfile
-    stdin_open: true
-    tty: true
-    ports:
-    - "5053:5053"
-    network_mode: "host"
-
-  node4:
-    build:
-      context: ./
-      args:
-        CONFIG: src/Phorkus.Console/config4.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true

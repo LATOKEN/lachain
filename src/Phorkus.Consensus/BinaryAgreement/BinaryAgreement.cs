@@ -152,9 +152,9 @@ namespace Phorkus.Consensus.BinaryAgreement
                         // todo fix back or add some logic to handle parents fault
                         throw new InvalidOperationException("Cannot propose value: protocol is already running");
                     }
-
                     _requested = ResultStatus.Requested;
                     _estimate = agreementRequested.Input;
+                    _logger.LogDebug($"Started BA loop in epoch {_currentEpoch} with initial estimate {_estimate}");
                     TryProgressEpoch();
                     break;
                 case ProtocolResult<BinaryAgreementId, bool> _:

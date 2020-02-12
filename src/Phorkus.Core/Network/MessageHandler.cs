@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
+using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
@@ -17,18 +18,22 @@ namespace Phorkus.Core.Network
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
+        private readonly IValidatorManager _validatorManager;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
             ITransactionPool transactionPool,
             IStateManager stateManager,
-            IConsensusManager consensusManager
+            IConsensusManager consensusManager,
+            IValidatorManager validatorManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
             _consensusManager = consensusManager;
+            _validatorManager = validatorManager;
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -90,6 +95,13 @@ namespace Phorkus.Core.Network
 
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
+            var index = _validatorManager.GetValidatorIndex(envelope.PublicKey);
+            if (message.Validator.ValidatorIndex != index)
+            {
+                throw new UnauthorizedAccessException(
+                    $"Message signed by validator {index}, but validator index is {message.Validator.ValidatorIndex}");
+            }
+
             _consensusManager.Dispatch(message);
         }
     }

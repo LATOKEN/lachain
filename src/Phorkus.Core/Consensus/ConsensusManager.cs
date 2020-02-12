@@ -59,6 +59,7 @@ namespace Phorkus.Core.Consensus
                     };
             _terminated = false;
             _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), _crypto);
+            _logger.LogDebug($"Starting consensus as validator {_validatorManager.GetValidatorIndex(_keyPair.PublicKey)}");
         }
 
         public void AdvanceEra(long newEra)

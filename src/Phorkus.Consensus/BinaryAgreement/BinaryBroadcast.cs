@@ -301,7 +301,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void CheckResult()
         {
-            if (_result == null) return;
+            if (!_result.HasValue) return;
             if (_requested != ResultStatus.Requested) return;
             Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));

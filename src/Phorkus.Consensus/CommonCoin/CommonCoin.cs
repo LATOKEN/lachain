@@ -6,6 +6,7 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.ThresholdSignature;
 using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 using Signature = Phorkus.Crypto.ThresholdSignature.Signature;
 
 namespace Phorkus.Consensus.CommonCoin
@@ -18,6 +19,7 @@ namespace Phorkus.Consensus.CommonCoin
         private bool? _result;
         private ResultStatus _requested = ResultStatus.NotRequested;
         private readonly ILogger<CommonCoin> _logger = LoggerFactory.GetLoggerForClass<CommonCoin>();
+        private readonly PublicKeyShare _publicKeyShare;
 
         public CommonCoin(
             CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
@@ -28,6 +30,7 @@ namespace Phorkus.Consensus.CommonCoin
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(_coinId.ToByteArray(), wallet.ThresholdSignaturePrivateKeyShare,
                 _publicKeySet);
+            _publicKeyShare = wallet.ThresholdSignaturePrivateKeyShare.GetPublicKeyShare();
         }
 
         public void CheckResult()
@@ -54,6 +57,7 @@ namespace Phorkus.Consensus.CommonCoin
                     message.Coin.Epoch != _coinId.Epoch)
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
 
+                _logger.LogDebug($"received share {message.Coin.SignatureShare.ToByteArray().ToHex()} from {message.Validator.ValidatorIndex}");
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(_publicKeySet[(int) message.Validator.ValidatorIndex], signatureShare,
                     out var signature))
@@ -73,9 +77,12 @@ namespace Phorkus.Consensus.CommonCoin
                 {
                     case ProtocolRequest<CoinId, object> _:
                         var signatureShare = _thresholdSigner.Sign();
+                        _logger.LogDebug($"signed payload {_coinId.ToByteArray().ToHex()} and got signature {signatureShare.ToBytes().ToHex()}");
                         _requested = ResultStatus.Requested;
                         CheckResult();
-                        Broadcaster.Broadcast(CreateCoinMessage(signatureShare));
+                        var msg = CreateCoinMessage(signatureShare);
+                        Broadcaster.Broadcast(msg);
+                        _logger.LogDebug($"sent share {msg.Coin.SignatureShare.ToByteArray().ToHex()}");
                         break;
                     case ProtocolResult<CoinId, bool> _:
                         Terminated = true;
