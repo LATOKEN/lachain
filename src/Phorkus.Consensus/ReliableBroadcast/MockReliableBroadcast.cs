@@ -52,7 +52,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                         HandleInputMessage(request);
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
-                        Terminated = true;
+                        Terminate();
                         break;
                     default:
                         throw new InvalidOperationException(
@@ -87,6 +87,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
 
         private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMessage messageEncryptedShare)
         {
+            _logger.LogError($"Got message from {messageValidator.ValidatorIndex} in {_reliableBroadcastId}");
             if (_receivedAlready)
             {
                 _logger.LogDebug(

@@ -26,7 +26,7 @@ namespace Phorkus.Consensus.CommonSubset
 
         public override string ToString()
         {
-            return $"CommonSubsetId {nameof(Era)}: {Era}";
+            return $"ACS ({nameof(Era)}={Era})";
         }
 
         public bool Equals(IProtocolIdentifier other)

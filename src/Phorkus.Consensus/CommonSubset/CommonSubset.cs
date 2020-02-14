@@ -104,7 +104,7 @@ namespace Phorkus.Consensus.CommonSubset
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
             var j = result.Id.AssociatedValidatorId;
-            _logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: ${j}-th RBC completed.");
+            _logger.LogError($"Player {GetMyId()} at {_commonSubsetId}: {j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)
@@ -118,14 +118,16 @@ namespace Phorkus.Consensus.CommonSubset
 
         private void HandleBinaryAgreementResult(ProtocolResult<BinaryAgreementId, bool> result)
         {
+            _logger.LogError($"Received {result.From} result: {result.Result}");
             // todo check for double send of result
             ++_cntBinaryAgreementsCompleted;
             _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
-            _logger.LogDebug(
-                $"Player ${GetMyId()} at ${_commonSubsetId}: ${result.Id.AssociatedValidatorId}-th bb completed.");
+            _logger.LogError(
+                $"Player {GetMyId()} at {_commonSubsetId}: {result.Id.AssociatedValidatorId}-th BA completed.");
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= N - F)
             {
+                _logger.LogError($"Sending 0 to all remaining BA");
                 _filledBinaryAgreements = true;
                 for (var i = 0; i < N; ++i)
                 {

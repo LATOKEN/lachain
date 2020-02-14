@@ -85,7 +85,7 @@ namespace Phorkus.Consensus.CommonCoin
                         _logger.LogDebug($"sent share {msg.Coin.SignatureShare.ToByteArray().ToHex()}");
                         break;
                     case ProtocolResult<CoinId, bool> _:
-                        Terminated = true;
+                        Terminate();
                         break;
                     default:
                         throw new InvalidOperationException(

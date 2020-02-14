@@ -96,7 +96,11 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed,
                     out var totalFee);
                 if (operatingError != OperatingError.Ok)
+                {
+                    _logger.LogError($"Error occured while executing block: {operatingError}");
                     throw new InvalidBlockException(operatingError);
+                }
+                    
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
                 {
                     _stateManager.RollbackTo(snapshotBefore);

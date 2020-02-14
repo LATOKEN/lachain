@@ -196,6 +196,11 @@ namespace Phorkus.Core.Consensus
             _logger.LogDebug($"Protocol {result.From} returned result");
             if (_callback.TryGetValue(result.From, out var senderId))
             {
+                if (_registry[senderId] == null)
+                {
+                    _logger.LogWarning($"There is no protocol registered to get result from {senderId}");
+                }
+
                 _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result));
                 _logger.LogDebug($"Result from protocol {result.From} delivered to {senderId}");
             }
@@ -248,6 +253,9 @@ namespace Phorkus.Core.Consensus
                     break;
                 case CommonSubsetId acsId:
                     RegisterProtocols(new[] {new CommonSubset(acsId, _wallet, this)});
+                    break;
+                case HoneyBadgerId hbId:
+                    RegisterProtocols(new[] {new HoneyBadger(hbId, _wallet, this)});
                     break;
                 default:
                     throw new Exception($"Unknown protocol type {id}");

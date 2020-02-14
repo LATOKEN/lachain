@@ -25,6 +25,7 @@ namespace Phorkus.Core.Consensus
         private readonly ILogger<ConsensusManager> _logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
+        private readonly IBlockProducer _blockProducer;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private bool _terminated;
         private readonly IWallet _wallet;
@@ -36,12 +37,12 @@ namespace Phorkus.Core.Consensus
         public ConsensusManager(
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
-            IConfigManager configManager
-        )
+            IConfigManager configManager, IBlockProducer blockProducer)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
+            _blockProducer = blockProducer;
             var tpkePrivateKey = PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes());
             var maxFaulty = (config.ValidatorsEcdsaPublicKeys.Count - 1) / 3;
             _wallet =
@@ -59,7 +60,8 @@ namespace Phorkus.Core.Consensus
                     };
             _terminated = false;
             _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), _crypto);
-            _logger.LogDebug($"Starting consensus as validator {_validatorManager.GetValidatorIndex(_keyPair.PublicKey)}");
+            _logger.LogDebug(
+                $"Starting consensus as validator {_validatorManager.GetValidatorIndex(_keyPair.PublicKey)}");
         }
 
         public void AdvanceEra(long newEra)
@@ -87,16 +89,18 @@ namespace Phorkus.Core.Consensus
 
         private void Run()
         {
-            Thread.Sleep(5000);
-            var broadcaster = EnsureEra(CurrentEra);
-            var rootId = new HoneyBadgerId(CurrentEra);
-            var rootProtocol = new HoneyBadger(rootId, _wallet, broadcaster);
-            broadcaster.RegisterProtocols(new[] {rootProtocol});
-            broadcaster.InternalRequest(
-                new ProtocolRequest<HoneyBadgerId, IRawShare>(null, rootId, new RawShare(new byte[] { }, 0))
-            );            
+            for (;; CurrentEra += 1)
+            {
+                Thread.Sleep(5000);
+                var broadcaster = EnsureEra(CurrentEra);
+                var rootId = new RootProtocolId(CurrentEra);
+                var rootProtocol = new RootProtocol(_wallet, rootId, broadcaster, _blockProducer, _keyPair.PublicKey);
+                broadcaster.RegisterProtocols(new[] {rootProtocol});
+                broadcaster.InternalRequest(new ProtocolRequest<RootProtocolId, object>(null, rootId, null));
+                rootProtocol.WaitFinish();
+                _logger.LogDebug("Root protocol finished, waiting for new era...");
+            }
         }
-        
 
         public void Terminate()
         {

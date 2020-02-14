@@ -44,5 +44,10 @@ namespace Phorkus.Consensus.ReliableBroadcast
         {
             throw new NotImplementedException();
         }
+
+        public override string ToString()
+        {
+            return $"RBC (E={Era}, A={AssociatedValidatorId})";
+        }
     }
 }

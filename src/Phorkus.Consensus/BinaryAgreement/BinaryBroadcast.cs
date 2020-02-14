@@ -80,7 +80,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                         HandleRequest(broadcastRequested);
                         break;
                     case ProtocolResult<BinaryBroadcastId, BoolSet> _:
-                        Terminated = true;
+                        Terminate();
                         break;
                     default:
                         throw new InvalidOperationException(
@@ -303,9 +303,9 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (!_result.HasValue) return;
             if (_requested != ResultStatus.Requested) return;
+            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: made result {_result.Value.ToString()}");
             Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: made result {_result.Value.ToString()}");
             _requested = ResultStatus.Sent;
         }
     }

@@ -31,6 +31,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             _agreementId = agreementId;
             _requested = ResultStatus.NotRequested;
             _currentEpoch = 0;
+            _resultEpoch = 0;
             _wasRepeat = false;
         }
 
@@ -89,9 +90,10 @@ namespace Phorkus.Consensus.BinaryAgreement
                         {
                             if (_currentEpoch > _resultEpoch)
                             {
+                                _logger.LogDebug($"Value repeated at Ep={_currentEpoch}, result is already obtained: {_result}. Terminating protocol");
                                 _wasRepeat = true;
                                 Terminate();
-//                                CheckResult();
+                                // CheckResult();
                             }
                         }
                         else
@@ -133,15 +135,18 @@ namespace Phorkus.Consensus.BinaryAgreement
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        // [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
+            _logger.LogDebug("Started processing message");
             if (envelope.External)
             {
+                _logger.LogError("Binary agreement should not receive external messages");
                 throw new InvalidOperationException("Binary agreement should not receive external messages");
             }
 
             var message = envelope.InternalMessage;
+            _logger.LogDebug($"Got message of type {message.GetType()}");
 
             switch (message)
             {
@@ -158,10 +163,10 @@ namespace Phorkus.Consensus.BinaryAgreement
                     TryProgressEpoch();
                     break;
                 case ProtocolResult<BinaryAgreementId, bool> _:
-//                    Terminated = true;
                     break;
                 case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
                 {
+                    _logger.LogDebug($"Broadcast {broadcastCompleted.Id.Epoch} completed at era {Id.Era}");
                     _binaryBroadcastsResults[broadcastCompleted.Id.Epoch] = broadcastCompleted.Result;
                     TryProgressEpoch();
                     return;

@@ -21,6 +21,6 @@ FROM mcr.microsoft.com/dotnet/core/runtime:3.1
 RUN apt update && apt install -y libc6-dev libsnappy-dev
 WORKDIR /phorkus
 COPY --from=build-env /phorkus/Phorkus.Console/out .
-ARG CONFIG=src/Phorkus.Console/config.json
-COPY ${CONFIG} ./config.json
+ARG CONFIG
+COPY $CONFIG ./config.json
 ENTRYPOINT ["dotnet", "Phorkus.Console.dll"]

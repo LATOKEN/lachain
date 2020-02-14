@@ -46,10 +46,9 @@ namespace Phorkus.Consensus
             lock (_resultLock)
             {
                 if (ResultEmitted) return;
-                Monitor.Wait(_resultLock);
-                if (!ResultEmitted)
+                while (!ResultEmitted)
                 {
-                    throw new Exception("Should set ResultEmitted to true before pulse.");
+                    Monitor.Wait(_resultLock);
                 }
             }
         }
@@ -69,6 +68,7 @@ namespace Phorkus.Consensus
             lock (_queueLock)
             {
                 if (Terminated) return;
+                _logger.LogDebug($"Protocol {GetType()} is terminated");
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
             }
@@ -98,7 +98,7 @@ namespace Phorkus.Consensus
                 }
                 catch (Exception e)
                 {
-                    _logger.LogDebug(e, "Exception occured while processing protocol message");
+                    _logger.LogError($"Exception occured while processing protocol message: {e}");
                     Terminated = true;
                     break;
                 }

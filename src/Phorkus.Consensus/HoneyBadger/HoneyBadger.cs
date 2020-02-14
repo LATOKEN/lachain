@@ -76,7 +76,7 @@ namespace Phorkus.Consensus.HoneyBadger
                         HandleInputMessage(honeyBadgerRequested);
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> _:
-                        Terminated = true;
+                        Terminate();
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
                         HandleCommonSubset(result);
@@ -112,6 +112,7 @@ namespace Phorkus.Consensus.HoneyBadger
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
+            _logger.LogInformation($"Full result decrypted!");
             _requested = ResultStatus.Sent;
             Broadcaster.InternalResponse(
                 new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
@@ -119,6 +120,7 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
+            _logger.LogDebug($"Common subset finished {result.From}");
             foreach (EncryptedShare share in result.Result)
             {
                 var dec = PrivKey.Decrypt(share);
@@ -176,6 +178,7 @@ namespace Phorkus.Consensus.HoneyBadger
 
             if (_shares[id] != null) return;
 
+            _logger.LogInformation($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
             _shares[id] = PubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
             CheckAllSharesDecrypted();
@@ -194,8 +197,11 @@ namespace Phorkus.Consensus.HoneyBadger
 
             for (var i = 0; i < N; ++i)
                 if (_taken[i])
-                    _result.Add(_shares[i]);
-
+                {
+                    _logger.LogDebug($"Added share {i} to result");
+                    _result.Add(_shares[i]);   
+                }
+            
             CheckResult();
         }
 

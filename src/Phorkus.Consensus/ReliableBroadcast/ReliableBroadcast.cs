@@ -83,7 +83,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                         HandleInputMessage(broadcastRequested);
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
-                        Terminated = true;
+                        Terminate();
                         break;
                     default:
                         throw new InvalidOperationException(

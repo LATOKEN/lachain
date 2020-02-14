@@ -80,7 +80,7 @@ namespace Phorkus.Consensus.TPKE
                         HandleInputMessage(request);
                         break;
                     case ProtocolResult<TPKESetupId, Keys> _:
-                        Terminated = true;
+                        Terminate();
                         break;
                     default:
                         throw new InvalidOperationException(
