@@ -87,7 +87,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
 
         private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMessage messageEncryptedShare)
         {
-            _logger.LogError($"Got message from {messageValidator.ValidatorIndex} in {_reliableBroadcastId}");
+            _logger.LogDebug($"Got message from {messageValidator.ValidatorIndex} in {_reliableBroadcastId}");
             if (_receivedAlready)
             {
                 _logger.LogDebug(
