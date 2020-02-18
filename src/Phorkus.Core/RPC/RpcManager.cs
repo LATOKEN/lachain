@@ -36,7 +36,7 @@ namespace Phorkus.Core.RPC
             _virtualMachine = virtualMachine;
         }
 
-        private HttpService _httpService;
+        private HttpService? _httpService;
         
         public void Start()
         {            

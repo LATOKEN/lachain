@@ -9,12 +9,12 @@ namespace Phorkus.Consensus
     {
         public int N { get; }
         public int F { get; }
-        public PublicKey TpkePublicKey { get; set; }
-        public PrivateKey TpkePrivateKey { get; set; }
-        public VerificationKey TpkeVerificationKey { get; set; }
+        public PublicKey? TpkePublicKey { get; set; }
+        public PrivateKey? TpkePrivateKey { get; set; }
+        public VerificationKey? TpkeVerificationKey { get; set; }
 
-        public PublicKeySet ThresholdSignaturePublicKeySet { get; set; }
-        public PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; set;  }
+        public PublicKeySet? ThresholdSignaturePublicKeySet { get; set; }
+        public PrivateKeyShare? ThresholdSignaturePrivateKeyShare { get; set;  }
         public ISet<IProtocolIdentifier> ProtocolIds { get; } = new HashSet<IProtocolIdentifier>(); // TODO: delete this
 
         public Wallet(int n, int f)

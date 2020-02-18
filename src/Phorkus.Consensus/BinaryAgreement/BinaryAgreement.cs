@@ -128,7 +128,7 @@ namespace Phorkus.Consensus.BinaryAgreement
 
                     _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
-                    Broadcaster.InternalRequest(new ProtocolRequest<CoinId, object>(Id, coinId, null));
+                    Broadcaster.InternalRequest(new ProtocolRequest<CoinId, object?>(Id, coinId, null));
                     _logger.LogDebug($"Player {GetMyId()}: send request for coin {coinId}");
                     _currentEpoch += 1;
                 }
@@ -146,6 +146,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             }
 
             var message = envelope.InternalMessage;
+            if (message is null) throw new ArgumentNullException();
             _logger.LogDebug($"Got message of type {message.GetType()}");
 
             switch (message)
@@ -171,8 +172,8 @@ namespace Phorkus.Consensus.BinaryAgreement
                     TryProgressEpoch();
                     return;
                 }
-                case ProtocolResult<CoinId, bool> coinTossed:
-                    _coins[coinTossed.Id.Epoch] = coinTossed.Result;
+                case ProtocolResult<CoinId, CoinResult> coinTossed:
+                    _coins[coinTossed.Id.Epoch] = coinTossed.Result.Parity();
                     TryProgressEpoch();
                     return;
                 default:

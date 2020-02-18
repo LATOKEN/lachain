@@ -9,6 +9,6 @@ namespace Phorkus.Core.Blockchain.Genesis
         public Dictionary<string, string> Balances { get; set; } = new Dictionary<string, string>();
 
         [JsonProperty("privateKey")]
-        public string PrivateKey { get; set; }
+        public string? PrivateKey { get; set; }
     }
 }

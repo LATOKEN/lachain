@@ -38,27 +38,32 @@ namespace Phorkus.Core.Network
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
         {
-            var reply = envelope.MessageFactory.PingReply(request.Timestamp,
-                _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
-            envelope.RemotePeer.Send(reply);
+            var reply = envelope.MessageFactory?.PingReply(request.Timestamp,
+                            _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()) ??
+                        throw new InvalidOperationException();
+            envelope.RemotePeer?.Send(reply);
         }
 
         public void PingReply(MessageEnvelope envelope, PingReply reply)
         {
-            _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, envelope.RemotePeer);
+            _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight,
+                envelope.RemotePeer ?? throw new InvalidOperationException()
+            );
         }
 
         public void GetBlocksByHashesRequest(MessageEnvelope envelope, GetBlocksByHashesRequest request)
         {
             var blocks = _stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes);
-            envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHashesReply(blocks));
+            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHashesReply(blocks) ??
+                                      throw new InvalidOperationException());
         }
 
         public void GetBlocksByHashesReply(MessageEnvelope envelope, GetBlocksByHashesReply reply)
         {
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
-                _blockSynchronizer.HandleBlockFromPeer(block, envelope.RemotePeer, TimeSpan.FromSeconds(5));
+                _blockSynchronizer.HandleBlockFromPeer(block,
+                    envelope.RemotePeer ?? throw new InvalidOperationException(), TimeSpan.FromSeconds(5));
         }
 
         public void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request)
@@ -66,12 +71,14 @@ namespace Phorkus.Core.Network
             var blockHashes = _stateManager.LastApprovedSnapshot.Blocks
                 .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
-            envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHeightRangeReply(blockHashes));
+            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHeightRangeReply(blockHashes) ??
+                                      throw new InvalidOperationException());
         }
 
         public void GetBlocksByHeightRangeReply(MessageEnvelope envelope, GetBlocksByHeightRangeReply reply)
         {
-            envelope.RemotePeer.Send(envelope.MessageFactory.GetBlocksByHashesRequest(reply.BlockHashes));
+            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHashesRequest(reply.BlockHashes) ??
+                                      throw new InvalidOperationException());
         }
 
         public void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request)
@@ -85,17 +92,22 @@ namespace Phorkus.Core.Network
                     txs.Add(tx);
             }
 
-            envelope.RemotePeer.Send(envelope.MessageFactory.GetTransactionsByHashesReply(txs));
+            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetTransactionsByHashesReply(txs) ??
+                                      throw new InvalidOperationException());
         }
 
         public void GetTransactionsByHashesReply(MessageEnvelope envelope, GetTransactionsByHashesReply reply)
         {
-            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, envelope.RemotePeer);
+            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions,
+                envelope.RemotePeer ?? throw new InvalidOperationException()
+            );
         }
 
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
-            var index = _validatorManager.GetValidatorIndex(envelope.PublicKey);
+            var index = _validatorManager.GetValidatorIndex(
+                envelope.PublicKey ?? throw new InvalidOperationException()
+            );
             if (message.Validator.ValidatorIndex != index)
             {
                 throw new UnauthorizedAccessException(

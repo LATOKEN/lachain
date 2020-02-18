@@ -21,13 +21,15 @@ namespace Phorkus.Core.Blockchain
         private readonly ITransactionManager _transactionManager;
         private readonly INetworkManager _networkManager;
         private readonly INetworkBroadcaster _networkBroadcaster;
-        
+
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
-        
-        private readonly ConcurrentQueue<TransactionReceipt> _transactionsQueue = new ConcurrentQueue<TransactionReceipt>();
+
+        private readonly ConcurrentQueue<TransactionReceipt> _transactionsQueue =
+            new ConcurrentQueue<TransactionReceipt>();
+
         private readonly ConcurrentQueue<TransactionReceipt> _relayQueue = new ConcurrentQueue<TransactionReceipt>();
-        
+
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
@@ -46,7 +48,7 @@ namespace Phorkus.Core.Blockchain
 
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
-        public TransactionReceipt GetByHash(UInt256 hash)
+        public TransactionReceipt? GetByHash(UInt256 hash)
         {
             return _transactions.TryGetValue(hash, out var tx) ? tx : _poolRepository.GetTransactionByHash(hash);
         }
@@ -76,7 +78,7 @@ namespace Phorkus.Core.Blockchain
             };
             return Add(acceptedTx);
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt transaction)
         {
@@ -98,9 +100,9 @@ namespace Phorkus.Core.Blockchain
                 _poolRepository.AddTransaction(transaction);
             if (!_networkManager.IsReady)
                 return OperatingError.Ok;
-            var message = _networkManager.MessageFactory.GetTransactionsByHashesReply(
-                new [] { transaction }
-            );
+            var message = _networkManager.MessageFactory?.GetTransactionsByHashesReply(
+                              new[] {transaction}
+                          ) ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(message);
             return OperatingError.Ok;
         }
@@ -122,9 +124,11 @@ namespace Phorkus.Core.Blockchain
                     continue;
                 result.Add(receipt);
             }
-            return result.OrderByDescending(tx => tx.Transaction.GasPrice).Where(tx => _transactionManager.GetByHash(tx.Hash) == null).ToList();
+
+            return result.OrderByDescending(tx => tx.Transaction.GasPrice)
+                .Where(tx => _transactionManager.GetByHash(tx.Hash) == null).ToList();
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Relay(IEnumerable<TransactionReceipt> receipts)
         {
@@ -141,7 +145,7 @@ namespace Phorkus.Core.Blockchain
         {
             return (uint) _transactions.Count;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Delete(UInt256 transactionHash)
         {

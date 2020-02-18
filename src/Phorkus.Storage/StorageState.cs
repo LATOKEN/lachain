@@ -31,7 +31,7 @@ namespace Phorkus.Storage
 
         public ulong CurrentVersion { get; private set; }
 
-        public byte[] Get(byte[] key)
+        public byte[]? Get(byte[] key)
         {
             return _trieMap.Find(CurrentVersion, key);
         }
@@ -54,13 +54,13 @@ namespace Phorkus.Storage
             return CurrentVersion;
         }
 
-        public ulong Delete(byte[] key, out byte[] value)
+        public ulong Delete(byte[] key, out byte[]? value)
         {
             CurrentVersion = _trieMap.Delete(CurrentVersion, key, out value);
             return CurrentVersion;
         }
 
-        public ulong TryDelete(byte[] key, out byte[] value)
+        public ulong TryDelete(byte[] key, out byte[]? value)
         {
             CurrentVersion = _trieMap.TryDelete(CurrentVersion, key, out value);
             return CurrentVersion;

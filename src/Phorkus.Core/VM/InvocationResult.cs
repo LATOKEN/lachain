@@ -14,6 +14,6 @@
         
         public ExecutionStatus Status { get; internal set; }
 
-        public byte[] ReturnValue { get; internal set; }
+        public byte[]? ReturnValue { get; internal set; }
     }
 }

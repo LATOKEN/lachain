@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Utils;
@@ -14,10 +15,10 @@ namespace Phorkus.Core.Blockchain
         private readonly UInt256 _stateHash;
         private readonly ECDSAPublicKey _validator;
 
-        private ICollection<TransactionReceipt> _transactions;
-        private MultiSig _multiSig;
+        private ICollection<TransactionReceipt>? _transactions;
+        private MultiSig? _multiSig;
 
-        public BlockBuilder(BlockHeader prevBlock, ECDSAPublicKey validator, UInt256 stateHash = null)
+        public BlockBuilder(BlockHeader prevBlock, ECDSAPublicKey validator, UInt256? stateHash = null)
         {
             _prevBlock = prevBlock;
             _stateHash = stateHash ?? UInt256Utils.Zero;
@@ -29,7 +30,7 @@ namespace Phorkus.Core.Blockchain
             _transactions = new List<TransactionReceipt>(transactions);
             return this;
         }
-        
+
         public BlockBuilder WithTransactions(ITransactionPool transactionPool)
         {
             _transactions = new List<TransactionReceipt>(transactionPool.Peek());
@@ -62,17 +63,16 @@ namespace Phorkus.Core.Blockchain
 
         public BlockWithTransactions Build(ulong nonce)
         {
-            var txs = _transactions;
+            var txs = _transactions ?? throw new InvalidOperationException();
             var merkleRoot = UInt256Utils.Zero;
             if (txs.Count > 0)
-                merkleRoot = MerkleTree.ComputeRoot(txs.Select(tx => tx.Hash).ToArray());
+                merkleRoot = MerkleTree.ComputeRoot(txs.Select(tx => tx.Hash).ToArray()) ??
+                             throw new InvalidOperationException();
             var header = new BlockHeader
             {
                 PrevBlockHash = _prevBlock != null ? _prevBlock.ToHash256() : UInt256Utils.Zero,
                 MerkleRoot = merkleRoot,
-                Timestamp = TimeUtils.CurrentTimeMillis() / 1000,
                 Index = _prevBlock?.Index + 1 ?? 0,
-                Validator = _validator,
                 StateHash = _stateHash,
                 Nonce = nonce
             };
@@ -81,7 +81,8 @@ namespace Phorkus.Core.Blockchain
                 Hash = header.ToByteArray().ToHash256(),
                 TransactionHashes = {txs.Select(tx => tx.Hash)},
                 Header = header,
-                Multisig = new MultiSig()
+                Multisig = new MultiSig(),
+                Timestamp = TimeUtils.CurrentTimeMillis(),
             };
             return new BlockWithTransactions(block, txs);
         }

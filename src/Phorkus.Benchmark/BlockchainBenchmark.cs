@@ -70,7 +70,6 @@ namespace Phorkus.Benchmark
             Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
-            Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
             Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
             Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.Count}");
             foreach (var s in genesisBlock.TransactionHashes)

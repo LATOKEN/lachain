@@ -24,7 +24,7 @@ namespace Phorkus.Storage.State
         public UInt256 Hash => _state.Hash;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Contract GetContractByHash(UInt160 contractHash)
+        public Contract? GetContractByHash(UInt160 contractHash)
         {
             var value = _state.Get(EntryPrefix.ContractByHash.BuildPrefix(contractHash));
             return value != null ? Contract.Parser.ParseFrom(value) : null;

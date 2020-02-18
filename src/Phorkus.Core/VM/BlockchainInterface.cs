@@ -5,7 +5,7 @@ namespace Phorkus.Core.VM
 {
     class BlockchainInterface : IBlockchainInterface
     {
-        private IEnumerable<FunctionImport> _functionImports;
+        private IEnumerable<FunctionImport>? _functionImports;
 
         public IEnumerable<FunctionImport> GetFunctionImports()
         {

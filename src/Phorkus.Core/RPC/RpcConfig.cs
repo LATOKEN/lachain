@@ -15,7 +15,7 @@ namespace Phorkus.Core.RPC
         };
         
         [JsonProperty("hosts")]
-        public string[] Hosts { get; set; }
+        public string[]? Hosts { get; set; }
 
         [JsonProperty("port")]
         public short Port { get; set; }

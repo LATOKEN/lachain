@@ -10,15 +10,15 @@ namespace Phorkus.Consensus
         int N { get; }
         int F { get; }
         
-        PublicKey TpkePublicKey { get; set; }
+        PublicKey? TpkePublicKey { get; set; }
         
-        PrivateKey TpkePrivateKey { get; set; }
+        PrivateKey? TpkePrivateKey { get; set; }
 
-        VerificationKey TpkeVerificationKey { get; set; }
+        VerificationKey? TpkeVerificationKey { get; set; }
         
-        PublicKeySet ThresholdSignaturePublicKeySet { get; set; }
+        PublicKeySet? ThresholdSignaturePublicKeySet { get; set; }
         
-        PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; set; }
+        PrivateKeyShare? ThresholdSignaturePrivateKeyShare { get; set; }
         
         ISet<IProtocolIdentifier> ProtocolIds { get; } // TODO: delete this
     }

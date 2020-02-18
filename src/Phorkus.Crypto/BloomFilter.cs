@@ -20,7 +20,7 @@ namespace Phorkus.Crypto
         /// <param name="k">Hash iterations</param>
         /// <param name="nTweak">Seed</param>
         /// <param name="elements">Initial elements</param>
-        public BloomFilter(int m, int k, uint nTweak, byte[] elements = null)
+        public BloomFilter(int m, int k, uint nTweak, byte[]? elements = null)
         {
             _seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
             _bits = elements == null ? new BitArray(m) : new BitArray(elements);

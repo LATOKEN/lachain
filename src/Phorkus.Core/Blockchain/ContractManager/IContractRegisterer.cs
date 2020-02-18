@@ -9,8 +9,8 @@ namespace Phorkus.Core.Blockchain.ContractManager
         void RegisterContract<T>(UInt160 address)
             where T : ISystemContract;
         
-        Type GetContractByAddress(UInt160 address);
+        Type? GetContractByAddress(UInt160 address);
 
-        Tuple<Type, MethodInfo, object[]> DecodeContract(UInt160 address, byte[] input);
+        Tuple<Type, MethodInfo, object[]>? DecodeContract(UInt160 address, byte[] input);
     }
 }

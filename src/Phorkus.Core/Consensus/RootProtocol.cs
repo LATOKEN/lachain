@@ -54,7 +54,7 @@ namespace Phorkus.Core.Consensus
                     }
 
                     break;
-                case ProtocolResult<RootProtocolId, object> _:
+                case ProtocolResult<RootProtocolId, object?> _:
                     Terminate();
                     break;
                 case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
@@ -66,7 +66,7 @@ namespace Phorkus.Core.Consensus
                         .ToArray();
                     _logger.LogDebug($"Collected {txHashes.Length} transactions in total");
                     _blockProducer.ProduceBlock(txHashes, _publicKey, 0); // TODO: nonce
-                    Broadcaster.InternalResponse(new ProtocolResult<RootProtocolId, object>(_rootId, null));
+                    Broadcaster.InternalResponse(new ProtocolResult<RootProtocolId, object?>(_rootId, null));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message));

@@ -10,9 +10,9 @@ namespace Phorkus.Storage.Trie
         ulong Add(ulong root, byte[] key, byte[] value);
         ulong AddOrUpdate(ulong root, byte[] key, byte[] value);
         ulong Update(ulong root, byte[] key, byte[] value);
-        ulong Delete(ulong root, byte[] key, out byte[] value);
-        ulong TryDelete(ulong root, byte[] key, out byte[] value);
-        byte[] Find(ulong root, byte[] key);
+        ulong Delete(ulong root, byte[] key, out byte[]? value);
+        ulong TryDelete(ulong root, byte[] key, out byte[]? value);
+        byte[]? Find(ulong root, byte[] key);
         IEnumerable<byte[]> GetValues(ulong root);
         UInt256 GetHash(ulong root);
     }

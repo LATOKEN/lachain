@@ -36,12 +36,12 @@ namespace Phorkus.Core.Blockchain.ContractManager
             _signatures.Add(address, signatures.Concat(props).ToDictionary(tuple => BitConverter.ToUInt32(ContractEncoder.Encode(tuple.Item1), 0), tuple => tuple));
         }
 
-        public Type GetContractByAddress(UInt160 address)
+        public Type? GetContractByAddress(UInt160 address)
         {
             return _contracts.TryGetValue(address, out var result) ? result : null;
         }
         
-        public Tuple<Type, MethodInfo, object[]> DecodeContract(UInt160 address, byte[] input)
+        public Tuple<Type, MethodInfo, object[]>? DecodeContract(UInt160 address, byte[] input)
         {
             if (input.Length < 4)
                 throw new ArgumentOutOfRangeException(nameof(input));

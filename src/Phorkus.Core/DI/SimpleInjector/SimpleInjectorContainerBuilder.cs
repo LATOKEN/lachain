@@ -12,7 +12,7 @@ namespace Phorkus.Core.DI.SimpleInjector
         private readonly Container _container;
         private readonly SimpleInjectorContainer _containerAdapter;
 
-        public event Action<IContainer> OnBuild;
+        public event Action<IContainer>? OnBuild;
 
         public SimpleInjectorContainerBuilder(IConfigManager configManager)
         {

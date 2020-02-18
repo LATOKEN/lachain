@@ -18,17 +18,17 @@ namespace Phorkus.Consensus.TPKE
     {
         private readonly TPKESetupId _tpkeSetupId;
         private ResultStatus _requested;
-        private Keys _result;
+        private Keys? _result;
 
-        private Fr[] _P;
-        private Fr[] _received;
-        private G1[][] _hiddenPolyG1;
-        private G2[][] _hiddenPolyG2;
-        private byte[][][] _confirmationHash;
-        private bool allValuesReceived = false;
-        private bool allHiddenPolynomialsReceived = false;
-        private bool allConfirmationHashesReceived = false;
-        private bool allHashSent = false;
+        private readonly Fr[] _p;
+        private readonly Fr[] _received;
+        private readonly G1[][] _hiddenPolyG1;
+        private readonly G2[][] _hiddenPolyG2;
+        private readonly byte[][][] _confirmationHash;
+        private bool _allValuesReceived;
+        private bool _allHiddenPolynomialsReceived;
+        private bool _allConfirmationHashesReceived;
+        private bool _allHashSent;
         private readonly ILogger<TPKESecureSetup> _logger = LoggerFactory.GetLoggerForClass<TPKESecureSetup>();
 
         public TPKESecureSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
@@ -37,7 +37,7 @@ namespace Phorkus.Consensus.TPKE
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;
 
-            _P = new Fr[F];
+            _p = new Fr[F];
 
             // todo add reception manager!!!!@
             _received = new Fr[N];
@@ -47,6 +47,7 @@ namespace Phorkus.Consensus.TPKE
             _hiddenPolyG1 = new G1[N][];
             _hiddenPolyG2 = new G2[N][];
             _confirmationHash = new byte[N][][];
+            _result = null;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -54,6 +55,7 @@ namespace Phorkus.Consensus.TPKE
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.PolynomialValue:
@@ -95,7 +97,7 @@ namespace Phorkus.Consensus.TPKE
             _requested = ResultStatus.Requested;
             for (var i = 0; i < F; ++i)
             {
-                _P[i] = Fr.GetRandom();
+                _p[i] = Fr.GetRandom();
             }
 
             for (var j = 0; j < N; ++j)
@@ -109,7 +111,7 @@ namespace Phorkus.Consensus.TPKE
                     },
                     PolynomialValue = new TPKEPolynomialValueMessage
                     {
-                        Value = ByteString.CopyFrom(Fr.ToBytes(Mcl.GetValue(_P.AsDynamic(), j + 1, Fr.Zero)))
+                        Value = ByteString.CopyFrom(Fr.ToBytes(Mcl.GetValue(_p.AsDynamic(), j + 1, Fr.Zero)))
                     }
                 };
                 Broadcaster.SendToValidator(polyVal, j);
@@ -127,8 +129,8 @@ namespace Phorkus.Consensus.TPKE
 
             for (var j = 0; j < F; ++j)
             {
-                msg.HiddenPolynomial.CoeffsG1.Add(ByteString.CopyFrom(G1.ToBytes(G1.Generator * _P[j])));
-                msg.HiddenPolynomial.CoeffsG2.Add(ByteString.CopyFrom(G2.ToBytes(G2.Generator * _P[j])));
+                msg.HiddenPolynomial.CoeffsG1.Add(ByteString.CopyFrom(G1.ToBytes(G1.Generator * _p[j])));
+                msg.HiddenPolynomial.CoeffsG2.Add(ByteString.CopyFrom(G2.ToBytes(G2.Generator * _p[j])));
             }
 
             Broadcaster.Broadcast(msg);
@@ -175,8 +177,8 @@ namespace Phorkus.Consensus.TPKE
 
         private void TrySendConfirmationHash()
         {
-            if (allHashSent) return;
-            if (!allHiddenPolynomialsReceived) return;
+            if (_allHashSent) return;
+            if (!_allHiddenPolynomialsReceived) return;
 
             var msg = new ConsensusMessage
             {
@@ -196,7 +198,7 @@ namespace Phorkus.Consensus.TPKE
 
             Broadcaster.Broadcast(msg);
 
-            allHashSent = true;
+            _allHashSent = true;
         }
 
         private void HandleConfirmationHash(Validator messageValidator, TPKEConfirmationHashMessage hsh)
@@ -215,19 +217,19 @@ namespace Phorkus.Consensus.TPKE
 
         private void CheckAllValuesReceived()
         {
-            if (allValuesReceived) return;
+            if (_allValuesReceived) return;
 
             for (var i = 0; i < N; ++i)
                 if (_received[i].Equals(Fr.FromInt(0)))
                     return;
 
-            allValuesReceived = true;
+            _allValuesReceived = true;
             TryFinalize();
         }
 
         private void CheckAllPolynomialsReceived()
         {
-            if (allHiddenPolynomialsReceived) return;
+            if (_allHiddenPolynomialsReceived) return;
             for (var i = 0; i < N; ++i)
                 if (_hiddenPolyG1[i] == null)
                     return;
@@ -236,27 +238,27 @@ namespace Phorkus.Consensus.TPKE
                 if (_hiddenPolyG2[i] == null)
                     return;
 
-            allHiddenPolynomialsReceived = true;
+            _allHiddenPolynomialsReceived = true;
             TrySendConfirmationHash();
             TryFinalize();
         }
 
         private void CheckAllConfirmationHashesReceived()
         {
-            if (allConfirmationHashesReceived) return;
+            if (_allConfirmationHashesReceived) return;
             for (var i = 0; i < N; ++i)
                 if (_confirmationHash[i] == null)
                     return;
 
-            allConfirmationHashesReceived = true;
+            _allConfirmationHashesReceived = true;
             TryFinalize();
         }
 
         private void TryFinalize()
         {
-            if (!allValuesReceived) return;
-            if (!allHiddenPolynomialsReceived) return;
-            if (!allConfirmationHashesReceived) return;
+            if (!_allValuesReceived) return;
+            if (!_allHiddenPolynomialsReceived) return;
+            if (!_allConfirmationHashesReceived) return;
 
             // verify values
             for (var i = 0; i < N; ++i)

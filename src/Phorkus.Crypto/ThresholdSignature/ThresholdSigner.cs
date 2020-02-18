@@ -15,7 +15,7 @@ namespace Phorkus.Crypto.ThresholdSignature
         private readonly PrivateKeyShare _privateKeyShare;
         private readonly PublicKeySet _publicKeySet;
         private readonly SignatureShare[] _collectedShares;
-        private Signature _signature;
+        private Signature? _signature;
         private int _collectedSharesNumber;
 
         public ThresholdSigner(IEnumerable<byte> dataToSign, PrivateKeyShare privateKeyShare, PublicKeySet publicKeySet)
@@ -33,7 +33,7 @@ namespace Phorkus.Crypto.ThresholdSignature
             return _privateKeyShare.HashAndSign(_dataToSign);
         }
 
-        public bool AddShare(PublicKeyShare pubKey, SignatureShare sigShare, out Signature result)
+        public bool AddShare(PublicKeyShare pubKey, SignatureShare sigShare, out Signature? result)
         {
             result = null;
             var idx = _publicKeySet.GetIndex(pubKey);

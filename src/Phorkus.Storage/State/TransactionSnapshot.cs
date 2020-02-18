@@ -31,7 +31,7 @@ namespace Phorkus.Storage.State
             return raw == null ? 0UL : BitConverter.ToUInt64(raw, 0);
         }
         
-        public TransactionReceipt GetTransactionByHash(UInt256 transactionHash)
+        public TransactionReceipt? GetTransactionByHash(UInt256 transactionHash)
         {
             var raw = _state.Get(EntryPrefix.TransactionByHash.BuildPrefix(transactionHash));
             return raw != null ? TransactionReceipt.Parser.ParseFrom(raw) : null;

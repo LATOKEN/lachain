@@ -26,6 +26,7 @@ namespace Phorkus.Storage.Trie
         {
             ChildrenMask = 0;
             _children = new ulong[0];
+            Hash = new byte[] { };
             UpdateHash(Enumerable.Empty<byte[]>(), Enumerable.Empty<byte>());
         }
 
@@ -33,9 +34,10 @@ namespace Phorkus.Storage.Trie
         {
             ChildrenMask = mask;
             _children = children.ToArray();
+            Hash = new byte[] { };
             UpdateHash(childrenHashes, GetChildrenLabels(mask));
         }
-        
+
         public InternalNode(uint mask, IEnumerable<ulong> children, IEnumerable<byte> hash)
         {
             ChildrenMask = mask;
@@ -73,8 +75,8 @@ namespace Phorkus.Storage.Trie
                 childrenHashes
             );
         }
-        
-        public static IHashTrieNode ModifyChildren(
+
+        public static IHashTrieNode? ModifyChildren(
             InternalNode node, byte h, ulong value, IEnumerable<byte[]> childrenHashes, byte[] valueHash
         )
         {

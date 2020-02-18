@@ -8,7 +8,7 @@ namespace Phorkus.Core.Blockchain
     {
         IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions { get; }
 
-        TransactionReceipt GetByHash(UInt256 hash);
+        TransactionReceipt? GetByHash(UInt256 hash);
 
         void Restore();
 

@@ -13,7 +13,7 @@ namespace Phorkus.Consensus.CommonSubset
     {
         private CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
-        private ISet<EncryptedShare> _result;
+        private ISet<EncryptedShare>? _result;
 
         private readonly bool?[] _binaryAgreementInput;
         private readonly bool?[] _binaryAgreementResult;
@@ -27,11 +27,10 @@ namespace Phorkus.Consensus.CommonSubset
             : base(wallet, commonSubsetId, broadcaster)
         {
             _commonSubsetId = commonSubsetId;
-
             _binaryAgreementInput = new bool?[N];
             _binaryAgreementResult = new bool?[N];
-
             _reliableBroadcastResult = new EncryptedShare[N];
+            _result = null;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -39,6 +38,7 @@ namespace Phorkus.Consensus.CommonSubset
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     default:
@@ -75,14 +75,14 @@ namespace Phorkus.Consensus.CommonSubset
         {
             _requested = ResultStatus.Requested;
 
-            Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>
+            Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                 (Id, new ReliableBroadcastId(GetMyId(), (int) _commonSubsetId.Era), request.Input));
 
             for (var j = 0; j < N; ++j)
             {
                 if (j != GetMyId())
                 {
-                    Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(Id,
+                    Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(Id,
                         new ReliableBroadcastId(j, (int) _commonSubsetId.Era), null));
                 }
             }
@@ -92,7 +92,7 @@ namespace Phorkus.Consensus.CommonSubset
 
         private void SendInputToBinaryAgreement(int j)
         {
-            if (!_binaryAgreementInput[j].HasValue)
+            if (_binaryAgreementInput[j] is null || !_binaryAgreementInput[j].HasValue)
                 throw new NoNullAllowedException();
 
             var id = new BinaryAgreementId(_commonSubsetId.Era, j);

@@ -6,7 +6,7 @@ namespace Phorkus.Storage.State
     {
         ulong GetTotalTransactionCount(UInt160 @from);
         
-        TransactionReceipt GetTransactionByHash(UInt256 transactionHash);
+        TransactionReceipt? GetTransactionByHash(UInt256 transactionHash);
         
         void AddTransaction(TransactionReceipt receipt, TransactionStatus status);
     }

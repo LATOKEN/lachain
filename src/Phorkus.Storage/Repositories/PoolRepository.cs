@@ -17,7 +17,7 @@ namespace Phorkus.Storage.Repositories
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public TransactionReceipt GetTransactionByHash(UInt256 txHash)
+        public TransactionReceipt? GetTransactionByHash(UInt256 txHash)
         {
             var prefix = EntryPrefix.TransactionByHash.BuildPrefix(txHash);
             var raw = _rocksDbContext.Get(prefix);

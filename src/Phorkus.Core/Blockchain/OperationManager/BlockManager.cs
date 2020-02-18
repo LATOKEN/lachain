@@ -28,7 +28,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
             IMultisigVerifier multisigVerifier,
-            IStateManager stateManager)
+            IStateManager stateManager
+        )
         {
             _transactionManager = transactionManager;
             _validatorManager = validatorManager;
@@ -37,15 +38,15 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _stateManager = stateManager;
         }
 
-        public event EventHandler<Block> OnBlockPersisted;
-        public event EventHandler<Block> OnBlockSigned;
+        public event EventHandler<Block>? OnBlockPersisted;
+        public event EventHandler<Block>? OnBlockSigned;
 
-        public Block GetByHeight(ulong blockHeight)
+        public Block? GetByHeight(ulong blockHeight)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
         }
 
-        public Block GetByHash(UInt256 blockHash)
+        public Block? GetByHash(UInt256 blockHash)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
         }
@@ -74,7 +75,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     throw new InvalidOperationException($"Cannot assemble block, {error}");
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 _logger.LogDebug(
-                    $"Execution successfull, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
+                    $"Execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
                     $" stateHash={currentStateHash}, gasUsed={gasUsed}"
                 );
                 _stateManager.RollbackTo(snapshotBefore);
@@ -100,7 +101,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     _logger.LogError($"Error occured while executing block: {operatingError}");
                     throw new InvalidBlockException(operatingError);
                 }
-                    
+
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
                 {
                     _stateManager.RollbackTo(snapshotBefore);
@@ -125,7 +126,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
             out List<TransactionReceipt> relayTransactions,
             bool writeFailed,
             out ulong gasUsed,
-            out Money totalFee)
+            out Money totalFee
+        )
         {
             totalFee = Money.Zero;
             gasUsed = 0;
@@ -159,11 +161,10 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (error != OperatingError.Ok)
                 return error;
 
-            /* check do we have all transcations specified */
-            foreach (var txHash in block.TransactionHashes)
+            /* check do we have all transactions specified */
+            if (block.TransactionHashes.Any(txHash => !currentTransactions.ContainsKey(txHash)))
             {
-                if (!currentTransactions.ContainsKey(txHash))
-                    return OperatingError.TransactionLost;
+                return OperatingError.TransactionLost;
             }
 
             /* execute transactions */
@@ -239,7 +240,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private OperatingError _TakeTransactionFee(TransactionReceipt transaction,
             IBlockchainSnapshot snapshot, out Money fee)
         {
-            /* check availabe LA balance */
+            /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* genesis block doesn't have LA asset and validators are fee free */
             if (_validatorManager.CheckValidator(transaction.Transaction.From))
@@ -287,10 +288,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var merkleRoot = MerkleTree.ComputeRoot(block.TransactionHashes) ?? UInt256Utils.Zero;
             if (!merkleRoot.Equals(header.MerkleRoot))
                 return OperatingError.InvalidMerkeRoot;
-            if (header.Timestamp == 0)
-                return OperatingError.InvalidBlock;
-            if (header.Validator is null)
-                return OperatingError.InvalidBlock;
             return OperatingError.Ok;
         }
 
@@ -305,22 +302,30 @@ namespace Phorkus.Core.Blockchain.OperationManager
 
         public ulong CalcEstimatedFee(UInt256 blockHash)
         {
-            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash) ??
+                        throw new InvalidOperationException();
             if (block.GasPrice != 0)
                 return block.GasPrice;
-            var txs = block.TransactionHashes.Select(txHash => _transactionManager.GetByHash(txHash))
-                .Where(tx => tx != null);
+            var txs = block.TransactionHashes.SelectMany(txHash =>
+            {
+                var tx = _transactionManager.GetByHash(txHash);
+                return tx is null ? Enumerable.Empty<TransactionReceipt>() : new[] {tx};
+            });
             return _CalcEstimatedBlockFee(txs);
         }
 
         public ulong CalcEstimatedFee()
         {
             var currentHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentHeight);
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(currentHeight) ??
+                        throw new InvalidOperationException();
             if (block.GasPrice != 0)
                 return block.GasPrice;
-            var txs = block.TransactionHashes.Select(txHash => _transactionManager.GetByHash(txHash))
-                .Where(tx => tx != null);
+            var txs = block.TransactionHashes.SelectMany(txHash =>
+            {
+                var tx = _transactionManager.GetByHash(txHash);
+                return tx is null ? Enumerable.Empty<TransactionReceipt>() : new[] {tx};
+            });
             return _CalcEstimatedBlockFee(txs);
         }
     }

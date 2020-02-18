@@ -14,7 +14,7 @@ namespace Phorkus.ConsensusTest
         private IConsensusProtocol[] _coins;
         private IConsensusBroadcaster[] _broadcasters;
         private DeliveryService _deliveryService;
-        private ProtocolInvoker<CoinId, bool>[] _resultInterceptors;
+        private ProtocolInvoker<CoinId, CoinResult>[] _resultInterceptors;
         private IWallet[] _wallets;
 
         public void SetUp()
@@ -26,14 +26,16 @@ namespace Phorkus.ConsensusTest
             _deliveryService = new DeliveryService();
             _coins = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
-            _resultInterceptors = new ProtocolInvoker<CoinId, bool>[N];
+            _resultInterceptors = new ProtocolInvoker<CoinId, CoinResult>[N];
             _wallets = new IWallet[N];
             for (var i = 0; i < N; ++i)
             {
-                _resultInterceptors[i] = new ProtocolInvoker<CoinId, bool>();
-                _wallets[i] = new Wallet(N, F);
-                _wallets[i].ThresholdSignaturePrivateKeyShare = shares[i];
-                _wallets[i].ThresholdSignaturePublicKeySet = pubKeys;
+                _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();
+                _wallets[i] = new Wallet(N, F)
+                {
+                    ThresholdSignaturePrivateKeyShare = shares[i],
+                    ThresholdSignaturePublicKeySet = pubKeys
+                };
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
                 _coins[i] = new CommonCoin(
                     new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
@@ -42,12 +44,12 @@ namespace Phorkus.ConsensusTest
             }
         }
 
-        public void Run()
+        private void Run()
         {
             for (var i = 0; i < N; ++i)
             {
                 _broadcasters[i].InternalRequest(
-                    new ProtocolRequest<CoinId, object>(_resultInterceptors[i].Id, (CoinId) _coins[i].Id, null)
+                    new ProtocolRequest<CoinId, object?>(_resultInterceptors[i].Id, (CoinId) _coins[i].Id, null)
                 );
             }
 
@@ -55,9 +57,10 @@ namespace Phorkus.ConsensusTest
             {
                 _coins[i].WaitFinish();
             }
+
             _deliveryService.WaitFinish();
 
-            var results = new bool[N]; // bit vector to reach agreement
+            var results = new CoinResult[N];
             for (var i = 0; i < N; ++i)
             {
                 Assert.IsTrue(_coins[i].Terminated, $"protocol {i} did not terminate");
@@ -65,7 +68,7 @@ namespace Phorkus.ConsensusTest
                 results[i] = _resultInterceptors[i].Result;
             }
 
-            Assert.AreEqual(results.Distinct().Count(), 1, "all guys should get same coin");
+            Assert.AreEqual(1, results.Distinct().Count(), "all guys should get same coin");
         }
 
         [Test]

@@ -12,13 +12,13 @@ namespace Phorkus.Core.Blockchain
     public class TransactionBuilder : ITransactionBuilder
     {
         private readonly IStateManager _stateManager;
-        
+
         public TransactionBuilder(IStateManager stateManager)
         {
             _stateManager = stateManager;
         }
 
-        public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[] input)
+        public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[]? input)
         {
             var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var tx = new Transaction
@@ -36,7 +36,7 @@ namespace Phorkus.Core.Blockchain
             return tx;
         }
 
-        public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[] input)
+        public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
             var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
             var tx = new Transaction
@@ -78,14 +78,17 @@ namespace Phorkus.Core.Blockchain
                 _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
             return block is null ? 0 : _CalcEstimatedBlockFee(block.TransactionHashes);
         }
-        
+
         private ulong _CalcEstimatedBlockFee(IEnumerable<UInt256> txHashes)
         {
             var arrayOfHashes = txHashes as UInt256[] ?? txHashes.ToArray();
             if (arrayOfHashes.Length == 0)
                 return 0;
-            var sum = arrayOfHashes.Select(txHash => _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(txHash))
-                .Where(tx => !(tx is null))
+            var sum = arrayOfHashes.SelectMany(txHash =>
+                {
+                    var tx = _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(txHash);
+                    return tx is null ? Enumerable.Empty<TransactionReceipt>() : new[] {tx};
+                })
                 .Aggregate(0UL, (current, tx) => current + tx.Transaction.GasPrice);
             return sum / (ulong) arrayOfHashes.Length;
         }

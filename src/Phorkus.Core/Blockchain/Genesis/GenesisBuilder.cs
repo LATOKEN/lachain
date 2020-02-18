@@ -26,7 +26,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             _configManager = configManager;
         }
 
-        private BlockWithTransactions _genesisBlock;
+        private BlockWithTransactions? _genesisBlock;
 
         public BlockWithTransactions Build()
         {
@@ -43,9 +43,6 @@ namespace Phorkus.Core.Blockchain.Genesis
 
             var keyPair = new KeyPair(genesisConfig.PrivateKey.HexToBytes().ToPrivateKey(), _crypto);
             var address = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
-
-            var genesisTimestamp = new DateTime(kind: DateTimeKind.Utc,
-                year: 2019, month: 1, day: 1, hour: 00, minute: 00, second: 00).ToTimestamp();
 
             var txsBefore = new Transaction[] { };
             var genesisTransactions = txsBefore.ToArray();
@@ -65,9 +62,7 @@ namespace Phorkus.Core.Blockchain.Genesis
             {
                 PrevBlockHash = UInt256Utils.Zero,
                 MerkleRoot = MerkleTree.ComputeRoot(txHashes) ?? UInt256Utils.Zero,
-                Timestamp = (ulong) genesisTimestamp.Seconds,
                 Index = 0,
-                Validator = keyPair.PublicKey,
                 StateHash = UInt256Utils.Zero,
                 Nonce = GenesisConsensusData
             };

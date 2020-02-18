@@ -5,10 +5,10 @@ namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class ContractContext
     {
-        public IBlockchainSnapshot Snapshot { get; set; }
+        public IBlockchainSnapshot? Snapshot { get; set; }
         
-        public UInt160 Sender { get; set; }
+        public UInt160? Sender { get; set; }
 
-        public Transaction Transaction { get; set; }
+        public Transaction? Transaction { get; set; }
     }
 }

@@ -9,7 +9,7 @@ namespace Phorkus.Storage.State
         /// </summary>
         /// <param name="contractHash"></param>
         /// <returns></returns>
-        Contract GetContractByHash(UInt160 contractHash);
+        Contract? GetContractByHash(UInt160 contractHash);
 
         /// <summary>
         /// Adds a smart contract

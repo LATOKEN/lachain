@@ -19,11 +19,11 @@ namespace Phorkus.Networking
         
         public Protocol Protocol { get; set; }
 
-        public string Host { get; set; }
+        public string? Host { get; set; }
         
         public int Port { get; set; }
 
-        public ECDSAPublicKey PublicKey { get; set; }
+        public ECDSAPublicKey? PublicKey { get; set; }
 
         public static PeerAddress FromNode(Node node)
         {
@@ -79,7 +79,7 @@ namespace Phorkus.Networking
         
         public override string ToString()
         {
-            return $"{Protocol.ToString().ToLower()}://{Host}:{Port}@{PublicKey.Buffer.ToHex().Substring(2)}";
+            return $"{Protocol.ToString().ToLower()}://{Host}:{Port}@{PublicKey?.Buffer?.ToHex()?.Substring(2)}";
         }
         
         public override int GetHashCode()

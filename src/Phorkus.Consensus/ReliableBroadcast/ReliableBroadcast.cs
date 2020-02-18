@@ -16,9 +16,11 @@ namespace Phorkus.Consensus.ReliableBroadcast
     public class ReliableBroadcast : AbstractProtocol
     {
         private readonly ReliableBroadcastId _broadcastId;
+
         private readonly bool[] _isBroadcast;
+
         //private readonly ISet<int>[] _receivedValues;
-        private readonly Dictionary<long, ArrayList > _receivedValues;
+        private readonly Dictionary<long, ArrayList> _receivedValues;
         private ResultStatus _requested;
         private BoolSet? _result;
 
@@ -26,11 +28,9 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private int _countValMsg;
         private int _countCorrectECHOMsg;
         private int _countReadyMsg;
-        
-        
-        
-        
-        public ReliableBroadcast(ReliableBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) : 
+
+
+        public ReliableBroadcast(ReliableBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) :
             base(wallet, broadcastId, broadcaster)
         {
             _broadcastId = broadcastId;
@@ -44,10 +44,9 @@ namespace Phorkus.Consensus.ReliableBroadcast
             _countValMsg = 0;
             _countCorrectECHOMsg = 0;
             _countReadyMsg = 0;
-            
         }
-        
-        
+
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
@@ -55,7 +54,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
-                
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
@@ -78,11 +77,11 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 var message = envelope.InternalMessage;
                 switch (message)
                 {
-                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested:
-                        var tmp = broadcastRequested.From; 
+                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> broadcastRequested:
+                        var tmp = broadcastRequested.From;
                         HandleInputMessage(broadcastRequested);
                         break;
-                    case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
+                    case ProtocolResult<ReliableBroadcastId, EncryptedShare?> _:
                         Terminate();
                         break;
                     default:
@@ -91,8 +90,8 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 }
             }
         }
-        
-        private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
+
+        private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare?> broadcastRequested)
         {
             //if (broadcastRequested.Input.Id.Equals(_broadcastId.AssociatedValidatorId))
             if (broadcastRequested.From.GetHashCode().Equals(_broadcastId.GetHashCode()))
@@ -105,8 +104,8 @@ namespace Phorkus.Consensus.ReliableBroadcast
         {
             var validatorIndex = messageValidator.ValidatorIndex;
             // Save: blocks, root, branch <-> senderId
-            
-            Dictionary<int, ArrayList > receivedValues = new Dictionary<int, ArrayList >();
+
+            Dictionary<int, ArrayList> receivedValues = new Dictionary<int, ArrayList>();
             receivedValues[(int) messageValidator.ValidatorIndex] = new ArrayList
             {
                 val.BlockErasureCoding,
@@ -116,6 +115,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             // broadcast ECHO messages
             Broadcaster.Broadcast(CreateECHOMessage(messageValidator, val));
         }
+
         private void HandleECHOMessage(Validator messageValidator, ECHOMessage echo)
         {
             var era = messageValidator.Era;
@@ -136,7 +136,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             {
                 if (Interpolate() && RecomputeMerkleTree())
                 {
-                    if(!_sentReadyMsg[messageValidator.ValidatorIndex])
+                    if (!_sentReadyMsg[messageValidator.ValidatorIndex])
                     {
                         // here I sent ready msg for  players of ValidatorIndex
                         Broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
@@ -145,7 +145,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 }
                 else
                 {
-                    discard();    
+                    discard();
                 }
             }
             else
@@ -164,21 +164,20 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 {
                     Broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
                 }
-                else if(_countReadyMsg == 2 * F + 1)
+                else if (_countReadyMsg == 2 * F + 1)
                 {
                     if (_countCorrectECHOMsg == N - 2 * F)
                     {
                         Decode();
                     }
                 }
-            }            
+            }
         }
 
         private static void Decode()
         {
-
         }
-        
+
         private static bool Interpolate()
         {
             return true;
@@ -188,10 +187,11 @@ namespace Phorkus.Consensus.ReliableBroadcast
         {
             return true;
         }
+
         void discard()
         {
-            
         }
+
         bool checkECHOMsg(ArrayList toCheck)
         {
             return true;
@@ -207,19 +207,20 @@ namespace Phorkus.Consensus.ReliableBroadcast
             var result = new int[bytes.Length + zeroCount];
             for (var i = 0; i < bytes.Length; i++)
             {
-                if(bytes[i] < sizeMax)
+                if (bytes[i] < sizeMax)
                     result[i] = bytes[i];
             }
+
             return result;
         }
-        
+
         private ConsensusMessage CreateValMessage(byte[] input)
         {
             // if call from sender context
             var blocks = CreateBlocks(input);
             var root = CalculateRoot(blocks);
             var branch = CreateBranch(blocks, 0);
-            
+
             var message = new ConsensusMessage
             {
                 Validator = new Validator
@@ -228,18 +229,17 @@ namespace Phorkus.Consensus.ReliableBroadcast
                     Era = _broadcastId.Era
                 },
                 ValMessage = new ValMessage
-                    {
-                        RootMerkleTree = root,
-                        BranchMerkleTree = ByteString.CopyFrom(branch.ToByteArray()),
-                        BlockErasureCoding = ByteString.CopyFrom(blocks.ToByteArray())                        
-                    }
-
+                {
+                    RootMerkleTree = root,
+                    BranchMerkleTree = ByteString.CopyFrom(branch.ToByteArray()),
+                    BlockErasureCoding = ByteString.CopyFrom(blocks.ToByteArray())
+                }
             };
             return message;
         }
 
         private ConsensusMessage CreateReadyMessage(UInt256 root)
-        {   
+        {
             var message = new ConsensusMessage
             {
                 Validator = new Validator
@@ -254,10 +254,9 @@ namespace Phorkus.Consensus.ReliableBroadcast
             };
             return message;
         }
-        
+
         private ConsensusMessage CreateECHOMessage(Validator messageValidator, ValMessage valMessage)
         {
-            
             var message = new ConsensusMessage
             {
                 Validator = new Validator
@@ -271,7 +270,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
                     BranchMerkleTree = ByteString.CopyFrom(valMessage.BranchMerkleTree.ToByteArray()),
                     BlockErasureCoding = ByteString.CopyFrom(valMessage.BlockErasureCoding.ToByteArray())
                 }
-
             };
             return message;
         }
@@ -283,11 +281,13 @@ namespace Phorkus.Consensus.ReliableBroadcast
             var mt = MerkleTree.ComputeTree(blocks.ToArray());
             var branch = new List<UInt256>();
             var currnode = mt.Search(blocks[playerIndex]);
-            
-            while (!currnode.IsRoot){
+
+            while (!(currnode?.Hash is null) && !currnode.IsRoot)
+            {
                 branch.Add(currnode.Hash);
                 currnode = currnode.Parent;
             }
+
             return branch;
         }
 
@@ -304,31 +304,32 @@ namespace Phorkus.Consensus.ReliableBroadcast
             {
                 generalDivide(initDataBuffer, encodeArray, N);
             }
+
             foreach (var t in encodeArray)
             {
                 rse.Encode(t, additionalBits);
             }
-            
 
-            
+
             return BuildShares(initDataBuffer, N);
         }
-        
-        private static UInt256 CalculateRoot(List<UInt256> blocks)
+
+        private static UInt256? CalculateRoot(List<UInt256> blocks)
         {
             return MerkleTree.ComputeRoot(blocks.ToArray());
-        }        
-        
+        }
+
         private List<UInt256> BuildShares(Int32[] v, int playersCount)
         {
             if (!v.Any())
             {
                 return new List<UInt256>();
             }
+
             var shareSize = v.Length / playersCount + 1;
-            
+
             var a = new List<UInt256>();
-            
+
             for (var i = 0; i < playersCount; i++)
             {
                 var buffer = new byte[shareSize];
@@ -336,12 +337,14 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 {
                     buffer[j] = BitConverter.GetBytes(v[i * playersCount + j])[0];
                 }
+
                 a.Add(buffer.Keccak256().ToUInt256());
             }
+
             return a;
         }
-        
-        private void generalDivide(int[] source, List<int[]> result, int parts, int fillSybol=0)
+
+        private void generalDivide(int[] source, List<int[]> result, int parts, int fillSybol = 0)
         {
             var bufferLength = source.Length;
             var partLength = bufferLength / parts;
@@ -349,16 +352,18 @@ namespace Phorkus.Consensus.ReliableBroadcast
             var tmp = new int[partLength];
             if (bufferLength % partLength != 0)
             {
-                throw new ArgumentException("The length of source parameter should be divided by the length of part ", nameof(source));
+                throw new ArgumentException("The length of source parameter should be divided by the length of part ",
+                    nameof(source));
             }
+
             for (int i = 0; i < partsCount; i++)
             {
                 tmp = source.Skip(partLength * i).Take(partLength).ToArray();
                 result.Add(tmp);
             }
         }
-        
-        private byte[] GetTestVector(int size=1000)
+
+        private byte[] GetTestVector(int size = 1000)
         {
             var vector = new byte[size];
             var rnd = new Random();
@@ -366,5 +371,4 @@ namespace Phorkus.Consensus.ReliableBroadcast
             return vector;
         }
     }
-    
 }

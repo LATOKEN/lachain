@@ -56,11 +56,13 @@ namespace Phorkus.Core.Consensus
             }
 
             var receipts = txHashes
-                .Select(hash => _transactionPool.GetByHash(hash))
+                .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
                 .ToList();
 
             var blockWithTransactions =
-                new BlockBuilder(_blockchainContext.CurrentBlock.Header, publicKey)
+                new BlockBuilder(
+                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException(),
+                        publicKey)
                     .WithTransactions(receipts)
                     .Build(nonce);
 

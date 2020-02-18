@@ -33,21 +33,21 @@ namespace Phorkus.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("getBlockByHeight")]
-        private JObject GetBlockByHeight(uint blockHeight)
+        private JObject? GetBlockByHeight(uint blockHeight)
         {
             var block = _blockManager.GetByHeight(blockHeight);
             return block?.ToJson();
         }
 
         [JsonRpcMethod("getBlockByHash")]
-        private JObject GetBlockByHash(string blockHash)
+        private JObject? GetBlockByHash(string blockHash)
         {
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             return block?.ToJson();
         }
 
         [JsonRpcMethod("getTransactionByHash")]
-        private JObject GetTransactionByHash(string txHash)
+        private JObject? GetTransactionByHash(string txHash)
         {
             var tx = _transactionManager.GetByHash(txHash.HexToBytes().ToUInt256());
             return tx?.ToJson();
@@ -94,10 +94,10 @@ namespace Phorkus.Core.RPC.HTTP
         
         
         [JsonRpcMethod("getTransactionPoolByHash")]
-        private JObject GetTransactionPoolByHash(string txHash)
+        private JObject? GetTransactionPoolByHash(string txHash)
         {
             var transaction = _transactionPool.GetByHash(HexUtils.HexToUInt256(txHash));
-            return transaction.ToJson();
+            return transaction?.ToJson();
         }
     }
 }

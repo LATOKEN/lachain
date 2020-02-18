@@ -9,7 +9,7 @@ namespace Phorkus.Core.RPC.HTTP
     public class HttpService
     {
         private const int RequestMaxSize = 64 * 1024;
-        
+
         public void Start(RpcConfig rpcConfig)
         {
             Task.Factory.StartNew(() =>
@@ -25,11 +25,11 @@ namespace Phorkus.Core.RPC.HTTP
             }, TaskCreationOptions.LongRunning);
         }
 
-        private HttpListener _httpListener;
-        
+        private HttpListener? _httpListener;
+
         public void Stop()
         {
-            _httpListener.Stop();
+            _httpListener?.Stop();
         }
 
         private void _Worker(RpcConfig rpcConfig)
@@ -37,7 +37,7 @@ namespace Phorkus.Core.RPC.HTTP
             if (!HttpListener.IsSupported)
                 throw new Exception("Your platform doesn't support [HttpListener]");
             _httpListener = new HttpListener();
-            foreach (var host in rpcConfig.Hosts)
+            foreach (var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
                 _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             _httpListener.Start();
@@ -52,6 +52,7 @@ namespace Phorkus.Core.RPC.HTTP
                     Console.Error.WriteLine(e);
                 }
             }
+
             _httpListener.Stop();
         }
 
@@ -71,6 +72,7 @@ namespace Phorkus.Core.RPC.HTTP
                 response.AddHeader("Access-Control-Max-Age", "1728000");
                 return true;
             }
+
             response.Headers.Add("Access-Control-Allow-Origin", "*");
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
             var rpcResultHandler = new AsyncCallback(result =>

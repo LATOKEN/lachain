@@ -6,12 +6,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
 {
     public interface ITransactionManager : ITransactionSigner
     {
-        event EventHandler<TransactionReceipt> OnTransactionPersisted;
-        event EventHandler<TransactionReceipt> OnTransactionFailed;
-        event EventHandler<TransactionReceipt> OnTransactionExecuted;
-        event EventHandler<TransactionReceipt> OnTransactionSigned;
+        event EventHandler<TransactionReceipt>? OnTransactionPersisted;
+        event EventHandler<TransactionReceipt>? OnTransactionFailed;
+        event EventHandler<TransactionReceipt>? OnTransactionExecuted;
+        event EventHandler<TransactionReceipt>? OnTransactionSigned;
         
-        TransactionReceipt GetByHash(UInt256 transactionHash);
+        TransactionReceipt? GetByHash(UInt256 transactionHash);
 
         OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot);
         

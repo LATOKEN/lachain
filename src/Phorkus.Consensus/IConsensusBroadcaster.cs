@@ -31,7 +31,7 @@ namespace Phorkus.Consensus
          */
         int GetMyId();
 
-        IConsensusProtocol GetProtocolById(IProtocolIdentifier id);
+        IConsensusProtocol? GetProtocolById(IProtocolIdentifier id);
 
         void Terminate();
     }

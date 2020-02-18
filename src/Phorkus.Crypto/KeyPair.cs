@@ -24,14 +24,14 @@ namespace Phorkus.Crypto
             };
         }
 
-        public bool Equals(KeyPair other)
+        public bool Equals(KeyPair? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
             return !(other is null) && PrivateKey.Equals(other.PrivateKey);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as KeyPair);
         }

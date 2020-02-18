@@ -215,7 +215,7 @@ namespace Phorkus.Core.Consensus
             return (int) _validatorManager.GetValidatorIndex(_keyPair.PublicKey);
         }
 
-        public IConsensusProtocol GetProtocolById(IProtocolIdentifier id)
+        public IConsensusProtocol? GetProtocolById(IProtocolIdentifier id)
         {
             return _registry.TryGetValue(id, out var value) ? value : null;
         }

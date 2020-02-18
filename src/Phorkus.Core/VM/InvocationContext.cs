@@ -18,10 +18,10 @@ namespace Phorkus.Core.VM
 
         public ulong BlockNonce => _block?.Header?.Nonce ?? 0;
 
-        private readonly Transaction _transaction;
-        private readonly Block _block;
+        private readonly Transaction? _transaction;
+        private readonly Block? _block;
         
-        public InvocationContext(UInt160 sender, Transaction transaction = null, Block block = null)
+        public InvocationContext(UInt160 sender, Transaction? transaction = null, Block? block = null)
         {
             Sender = sender;
             _transaction = transaction;

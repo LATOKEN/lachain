@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
@@ -16,7 +17,7 @@ namespace Phorkus.Storage.State
         }
 
         public ulong Version => _state.CurrentVersion;
-        
+
         public void Commit()
         {
             _state.Commit();
@@ -29,8 +30,8 @@ namespace Phorkus.Storage.State
             var raw = _state.Get(EntryPrefix.BlockHeight.BuildPrefix());
             return raw != null ? BitConverter.ToUInt64(raw, 0) : 0UL;
         }
-        
-        public Block GetBlockByHeight(ulong blockHeight)
+
+        public Block? GetBlockByHeight(ulong blockHeight)
         {
             var raw = _state.Get(EntryPrefix.BlockHashByHeight.BuildPrefix(blockHeight));
             if (raw is null)
@@ -39,7 +40,7 @@ namespace Phorkus.Storage.State
             return GetBlockByHash(blockHash);
         }
 
-        public Block GetBlockByHash(UInt256 blockHash)
+        public Block? GetBlockByHash(UInt256 blockHash)
         {
             var raw = _state.Get(EntryPrefix.BlockByHash.BuildPrefix(blockHash));
             return raw != null ? Block.Parser.ParseFrom(raw) : null;
@@ -48,8 +49,9 @@ namespace Phorkus.Storage.State
         public void AddBlock(Block block)
         {
             var currentHeight = GetTotalBlockHeight();
-            if (block.Header.Index != 0 && block.Header.Index !=  currentHeight + 1)
-                throw new Exception($"Invalid block height, expected {currentHeight + 1}, but got {block.Header.Index}");
+            if (block.Header.Index != 0 && block.Header.Index != currentHeight + 1)
+                throw new Exception(
+                    $"Invalid block height, expected {currentHeight + 1}, but got {block.Header.Index}");
             _state.Add(EntryPrefix.BlockByHash.BuildPrefix(block.Hash), block.ToByteArray());
             _state.Add(EntryPrefix.BlockHashByHeight.BuildPrefix(block.Header.Index), block.Hash.ToByteArray());
             _state.AddOrUpdate(EntryPrefix.BlockHeight.BuildPrefix(), BitConverter.GetBytes(block.Header.Index));
@@ -65,12 +67,17 @@ namespace Phorkus.Storage.State
                     continue;
                 result.Add(block);
             }
+
             return result;
         }
 
         public IEnumerable<Block> GetBlocksByHashes(IEnumerable<UInt256> hashes)
         {
-            return hashes.Select(GetBlockByHash).Where(block => block != null);
+            return hashes.SelectMany(hash =>
+            {
+                var block = GetBlockByHash(hash);
+                return block is null ? Enumerable.Empty<Block>() : new[] {block};
+            });
         }
     }
 }

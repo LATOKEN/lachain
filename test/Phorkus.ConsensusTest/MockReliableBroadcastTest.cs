@@ -61,7 +61,7 @@ namespace Phorkus.ConsensusTest
             var share = new EncryptedShare(G1.Generator, new byte[]{}, G2.Generator, sender);
             for (var i = 0; i < N; ++i)
             {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? share : null
                 ));
             }

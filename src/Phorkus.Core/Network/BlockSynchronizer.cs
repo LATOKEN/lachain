@@ -56,7 +56,8 @@ namespace Phorkus.Core.Network
         {
             var txHashes = transactionHashes as UInt256[] ?? transactionHashes.ToArray();
             var lostTxs = _GetMissingTransactions(txHashes);
-            _networkBroadcaster.Broadcast(_networkManager.MessageFactory.GetTransactionsByHashesRequest(lostTxs));
+            _networkBroadcaster.Broadcast(_networkManager.MessageFactory?.GetTransactionsByHashesRequest(lostTxs) ??
+                                          throw new InvalidOperationException());
             var endWait = DateTime.UtcNow.Add(timeout);
             while (_GetMissingTransactions(txHashes).Count != 0)
             {
@@ -153,6 +154,7 @@ namespace Phorkus.Core.Network
 
         public bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers)
         {
+            if (_networkContext.LocalNode is null) throw new InvalidOperationException();
             var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
@@ -164,14 +166,14 @@ namespace Phorkus.Core.Network
             }
 
             _lastActiveTime = TimeUtils.CurrentTimeMillis();
-            var messageFactory = _networkManager.MessageFactory;
+            var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             if (_peerHeights.Count == 0)
                 return true;
             var arrayOfPeers = peers.ToArray();
-            var validatorPeers = _peerHeights.Where(entry => arrayOfPeers.Contains(entry.Key.Node.PublicKey));
+            var validatorPeers = _peerHeights.Where(entry => arrayOfPeers.Contains(entry.Key.Node?.PublicKey));
             var maxHeight = validatorPeers.Max(v => v.Value);
             return myHeight < maxHeight;
         }
@@ -180,6 +182,7 @@ namespace Phorkus.Core.Network
 
         private void _Worker()
         {
+            if (_networkContext.LocalNode is null) throw new InvalidOperationException();
             var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
@@ -187,7 +190,7 @@ namespace Phorkus.Core.Network
             if (_networkContext.ActivePeers.Values.Count == 0)
                 return;
 
-            var messageFactory = _networkManager.MessageFactory;
+            var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));

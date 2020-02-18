@@ -6,6 +6,6 @@ namespace Phorkus.Core.Blockchain
     {
         ulong CurrentBlockHeight { get; }
 
-        Block CurrentBlock { get; }
+        Block? CurrentBlock { get; }
     }
 }

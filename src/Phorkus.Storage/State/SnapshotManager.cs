@@ -8,14 +8,14 @@ namespace Phorkus.Storage.State
         private readonly IStorageManager _storageManager;
 
         private TSnapshotType _lastApprovedSnapshot;
-        private TSnapshotType _pendingSnapshot;
+        private TSnapshotType? _pendingSnapshot;
 
         protected uint RepositoryId { get; }
 
         public TSnapshotInterface CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
 
         public TSnapshotInterface LastApprovedSnapshot => _lastApprovedSnapshot;
-        public TSnapshotInterface PendingSnapshot => _pendingSnapshot;
+        public TSnapshotInterface? PendingSnapshot => _pendingSnapshot;
 
         private static TSnapshotType SnaphotFromState(IStorageState state)
         {
@@ -35,7 +35,7 @@ namespace Phorkus.Storage.State
             if (PendingSnapshot != null)
                 throw new InvalidOperationException("Cannot begin new snapshot, need to approve or rollback first");
             _pendingSnapshot = SnaphotFromState(_storageManager.GetState(RepositoryId, _lastApprovedSnapshot.Version));
-            return PendingSnapshot;
+            return _pendingSnapshot;
         }
 
         public void Approve()

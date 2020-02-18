@@ -71,7 +71,6 @@ namespace Phorkus.Console
             System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
             System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
             System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
-            System.Console.WriteLine($" + timestamp: {genesisBlock.Header.Timestamp}");
             System.Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
             System.Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.ToArray().Length}");
             foreach (var s in genesisBlock.TransactionHashes)

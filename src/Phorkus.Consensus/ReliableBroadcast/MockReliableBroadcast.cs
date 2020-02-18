@@ -13,8 +13,8 @@ namespace Phorkus.Consensus.ReliableBroadcast
     {
         private readonly ReliableBroadcastId _reliableBroadcastId;
         private ResultStatus _requested = ResultStatus.NotRequested;
-        private EncryptedShare _result;
-        private bool _receivedAlready = false;
+        private EncryptedShare? _result;
+        private bool _receivedAlready;
 
         private readonly ILogger<MockReliableBroadcast> _logger =
             LoggerFactory.GetLoggerForClass<MockReliableBroadcast>();
@@ -32,6 +32,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.EncryptedShare:
@@ -46,12 +47,13 @@ namespace Phorkus.Consensus.ReliableBroadcast
             else
             {
                 var message = envelope.InternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message)
                 {
-                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare> request:
+                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request:
                         HandleInputMessage(request);
                         break;
-                    case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
+                    case ProtocolResult<ReliableBroadcastId, EncryptedShare?> _:
                         Terminate();
                         break;
                     default:
@@ -61,7 +63,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             }
         }
 
-        private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> request)
+        private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request)
         {
             _requested = ResultStatus.Requested;
             CheckResult();

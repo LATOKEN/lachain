@@ -24,7 +24,7 @@ namespace Phorkus.Core.Blockchain
 
         private readonly object _queueNotEmpty = new object();
 
-        public event EventHandler<TransactionReceipt> OnTransactionVerified;
+        public event EventHandler<TransactionReceipt>? OnTransactionVerified;
 
         public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey)
         {

@@ -11,7 +11,7 @@ namespace Phorkus.Networking
 
         PeerAddress Address { get; }
         
-        Node Node { get; set; }
+        Node? Node { get; set; }
         
         DateTime Connected { get; }
 

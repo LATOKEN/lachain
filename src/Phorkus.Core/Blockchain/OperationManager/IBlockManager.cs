@@ -10,9 +10,9 @@ namespace Phorkus.Core.Blockchain.OperationManager
         event EventHandler<Block> OnBlockPersisted;
         event EventHandler<Block> OnBlockSigned;
         
-        Block GetByHeight(ulong blockHeight);
+        Block? GetByHeight(ulong blockHeight);
         
-        Block GetByHash(UInt256 blockHash);
+        Block? GetByHash(UInt256 blockHash);
         
         Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block, IEnumerable<TransactionReceipt> transactions);
         

@@ -6,9 +6,9 @@ namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionBuilder
     {
-        Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[] input = null);
+        Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[]? input = null);
         
-        Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[] input = null);
+        Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input = null);
 
         Transaction TokenTransferTransaction(UInt160 contract, UInt160 from, UInt160 to, Money value);
     }

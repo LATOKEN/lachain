@@ -20,9 +20,8 @@ namespace Phorkus.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly ILogger<ConsoleManager> _logger = LoggerFactory.GetLoggerForClass<ConsoleManager>();
-        private IConsoleCommands _consoleCommands;
+        private IConsoleCommands? _consoleCommands;
 
         public bool IsWorking { get; set; }
 

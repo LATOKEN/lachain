@@ -12,19 +12,20 @@ namespace Phorkus.Core.VM
     public class VirtualMachine : IVirtualMachine
     {
         internal static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
-        
-        internal static IBlockchainSnapshot BlockchainSnapshot => StateManager.CurrentSnapshot;
+
+        internal static IBlockchainSnapshot? BlockchainSnapshot => StateManager?.CurrentSnapshot;
         internal static IBlockchainInterface BlockchainInterface { get; } = new BlockchainInterface();
-        
-        internal static IStateManager StateManager { get; set; }
-        internal static ICrypto Crypto { get; set; }
+
+        internal static IStateManager? StateManager { get; set; }
+
+        internal static ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public VirtualMachine(IStateManager stateManager, ICrypto crypto)
         {
             StateManager = stateManager;
             Crypto = crypto;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifyContract(byte[] contractCode)
         {
@@ -43,10 +44,11 @@ namespace Phorkus.Core.VM
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public InvocationResult InvokeContract(Contract contract, InvocationContext context, byte[] input, ulong gasLimit)
+        public InvocationResult InvokeContract(Contract contract, InvocationContext context, byte[] input,
+            ulong gasLimit)
         {
             var executionStatus = ExecutionStatus.Ok;
-            byte[] returnValue = null;
+            var returnValue = new byte[] { };
             var gasUsed = 0UL;
             try
             {

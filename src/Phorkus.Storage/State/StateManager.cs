@@ -8,7 +8,7 @@ namespace Phorkus.Storage.State
         public IBlockchainSnapshot CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
 
         public IBlockchainSnapshot LastApprovedSnapshot { get; private set; }
-        public IBlockchainSnapshot PendingSnapshot { get; private set; }
+        public IBlockchainSnapshot? PendingSnapshot { get; private set; }
 
         private readonly ISnapshotManager<IBlockSnapshot> _blockManager;
         private readonly ISnapshotManager<ITransactionSnapshot> _transactionManager;

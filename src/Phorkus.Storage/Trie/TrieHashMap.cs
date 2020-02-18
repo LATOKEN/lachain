@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Phorkus.Crypto;
 using Phorkus.Proto;
@@ -67,19 +68,19 @@ namespace Phorkus.Storage.Trie
             return UpdateInternal(root, 0, key, value);
         }
 
-        public ulong Delete(ulong root, byte[] key, out byte[] value)
+        public ulong Delete(ulong root, byte[] key, out byte[]? value)
         {
             key = Hash(key);
             return DeleteInternal(root, 0, key, out value, true);
         }
 
-        public ulong TryDelete(ulong root, byte[] key, out byte[] value)
+        public ulong TryDelete(ulong root, byte[] key, out byte[]? value)
         {
             key = Hash(key);
             return DeleteInternal(root, 0, key, out value, false);
         }
 
-        public byte[] Find(ulong root, byte[] key)
+        public byte[]? Find(ulong root, byte[] key)
         {
             key = Hash(key);
             return FindInternal(root, key);
@@ -92,7 +93,7 @@ namespace Phorkus.Storage.Trie
 
         public UInt256 GetHash(ulong root)
         {
-            return root == 0 ? UInt256Utils.Zero : GetNodeById(root).Hash.ToUInt256();
+            return GetNodeById(root)?.Hash?.ToUInt256() ?? UInt256Utils.Zero;
         }
 
         private IEnumerable<byte[]> TraverseValues(ulong root)
@@ -101,6 +102,7 @@ namespace Phorkus.Storage.Trie
                 yield break;
 
             var node = GetNodeById(root);
+            if (node is null) throw new InvalidOperationException("corrupted trie");
             switch (node)
             {
                 case LeafNode leafNode:
@@ -114,7 +116,7 @@ namespace Phorkus.Storage.Trie
             }
         }
 
-        private IHashTrieNode GetNodeById(ulong id)
+        private IHashTrieNode? GetNodeById(ulong id)
         {
             if (id == 0) return null;
             return _nodeCache.TryGetValue(id, out var node) ? node : _repository.GetNode(id);
@@ -130,7 +132,10 @@ namespace Phorkus.Storage.Trie
             }
 
             var modified = InternalNode.ModifyChildren(
-                node, h, value, node.Children.Select(id => GetNodeById(id).Hash), valueHash);
+                node, h, value,
+                node.Children.Select(id => GetNodeById(id)?.Hash ?? throw new InvalidOperationException()),
+                valueHash
+            );
             if (modified == null) return 0u;
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = modified;
@@ -155,7 +160,7 @@ namespace Phorkus.Storage.Trie
             if (bitOffset % 8 <= 3)
                 return (byte) ((hash[bitOffset / 8] >> (bitOffset % 8)) & 0x1F);
             var fromFirst = 8 - bitOffset % 8;
-            var first = hash[bitOffset / 8] >> (bitOffset % 8);
+            var first = (uint) (hash[bitOffset / 8] >> (bitOffset % 8));
             var second = hash[bitOffset / 8 + 1] & ((1u << (5 - fromFirst)) - 1);
             return (byte) ((second << fromFirst) | first);
         }
@@ -169,7 +174,8 @@ namespace Phorkus.Storage.Trie
             if (firstFragment != secondFragment)
             {
                 var secondSon = NewLeafNode(keyHash, value);
-                var secondSonHash = GetNodeById(secondSon).Hash;
+                var secondSonHash = GetNodeById(secondSon)?.Hash;
+                if (secondSonHash is null) throw new InvalidOperationException();
 
                 var newId = _versionFactory.NewVersion();
                 _nodeCache[newId] = InternalNode.WithChildren(
@@ -182,7 +188,8 @@ namespace Phorkus.Storage.Trie
             else
             {
                 var son = SplitLeafNode(id, leafNode, height + 1, keyHash, value);
-                var sonHash = GetNodeById(son).Hash;
+                var sonHash = GetNodeById(son)?.Hash;
+                if (sonHash is null) throw new InvalidOperationException();
                 var newId = _versionFactory.NewVersion();
                 _nodeCache[newId] = InternalNode.WithChildren(new[] {son}, new[] {firstFragment}, new[] {sonHash});
                 return newId;
@@ -195,13 +202,16 @@ namespace Phorkus.Storage.Trie
                 return NewLeafNode(keyHash, value);
 
             var rootNode = GetNodeById(root);
+            if (rootNode is null) throw new InvalidOperationException();
             switch (rootNode)
             {
                 case InternalNode internalNode:
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = AddInternal(to, height + 1, keyHash, value, check);
-                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo).Hash);
+                    return ModifyInternalNode(internalNode, h, updatedTo,
+                        GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException()
+                    );
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                         return SplitLeafNode(root, leafNode, height, keyHash, value);
@@ -213,7 +223,7 @@ namespace Phorkus.Storage.Trie
             throw new InvalidOperationException($"Unknown node type {root.GetType()}");
         }
 
-        private ulong DeleteInternal(ulong root, int height, byte[] keyHash, out byte[] value, bool check)
+        private ulong DeleteInternal(ulong root, int height, byte[] keyHash, out byte[]? value, bool check)
         {
             if (root == 0)
             {
@@ -229,7 +239,7 @@ namespace Phorkus.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = DeleteInternal(to, height + 1, keyHash, out value, check);
-                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash);
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                     {
@@ -255,7 +265,7 @@ namespace Phorkus.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = UpdateInternal(to, height + 1, keyHash, value);
-                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo).Hash);
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                         throw new KeyNotFoundException(nameof(keyHash));
@@ -265,7 +275,7 @@ namespace Phorkus.Storage.Trie
             throw new InvalidOperationException($"Unknown node type {root.GetType()}");
         }
 
-        private byte[] FindInternal(ulong root, IReadOnlyList<byte> keyHash)
+        private byte[]? FindInternal(ulong root, IReadOnlyList<byte> keyHash)
         {
             for (var height = 0;; ++height)
             {

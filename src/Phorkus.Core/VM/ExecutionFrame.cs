@@ -73,7 +73,8 @@ namespace Phorkus.Core.VM
             get
             {
                 var memoryGetter = Exports.GetMethod("get_memory");
-                return memoryGetter?.Invoke(InvocationContext.Exports, new object[] { }) as UnmanagedMemory;
+                return memoryGetter?.Invoke(InvocationContext.Exports, new object[] { }) as UnmanagedMemory ??
+                       throw new InvalidOperationException();
             }
         }
 
@@ -94,6 +95,7 @@ namespace Phorkus.Core.VM
             {
                 currentGas -= gas;
             }
+
             gasLimitField.SetValue(null, currentGas);
         }
 
@@ -129,11 +131,12 @@ namespace Phorkus.Core.VM
         {
             InvocationContext?.Dispose();
         }
-        
+
         private static readonly ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>> ByteCodeCache
             = new ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>>();
-        
-        private static Instance<JitEntryPoint> _CompileWasm(UInt160 contract, byte[] buffer, IEnumerable<RuntimeImport> imports = null)
+
+        private static Instance<JitEntryPoint> _CompileWasm(UInt160 contract, byte[] buffer,
+            IEnumerable<RuntimeImport>? imports = null)
         {
             if (ByteCodeCache.TryGetValue(contract, out var instance))
                 return instance();

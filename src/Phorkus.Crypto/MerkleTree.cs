@@ -13,22 +13,22 @@ namespace Phorkus.Crypto
         /// <summary>
         /// Node hash
         /// </summary>
-        public UInt256 Hash;
+        public UInt256? Hash;
 
         /// <summary>
         /// Parent node
         /// </summary>
-        public MerkleTreeNode Parent;
+        public MerkleTreeNode? Parent;
 
         /// <summary>
         /// Left child node
         /// </summary>
-        public MerkleTreeNode LeftChild;
+        public MerkleTreeNode? LeftChild;
 
         /// <summary>
         /// Right child node
         /// </summary>
-        public MerkleTreeNode RightChild;
+        public MerkleTreeNode? RightChild;
 
         /// <summary>
         /// Is root
@@ -56,7 +56,7 @@ namespace Phorkus.Crypto
             Hash = hash;
         }
 
-        
+
         /// <summary>
         /// Get leafs form node
         /// </summary>
@@ -123,7 +123,7 @@ namespace Phorkus.Crypto
         {
             if (hashes.Count == 0)
                 throw new ArgumentException();
-            
+
             Root = Build(hashes.Select(p => new MerkleTreeNode(p)).ToArray());
             var depth = 1;
             for (var i = Root; i.LeftChild != null; i = i.LeftChild)
@@ -143,7 +143,7 @@ namespace Phorkus.Crypto
                 throw new ArgumentException(nameof(leaves.Count));
             if (leaves.Count == 1)
                 return leaves[0];
-            
+
             var parents = new MerkleTreeNode[(leaves.Count + 1) / 2];
 
             for (var i = 0; i < parents.Length; i++)
@@ -181,7 +181,7 @@ namespace Phorkus.Crypto
         /// </summary>
         /// <param name="hashes">Hash list</param>
         /// <returns>Result of the calculation</returns>
-        public static UInt256 ComputeRoot(IReadOnlyCollection<UInt256> hashes)
+        public static UInt256? ComputeRoot(IReadOnlyCollection<UInt256> hashes)
         {
             if (hashes == null || hashes.Count == 0)
                 return null;
@@ -211,9 +211,14 @@ namespace Phorkus.Crypto
         /// <param name="hashes">List to return hashes</param>
         private static void DepthFirstSearch(MerkleTreeNode node, ICollection<UInt256> hashes)
         {
-            if (node.LeftChild == null)
+            if (node.LeftChild is null || node.RightChild is null)
             {
                 // if left is null, then right must be null
+                if (!(node.RightChild is null && node.LeftChild is null) || node.Hash is null)
+                {
+                    throw new InvalidOperationException("Corrupted merkle tree");
+                }
+
                 hashes.Add(node.Hash);
                 return;
             }
@@ -256,7 +261,7 @@ namespace Phorkus.Crypto
         private static void Trim(MerkleTreeNode node, int index, int depth, BitArray flags)
         {
             if (depth == 1) return;
-            if (node.LeftChild == null) return; // if left is null, then right must be null
+            if (node.LeftChild is null || node.RightChild is null) return; // if left is null, then right must be null
             if (depth == 2)
             {
                 if (flags.Get(index * 2) || flags.Get(index * 2 + 1))
@@ -268,7 +273,7 @@ namespace Phorkus.Crypto
 
             Trim(node.LeftChild, index * 2, depth - 1, flags);
             Trim(node.RightChild, index * 2 + 1, depth - 1, flags);
-            if (node.LeftChild.LeftChild != null || node.RightChild.RightChild != null)
+            if (!(node.LeftChild.LeftChild is null && node.RightChild.RightChild is null))
                 return;
             node.LeftChild = null;
             node.RightChild = null;
@@ -280,10 +285,10 @@ namespace Phorkus.Crypto
         /// <param name="hash">Hash</param>
         /// <param name="node">Start node</param>
         /// <returns>Node</returns>
-        public MerkleTreeNode Search(UInt256 hash, MerkleTreeNode node = null)
+        public MerkleTreeNode? Search(UInt256 hash, MerkleTreeNode? node = null)
         {
             if (node == null) node = Root;
-            if (node.Hash.Equals(hash)) return node;
+            if (node.Hash is null || node.Hash.Equals(hash)) return node;
 
             if (node.LeftChild != null)
             {
@@ -300,6 +305,4 @@ namespace Phorkus.Crypto
             return null;
         }
     }
-    
 }
-

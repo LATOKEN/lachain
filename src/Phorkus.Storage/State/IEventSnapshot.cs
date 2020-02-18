@@ -6,7 +6,7 @@ namespace Phorkus.Storage.State
     {
         void AddEvent(Event @event);
         
-        Event GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex);
+        Event? GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex);
         
         uint GetTotalTransactionEvents(UInt256 transactionHash);
     }

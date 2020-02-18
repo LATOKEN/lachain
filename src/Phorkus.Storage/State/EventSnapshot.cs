@@ -32,7 +32,7 @@ namespace Phorkus.Storage.State
             _state.AddOrUpdate(prefix, @event.ToByteArray());
         }
 
-        public Event GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex)
+        public Event? GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex)
         {
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(transactionHash, eventIndex);
             var raw = _state.Get(prefix);

@@ -3,25 +3,25 @@ using Phorkus.Proto;
 
 namespace Phorkus.Networking
 {
-    public delegate void OnClientConnectedDelegate(IRemotePeer remotePeer);
+    public delegate void ClientConnectedDelegate(IRemotePeer remotePeer);
 
-    public delegate void OnClientClosedDelegate(IRemotePeer remotePeer);
+    public delegate void ClientClosedDelegate(IRemotePeer remotePeer);
 
-    public delegate void OnClientHandshakeDelegate(Node node);
+    public delegate void ClientHandshakeDelegate(Node node);
 
     public interface INetworkManager
     {
-        event OnClientConnectedDelegate OnClientConnected;
-        event OnClientClosedDelegate OnClientClosed;
+        event ClientConnectedDelegate OnClientConnected;
+        event ClientClosedDelegate OnClientClosed;
 
-        event OnClientHandshakeDelegate OnClientHandshake;
+        event ClientHandshakeDelegate OnClientHandshake;
 
-        IMessageFactory MessageFactory { get; }
+        IMessageFactory? MessageFactory { get; }
 
         bool IsConnected(PeerAddress address);
 
-        IRemotePeer Connect(PeerAddress address);
-        IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey);
+        IRemotePeer? Connect(PeerAddress address);
+        IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey);
         bool IsReady { get; }
 
         void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler);

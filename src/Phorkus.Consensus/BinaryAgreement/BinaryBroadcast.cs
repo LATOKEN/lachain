@@ -54,6 +54,7 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:

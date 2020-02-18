@@ -10,7 +10,7 @@ namespace Phorkus.Storage.Repositories
         /// </summary>
         /// <param name="txHash">Identifier / hash of the transaction</param>
         /// <returns>Transaction with the specified id / hash</returns>
-        TransactionReceipt GetTransactionByHash(UInt256 txHash);
+        TransactionReceipt? GetTransactionByHash(UInt256 txHash);
         
         /// <summary>
         /// Adds a transaction to the repository

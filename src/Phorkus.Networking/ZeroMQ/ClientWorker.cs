@@ -11,25 +11,25 @@ namespace Phorkus.Networking.ZeroMQ
 {
     public class ClientWorker : IRemotePeer
     {
-        public delegate void OnOpenDelegate(ClientWorker clientWorker, string endpoint);
-        public event OnOpenDelegate OnOpen;
+        public delegate void OpenDelegate(ClientWorker clientWorker, string endpoint);
+        public event OpenDelegate? OnOpen;
 
-        public delegate void OnMessageDelegate(ClientWorker clientWorker, NetworkMessage message);
-        public event OnMessageDelegate OnSent;
+        public delegate void MessageDelegate(ClientWorker clientWorker, NetworkMessage message);
+        public event MessageDelegate? OnSent;
         
-        public delegate void OnCloseDelegate(ClientWorker clientWorker, string endpoint);
-        public event OnCloseDelegate OnClose;
+        public delegate void CloseDelegate(ClientWorker clientWorker, string endpoint);
+        public event CloseDelegate? OnClose;
 
-        public delegate void OnErrorDelegate(ClientWorker clientWorker, string message);
-        public event OnErrorDelegate OnError;
+        public delegate void ErrorDelegate(ClientWorker clientWorker, string message);
+        public event ErrorDelegate? OnError;
 
         public bool IsConnected { get; set; }
         public bool IsKnown { get; set; }
         public PeerAddress Address { get; }
-        public Node Node { get; set; }
+        public Node? Node { get; set; }
         public DateTime Connected { get; } = DateTime.Now;
         
-        public ClientWorker(PeerAddress peerAddress, Node node)
+        public ClientWorker(PeerAddress peerAddress, Node? node)
         {
             Address = peerAddress;
             Node = node;

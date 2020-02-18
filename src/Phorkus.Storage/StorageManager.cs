@@ -29,7 +29,7 @@ namespace Phorkus.Storage
             return _repositoryManagers[repository].LatestVersion;
         }
 
-        public byte[] Get(uint repository, ulong version, byte[] key)
+        public byte[]? Get(uint repository, ulong version, byte[] key)
         {
             return _repositoryManagers[repository].TrieMap.Find(version, key);
         }

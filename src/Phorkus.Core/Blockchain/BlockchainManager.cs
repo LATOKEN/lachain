@@ -20,7 +20,7 @@ namespace Phorkus.Core.Blockchain
         private readonly IStateManager _stateManager;
 
         public ulong CurrentBlockHeight => _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-        public Block CurrentBlock => _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(CurrentBlockHeight);
+        public Block? CurrentBlock => _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(CurrentBlockHeight);
 
         public BlockchainManager(
             IGenesisBuilder genesisBuilder,
@@ -41,6 +41,7 @@ namespace Phorkus.Core.Blockchain
                 return false;
             var snapshot = _stateManager.NewSnapshot();
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
+            if (genesisConfig?.Balances is null) throw new InvalidOperationException();
             foreach (var entry in genesisConfig.Balances)
                 snapshot.Balances.SetBalance(entry.Key.HexToBytes().ToUInt160(), Money.Parse(entry.Value));
             _stateManager.Approve();

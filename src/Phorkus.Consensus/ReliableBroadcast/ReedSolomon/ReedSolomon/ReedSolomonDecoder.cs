@@ -77,7 +77,7 @@ namespace STH1123.ReedSolomon
         /// <param name="twoS">number of error-correction codewords available</param>
         /// <param name="erasurePos">array of zero-based erasure indices</param>
         /// <returns>false: decoding fails</returns>
-        public bool Decode(int[] received, int twoS, int[] erasurePos)
+        public bool Decode(int[] received, int twoS, int[]? erasurePos)
         {
             // Method modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
             // to add support for erasure and errata correction
@@ -312,7 +312,7 @@ namespace STH1123.ReedSolomon
         }
 
         // Method added by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
-        private GenericGFPoly findErrorEvaluator(GenericGFPoly syndrome, GenericGFPoly errataLocations)
+        private GenericGFPoly? findErrorEvaluator(GenericGFPoly syndrome, GenericGFPoly errataLocations)
         {
             int[] product = syndrome.multiply(errataLocations).Coefficients;
 
@@ -330,7 +330,7 @@ namespace STH1123.ReedSolomon
             return omega;
         }
 
-        private int[] findErrorLocations(GenericGFPoly errorLocator)
+        private int[]? findErrorLocations(GenericGFPoly errorLocator)
         {
             // This is a direct application of Chien's search
             int numErrors = errorLocator.Degree;
@@ -359,7 +359,7 @@ namespace STH1123.ReedSolomon
 
         // Method modified by Sonic-The-Hedgehog-LNK1123 (github.com/Sonic-The-Hedgehog-LNK1123)
         // added missing "if (denominator == 0)" check
-        private int[] findErrorMagnitudes(GenericGFPoly errorEvaluator, int[] errorLocations)
+        private int[]? findErrorMagnitudes(GenericGFPoly errorEvaluator, int[] errorLocations)
         {
             // This is directly applying Forney's Formula
             int s = errorLocations.Length;

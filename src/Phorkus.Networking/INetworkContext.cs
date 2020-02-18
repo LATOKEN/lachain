@@ -7,9 +7,9 @@ namespace Phorkus.Networking
     {
         IDictionary<PeerAddress, IRemotePeer> ActivePeers { get; }
         
-        Node LocalNode { get; }
+        Node? LocalNode { get; }
 
-        IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey);
+        IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey);
     }
     
 }

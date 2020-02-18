@@ -75,7 +75,7 @@ namespace Phorkus.Utility
 
         public bool Equals(Money other)
         {
-            return other != null && _value == other._value;
+            return !(other is null) && _value == other._value;
         }
 
         public static Money Parse(string s)
@@ -91,12 +91,12 @@ namespace Phorkus.Utility
             return new Money(result);
         }
 
-        public static bool TryParse(string s, out Money result)
+        public static bool TryParse(string s, out Money? result)
         {
             var parts = s.Split(new[] {CultureInfo.InvariantCulture.NumberFormat.NumberDecimalSeparator}, StringSplitOptions.None);
             if (parts.Length == 0 || parts.Length > 2 || !BigInteger.TryParse(parts[0], out var integralPart))
             {
-                result = default(Money);
+                result = default;
                 return false;
             }
 
@@ -108,20 +108,20 @@ namespace Phorkus.Utility
 
             if (!BigInteger.TryParse(parts[1], out var decimalPart))
             {
-                result = default(Money);
+                result = default;
                 return false;
             }
 
             if (decimalPart < 0 || decimalPart > D)
             {
-                result = default(Money);
+                result = default;
                 return false;
             }
 
             var value = integralPart * D + decimalPart * BigInteger.Pow(10, DecimalDigits - parts[1].Length);
             if (value < MinRawValue || value > MaxRawValue)
             {
-                result = default(Money);
+                result = default;
                 return false;
             }
             result = new Money(value);

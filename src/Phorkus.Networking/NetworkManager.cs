@@ -18,9 +18,9 @@ namespace Phorkus.Networking
 {
     public class NetworkManager : INetworkManager, INetworkBroadcaster, INetworkContext, IMessageDeliverer
     {
-        public event OnClientConnectedDelegate OnClientConnected;
-        public event OnClientClosedDelegate OnClientClosed;
-        public event OnClientHandshakeDelegate OnClientHandshake;
+        public event ClientConnectedDelegate? OnClientConnected;
+        public event ClientClosedDelegate? OnClientClosed;
+        public event ClientHandshakeDelegate? OnClientHandshake;
 
         public IDictionary<PeerAddress, IRemotePeer> ActivePeers
         {
@@ -32,9 +32,9 @@ namespace Phorkus.Networking
             }
         }
 
-        public Node LocalNode { get; set; }
+        public Node? LocalNode { get; private set; }
 
-        public IMessageFactory MessageFactory => _messageFactory;
+        public IMessageFactory? MessageFactory => _messageFactory;
 
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new Dictionary<PeerAddress, ClientWorker>();
@@ -45,12 +45,12 @@ namespace Phorkus.Networking
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly ILogger<NetworkManager> _logger = LoggerFactory.GetLoggerForClass<NetworkManager>();
 
-        private MessageFactory _messageFactory;
-        private ServerWorker _serverWorker;
-        private IMessageHandler _messageHandler;
-        private NetworkConfig _networkConfig;
+        private MessageFactory? _messageFactory;
+        private ServerWorker? _serverWorker;
+        private IMessageHandler? _messageHandler;
+        private NetworkConfig? _networkConfig;
 
-        public IRemotePeer GetPeerByPublicKey(ECDSAPublicKey publicKey)
+        public IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey)
         {
             foreach (var worker in _clientWorkers)
             {
@@ -102,8 +102,9 @@ namespace Phorkus.Networking
             return false;
         }
 
-        public IRemotePeer Connect(PeerAddress address)
+        public IRemotePeer? Connect(PeerAddress address)
         {
+            if (_networkConfig is null) throw new InvalidOperationException();
             lock (_hasPeersToConnect)
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
@@ -121,6 +122,7 @@ namespace Phorkus.Networking
         {
             if (!_clientWorkers.TryGetValue(address, out var remotePeer))
                 return;
+            if (LocalNode is null || _messageFactory is null) throw new InvalidOperationException();
             remotePeer.OnOpen += (worker, endpoint) =>
             {
                 lock (_clientWorkers)
@@ -142,7 +144,7 @@ namespace Phorkus.Networking
                 }
             };
             remotePeer.OnError += (worker, message) => { Console.Error.WriteLine("Error: " + message); };
-            if (_authorizedKeys.Keys.Contains(address.PublicKey))
+            if (!(address.PublicKey is null) && _authorizedKeys.Keys.Contains(address.PublicKey))
                 return;
             remotePeer.Send(_messageFactory.HandshakeRequest(LocalNode));
             if (!remotePeer.IsConnected)
@@ -187,8 +189,8 @@ namespace Phorkus.Networking
         // TODO: handshake is unsafe, need to do actual challenge and response 
         private void _HandshakeRequest(Signature signature, HandshakeRequest request)
         {
-            if (signature is null)
-                throw new ArgumentNullException(nameof(signature));
+            if (signature is null || _messageFactory is null || LocalNode is null)
+                throw new ArgumentNullException();
             if (request.Node.PublicKey is null)
                 throw new Exception("Public key can't be null");
             var isValid = _crypto.VerifySignature(request.ToByteArray(), signature.Buffer.ToByteArray(),
@@ -233,47 +235,47 @@ namespace Phorkus.Networking
                     _HandshakeReply(message.Signature, message.HandshakeReply);
                     break;
                 case NetworkMessage.MessageOneofCase.PingRequest:
-                    _messageHandler.PingRequest(
+                    _messageHandler?.PingRequest(
                         _BuildEnvelope(message.PingRequest, message.Signature),
                         message.PingRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.PingReply:
-                    _messageHandler.PingReply(
+                    _messageHandler?.PingReply(
                         _BuildEnvelope(message.PingReply, message.Signature),
                         message.PingReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesRequest:
-                    _messageHandler.GetBlocksByHashesRequest(
+                    _messageHandler?.GetBlocksByHashesRequest(
                         _BuildEnvelope(message.GetBlocksByHashesRequest, message.Signature),
                         message.GetBlocksByHashesRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesReply:
-                    _messageHandler.GetBlocksByHashesReply(
+                    _messageHandler?.GetBlocksByHashesReply(
                         _BuildEnvelope(message.GetBlocksByHashesReply, message.Signature),
                         message.GetBlocksByHashesReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeRequest:
-                    _messageHandler.GetBlocksByHeightRangeRequest(
+                    _messageHandler?.GetBlocksByHeightRangeRequest(
                         _BuildEnvelope(message.GetBlocksByHeightRangeRequest, message.Signature),
                         message.GetBlocksByHeightRangeRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeReply:
-                    _messageHandler.GetBlocksByHeightRangeReply(
+                    _messageHandler?.GetBlocksByHeightRangeReply(
                         _BuildEnvelope(message.GetBlocksByHeightRangeReply, message.Signature),
                         message.GetBlocksByHeightRangeReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetTransactionsByHashesRequest:
-                    _messageHandler.GetTransactionsByHashesRequest(
+                    _messageHandler?.GetTransactionsByHashesRequest(
                         _BuildEnvelope(message.GetTransactionsByHashesRequest, message.Signature),
                         message.GetTransactionsByHashesRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.GetTransactionsByHashesReply:
-                    _messageHandler.GetTransactionsByHashesReply(
+                    _messageHandler?.GetTransactionsByHashesReply(
                         _BuildEnvelope(message.GetTransactionsByHashesReply, message.Signature),
                         message.GetTransactionsByHashesReply);
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
-                    _messageHandler.ConsensusMessage(
+                    _messageHandler?.ConsensusMessage(
                         _BuildEnvelope(message.ConsensusMessage, message.Signature),
                         message.ConsensusMessage
                     );
@@ -312,8 +314,11 @@ namespace Phorkus.Networking
 
         public void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler)
         {
+            if (networkConfig?.Peers is null)
+                throw new ArgumentNullException();
+
             _messageHandler = messageHandler;
-            _networkConfig = networkConfig ?? throw new ArgumentNullException(nameof(networkConfig));
+            _networkConfig = networkConfig;
             _messageFactory = new MessageFactory(keyPair);
             _serverWorker = new ServerWorker(networkConfig);
             LocalNode = new Node
@@ -390,7 +395,7 @@ namespace Phorkus.Networking
 
         public void Stop()
         {
-            _serverWorker.Stop();
+            _serverWorker?.Stop();
         }
     }
 }

@@ -14,10 +14,10 @@ namespace Phorkus.Consensus.TPKE
         private const int DealerId = 0;
         private TPKESetupId _tpkeSetupId;
         private ResultStatus _requested;
-        private PrivateKey _privKey;
-        private PublicKey _pubKey;
-        private VerificationKey _verificationKey;
-        private Keys _result;
+        private PrivateKey? _privateKey;
+        private PublicKey? _publicKey;
+        private VerificationKey? _verificationKey;
+        private Keys? _result;
         private readonly ILogger<TPKEDealerSetup> _logger = LoggerFactory.GetLoggerForClass<TPKEDealerSetup>();
 
         public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
@@ -32,6 +32,7 @@ namespace Phorkus.Consensus.TPKE
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.TpkeKeys:
@@ -71,13 +72,13 @@ namespace Phorkus.Consensus.TPKE
             }
 
             byte[] privEnc = tpkeKeys.PrivateKey.ToByteArray();
-            _privKey = new PrivateKey(Fr.FromBytes(privEnc), GetMyId());
+            _privateKey = new PrivateKey(Fr.FromBytes(privEnc), GetMyId());
 
             byte[] pubEnc = tpkeKeys.PublicKey.ToByteArray();
-            _pubKey = new PublicKey(G1.FromBytes(pubEnc), F);
+            _publicKey = new PublicKey(G1.FromBytes(pubEnc), F);
 
             _verificationKey = VerificationKey.FromProto(tpkeKeys.VerificationKey);
-            _result = new Keys(_pubKey, _privKey, _verificationKey);
+            _result = new Keys(_publicKey, _privateKey, _verificationKey);
 
             CheckResult();
         }

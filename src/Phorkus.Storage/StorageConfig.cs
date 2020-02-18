@@ -5,9 +5,9 @@ namespace Phorkus.Storage
     public class StorageConfig
     {
         [JsonProperty("provider")]
-        public string Provider { get; set; }
+        public string? Provider { get; set; }
         
         [JsonProperty("path")]
-        public string Path { get; set; }
+        public string? Path { get; set; }
     }
 }

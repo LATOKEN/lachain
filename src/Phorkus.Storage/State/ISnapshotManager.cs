@@ -1,10 +1,10 @@
 ﻿namespace Phorkus.Storage.State
 {
-    public interface ISnapshotManager<T>
+    public interface ISnapshotManager<T> where T: class
     {
         T CurrentSnapshot { get; }
         T LastApprovedSnapshot { get; }
-        T PendingSnapshot{ get; }
+        T? PendingSnapshot{ get; }
         
         T NewSnapshot();
         

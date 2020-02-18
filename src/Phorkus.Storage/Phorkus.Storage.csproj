@@ -4,6 +4,7 @@
     <AssemblyName>Phorkus.Storage</AssemblyName>
     <RootNamespace>Phorkus.Storage</RootNamespace>
     <LangVersion>8</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />

@@ -16,29 +16,28 @@ namespace Phorkus.Consensus.HoneyBadger
         private ResultStatus _requested;
         private readonly bool[] _taken;
 
-        private IRawShare _rawShare;
-        private EncryptedShare _encryptedShare;
+        private IRawShare? _rawShare;
+        private EncryptedShare? _encryptedShare;
         private readonly IRawShare[] _shares;
 
         private readonly EncryptedShare[] _receivedShares;
 
-        private ISet<IRawShare> _result;
+        private ISet<IRawShare>? _result;
 
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
 
-        private PublicKey PubKey => Wallet.TpkePublicKey;
-        private PrivateKey PrivKey => Wallet.TpkePrivateKey;
-        private VerificationKey VerificationKey => Wallet.TpkeVerificationKey;
+        private PublicKey? PubKey => Wallet.TpkePublicKey;
+        private PrivateKey? PrivKey => Wallet.TpkePrivateKey;
+        private VerificationKey? VerificationKey => Wallet.TpkeVerificationKey;
 
-        private bool _takenSet = false;
+        private bool _takenSet;
         private readonly ILogger<HoneyBadger> _logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
 
 
-        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
-            wallet, honeyBadgerId, broadcaster)
+        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster)
+            : base(wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
-
             _receivedShares = new EncryptedShare[N];
             _decryptedShares = new ISet<PartiallyDecryptedShare>[N];
             for (var i = 0; i < N; ++i)
@@ -56,6 +55,7 @@ namespace Phorkus.Consensus.HoneyBadger
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Decrypted:
@@ -70,6 +70,7 @@ namespace Phorkus.Consensus.HoneyBadger
             else
             {
                 var message = envelope.InternalMessage;
+                if (message is null) throw new ArgumentNullException();
                 switch (message)
                 {
                     case ProtocolRequest<HoneyBadgerId, IRawShare> honeyBadgerRequested:
@@ -120,6 +121,7 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
+            if (PrivKey is null) throw new InvalidOperationException();
             _logger.LogDebug($"Common subset finished {result.From}");
             foreach (EncryptedShare share in result.Result)
             {
@@ -144,6 +146,7 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
         {
+            if (PubKey is null) throw new InvalidOperationException();
             var message = new ConsensusMessage
             {
                 Validator = new Validator
@@ -158,6 +161,7 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void HandleDecryptedMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMessage msg)
         {
+            if (PubKey is null || VerificationKey is null) throw new InvalidOperationException();
             PartiallyDecryptedShare share = PubKey.Decode(msg);
             if (_receivedShares[share.ShareId] != null)
                 if (!VerificationKey.Verify(_receivedShares[share.ShareId], share))
@@ -172,6 +176,7 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void CheckDecryptedShares(int id)
         {
+            if (PubKey is null) throw new InvalidOperationException();
             if (!_takenSet) return;
             if (!_taken[id]) return;
             if (_decryptedShares[id].Count < F + 1) return;
@@ -199,14 +204,15 @@ namespace Phorkus.Consensus.HoneyBadger
                 if (_taken[i])
                 {
                     _logger.LogDebug($"Added share {i} to result");
-                    _result.Add(_shares[i]);   
+                    _result.Add(_shares[i]);
                 }
-            
+
             CheckResult();
         }
 
         private bool VerifyReceivedSharesByIndex(int i)
         {
+            if (VerificationKey is null) throw new InvalidOperationException();
             if (_receivedShares[i] == null) return false;
 
             foreach (var part in _decryptedShares[i])

@@ -7,17 +7,17 @@ namespace Phorkus.Networking.ZeroMQ
 {
     public class ServerWorker
     {
-        public delegate void OnOpenDelegate(string endpoint);
-        public event OnOpenDelegate OnOpen;
+        public delegate void OpenDelegate(string endpoint);
+        public event OpenDelegate? OnOpen;
 
-        public delegate void OnMessageDelegate(byte[] message);
-        public event OnMessageDelegate OnMessage;
+        public delegate void MessageDelegate(byte[] message);
+        public event MessageDelegate? OnMessage;
         
-        public delegate void OnCloseDelegate(string endpoint);
-        public event OnCloseDelegate OnClose;
+        public delegate void CloseDelegate(string endpoint);
+        public event CloseDelegate? OnClose;
 
-        public delegate void OnErrorDelegate(string message);
-        public event OnErrorDelegate OnError;
+        public delegate void ErrorDelegate(string message);
+        public event ErrorDelegate? OnError;
         
         private readonly NetworkConfig _networkConfig;
 

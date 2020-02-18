@@ -112,7 +112,7 @@ namespace Phorkus.Logger
         }
 
         /// <inheritdoc />
-        public void Log(LogLevel logLevel, Exception exception, string message, params object[] args)
+        public void Log(LogLevel logLevel, Exception? exception, string message, params object[] args)
         {
             _logger.Log(logLevel, exception, message, args);
         }

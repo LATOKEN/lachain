@@ -68,7 +68,7 @@ namespace Phorkus.Core.CLI
          * GetTransaction
          * blockHash, UInt256
         */
-        public string GetTransaction(string[] arguments)
+        public string? GetTransaction(string[] arguments)
         {
             arguments[1] = EraseHexPrefix(arguments[1]);
             if (!IsValidHexString(arguments[1]))
@@ -76,7 +76,8 @@ namespace Phorkus.Core.CLI
                 return null;
             }
 
-            var tx = _transactionManager.GetByHash(arguments[1].HexToUInt256());
+            var tx = _transactionManager.GetByHash(arguments[1].HexToUInt256()) ??
+                     throw new InvalidOperationException();
             return ProtoUtils.ParsedObject(tx);
             /*
             var type = tx.Transaction.Type;
@@ -102,14 +103,16 @@ namespace Phorkus.Core.CLI
          * GetBlock
          * blockHash, UInt256
         */
-        public string GetBlock(string[] arguments)
+        public string? GetBlock(string[] arguments)
         {
             if (arguments.Length != 2)
                 return null;
             var value = EraseHexPrefix(arguments[1]);
             return ulong.TryParse(value, out var blockHeight)
-                ? ProtoUtils.ParsedObject(_blockManager.GetByHeight(blockHeight))
-                : ProtoUtils.ParsedObject(_blockManager.GetByHash(arguments[1].HexToUInt256()));
+                ? ProtoUtils.ParsedObject(_blockManager.GetByHeight(blockHeight) ??
+                                          throw new InvalidOperationException())
+                : ProtoUtils.ParsedObject(_blockManager.GetByHash(arguments[1].HexToUInt256()) ??
+                                          throw new InvalidOperationException());
         }
 
         /*
@@ -117,7 +120,7 @@ namespace Phorkus.Core.CLI
          * address, UInt160
          * asset, UInt160
         */
-        public Money GetBalance(string[] arguments)
+        public Money? GetBalance(string[] arguments)
         {
             if (arguments.Length != 2)
                 return null;
@@ -186,7 +189,7 @@ namespace Phorkus.Core.CLI
          * SignBlock
          * blockHash, UInt256
         */
-        public string SignBlock(string[] arguments)
+        public string? SignBlock(string[] arguments)
         {
             if (arguments.Length != 2 || arguments[1].Length != TxLength)
                 return null;
@@ -195,7 +198,7 @@ namespace Phorkus.Core.CLI
             if (!IsValidHexString(arguments[1]))
                 return null;
             var block = _blockManager.GetByHash(arguments[1].HexToUInt256());
-            return _blockManager.Sign(block.Header, _keyPair).ToByteArray().ToString();
+            return block is null ? null : _blockManager.Sign(block.Header, _keyPair).ToByteArray().ToString();
         }
 
         public string SignTransaction(string[] arguments)
@@ -208,7 +211,7 @@ namespace Phorkus.Core.CLI
             return signedTx.Signature.ToString();
         }
 
-        public string SendRawTransaction(string[] arguments)
+        public string? SendRawTransaction(string[] arguments)
         {
             if (arguments.Length != 3)
                 return null;

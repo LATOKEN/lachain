@@ -41,12 +41,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private readonly ConcurrentDictionary<UInt256, UInt256> _verifiedTransactions
             = new ConcurrentDictionary<UInt256, UInt256>();
 
-        public event EventHandler<TransactionReceipt> OnTransactionPersisted;
-        public event EventHandler<TransactionReceipt> OnTransactionFailed;
-        public event EventHandler<TransactionReceipt> OnTransactionExecuted;
-        public event EventHandler<TransactionReceipt> OnTransactionSigned;
+        public event EventHandler<TransactionReceipt>? OnTransactionPersisted;
+        public event EventHandler<TransactionReceipt>? OnTransactionFailed;
+        public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
+        public event EventHandler<TransactionReceipt>? OnTransactionSigned;
 
-        public TransactionReceipt GetByHash(UInt256 transactionHash)
+        public TransactionReceipt? GetByHash(UInt256 transactionHash)
         {
             return _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(transactionHash);
         }

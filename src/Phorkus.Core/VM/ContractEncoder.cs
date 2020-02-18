@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Phorkus.Crypto;
@@ -78,7 +79,7 @@ namespace Phorkus.Core.VM
 
         public byte[] ToByteArray()
         {
-            return (_binaryWriter.BaseStream as MemoryStream)?.ToArray();
+            return (_binaryWriter.BaseStream as MemoryStream)?.ToArray() ?? throw new InvalidOperationException();
         }
     }
 }

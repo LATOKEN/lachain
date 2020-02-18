@@ -40,10 +40,17 @@ namespace Phorkus.Core.Consensus
             IConfigManager configManager, IBlockProducer blockProducer)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
+            if (config?.ValidatorsEcdsaPublicKeys is null) throw new InvalidOperationException();
+            if (config.TpkePrivateKey is null || config.TpkePublicKey is null || config.TpkeVerificationKey is null)
+                throw new InvalidOperationException();
+            if (config.ThresholdSignaturePrivateKey is null || config.ThresholdSignaturePublicKeySet is null)
+                throw new InvalidOperationException();
+            if (config.EcdsaPrivateKey is null) throw new InvalidOperationException();
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
-            var tpkePrivateKey = PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes());
+            var tpkePrivateKey =
+                PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes() ?? throw new InvalidOperationException());
             var maxFaulty = (config.ValidatorsEcdsaPublicKeys.Count - 1) / 3;
             _wallet =
                 new Wallet(config.ValidatorsEcdsaPublicKeys.Count,
@@ -78,7 +85,7 @@ namespace Phorkus.Core.Consensus
         public void Dispatch(ConsensusMessage message)
         {
             var era = message.Validator.Era;
-            EnsureEra(era).Dispatch(message);
+            EnsureEra(era)?.Dispatch(message);
         }
 
         public void Start(long startingEra)
@@ -92,11 +99,11 @@ namespace Phorkus.Core.Consensus
             for (;; CurrentEra += 1)
             {
                 Thread.Sleep(5000);
-                var broadcaster = EnsureEra(CurrentEra);
+                var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                 var rootId = new RootProtocolId(CurrentEra);
                 var rootProtocol = new RootProtocol(_wallet, rootId, broadcaster, _blockProducer, _keyPair.PublicKey);
                 broadcaster.RegisterProtocols(new[] {rootProtocol});
-                broadcaster.InternalRequest(new ProtocolRequest<RootProtocolId, object>(null, rootId, null));
+                broadcaster.InternalRequest(new ProtocolRequest<RootProtocolId, object?>(rootId, rootId, null));
                 rootProtocol.WaitFinish();
                 _logger.LogDebug("Root protocol finished, waiting for new era...");
             }
@@ -111,7 +118,7 @@ namespace Phorkus.Core.Consensus
          * Initialize consensus broadcaster for era if necessary. May throw if era is too far in the past or future
          */
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private EraBroadcaster EnsureEra(long era)
+        private EraBroadcaster? EnsureEra(long era)
         {
             if (_eras.ContainsKey(era)) return _eras[era];
             _logger.LogDebug($"Creating broadcaster for era {era}");

@@ -12,6 +12,6 @@ namespace Phorkus.Consensus.Messages
 
         public TResultType Result { get; }
         public IProtocolIdentifier From => Id;
-        public IProtocolIdentifier To => null;
+        public IProtocolIdentifier? To => null;
     }
 }

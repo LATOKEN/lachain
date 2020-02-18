@@ -22,7 +22,7 @@ namespace Phorkus.Core.DI.SimpleInjector
             return _container.GetInstance<TEntity>();
         }
 
-        public bool TryResolve(Type parameterType, out object obj)
+        public bool TryResolve(Type parameterType, out object? obj)
         {
             var ret = _container.GetRegistration(parameterType);
 

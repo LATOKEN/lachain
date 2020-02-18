@@ -2,6 +2,6 @@
 {
     public interface IConfigManager
     {
-        T GetConfig<T>(string name) where T : new();
+        T? GetConfig<T>(string name) where T : class;
     }
 }

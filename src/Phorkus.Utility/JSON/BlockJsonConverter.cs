@@ -13,14 +13,13 @@ namespace Phorkus.Utility.JSON
             {
                 ["prevBlockHash"] = blockHeader.PrevBlockHash.Buffer.ToHex(),
                 ["merkleRoot"] = blockHeader.MerkleRoot.Buffer.ToHex(),
-                ["timestamp"] = blockHeader.Timestamp,
+                ["stateHash"] = blockHeader.StateHash.Buffer.ToHex(),
                 ["index"] = blockHeader.Index,
-                ["validator"] = blockHeader.Validator.Buffer.ToHex(),
                 ["nonce"] = blockHeader.Index
             };
             return json;
         }
-        
+
         public static JObject ToJson(this Block block)
         {
             var json = new JObject
@@ -29,7 +28,8 @@ namespace Phorkus.Utility.JSON
                 ["hash"] = block.Hash.Buffer.ToHex(),
                 ["transactionHashes"] = new JArray(block.TransactionHashes.Select(txHash => txHash.Buffer.ToHex())),
                 ["multisig"] = null,
-                ["gasPrice"] = block.GasPrice
+                ["gasPrice"] = block.GasPrice,
+                ["timestamp"] = block.Timestamp,
             };
             return json;
         }
