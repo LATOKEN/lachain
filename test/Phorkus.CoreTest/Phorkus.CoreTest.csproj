@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <LangVersion>8</LangVersion>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <None Update="config.json">

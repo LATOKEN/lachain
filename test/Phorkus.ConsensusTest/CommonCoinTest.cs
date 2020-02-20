@@ -5,6 +5,7 @@ using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.ThresholdSignature;
+using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {
@@ -31,11 +32,12 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();
-                _wallets[i] = new Wallet(N, F)
-                {
-                    ThresholdSignaturePrivateKeyShare = shares[i],
-                    ThresholdSignaturePublicKeySet = pubKeys
-                };
+                _wallets[i] = new Wallet(
+                    N, F,
+                    null, null, null,
+                    pubKeys, shares[i],
+                    null, null, new ECDSAPublicKey[] { }
+                );
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
                 _coins[i] = new CommonCoin(
                     new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
@@ -49,7 +51,7 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _broadcasters[i].InternalRequest(
-                    new ProtocolRequest<CoinId, object?>(_resultInterceptors[i].Id, (CoinId) _coins[i].Id, null)
+                    new ProtocolRequest<CoinId, object>(_resultInterceptors[i].Id, (CoinId) _coins[i].Id, null)
                 );
             }
 

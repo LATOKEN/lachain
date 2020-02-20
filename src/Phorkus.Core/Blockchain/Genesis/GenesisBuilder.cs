@@ -41,7 +41,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 );
             }
 
-            var keyPair = new KeyPair(genesisConfig.PrivateKey.HexToBytes().ToPrivateKey(), _crypto);
+            var keyPair = new ECDSAKeyPair(genesisConfig.PrivateKey.HexToBytes().ToPrivateKey(), _crypto);
             var address = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
 
             var txsBefore = new Transaction[] { };

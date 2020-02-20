@@ -55,7 +55,7 @@ namespace Phorkus.Console
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var storageConfig = configManager.GetConfig<StorageConfig>("storage");
             
-            var keyPair = new KeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
             
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());

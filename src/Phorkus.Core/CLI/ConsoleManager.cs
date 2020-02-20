@@ -44,7 +44,7 @@ namespace Phorkus.Core.CLI
             _virtualMachine = virtualMachine;
         }
 
-        private void _Worker(KeyPair keyPair)
+        private void _Worker(ECDSAKeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(
                 _transactionBuilder, _transactionPool, _transactionManager,
@@ -89,7 +89,7 @@ namespace Phorkus.Core.CLI
             }
         }
 
-        public void Start(KeyPair keyPair)
+        public void Start(ECDSAKeyPair keyPair)
         {
             Task.Factory.StartNew(() =>
             {

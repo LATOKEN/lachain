@@ -8,6 +8,7 @@ using Phorkus.Consensus.CommonSubset;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
+using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Proto;
 
@@ -124,6 +125,12 @@ namespace Phorkus.ConsensusTest
                         new CommonSubset(acsId, _wallet, this),
                     });
                     break;
+                case RootProtocolId rootId:
+                    RegisterProtocols(new[]
+                    {
+                        new RootProtocol(rootId, _wallet, this),
+                    });
+                    break;
                 default:
                     throw new Exception($"Unknown protocol type {id}");
             }
@@ -204,6 +211,11 @@ namespace Phorkus.ConsensusTest
                         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
                     CheckRequest(idEncryptedShare);
                     Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
+                    var idRoot = new RootProtocolId(message.Validator.Era);
+                    CheckRequest(idRoot);
+                    Registry[idRoot]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");

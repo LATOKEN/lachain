@@ -26,7 +26,7 @@ namespace Phorkus.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
-        private readonly KeyPair _keyPair;
+        private readonly ECDSAKeyPair _keyPair;
         private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
@@ -37,7 +37,7 @@ namespace Phorkus.Core.CLI
             IValidatorManager validatorManager,
             IStateManager stateManager,
             IVirtualMachine virtualMachine,
-            KeyPair keyPair)
+            ECDSAKeyPair keyPair)
         {
             _blockManager = blockManager;
             _transactionBuilder = transactionBuilder;

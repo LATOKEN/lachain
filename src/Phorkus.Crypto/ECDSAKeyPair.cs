@@ -4,18 +4,18 @@ using Phorkus.Proto;
 
 namespace Phorkus.Crypto
 {
-    public class KeyPair : IEquatable<KeyPair>
+    public class ECDSAKeyPair : IEquatable<ECDSAKeyPair>
     {
         public readonly ECDSAPrivateKey PrivateKey;
         public readonly ECDSAPublicKey PublicKey;
 
-        public KeyPair(ECDSAPrivateKey privateKey, ECDSAPublicKey publicKey)
+        public ECDSAKeyPair(ECDSAPrivateKey privateKey, ECDSAPublicKey publicKey)
         {
             PrivateKey = privateKey;
             PublicKey = publicKey;
         }
 
-        public KeyPair(ECDSAPrivateKey privateKey, ICrypto crypto)
+        public ECDSAKeyPair(ECDSAPrivateKey privateKey, ICrypto crypto)
         {
             PrivateKey = privateKey;
             PublicKey = new ECDSAPublicKey
@@ -24,7 +24,7 @@ namespace Phorkus.Crypto
             };
         }
 
-        public bool Equals(KeyPair? other)
+        public bool Equals(ECDSAKeyPair? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -33,7 +33,7 @@ namespace Phorkus.Crypto
 
         public override bool Equals(object? obj)
         {
-            return Equals(obj as KeyPair);
+            return Equals(obj as ECDSAKeyPair);
         }
 
         public override int GetHashCode()

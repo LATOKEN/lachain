@@ -8,12 +8,13 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.ThresholdSignature;
+using Phorkus.Proto;
 using TrustedKeyGen = Phorkus.Crypto.TPKE.TrustedKeyGen;
 
 namespace Phorkus.ConsensusTest
 {
     [TestFixture]
-    public class HoneyBadgerTest 
+    public class HoneyBadgerTest
     {
         private DeliveryService _deliveryService;
         private IConsensusProtocol[] _broadcasts;
@@ -42,14 +43,10 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
-                _wallets[i] = new Wallet(N, F)
-                {
-                    ThresholdSignaturePrivateKeyShare = shares[i],
-                    ThresholdSignaturePublicKeySet = pubKeys,
-                    TpkePrivateKey = tpkeKeygen.GetPrivKey(i),
-                    TpkePublicKey = tpkeKeygen.GetPubKey(),
-                    TpkeVerificationKey = tpkeKeygen.GetVerificationKey()
-                };
+                _wallets[i] = new Wallet(N, F,
+                    tpkeKeygen.GetPubKey(), tpkeKeygen.GetPrivKey(i), tpkeKeygen.GetVerificationKey(),
+                    pubKeys, shares[i], null, null, new ECDSAPublicKey[] { }
+                );
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, true);
             }
         }
@@ -62,17 +59,17 @@ namespace Phorkus.ConsensusTest
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
-        
+
         private void SetUpSomeSilent(ISet<int> s)
         {
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(new HoneyBadgerId(10), _wallets[i], _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
-                    foreach (var j in s)
-                    {
-                        (_broadcasters[i] as BroadcastSimulator)?.Silent(j);
-                    }
+                foreach (var j in s)
+                {
+                    (_broadcasters[i] as BroadcastSimulator)?.Silent(j);
+                }
             }
         }
 
@@ -96,11 +93,12 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(N, _resultInterceptors[i].Result.Count);
             }
         }
-        
+
         [Test]
         public void TestSomeSilent()
         {
@@ -109,7 +107,7 @@ namespace Phorkus.ConsensusTest
             {
                 s.Add(_rnd.Next(0, N - 1));
             }
-            
+
             SetUpSomeSilent(s);
             for (var i = 0; i < N; ++i)
             {
@@ -124,14 +122,14 @@ namespace Phorkus.ConsensusTest
                 if (s.Contains(i)) continue;
                 _broadcasts[i].WaitFinish();
             }
-            
 
             for (var i = 0; i < N; ++i)
             {
                 if (s.Contains(i)) continue;
-                
+
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(N - F, _resultInterceptors[i].Result.Count);
             }
         }

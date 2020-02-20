@@ -18,7 +18,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         
         OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash, bool commit);        
         
-        Signature Sign(BlockHeader block, KeyPair keyPair);
+        Signature Sign(BlockHeader block, ECDSAKeyPair keyPair);
         
         OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey);
         

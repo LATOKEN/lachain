@@ -33,7 +33,7 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, Keys>();
-                _wallets[i] = new Wallet(N, T);
+                _wallets[i] = TestUtils.EmptyWallet(N, T);
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
             }
             

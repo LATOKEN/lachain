@@ -8,10 +8,10 @@ namespace Phorkus.Networking
 {
     public class MessageFactory : IMessageFactory
     {
-        private readonly KeyPair _keyPair;
+        private readonly ECDSAKeyPair _keyPair;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
-        public MessageFactory(KeyPair keyPair)
+        public MessageFactory(ECDSAKeyPair keyPair)
         {
             _keyPair = keyPair;
         }

@@ -89,7 +89,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public TransactionReceipt Sign(Transaction transaction, KeyPair keyPair)
+        public TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
             var message = transaction.ToHash256().Buffer.ToByteArray();

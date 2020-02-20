@@ -254,7 +254,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 : OperatingError.Ok;
         }
 
-        public Signature Sign(BlockHeader block, KeyPair keyPair)
+        public Signature Sign(BlockHeader block, ECDSAKeyPair keyPair)
         {
             return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
                 .ToSignature();

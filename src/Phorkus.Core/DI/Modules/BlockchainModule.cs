@@ -1,3 +1,4 @@
+using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.Blockchain.Genesis;

@@ -54,7 +54,7 @@ namespace Phorkus.Benchmark
             var stateManager = _container.Resolve<IStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
-            var keyPair = new KeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
 
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToByteArray().ToHex());
@@ -118,7 +118,7 @@ namespace Phorkus.Benchmark
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IBlockchainManager blockchainManager,
-            KeyPair keyPair)
+            ECDSAKeyPair keyPair)
         {
             var address1 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
             var address2 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
@@ -160,7 +160,7 @@ namespace Phorkus.Benchmark
                     var latestBlock = blockchainContext.CurrentBlock;
                     if (i > 0)
                         latestBlock = blocks[i - 1].Block;
-                    var blockWithTxs = new BlockBuilder(latestBlock.Header, keyPair.PublicKey)
+                    var blockWithTxs = new BlockBuilder(latestBlock.Header)
                         .WithTransactions(txs)
                         .Build(123456);
                     var block = blockWithTxs.Block;
@@ -200,7 +200,7 @@ namespace Phorkus.Benchmark
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IBlockchainManager blockchainManager,
-            KeyPair keyPair)
+            ECDSAKeyPair keyPair)
         {
             var address1 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
             var address2 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
@@ -218,7 +218,7 @@ namespace Phorkus.Benchmark
                     transactionBuilder.TransferTransaction(address1, address2, Money.FromDecimal(1.2m));
                 var signed = transactionSigner.Sign(transferTx, keyPair);
                 var latestBlock = blockchainContext.CurrentBlock;
-                var blockWithTxs = new BlockBuilder(latestBlock.Header, keyPair.PublicKey)
+                var blockWithTxs = new BlockBuilder(latestBlock.Header)
                     .WithTransactions(new[] {signed})
                     .Build(123456);
                 var stateHash = blockchainManager.CalcStateHash(blockWithTxs.Block, blockWithTxs.Transactions);

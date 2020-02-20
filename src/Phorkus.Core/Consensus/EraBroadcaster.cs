@@ -8,6 +8,7 @@ using Phorkus.Consensus.CommonSubset;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
+using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Core.Blockchain;
 using Phorkus.Crypto;
@@ -29,7 +30,7 @@ namespace Phorkus.Core.Consensus
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IMessageFactory _messageFactory;
         private readonly IWallet _wallet;
-        private readonly KeyPair _keyPair;
+        private readonly ECDSAKeyPair _keyPair;
         private bool _terminated;
 
         /**
@@ -46,7 +47,7 @@ namespace Phorkus.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            KeyPair keyPair, IWallet wallet
+            ECDSAKeyPair keyPair, IWallet wallet
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -95,6 +96,12 @@ namespace Phorkus.Core.Consensus
 
         public void Dispatch(ConsensusMessage message)
         {
+            if (message.Validator.Era != _era)
+            {
+                throw new InvalidOperationException(
+                    $"Message for era {message.Validator.Era} dispatched to era {_era}");
+            }
+
             switch (message.PayloadCase)
             {
                 case ConsensusMessage.PayloadOneofCase.Bval:
@@ -155,6 +162,11 @@ namespace Phorkus.Core.Consensus
                         (int) message.Validator.Era);
                     CheckRequest(rbIdEchoMsg);
                     _registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message));
+                    break;
+                case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
+                    var rootId = new RootProtocolId(message.Validator.Era);
+                    CheckRequest(rootId);
+                    _registry[rootId]?.ReceiveMessage(new MessageEnvelope(message));
                     break;
                 // TODO: this is only for mock RBC
                 case ConsensusMessage.PayloadOneofCase.EncryptedShare:
@@ -256,6 +268,9 @@ namespace Phorkus.Core.Consensus
                     break;
                 case HoneyBadgerId hbId:
                     RegisterProtocols(new[] {new HoneyBadger(hbId, _wallet, this)});
+                    break;
+                case RootProtocolId rootId:
+                    RegisterProtocols(new[] {new RootProtocol(rootId, _wallet, this)});
                     break;
                 default:
                     throw new Exception($"Unknown protocol type {id}");

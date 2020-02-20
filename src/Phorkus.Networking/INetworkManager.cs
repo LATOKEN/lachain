@@ -24,7 +24,7 @@ namespace Phorkus.Networking
         IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey);
         bool IsReady { get; }
 
-        void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler);
+        void Start(NetworkConfig networkConfig, ECDSAKeyPair keyPair, IMessageHandler messageHandler);
 
         void Stop();
     }

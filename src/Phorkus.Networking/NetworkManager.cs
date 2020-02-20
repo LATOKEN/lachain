@@ -312,7 +312,7 @@ namespace Phorkus.Networking
 
         public bool IsReady => _serverWorker != null && _serverWorker.IsActive;
 
-        public void Start(NetworkConfig networkConfig, KeyPair keyPair, IMessageHandler messageHandler)
+        public void Start(NetworkConfig networkConfig, ECDSAKeyPair keyPair, IMessageHandler messageHandler)
         {
             if (networkConfig?.Peers is null)
                 throw new ArgumentNullException();

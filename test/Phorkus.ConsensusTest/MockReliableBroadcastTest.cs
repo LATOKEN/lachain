@@ -35,7 +35,7 @@ namespace Phorkus.ConsensusTest
             Mcl.Init();
             for (var i = 0; i < N; ++i)
             {
-                _wallets[i] = new Wallet(N, F);
+                _wallets[i] = TestUtils.EmptyWallet(N, F);
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, mixMessages: false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
@@ -61,7 +61,7 @@ namespace Phorkus.ConsensusTest
             var share = new EncryptedShare(G1.Generator, new byte[]{}, G2.Generator, sender);
             for (var i = 0; i < N; ++i)
             {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? share : null
                 ));
             }

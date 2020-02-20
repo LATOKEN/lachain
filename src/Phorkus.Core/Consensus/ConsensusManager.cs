@@ -6,6 +6,7 @@ using System.Threading;
 using Phorkus.Consensus;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
+using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Config;
@@ -29,7 +30,7 @@ namespace Phorkus.Core.Consensus
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private bool _terminated;
         private readonly IWallet _wallet;
-        private readonly KeyPair _keyPair;
+        private readonly ECDSAKeyPair _keyPair;
         private long CurrentEra { get; set; }
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
@@ -40,33 +41,41 @@ namespace Phorkus.Core.Consensus
             IConfigManager configManager, IBlockProducer blockProducer)
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
-            if (config?.ValidatorsEcdsaPublicKeys is null) throw new InvalidOperationException();
-            if (config.TpkePrivateKey is null || config.TpkePublicKey is null || config.TpkeVerificationKey is null)
-                throw new InvalidOperationException();
-            if (config.ThresholdSignaturePrivateKey is null || config.ThresholdSignaturePublicKeySet is null)
-                throw new InvalidOperationException();
-            if (config.EcdsaPrivateKey is null) throw new InvalidOperationException();
+            if (config is null) throw new ArgumentNullException(nameof(config));
+            var validatorsKeys =
+                config.ValidatorsEcdsaPublicKeys?.Select(key => key.HexToBytes().ToPublicKey()).ToArray() ??
+                throw new ArgumentNullException();
+            var maxFaulty = (validatorsKeys.Length - 1) / 3;
+
+            var tpkePrivateKey =
+                PrivateKey.FromBytes(config.TpkePrivateKey?.HexToBytes() ?? throw new ArgumentNullException());
+            var tpkePublicKey =
+                PublicKey.FromBytes(config.TpkePublicKey?.HexToBytes() ?? throw new ArgumentNullException());
+            var tpkeVerificationKey =
+                VerificationKey.FromBytes(config.TpkeVerificationKey?.HexToBytes() ??
+                                          throw new ArgumentNullException());
+            var thresholdSignaturePublicKeySet = new PublicKeySet(
+                config.ThresholdSignaturePublicKeySet?
+                    .Select(s => PublicKeyShare.FromBytes(s.HexToBytes())) ?? throw new ArgumentNullException(),
+                maxFaulty
+            );
+            var thresholdSignaturePrivateKeyShare = PrivateKeyShare.FromBytes(
+                config.ThresholdSignaturePrivateKey?.HexToBytes() ??
+                throw new ArgumentNullException()
+            );
+            _keyPair = new ECDSAKeyPair(
+                config.EcdsaPrivateKey?.HexToBytes().ToPrivateKey() ?? throw new ArgumentNullException(), _crypto
+            );
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
-            var tpkePrivateKey =
-                PrivateKey.FromBytes(config.TpkePrivateKey.HexToBytes() ?? throw new InvalidOperationException());
-            var maxFaulty = (config.ValidatorsEcdsaPublicKeys.Count - 1) / 3;
-            _wallet =
-                new Wallet(config.ValidatorsEcdsaPublicKeys.Count,
-                        maxFaulty) // TODO: store public key info in blockchain to be able to change validators
-                    {
-                        TpkePrivateKey = tpkePrivateKey,
-                        TpkePublicKey = PublicKey.FromBytes(config.TpkePublicKey.HexToBytes()),
-                        TpkeVerificationKey = VerificationKey.FromBytes(config.TpkeVerificationKey.HexToBytes()),
-                        ThresholdSignaturePrivateKeyShare =
-                            PrivateKeyShare.FromBytes(config.ThresholdSignaturePrivateKey.HexToBytes()),
-                        ThresholdSignaturePublicKeySet = new PublicKeySet(
-                            config.ThresholdSignaturePublicKeySet.Select(s => PublicKeyShare.FromBytes(s.HexToBytes())),
-                            maxFaulty)
-                    };
+            _wallet = new Wallet(
+                config.ValidatorsEcdsaPublicKeys.Count, maxFaulty,
+                tpkePublicKey, tpkePrivateKey, tpkeVerificationKey,
+                thresholdSignaturePublicKeySet, thresholdSignaturePrivateKeyShare,
+                _keyPair.PublicKey, _keyPair.PrivateKey, validatorsKeys
+            ); // TODO: store public key info in blockchain to be able to change validators
             _terminated = false;
-            _keyPair = new KeyPair(config.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), _crypto);
             _logger.LogDebug(
                 $"Starting consensus as validator {_validatorManager.GetValidatorIndex(_keyPair.PublicKey)}");
         }
@@ -101,9 +110,10 @@ namespace Phorkus.Core.Consensus
                 Thread.Sleep(5000);
                 var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                 var rootId = new RootProtocolId(CurrentEra);
-                var rootProtocol = new RootProtocol(_wallet, rootId, broadcaster, _blockProducer, _keyPair.PublicKey);
-                broadcaster.RegisterProtocols(new[] {rootProtocol});
-                broadcaster.InternalRequest(new ProtocolRequest<RootProtocolId, object?>(rootId, rootId, null));
+                var rootProtocol = new RootProtocol(rootId, _wallet, broadcaster);
+                broadcaster.InternalRequest(
+                    new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId, _blockProducer)
+                );
                 rootProtocol.WaitFinish();
                 _logger.LogDebug("Root protocol finished, waiting for new era...");
             }

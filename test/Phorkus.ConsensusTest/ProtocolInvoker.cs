@@ -53,6 +53,7 @@ namespace Phorkus.ConsensusTest
     public class ProtocolInvoker<TId, TResult> : IConsensusProtocol where TId : IProtocolIdentifier
     {
         public IProtocolIdentifier Id { get; } = new InvokerId();
+
         public void Terminate()
         {
             throw new NotImplementedException();

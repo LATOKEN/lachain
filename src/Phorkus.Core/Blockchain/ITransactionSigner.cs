@@ -5,6 +5,6 @@ namespace Phorkus.Core.Blockchain
 {
     public interface ITransactionSigner
     {
-        TransactionReceipt Sign(Transaction transaction, KeyPair keyPair);
+        TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair);
     }
 }

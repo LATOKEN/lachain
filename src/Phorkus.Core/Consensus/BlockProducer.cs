@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Network;
@@ -42,7 +43,7 @@ namespace Phorkus.Core.Consensus
             return allTxs.Take(txNum);
         }
 
-        public void ProduceBlock(
+        public BlockHeader CreateHeader(
             IReadOnlyCollection<UInt256> txHashes, ECDSAPublicKey publicKey, ulong nonce
         )
         {
@@ -61,20 +62,38 @@ namespace Phorkus.Core.Consensus
 
             var blockWithTransactions =
                 new BlockBuilder(
-                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException(),
-                        publicKey)
+                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException())
                     .WithTransactions(receipts)
                     .Build(nonce);
 
-            var (operatingError, removeTransactions, stateHash, relayTransactions) =
+            var (operatingError, _, stateHash, _) =
                 _blockManager.Emulate(blockWithTransactions.Block, blockWithTransactions.Transactions);
 
             if (operatingError != OperatingError.Ok)
                 throw new InvalidOperationException($"Cannot assemble block: error {operatingError}");
 
-            blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlock.Header, publicKey, stateHash)
-                .WithTransactions(receipts)
-                .Build(nonce);
+            return new BlockHeader
+            {
+                Index = blockWithTransactions.Block.Header.Index,
+                MerkleRoot = blockWithTransactions.Block.Header.MerkleRoot,
+                Nonce = nonce,
+                PrevBlockHash = blockWithTransactions.Block.Header.PrevBlockHash,
+                StateHash = stateHash
+            };
+        }
+
+        public void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig)
+        {
+            var receipts = txHashes
+                .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
+                .ToList();
+
+            var blockWithTransactions =
+                new BlockBuilder(
+                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException())
+                    .WithTransactions(receipts)
+                    .WithMultisig(multiSig)
+                    .Build(header.Nonce);
 
             _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash}");
             var result = _blockManager.Execute(

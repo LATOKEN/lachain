@@ -5,7 +5,7 @@ namespace Phorkus.Core.CLI
 {
     public interface IConsoleManager
     {
-        void Start(KeyPair keyPair);
+        void Start(ECDSAKeyPair keyPair);
 
         void Stop();
 

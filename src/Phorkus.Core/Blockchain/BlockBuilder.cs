@@ -13,16 +13,14 @@ namespace Phorkus.Core.Blockchain
     {
         private readonly BlockHeader _prevBlock;
         private readonly UInt256 _stateHash;
-        private readonly ECDSAPublicKey _validator;
 
         private ICollection<TransactionReceipt>? _transactions;
         private MultiSig? _multiSig;
 
-        public BlockBuilder(BlockHeader prevBlock, ECDSAPublicKey validator, UInt256? stateHash = null)
+        public BlockBuilder(BlockHeader prevBlock, UInt256? stateHash = null)
         {
             _prevBlock = prevBlock;
             _stateHash = stateHash ?? UInt256Utils.Zero;
-            _validator = validator;
         }
 
         public BlockBuilder WithTransactions(IReadOnlyCollection<TransactionReceipt> transactions)
@@ -44,6 +42,12 @@ namespace Phorkus.Core.Blockchain
             var publicKeys = validators as ECDSAPublicKey[] ?? validators.ToArray();
             _multiSig.Validators.AddRange(publicKeys);
             _multiSig.Quorum = (uint) publicKeys.Length;
+            return this;
+        }
+
+        public BlockBuilder WithMultisig(MultiSig multiSig)
+        {
+            _multiSig = multiSig;
             return this;
         }
 
@@ -81,7 +85,7 @@ namespace Phorkus.Core.Blockchain
                 Hash = header.ToByteArray().ToHash256(),
                 TransactionHashes = {txs.Select(tx => tx.Hash)},
                 Header = header,
-                Multisig = new MultiSig(),
+                Multisig = _multiSig ?? new MultiSig(),
                 Timestamp = TimeUtils.CurrentTimeMillis(),
             };
             return new BlockWithTransactions(block, txs);

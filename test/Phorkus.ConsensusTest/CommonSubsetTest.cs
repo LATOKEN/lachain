@@ -8,12 +8,13 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.ThresholdSignature;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Proto;
 using TrustedKeyGen = Phorkus.Crypto.ThresholdSignature.TrustedKeyGen;
 
 namespace Phorkus.ConsensusTest
 {
     [TestFixture]
-    public class CommonSubsetTest 
+    public class CommonSubsetTest
     {
         private DeliveryService _deliveryService;
         private IConsensusProtocol[] _acs;
@@ -39,17 +40,20 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
-                _wallets[i] = new Wallet(N, F) {ThresholdSignaturePrivateKeyShare = shares[i], ThresholdSignaturePublicKeySet = pubKeys};
+                _wallets[i] = new Wallet(N, F, null, null, null,
+                    pubKeys, shares[i],
+                    null, null, new ECDSAPublicKey[] { }
+                );
                 _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
             }
-            
+
             for (uint i = 0; i < N; ++i)
             {
                 _acs[i] = new CommonSubset(new CommonSubsetId(10), _wallets[i], _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_acs[i], _resultInterceptors[i]});
             }
         }
-        
+
         // private void SetUpReliableBroadcast()
         // {        
         //     _deliveryService = new DeliveryService();
@@ -81,14 +85,14 @@ namespace Phorkus.ConsensusTest
         {
             if (faulty == null)
                 faulty = new HashSet<int>();
-            
+
             Assert.True(faulty.Count <= F);
 
             var numberOfInputs = 0;
             for (var i = 0; i < N; ++i)
                 if (!faulty.Contains(i) && inputs[i] != null)
                     numberOfInputs++;
-            
+
             // unsufficient number of inputs
             if (numberOfInputs < N - F)
                 Assert.Pass();
@@ -108,7 +112,7 @@ namespace Phorkus.ConsensusTest
                 }
 
                 Assert.True(set.Count >= N - F);
-                
+
                 var cnt = 0;
                 foreach (var share in set)
                 {
@@ -126,7 +130,6 @@ namespace Phorkus.ConsensusTest
                     Assert.True(canon.SequenceEqual(set.ToArray()));
                 }
             }
-            
         }
 
         public void TestAllCommonSubset(int n, DeliveryServiceMode mode = DeliveryServiceMode.TAKE_FIRST)
@@ -134,9 +137,10 @@ namespace Phorkus.ConsensusTest
             N = n;
             SetUpAllHonest();
             _deliveryService.Mode = mode;
-            
-            Console.Error.WriteLine("------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
-            
+
+            Console.Error.WriteLine(
+                "------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
+
             var inputs = new List<EncryptedShare>();
             for (var i = 0; i < N; ++i)
             {
@@ -153,6 +157,7 @@ namespace Phorkus.ConsensusTest
                 if (_deliveryService._mutedPlayers.Contains(i)) continue;
                 _acs[i].WaitResult();
             }
+
             Console.Error.WriteLine("All players produced result");
             _deliveryService.WaitFinish();
             Console.Error.WriteLine("Delivery service shut down");
@@ -168,12 +173,14 @@ namespace Phorkus.ConsensusTest
                         Console.Error.WriteLine($"Didn't found protocol with id {id}'");
                         continue;
                     }
+
                     protocol.Terminate();
                     Console.Error.WriteLine($"boy {id} terminated");
                     protocol.WaitFinish();
                     Console.Error.WriteLine($"boy {id} finished");
                 }
             }
+
             Console.Error.WriteLine("Ended protocols!");
 
             var outputs = new List<ISet<EncryptedShare>>();
@@ -181,12 +188,13 @@ namespace Phorkus.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 Assert.IsTrue(_acs[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(N, _resultInterceptors[i].Result.Count);
-                
+
                 outputs.Add(_resultInterceptors[i].Result);
             }
-            
+
             CheckOutput(inputs.ToArray(), outputs.ToArray());
         }
 
@@ -196,7 +204,7 @@ namespace Phorkus.ConsensusTest
         {
             TestAllCommonSubset(7);
         }
-        
+
         [Test]
         [Repeat(10)]
         public void TestRandom7()
