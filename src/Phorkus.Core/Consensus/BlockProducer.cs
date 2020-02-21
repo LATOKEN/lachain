@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -45,7 +46,7 @@ namespace Phorkus.Core.Consensus
         }
 
         public BlockHeader CreateHeader(
-            ulong index, IReadOnlyCollection<UInt256> txHashes, ECDSAPublicKey publicKey, ulong nonce
+            ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken
         )
         {
             var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromDays(1)); // TODO: timeout?
@@ -73,9 +74,18 @@ namespace Phorkus.Core.Consensus
                     .WithTransactions(receipts)
                     .Build(nonce);
 
-            var (operatingError, _, stateHash, _) =
+            var (operatingError, removedTxs, stateHash, returnedTxs) =
                 _blockManager.Emulate(blockWithTransactions.Block, blockWithTransactions.Transactions);
 
+            var badHashes = new HashSet<UInt256>(
+                removedTxs.Select(receipt => receipt.Hash).Concat(returnedTxs.Select(receipt => receipt.Hash))
+            );
+
+            blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlock.Header)
+                .WithTransactions(receipts.FindAll(receipt => !badHashes.Contains(receipt.Hash)).ToArray())
+                .Build(nonce);
+
+            hashesTaken = blockWithTransactions.Transactions.Select(receipt => receipt.Hash).ToArray();
             if (operatingError != OperatingError.Ok)
                 throw new InvalidOperationException($"Cannot assemble block: error {operatingError}");
 

@@ -178,10 +178,22 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 transaction.GasUsed = GasMetering.DefaultTxTransferGasCost;
                 var snapshot = _stateManager.NewSnapshot();
 
+                var gasLimitCheck = _CheckTransactionGasLimit(transaction.Transaction, snapshot);
+                if (gasLimitCheck != OperatingError.Ok)
+                {
+                    removeTransactions.Add(transaction);
+                    _stateManager.Rollback();
+                    _logger.LogWarning(
+                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Transaction?.Nonce}): not enough balance for gas"
+                    );
+                    continue;
+                }
+
                 /* try to execute transaction */
                 var result = _transactionManager.Execute(block, transaction, snapshot);
                 if (result != OperatingError.Ok)
                 {
+                    // TODO: here we have to take fees anyway
                     _stateManager.Rollback();
                     if (writeFailed)
                     {
@@ -240,14 +252,23 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return OperatingError.Ok;
         }
 
+        private OperatingError _CheckTransactionGasLimit(Transaction transaction, IBlockchainSnapshot snapshot)
+        {
+            /* check available LA balance */
+            var fee = new Money(transaction.GasLimit * transaction.GasPrice);
+            return snapshot.Balances.GetBalance(transaction.From).CompareTo(fee) < 0
+                ? OperatingError.InsufficientBalance
+                : OperatingError.Ok;
+        }
+
         private OperatingError _TakeTransactionFee(TransactionReceipt transaction,
             IBlockchainSnapshot snapshot, out Money fee)
         {
             /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* genesis block doesn't have LA asset and validators are fee free */
-            if (_validatorManager.CheckValidator(transaction.Transaction.From))
-                return OperatingError.Ok;
+            // if (_validatorManager.CheckValidator(transaction.Transaction.From)) // TODO: wtf?
+            //     return OperatingError.Ok;
             /* transfer fee from wallet to validator */
             var sharedFee = fee / _validatorManager.Validators.Count;
             return _validatorManager.Validators.Any(validator =>

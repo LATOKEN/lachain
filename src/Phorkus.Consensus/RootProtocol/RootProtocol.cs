@@ -103,7 +103,7 @@ namespace Phorkus.Consensus.RootProtocol
                                 stream.Write(hash.ToBytes(), 0, 32);
                             }
 
-                            var data = stream.GetBuffer();
+                            var data = stream.ToArray();
                             Broadcaster.InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                                 Id, new HoneyBadgerId(Id.Era), new RawShare(data, GetMyId()))
                             );
@@ -148,7 +148,7 @@ namespace Phorkus.Consensus.RootProtocol
             if (!(_header is null)) return;
             try
             {
-                _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _keyPair.PublicKey, _nonce.Value);
+                _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);
             }
             catch (InvalidOperationException e)
             {
