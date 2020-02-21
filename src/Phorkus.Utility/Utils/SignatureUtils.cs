@@ -24,5 +24,15 @@ namespace Phorkus.Utility.Utils
                 Buffer = ByteString.CopyFrom(signature)
             };
         }
+        
+        public static byte[] Encode(this Signature signature)
+        {
+            return signature.Buffer.ToByteArray();
+        }
+
+        public static string ToHex(this Signature signature)
+        {
+            return signature.Encode().ToHex();
+        }
     }
 }

@@ -19,9 +19,7 @@ namespace Phorkus.Core.Blockchain
             if (config is null)
                 throw new ArgumentNullException(nameof(config));
             Validators = config.ValidatorsEcdsaPublicKeys
-                .Select(key => key.HexToBytes())
-                .OrderBy(key => key.Sha256().ToHex())
-                .Select(key => key.ToPublicKey())
+                .Select(key => key.HexToBytes().ToPublicKey())
                 .ToList();
         }
 

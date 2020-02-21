@@ -345,7 +345,7 @@ namespace Phorkus.Networking
         private void SendQueuedMessages(Node node)
         {
             _logger.LogDebug(
-                $"Handshake with node {node.Address} with public key {node.PublicKey} is done, sending queued messages");
+                $"Handshake with node {node.Address} with public key {node.PublicKey.ToHex()} is done, sending queued messages");
             var publicKey = node.PublicKey;
             var peer = GetPeerByPublicKey(publicKey) ??
                        throw new InvalidOperationException("Peer did handshake but is not longer available");

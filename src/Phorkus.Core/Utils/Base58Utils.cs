@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Phorkus.Crypto;
+using Phorkus.Core.Utils;
 
-namespace Phorkus.Core.Utils
+namespace Phorkus.Utility.Utils
 {
     public static class Base58Utils
     {

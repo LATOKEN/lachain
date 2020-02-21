@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;

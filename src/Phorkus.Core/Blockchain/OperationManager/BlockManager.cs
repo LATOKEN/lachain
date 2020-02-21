@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
@@ -56,8 +57,9 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
 
-        public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block,
-            IEnumerable<TransactionReceipt> transactions)
+        public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(
+            Block block, IEnumerable<TransactionReceipt> transactions
+        )
         {
             var (operatingError, removeTransactions, stateHash, relayTransactions) = _stateManager.SafeContext(() =>
             {
@@ -87,6 +89,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash,
             bool commit)
         {

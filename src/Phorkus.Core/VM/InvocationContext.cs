@@ -1,4 +1,5 @@
 ﻿using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 

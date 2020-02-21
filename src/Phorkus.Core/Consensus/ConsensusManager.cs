@@ -9,6 +9,7 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Crypto;
 using Phorkus.Crypto.ThresholdSignature;
@@ -38,7 +39,10 @@ namespace Phorkus.Core.Consensus
         public ConsensusManager(
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
-            IConfigManager configManager, IBlockProducer blockProducer)
+            IConfigManager configManager,
+            IBlockProducer blockProducer,
+            IBlockManager blockManager
+        )
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             if (config is null) throw new ArgumentNullException(nameof(config));
@@ -66,6 +70,17 @@ namespace Phorkus.Core.Consensus
             _keyPair = new ECDSAKeyPair(
                 config.EcdsaPrivateKey?.HexToBytes().ToPrivateKey() ?? throw new ArgumentNullException(), _crypto
             );
+            if (!validatorManager.Validators.SequenceEqual(validatorsKeys))
+            {
+                throw new InvalidOperationException("Inconsistent validator numeration");
+            }
+
+            if (thresholdSignaturePublicKeySet.GetIndex(thresholdSignaturePrivateKeyShare.GetPublicKeyShare()) !=
+                validatorManager.GetValidatorIndex(_keyPair.PublicKey))
+            {
+                throw new InvalidOperationException("Inconsistent validator numeration");
+            }
+
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
@@ -76,8 +91,15 @@ namespace Phorkus.Core.Consensus
                 _keyPair.PublicKey, _keyPair.PrivateKey, validatorsKeys
             ); // TODO: store public key info in blockchain to be able to change validators
             _terminated = false;
+            blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
             _logger.LogDebug(
                 $"Starting consensus as validator {_validatorManager.GetValidatorIndex(_keyPair.PublicKey)}");
+        }
+
+        private void BlockManagerOnOnBlockPersisted(object sender, Block e)
+        {
+            _logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
+            EnsureEra((long) e.Header.Index)?.Terminate();
         }
 
         public void AdvanceEra(long newEra)
@@ -94,6 +116,12 @@ namespace Phorkus.Core.Consensus
         public void Dispatch(ConsensusMessage message)
         {
             var era = message.Validator.Era;
+            if (era < CurrentEra)
+            {
+                _logger.LogDebug($"Skipped message for era {era} since we already advanced to {CurrentEra}");
+                return;
+            }
+
             EnsureEra(era)?.Dispatch(message);
         }
 
@@ -110,11 +138,12 @@ namespace Phorkus.Core.Consensus
                 Thread.Sleep(5000);
                 var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                 var rootId = new RootProtocolId(CurrentEra);
-                var rootProtocol = new RootProtocol(rootId, _wallet, broadcaster);
                 broadcaster.InternalRequest(
                     new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId, _blockProducer)
                 );
-                rootProtocol.WaitFinish();
+                broadcaster.WaitFinish();
+                broadcaster.Terminate();
+                _eras.Remove(CurrentEra);
                 _logger.LogDebug("Root protocol finished, waiting for new era...");
             }
         }

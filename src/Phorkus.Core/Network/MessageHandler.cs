@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Consensus;
 using Phorkus.Crypto;
@@ -8,6 +9,7 @@ using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Network
 {
@@ -108,10 +110,20 @@ namespace Phorkus.Core.Network
             var index = _validatorManager.GetValidatorIndex(
                 envelope.PublicKey ?? throw new InvalidOperationException()
             );
+
             if (message.Validator.ValidatorIndex != index)
             {
                 throw new UnauthorizedAccessException(
                     $"Message signed by validator {index}, but validator index is {message.Validator.ValidatorIndex}");
+            }
+
+            if (envelope.Signature is null ||
+                !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
+                    envelope.PublicKey.EncodeCompressed())
+            )
+            {
+                throw new UnauthorizedAccessException(
+                    $"Message signed by validator {index}, but signature is not correct");
             }
 
             _consensusManager.Dispatch(message);

@@ -2,8 +2,9 @@
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Phorkus.Crypto;
 
-namespace Phorkus.Crypto
+namespace Phorkus.Core.Utils
 {
     public static class Base58
     {

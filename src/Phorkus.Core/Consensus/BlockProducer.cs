@@ -5,6 +5,7 @@ using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Network;
+using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
@@ -44,7 +45,7 @@ namespace Phorkus.Core.Consensus
         }
 
         public BlockHeader CreateHeader(
-            IReadOnlyCollection<UInt256> txHashes, ECDSAPublicKey publicKey, ulong nonce
+            ulong index, IReadOnlyCollection<UInt256> txHashes, ECDSAPublicKey publicKey, ulong nonce
         )
         {
             var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromDays(1)); // TODO: timeout?
@@ -60,9 +61,15 @@ namespace Phorkus.Core.Consensus
                 .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
                 .ToList();
 
+            if (_blockchainContext.CurrentBlock is null) throw new InvalidOperationException("No previous block");
+            if (_blockchainContext.CurrentBlock.Header.Index + 1 != index)
+            {
+                throw new InvalidOperationException(
+                    $"Latest block is {_blockchainContext.CurrentBlock}, but we are trying to create block {index}");
+            }
+
             var blockWithTransactions =
-                new BlockBuilder(
-                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException())
+                new BlockBuilder(_blockchainContext.CurrentBlock.Header)
                     .WithTransactions(receipts)
                     .Build(nonce);
 
@@ -90,17 +97,27 @@ namespace Phorkus.Core.Consensus
 
             var blockWithTransactions =
                 new BlockBuilder(
-                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException())
+                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException(),
+                        header.StateHash
+                    )
                     .WithTransactions(receipts)
                     .WithMultisig(multiSig)
                     .Build(header.Nonce);
 
-            _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash}");
+            _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash.ToHex()}");
+            if (_blockchainContext.CurrentBlockHeight + 1 != header.Index)
+            {
+                throw new InvalidOperationException(
+                    $"Current height is {_blockchainContext.CurrentBlockHeight}, but we are trying to produce block {header.Index}"
+                );
+            }
+
             var result = _blockManager.Execute(
-                blockWithTransactions.Block, blockWithTransactions.Transactions, commit: true, checkStateHash: true);
+                blockWithTransactions.Block, blockWithTransactions.Transactions, commit: true,
+                checkStateHash: true);
 
             if (result == OperatingError.Ok)
-                _logger.LogInformation($"Block persist completed: {blockWithTransactions.Block.Hash}");
+                _logger.LogInformation($"Block persist completed: {blockWithTransactions.Block.Hash.ToHex()}");
             else
                 _logger.LogError(
                     $"Block {blockWithTransactions.Block.Header.Index} hasn't been persisted: {blockWithTransactions.Block.Hash}, cuz error {result}");

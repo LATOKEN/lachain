@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Linq;
 using Phorkus.Crypto;
+using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.OperationManager
 {
     public class MultisigVerifier : IMultisigVerifier
     {
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
+        private readonly ILogger<MultisigVerifier> _logger = LoggerFactory.GetLoggerForClass<MultisigVerifier>();
 
         public OperatingError VerifyMultisig(MultiSig multisig, UInt256 hash)
         {
@@ -20,7 +23,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             /* check count of unique validators */
             if (multisig.Validators.Distinct().Count() != multisig.Validators.Count)
                 return OperatingError.InvalidMultisig;
-            /* verify every validator's siganture */
+            /* verify every validator's signature */
             var verified = 0;
             foreach (var entry in multisig.Signatures)
             {

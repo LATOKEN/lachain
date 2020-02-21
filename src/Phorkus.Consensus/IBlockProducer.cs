@@ -7,7 +7,9 @@ namespace Phorkus.Consensus
     {
         IEnumerable<TransactionReceipt> GetTransactionsToPropose();
 
-        BlockHeader CreateHeader(IReadOnlyCollection<UInt256> txHashes, ECDSAPublicKey publicKey, ulong nonce);
+        BlockHeader CreateHeader(
+            ulong index, IReadOnlyCollection<UInt256> txHashes, ECDSAPublicKey publicKey, ulong nonce
+        );
 
         void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig);
     }

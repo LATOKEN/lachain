@@ -2,12 +2,12 @@
 using Google.Protobuf;
 using Phorkus.Proto;
 
-namespace Phorkus.Utility.Utils
+namespace Phorkus.Crypto
 {
     public static class CryptoUtils
     {
         public const int PublicKeyLength = 33;
-        
+
         public static ECDSAPublicKey ToPublicKey(this byte[] buffer)
         {
             if (buffer.Length != PublicKeyLength)
@@ -18,6 +18,11 @@ namespace Phorkus.Utility.Utils
             };
         }
 
+        public static byte[] EncodeCompressed(this ECDSAPublicKey key)
+        {
+            return key.Buffer.ToByteArray();
+        }
+
         public static ECDSAPrivateKey ToPrivateKey(this byte[] buffer)
         {
             /*if (buffer.Length != 32)
@@ -26,6 +31,11 @@ namespace Phorkus.Utility.Utils
             {
                 Buffer = ByteString.CopyFrom(buffer)
             };
+        }
+
+        public static byte[] Encode(this ECDSAPrivateKey key)
+        {
+            return key.Buffer.ToByteArray();
         }
     }
 }

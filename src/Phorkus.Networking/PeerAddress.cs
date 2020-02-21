@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 

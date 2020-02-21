@@ -38,6 +38,11 @@ namespace Phorkus.Utility.Utils
             return new Money(value.ToBigInteger());
         }
 
+        public static byte[] ToBytes(this UInt256 value)
+        {
+            return value.Buffer.ToByteArray();
+        }
+
         public static UInt256 ToUInt256(this byte[] buffer)
         {
             if (buffer.Length != 32)

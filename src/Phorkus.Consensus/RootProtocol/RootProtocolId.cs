@@ -5,12 +5,6 @@ namespace Phorkus.Consensus.RootProtocol
 {
     public class RootProtocolId : IProtocolIdentifier
     {
-        public bool Equals(IProtocolIdentifier other)
-        {
-            if (other == null) return false;
-            if (GetType() != other.GetType()) return false;
-            return Era == other.Era;
-        }
 
         public long Era { get; }
         
@@ -22,6 +16,33 @@ namespace Phorkus.Consensus.RootProtocol
         public RootProtocolId(long era)
         {
             Era = era;
+        }
+
+        public override string ToString()
+        {
+            return $"Root (E={Era})";
+        }
+
+        private bool Equals(RootProtocolId other)
+        {
+            return Era == other.Era;
+        }
+
+        public bool Equals(IProtocolIdentifier other)
+        {
+            return Equals((object?) other);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((RootProtocolId) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Era.GetHashCode();
         }
     }
 }

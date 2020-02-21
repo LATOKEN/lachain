@@ -23,7 +23,7 @@ namespace Phorkus.Consensus
         public ECDSAPrivateKey EcdsaPrivateKey { get; }
 
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
-        public IEnumerable<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
+        public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
         public ISet<IProtocolIdentifier> ProtocolIds { get; } = new HashSet<IProtocolIdentifier>(); // TODO: delete this
 
         public Wallet(int n, int f,

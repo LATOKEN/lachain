@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Google.Protobuf;
 using Phorkus.Consensus.CommonCoin;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
@@ -53,20 +52,40 @@ namespace Phorkus.Consensus.RootProtocol
                 }
 
                 var signedHeaderMessage = message.SignedHeaderMessage;
+                var idx = (int) message.Validator.ValidatorIndex;
+                _logger.LogDebug(
+                    $"Received signature of header {signedHeaderMessage.Header.Hash().ToHex()} " +
+                    $"from validator {idx}: " +
+                    $"pubKey {_wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
+                );
                 if (!(_header is null) && !_header.Equals(signedHeaderMessage.Header))
                 {
-                    _logger.LogWarning($"Received incorrect block header from peer {message.Validator.ValidatorIndex}");
+                    _logger.LogWarning($"Received incorrect block header from validator {idx}");
                 }
 
-                _signatures.Add(new Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>(
-                        signedHeaderMessage.Header,
-                        new MultiSig.Types.SignatureByValidator
-                        {
-                            Key = _wallet.EcdsaPublicKeySet.ElementAt((int) message.Validator.ValidatorIndex),
-                            Value = signedHeaderMessage.Signature,
-                        }
-                    )
-                );
+                if (!_crypto.VerifySignature(
+                    signedHeaderMessage.Header.HashBytes(),
+                    signedHeaderMessage.Signature.Encode(),
+                    _wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
+                ))
+                {
+                    _logger.LogWarning(
+                        $"Incorrect signature of header {signedHeaderMessage.Header.Hash().ToHex()} from validator {idx}"
+                    );
+                }
+                else
+                {
+                    _signatures.Add(new Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>(
+                            signedHeaderMessage.Header,
+                            new MultiSig.Types.SignatureByValidator
+                            {
+                                Key = _wallet.EcdsaPublicKeySet[idx],
+                                Value = signedHeaderMessage.Signature,
+                            }
+                        )
+                    );
+                }
+
                 CheckSignatures();
             }
             else
@@ -80,8 +99,8 @@ namespace Phorkus.Consensus.RootProtocol
                         {
                             foreach (var hash in _blockProducer.GetTransactionsToPropose().Select(tx => tx.Hash))
                             {
-                                Debug.Assert(hash.Buffer.ToByteArray().Length == 32);
-                                stream.Write(hash.Buffer.ToByteArray(), 0, 32);
+                                Debug.Assert(hash.ToBytes().Length == 32);
+                                stream.Write(hash.ToBytes(), 0, 32);
                             }
 
                             var data = stream.GetBuffer();
@@ -94,11 +113,13 @@ namespace Phorkus.Consensus.RootProtocol
                             Id, new CoinId(Id.Era, -1, 0), null
                         ));
                         TrySignHeader();
+                        CheckSignatures();
                         break;
                     case ProtocolResult<CoinId, CoinResult> coinResult:
                         _nonce = GetNonceFromCoin(coinResult.Result);
                         _logger.LogDebug($"Received coin for block nonce: {_nonce}");
                         TrySignHeader();
+                        CheckSignatures();
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
                         _logger.LogDebug($"Received shares {result.Result.Count} from HoneyBadger");
@@ -110,6 +131,7 @@ namespace Phorkus.Consensus.RootProtocol
                             .ToArray();
                         _logger.LogDebug($"Collected {_hashes.Length} transactions in total");
                         TrySignHeader();
+                        CheckSignatures();
                         break;
                     case ProtocolResult<RootProtocolId, object?> _:
                         Terminate();
@@ -122,15 +144,31 @@ namespace Phorkus.Consensus.RootProtocol
 
         private void TrySignHeader()
         {
-            if (_hashes is null || _nonce is null || !(_header is null) || _blockProducer is null) return;
-            _header = _blockProducer.CreateHeader(_hashes, _keyPair.PublicKey, _nonce.Value);
-            var signature = _crypto.Sign(_header.ToByteArray(), _keyPair.PrivateKey.Buffer.ToByteArray()).ToSignature();
+            if (_hashes is null || _nonce is null || _blockProducer is null) return;
+            if (!(_header is null)) return;
+            try
+            {
+                _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _keyPair.PublicKey, _nonce.Value);
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e, "Cannot sign header");
+                Terminate();
+                return;
+            }
+
+            var signature = _crypto.Sign(
+                _header.HashBytes(),
+                _keyPair.PrivateKey.Encode()
+            ).ToSignature();
+            _logger.LogDebug(
+                $"Signed header {_header.Hash().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}");
             Broadcaster.Broadcast(CreateSignedHeaderMessage(_header, signature));
         }
 
         private void CheckSignatures()
         {
-            if (_header is null || _hashes is null || _blockProducer is null) return;
+            if (_header is null || _hashes is null || _blockProducer is null || _signatures.Count == 0) return;
             var bestHeader = _signatures
                 .GroupBy(
                     tuple => tuple.Item1,
@@ -142,19 +180,29 @@ namespace Phorkus.Consensus.RootProtocol
             _logger.LogDebug($"Received {bestHeader.Value} signatures for block header");
             _multiSig = new MultiSig {Quorum = (uint) (_wallet.N - _wallet.F)};
             _multiSig.Validators.AddRange(_wallet.EcdsaPublicKeySet);
-            foreach (var p in _signatures)
+            foreach (var (header, signature) in _signatures)
             {
-                if (p.Item1.Equals(bestHeader.Key))
+                if (header.Equals(bestHeader.Key))
                 {
-                    _multiSig.Signatures.Add(p.Item2);
+                    _multiSig.Signatures.Add(signature);
                 }
                 else
                 {
-                    _logger.LogWarning($"Validator {p.Item2.Key.Buffer.ToHex()} signed wrong block header: {p.Item1}");
+                    _logger.LogWarning($"Validator {signature.Key.Buffer.ToHex()} signed wrong block header: {header}");
                 }
             }
 
-            _blockProducer.ProduceBlock(_hashes, _header, _multiSig);
+            try
+            {
+                _blockProducer.ProduceBlock(_hashes, _header, _multiSig);
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e, "Cannot produce block");
+                Terminate();
+                return;
+            }
+
             Broadcaster.InternalResponse(new ProtocolResult<RootProtocolId, object?>(_rootId, null));
         }
 

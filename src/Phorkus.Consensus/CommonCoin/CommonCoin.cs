@@ -106,7 +106,6 @@ namespace Phorkus.Consensus.CommonCoin
             {
                 Validator = new Validator
                 {
-                    // TODO: somehow fill validator field
                     ValidatorIndex = GetMyId(),
                     Era = _coinId.Era
                 },

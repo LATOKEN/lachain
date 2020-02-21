@@ -7,6 +7,7 @@ using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;

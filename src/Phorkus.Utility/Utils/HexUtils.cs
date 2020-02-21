@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Google.Protobuf;
 using Phorkus.Proto;
 
 namespace Phorkus.Utility.Utils
@@ -23,23 +24,47 @@ namespace Phorkus.Utility.Utils
                 result[i] = byte.Parse(buffer.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
             return result;
         }
-        
+
         public static string ToHex(this UInt160 value)
         {
             return value.Buffer.ToHex();
         }
-        
+
         public static string ToHex(this UInt256 value)
         {
             return value.Buffer.ToHex();
         }
+        public static string ToHex(this ECDSAPublicKey key)
+        {
+            return key.Buffer.ToHex();
+        }
         
+        public static string ToHex(this ECDSAPrivateKey key)
+        {
+            return key.Buffer.ToHex();
+        }
+        
+        public static string ToHex(this Signature signature)
+        {
+            return signature.Buffer.ToHex();
+        }
+
         public static string ToHex(this IEnumerable<byte> buffer)
         {
             var sb = new StringBuilder();
             foreach (var b in buffer)
                 sb.AppendFormat("{0:x2}", b);
             return $"0x{sb}";
+        }
+
+        public static UInt256 HexToUInt256(this string buffer)
+        {
+            return buffer.HexToBytes().ToUInt256();
+        }
+
+        public static UInt160 HexToUInt160(this string buffer)
+        {
+            return buffer.HexToBytes().ToUInt160();
         }
     }
 }

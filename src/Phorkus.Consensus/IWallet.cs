@@ -24,7 +24,7 @@ namespace Phorkus.Consensus
 
         ECDSAPublicKey EcdsaPublicKey { get; }
         
-        IEnumerable<ECDSAPublicKey> EcdsaPublicKeySet { get; }
+        IList<ECDSAPublicKey> EcdsaPublicKeySet { get; }
 
         ECDSAPrivateKey EcdsaPrivateKey { get; }
 
