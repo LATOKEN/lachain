@@ -87,7 +87,7 @@ namespace Phorkus.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
-            consensusManager.Start(1);
+            consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
             blockSynchronizer.Start();
             commandManager.Start(keyPair);
             rpcManager.Start();

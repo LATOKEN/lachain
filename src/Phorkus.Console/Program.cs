@@ -8,18 +8,19 @@ namespace Phorkus.Console
     {
         static void TrustedKeyGen()
         {
-            var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(4, 1);
+            const int n = 1, f = 0;
+            var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
             var tpkeVerificationKey = tpkeKeyGen.GetVerificationKey();
 
-            var sigKeyGen = new Crypto.ThresholdSignature.TrustedKeyGen(4, 1);
+            var sigKeyGen = new Crypto.ThresholdSignature.TrustedKeyGen(n, f);
             var privShares = sigKeyGen.GetPrivateShares().ToArray();
             var pubShares = string.Join(',', sigKeyGen.GetPrivateShares()
                 .Select(s => s.GetPublicKeyShare())
                 .Select(s => s.ToByteArray().ToHex())
                 .Select(s => '"' + s + '"'));
 
-            for (var i = 0; i < 4; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 System.Console.WriteLine($"Player {i} config:");
                 System.Console.WriteLine($"    \"TPKEPublicKey\": \"{tpkePubKey.ToByteArray().ToHex()}\",");

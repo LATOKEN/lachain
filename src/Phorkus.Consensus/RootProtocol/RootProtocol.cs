@@ -152,7 +152,7 @@ namespace Phorkus.Consensus.RootProtocol
             }
             catch (InvalidOperationException e)
             {
-                _logger.LogError(e, "Cannot sign header");
+                _logger.LogError($"Cannot sign header because of {e}");
                 Terminate();
                 return;
             }

@@ -60,16 +60,17 @@ namespace Phorkus.Consensus.CommonCoin
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
 
                 _logger.LogDebug(
-                    $"received share {message.Coin.SignatureShare.ToByteArray().ToHex()} from {message.Validator.ValidatorIndex}");
+                    $"Received share {message.Coin.SignatureShare.ToByteArray().ToHex()} from {message.Validator.ValidatorIndex}");
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(_publicKeySet[(int) message.Validator.ValidatorIndex], signatureShare,
                     out var signature))
                 {
-                    _logger.LogDebug($"Player {GetMyId()}: faulty behaviour from player {message.Validator}");
+                    _logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
                     return; // potential fault evidence
                 }
 
                 if (signature == null) return;
+                _logger.LogDebug($"Assembled signature {signature.ToBytes().ToHex()}");
                 _result = new CoinResult(signature.RawSignature.ToBytes());
                 CheckResult();
             }

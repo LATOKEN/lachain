@@ -39,19 +39,19 @@ namespace Phorkus.Crypto.ThresholdSignature
             var idx = _publicKeySet.GetIndex(pubKey);
             if (idx < 0 || idx >= _publicKeySet.Count)
             {
-                _logger.LogDebug($"Public key {pubKey} is not recognized (index {idx})");
+                _logger.LogWarning($"Public key {pubKey} is not recognized (index {idx})");
                 return false;
             }
 
             if (_collectedShares[idx] != null)
             {
-                _logger.LogDebug($"Signature share {idx} input twice");
+                _logger.LogWarning($"Signature share {idx} input twice");
                 return false;
             }
 
             if (!IsShareValid(pubKey, sigShare))
             {
-                _logger.LogDebug($"Signature share {idx} is not valid: {sigShare.ToBytes().ToHex()}");
+                _logger.LogWarning($"Signature share {idx} is not valid: {sigShare.ToBytes().ToHex()}");
                 return false;
             }
             if (_collectedSharesNumber > _publicKeySet.Threshold)
@@ -60,7 +60,7 @@ namespace Phorkus.Crypto.ThresholdSignature
                 return true;
             }
 
-            _logger.LogDebug($"Collected signature share #{idx}");
+            _logger.LogDebug($"Collected signature share #{idx}: {sigShare.RawSignature.ToHex()}");
             _collectedShares[idx] = sigShare;
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;
@@ -68,10 +68,10 @@ namespace Phorkus.Crypto.ThresholdSignature
                 _collectedShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share))
                     .Where(pair => pair.Value != null).ToArray()
             );
-            _logger.LogDebug($"Combined signature {signature}");
             if (!_publicKeySet.SharedPublicKey.ValidateSignature(signature, _dataToSign))
                 throw new Exception("Fatal error: all shares are valid but combined signature is not");
             _signature = signature;
+            result = signature;
             return true;
         }
 
