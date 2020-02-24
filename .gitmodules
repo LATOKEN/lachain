@@ -1,3 +1,6 @@
 [submodule "src/Phorkus.Proto/proto"]
 	path = src/Phorkus.Proto/proto
 	url = git@gitlab.nekotal.tech:lachain/lachainproto.git
+[submodule "wasm"]
+	path = wasm
+	url = git@gitlab.nekotal.tech:lachain/lachain-wasm-compiler.git

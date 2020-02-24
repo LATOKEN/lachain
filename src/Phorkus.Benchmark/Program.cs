@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Phorkus.Core.DI;
+using Phorkus.Crypto.MCL.BLS12_381;
 
 namespace Phorkus.Benchmark
 {
@@ -8,6 +9,7 @@ namespace Phorkus.Benchmark
     {
         internal static void Main(string[] args)
         {
+            Mcl.Init();
             if (args.Length == 0)
             {
                 args = new[] { "blockchain" };

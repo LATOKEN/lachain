@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using Phorkus.Proto;
-using Phorkus.WebAssembly;
-using Phorkus.WebAssembly.Runtime;
+using WebAssembly;
+using WebAssembly.Runtime;
 
 namespace Phorkus.Core.VM
 {
@@ -135,17 +134,21 @@ namespace Phorkus.Core.VM
         private static readonly ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>> ByteCodeCache
             = new ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>>();
 
-        private static Instance<JitEntryPoint> _CompileWasm(UInt160 contract, byte[] buffer,
-            IEnumerable<RuntimeImport>? imports = null)
+        private static Instance<JitEntryPoint> _CompileWasm(
+            UInt160 contract, byte[] buffer, ImportDictionary imports = null
+        )
         {
             if (ByteCodeCache.TryGetValue(contract, out var instance))
                 return instance();
-            using (var stream = new MemoryStream(buffer, 0, buffer.Length, false))
-            {
-                var func = Compile.FromBinary<JitEntryPoint>(stream, imports);
-                //ByteCodeCache.TryAdd(contract, func);
-                return func();
-            }
+            var config = new CompilerConfiguration();
+            using var stream = new MemoryStream(buffer, 0, buffer.Length, false);
+            return Compile.FromBinary<JitEntryPoint>(stream, config)(imports);
+            // {
+            // return instance;
+            // }
+            // var func = ;
+            //ByteCodeCache.TryAdd(contract, func);
+            // return func();
         }
     }
 }
