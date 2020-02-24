@@ -78,7 +78,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 _logger.LogDebug(
                     $"Execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
-                    $" stateHash={currentStateHash}, gasUsed={gasUsed}"
+                    $" stateHash={currentStateHash.ToHex()}, gasUsed={gasUsed}"
                 );
                 _stateManager.RollbackTo(snapshotBefore);
                 _logger.LogDebug(

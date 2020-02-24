@@ -28,7 +28,7 @@ namespace Phorkus.Core.Consensus
             ITransactionPool transactionPool,
             IValidatorManager validatorManager,
             IBlockchainContext blockchainContext,
-            IBlockSynchronizer blockSynchronizer, IBlockManager blockManager)
+            IBlockSynchronizer blockSynchronizer, IBlockManager blockManager) 
         {
             _transactionPool = transactionPool;
             _validatorManager = validatorManager;
@@ -40,7 +40,7 @@ namespace Phorkus.Core.Consensus
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose()
         {
             var txNum = (BatchSize + _validatorManager.Validators.Count - 1) / _validatorManager.Validators.Count;
-            var allTxs = _transactionPool.Transactions.Values.ToArray();
+            var allTxs = _transactionPool.Peek(txNum).ToArray();
             _random.Shuffle(allTxs);
             return allTxs.Take(txNum);
         }
