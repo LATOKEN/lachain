@@ -16,9 +16,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0-preview3-35497" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="SimpleInjector" Version="4.4.0" />
-    <PackageReference Include="WebAssembly" Version="0.8.0-preview" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\wasm\WebAssembly\WebAssembly.csproj" />
     <ProjectReference Include="..\Phorkus.Consensus\Phorkus.Consensus.csproj" />
     <ProjectReference Include="..\Phorkus.Crypto\Phorkus.Crypto.csproj" />
     <ProjectReference Include="..\Phorkus.Logger\Phorkus.Logger.csproj" />
@@ -26,6 +26,5 @@
     <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
     <ProjectReference Include="..\Phorkus.Storage\Phorkus.Storage.csproj" />
     <ProjectReference Include="..\Phorkus.Utility\Phorkus.Utility.csproj" />
-    <ProjectReference Include="..\Phorkus.Wasm\Phorkus.Wasm.csproj" />
   </ItemGroup>
 </Project>
