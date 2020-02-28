@@ -25,36 +25,36 @@ namespace Phorkus.Utility.Utils
             return result;
         }
 
-        public static string ToHex(this UInt160 value)
+        public static string ToHex(this UInt160 value, bool prefix = true)
         {
-            return value.Buffer.ToHex();
+            return value.Buffer.ToHex(prefix);
         }
 
-        public static string ToHex(this UInt256 value)
+        public static string ToHex(this UInt256 value, bool prefix = true)
         {
-            return value.Buffer.ToHex();
+            return value.Buffer.ToHex(prefix);
         }
-        public static string ToHex(this ECDSAPublicKey key)
+        public static string ToHex(this ECDSAPublicKey key, bool prefix = true)
         {
-            return key.Buffer.ToHex();
-        }
-        
-        public static string ToHex(this ECDSAPrivateKey key)
-        {
-            return key.Buffer.ToHex();
+            return key.Buffer.ToHex(prefix);
         }
         
-        public static string ToHex(this Signature signature)
+        public static string ToHex(this ECDSAPrivateKey key, bool prefix = true)
         {
-            return signature.Buffer.ToHex();
+            return key.Buffer.ToHex(prefix);
+        }
+        
+        public static string ToHex(this Signature signature, bool prefix = true)
+        {
+            return signature.Buffer.ToHex(prefix);
         }
 
-        public static string ToHex(this IEnumerable<byte> buffer)
+        public static string ToHex(this IEnumerable<byte> buffer, bool prefix = true)
         {
             var sb = new StringBuilder();
             foreach (var b in buffer)
                 sb.AppendFormat("{0:x2}", b);
-            return $"0x{sb}";
+            return prefix ? $"0x{sb}" : sb.ToString();
         }
 
         public static UInt256 HexToUInt256(this string buffer)

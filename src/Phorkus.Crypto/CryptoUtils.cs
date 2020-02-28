@@ -25,8 +25,8 @@ namespace Phorkus.Crypto
 
         public static ECDSAPrivateKey ToPrivateKey(this byte[] buffer)
         {
-            /*if (buffer.Length != 32)
-                throw new ArgumentOutOfRangeException(nameof(buffer));*/
+            if (buffer.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(buffer));
             return new ECDSAPrivateKey
             {
                 Buffer = ByteString.CopyFrom(buffer)
