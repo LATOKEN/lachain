@@ -135,7 +135,7 @@ namespace Phorkus.Core.Consensus
         {
             for (;; CurrentEra += 1)
             {
-                Thread.Sleep(5000);
+                Thread.Sleep(30_000);
                 var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                 var rootId = new RootProtocolId(CurrentEra);
                 broadcaster.InternalRequest(

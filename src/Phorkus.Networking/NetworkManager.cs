@@ -90,7 +90,6 @@ namespace Phorkus.Networking
 
                 foreach (var ip in ni.GetIPProperties().UnicastAddresses)
                 {
-                    Console.WriteLine(ip.Address);
                     if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
                         continue;
                     if (!ip.Address.Equals(ipAddress))

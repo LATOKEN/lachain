@@ -214,6 +214,7 @@ namespace Phorkus.Core.Network
         {
             Task.Factory.StartNew(() =>
             {
+                Thread.Sleep(15_000);
                 try
                 {
                     var thread = Thread.CurrentThread;
