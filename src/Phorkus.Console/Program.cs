@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -60,7 +61,7 @@ namespace Phorkus.Console
 
             for (var i = 0; i < n; ++i)
             {
-                using var file = new StreamWriter($"config{i}.json");
+                using var file = new StreamWriter($"config{i+1:D2}.json");
                 var net = new NetworkConfig
                 {
                     Magic = 56754,
@@ -79,7 +80,7 @@ namespace Phorkus.Console
                             "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
                         }
                     },
-                    PrivateKey = "1000000.0",
+                    PrivateKey = ecdsaPrivateKeys[i],
                 };
                 var rpc = new RpcConfig
                 {
