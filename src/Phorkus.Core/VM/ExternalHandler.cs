@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain;
@@ -8,8 +10,7 @@ using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
-using Phorkus.WebAssembly;
-using Phorkus.WebAssembly.Runtime;
+using WebAssembly.Runtime;
 
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -350,57 +351,53 @@ namespace Phorkus.Core.VM
             VirtualMachine.BlockchainSnapshot.Events.AddEvent(ev);
         }
 
-        public IEnumerable<FunctionImport> GetFunctionImports()
+        private static FunctionImport CreateImport(string methodName)
         {
-            return new[]
+            var methodInfo = typeof(ExternalHandler).GetMethod(methodName) ?? throw new ArgumentNullException();
+            var isAction = methodInfo.ReturnType == typeof(void);
+            var types = methodInfo.GetParameters().Select(p => p.ParameterType);
+
+            if (isAction)
             {
-                /* basic system methods */
-                new FunctionImport(EnvModule, "get_call_value",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetCallValue))),
-                new FunctionImport(EnvModule, "get_call_size",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetCallSize))),
-                new FunctionImport(EnvModule, "copy_call_value",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CopyCallValue))),
-                new FunctionImport(EnvModule, "invoke_contract",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_InvokeContract))),
-                new FunctionImport(EnvModule, "write_log",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_WriteLog))),
-                new FunctionImport(EnvModule, "load_storage",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_LoadStorage))),
-                new FunctionImport(EnvModule, "save_storage",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SaveStorage))),
-                new FunctionImport(EnvModule, "set_return",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SetReturn))),
-                new FunctionImport(EnvModule, "get_sender",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetSender))),
-                new FunctionImport(EnvModule, "system_halt",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_SystemHalt))),
-                new FunctionImport(EnvModule, "get_transferred_funds",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetTransferredFunds))),
-                new FunctionImport(EnvModule, "get_block_hash",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetBlockHash))),
-                new FunctionImport(EnvModule, "get_block_height",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetBlockHeight))),
-                new FunctionImport(EnvModule, "get_transaction_hash",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_GetTransactionHash))),
-                new FunctionImport(EnvModule, "write_event",
-                    typeof(ExternalHandler).GetMethod(nameof(Handle_Env_WriteEvent))),
-                /* crypto hash bindings */
-                new FunctionImport(EnvModule, "crypto_keccak256",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoKeccak256))),
-                new FunctionImport(EnvModule, "crypto_sha256",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoSha256))),
-                new FunctionImport(EnvModule, "crypto_ripemd160",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoRipemd160))),
-                new FunctionImport(EnvModule, "crypto_murmur3",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoMurmur3))),
-                /* cryptography methods */
-                new FunctionImport(EnvModule, "crypto_recover",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoRecover))),
-                new FunctionImport(EnvModule, "crypto_verify",
-                    typeof(ExternalHandler).GetMethod(nameof(Handler_Env_CryptoVerify))),
+                return new FunctionImport(
+                    Delegate.CreateDelegate(Expression.GetActionType(types.ToArray()), methodInfo)
+                );
+            }
+
+            types = types.Concat(new[] {methodInfo.ReturnType});
+            return new FunctionImport(Delegate.CreateDelegate(Expression.GetFuncType(types.ToArray()), methodInfo));
+        }
+
+        public ImportDictionary GetFunctionImports()
+        {
+            var result = new ImportDictionary
+            {
+                {EnvModule, "get_call_value", CreateImport(nameof(Handler_Env_GetCallValue))},
+                {EnvModule, "get_call_size", CreateImport(nameof(Handler_Env_GetCallSize))},
+                {EnvModule, "copy_call_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
+                {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
+                {EnvModule, "write_log", CreateImport(nameof(Handler_Env_WriteLog))},
+                {EnvModule, "load_storage", CreateImport(nameof(Handler_Env_LoadStorage))},
+                {EnvModule, "save_storage", CreateImport(nameof(Handler_Env_SaveStorage))},
+                {EnvModule, "set_return", CreateImport(nameof(Handler_Env_SetReturn))},
+                {EnvModule, "get_sender", CreateImport(nameof(Handler_Env_GetSender))},
+                {EnvModule, "system_halt", CreateImport(nameof(Handler_Env_SystemHalt))},
+                {EnvModule, "get_transferred_funds", CreateImport(nameof(Handler_Env_GetTransferredFunds))},
+                {EnvModule, "get_block_hash", CreateImport(nameof(Handler_Env_GetBlockHash))},
+                {EnvModule, "get_block_height", CreateImport(nameof(Handler_Env_GetBlockHeight))},
+                {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
+                {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
+                // /* crypto hash bindings */
+                {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
+                {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
+                {EnvModule, "crypto_ripemd160", CreateImport(nameof(Handler_Env_CryptoRipemd160))},
+                {EnvModule, "crypto_murmur3", CreateImport(nameof(Handler_Env_CryptoMurmur3))},
+                // /* cryptography methods */
+                {EnvModule, "crypto_recover", CreateImport(nameof(Handler_Env_CryptoRecover))},
+                {EnvModule, "crypto_verify", CreateImport(nameof(Handler_Env_CryptoVerify))},
                 /* memory methods */
             };
+            return result;
         }
     }
 }

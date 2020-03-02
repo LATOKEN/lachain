@@ -18,6 +18,7 @@
     <PackageReference Include="SimpleInjector" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\wasm\WebAssembly\WebAssembly.csproj" />
     <ProjectReference Include="..\Phorkus.Consensus\Phorkus.Consensus.csproj" />
     <ProjectReference Include="..\Phorkus.Crypto\Phorkus.Crypto.csproj" />
     <ProjectReference Include="..\Phorkus.Logger\Phorkus.Logger.csproj" />
@@ -25,6 +26,5 @@
     <ProjectReference Include="..\Phorkus.Proto\Phorkus.Proto.csproj" />
     <ProjectReference Include="..\Phorkus.Storage\Phorkus.Storage.csproj" />
     <ProjectReference Include="..\Phorkus.Utility\Phorkus.Utility.csproj" />
-    <ProjectReference Include="..\Phorkus.WebAssembly\Phorkus.WebAssembly.csproj" />
   </ItemGroup>
 </Project>

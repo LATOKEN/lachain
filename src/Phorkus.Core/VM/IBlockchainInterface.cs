@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using Phorkus.WebAssembly;
+using WebAssembly.Runtime;
 
 namespace Phorkus.Core.VM
 {
     public interface IBlockchainInterface
     {
-        IEnumerable<FunctionImport> GetFunctionImports();
+        ImportDictionary GetFunctionImports();
     }
 }

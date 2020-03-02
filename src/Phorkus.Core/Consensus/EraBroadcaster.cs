@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using Phorkus.Consensus;
 using Phorkus.Consensus.BinaryAgreement;

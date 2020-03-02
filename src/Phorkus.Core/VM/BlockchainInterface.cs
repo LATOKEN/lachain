@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
-using Phorkus.WebAssembly;
+using WebAssembly.Runtime;
 
 namespace Phorkus.Core.VM
 {
     class BlockchainInterface : IBlockchainInterface
     {
-        private IEnumerable<FunctionImport>? _functionImports;
+        private ImportDictionary? _functionImports;
 
-        public IEnumerable<FunctionImport> GetFunctionImports()
+        public ImportDictionary GetFunctionImports()
         {
             if (_functionImports != null)
                 return _functionImports;

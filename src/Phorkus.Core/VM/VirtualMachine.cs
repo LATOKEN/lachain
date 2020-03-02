@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
-using Phorkus.WebAssembly;
+using WebAssembly;
+using WebAssembly.Runtime;
 
 namespace Phorkus.Core.VM
 {
@@ -31,8 +32,9 @@ namespace Phorkus.Core.VM
         {
             try
             {
+                var config = new CompilerConfiguration();
                 using (var stream = new MemoryStream(contractCode))
-                    Compile.FromBinary<dynamic>(stream, BlockchainInterface.GetFunctionImports());
+                    Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
             }
             catch (Exception e)
