@@ -143,12 +143,6 @@ namespace Phorkus.Core.VM
             var config = new CompilerConfiguration();
             using var stream = new MemoryStream(buffer, 0, buffer.Length, false);
             return Compile.FromBinary<JitEntryPoint>(stream, config)(imports);
-            // {
-            // return instance;
-            // }
-            // var func = ;
-            //ByteCodeCache.TryAdd(contract, func);
-            // return func();
         }
     }
 }
