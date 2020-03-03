@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,8 +9,6 @@ namespace Phorkus.Core.RPC.HTTP
 {
     public class HttpService
     {
-        private const int RequestMaxSize = 64 * 1024;
-
         public void Start(RpcConfig rpcConfig)
         {
             Task.Factory.StartNew(() =>
@@ -60,11 +59,8 @@ namespace Phorkus.Core.RPC.HTTP
         {
             var request = context.Request;
             var response = context.Response;
-            var buffer = new byte[RequestMaxSize];
-            var length = request.InputStream.Read(buffer, 0, buffer.Length);
-            if (length <= 0 || length >= buffer.Length && request.InputStream.CanRead)
-                return false;
-            var body = Encoding.UTF8.GetString(buffer, 0, length);
+            using var reader = new StreamReader(request.InputStream);
+            var body = reader.ReadToEnd();
             if (request.HttpMethod == "OPTIONS")
             {
                 response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
