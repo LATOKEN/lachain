@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NetMQ;
 using NetMQ.Sockets;
@@ -38,8 +39,7 @@ namespace Phorkus.Networking.ZeroMQ
                 OnOpen?.Invoke(endpoint);
                 while (IsActive)
                 {
-                    if (!socket.TryReceiveFrameBytes(out var buffer))
-                        continue;
+                    var buffer = socket.ReceiveFrameBytes();
                     if (buffer == null || buffer.Length <= 0)
                         continue;
                     Task.Factory.StartNew(() =>
