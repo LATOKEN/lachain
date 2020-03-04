@@ -17,14 +17,13 @@ namespace Phorkus.Core.VM
         internal static IBlockchainSnapshot? BlockchainSnapshot => StateManager?.CurrentSnapshot;
         internal static IBlockchainInterface BlockchainInterface { get; } = new BlockchainInterface();
 
-        internal static IStateManager? StateManager { get; set; }
+        private static IStateManager StateManager { get; set; }
 
-        internal static ICrypto Crypto = CryptoProvider.GetCrypto();
+        internal static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
-        public VirtualMachine(IStateManager stateManager, ICrypto crypto)
+        public VirtualMachine(IStateManager stateManager)
         {
             StateManager = stateManager;
-            Crypto = crypto;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
