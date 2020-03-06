@@ -113,7 +113,7 @@ namespace Phorkus.Core.Consensus
         }
 
 
-        public void Dispatch(ConsensusMessage message)
+        public void Dispatch(ConsensusMessage message, int from)
         {
             var era = message.Validator.Era;
             if (era < CurrentEra)
@@ -122,7 +122,7 @@ namespace Phorkus.Core.Consensus
                 return;
             }
 
-            EnsureEra(era)?.Dispatch(message);
+            EnsureEra(era)?.Dispatch(message, from);
         }
 
         public void Start(long startingEra)
@@ -133,9 +133,16 @@ namespace Phorkus.Core.Consensus
 
         private void Run()
         {
+            Thread.Sleep(30_000);
+            ulong lastBlock = 0;
+            const ulong minBlockInterval = 5_000;
             for (;; CurrentEra += 1)
             {
-                Thread.Sleep(30_000);
+                var now = TimeUtils.CurrentTimeMillis();
+                if (lastBlock + minBlockInterval > now)
+                {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + minBlockInterval - now));
+                }
                 var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                 var rootId = new RootProtocolId(CurrentEra);
                 broadcaster.InternalRequest(
@@ -145,6 +152,7 @@ namespace Phorkus.Core.Consensus
                 broadcaster.Terminate();
                 _eras.Remove(CurrentEra);
                 _logger.LogDebug("Root protocol finished, waiting for new era...");
+                lastBlock = TimeUtils.CurrentTimeMillis();
             }
         }
 

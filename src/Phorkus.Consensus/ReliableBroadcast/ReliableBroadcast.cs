@@ -58,13 +58,13 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
-                        HandleValMessage(message.Validator, message.ValMessage);
+                        HandleValMessage(envelope.ValidatorIndex, message.ValMessage);
                         break;
                     case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                        HandleECHOMessage(message.Validator, message.EchoMessage);
+                        HandleECHOMessage(envelope.ValidatorIndex, message.EchoMessage);
                         break;
                     case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                        HandleReadyMessage(message.Validator, message.ReadyMessage);
+                        HandleReadyMessage(message.ReadyMessage);
                         break;
                     default:
                         throw new ArgumentException(
@@ -100,25 +100,21 @@ namespace Phorkus.Consensus.ReliableBroadcast
             }
         }
 
-        private void HandleValMessage(Validator messageValidator, ValMessage val)
+        private void HandleValMessage(int validatorIndex, ValMessage val)
         {
-            var validatorIndex = messageValidator.ValidatorIndex;
             // Save: blocks, root, branch <-> senderId
 
-            Dictionary<int, ArrayList> receivedValues = new Dictionary<int, ArrayList>();
-            receivedValues[(int) messageValidator.ValidatorIndex] = new ArrayList
+            var receivedValues = new Dictionary<int, ArrayList>
             {
-                val.BlockErasureCoding,
-                val.BranchMerkleTree,
-                val.RootMerkleTree
+                [validatorIndex] = new ArrayList {val.BlockErasureCoding, val.BranchMerkleTree, val.RootMerkleTree}
             };
             // broadcast ECHO messages
-            Broadcaster.Broadcast(CreateECHOMessage(messageValidator, val));
+            Broadcaster.Broadcast(CreateECHOMessage(val));
         }
 
-        private void HandleECHOMessage(Validator messageValidator, ECHOMessage echo)
+        private void HandleECHOMessage(int validatorIndex, ECHOMessage echo)
         {
-            var era = messageValidator.Era;
+            var era = Id.Era;
             var tmp = new ArrayList
             {
                 echo.BlockErasureCoding.ToByteArray(),
@@ -127,7 +123,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             };
             if (checkECHOMsg(tmp))
             {
-                _receivedValues.Add(messageValidator.ValidatorIndex, tmp);
+                _receivedValues.Add(validatorIndex, tmp);
                 _countCorrectECHOMsg++;
             }
 
@@ -136,11 +132,11 @@ namespace Phorkus.Consensus.ReliableBroadcast
             {
                 if (Interpolate() && RecomputeMerkleTree())
                 {
-                    if (!_sentReadyMsg[messageValidator.ValidatorIndex])
+                    if (!_sentReadyMsg[validatorIndex])
                     {
                         // here I sent ready msg for  players of ValidatorIndex
                         Broadcaster.Broadcast(CreateReadyMessage(rootMerkleTree));
-                        _sentReadyMsg[messageValidator.ValidatorIndex] = true;
+                        _sentReadyMsg[validatorIndex] = true;
                     }
                 }
                 else
@@ -154,7 +150,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             }
         }
 
-        private void HandleReadyMessage(Validator validator, ReadyMessage readyMessage)
+        private void HandleReadyMessage(ReadyMessage readyMessage)
         {
             var rootMerkleTree = readyMessage.RootMerkleTree;
             if (checkREADYMsg(readyMessage.RootMerkleTree.ToByteArray()))
@@ -223,11 +219,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
 
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = _broadcastId.Era
-                },
                 ValMessage = new ValMessage
                 {
                     RootMerkleTree = root,
@@ -242,11 +233,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = _broadcastId.Era
-                },
                 ReadyMessage = new ReadyMessage
                 {
                     RootMerkleTree = root
@@ -255,15 +241,10 @@ namespace Phorkus.Consensus.ReliableBroadcast
             return message;
         }
 
-        private ConsensusMessage CreateECHOMessage(Validator messageValidator, ValMessage valMessage)
+        private ConsensusMessage CreateECHOMessage(ValMessage valMessage)
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = _broadcastId.Era
-                },
                 EchoMessage = new ECHOMessage
                 {
                     RootMerkleTree = valMessage.RootMerkleTree,

@@ -59,13 +59,13 @@ namespace Phorkus.Consensus.TPKE
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.PolynomialValue:
-                        HandlePolynomialValue(message.Validator, message.PolynomialValue);
+                        HandlePolynomialValue(envelope.ValidatorIndex, message.PolynomialValue);
                         break;
                     case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
-                        HandleHiddenPolynomial(message.Validator, message.HiddenPolynomial);
+                        HandleHiddenPolynomial(envelope.ValidatorIndex, message.HiddenPolynomial);
                         break;
                     case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
-                        HandleConfirmationHash(message.Validator, message.ConfirmationHash);
+                        HandleConfirmationHash(envelope.ValidatorIndex, message.ConfirmationHash);
                         break;
                     default:
                         throw new ArgumentException(
@@ -104,11 +104,6 @@ namespace Phorkus.Consensus.TPKE
             {
                 var polyVal = new ConsensusMessage
                 {
-                    Validator = new Validator
-                    {
-                        Era = _tpkeSetupId.Era,
-                        ValidatorIndex = GetMyId()
-                    },
                     PolynomialValue = new TPKEPolynomialValueMessage
                     {
                         Value = ByteString.CopyFrom(Fr.ToBytes(Mcl.GetValue(_p.AsDynamic(), j + 1, Fr.Zero)))
@@ -119,11 +114,6 @@ namespace Phorkus.Consensus.TPKE
 
             var msg = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    Era = _tpkeSetupId.Era,
-                    ValidatorIndex = GetMyId()
-                },
                 HiddenPolynomial = new TPKEHiddenPolynomialMessage()
             };
 
@@ -138,23 +128,20 @@ namespace Phorkus.Consensus.TPKE
             CheckResult();
         }
 
-        private void HandlePolynomialValue(Validator messageValidator,
-            TPKEPolynomialValueMessage messagePolynomialValue)
+        private void HandlePolynomialValue(int sender, TPKEPolynomialValueMessage messagePolynomialValue)
         {
-            var id = messageValidator.ValidatorIndex;
-            _logger.LogDebug($"Player {GetMyId()} got value from {id}");
+            _logger.LogDebug($"Player {GetMyId()} got value from {sender}");
             var value = Fr.FromBytes(messagePolynomialValue.Value.ToByteArray());
             // todo fix
 //            if (_received[messageValidator.ValidatorIndex] == null)
 //                throw new Exception("Already received!");
 
-            _received[id] = value;
+            _received[sender] = value;
             CheckAllValuesReceived();
         }
 
-        private void HandleHiddenPolynomial(Validator messageValidator, TPKEHiddenPolynomialMessage msg)
+        private void HandleHiddenPolynomial(int sender, TPKEHiddenPolynomialMessage msg)
         {
-            var id = messageValidator.ValidatorIndex;
             if (msg.CoeffsG1.Count != F || msg.CoeffsG2.Count != F)
             {
                 throw new Exception($"Expected length of coeffs to be {F}, but got {msg.CoeffsG1.Count}");
@@ -168,8 +155,8 @@ namespace Phorkus.Consensus.TPKE
                 tmpG2.Add(G2.FromBytes(msg.CoeffsG2[i].ToByteArray()));
             }
 
-            _hiddenPolyG1[id] = tmpG1.ToArray();
-            _hiddenPolyG2[id] = tmpG2.ToArray();
+            _hiddenPolyG1[sender] = tmpG1.ToArray();
+            _hiddenPolyG2[sender] = tmpG2.ToArray();
 
 
             CheckAllPolynomialsReceived();
@@ -182,11 +169,6 @@ namespace Phorkus.Consensus.TPKE
 
             var msg = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = Id.Era
-                },
                 ConfirmationHash = new TPKEConfirmationHashMessage()
             };
 
@@ -201,16 +183,15 @@ namespace Phorkus.Consensus.TPKE
             _allHashSent = true;
         }
 
-        private void HandleConfirmationHash(Validator messageValidator, TPKEConfirmationHashMessage hsh)
+        private void HandleConfirmationHash(int sender, TPKEConfirmationHashMessage hsh)
         {
-            var id = messageValidator.ValidatorIndex;
             var tmp = new List<byte[]>();
             for (var i = 0; i < N; ++i)
             {
                 tmp.Add(hsh.Hashes[i].ToByteArray());
             }
 
-            _confirmationHash[id] = tmp.ToArray();
+            _confirmationHash[sender] = tmp.ToArray();
 
             CheckAllConfirmationHashesReceived();
         }

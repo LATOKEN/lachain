@@ -18,7 +18,7 @@ namespace Phorkus.Consensus
         /*
          * This method is used when external consensus message is incoming
          */
-        void Dispatch(ConsensusMessage message);
+        void Dispatch(ConsensusMessage message, int from);
 
         void InternalRequest<TId, TInputType>(
             ProtocolRequest<TId, TInputType> request) where TId : IProtocolIdentifier;

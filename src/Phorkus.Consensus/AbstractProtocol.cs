@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using Phorkus.Consensus.Messages;
 using Phorkus.Logger;
+using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Consensus
 {
@@ -20,6 +23,43 @@ namespace Phorkus.Consensus
         protected int N => Wallet.N;
         protected int F => Wallet.F;
         private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+
+        public class PKey : IEquatable<PKey>
+        {
+            public object type { get; set; }
+            public long Era { get; set; }
+
+            public bool Equals(PKey? other)
+            {
+                if (ReferenceEquals(null, other)) return false;
+                if (ReferenceEquals(this, other)) return true;
+                return type.Equals(other.type) && Era == other.Era;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != this.GetType()) return false;
+                return Equals((PKey) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (type.GetHashCode() * 397) ^ Era.GetHashCode();
+                }
+            }
+        }
+
+        public class PVal
+        {
+            public long sumT { get; set; }
+            public int cnt { get; set; }
+        }
+
+        public static IDictionary<PKey, PVal> _profile = new Dictionary<PKey, PVal>();
 
         protected AbstractProtocol(IWallet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
         {
@@ -94,7 +134,16 @@ namespace Phorkus.Consensus
 
                 try
                 {
+                    var ts0 = (long) TimeUtils.CurrentTimeMillis();
                     ProcessMessage(msg);
+                    var ts1 = (long) TimeUtils.CurrentTimeMillis();
+                    var t = msg.External ? (object) msg.ExternalMessage.PayloadCase : msg.InternalMessage.To?.GetType();
+                    if (t is null) t = msg.InternalMessage.From.GetType();
+                    _profile.Compute(new PKey {Era = Id.Era, type = t}, (key, val) =>
+                        val == null
+                            ? new PVal {sumT = ts1 - ts0, cnt = 1}
+                            : new PVal {sumT = val.sumT + ts1 - ts0, cnt = val.cnt + 1}
+                    );
                 }
                 catch (Exception e)
                 {

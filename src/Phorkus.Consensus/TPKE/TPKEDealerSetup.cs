@@ -143,11 +143,6 @@ namespace Phorkus.Consensus.TPKE
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = Id.Era
-                },
                 TpkeKeys = new TPKEKeysMessage
                 {
                     PublicKey = ByteString.CopyFrom(G1.ToBytes(pubKey.Y)),

@@ -36,7 +36,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                        HandleEncryptedShare(message.Validator, message.EncryptedShare);
+                        HandleEncryptedShare(envelope.ValidatorIndex, message.EncryptedShare);
                         break;
                     default:
                         throw new ArgumentException(
@@ -71,11 +71,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if (share == null) return;
             var msg = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    Era = Id.Era,
-                    ValidatorIndex = GetMyId()
-                },
                 EncryptedShare = new TPKEEncryptedShareMessage
                 {
                     U = ByteString.CopyFrom(G1.ToBytes(share.U)),
@@ -87,13 +82,13 @@ namespace Phorkus.Consensus.ReliableBroadcast
             Broadcaster.Broadcast(msg);
         }
 
-        private void HandleEncryptedShare(Validator messageValidator, TPKEEncryptedShareMessage messageEncryptedShare)
+        private void HandleEncryptedShare(int validatorIndex, TPKEEncryptedShareMessage messageEncryptedShare)
         {
-            _logger.LogDebug($"Got message from {messageValidator.ValidatorIndex} in {_reliableBroadcastId}");
+            _logger.LogDebug($"Got message from {validatorIndex} in {_reliableBroadcastId}");
             if (_receivedAlready)
             {
                 _logger.LogDebug(
-                    $"Player {GetMyId()} at {_reliableBroadcastId}: double receive of message from {messageValidator}!");
+                    $"Player {GetMyId()} at {_reliableBroadcastId}: double receive of message from {validatorIndex}!");
                 return;
             }
 

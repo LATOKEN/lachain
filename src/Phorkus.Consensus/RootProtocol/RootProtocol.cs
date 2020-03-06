@@ -52,7 +52,7 @@ namespace Phorkus.Consensus.RootProtocol
                 }
 
                 var signedHeaderMessage = message.SignedHeaderMessage;
-                var idx = (int) message.Validator.ValidatorIndex;
+                var idx = envelope.ValidatorIndex;
                 _logger.LogDebug(
                     $"Received signature of header {signedHeaderMessage.Header.Hash().ToHex()} " +
                     $"from validator {idx}: " +
@@ -226,11 +226,6 @@ namespace Phorkus.Consensus.RootProtocol
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = Id.Era
-                },
                 SignedHeaderMessage = new SignedHeaderMessage
                 {
                     Header = header,
