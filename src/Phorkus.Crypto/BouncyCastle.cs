@@ -70,22 +70,28 @@ namespace Phorkus.Crypto
             sumSign = numSign = sumVerify = numVerify = 0;
             sumRec = numRec = 0;
         }
-        
-        private static readonly Secp256k1 secp256K1 = new Secp256k1(); 
+
+        private static readonly Secp256k1 secp256K1 = new Secp256k1();
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
         {
             var startTs = TimeUtils.CurrentTimeMillis();
-            
+
             // using var secp256K1 = new Secp256k1();
             var pk = new byte[64];
             if (!secp256K1.PublicKeyParse(pk, pubkey))
                 throw new ArgumentException();
-            
+
+
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
-            var result = secp256K1.Verify(signature.Skip(1).ToArray(), messageHash, pk);
-            
+
+            var parsedSig = new byte[65];
+            int recId = signature[0];
+            if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+                throw new ArgumentException();
+
+            var result = secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
 
             // var fullpubkey = DecodePublicKey(pubkey, false, out _, out _);
             //
@@ -105,7 +111,7 @@ namespace Phorkus.Crypto
             // }
             //
             // var result = signer.VerifySignature(signature);
-            
+
             var endTs = TimeUtils.CurrentTimeMillis();
             sumVerify += endTs - startTs;
             numVerify += 1;
@@ -117,15 +123,19 @@ namespace Phorkus.Crypto
         {
             var startTs = TimeUtils.CurrentTimeMillis();
             // using var secp256K1 = new Secp256k1();
-            
+
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
-            
+
             var sig = new byte[65];
             if (!secp256K1.SignRecoverable(sig, messageHash, prikey))
                 throw new ArgumentException();
-            
-            var fullsign = sig.Skip(64).Concat(sig.Take(64)).ToArray();
-            
+            var serialized = new byte[64];
+            if (!secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
+                throw new ArgumentException();
+
+            var fullsign = new[] {(byte) recId}.Concat(serialized).ToArray();
+            // var fullsign = sig.Skip(64).Concat(sig.Take(64)).ToArray();
+
 
             // var priv = new ECPrivateKeyParameters("ECDSA", new BigInteger(1, prikey), Domain);
             // var signer = new EcDsaSignerWithRecId();
@@ -149,7 +159,7 @@ namespace Phorkus.Crypto
             //     Array.Copy(s, 0, fullsign, 65 - sLen, sLen);
             // else
             //     Array.Copy(s, sLen - 32, fullsign, 33, 32);
-            
+
             var endTs = TimeUtils.CurrentTimeMillis();
             sumSign += endTs - startTs;
             numSign += 1;
@@ -161,13 +171,21 @@ namespace Phorkus.Crypto
         {
             var startTs = TimeUtils.CurrentTimeMillis();
             // using var secp256K1 = new Secp256k1();
-            
+
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
+            var parsedSig = new byte[65];
             var pk = new byte[64];
-            secp256K1.Recover(pk, signature.Skip(1).Concat(signature.Take(1)).ToArray(), messageHash);
-            
+            int recId = signature[0];
+            if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+                throw new ArgumentException();
+            if (!secp256K1.Recover(pk, parsedSig, messageHash))
+                throw new ArgumentException("Bad signature");
+
             var result = new byte[33];
-            secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED);
+            if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+            {
+                throw new ArgumentException("Bad signature");
+            }
 
             // var recId = signature[0];
             // var r = new BigInteger(new byte[] {0}.Concat(signature.Skip(1).Take(32)).ToArray(), 0, 33);
@@ -200,7 +218,7 @@ namespace Phorkus.Crypto
             //
             // var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
             // var result = point.Normalize().GetEncoded(true);
-            
+
             var endTs = TimeUtils.CurrentTimeMillis();
             sumRec += endTs - startTs;
             numRec += 1;
