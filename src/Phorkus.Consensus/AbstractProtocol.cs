@@ -59,7 +59,7 @@ namespace Phorkus.Consensus
             public int cnt { get; set; }
         }
 
-        public static IDictionary<PKey, PVal> _profile = new Dictionary<PKey, PVal>();
+        public static IDictionary<PKey, PVal> _profile = new ConcurrentDictionary<PKey, PVal>();
 
         protected AbstractProtocol(IWallet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
         {

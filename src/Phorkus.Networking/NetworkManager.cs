@@ -287,16 +287,30 @@ namespace Phorkus.Networking
 
         private void _HandleMessage(byte[] buffer)
         {
-            var message = NetworkMessage.Parser.ParseFrom(buffer);
+            NetworkMessage message = null;
+            try
+            {
+                message = NetworkMessage.Parser.ParseFrom(buffer);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Unable to parse protocol message: {e}");
+                _logger.LogError($"Original message bytes: {buffer.ToHex()}");
+            }
+
             if (message is null)
+            {
+                _logger.LogError($"Unable to parse protocol message from {buffer.ToHex()}");
                 return;
+            }
+
             try
             {
                 _HandleMessageUnsafe(message);
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                _logger.LogError($"Unexpected error occurred: {e}");
             }
         }
 

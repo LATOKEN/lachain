@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Phorkus.Utility.Utils
@@ -16,6 +16,22 @@ namespace Phorkus.Utility.Utils
                 array[n] = array[k];
                 array[k] = temp;
             }
+        }
+
+        public static T SelectRandom<T>(this Random rng, IEnumerable<T> collection)
+        {
+            var current = default(T);
+            var cnt = 0;
+            foreach (var element in collection)
+            {
+                ++cnt;
+                if (rng.Next(cnt) == 0)
+                {
+                    current = element;
+                }
+            }
+
+            return current;
         }
     }
 }
