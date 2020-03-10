@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -35,20 +36,17 @@ namespace Phorkus.Core.Consensus
         private readonly ECDSAKeyPair _keyPair;
         private bool _terminated;
 
-        private readonly Dictionary<ConsensusMessage.PayloadOneofCase, int> _counter =
-            new Dictionary<ConsensusMessage.PayloadOneofCase, int>();
-
         /**
          * Registered callbacks, identifying that one protocol requires result from another
          */
-        private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
-            new Dictionary<IProtocolIdentifier, IProtocolIdentifier>();
+        private readonly IDictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
+            new ConcurrentDictionary<IProtocolIdentifier, IProtocolIdentifier>();
 
         /**
          * Registry of all protocols for this era
          */
-        private readonly Dictionary<IProtocolIdentifier, IConsensusProtocol> _registry =
-            new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
+        private readonly IDictionary<IProtocolIdentifier, IConsensusProtocol> _registry =
+            new ConcurrentDictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
@@ -74,7 +72,7 @@ namespace Phorkus.Core.Consensus
 
         public void Broadcast(ConsensusMessage message)
         {
-            message.Validator = new Validator{Era = _era};
+            message.Validator = new Validator {Era = _era};
             if (_terminated)
             {
                 _logger.LogDebug($"Era {_era} is already finished, skipping Broadcast");
@@ -97,7 +95,7 @@ namespace Phorkus.Core.Consensus
 
         public void SendToValidator(ConsensusMessage message, int index)
         {
-            message.Validator = new Validator{Era = _era};
+            message.Validator = new Validator {Era = _era};
             if (_terminated)
             {
                 _logger.LogDebug($"Era {_era} is already finished, skipping SendToValidator");
@@ -126,8 +124,6 @@ namespace Phorkus.Core.Consensus
                 throw new InvalidOperationException(
                     $"Message for era {message.Validator.Era} dispatched to era {_era}");
             }
-
-            _counter.Compute(message.PayloadCase, (k, v) => v + 1);
 
             switch (message.PayloadCase)
             {
@@ -259,40 +255,6 @@ namespace Phorkus.Core.Consensus
         public void Terminate()
         {
             if (_terminated) return;
-            _logger.LogInformation("====================");
-            _logger.LogInformation($"Finished era {_era}");
-            _logger.LogInformation("Protocol stats:");
-            foreach (var entry in _registry.GroupBy(pair => pair.Key.GetType())
-                .Select(pairs => new KeyValuePair<Type, int>(pairs.Key, pairs.Count())))
-            {
-                _logger.LogInformation($" - {entry.Key}: {entry.Value}");
-            }
-
-            _logger.LogInformation("");
-            _logger.LogInformation("Protocol profile:");
-            foreach (var pVal in AbstractProtocol._profile
-                .Where(x => x.Key.Era == _era)
-                .OrderByDescending(x => x.Value.sumT))
-            {
-                _logger.LogInformation(
-                    $" - {pVal.Key.type}: {pVal.Value.cnt} times, {pVal.Value.sumT} ms total, avg = {(double) pVal.Value.sumT / pVal.Value.cnt} ms");
-            }
-
-            _logger.LogInformation("");
-            _logger.LogInformation("Messages stats:");
-            foreach (var entry in _counter)
-            {
-                _logger.LogInformation($" - {entry.Key}: {entry.Value}");
-            }
-            
-            _logger.LogInformation("");
-            _logger.LogInformation($"Total signs: {BouncyCastle.numSign}, {BouncyCastle.sumSign} ms in total, avg = {(double) BouncyCastle.sumSign / BouncyCastle.numSign}");
-            _logger.LogInformation($"Total verify: {BouncyCastle.numVerify}, {BouncyCastle.sumVerify} ms in total, avg = {(double) BouncyCastle.sumVerify / BouncyCastle.numVerify}");
-            _logger.LogInformation($"Total recovers: {BouncyCastle.numRec}, {BouncyCastle.sumRec} ms in total, avg = {(double) BouncyCastle.sumRec / BouncyCastle.numRec}");
-            BouncyCastle.Reset();
-
-            _logger.LogInformation("====================");
-
             _terminated = true;
             foreach (var protocol in _registry)
             {

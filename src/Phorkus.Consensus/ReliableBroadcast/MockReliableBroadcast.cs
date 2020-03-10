@@ -88,7 +88,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if (_receivedAlready)
             {
                 _logger.LogDebug(
-                    $"Player {GetMyId()} at {_reliableBroadcastId}: double receive of message from {validatorIndex}!");
+                    $"{_reliableBroadcastId}: double receive of message from {validatorIndex}!");
                 return;
             }
 

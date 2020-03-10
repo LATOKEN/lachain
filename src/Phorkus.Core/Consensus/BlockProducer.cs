@@ -28,7 +28,9 @@ namespace Phorkus.Core.Consensus
             ITransactionPool transactionPool,
             IValidatorManager validatorManager,
             IBlockchainContext blockchainContext,
-            IBlockSynchronizer blockSynchronizer, IBlockManager blockManager)
+            IBlockSynchronizer blockSynchronizer,
+            IBlockManager blockManager
+        )
         {
             _transactionPool = transactionPool;
             _validatorManager = validatorManager;
@@ -120,7 +122,7 @@ namespace Phorkus.Core.Consensus
         {
             var receipts = txHashes
                 .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
-                .OrderBy(receipt => receipt, new ReceiptComparer()) 
+                .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
             var blockWithTransactions =

@@ -60,7 +60,7 @@ namespace Phorkus.Consensus.CommonCoin
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
 
                 _logger.LogDebug(
-                    $"Received share {message.Coin.SignatureShare.ToByteArray().ToHex()} from {envelope.ValidatorIndex}");
+                    $"Received share from {envelope.ValidatorIndex}");
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(_publicKeySet[envelope.ValidatorIndex], signatureShare,
                     out var signature))

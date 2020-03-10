@@ -16,39 +16,6 @@ using Secp256k1Net;
 
 namespace Phorkus.Crypto
 {
-    internal sealed class EcDsaSignerWithRecId : ECDsaSigner
-    {
-        public BigInteger[] GenerateSignatureWithRecId(byte[] message, out byte recId)
-        {
-            var parameters = key.Parameters;
-            var n = parameters.N;
-            var e = CalculateE(n, message);
-            var d = ((ECPrivateKeyParameters) key).D;
-            if (kCalculator.IsDeterministic)
-                kCalculator.Init(n, d, message);
-            else
-                kCalculator.Init(n, random);
-            var basePointMultiplier = CreateBasePointMultiplier();
-            BigInteger val;
-            BigInteger bigInteger;
-            do
-            {
-                BigInteger k;
-                do
-                {
-                    k = kCalculator.NextK();
-                    var T = basePointMultiplier.Multiply(parameters.G, k).Normalize();
-                    val = T.AffineXCoord.ToBigInteger().Mod(n);
-                    recId = (byte) (T.YCoord.TestBitZero() ? 1 : 0);
-                } while (val.SignValue == 0);
-
-                bigInteger = k.ModInverse(n).Multiply(e.Add(d.Multiply(val))).Mod(n);
-            } while (bigInteger.SignValue == 0);
-
-            return new[] {val, bigInteger};
-        }
-    }
-
     public class BouncyCastle : ICrypto
     {
         private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
@@ -58,170 +25,58 @@ namespace Phorkus.Crypto
         private static readonly ECDomainParameters Domain
             = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
 
-        public static ulong sumVerify = 0;
-        public static ulong numVerify = 0;
-        public static ulong sumSign = 0;
-        public static ulong numSign = 0;
-        public static ulong sumRec = 0;
-        public static ulong numRec = 0;
-
-        public static void Reset()
-        {
-            sumSign = numSign = sumVerify = numVerify = 0;
-            sumRec = numRec = 0;
-        }
-
-        private static readonly Secp256k1 secp256K1 = new Secp256k1();
+        private static readonly Secp256k1 Secp256K1 = new Secp256k1();
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
+        public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
         {
-            var startTs = TimeUtils.CurrentTimeMillis();
-
-            // using var secp256K1 = new Secp256k1();
             var pk = new byte[64];
-            if (!secp256K1.PublicKeyParse(pk, pubkey))
+            if (!Secp256K1.PublicKeyParse(pk, publicKey))
                 throw new ArgumentException();
-
 
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
 
             var parsedSig = new byte[65];
             int recId = signature[0];
-            if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
                 throw new ArgumentException();
 
-            var result = secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
-
-            // var fullpubkey = DecodePublicKey(pubkey, false, out _, out _);
-            //
-            // var point = Curve.Curve.DecodePoint(fullpubkey);
-            // var keyParameters = new ECPublicKeyParameters(point, Domain);
-            //
-            // var signer = SignerUtilities.GetSigner("SHA256withECDSA");
-            // signer.Init(false, keyParameters);
-            // signer.BlockUpdate(message, 0, message.Length);
-            //
-            // if (signature.Length == 65)
-            // {
-            //     signature = new DerSequence(
-            //             new DerInteger(new BigInteger(1, signature.Skip(1).Take(32).ToArray())),
-            //             new DerInteger(new BigInteger(1, signature.Skip(1).Skip(32).ToArray())))
-            //         .GetDerEncoded();
-            // }
-            //
-            // var result = signer.VerifySignature(signature);
-
-            var endTs = TimeUtils.CurrentTimeMillis();
-            sumVerify += endTs - startTs;
-            numVerify += 1;
-            return result;
+            return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public byte[] Sign(byte[] message, byte[] prikey)
+        public byte[] Sign(byte[] message, byte[] privateKey)
         {
-            var startTs = TimeUtils.CurrentTimeMillis();
-            // using var secp256K1 = new Secp256k1();
-
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
 
             var sig = new byte[65];
-            if (!secp256K1.SignRecoverable(sig, messageHash, prikey))
+            if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
                 throw new ArgumentException();
             var serialized = new byte[64];
-            if (!secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
+            if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                 throw new ArgumentException();
 
-            var fullsign = new[] {(byte) recId}.Concat(serialized).ToArray();
-            // var fullsign = sig.Skip(64).Concat(sig.Take(64)).ToArray();
-
-
-            // var priv = new ECPrivateKeyParameters("ECDSA", new BigInteger(1, prikey), Domain);
-            // var signer = new EcDsaSignerWithRecId();
-            // var fullsign = new byte[65];
-            //
-            // message = message.Sha256();
-            // signer.Init(true, priv);
-            // var signature = signer.GenerateSignatureWithRecId(message, out var recId);
-            // var r = signature[0].ToByteArray();
-            // var s = signature[1].ToByteArray();
-            // var rLen = r.Length;
-            // var sLen = s.Length;
-            //
-            // // Build Signature ensuring expected format. 1byte v + 32byte r + 32byte s.
-            // fullsign[0] = recId;
-            // if (rLen < 32)
-            //     Array.Copy(r, 0, fullsign, 33 - rLen, rLen);
-            // else
-            //     Array.Copy(r, rLen - 32, fullsign, 1, 32);
-            // if (sLen < 32)
-            //     Array.Copy(s, 0, fullsign, 65 - sLen, sLen);
-            // else
-            //     Array.Copy(s, sLen - 32, fullsign, 33, 32);
-
-            var endTs = TimeUtils.CurrentTimeMillis();
-            sumSign += endTs - startTs;
-            numSign += 1;
-            return fullsign;
+            return new[] {(byte) recId}.Concat(serialized).ToArray();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignature(byte[] message, byte[] signature)
         {
-            var startTs = TimeUtils.CurrentTimeMillis();
-            // using var secp256K1 = new Secp256k1();
-
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
             var parsedSig = new byte[65];
             var pk = new byte[64];
             int recId = signature[0];
-            if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
                 throw new ArgumentException();
-            if (!secp256K1.Recover(pk, parsedSig, messageHash))
+            if (!Secp256K1.Recover(pk, parsedSig, messageHash))
                 throw new ArgumentException("Bad signature");
 
             var result = new byte[33];
-            if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+            if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
             {
                 throw new ArgumentException("Bad signature");
             }
 
-            // var recId = signature[0];
-            // var r = new BigInteger(new byte[] {0}.Concat(signature.Skip(1).Take(32)).ToArray(), 0, 33);
-            // var s = new BigInteger(new byte[] {0}.Concat(signature.Skip(1).Skip(32)).ToArray(), 0, 33);
-            //
-            // var hash = message.Sha256();
-            //
-            // var curve = Curve.Curve as FpCurve ?? throw new ArgumentException("Unable to cast Curve to FpCurve");
-            // var order = Curve.N;
-            //
-            // var x = r;
-            // if ((recId & 2) != 0)
-            //     x = x.Add(order);
-            //
-            // if (x.CompareTo(curve.Q) >= 0)
-            //     throw new ArgumentException("X too large");
-            //
-            // var xEnc = X9IntegerConverter.IntegerToBytes(x, X9IntegerConverter.GetByteLength(curve));
-            // var compEncoding = new byte[xEnc.Length + 1];
-            //
-            // compEncoding[0] = (byte) (0x02 + (recId & 1));
-            // xEnc.CopyTo(compEncoding, 1);
-            // var R = curve.DecodePoint(compEncoding);
-            //
-            // var e = CalculateE(order, hash);
-            //
-            // var rInv = r.ModInverse(order);
-            // var srInv = s.Multiply(rInv).Mod(order);
-            // var erInv = e.Multiply(rInv).Mod(order);
-            //
-            // var point = ECAlgorithms.SumOfTwoMultiplies(R, srInv, Curve.G.Negate(), erInv);
-            // var result = point.Normalize().GetEncoded(true);
-
-            var endTs = TimeUtils.CurrentTimeMillis();
-            sumRec += endTs - startTs;
-            numRec += 1;
             return result;
         }
 
@@ -251,30 +106,34 @@ namespace Phorkus.Crypto
             return result;
         }
 
-        public byte[] DecodePublicKey(byte[] pubkey, bool compress, out System.Numerics.BigInteger x,
+        public byte[] DecodePublicKey(byte[] publicKey, bool compress, out System.Numerics.BigInteger x,
             out System.Numerics.BigInteger y)
         {
-            if (pubkey == null || pubkey.Length != 33 && pubkey.Length != 64 && pubkey.Length != 65)
-                throw new ArgumentException(nameof(pubkey));
+            if (publicKey == null || publicKey.Length != 33 && publicKey.Length != 64 && publicKey.Length != 65)
+                throw new ArgumentException(nameof(publicKey));
 
-            if (pubkey.Length == 33 && pubkey[0] != 0x02 && pubkey[0] != 0x03)
-                throw new ArgumentException(nameof(pubkey));
-            if (pubkey.Length == 65 && pubkey[0] != 0x04) throw new ArgumentException(nameof(pubkey));
-
-            byte[] fullpubkey;
-
-            if (pubkey.Length == 64)
+            switch (publicKey.Length)
             {
-                fullpubkey = new byte[65];
-                fullpubkey[0] = 0x04;
-                Array.Copy(pubkey, 0, fullpubkey, 1, pubkey.Length);
+                case 33 when publicKey[0] != 0x02 && publicKey[0] != 0x03:
+                    throw new ArgumentException(nameof(publicKey));
+                case 65 when publicKey[0] != 0x04:
+                    throw new ArgumentException(nameof(publicKey));
+            }
+
+            byte[] fullPublicKey;
+
+            if (publicKey.Length == 64)
+            {
+                fullPublicKey = new byte[65];
+                fullPublicKey[0] = 0x04;
+                Array.Copy(publicKey, 0, fullPublicKey, 1, publicKey.Length);
             }
             else
             {
-                fullpubkey = pubkey;
+                fullPublicKey = publicKey;
             }
 
-            var ret = new ECPublicKeyParameters("ECDSA", Curve.Curve.DecodePoint(fullpubkey), Domain).Q;
+            var ret = new ECPublicKeyParameters("ECDSA", Curve.Curve.DecodePoint(fullPublicKey), Domain).Q;
             var x0 = ret.XCoord.ToBigInteger();
             var y0 = ret.YCoord.ToBigInteger();
 
