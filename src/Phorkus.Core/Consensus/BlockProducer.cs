@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using Google.Protobuf;
 using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
@@ -21,8 +22,8 @@ namespace Phorkus.Core.Consensus
         private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
-        private const int BatchSize = 1000; // TODO: calculate batch size
-        private readonly Random _random = new Random();
+        private const int BatchSize = 100; // TODO: calculate batch size
+        private readonly Random _random;
 
         public BlockProducer(
             ITransactionPool transactionPool,
@@ -37,29 +38,15 @@ namespace Phorkus.Core.Consensus
             _blockchainContext = blockchainContext;
             _blockSynchronizer = blockSynchronizer;
             _blockManager = blockManager;
+            _random = new Random((int) TimeUtils.CurrentTimeMillis());
         }
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose()
         {
             var txNum = (BatchSize + _validatorManager.Validators.Count - 1) / _validatorManager.Validators.Count;
-            var allTxs = _transactionPool.Peek(txNum);
-            txNum = Math.Min(txNum, allTxs.Count);
-            var groups = allTxs
-                .GroupBy(receipt => receipt.Transaction.From)
-                .ToDictionary(receipts => receipts.Key, receipts => receipts.Reverse().ToList());
-
-            // TODO: we need more complex & robust mechanism to peek transactions
-            var taken = new List<TransactionReceipt>();
-            var rnd = new Random();
-            for (var i = 0; i < txNum; ++i)
-            {
-                var key = rnd.SelectRandom(groups.Keys);
-                var tx = groups[key][groups[key].Count - 1];
-                taken.Add(tx);
-                groups[key].RemoveAt(groups[key].Count - 1);
-                if (groups[key].Count == 0) groups.Remove(key);
-            }
-
+            var taken = _transactionPool.Peek(BatchSize, txNum);
+            Console.WriteLine($"Took {taken.Count} transactions: " +
+                              string.Join(", ", taken.Select(tx => tx.Hash.ToHex()).OrderBy(x => x)));
             return taken;
         }
 

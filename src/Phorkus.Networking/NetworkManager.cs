@@ -350,6 +350,7 @@ namespace Phorkus.Networking
             _serverWorker.OnError += _HandleError;
             _serverWorker.Start();
             OnClientHandshake += SendQueuedMessages;
+            OnClientHandshake += ProcessHandshake;
             Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
             foreach (var peer in networkConfig.Peers)
                 Connect(PeerAddress.Parse(peer));
@@ -399,6 +400,30 @@ namespace Phorkus.Networking
         // TODO: Implement some delivery persistence and policies
         private readonly ConcurrentDictionary<ECDSAPublicKey, List<NetworkMessage>> _messageQueue =
             new ConcurrentDictionary<ECDSAPublicKey, List<NetworkMessage>>();
+
+        private readonly ISet<ECDSAPublicKey> _handshakeSuccessful = new HashSet<ECDSAPublicKey>();
+        private readonly object _handshakeLock = new object();
+
+        private void ProcessHandshake(Node node)
+        {
+            lock (_handshakeLock)
+            {
+                _handshakeSuccessful.Add(node.PublicKey);
+                Monitor.PulseAll(_handshakeLock);
+            }
+        }
+
+        public void WaitForHandshake(IEnumerable<ECDSAPublicKey> peerKeys)
+        {
+            var keys = peerKeys.ToList();
+            lock (_handshakeLock)
+            {
+                while (!keys.All(key => _handshakeSuccessful.Contains(key)))
+                {
+                    Monitor.Wait(_handshakeLock);
+                }
+            }
+        }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
         {

@@ -45,6 +45,7 @@ namespace Phorkus.Console
             var crypto = _container.Resolve<ICrypto>();
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
+            var validatorManager = _container.Resolve<IValidatorManager>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
             var networkManager = _container.Resolve<INetworkManager>();
             var messageHandler = _container.Resolve<IMessageHandler>();
@@ -87,11 +88,17 @@ namespace Phorkus.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
             networkManager.Start(networkConfig, keyPair, messageHandler);
             transactionVerifier.Start();
-            consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
-            blockSynchronizer.Start();
             commandManager.Start(keyPair);
             rpcManager.Start();
             
+            System.Console.WriteLine("Waiting for consensus peers to handshake...");
+            networkManager.WaitForHandshake(validatorManager.Validators.Where(key => !key.Equals(keyPair.PublicKey)));
+            System.Console.WriteLine("Handshake successful, synchronizing blocks...");
+            blockSynchronizer.Start();
+            blockSynchronizer.SynchronizeWith(validatorManager.Validators.Where(key => !key.Equals(keyPair.PublicKey)));
+            System.Console.WriteLine("Block synchronization finished, starting consensus...");
+            consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
+
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
             
             while (!_interrupt)

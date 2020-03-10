@@ -133,7 +133,6 @@ namespace Phorkus.Core.Consensus
 
         private void Run()
         {
-            Thread.Sleep(30_000);
             ulong lastBlock = 0;
             const ulong minBlockInterval = 5_000;
             for (;; CurrentEra += 1)

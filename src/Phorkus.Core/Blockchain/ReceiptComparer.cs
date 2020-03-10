@@ -21,4 +21,13 @@ namespace Phorkus.Core.Blockchain
             return x.Transaction.Nonce.CompareTo(y.Transaction.Nonce);
         }
     }
+
+    public class GasPriceReceiptComparer : IComparer<TransactionReceipt>
+    {
+        public int Compare(TransactionReceipt x, TransactionReceipt y)
+        {
+            if (x is null) return y is null ? 0 : -1; // nulls first, just in case
+            return y is null ? 1 : x.Transaction.GasPrice.CompareTo(y.Transaction.GasPrice);
+        }
+    }
 }

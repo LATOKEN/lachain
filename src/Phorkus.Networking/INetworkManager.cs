@@ -1,4 +1,6 @@
-﻿using Phorkus.Crypto;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 
 namespace Phorkus.Networking
@@ -25,6 +27,8 @@ namespace Phorkus.Networking
         bool IsReady { get; }
 
         void Start(NetworkConfig networkConfig, ECDSAKeyPair keyPair, IMessageHandler messageHandler);
+
+        void WaitForHandshake(IEnumerable<ECDSAPublicKey> peerKeys);
 
         void Stop();
     }

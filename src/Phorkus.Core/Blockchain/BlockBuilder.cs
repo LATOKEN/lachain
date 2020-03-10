@@ -29,12 +29,6 @@ namespace Phorkus.Core.Blockchain
             return this;
         }
 
-        public BlockBuilder WithTransactions(ITransactionPool transactionPool)
-        {
-            _transactions = new List<TransactionReceipt>(transactionPool.Peek());
-            return this;
-        }
-
         public BlockBuilder WithMultisig(IEnumerable<ECDSAPublicKey> validators)
         {
             if (_multiSig is null)

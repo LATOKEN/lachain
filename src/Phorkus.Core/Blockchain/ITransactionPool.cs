@@ -16,7 +16,7 @@ namespace Phorkus.Core.Blockchain
         
         OperatingError Add(TransactionReceipt transaction);
         
-        IReadOnlyCollection<TransactionReceipt> Peek(int limit = -1);
+        IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
 
         void Relay(IEnumerable<TransactionReceipt> receipts);
         

@@ -172,7 +172,7 @@ namespace Phorkus.Consensus.BinaryAgreement
 
             if (_validatorSentConf[sender])
             {
-                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {conf} from {sender}");
+                _logger.LogDebug($"{_broadcastId}: double receive message {conf} from {sender}");
                 return; // potential fault evidence
             }
 
@@ -209,11 +209,9 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_result != null) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             _result = ChoseMinimalSet();
-            _logger.LogDebug(
-                $"Player {GetMyId()} at {_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: my current bin_values = {_binValues}");
-            _logger.LogDebug(
-                $"Player {GetMyId()} at {_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
+            // _logger.LogDebug($"{_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
+            // _logger.LogDebug($"{_broadcastId}: my current bin_values = {_binValues}");
+            // _logger.LogDebug($"{_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
             CheckResult();
         }
 
@@ -222,7 +220,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (_confSent) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: conf message sent with set {_binValues}");
+            // _logger.LogDebug($"{_broadcastId}: conf message sent with set {_binValues}");
             Broadcaster.Broadcast(CreateConfMessage(_binValues));
             _confSent = true;
             RevisitConfMessages();
@@ -278,7 +276,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (!_result.HasValue) return;
             if (_requested != ResultStatus.Requested) return;
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: made result {_result.Value.ToString()}");
+            // _logger.LogDebug($"{_broadcastId}: made result {_result.Value.ToString()}");
             Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));
             _requested = ResultStatus.Sent;

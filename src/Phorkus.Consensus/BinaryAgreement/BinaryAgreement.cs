@@ -44,7 +44,7 @@ namespace Phorkus.Consensus.BinaryAgreement
                     new ProtocolResult<BinaryAgreementId, bool>(_agreementId, (bool) _result));
                 _requested = ResultStatus.Sent;
                 SetResult();
-                _logger.LogDebug($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
+                // _logger.LogDebug($"Player {GetMyId()} at {_agreementId}: made result succ at Ep={_currentEpoch}");
             }
         }
 
@@ -59,14 +59,14 @@ namespace Phorkus.Consensus.BinaryAgreement
                     // epoch mod 2 = 0 -> we have not yet initiated BB
                     if (_currentEpoch != 0 && !_coins.ContainsKey(_currentEpoch - 1))
                     {
-                        _logger.LogDebug($"Can't progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present");
+                        // _logger.LogDebug($"Can't progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present");
                         return; // we cannot progress since coin is not tossed and estimate is not correct
                     }
 
-                    _logger.LogDebug(
-                        $"Epoch progressed, coin (Ep={_currentEpoch - 1}) is present " +
-                        $"with value {_currentEpoch > 0 && _coins[_currentEpoch - 1]}"
-                    );
+                    // _logger.LogDebug(
+                    //     $"Epoch progressed, coin (Ep={_currentEpoch - 1}) is present " +
+                    //     $"with value {_currentEpoch > 0 && _coins[_currentEpoch - 1]}"
+                    // );
                     // we have right to calculate new estimate and proceed
                     if (_currentEpoch != 0)
                     {
@@ -117,12 +117,12 @@ namespace Phorkus.Consensus.BinaryAgreement
                     // epoch mod 2 = 1 -> we have not yet tossed coin
                     if (!_binaryBroadcastsResults.ContainsKey(_currentEpoch - 1))
                     {
-                        _logger.LogDebug(
-                            $"Can't progress epoch, blocked, BB (Ep={_currentEpoch - 1}) not present");
+                        // _logger.LogDebug(
+                        //     $"Can't progress epoch, blocked, BB (Ep={_currentEpoch - 1}) not present");
                         return; // we cannot progress since BB is not completed
                     }
 
-                    _logger.LogDebug($"Epoch progressed, BB (Ep={_currentEpoch - 1}) is present");
+                    // _logger.LogDebug($"Epoch progressed, BB (Ep={_currentEpoch - 1}) is present");
 
                     _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
