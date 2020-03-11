@@ -41,7 +41,7 @@ namespace Phorkus.Storage.State
         {
             var expectedNonce = GetTotalTransactionCount(receipt.Transaction.From);
             if (expectedNonce != receipt.Transaction.Nonce)
-                throw new Exception("This should never happen, transaction nonce mismatch");
+                throw new Exception($"This should never happen, transaction nonce mismatch: {receipt.Transaction.Nonce} but should be {expectedNonce}");
             /* save transaction status */
             receipt.Status = status;
             /* write transaction to storage */

@@ -194,9 +194,19 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 if (result != OperatingError.Ok)
                 {
                     _stateManager.Rollback();
-                    snapshot = _stateManager.NewSnapshot();
-                    snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
-                    _stateManager.Approve();
+                    if (result == OperatingError.InvalidNonce)
+                    {
+                        removeTransactions.Add(transaction);
+                        _logger.LogWarning(
+                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Transaction?.Nonce}): invalid nonce"
+                        );
+                    }
+                    else
+                    {
+                        snapshot = _stateManager.NewSnapshot();
+                        snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
+                        _stateManager.Approve();                        
+                    }
                     continue;
                 }
 

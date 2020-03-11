@@ -44,7 +44,8 @@ namespace Phorkus.Core.RPC
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
                 new BlockchainService(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
-                new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool)
+                new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new NodeService()
             };
             
             var rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;

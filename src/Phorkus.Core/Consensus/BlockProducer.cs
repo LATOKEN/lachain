@@ -22,8 +22,7 @@ namespace Phorkus.Core.Consensus
         private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
-        private const int BatchSize = 100; // TODO: calculate batch size
-        private readonly Random _random;
+        private const int BatchSize = 1000; // TODO: calculate batch size
 
         public BlockProducer(
             ITransactionPool transactionPool,
@@ -38,7 +37,6 @@ namespace Phorkus.Core.Consensus
             _blockchainContext = blockchainContext;
             _blockSynchronizer = blockSynchronizer;
             _blockManager = blockManager;
-            _random = new Random((int) TimeUtils.CurrentTimeMillis());
         }
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose()
