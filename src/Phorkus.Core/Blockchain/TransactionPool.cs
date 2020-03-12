@@ -28,15 +28,17 @@ namespace Phorkus.Core.Blockchain
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
 
-        private readonly ISet<TransactionReceipt> _transactionsQueue = new HashSet<TransactionReceipt>();
-        private readonly ISet<TransactionReceipt> _relayQueue = new HashSet<TransactionReceipt>();
+        private ISet<TransactionReceipt> _transactionsQueue = new HashSet<TransactionReceipt>();
+        private ISet<TransactionReceipt> _relayQueue = new HashSet<TransactionReceipt>();
 
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
             INetworkManager networkManager,
-            INetworkBroadcaster networkBroadcaster)
+            INetworkBroadcaster networkBroadcaster,
+            IBlockManager blockManager
+        )
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
             _poolRepository = poolRepository ?? throw new ArgumentNullException(nameof(poolRepository));
@@ -44,7 +46,17 @@ namespace Phorkus.Core.Blockchain
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
 
+            blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
             Restore();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void BlockManagerOnOnBlockPersisted(object sender, Block e)
+        {
+            foreach (var tx in e.TransactionHashes)
+            {
+                Delete(tx);
+            }
         }
 
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
@@ -103,15 +115,27 @@ namespace Phorkus.Core.Blockchain
             if (!_networkManager.IsReady)
                 return OperatingError.Ok;
             var message = _networkManager.MessageFactory?.GetTransactionsByHashesReply(
-                              new[] {transaction}
-                          ) ?? throw new InvalidOperationException();
+                new[] {transaction}
+            ) ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(message);
             return OperatingError.Ok;
+        }
+
+        private bool TxNonceValid(TransactionReceipt receipt)
+        {
+            return receipt.Transaction.Nonce >= _transactionManager.CalcNextTxNonce(receipt.Transaction.From);
+        }
+
+        private void Sanitize()
+        {
+            _relayQueue = new HashSet<TransactionReceipt>(_relayQueue.Where(TxNonceValid));
+            _transactionsQueue = new HashSet<TransactionReceipt>(_transactionsQueue.Where(TxNonceValid));
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake)
         {
+            Sanitize();
             var rnd = new Random();
             var result = _relayQueue.ToList();
             // First we try to take transactions from relay queue
@@ -124,14 +148,14 @@ namespace Phorkus.Core.Blockchain
                 .OrderBy(x => x, new ReceiptComparer())
                 .GroupBy(receipt => receipt.Transaction.From)
                 .ToDictionary(receipts => receipts.Key, receipts => receipts.Reverse().ToList());
-            
+
             // We maintain heap of current transaction for each sender
             var heap = new C5.IntervalHeap<TransactionReceipt>(new GasPriceReceiptComparer());
             foreach (var txs in txsBySender.Values)
             {
                 heap.Add(txs.Last());
             }
-            
+
             var bestTxs = new List<TransactionReceipt>();
             for (var i = 0; i < txsToLook && !heap.IsEmpty; ++i)
             {
@@ -145,7 +169,7 @@ namespace Phorkus.Core.Blockchain
                     heap.Add(txsFrom.Last());
                 }
             }
-            
+
             // Regroup transactions in order to take some random subset
             txsBySender = bestTxs
                 .OrderBy(x => x, new ReceiptComparer())
@@ -155,7 +179,7 @@ namespace Phorkus.Core.Blockchain
             for (var i = 0; i < txsToTake && txsBySender.Count > 0; ++i)
             {
                 var key = rnd.SelectRandom(txsBySender.Keys);
-                var txsFrom = txsBySender[key]; 
+                var txsFrom = txsBySender[key];
                 var tx = txsFrom.Last();
                 result.Add(tx);
                 txsFrom.RemoveAt(txsFrom.Count - 1);
@@ -189,19 +213,23 @@ namespace Phorkus.Core.Blockchain
         [MethodImpl(MethodImplOptions.Synchronized)]
         public uint Size()
         {
-            return (uint) _transactions.Count;
+            return (uint) _transactionsQueue.Count;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Delete(UInt256 transactionHash)
         {
-            _transactions.TryRemove(transactionHash, out _);
+            if (_transactions.TryRemove(transactionHash, out var tx))
+            {
+                _transactionsQueue.Remove(tx);
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Clear()
         {
             _transactions.Clear();
+            _transactionsQueue.Clear();
         }
     }
 }

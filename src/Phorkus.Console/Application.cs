@@ -78,9 +78,6 @@ namespace Phorkus.Console
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
             
-            var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
-            var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
-
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
@@ -91,10 +88,10 @@ namespace Phorkus.Console
             commandManager.Start(keyPair);
             rpcManager.Start();
             
+            blockSynchronizer.Start();
             System.Console.WriteLine("Waiting for consensus peers to handshake...");
             networkManager.WaitForHandshake(validatorManager.Validators.Where(key => !key.Equals(keyPair.PublicKey)));
             System.Console.WriteLine("Handshake successful, synchronizing blocks...");
-            blockSynchronizer.Start();
             blockSynchronizer.SynchronizeWith(validatorManager.Validators.Where(key => !key.Equals(keyPair.PublicKey)));
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);

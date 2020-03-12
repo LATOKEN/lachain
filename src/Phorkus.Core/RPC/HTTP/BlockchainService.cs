@@ -98,8 +98,7 @@ namespace Phorkus.Core.RPC.HTTP
             var jArray = new JArray();
             foreach (var txHash in txHashes)
             {
-                
-                jArray.Add(txHash);
+                jArray.Add(txHash.ToHex());
             }
             return jArray;
         }
