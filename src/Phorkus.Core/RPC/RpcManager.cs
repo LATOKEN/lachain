@@ -3,6 +3,7 @@ using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Core.RPC.HTTP;
+using Phorkus.Core.RPC.HTTP.Web3;
 using Phorkus.Core.VM;
 using Phorkus.Storage.State;
 
@@ -44,7 +45,9 @@ namespace Phorkus.Core.RPC
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
                 new BlockchainService(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
-                new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool)
+                new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new BlockchainServiceWeb3(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
+                new AccountServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool)
             };
             
             var rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
