@@ -22,7 +22,7 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[] _resultInterceptors;
         private int N = 7;
         private int F = 2;
-        private IWallet[] _wallets;
+        private IPrivateConsensusKeySet[] _wallets;
         private Random _rnd;
 
         private void SetUpAllHonest()
@@ -33,14 +33,14 @@ namespace Phorkus.ConsensusTest
             _acs = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[N];
-            _wallets = new IWallet[N];
+            _wallets = new IPrivateConsensusKeySet[N];
             var keygen = new TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
-                _wallets[i] = new Wallet(N, F, null, null, null,
+                _wallets[i] = new PublicConsensusKeySet(N, F, null, null, null,
                     pubKeys, shares[i],
                     null, null, new ECDSAPublicKey[] { }
                 );

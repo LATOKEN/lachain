@@ -1,8 +1,7 @@
 ﻿using System;
-using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Proto;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Interface
 {
     public interface ITransactionVerifier
     {

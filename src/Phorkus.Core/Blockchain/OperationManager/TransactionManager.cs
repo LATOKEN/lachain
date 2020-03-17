@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.ContractManager;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;

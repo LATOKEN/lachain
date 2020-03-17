@@ -20,7 +20,7 @@ namespace Phorkus.ConsensusTest
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
         private Random _rnd;
-        private IWallet[] _wallets;
+        private IPrivateConsensusKeySet[] _wallets;
         
         [SetUp]
         public void SetUp()
@@ -30,7 +30,7 @@ namespace Phorkus.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
             _rnd = new Random();
-            _wallets = new IWallet[N];
+            _wallets = new IPrivateConsensusKeySet[N];
             
             Mcl.Init();
             for (var i = 0; i < N; ++i)

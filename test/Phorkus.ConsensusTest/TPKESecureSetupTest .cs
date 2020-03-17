@@ -19,7 +19,7 @@ namespace Phorkus.ConsensusTest
         private const int N = 10;
         private const int T = 5;
         private Random _rnd;
-        private IWallet[] _wallets;
+        private IPrivateConsensusKeySet[] _wallets;
 
         [SetUp]
         public void SetUp()
@@ -29,7 +29,7 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<TPKESetupId, Keys>[N];
-            _wallets = new IWallet[N];
+            _wallets = new IPrivateConsensusKeySet[N];
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, Keys>();

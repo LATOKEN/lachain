@@ -20,7 +20,7 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors;
         private int F = 1;
         private int N = 3 * 1 + 1;
-        private IWallet[] _wallets;
+        private IPrivateConsensusKeySet[] _wallets;
         private Random _rnd;
 
 //        [SetUp]
@@ -32,14 +32,14 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryAgreementId, bool>[N];
-            _wallets = new IWallet[N];
+            _wallets = new IPrivateConsensusKeySet[N];
             var keygen = new TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
-                _wallets[i] = new Wallet(N, F,
+                _wallets[i] = new PublicConsensusKeySet(N, F,
                     null, null, null,
                     pubKeys, shares[i],
                     null, null, new ECDSAPublicKey[] { }

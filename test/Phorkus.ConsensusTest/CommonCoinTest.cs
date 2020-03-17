@@ -16,7 +16,7 @@ namespace Phorkus.ConsensusTest
         private IConsensusBroadcaster[] _broadcasters;
         private DeliveryService _deliveryService;
         private ProtocolInvoker<CoinId, CoinResult>[] _resultInterceptors;
-        private IWallet[] _wallets;
+        private IPrivateConsensusKeySet[] _wallets;
 
         public void SetUp()
         {
@@ -28,11 +28,11 @@ namespace Phorkus.ConsensusTest
             _coins = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CoinId, CoinResult>[N];
-            _wallets = new IWallet[N];
+            _wallets = new IPrivateConsensusKeySet[N];
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();
-                _wallets[i] = new Wallet(
+                _wallets[i] = new PublicConsensusKeySet(
                     N, F,
                     null, null, null,
                     pubKeys, shares[i],

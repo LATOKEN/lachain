@@ -1,6 +1,8 @@
 ﻿using AustinHarris.JsonRpc;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Config;
 using Phorkus.Core.RPC.HTTP;
 using Phorkus.Core.VM;

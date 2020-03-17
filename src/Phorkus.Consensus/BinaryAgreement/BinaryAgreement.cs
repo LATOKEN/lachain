@@ -25,7 +25,8 @@ namespace Phorkus.Consensus.BinaryAgreement
         private readonly Dictionary<long, BoolSet> _binaryBroadcastsResults = new Dictionary<long, BoolSet>();
         private readonly ILogger<BinaryAgreement> _logger = LoggerFactory.GetLoggerForClass<BinaryAgreement>();
 
-        public BinaryAgreement(BinaryAgreementId agreementId, IWallet wallet, IConsensusBroadcaster broadcaster)
+        public BinaryAgreement(
+            BinaryAgreementId agreementId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster)
             : base(wallet, agreementId, broadcaster)
         {
             _agreementId = agreementId;

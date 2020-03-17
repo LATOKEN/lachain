@@ -4,7 +4,7 @@ using System.Linq;
 using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Utils
 {
     public class ReceiptComparer : IComparer<TransactionReceipt>
     {

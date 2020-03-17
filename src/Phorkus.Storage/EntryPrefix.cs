@@ -12,8 +12,9 @@
         TransactionPool = 0x0404,
         /* balance */
         BalanceByOwnerAndAsset = 0x0501,
-        /* store */
+        /* storage version & index by height */
         StorageVersionIndex = 0x0601,
+        SnapshotIndex = 0x0602,
         /* node */
         PersistentHashMap = 0x0603,
         /* contract */
@@ -23,5 +24,7 @@
         /* event */
         EventByTransactionHashAndIndex = 0x0a01,
         EventCountByTransactionHash = 0x0a02,
+        /* consensus */
+        ConsensusState = 0x0b01,
     }
 }

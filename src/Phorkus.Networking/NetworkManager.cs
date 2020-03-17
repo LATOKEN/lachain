@@ -418,7 +418,7 @@ namespace Phorkus.Networking
             var keys = peerKeys.ToList();
             lock (_handshakeLock)
             {
-                while (!keys.All(key => _handshakeSuccessful.Contains(key)))
+                while (keys.Count(key => _handshakeSuccessful.Contains(key)) <= 2 * keys.Count / 3)
                 {
                     Monitor.Wait(_handshakeLock);
                 }

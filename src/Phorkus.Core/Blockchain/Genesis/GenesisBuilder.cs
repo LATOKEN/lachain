@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Proto;

@@ -16,10 +16,10 @@ namespace Phorkus.Storage.State
         private readonly ISnapshotManager<IContractSnapshot> _contractManager;
         private readonly ISnapshotManager<IStorageSnapshot> _storageManager;
         private readonly ISnapshotManager<IEventSnapshot> _eventManager;
+        private readonly ISnapshotManager<IValidatorSnapshot> _validatorManager;
 
-        private readonly Mutex _globalMutex
-            = new Mutex(false);
-        
+        private readonly Mutex _globalMutex = new Mutex(false);
+
         public StateManager(IStorageManager storageManager)
         {
             _balanceManager =
@@ -40,6 +40,9 @@ namespace Phorkus.Storage.State
             _eventManager =
                 new SnapshotManager<IEventSnapshot, EventSnapshot>(storageManager,
                     (uint) RepositoryType.EventRepository);
+            _validatorManager =
+                new SnapshotManager<IValidatorSnapshot, ValidatorSnapshot>(storageManager,
+                    (uint) RepositoryType.ValidatorRepository);
 
             LastApprovedSnapshot = new BlockchainSnapshot(
                 _balanceManager.LastApprovedSnapshot,
@@ -47,7 +50,8 @@ namespace Phorkus.Storage.State
                 _storageManager.LastApprovedSnapshot,
                 _transactionManager.LastApprovedSnapshot,
                 _blockManager.LastApprovedSnapshot,
-                _eventManager.LastApprovedSnapshot
+                _eventManager.LastApprovedSnapshot,
+                _validatorManager.LastApprovedSnapshot
             );
         }
 
@@ -63,8 +67,8 @@ namespace Phorkus.Storage.State
                 Release();
             }
         }
-        
-        public TR SafeContext<TR>(Func<TR> callback)
+
+        public T SafeContext<T>(Func<T> callback)
         {
             try
             {
@@ -97,7 +101,8 @@ namespace Phorkus.Storage.State
                 _storageManager.NewSnapshot(),
                 _transactionManager.NewSnapshot(),
                 _blockManager.NewSnapshot(),
-                _eventManager.NewSnapshot()
+                _eventManager.NewSnapshot(),
+                _validatorManager.NewSnapshot()
             );
             return PendingSnapshot;
         }
@@ -110,6 +115,7 @@ namespace Phorkus.Storage.State
             _transactionManager.Approve();
             _blockManager.Approve();
             _eventManager.Approve();
+            _validatorManager.Approve();
             LastApprovedSnapshot = PendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
             PendingSnapshot = null;
         }
@@ -124,6 +130,7 @@ namespace Phorkus.Storage.State
             _transactionManager.Rollback();
             _blockManager.Rollback();
             _eventManager.Rollback();
+            _validatorManager.Rollback();
             PendingSnapshot = null;
         }
 
@@ -135,6 +142,7 @@ namespace Phorkus.Storage.State
             _transactionManager.Commit();
             _blockManager.Commit();
             _eventManager.Commit();
+            _validatorManager.Commit();
         }
 
         public void RollbackTo(IBlockchainSnapshot snapshot)
@@ -147,6 +155,7 @@ namespace Phorkus.Storage.State
             _transactionManager.RollbackTo(snapshot.Transactions);
             _blockManager.RollbackTo(snapshot.Blocks);
             _eventManager.RollbackTo(snapshot.Events);
+            _validatorManager.RollbackTo(snapshot.Validators);
             LastApprovedSnapshot = snapshot;
         }
     }

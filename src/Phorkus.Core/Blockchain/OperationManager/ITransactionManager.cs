@@ -1,4 +1,5 @@
 ﻿using System;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 

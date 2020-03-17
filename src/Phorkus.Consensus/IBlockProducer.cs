@@ -5,7 +5,7 @@ namespace Phorkus.Consensus
 {
     public interface IBlockProducer
     {
-        IEnumerable<TransactionReceipt> GetTransactionsToPropose();
+        IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era);
 
         BlockHeader CreateHeader(
             ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken

@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Phorkus.Core.Blockchain.Genesis;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Proto;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
@@ -23,13 +25,15 @@ namespace Phorkus.Core.Blockchain.OperationManager
         private readonly IMultisigVerifier _multisigVerifier;
         private readonly ILogger<BlockManager> _logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private readonly IStateManager _stateManager;
+        private readonly ISnapshotIndexRepository _snapshotIndexRepository;
 
         public BlockManager(
             ITransactionManager transactionManager,
             IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
             IMultisigVerifier multisigVerifier,
-            IStateManager stateManager
+            IStateManager stateManager,
+            ISnapshotIndexRepository snapshotIndexRepository
         )
         {
             _transactionManager = transactionManager;
@@ -37,6 +41,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             _genesisBuilder = genesisBuilder;
             _multisigVerifier = multisigVerifier;
             _stateManager = stateManager;
+            _snapshotIndexRepository = snapshotIndexRepository;
         }
 
         public event EventHandler<Block>? OnBlockPersisted;
@@ -117,6 +122,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 _logger.LogInformation(
                     $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}, fee {totalFee}");
                 _stateManager.Commit();
+                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
                 OnBlockPersisted?.Invoke(this, block);
                 return OperatingError.Ok;
             });
@@ -205,8 +211,9 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     {
                         snapshot = _stateManager.NewSnapshot();
                         snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
-                        _stateManager.Approve();                        
+                        _stateManager.Approve();
                     }
+
                     continue;
                 }
 
@@ -226,7 +233,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 }
 
                 /* try to take fee from sender */
-                result = _TakeTransactionFee(transaction, snapshot, out var fee);
+                result = _TakeTransactionFee((long) block.Header.Index, transaction, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
                     removeTransactions.Add(transaction);
@@ -234,7 +241,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     _logger.LogWarning(
                         $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
-                } 
+                }
 
                 totalFee += fee;
 
@@ -264,8 +271,9 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 : OperatingError.Ok;
         }
 
-        private OperatingError _TakeTransactionFee(TransactionReceipt transaction,
-            IBlockchainSnapshot snapshot, out Money fee)
+        private OperatingError _TakeTransactionFee(
+            long block, TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
+        )
         {
             /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
@@ -273,10 +281,14 @@ namespace Phorkus.Core.Blockchain.OperationManager
             // if (_validatorManager.CheckValidator(transaction.Transaction.From)) // TODO: wtf?
             //     return OperatingError.Ok;
             /* transfer fee from wallet to validator */
-            var sharedFee = fee / _validatorManager.Validators.Count;
-            return _validatorManager.Validators.Any(validator =>
-                !snapshot.Balances.TransferBalance(transaction.Transaction.From,
-                    _crypto.ComputeAddress(validator.Buffer.ToByteArray()).ToUInt160(), sharedFee))
+
+            // block - 1 because current block is only mined now and uses old validators
+            var n = _validatorManager.GetValidators(block - 1).N;
+            var sharedFee = fee / n;
+            return _validatorManager.GetValidatorsPublicKeys(block - 1)
+                .Any(validator =>
+                    !snapshot.Balances.TransferBalance(transaction.Transaction.From,
+                        _crypto.ComputeAddress(validator.Buffer.ToByteArray()).ToUInt160(), sharedFee))
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }

@@ -2,7 +2,7 @@
 using Phorkus.Proto;
 using Phorkus.Utility;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Interface
 {
     public interface ITransactionBuilder
     {

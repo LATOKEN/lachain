@@ -7,27 +7,13 @@ using PublicKey = Phorkus.Crypto.TPKE.PublicKey;
 
 namespace Phorkus.Consensus
 {
-    public interface IWallet
+    public interface IPublicConsensusKeySet
     {
         int N { get; }
         int F { get; }
-
         PublicKey TpkePublicKey { get; }
-
-        PrivateKey TpkePrivateKey { get; }
-
         VerificationKey TpkeVerificationKey { get; }
-
         PublicKeySet ThresholdSignaturePublicKeySet { get; }
-
-        PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; }
-
-        ECDSAPublicKey EcdsaPublicKey { get; }
-        
         IList<ECDSAPublicKey> EcdsaPublicKeySet { get; }
-
-        ECDSAPrivateKey EcdsaPrivateKey { get; }
-
-        ISet<IProtocolIdentifier> ProtocolIds { get; } // TODO: delete this
     }
 }

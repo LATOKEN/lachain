@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.Consensus;
 using Phorkus.Crypto;
 using Phorkus.Logger;
@@ -15,8 +17,9 @@ namespace Phorkus.Core.Network
 {
     public class MessageHandler : IMessageHandler
     {
-        private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly ILogger<MessageHandler> _logger = LoggerFactory.GetLoggerForClass<MessageHandler>();
+
+        private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
@@ -85,14 +88,11 @@ namespace Phorkus.Core.Network
 
         public void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request)
         {
-            var txs = new List<TransactionReceipt>();
-            foreach (var txHash in request.TransactionHashes)
-            {
-                var tx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash)
-                         ?? _transactionPool.GetByHash(txHash);
-                if (tx != null)
-                    txs.Add(tx);
-            }
+            var txs = request.TransactionHashes
+                .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
+                                  _transactionPool.GetByHash(txHash))
+                .Where(tx => tx != null)
+                .ToList();
 
             envelope.RemotePeer?.Send(envelope.MessageFactory?.GetTransactionsByHashesReply(txs) ??
                                       throw new InvalidOperationException());
@@ -107,8 +107,9 @@ namespace Phorkus.Core.Network
 
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
-            var index = (int) _validatorManager.GetValidatorIndex(
-                envelope.PublicKey ?? throw new InvalidOperationException()
+            var index = _validatorManager.GetValidatorIndex(
+                envelope.PublicKey ?? throw new InvalidOperationException(),
+                message.Validator.Era
             );
 
             if (envelope.Signature is null ||

@@ -9,5 +9,6 @@
         TransactionRepository = 6,
         BlockRepository = 7,
         EventRepository = 9,
+        ValidatorRepository = 10,
     }
 }

@@ -26,7 +26,7 @@ namespace Phorkus.ConsensusTest
 
         private readonly DeliveryService _deliveryService;
 
-        private readonly IWallet _wallet;
+        private readonly IPrivateConsensusKeySet _wallet;
 
         private readonly ISet<int> _silenced;
 
@@ -45,7 +45,7 @@ namespace Phorkus.ConsensusTest
 
         private bool MixMessages { get; }
 
-        public BroadcastSimulator(int sender, IWallet wallet, DeliveryService deliveryService, bool mixMessages)
+        public BroadcastSimulator(int sender, IPrivateConsensusKeySet wallet, DeliveryService deliveryService, bool mixMessages)
         {
             _sender = sender;
             _deliveryService = deliveryService;

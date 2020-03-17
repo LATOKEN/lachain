@@ -31,8 +31,9 @@ namespace Phorkus.Consensus.TPKE
         private bool _allHashSent;
         private readonly ILogger<TPKESecureSetup> _logger = LoggerFactory.GetLoggerForClass<TPKESecureSetup>();
 
-        public TPKESecureSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
-            wallet, tpkeSetupId, broadcaster)
+        public TPKESecureSetup(
+            TPKESetupId tpkeSetupId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster)
+            : base(wallet, tpkeSetupId, broadcaster)
         {
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;

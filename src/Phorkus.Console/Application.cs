@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using System.Threading;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Interface;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.CLI;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
@@ -33,7 +35,7 @@ namespace Phorkus.Console
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
-            
+
             _container = containerBuilder.Build();
         }
 
@@ -51,13 +53,13 @@ namespace Phorkus.Console
             var messageHandler = _container.Resolve<IMessageHandler>();
             var commandManager = _container.Resolve<IConsoleManager>();
             var rpcManager = _container.Resolve<IRpcManager>();
-            var stateManager = _container.Resolve<IStateManager>();            
+            var stateManager = _container.Resolve<IStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var storageConfig = configManager.GetConfig<StorageConfig>("storage");
-            
+
             var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
-            
+
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
             System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToHex());
@@ -77,7 +79,7 @@ namespace Phorkus.Console
             foreach (var s in genesisBlock.TransactionHashes)
                 System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
-            
+
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
             System.Console.WriteLine("-------------------------------");
@@ -87,21 +89,27 @@ namespace Phorkus.Console
             transactionVerifier.Start();
             commandManager.Start(keyPair);
             rpcManager.Start();
-            
+
             blockSynchronizer.Start();
             System.Console.WriteLine("Waiting for consensus peers to handshake...");
-            networkManager.WaitForHandshake(validatorManager.Validators.Where(key => !key.Equals(keyPair.PublicKey)));
+            networkManager.WaitForHandshake(validatorManager
+                .GetValidatorsPublicKeys((long) blockchainContext.CurrentBlockHeight)
+                .Where(key => !key.Equals(keyPair.PublicKey))
+            );
             System.Console.WriteLine("Handshake successful, synchronizing blocks...");
-            blockSynchronizer.SynchronizeWith(validatorManager.Validators.Where(key => !key.Equals(keyPair.PublicKey)));
+            blockSynchronizer.SynchronizeWith(
+                validatorManager.GetValidatorsPublicKeys((long) blockchainContext.CurrentBlockHeight)
+                    .Where(key => !key.Equals(keyPair.PublicKey))
+            );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
-            
+
             while (!_interrupt)
                 Thread.Sleep(1000);
         }
-        
+
         private bool _interrupt;
     }
 }

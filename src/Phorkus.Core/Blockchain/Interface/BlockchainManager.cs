@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
-using Phorkus.Core.Utils;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Interface
 {
     public class BlockchainManager : IBlockchainManager, IBlockchainContext
     {

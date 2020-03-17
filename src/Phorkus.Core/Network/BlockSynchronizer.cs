@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Logger;
 using Phorkus.Networking;
 using Phorkus.Proto;
@@ -158,22 +160,19 @@ namespace Phorkus.Core.Network
             var myHeight = _blockchainContext.CurrentBlockHeight;
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
-            if (_networkContext.ActivePeers.Values.Count == 0)
-            {
-                /* if we dont have peers for 1 second than we don't need them */
-                var diff = TimeUtils.CurrentTimeMillis() - _lastActiveTime;
-                return diff <= 1000;
-            }
+            var setOfPeers = new HashSet<ECDSAPublicKey>(peers);
+            if (setOfPeers.Count == 1) return false;
 
             _lastActiveTime = TimeUtils.CurrentTimeMillis();
             var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
-            if (_peerHeights.Count == 0)
+            var validatorPeers = _peerHeights
+                .Where(entry => setOfPeers.Contains(entry.Key.Node?.PublicKey))
+                .ToArray();
+            if (validatorPeers.Length <= setOfPeers.Count * 2 / 3)
                 return true;
-            var arrayOfPeers = peers.ToArray();
-            var validatorPeers = _peerHeights.Where(entry => arrayOfPeers.Contains(entry.Key.Node?.PublicKey));
             var maxHeight = validatorPeers.Max(v => v.Value);
             return myHeight < maxHeight;
         }

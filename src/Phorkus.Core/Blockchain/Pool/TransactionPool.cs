@@ -1,21 +1,18 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Org.BouncyCastle.Asn1;
-using Org.BouncyCastle.Crypto.Engines;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Utils;
+using Phorkus.Core.Blockchain.Utils;
 using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Proto;
 using Phorkus.Storage.Repositories;
-using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Pool
 {
     public class TransactionPool : ITransactionPool
     {

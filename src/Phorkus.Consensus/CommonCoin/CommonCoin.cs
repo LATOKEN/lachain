@@ -13,27 +13,25 @@ namespace Phorkus.Consensus.CommonCoin
 {
     public class CommonCoin : AbstractProtocol
     {
-        private readonly IThresholdSigner _thresholdSigner;
-        private readonly PublicKeySet _publicKeySet;
         private readonly CoinId _coinId;
+        private readonly IThresholdSigner _thresholdSigner;
         private CoinResult? _result;
         private ResultStatus _requested = ResultStatus.NotRequested;
         private readonly ILogger<CommonCoin> _logger = LoggerFactory.GetLoggerForClass<CommonCoin>();
 
         public CommonCoin(
-            CoinId coinId, IWallet wallet, IConsensusBroadcaster broadcaster
+            CoinId coinId, IPublicConsensusKeySet wallet, PrivateKeyShare privateKeyShare,
+            IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
-            if (wallet.ThresholdSignaturePrivateKeyShare is null) throw new ArgumentNullException();
-            _publicKeySet = wallet.ThresholdSignaturePublicKeySet;
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
-                _coinId.ToByteArray(), wallet.ThresholdSignaturePrivateKeyShare, _publicKeySet
+                _coinId.ToByteArray(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
             );
             _result = null;
         }
 
-        public void CheckResult()
+        private void CheckResult()
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
@@ -60,15 +58,14 @@ namespace Phorkus.Consensus.CommonCoin
 
                 // _logger.LogDebug($"Received share from {envelope.ValidatorIndex}");
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
-                if (!_thresholdSigner.AddShare(_publicKeySet[envelope.ValidatorIndex], signatureShare,
-                    out var signature))
+                if (!_thresholdSigner.AddShare(
+                    Wallet.ThresholdSignaturePublicKeySet[envelope.ValidatorIndex], signatureShare, out var signature))
                 {
                     _logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
                     return; // potential fault evidence
                 }
 
                 if (signature == null) return;
-                // _logger.LogDebug($"Assembled signature {signature.ToBytes().ToHex()}");
                 _result = new CoinResult(signature.RawSignature.ToBytes());
                 CheckResult();
             }
@@ -80,13 +77,10 @@ namespace Phorkus.Consensus.CommonCoin
                 {
                     case ProtocolRequest<CoinId, object?> _:
                         var signatureShare = _thresholdSigner.Sign();
-                        // _logger.LogDebug(
-                        //     $"signed payload {_coinId.ToByteArray().ToHex()} and got signature {signatureShare.ToBytes().ToHex()}");
                         _requested = ResultStatus.Requested;
                         CheckResult();
                         var msg = CreateCoinMessage(signatureShare);
                         Broadcaster.Broadcast(msg);
-                        // _logger.LogDebug($"sent share {msg.Coin.SignatureShare.ToByteArray().ToHex()}");
                         break;
                     case ProtocolResult<CoinId, CoinResult> _:
                         Terminate();
