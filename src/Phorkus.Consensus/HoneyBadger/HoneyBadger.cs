@@ -149,11 +149,6 @@ namespace Phorkus.Consensus.HoneyBadger
             if (PubKey is null) throw new InvalidOperationException();
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = _honeyBadgerId.Era
-                },
                 Decrypted = PubKey.Encode(share)
             };
             return message;

@@ -9,11 +9,12 @@ COPY src/Phorkus.Networking/Phorkus.Networking.csproj ./Phorkus.Networking/
 COPY src/Phorkus.Proto/Phorkus.Proto.csproj ./Phorkus.Proto/
 COPY src/Phorkus.Storage/Phorkus.Storage.csproj ./Phorkus.Storage/
 COPY src/Phorkus.Utility/Phorkus.Utility.csproj ./Phorkus.Utility/
-COPY src/Phorkus.WebAssembly/Phorkus.WebAssembly.csproj ./Phorkus.WebAssembly/
+COPY wasm/WebAssembly/WebAssembly.csproj /wasm/WebAssembly/
 WORKDIR /phorkus/Phorkus.Console
 RUN dotnet restore
 WORKDIR /phorkus
-COPY src/ ./
+COPY src/ /phorkus/
+COPY wasm/ /wasm/
 WORKDIR /phorkus/Phorkus.Console
 RUN dotnet publish -c Release -o out
 

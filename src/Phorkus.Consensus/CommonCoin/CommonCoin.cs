@@ -25,8 +25,7 @@ namespace Phorkus.Consensus.CommonCoin
         ) : base(wallet, coinId, broadcaster)
         {
             if (wallet.ThresholdSignaturePrivateKeyShare is null) throw new ArgumentNullException();
-            _publicKeySet = wallet.ThresholdSignaturePublicKeySet ??
-                            throw new ArgumentNullException(nameof(wallet.ThresholdSignaturePublicKeySet));
+            _publicKeySet = wallet.ThresholdSignaturePublicKeySet;
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
                 _coinId.ToByteArray(), wallet.ThresholdSignaturePrivateKeyShare, _publicKeySet
@@ -39,7 +38,7 @@ namespace Phorkus.Consensus.CommonCoin
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
             Broadcaster.InternalResponse(new ProtocolResult<CoinId, CoinResult>(_coinId, _result));
-            _logger.LogDebug($"Player {GetMyId()}: made coin by {_coinId} and sent.");
+            // _logger.LogDebug($"Player {GetMyId()}: made coin by {_coinId} and sent.");
             _requested = ResultStatus.Sent;
         }
 
@@ -59,10 +58,9 @@ namespace Phorkus.Consensus.CommonCoin
                     message.Coin.Epoch != _coinId.Epoch)
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
 
-                _logger.LogDebug(
-                    $"Received share {message.Coin.SignatureShare.ToByteArray().ToHex()} from {message.Validator.ValidatorIndex}");
+                // _logger.LogDebug($"Received share from {envelope.ValidatorIndex}");
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
-                if (!_thresholdSigner.AddShare(_publicKeySet[(int) message.Validator.ValidatorIndex], signatureShare,
+                if (!_thresholdSigner.AddShare(_publicKeySet[envelope.ValidatorIndex], signatureShare,
                     out var signature))
                 {
                     _logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
@@ -70,7 +68,7 @@ namespace Phorkus.Consensus.CommonCoin
                 }
 
                 if (signature == null) return;
-                _logger.LogDebug($"Assembled signature {signature.ToBytes().ToHex()}");
+                // _logger.LogDebug($"Assembled signature {signature.ToBytes().ToHex()}");
                 _result = new CoinResult(signature.RawSignature.ToBytes());
                 CheckResult();
             }
@@ -82,13 +80,13 @@ namespace Phorkus.Consensus.CommonCoin
                 {
                     case ProtocolRequest<CoinId, object?> _:
                         var signatureShare = _thresholdSigner.Sign();
-                        _logger.LogDebug(
-                            $"signed payload {_coinId.ToByteArray().ToHex()} and got signature {signatureShare.ToBytes().ToHex()}");
+                        // _logger.LogDebug(
+                        //     $"signed payload {_coinId.ToByteArray().ToHex()} and got signature {signatureShare.ToBytes().ToHex()}");
                         _requested = ResultStatus.Requested;
                         CheckResult();
                         var msg = CreateCoinMessage(signatureShare);
                         Broadcaster.Broadcast(msg);
-                        _logger.LogDebug($"sent share {msg.Coin.SignatureShare.ToByteArray().ToHex()}");
+                        // _logger.LogDebug($"sent share {msg.Coin.SignatureShare.ToByteArray().ToHex()}");
                         break;
                     case ProtocolResult<CoinId, CoinResult> _:
                         Terminate();
@@ -105,11 +103,6 @@ namespace Phorkus.Consensus.CommonCoin
             var shareBytes = share.ToBytes().ToArray();
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = _coinId.Era
-                },
                 Coin = new CommonCoinMessage
                 {
                     Agreement = _coinId.Agreement,

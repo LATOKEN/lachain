@@ -52,7 +52,7 @@ namespace Phorkus.Consensus.RootProtocol
                 }
 
                 var signedHeaderMessage = message.SignedHeaderMessage;
-                var idx = (int) message.Validator.ValidatorIndex;
+                var idx = envelope.ValidatorIndex;
                 _logger.LogDebug(
                     $"Received signature of header {signedHeaderMessage.Header.Hash().ToHex()} " +
                     $"from validator {idx}: " +
@@ -150,10 +150,11 @@ namespace Phorkus.Consensus.RootProtocol
             {
                 _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);
             }
-            catch (InvalidOperationException e)
+            catch (Exception e)
             {
                 _logger.LogError($"Cannot sign header because of {e}");
                 Terminate();
+                Environment.Exit(1);
                 return;
             }
 
@@ -196,10 +197,11 @@ namespace Phorkus.Consensus.RootProtocol
             {
                 _blockProducer.ProduceBlock(_hashes, _header, _multiSig);
             }
-            catch (InvalidOperationException e)
+            catch (Exception e)
             {
-                _logger.LogError(e, "Cannot produce block");
+                _logger.LogError($"Cannot produce block because of {e}");
                 Terminate();
+                Environment.Exit(1);
                 return;
             }
 
@@ -226,11 +228,6 @@ namespace Phorkus.Consensus.RootProtocol
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    ValidatorIndex = GetMyId(),
-                    Era = Id.Era
-                },
                 SignedHeaderMessage = new SignedHeaderMessage
                 {
                     Header = header,

@@ -1,4 +1,5 @@
-﻿using AustinHarris.JsonRpc;
+﻿using System.Linq;
+using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
@@ -43,6 +44,19 @@ namespace Phorkus.Core.RPC.HTTP
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             return block?.ToJson();
         }
+        
+        [JsonRpcMethod("getTransactionsByBlockHash")]
+        private JObject? GetTransactionsByBlockHash(string blockHash)
+        {
+            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
+            var txs = block.TransactionHashes
+                .Select(hash => _transactionManager.GetByHash(hash)?.ToJson())
+                .ToList();
+            return new JObject
+            {
+                ["transactions"] = new JArray(txs),
+            };
+        }
 
         [JsonRpcMethod("getTransactionByHash")]
         private JObject? GetTransactionByHash(string txHash)
@@ -84,8 +98,7 @@ namespace Phorkus.Core.RPC.HTTP
             var jArray = new JArray();
             foreach (var txHash in txHashes)
             {
-                
-                jArray.Add(txHash);
+                jArray.Add(txHash.ToHex());
             }
             return jArray;
         }

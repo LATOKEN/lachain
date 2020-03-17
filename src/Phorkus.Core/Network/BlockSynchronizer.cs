@@ -178,6 +178,15 @@ namespace Phorkus.Core.Network
             return myHeight < maxHeight;
         }
 
+        public void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers)
+        {
+            var peersArray = peers.ToArray();
+            while (IsSynchronizingWith(peersArray))
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+            }
+        }
+
         private ulong _lastActiveTime = TimeUtils.CurrentTimeMillis();
 
         private void _Worker()
@@ -214,6 +223,7 @@ namespace Phorkus.Core.Network
         {
             Task.Factory.StartNew(() =>
             {
+                Thread.Sleep(15_000);
                 try
                 {
                     var thread = Thread.CurrentThread;

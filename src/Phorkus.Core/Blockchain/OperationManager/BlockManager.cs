@@ -127,7 +127,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             IEnumerable<TransactionReceipt> transactions,
             out List<TransactionReceipt> removeTransactions,
             out List<TransactionReceipt> relayTransactions,
-            bool writeFailed,
+            bool isEmulation,
             out ulong gasUsed,
             out Money totalFee
         )
@@ -193,17 +193,20 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 var result = _transactionManager.Execute(block, transaction, snapshot);
                 if (result != OperatingError.Ok)
                 {
-                    // TODO: here we have to take fees anyway
                     _stateManager.Rollback();
-                    if (writeFailed)
+                    if (result == OperatingError.InvalidNonce)
+                    {
+                        removeTransactions.Add(transaction);
+                        _logger.LogWarning(
+                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Transaction?.Nonce}): invalid nonce"
+                        );
+                    }
+                    else
                     {
                         snapshot = _stateManager.NewSnapshot();
                         snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
-                        _stateManager.Approve();
+                        _stateManager.Approve();                        
                     }
-
-                    _logger.LogWarning(
-                        $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
                 }
 
@@ -215,7 +218,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     relayTransactions.Add(transaction);
                     _stateManager.Rollback();
                     /* this should never happen cuz that mean that someone applied overflowed block */
-                    if (writeFailed)
+                    if (!isEmulation)
                         throw new InvalidBlockException(OperatingError.BlockGasOverflow);
                     _logger.LogWarning(
                         $"Unable to take transaction {txHash.Buffer.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
@@ -231,7 +234,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     _logger.LogWarning(
                         $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
-                }
+                } 
 
                 totalFee += fee;
 

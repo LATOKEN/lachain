@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Phorkus.Consensus.Messages;
 using Phorkus.Logger;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Consensus
 {

@@ -90,7 +90,6 @@ namespace Phorkus.Networking
 
                 foreach (var ip in ni.GetIPProperties().UnicastAddresses)
                 {
-                    Console.WriteLine(ip.Address);
                     if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
                         continue;
                     if (!ip.Address.Equals(ipAddress))
@@ -288,16 +287,30 @@ namespace Phorkus.Networking
 
         private void _HandleMessage(byte[] buffer)
         {
-            var message = NetworkMessage.Parser.ParseFrom(buffer);
+            NetworkMessage message = null;
+            try
+            {
+                message = NetworkMessage.Parser.ParseFrom(buffer);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Unable to parse protocol message: {e}");
+                _logger.LogError($"Original message bytes: {buffer.ToHex()}");
+            }
+
             if (message is null)
+            {
+                _logger.LogError($"Unable to parse protocol message from {buffer.ToHex()}");
                 return;
+            }
+
             try
             {
                 _HandleMessageUnsafe(message);
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                _logger.LogError($"Unexpected error occurred: {e}");
             }
         }
 
@@ -337,6 +350,7 @@ namespace Phorkus.Networking
             _serverWorker.OnError += _HandleError;
             _serverWorker.Start();
             OnClientHandshake += SendQueuedMessages;
+            OnClientHandshake += ProcessHandshake;
             Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
             foreach (var peer in networkConfig.Peers)
                 Connect(PeerAddress.Parse(peer));
@@ -386,6 +400,30 @@ namespace Phorkus.Networking
         // TODO: Implement some delivery persistence and policies
         private readonly ConcurrentDictionary<ECDSAPublicKey, List<NetworkMessage>> _messageQueue =
             new ConcurrentDictionary<ECDSAPublicKey, List<NetworkMessage>>();
+
+        private readonly ISet<ECDSAPublicKey> _handshakeSuccessful = new HashSet<ECDSAPublicKey>();
+        private readonly object _handshakeLock = new object();
+
+        private void ProcessHandshake(Node node)
+        {
+            lock (_handshakeLock)
+            {
+                _handshakeSuccessful.Add(node.PublicKey);
+                Monitor.PulseAll(_handshakeLock);
+            }
+        }
+
+        public void WaitForHandshake(IEnumerable<ECDSAPublicKey> peerKeys)
+        {
+            var keys = peerKeys.ToList();
+            lock (_handshakeLock)
+            {
+                while (!keys.All(key => _handshakeSuccessful.Contains(key)))
+                {
+                    Monitor.Wait(_handshakeLock);
+                }
+            }
+        }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
         {

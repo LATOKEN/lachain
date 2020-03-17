@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using Google.Protobuf;
 using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
@@ -21,14 +22,15 @@ namespace Phorkus.Core.Consensus
         private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
-        private const int BatchSize = 100; // TODO: calculate batch size
-        private readonly Random _random = new Random();
+        private const int BatchSize = 1000; // TODO: calculate batch size
 
         public BlockProducer(
             ITransactionPool transactionPool,
             IValidatorManager validatorManager,
             IBlockchainContext blockchainContext,
-            IBlockSynchronizer blockSynchronizer, IBlockManager blockManager) 
+            IBlockSynchronizer blockSynchronizer,
+            IBlockManager blockManager
+        )
         {
             _transactionPool = transactionPool;
             _validatorManager = validatorManager;
@@ -40,9 +42,10 @@ namespace Phorkus.Core.Consensus
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose()
         {
             var txNum = (BatchSize + _validatorManager.Validators.Count - 1) / _validatorManager.Validators.Count;
-            var allTxs = _transactionPool.Peek(txNum).ToArray();
-            _random.Shuffle(allTxs);
-            return allTxs.Take(txNum);
+            var taken = _transactionPool.Peek(BatchSize, txNum);
+            Console.WriteLine($"Took {taken.Count} transactions: " +
+                              string.Join(", ", taken.Select(tx => tx.Hash.ToHex()).OrderBy(x => x)));
+            return taken;
         }
 
         public BlockHeader CreateHeader(
@@ -60,6 +63,7 @@ namespace Phorkus.Core.Consensus
 
             var receipts = txHashes
                 .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
+                .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
             if (_blockchainContext.CurrentBlock is null) throw new InvalidOperationException("No previous block");
@@ -103,6 +107,7 @@ namespace Phorkus.Core.Consensus
         {
             var receipts = txHashes
                 .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
+                .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
             var blockWithTransactions =

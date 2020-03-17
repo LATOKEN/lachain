@@ -73,12 +73,14 @@ namespace Phorkus.ConsensusTest
 
         public void Broadcast(ConsensusMessage message)
         {
-            _deliveryService.BroadcastMessage(message);
+            message.Validator = new Validator {Era = 0};
+            _deliveryService.BroadcastMessage(GetMyId(), message);
         }
 
         public void SendToValidator(ConsensusMessage message, int index)
         {
-            _deliveryService.SendToPlayer(index, message);
+            message.Validator = new Validator {Era = 0};
+            _deliveryService.SendToPlayer(GetMyId(), index, message);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -138,9 +140,9 @@ namespace Phorkus.ConsensusTest
             Console.Error.WriteLine($"{_sender}: created protocol {id}.");
         }
 
-        public void Dispatch(ConsensusMessage message)
+        public void Dispatch(ConsensusMessage message, int from)
         {
-            if (_silenced.Contains((int) message.Validator.ValidatorIndex))
+            if (_silenced.Contains(from))
                 return;
             if (_silenced.Contains(GetMyId()))
                 return;
@@ -151,71 +153,69 @@ namespace Phorkus.ConsensusTest
                     var idBval = new BinaryBroadcastId(message.Validator.Era, message.Bval.Agreement,
                         message.Bval.Epoch);
                     CheckRequest(idBval);
-                    Registry[idBval]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idBval]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Aux:
                     var idAux = new BinaryBroadcastId(message.Validator.Era, message.Aux.Agreement, message.Aux.Epoch);
                     CheckRequest(idAux);
-                    Registry[idAux]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idAux]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Conf:
                     var idConf = new BinaryBroadcastId(message.Validator.Era, message.Conf.Agreement,
                         message.Conf.Epoch);
                     CheckRequest(idConf);
-                    Registry[idConf]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idConf]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
                     CheckRequest(idCoin);
-                    Registry[idCoin]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idCoin]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.TpkeKeys:
                     var idTpkeKeys = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idTpkeKeys);
-                    Registry[idTpkeKeys]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idTpkeKeys]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.PolynomialValue:
                     var idPolynomialValue = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idPolynomialValue);
-                    Registry[idPolynomialValue]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idPolynomialValue]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
                     var idHiddenPolynomial = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idHiddenPolynomial);
-                    Registry[idHiddenPolynomial]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idHiddenPolynomial]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
                     var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
                     CheckRequest(idConfirmationHash);
-                    Registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
                     CheckRequest(hbbftId);
-                    Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId((int) message.Validator.ValidatorIndex,
-                        (int) message.Validator.Era);
+                    var reliableBroadcastId = new ReliableBroadcastId(from, (int) message.Validator.Era);
                     CheckRequest(reliableBroadcastId);
-                    Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId((int) message.Validator.ValidatorIndex,
-                        (int) message.Validator.Era);
+                    var rbIdEchoMsg = new ReliableBroadcastId(from, (int) message.Validator.Era);
                     CheckRequest(rbIdEchoMsg);
-                    Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EncryptedShare:
                     var idEncryptedShare =
                         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
                     CheckRequest(idEncryptedShare);
-                    Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var idRoot = new RootProtocolId(message.Validator.Era);
                     CheckRequest(idRoot);
-                    Registry[idRoot]?.ReceiveMessage(new MessageEnvelope(message));
+                    Registry[idRoot]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");
@@ -236,21 +236,19 @@ namespace Phorkus.ConsensusTest
 
             Console.Error.WriteLine($"Party {GetMyId()} received internal request from {request.From}");
             CheckRequest(request.To);
-            Registry[request.To]?.ReceiveMessage(new MessageEnvelope(request));
+            Registry[request.To]?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
-//            Console.Error.WriteLine($"Player {GetMyId()}: result from {result.From}");
             if (_callback.TryGetValue(result.From, out var senderId))
             {
-                Registry[senderId]?.ReceiveMessage(new MessageEnvelope(result));
-                Console.Error.WriteLine($"Player {GetMyId()} sent response to batya {senderId}");
+                Registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
             }
 
             // message is also delivered to self
-            Registry[result.From]?.ReceiveMessage(new MessageEnvelope(result));
+            Registry[result.From]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
         }
 
         public int GetMyId()

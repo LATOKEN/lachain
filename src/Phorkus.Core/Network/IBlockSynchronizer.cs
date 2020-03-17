@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Phorkus.Networking;
 using Phorkus.Proto;
@@ -18,6 +19,8 @@ namespace Phorkus.Core.Network
         void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer);
 
         bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers);
+
+        void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers);
         
         void Start();
     }

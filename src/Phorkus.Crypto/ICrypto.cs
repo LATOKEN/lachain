@@ -9,17 +9,17 @@ namespace Phorkus.Crypto
         /// </summary>
         /// <param name="message">Message</param>
         /// <param name="signature">Signature</param>
-        /// <param name="pubkey">Public Key</param>
+        /// <param name="publicKey">Public Key</param>
         /// <returns>Bool</returns>
-        bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey);
+        bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey);
 
         /// <summary>
         /// Sign sha256 Message (secp256r1)
         /// </summary>
         /// <param name="message">Message</param>
-        /// <param name="prikey">Private Key</param>
+        /// <param name="privateKey">Private Key</param>
         /// <returns>Siganture bytearray</returns>
-        byte[] Sign(byte[] message, byte[] prikey);
+        byte[] Sign(byte[] message, byte[] privateKey);
         
         /// <summary>
         /// Recovers public key from signature
@@ -47,12 +47,12 @@ namespace Phorkus.Crypto
         /// <summary>
         /// Decode Public Key
         /// </summary>
-        /// <param name="pubkey">Data</param>
+        /// <param name="publicKey">Data</param>
         /// <param name="compress">Compress public key</param>
         /// <param name="x">X</param>
         /// <param name="y">Y</param>
         /// <returns>Public key bytearray</returns>
-        byte[] DecodePublicKey(byte[] pubkey, bool compress, out BigInteger x, out BigInteger y);
+        byte[] DecodePublicKey(byte[] publicKey, bool compress, out BigInteger x, out BigInteger y);
 
         /// <summary>
         /// Encrypt using ECB

@@ -107,15 +107,9 @@ namespace Phorkus.Core.Network
 
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
-            var index = _validatorManager.GetValidatorIndex(
+            var index = (int) _validatorManager.GetValidatorIndex(
                 envelope.PublicKey ?? throw new InvalidOperationException()
             );
-
-            if (message.Validator.ValidatorIndex != index)
-            {
-                throw new UnauthorizedAccessException(
-                    $"Message signed by validator {index}, but validator index is {message.Validator.ValidatorIndex}");
-            }
 
             if (envelope.Signature is null ||
                 !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
@@ -126,7 +120,7 @@ namespace Phorkus.Core.Network
                     $"Message signed by validator {index}, but signature is not correct");
             }
 
-            _consensusManager.Dispatch(message);
+            _consensusManager.Dispatch(message, index);
         }
     }
 }

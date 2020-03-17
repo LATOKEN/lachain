@@ -28,7 +28,7 @@ namespace Phorkus.Consensus.BinaryAgreement
 
 
         public BinaryBroadcast(BinaryBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster)
-        : base(wallet, broadcastId, broadcaster)
+            : base(wallet, broadcastId, broadcaster)
         {
             _broadcastId = broadcastId;
             _requested = ResultStatus.NotRequested;
@@ -55,16 +55,17 @@ namespace Phorkus.Consensus.BinaryAgreement
             {
                 var message = envelope.ExternalMessage;
                 if (message is null) throw new ArgumentNullException();
+                if (message.Validator.Era != Id.Era) throw new ArgumentException("era mismatched");
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:
-                        HandleBValMessage(message.Validator, message.Bval);
+                        HandleBValMessage(envelope.ValidatorIndex, message.Bval);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Aux:
-                        HandleAuxMessage(message.Validator, message.Aux);
+                        HandleAuxMessage(envelope.ValidatorIndex, message.Aux);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Conf:
-                        HandleConfMessage(message.Validator, message.Conf);
+                        HandleConfMessage(envelope.ValidatorIndex, message.Conf);
                         return;
                     default:
                         throw new ArgumentException(
@@ -106,25 +107,22 @@ namespace Phorkus.Consensus.BinaryAgreement
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void HandleBValMessage(Validator validator, BValMessage bval)
+        private void HandleBValMessage(int sender, BValMessage bval)
         {
             // todo investigate reason for this
             //  if (_auxSent) return;
-            if (
-                validator.Era != _broadcastId.Era || bval.Epoch != _broadcastId.Epoch ||
-                bval.Agreement != _broadcastId.Agreement
-            )
+            if (bval.Epoch != _broadcastId.Epoch || bval.Agreement != _broadcastId.Agreement)
                 throw new ArgumentException("era, agreement or epoch of message mismatched");
 
-            var sender = validator.ValidatorIndex;
             var b = bval.Value ? 1 : 0;
 
             if (_receivedValues[sender].Contains(b))
             {
                 // todo write fault evidence management = logging
-                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {bval} from {sender}");
+                _logger.LogDebug($"{_broadcastId}: double receive message {bval} from {sender}");
                 return; // potential fault evidence
             }
+
             _receivedValues[sender].Add(b);
             ++_receivedCount[b];
 
@@ -135,7 +133,7 @@ namespace Phorkus.Consensus.BinaryAgreement
 
             if (_receivedCount[b] < 2 * F + 1) return;
             if (_binValues.Contains(b == 1)) return;
-            
+
             _binValues = _binValues.Add(b == 1);
             // todo investigate
             if (_binValues.Count() == 1)
@@ -149,19 +147,15 @@ namespace Phorkus.Consensus.BinaryAgreement
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void HandleAuxMessage(Validator validator, AuxMessage aux)
+        private void HandleAuxMessage(int sender, AuxMessage aux)
         {
-            if (
-                validator.Era != _broadcastId.Era || aux.Epoch != _broadcastId.Epoch ||
-                aux.Agreement != _broadcastId.Agreement
-            )
+            if (aux.Epoch != _broadcastId.Epoch || aux.Agreement != _broadcastId.Agreement)
                 throw new ArgumentException("era, agreement or epoch of message mismatched");
 
-            var sender = validator.ValidatorIndex;
             var b = aux.Value ? 1 : 0;
             if (_playerSentAux[sender])
             {
-                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {aux} from {sender}");
+                _logger.LogDebug($"{_broadcastId}: double receive message {aux} from {sender}");
                 return; // potential fault evidence
             }
 
@@ -171,21 +165,17 @@ namespace Phorkus.Consensus.BinaryAgreement
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void HandleConfMessage(Validator validator, ConfMessage conf)
+        private void HandleConfMessage(int sender, ConfMessage conf)
         {
-            if (
-                validator.Era != _broadcastId.Era || conf.Epoch != _broadcastId.Epoch ||
-                conf.Agreement != _broadcastId.Agreement
-            )
+            if (conf.Epoch != _broadcastId.Epoch || conf.Agreement != _broadcastId.Agreement)
                 throw new ArgumentException("era, agreement or epoch of message mismatched");
 
-            var sender = validator.ValidatorIndex;
-
-            if (_validatorSentConf[sender]) 
+            if (_validatorSentConf[sender])
             {
-                _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: double receive message {conf} from {sender}");
+                _logger.LogDebug($"{_broadcastId}: double receive message {conf} from {sender}");
                 return; // potential fault evidence
             }
+
             _validatorSentConf[sender] = true;
 
             _confReceived.Add(new BoolSet(conf.Values));
@@ -219,9 +209,9 @@ namespace Phorkus.Consensus.BinaryAgreement
             if (_result != null) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             _result = ChoseMinimalSet();
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: my current bin_values = {_binValues}");
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
+            // _logger.LogDebug($"{_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
+            // _logger.LogDebug($"{_broadcastId}: my current bin_values = {_binValues}");
+            // _logger.LogDebug($"{_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
             CheckResult();
         }
 
@@ -230,7 +220,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (_confSent) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: conf message sent with set {_binValues}");
+            // _logger.LogDebug($"{_broadcastId}: conf message sent with set {_binValues}");
             Broadcaster.Broadcast(CreateConfMessage(_binValues));
             _confSent = true;
             RevisitConfMessages();
@@ -241,12 +231,6 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    // TODO: somehow fill validator field
-                    ValidatorIndex = GetMyId(),
-                    Era = _broadcastId.Era
-                },
                 Bval = new BValMessage
                 {
                     Agreement = _broadcastId.Agreement,
@@ -262,12 +246,6 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    // TODO: somehow fill validator field
-                    ValidatorIndex = GetMyId(),
-                    Era = _broadcastId.Era
-                },
                 Aux = new AuxMessage
                 {
                     Agreement = _broadcastId.Agreement,
@@ -283,12 +261,6 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             var message = new ConsensusMessage
             {
-                Validator = new Validator
-                {
-                    // TODO: somehow fill validator field
-                    ValidatorIndex = GetMyId(),
-                    Era = _broadcastId.Era
-                },
                 Conf = new ConfMessage
                 {
                     Agreement = _broadcastId.Agreement,
@@ -304,7 +276,7 @@ namespace Phorkus.Consensus.BinaryAgreement
         {
             if (!_result.HasValue) return;
             if (_requested != ResultStatus.Requested) return;
-            _logger.LogDebug($"Player {GetMyId()} at {_broadcastId}: made result {_result.Value.ToString()}");
+            // _logger.LogDebug($"{_broadcastId}: made result {_result.Value.ToString()}");
             Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));
             _requested = ResultStatus.Sent;

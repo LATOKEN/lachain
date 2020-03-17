@@ -60,7 +60,7 @@ namespace Phorkus.Crypto.ThresholdSignature
                 return true;
             }
 
-            _logger.LogDebug($"Collected signature share #{idx}: {sigShare.RawSignature.ToHex()}");
+            // _logger.LogDebug($"Collected signature share #{idx}: {sigShare.RawSignature.ToHex()}");
             _collectedShares[idx] = sigShare;
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;

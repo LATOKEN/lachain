@@ -1,5 +1,5 @@
+using System;
 using NUnit.Framework;
-using Org.BouncyCastle.Asn1.Sec;
 using Phorkus.Crypto;
 using Phorkus.Utility.Utils;
 
@@ -7,36 +7,49 @@ namespace Phorkus.CryptoTest
 {
     public class CryptographyTest
     {
+        const int N = 1024;
+
         [Test]
         public void Test_BouncyCastle_SignRoundTrip()
         {
             var crypto = new BouncyCastle();
             var privateKey = "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48".HexToBytes();
             var publicKey = crypto.ComputePublicKey(privateKey);
-            var address = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToBytes();
+            var address = "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".HexToBytes();
 
             CollectionAssert.AreEqual(address, crypto.ComputeAddress(publicKey));
 
-            for (var it = 0; it < 256; ++it)
+            var startTs = TimeUtils.CurrentTimeMillis();
+            for (var it = 0; it < N; ++it)
             {
-                var message = "0xdeadbeef" + it.ToString("X2");
+                var message = "0xdeadbeef" + it.ToString("X4");
                 var digest = message.HexToBytes();
                 var signature = crypto.Sign(digest, privateKey);
                 Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey));
                 var recoveredPubkey = crypto.RecoverSignature(digest, signature);
                 CollectionAssert.AreEqual(recoveredPubkey, publicKey);
             }
+
+            var endTs = TimeUtils.CurrentTimeMillis();
+            Console.WriteLine(endTs - startTs);
+            Console.WriteLine((endTs - startTs) / N);
         }
 
         [Test]
-        public void Test_BouncyCastle_Sign()
+        public void Test_External_Signature()
         {
+            var crypto = new BouncyCastle();
+            var message = "0xdeadbeef".HexToBytes();
+            var signature =
+                "0x008cb79fb05605ffb79266395eec371f3b0d9e69b55512017acbfe5577884220ef4922d2d0d4ce0a0f3ee864aa3853b42fb319edab60f6294d2696cd4ed5517cf8"
+                    .HexToBytes();
+            var pubKey = crypto.RecoverSignature(message, signature);
+            Assert.AreEqual(
+                crypto.ComputeAddress(pubKey).ToHex().ToLower(),
+                "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".ToLower()
+            );
         }
 
-        [Test]
-        public void Test_BouncyCastle_VerifySignature()
-        {
-        }
 
         [Test]
         public void Test_BouncyCastle_RecoverSignature()
@@ -44,65 +57,20 @@ namespace Phorkus.CryptoTest
             var crypto = new BouncyCastle();
 
             var privateKey = "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48".HexToBytes();
-            var publicKey =
-                "0x04affc3f22498bd1f70740b156faf8b6025269f55ee9e87f48b6fd95a33772fcd5529db79354bbace25f4f378d6a1320ae69994841ff6fb547f1b3a0c21cf73f68"
-                    .HexToBytes();
-            var address = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToBytes();
+            var publicKey = crypto.ComputePublicKey(privateKey);
 
-            var address2 = crypto.ComputeAddress(publicKey);
-            System.Console.WriteLine("Address: " + address2.ToHex());
+            var startTs = TimeUtils.CurrentTimeMillis();
+            for (var it = 0; it < N; ++it)
+            {
+                var message = ("0xbadcab1e" + it.ToString("X4")).HexToBytes();
+                var signature = crypto.Sign(message, privateKey);
+                var recoveredPubkey = crypto.RecoverSignature(message, signature);
+                CollectionAssert.AreEqual(recoveredPubkey.ToHex(), publicKey.ToHex());
+            }
 
-            var message = "0xbadcab1e".HexToBytes().Sha256();
-            var curve = SecNamedCurves.GetByName("secp256r1");
-            var point = curve.Curve.DecodePoint(publicKey);
-            System.Console.WriteLine("Compressed pubkey: " + point.GetEncoded(true).ToHex());
-
-            var message2 = "0xbadcab1e".HexToBytes();
-            var sig = crypto.Sign(message2, privateKey);
-
-            System.Console.WriteLine("Signature: " + sig.ToHex());
-
-            var isValid = crypto.VerifySignature(message, sig, publicKey);
-            System.Console.WriteLine("Is signature valid: " + isValid);
-
-            var publicKey2 = crypto.RecoverSignature(message, sig);
-            System.Console.WriteLine("Restored public key: " + publicKey2.ToHex());
-            System.Console.WriteLine("Restored address: " + crypto.ComputeAddress(publicKey2).ToHex());
-        }
-
-        [Test]
-        public void Test_BouncyCastle_ComputeAddress()
-        {
-        }
-
-        [Test]
-        public void Test_BouncyCastle_ComputePublicKey()
-        {
-        }
-
-        [Test]
-        public void Test_BouncyCastle_DecodePublicKey()
-        {
-        }
-
-        [Test]
-        public void Test_BouncyCastle_AesEncrypt()
-        {
-        }
-
-        [Test]
-        public void Test_BouncyCastle_AesDecrypt()
-        {
-        }
-
-        [Test]
-        public void Test_BouncyCastle_SCrypt()
-        {
-        }
-
-        [Test]
-        public void Test_BouncyCastle_GenerateRandomBytes()
-        {
+            var endTs = TimeUtils.CurrentTimeMillis();
+            Console.WriteLine(endTs - startTs);
+            Console.WriteLine((endTs - startTs) / N);
         }
     }
 }

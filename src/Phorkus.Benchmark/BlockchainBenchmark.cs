@@ -156,7 +156,7 @@ namespace Phorkus.Benchmark
 
             _Benchmark("Generating blocks... ", i =>
                 {
-                    var txs = transactionPool.Peek(txPerBlock);
+                    var txs = transactionPool.Peek(txPerBlock, txPerBlock);
                     var latestBlock = blockchainContext.CurrentBlock;
                     if (i > 0)
                         latestBlock = blocks[i - 1].Block;

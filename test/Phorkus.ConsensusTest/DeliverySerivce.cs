@@ -10,7 +10,7 @@ namespace Phorkus.ConsensusTest
     {
         public readonly ISet<int> _mutedPlayers = new HashSet<int>();
         private readonly IDictionary<int, IConsensusBroadcaster> _broadcasters = new Dictionary<int, IConsensusBroadcaster>();
-        private readonly RandomSamplingQueue<Tuple<int, ConsensusMessage>> _queue = new RandomSamplingQueue<Tuple<int, ConsensusMessage>>();
+        private readonly RandomSamplingQueue<Tuple<int, int, ConsensusMessage>> _queue = new RandomSamplingQueue<Tuple<int, int, ConsensusMessage>>();
         private readonly object _queueLock = new object();
         public double RepeatProbability
         {
@@ -65,7 +65,7 @@ namespace Phorkus.ConsensusTest
 
                     if (!_queue.IsEmpty)
                     {
-                        Tuple<int, ConsensusMessage> tuple;
+                        Tuple<int, int, ConsensusMessage> tuple;
                         var success = Mode switch
                         {
                             DeliveryServiceMode.TAKE_FIRST => _queue.TryDequeue(out tuple),
@@ -80,15 +80,16 @@ namespace Phorkus.ConsensusTest
                         }
 
                         Console.Error.WriteLine($"remaining in queue: {_queue.Count}");
-                        
-                        var index = tuple.Item1;
-                        var message = tuple.Item2;
+
+                        var from = tuple.Item1;
+                        var index = tuple.Item2;
+                        var message = tuple.Item3;
                         
                         if (_mutedPlayers.Contains(index)) continue;
                         
                         try
                         {
-                            _broadcasters[index].Dispatch(message);
+                            _broadcasters[index].Dispatch(message, from);
                         }
                         catch (Exception e)
                         {
@@ -105,27 +106,27 @@ namespace Phorkus.ConsensusTest
             }
         }
 
-        private void ReceiveMessage(int index, ConsensusMessage message)
+        private void ReceiveMessage(int from, int to, ConsensusMessage message)
         {
             if (Terminated) return;
             lock (_queueLock)
             {
-                _queue.Enqueue(new Tuple<int, ConsensusMessage>(index, message));
+                _queue.Enqueue(new Tuple<int, int, ConsensusMessage>(from, to, message));
                 Monitor.Pulse(_queueLock);
             }
         }
 
-        public void BroadcastMessage(ConsensusMessage consensusMessage)
+        public void BroadcastMessage(int from, ConsensusMessage consensusMessage)
         {
             for (var i = 0; i < _broadcasters.Count; ++i)
             {
-                ReceiveMessage(i, consensusMessage);
+                ReceiveMessage(from, i, consensusMessage);
             }
         }
 
-        public void SendToPlayer(int index, ConsensusMessage consensusMessage)
+        public void SendToPlayer(int from, int index, ConsensusMessage consensusMessage)
         {
-            ReceiveMessage(index, consensusMessage);
+            ReceiveMessage(from, index, consensusMessage);
         }
     }
 }
