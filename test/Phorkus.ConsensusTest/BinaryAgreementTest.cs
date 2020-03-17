@@ -20,10 +20,11 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors;
         private int F = 1;
         private int N = 3 * 1 + 1;
-        private IPrivateConsensusKeySet[] _wallets;
+        private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
+        private IPublicConsensusKeySet _publicKeys;
 
-//        [SetUp]
+        //        [SetUp]
         public void SetUp()
         {
             _rnd = new Random();
@@ -32,19 +33,20 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryAgreementId, bool>[N];
-            _wallets = new IPrivateConsensusKeySet[N];
+            _privateKeys = new IPrivateConsensusKeySet[N];
             var keygen = new TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
+
+            _publicKeys = new PublicConsensusKeySet(
+                N, F, null, null,
+                pubKeys, Enumerable.Empty<ECDSAPublicKey>()
+            );
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
-                _wallets[i] = new PublicConsensusKeySet(N, F,
-                    null, null, null,
-                    pubKeys, shares[i],
-                    null, null, new ECDSAPublicKey[] { }
-                );
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, true);
+                _privateKeys[i] = new PrivateConsensusKeySet(null, null, shares[i]);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
             }
         }
 
@@ -53,7 +55,7 @@ namespace Phorkus.ConsensusTest
             SetUp();
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new BinaryAgreement(new BinaryAgreementId(0, 0), _wallets[i], _broadcasters[i]);
+                _broadcasts[i] = new BinaryAgreement(new BinaryAgreementId(0, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
@@ -74,11 +76,7 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[i].WaitResult();
             }
 
-            Console.Error.WriteLine(
-                "-------------------------------------------------------------------------- ZHOPA ####################################################33");
             _deliveryService.WaitFinish();
-            Console.Error.WriteLine(
-                "-------------------------------------------------------------------------- ZHOPA ####################################################33");
 
             for (var i = 0; i < N; ++i)
             {
@@ -87,9 +85,6 @@ namespace Phorkus.ConsensusTest
                 _broadcasts[i].WaitFinish();
                 Console.Error.WriteLine($"boy {i} finished");
             }
-
-            Console.Error.WriteLine(
-                "-------------------------------------------------------------------------- ZHOPA ####################################################33");
 
             for (var i = 0; i < N; ++i)
             {
@@ -146,9 +141,6 @@ namespace Phorkus.ConsensusTest
             {
                 _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
             }
-
-            Console.Error.WriteLine(
-                "------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
 
             var used = new BoolSet();
             for (var i = 0; i < N; ++i)

@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {
@@ -20,6 +22,7 @@ namespace Phorkus.ConsensusTest
         private const int T = 5;
         private Random _rnd;
         private IPrivateConsensusKeySet[] _wallets;
+        private IPublicConsensusKeySet _publicKeys;
 
         [SetUp]
         public void SetUp()
@@ -30,11 +33,15 @@ namespace Phorkus.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<TPKESetupId, Keys>[N];
             _wallets = new IPrivateConsensusKeySet[N];
+            _publicKeys = new PublicConsensusKeySet(
+                N, T, null, null,
+                null, Enumerable.Empty<ECDSAPublicKey>()
+            );
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, Keys>();
                 _wallets[i] = TestUtils.EmptyWallet(N, T);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
             }
 
             Mcl.Init();
@@ -44,7 +51,7 @@ namespace Phorkus.ConsensusTest
         {
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new TPKEDealerSetup(new TPKESetupId(0), _wallets[i], _broadcasters[i]);
+                _broadcasts[i] = new TPKEDealerSetup(new TPKESetupId(0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }

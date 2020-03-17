@@ -17,6 +17,7 @@ namespace Phorkus.ConsensusTest
         private DeliveryService _deliveryService;
         private ProtocolInvoker<CoinId, CoinResult>[] _resultInterceptors;
         private IPrivateConsensusKeySet[] _wallets;
+        private IPublicConsensusKeySet _publicKeys;
 
         public void SetUp()
         {
@@ -29,18 +30,17 @@ namespace Phorkus.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CoinId, CoinResult>[N];
             _wallets = new IPrivateConsensusKeySet[N];
+            _publicKeys = new PublicConsensusKeySet(
+                N, F, null, null,
+                pubKeys, Enumerable.Empty<ECDSAPublicKey>()
+            );
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();
-                _wallets[i] = new PublicConsensusKeySet(
-                    N, F,
-                    null, null, null,
-                    pubKeys, shares[i],
-                    null, null, new ECDSAPublicKey[] { }
-                );
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
+                _wallets[i] = new PrivateConsensusKeySet(null, null, shares[i]);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _coins[i] = new CommonCoin(
-                    new CoinId(0, 0, 0), _wallets[i], _broadcasters[i]
+                    new CoinId(0, 0, 0), _publicKeys, shares[i], _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_coins[i], _resultInterceptors[i]});
             }

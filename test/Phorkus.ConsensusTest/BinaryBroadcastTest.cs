@@ -6,6 +6,7 @@ using Phorkus.Consensus;
 using Phorkus.Consensus.BinaryAgreement;
 using Phorkus.Consensus.Messages;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Proto;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.ConsensusTest
@@ -19,7 +20,8 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
         private const int N = 7;
         private const int F = 2;
-        private IPrivateConsensusKeySet[] _wallets;
+        private IPrivateConsensusKeySet[] _privateKeys;
+        private IPublicConsensusKeySet _publicKeys;
 
         [SetUp]
         public void SetUp()
@@ -29,12 +31,16 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
-            _wallets = new IPrivateConsensusKeySet[N];
+            _privateKeys = new IPrivateConsensusKeySet[N];
+            _publicKeys = new PublicConsensusKeySet(
+                N, F, null, null,
+                null, Enumerable.Empty<ECDSAPublicKey>()
+            );
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
-                _wallets[i] = TestUtils.EmptyWallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
+                _privateKeys[i] = TestUtils.EmptyWallet(N, F);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
             }
         }
 
@@ -42,7 +48,7 @@ namespace Phorkus.ConsensusTest
         {
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _wallets[i], _broadcasters[i]);
+                _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
@@ -63,7 +69,7 @@ namespace Phorkus.ConsensusTest
             {
                 if (_broadcasts[i] == null)
                 {
-                    _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _wallets[i], _broadcasters[i]);
+                    _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
                 }
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }

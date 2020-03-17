@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {
     [TestFixture]
-    public class TPKESecureSetupTest  
+    public class TPKESecureSetupTest
     {
         private DeliveryService _deliveryService;
         private IConsensusProtocol[] _broadcasts;
@@ -19,7 +21,8 @@ namespace Phorkus.ConsensusTest
         private const int N = 10;
         private const int T = 5;
         private Random _rnd;
-        private IPrivateConsensusKeySet[] _wallets;
+        private IPrivateConsensusKeySet[] _privateKeys;
+        private IPublicConsensusKeySet _publicKeys;
 
         [SetUp]
         public void SetUp()
@@ -29,14 +32,18 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<TPKESetupId, Keys>[N];
-            _wallets = new IPrivateConsensusKeySet[N];
+            _privateKeys = new IPrivateConsensusKeySet[N];
+            _publicKeys = new PublicConsensusKeySet(
+                N, T, null, null,
+                null, Enumerable.Empty<ECDSAPublicKey>()
+            );
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<TPKESetupId, Keys>();
-                _wallets[i] = TestUtils.EmptyWallet(N, T);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, false);
+                _privateKeys[i] = TestUtils.EmptyWallet(N, T);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
             }
-            
+
             Mcl.Init();
         }
 
@@ -44,7 +51,7 @@ namespace Phorkus.ConsensusTest
         {
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new TPKESecureSetup(new TPKESetupId(0), _wallets[i], _broadcasters[i]);
+                _broadcasts[i] = new TPKESecureSetup(new TPKESetupId(0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
@@ -85,9 +92,8 @@ namespace Phorkus.ConsensusTest
         [Repeat(10)]
         public void TestLagrangeInterpolation()
         {
-            
             RunAllHonest();
-            
+
             // test that pub key can be recovered correctly using interpolation
 
             var ys = new List<G1>();
@@ -95,8 +101,8 @@ namespace Phorkus.ConsensusTest
 
             foreach (var i in ChooseRandomPlayers(T))
             {
-               xs.Add(Fr.FromInt(i + 1));
-               ys.Add(_resultInterceptors[i].Result.PrivKey.Y);
+                xs.Add(Fr.FromInt(i + 1));
+                ys.Add(_resultInterceptors[i].Result.PrivKey.Y);
             }
 
             var A = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
@@ -111,13 +117,13 @@ namespace Phorkus.ConsensusTest
         {
             var data = new byte[32];
             _rnd.NextBytes(data);
-            
+
             RunAllHonest();
             var pubKey = _resultInterceptors[0].Result.PubKey;
-            
+
             var share = new RawShare(data, 555);
             var enc = pubKey.Encrypt(share);
-           
+
             var parts = new List<PartiallyDecryptedShare>();
             foreach (var i in ChooseRandomPlayers(T))
             {
@@ -125,7 +131,7 @@ namespace Phorkus.ConsensusTest
             }
 
             var dec = pubKey.FullDecrypt(enc, parts);
-            
+
             Assert.True(share.Equals(dec));
         }
 
@@ -135,10 +141,10 @@ namespace Phorkus.ConsensusTest
         {
             var data = new byte[32];
             _rnd.NextBytes(data);
-            
+
             RunAllHonest();
             var pubKey = _resultInterceptors[0].Result.PubKey;
-            
+
             var share = new RawShare(data, 555);
             var enc = pubKey.Encrypt(share);
 
