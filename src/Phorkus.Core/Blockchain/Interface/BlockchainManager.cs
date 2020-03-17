@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Google.Protobuf;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
+using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
-using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.Interface
@@ -31,7 +33,7 @@ namespace Phorkus.Core.Blockchain.Interface
             _configManager = configManager;
             _stateManager = stateManager;
         }
-        
+
         public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
@@ -39,11 +41,22 @@ namespace Phorkus.Core.Blockchain.Interface
                 return false;
             var snapshot = _stateManager.NewSnapshot();
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
-            if (genesisConfig?.Balances is null) throw new InvalidOperationException();
-            foreach (var entry in genesisConfig.Balances)
-                snapshot.Balances.SetBalance(entry.Key.HexToBytes().ToUInt160(), Money.Parse(entry.Value));
+            var initialConsensusState = new ConsensusState
+            {
+                TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes()),
+                TpkeVerificationKey =
+                    ByteString.CopyFrom(genesisConfig.ThresholdEncryptionVerificationKey.HexToBytes()),
+            };
+            initialConsensusState.Validators.Add(genesisConfig.Validators.Select(v => new ValidatorCredentials
+            {
+                PublicKey = v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
+                ResolvableAddress = v.ResolvableName,
+                ThresholdSignaturePublicKey = ByteString.CopyFrom(v.ThresholdSignaturePublicKey.HexToBytes()),
+            }));
+            snapshot.Validators.SetConsensusState(initialConsensusState);
             _stateManager.Approve();
-            var error = _blockManager.Execute(genesisBlock.Block, genesisBlock.Transactions, commit: false, checkStateHash: false);
+            var error = _blockManager.Execute(genesisBlock.Block, genesisBlock.Transactions, commit: false,
+                checkStateHash: false);
             if (error != OperatingError.Ok)
                 throw new InvalidBlockException(error);
             _stateManager.Commit();
@@ -52,7 +65,8 @@ namespace Phorkus.Core.Blockchain.Interface
 
         public UInt256 CalcStateHash(Block block, IEnumerable<TransactionReceipt> transactionReceipts)
         {
-            var(operatingError, removeTransactions, stateHash, relayTransactions) = _blockManager.Emulate(block, transactionReceipts);
+            var (operatingError, removeTransactions, stateHash, relayTransactions) =
+                _blockManager.Emulate(block, transactionReceipts);
             if (operatingError != OperatingError.Ok)
                 throw new InvalidBlockException(operatingError);
             if (removeTransactions.Count > 0)

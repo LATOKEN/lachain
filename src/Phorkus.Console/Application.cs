@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading;
-using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.CLI;
@@ -11,7 +10,6 @@ using Phorkus.Core.DI.Modules;
 using Phorkus.Core.DI.SimpleInjector;
 using Phorkus.Core.Network;
 using Phorkus.Core.RPC;
-using Phorkus.Core.Utils;
 using Phorkus.Crypto;
 using Phorkus.Networking;
 using Phorkus.Storage;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Phorkus.Proto;
 
 namespace Phorkus.Storage.State
@@ -26,6 +27,12 @@ namespace Phorkus.Storage.State
         {
             var raw = _state.Get(EntryPrefix.ConsensusState.BuildPrefix());
             return raw != null ? ConsensusState.Parser.ParseFrom(raw) : null;
+        }
+
+        public void SetConsensusState(ConsensusState consensusState)
+        {
+            var raw = consensusState.ToByteArray();
+            _state.AddOrUpdate(EntryPrefix.ConsensusState.BuildPrefix(), raw);
         }
 
         public IEnumerable<ECDSAPublicKey> GetValidatorsPublicKeys()

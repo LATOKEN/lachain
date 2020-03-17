@@ -23,7 +23,6 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IConsoleManager, ConsoleManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
-            containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IMultisigVerifier, MultisigVerifier>();
             /* consensus */
             containerBuilder.RegisterSingleton<IBlockProducer, BlockProducer>();

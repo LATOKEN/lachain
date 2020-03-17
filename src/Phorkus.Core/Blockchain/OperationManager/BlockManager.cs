@@ -277,10 +277,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
         {
             /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
-            /* genesis block doesn't have LA asset and validators are fee free */
-            // if (_validatorManager.CheckValidator(transaction.Transaction.From)) // TODO: wtf?
-            //     return OperatingError.Ok;
             /* transfer fee from wallet to validator */
+            if (fee == Money.Zero) return OperatingError.Ok;
 
             // block - 1 because current block is only mined now and uses old validators
             var n = _validatorManager.GetValidators(block - 1).N;

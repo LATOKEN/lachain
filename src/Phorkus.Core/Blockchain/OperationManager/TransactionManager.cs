@@ -60,7 +60,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(receipt);
+            var verifyError = Verify(receipt, block.Header.Index == 0);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
@@ -108,12 +108,21 @@ namespace Phorkus.Core.Blockchain.OperationManager
             OnTransactionSigned?.Invoke(this, signed);
             return signed;
         }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public OperatingError Verify(TransactionReceipt transaction)
+        {
+            return Verify(transaction, false);
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Verify(TransactionReceipt acceptedTransaction)
+        private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesis)
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.Transaction.ToHash256()))
                 return OperatingError.HashMismatched;
+            if (isGenesis)
+                return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
+
             var result = VerifySignature(acceptedTransaction);
             if (result != OperatingError.Ok)
                 return result;

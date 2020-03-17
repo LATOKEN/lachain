@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using Phorkus.Core.Blockchain.Interface;
@@ -7,6 +8,7 @@ using Phorkus.Core.Config;
 using Phorkus.Proto;
 using Phorkus.Core.Utils;
 using Phorkus.Crypto;
+using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
 namespace Phorkus.Core.Blockchain.Genesis
@@ -16,14 +18,9 @@ namespace Phorkus.Core.Blockchain.Genesis
         public const ulong GenesisConsensusData = 2083236893UL;
 
         private readonly IConfigManager _configManager;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-        private readonly ITransactionManager _transactionManager;
 
-        public GenesisBuilder(
-            IConfigManager configManager,
-            ITransactionManager transactionManager)
+        public GenesisBuilder(IConfigManager configManager)
         {
-            _transactionManager = transactionManager;
             _configManager = configManager;
         }
 
@@ -35,29 +32,29 @@ namespace Phorkus.Core.Blockchain.Genesis
                 return _genesisBlock;
 
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
-            if (genesisConfig?.PrivateKey is null)
-            {
-                throw new ArgumentNullException(nameof(genesisConfig.PrivateKey),
-                    "You must specify private key in genesis config section"
-                );
-            }
 
-            var keyPair = new ECDSAKeyPair(genesisConfig.PrivateKey.HexToBytes().ToPrivateKey(), _crypto);
-            var address = _crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var fromAddress = UInt160Utils.Zero; // mint initial tokens from zero address
+            var balances = genesisConfig.Balances
+                .OrderBy(x => x.Key)
+                .ToArray();
+            var genesisTransactions = balances.Select((t, i) => new Transaction
+                {
+                    From = fromAddress,
+                    Nonce = (ulong) i,
+                    Type = TransactionType.Transfer,
+                    Value = Money.Parse(t.Value).ToUInt256(),
+                    To = t.Key.HexToUInt160(),
+                    GasPrice = 0,
+                })
+                .Select(tx => new TransactionReceipt
+                {
+                    Transaction = tx,
+                    Hash = tx.ToHash256(),
+                    Signature = SignatureUtils.Zero,
+                })
+                .ToList();
 
-            var txsBefore = new Transaction[] { };
-            var genesisTransactions = txsBefore.ToArray();
-
-            var nonce = 0ul;
-            foreach (var tx in genesisTransactions)
-            {
-                tx.From = address;
-                tx.Nonce = nonce++;
-            }
-
-            var signed = genesisTransactions.Select(tx => _transactionManager.Sign(tx, keyPair));
-            var acceptedTransactions = signed as TransactionReceipt[] ?? signed.ToArray();
-            var txHashes = acceptedTransactions.Select(tx => tx.Hash).ToArray();
+            var txHashes = genesisTransactions.Select(tx => tx.Hash).ToArray();
 
             var header = new BlockHeader
             {
@@ -75,7 +72,7 @@ namespace Phorkus.Core.Blockchain.Genesis
                 Header = header
             };
 
-            _genesisBlock = new BlockWithTransactions(result, acceptedTransactions.ToArray());
+            _genesisBlock = new BlockWithTransactions(result, genesisTransactions.ToArray());
             return _genesisBlock;
         }
     }
