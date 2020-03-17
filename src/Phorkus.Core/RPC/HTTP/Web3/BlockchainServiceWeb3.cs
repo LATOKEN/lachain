@@ -32,6 +32,11 @@ namespace Phorkus.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
+        private JObject? GetBlockByNumber(uint blockHeight)
+        {
+            var block = _blockManager.GetByHeight(blockHeight);
+            return block?.ToJson();
+        }
         private JObject? GetBlockByNumber(uint blockHeight, bool fullTx)
         {
             var block = _blockManager.GetByHeight(blockHeight);
@@ -66,13 +71,13 @@ namespace Phorkus.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("net_version")]
-        private ulong NetVersion()
+        private string NetVersion()
         {
-            return 1717;
+            return "1717";
         }
 
         [JsonRpcMethod("eth_blockNumber")]
-        private string GetBlockStat()
+        private string GetBlockNumber()
         {
             return $"0x{_blockchainContext.CurrentBlockHeight:X}";
         }

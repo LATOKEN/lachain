@@ -89,15 +89,17 @@ namespace Phorkus.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionCount")]
-        private JObject GetTransactionCount(string from, string blockId)
+        private ulong GetTransactionCount(string from, string blockId)
         {
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
                 from.HexToBytes().ToUInt160());
-            var json = new JObject
-            {
-                ["result"] = nonce
-            };
-            return json;
+            return nonce;
+        }
+        private ulong GetTransactionCount(string from)
+        {
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
+                from.HexToBytes().ToUInt160());
+            return nonce;
         }
         
         [JsonRpcMethod("eth_invokeContract")]
