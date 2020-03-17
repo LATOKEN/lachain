@@ -1,17 +1,19 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Signer;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
 using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
-using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;
 using Phorkus.Proto;
 using Phorkus.Storage.State;
-using Phorkus.Utility;
 using Phorkus.Utility.Utils;
+using Transaction = Phorkus.Proto.Transaction;
 
 namespace Phorkus.Core.RPC.HTTP.Web3
 {
@@ -35,7 +37,7 @@ namespace Phorkus.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBalance")]
-        private string GetBalance(string address)
+        private string GetBalance(string address, string tag)
         {
             var addressUint160 = address.HexToBytes().ToUInt160();
             var availableBalance =
@@ -71,21 +73,45 @@ namespace Phorkus.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_sendRawTransaction")]
-        private JObject SendRawTransaction(string rawTransation, string signature)
+        private string SendRawTransaction(string rawTx)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransation.HexToBytes());
-            var json = new JObject
+            var ethTx = new TransactionChainId(rawTx.HexToByteArray());
+            try
             {
-                ["hash"] = transaction.ToHash256().Buffer.ToHex()
-            };
-            var result = _transactionPool.Add(
-                transaction, signature.HexToBytes().ToSignature());
-            if (result != OperatingError.Ok)
-                json["failed"] = true;
-            else
-                json["failed"] = false;
-            json["result"] = result.ToString();
-            return json;
+                var transaction = new Transaction
+                {
+                    Type = TransactionType.Transfer,
+                    To = new UInt160
+                    {
+                        Buffer = ByteString.CopyFrom(ethTx.ReceiveAddress)
+                    },
+                    Value = new UInt256
+                    {
+                        Buffer = ByteString.CopyFrom(ethTx.Value)
+                    },
+                    From = new UInt160
+                    {
+                        Buffer = ByteString.CopyFrom(ethTx.Key.GetPublicAddress().HexToBytes())
+                    },
+                    Nonce = ulong.Parse(ethTx.Nonce.ToHex(), NumberStyles.HexNumber),
+                    GasPrice = ulong.Parse(ethTx.GasPrice.ToHex(), NumberStyles.HexNumber),
+                    GasLimit = ulong.Parse(ethTx.GasLimit.ToHex(), NumberStyles.HexNumber),
+                };
+
+                Console.WriteLine(transaction);
+                
+                
+                var result = _transactionPool.Add(
+                    transaction, rawTx.HexToBytes().ToSignature());
+                if (result != OperatingError.Ok)
+                    return "Can not add to transaction pool";
+                return transaction.ToHash256().Buffer.ToHex();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return e.Message;
+            }
         }
 
         [JsonRpcMethod("eth_getTransactionCount")]

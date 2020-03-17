@@ -15,7 +15,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.SystemContracts
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
         }
-
+        
         public ContractStandard ContractStandard => ContractStandard.Lrc20;
 
         [ContractProperty(Lrc20Interface.PropertyName)]
@@ -45,6 +45,7 @@ namespace Phorkus.Core.Blockchain.OperationManager.SystemContracts
         [ContractMethod(Lrc20Interface.MethodBalanceOf)]
         public UInt256? BalanceOf(UInt160 address)
         {
+            /* TODO: add gas metering */
             var balance = _contractContext.Snapshot?.Balances.GetBalance(address);
             return balance?.ToUInt256();
         }

@@ -32,11 +32,6 @@ namespace Phorkus.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
-        private JObject? GetBlockByNumber(uint blockHeight)
-        {
-            var block = _blockManager.GetByHeight(blockHeight);
-            return block?.ToJson();
-        }
         private JObject? GetBlockByNumber(uint blockHeight, bool fullTx)
         {
             var block = _blockManager.GetByHeight(blockHeight);
