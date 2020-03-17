@@ -41,6 +41,7 @@ namespace Phorkus.Core.Blockchain.Interface
                 return false;
             var snapshot = _stateManager.NewSnapshot();
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
+            genesisConfig.ValidateOrThrow();
             var initialConsensusState = new ConsensusState
             {
                 TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes()),
