@@ -59,17 +59,21 @@ namespace Phorkus.Core.RPC.HTTP
         {
             var request = context.Request;
             var response = context.Response;
-            using var reader = new StreamReader(request.InputStream);
-            var body = reader.ReadToEnd();
+            /* check is request options pre-flight */
             if (request.HttpMethod == "OPTIONS")
             {
-                response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
+                if (request.Headers["Origin"] != null)
+                    response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
+                response.AddHeader("Access-Control-Allow-Headers", "*");
                 response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
                 response.AddHeader("Access-Control-Max-Age", "1728000");
+                response.Close();
                 return true;
             }
-
-            response.Headers.Add("Access-Control-Allow-Origin", "*");
+            using var reader = new StreamReader(request.InputStream);
+            var body = reader.ReadToEnd();
+            if (request.Headers["Origin"] != null)
+                response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
             var rpcResultHandler = new AsyncCallback(result =>
             {

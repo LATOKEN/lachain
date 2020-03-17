@@ -35,7 +35,7 @@ namespace Phorkus.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBalance")]
-        private string GetBalance(string address)
+        private string GetBalance(string address, string tag)
         {
             var addressUint160 = address.HexToBytes().ToUInt160();
             var availableBalance =

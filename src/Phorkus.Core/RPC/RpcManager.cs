@@ -48,8 +48,6 @@ namespace Phorkus.Core.RPC
                 new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
                 new AccountServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
-                new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
-                new NodeService()
             };
             
             var rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
