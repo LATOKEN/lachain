@@ -79,7 +79,7 @@ namespace Phorkus.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            foreach (var publicKey in _validatorManager.GetValidatorsPublicKeys(_era))
+            foreach (var publicKey in _validatorManager.GetValidatorsPublicKeys(_era - 1))
             {
                 if (publicKey.Equals(_wallet.EcdsaKeyPair.PublicKey))
                 {
@@ -243,7 +243,7 @@ namespace Phorkus.Core.Consensus
 
         public int GetMyId()
         {
-            return _validatorManager.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey, _era);
+            return _validatorManager.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey, _era - 1);
         }
 
         public IConsensusProtocol? GetProtocolById(IProtocolIdentifier id)
@@ -276,7 +276,7 @@ namespace Phorkus.Core.Consensus
                 return null;
             }
 
-            var publicKeySet = _validatorManager.GetValidators(_era);
+            var publicKeySet = _validatorManager.GetValidators(_era - 1);
             switch (id)
             {
                 case BinaryBroadcastId bbId:

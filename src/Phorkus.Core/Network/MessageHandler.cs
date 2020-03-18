@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.Consensus;
@@ -26,12 +29,19 @@ namespace Phorkus.Core.Network
         private readonly IValidatorManager _validatorManager;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
+        /*
+         * TODO: message queue is a hack. We should design additional layer for storing/persisting consensus messages
+         */
+        private readonly IDictionary<long, List<Tuple<MessageEnvelope, ConsensusMessage>>> _queuedMessages =
+            new ConcurrentDictionary<long, List<Tuple<MessageEnvelope, ConsensusMessage>>>();
+
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
             ITransactionPool transactionPool,
             IStateManager stateManager,
             IConsensusManager consensusManager,
-            IValidatorManager validatorManager
+            IValidatorManager validatorManager,
+            IBlockManager blockManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -39,6 +49,19 @@ namespace Phorkus.Core.Network
             _stateManager = stateManager;
             _consensusManager = consensusManager;
             _validatorManager = validatorManager;
+            blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void BlockManagerOnBlockPersisted(object sender, Block e)
+        {
+            var era = (long) e.Header.Index + 1;
+            if (!_queuedMessages.TryGetValue(era, out var messages)) return;
+            _queuedMessages.Remove(era);
+            foreach (var (envelope, message) in messages)
+            {
+                ConsensusMessage(envelope, message);
+            }
         }
 
         public void PingRequest(MessageEnvelope envelope, PingRequest request)
@@ -104,24 +127,35 @@ namespace Phorkus.Core.Network
                 envelope.RemotePeer ?? throw new InvalidOperationException()
             );
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
-            var index = _validatorManager.GetValidatorIndex(
-                envelope.PublicKey ?? throw new InvalidOperationException(),
-                message.Validator.Era
-            );
-
-            if (envelope.Signature is null ||
-                !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
-                    envelope.PublicKey.EncodeCompressed())
-            )
+            try
             {
-                throw new UnauthorizedAccessException(
-                    $"Message signed by validator {index}, but signature is not correct");
-            }
+                var index = _validatorManager.GetValidatorIndex(
+                    envelope.PublicKey ?? throw new InvalidOperationException(),
+                    message.Validator.Era - 1
+                );
+                if (envelope.Signature is null ||
+                    !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
+                        envelope.PublicKey.EncodeCompressed())
+                )
+                {
+                    throw new UnauthorizedAccessException(
+                        $"Message signed by validator {index}, but signature is not correct");
+                }
 
-            _consensusManager.Dispatch(message, index);
+                _consensusManager.Dispatch(message, index);
+            }
+            catch (ConsensusStateNotPresentException)
+            {
+                _queuedMessages.ComputeIfAbsent(message.Validator.Era,
+                        x => new List<Tuple<MessageEnvelope, ConsensusMessage>>())
+                    .Add(new Tuple<MessageEnvelope, ConsensusMessage>(envelope, message));
+
+                _logger.LogWarning("Skipped message too far in future...");
+            }
         }
     }
 }

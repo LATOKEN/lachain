@@ -94,6 +94,12 @@ namespace Phorkus.Core.Blockchain.OperationManager
             return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);
         }
 
+        public void BlockPersisted(Block block)
+        {
+            _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
+            OnBlockPersisted?.Invoke(this, block);
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash,
             bool commit)
@@ -122,8 +128,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                 _logger.LogInformation(
                     $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}, fee {totalFee}");
                 _stateManager.Commit();
-                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
-                OnBlockPersisted?.Invoke(this, block);
+                BlockPersisted(block);
                 return OperatingError.Ok;
             });
         }

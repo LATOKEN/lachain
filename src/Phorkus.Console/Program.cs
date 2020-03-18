@@ -26,7 +26,8 @@ namespace Phorkus.Console
     {
         static void TrustedKeyGen()
         {
-            const int n = 22, f = 7;
+            // const int n = 22, f = 7;
+            const int n = 4, f = 1;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
             var tpkeVerificationKey = tpkeKeyGen.GetVerificationKey();
@@ -87,7 +88,15 @@ namespace Phorkus.Console
                         {
                             "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
                         }
-                    }
+                    },
+                    Validators = Enumerable.Range(0, n).Select(j => new GenesisConfig.ValidatorInfo
+                    {
+                        ResolvableName = ips[j],
+                        EcdsaPublicKey = ecdsaPublicKeys[j],
+                        ThresholdSignaturePublicKey = pubShares[j]
+                    }).ToList(),
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToByteArray().ToHex(),
+                    ThresholdEncryptionVerificationKey = tpkeVerificationKey.ToByteArray().ToHex()
                 };
                 var rpc = new RpcConfig
                 {
@@ -96,13 +105,9 @@ namespace Phorkus.Console
                 };
                 var consensus = new ConsensusConfig
                 {
-                    ValidatorsEcdsaPublicKeys = ecdsaPublicKeys.ToList(),
                     EcdsaPrivateKey = ecdsaPrivateKeys[i],
-                    TpkePublicKey = tpkePubKey.ToByteArray().ToHex(),
                     TpkePrivateKey = tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
-                    TpkeVerificationKey = tpkeVerificationKey.ToByteArray().ToHex(),
                     ThresholdSignaturePrivateKey = privShares[i].ToByteArray().ToHex(),
-                    ThresholdSignaturePublicKeySet = pubShares.ToList(),
                 };
                 var storage = new StorageConfig
                 {

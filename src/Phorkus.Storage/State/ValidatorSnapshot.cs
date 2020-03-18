@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Phorkus.Proto;
@@ -25,8 +26,9 @@ namespace Phorkus.Storage.State
 
         public ConsensusState GetConsensusState()
         {
-            var raw = _state.Get(EntryPrefix.ConsensusState.BuildPrefix());
-            return raw != null ? ConsensusState.Parser.ParseFrom(raw) : null;
+            var raw = _state.Get(EntryPrefix.ConsensusState.BuildPrefix()) ??
+                      throw new ConsensusStateNotPresentException();
+            return ConsensusState.Parser.ParseFrom(raw);
         }
 
         public void SetConsensusState(ConsensusState consensusState)
@@ -39,5 +41,9 @@ namespace Phorkus.Storage.State
         {
             return GetConsensusState().Validators.Select(v => v.PublicKey);
         }
+    }
+
+    public class ConsensusStateNotPresentException : Exception
+    {
     }
 }

@@ -161,7 +161,7 @@ namespace Phorkus.Core.Network
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
             var setOfPeers = new HashSet<ECDSAPublicKey>(peers);
-            if (setOfPeers.Count == 1) return false;
+            if (setOfPeers.Count == 0) return false;
 
             _lastActiveTime = TimeUtils.CurrentTimeMillis();
             var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();

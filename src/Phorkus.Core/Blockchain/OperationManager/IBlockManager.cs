@@ -9,6 +9,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
     {
         event EventHandler<Block> OnBlockPersisted;
         event EventHandler<Block> OnBlockSigned;
+
+        void BlockPersisted(Block block);
         
         Block? GetByHeight(ulong blockHeight);
         
