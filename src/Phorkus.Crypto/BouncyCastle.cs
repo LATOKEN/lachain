@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NLog;
@@ -47,7 +47,7 @@ namespace Phorkus.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] Sign(byte[] message, byte[] privateKey)
         {
-            var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
+            var messageHash = message.Keccak256();
 
             var sig = new byte[65];
             if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))

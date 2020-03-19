@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Nethereum.RLP;
 using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
@@ -92,7 +93,22 @@ namespace Phorkus.Core.Blockchain.OperationManager
         public TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
-            var message = transaction.ToHash256().Buffer.ToByteArray();
+            Nethereum.Signer.Transaction ethTx = new Nethereum.Signer.Transaction(
+                transaction.Nonce.ToBytes(),
+                transaction.GasPrice.ToBytes(),
+                transaction.GasLimit.ToBytes(),
+                transaction.To.Buffer.ToByteArray(),
+                transaction.Value.Buffer.ToByteArray(),
+                transaction.Invocation.ToByteArray(),
+                Array.Empty<byte>(),
+                Array.Empty<byte>(),
+                0);
+            
+            Console.WriteLine();
+            byte[] rlp = ethTx.GetRLPEncodedRaw();
+            var message = rlp.Keccak256();
+                
+            // var message = transaction.ToHash256().Buffer.ToByteArray();
             var signature = _crypto.Sign(message, keyPair.PrivateKey.Buffer.ToByteArray());
             /* we're afraid */
             var pubKey = _crypto.RecoverSignature(message, signature);

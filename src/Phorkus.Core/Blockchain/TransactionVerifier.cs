@@ -70,7 +70,7 @@ namespace Phorkus.Core.Blockchain
             /* validate transaction hash */
             if (!transaction.Hash.Equals(transaction.Transaction.ToHash256()))
                 return false;
-
+            
             try
             {
                 /* try to verify signature using public key cache to avoid EC recover */
@@ -82,7 +82,7 @@ namespace Phorkus.Core.Blockchain
                     transaction.Signature.Buffer.ToByteArray());
                 var address = _crypto.ComputeAddress(rawKey);
 
-                /* check if recovered addres from public key is valid */
+                /* check if recovered address from public key is valid */
                 if (rawKey is null || !address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
                     return false;
 

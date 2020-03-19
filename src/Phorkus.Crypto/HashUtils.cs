@@ -87,6 +87,12 @@ namespace Phorkus.Crypto
                 Buffer = ByteString.CopyFrom(t.ToByteArray().Sha256())
             };
         }
+        
+        // public static UInt256 RLPHashKeccak<T>(this T t) // TODO: wtf sha256?
+        //     where T : IMessage<T>
+        // {
+        //     
+        // }
 
         public static UInt256 Hash(this BlockHeader header)
         {

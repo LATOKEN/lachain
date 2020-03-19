@@ -44,10 +44,10 @@ namespace Phorkus.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("verifyRawTransaction")]
-        private JObject VerifyRawTransaction(string rawTransation, string signature)
+        private JObject VerifyRawTransaction(string rawTransaction, string signature)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransation.HexToBytes());
-            if (!transaction.ToByteArray().SequenceEqual(rawTransation.HexToBytes()))
+            var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
+            if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
             var json = new JObject
             {
@@ -69,9 +69,9 @@ namespace Phorkus.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("sendRawTransaction")]
-        private JObject SendRawTransaction(string rawTransation, string signature)
+        private JObject SendRawTransaction(string rawTransaction, string signature)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransation.HexToBytes());
+            var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             var json = new JObject
             {
                 ["hash"] = transaction.ToHash256().Buffer.ToHex()
