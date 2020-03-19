@@ -2,7 +2,10 @@ using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.ContractManager;
 using Phorkus.Core.Blockchain.Genesis;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.CLI;
 using Phorkus.Core.Config;
 using Phorkus.Core.Consensus;
@@ -20,11 +23,11 @@ namespace Phorkus.Core.DI.Modules
             containerBuilder.RegisterSingleton<IConsoleManager, ConsoleManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
-            containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IMultisigVerifier, MultisigVerifier>();
             /* consensus */
             containerBuilder.RegisterSingleton<IBlockProducer, BlockProducer>();
             containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
+            containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             /* genesis */
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();
             /* operation manager */

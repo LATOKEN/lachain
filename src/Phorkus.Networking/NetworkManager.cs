@@ -416,9 +416,10 @@ namespace Phorkus.Networking
         public void WaitForHandshake(IEnumerable<ECDSAPublicKey> peerKeys)
         {
             var keys = peerKeys.ToList();
+            if (keys.Count == 0) return;
             lock (_handshakeLock)
             {
-                while (!keys.All(key => _handshakeSuccessful.Contains(key)))
+                while (keys.Count(key => _handshakeSuccessful.Contains(key)) <= 2 * keys.Count / 3)
                 {
                     Monitor.Wait(_handshakeLock);
                 }

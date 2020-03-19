@@ -18,7 +18,7 @@ namespace Phorkus.ConsensusTest
     {
         private readonly int _sender;
 
-        private Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
+        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
             new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
@@ -26,7 +26,8 @@ namespace Phorkus.ConsensusTest
 
         private readonly DeliveryService _deliveryService;
 
-        private readonly IWallet _wallet;
+        private readonly IPublicConsensusKeySet _wallet;
+        private readonly IPrivateConsensusKeySet _privateKeys;
 
         private readonly ISet<int> _silenced;
 
@@ -45,12 +46,16 @@ namespace Phorkus.ConsensusTest
 
         private bool MixMessages { get; }
 
-        public BroadcastSimulator(int sender, IWallet wallet, DeliveryService deliveryService, bool mixMessages)
+        public BroadcastSimulator(
+            int sender, IPublicConsensusKeySet wallet, IPrivateConsensusKeySet privateKeys,
+            DeliveryService deliveryService, bool mixMessages
+        )
         {
             _sender = sender;
             _deliveryService = deliveryService;
             _deliveryService.AddPlayer(GetMyId(), this);
             _wallet = wallet;
+            _privateKeys = privateKeys;
             _silenced = new HashSet<int>();
             MixMessages = mixMessages;
         }
@@ -105,7 +110,7 @@ namespace Phorkus.ConsensusTest
                 case CoinId coinId:
                     RegisterProtocols(new[]
                     {
-                        new CommonCoin(coinId, _wallet, this),
+                        new CommonCoin(coinId, _wallet, _privateKeys.ThresholdSignaturePrivateKeyShare, this),
                     });
                     break;
                 case ReliableBroadcastId rbcId:
@@ -130,7 +135,7 @@ namespace Phorkus.ConsensusTest
                 case RootProtocolId rootId:
                     RegisterProtocols(new[]
                     {
-                        new RootProtocol(rootId, _wallet, this),
+                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this),
                     });
                     break;
                 default:

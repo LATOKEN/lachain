@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Core.Utils;
 using Phorkus.Core.VM;
 using Phorkus.Crypto;

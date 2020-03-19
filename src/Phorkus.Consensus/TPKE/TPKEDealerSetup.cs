@@ -20,8 +20,9 @@ namespace Phorkus.Consensus.TPKE
         private Keys? _result;
         private readonly ILogger<TPKEDealerSetup> _logger = LoggerFactory.GetLoggerForClass<TPKEDealerSetup>();
 
-        public TPKEDealerSetup(TPKESetupId tpkeSetupId, IWallet wallet, IConsensusBroadcaster broadcaster) : base(
-            wallet, tpkeSetupId, broadcaster)
+        public TPKEDealerSetup(
+            TPKESetupId tpkeSetupId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster)
+            : base(wallet, tpkeSetupId, broadcaster)
         {
             _tpkeSetupId = tpkeSetupId;
             _requested = ResultStatus.NotRequested;
@@ -148,7 +149,7 @@ namespace Phorkus.Consensus.TPKE
                     PublicKey = ByteString.CopyFrom(G1.ToBytes(pubKey.Y)),
                     PrivateKey = ByteString.CopyFrom(Fr.ToBytes(privKey.x)),
                     VerificationKey = verificationKey.ToProto(),
-                    Id = (ulong) to
+                    Id = (long) to
                 }
             };
             return message;

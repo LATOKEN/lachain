@@ -17,19 +17,18 @@ namespace Phorkus.Consensus
         public IProtocolIdentifier Id { get; }
         protected readonly IConsensusBroadcaster Broadcaster;
         private readonly Thread _thread;
-        protected readonly IWallet Wallet;
+        protected readonly IPublicConsensusKeySet Wallet;
         protected int N => Wallet.N;
         protected int F => Wallet.F;
         private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
 
-        protected AbstractProtocol(IWallet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
+        protected AbstractProtocol(IPublicConsensusKeySet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
         {
             _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
             Broadcaster = broadcaster;
             Id = id;
             Wallet = wallet;
-            Wallet.ProtocolIds.Add(Id);
         }
 
         public int GetMyId()

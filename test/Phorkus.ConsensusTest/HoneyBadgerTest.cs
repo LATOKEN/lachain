@@ -6,6 +6,7 @@ using Phorkus.Consensus;
 using Phorkus.Consensus.HoneyBadger;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.TPKE;
+using Phorkus.Crypto;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.ThresholdSignature;
 using Phorkus.Proto;
@@ -22,8 +23,10 @@ namespace Phorkus.ConsensusTest
         private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
         private const int N = 7;
         private const int F = 2;
-        private IWallet[] _wallets;
+        private IPublicConsensusKeySet _publicKeys;
+        private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         [SetUp]
         public void SetUp()
@@ -34,20 +37,26 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[N];
-            _wallets = new IWallet[N];
             var keygen = new Crypto.ThresholdSignature.TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
-            // todo is this correct f?
             var tpkeKeygen = new TrustedKeyGen(N, F);
+
+            var ecdsaKeys = Enumerable.Range(0, N)
+                .Select(i => _crypto.GenerateRandomBytes(32))
+                .Select(x => x.ToPrivateKey())
+                .Select(k => new ECDSAKeyPair(k, _crypto))
+                .ToArray();
+            _publicKeys = new PublicConsensusKeySet(
+                N, F, tpkeKeygen.GetPubKey(), tpkeKeygen.GetVerificationKey(),
+                pubKeys, ecdsaKeys.Select(k => k.PublicKey)
+            );
+            _privateKeys = new IPrivateConsensusKeySet[N];
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
-                _wallets[i] = new Wallet(N, F,
-                    tpkeKeygen.GetPubKey(), tpkeKeygen.GetPrivKey(i), tpkeKeygen.GetVerificationKey(),
-                    pubKeys, shares[i], null, null, new ECDSAPublicKey[] { }
-                );
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, true);
+                _privateKeys[i] = new PrivateConsensusKeySet(ecdsaKeys[i], tpkeKeygen.GetPrivKey(i), shares[i]);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
             }
         }
 
@@ -55,7 +64,9 @@ namespace Phorkus.ConsensusTest
         {
             for (uint i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new HoneyBadger(new HoneyBadgerId(10), _wallets[i], _broadcasters[i]);
+                _broadcasts[i] = new HoneyBadger(
+                    new HoneyBadgerId(10), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
@@ -64,7 +75,9 @@ namespace Phorkus.ConsensusTest
         {
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i] = new HoneyBadger(new HoneyBadgerId(10), _wallets[i], _broadcasters[i]);
+                _broadcasts[i] = new HoneyBadger(
+                    new HoneyBadgerId(10), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
                 foreach (var j in s)
                 {

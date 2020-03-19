@@ -5,7 +5,11 @@ using System.Security.Principal;
 using Google.Protobuf;
 using Phorkus.Consensus;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.Blockchain.Utils;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.Network;
 using Phorkus.Crypto;
 using Phorkus.Logger;
@@ -39,12 +43,11 @@ namespace Phorkus.Core.Consensus
             _blockManager = blockManager;
         }
 
-        public IEnumerable<TransactionReceipt> GetTransactionsToPropose()
+        public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
         {
-            var txNum = (BatchSize + _validatorManager.Validators.Count - 1) / _validatorManager.Validators.Count;
+            var n = _validatorManager.GetValidators(era - 1).N;
+            var txNum = (BatchSize + n - 1) / n;
             var taken = _transactionPool.Peek(BatchSize, txNum);
-            Console.WriteLine($"Took {taken.Count} transactions: " +
-                              string.Join(", ", taken.Select(tx => tx.Hash.ToHex()).OrderBy(x => x)));
             return taken;
         }
 

@@ -11,20 +11,21 @@ namespace Phorkus.Consensus.CommonSubset
 {
     public class CommonSubset : AbstractProtocol
     {
-        private CommonSubsetId _commonSubsetId;
+        private readonly CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
         private ISet<EncryptedShare>? _result;
 
         private readonly bool?[] _binaryAgreementInput;
         private readonly bool?[] _binaryAgreementResult;
-        private bool _filledBinaryAgreements = false;
-        private int _cntBinaryAgreementsCompleted = 0;
+        private bool _filledBinaryAgreements;
+        private int _cntBinaryAgreementsCompleted;
 
-        private readonly EncryptedShare[] _reliableBroadcastResult;
+        private readonly EncryptedShare?[] _reliableBroadcastResult;
         private readonly ILogger<CommonSubset> _logger = LoggerFactory.GetLoggerForClass<CommonSubset>();
 
-        public CommonSubset(CommonSubsetId commonSubsetId, IWallet wallet, IConsensusBroadcaster broadcaster)
-            : base(wallet, commonSubsetId, broadcaster)
+        public CommonSubset(
+            CommonSubsetId commonSubsetId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster
+        ) : base(wallet, commonSubsetId, broadcaster)
         {
             _commonSubsetId = commonSubsetId;
             _binaryAgreementInput = new bool?[N];

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf;
 using Phorkus.Proto;
 
@@ -7,24 +9,22 @@ namespace Phorkus.Utility.Utils
     public static class SignatureUtils
     {
         public const int Length = 65;
-        
+
         public static Signature Zero = new byte[Length].ToSignature();
 
         public static bool IsZero(this Signature signature)
         {
             return Zero.Equals(signature);
         }
-        
-        public static Signature ToSignature(this byte[] signature)
+
+        public static Signature ToSignature(this IEnumerable<byte> signature)
         {
-            if (signature.Length != Length)
+            var bytes = signature.ToArray();
+            if (bytes.Length != Length)
                 throw new ArgumentOutOfRangeException(nameof(signature));
-            return new Signature
-            {
-                Buffer = ByteString.CopyFrom(signature)
-            };
+            return new Signature {Buffer = ByteString.CopyFrom(bytes)};
         }
-        
+
         public static byte[] Encode(this Signature signature)
         {
             return signature.Buffer.ToByteArray();

@@ -10,6 +10,7 @@ using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.Config;
 using Phorkus.Crypto;
 using Phorkus.Crypto.ThresholdSignature;
@@ -30,8 +31,7 @@ namespace Phorkus.Core.Consensus
         private readonly IBlockProducer _blockProducer;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private bool _terminated;
-        private readonly IWallet _wallet;
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly IPrivateConsensusKeySet _consensusKeySet;
         private long CurrentEra { get; set; } = -1;
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
@@ -46,54 +46,24 @@ namespace Phorkus.Core.Consensus
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
             if (config is null) throw new ArgumentNullException(nameof(config));
-            var validatorsKeys =
-                config.ValidatorsEcdsaPublicKeys?.Select(key => key.HexToBytes().ToPublicKey()).ToArray() ??
-                throw new ArgumentNullException();
-            var maxFaulty = (validatorsKeys.Length - 1) / 3;
 
             var tpkePrivateKey =
                 PrivateKey.FromBytes(config.TpkePrivateKey?.HexToBytes() ?? throw new ArgumentNullException());
-            var tpkePublicKey =
-                PublicKey.FromBytes(config.TpkePublicKey?.HexToBytes() ?? throw new ArgumentNullException());
-            var tpkeVerificationKey =
-                VerificationKey.FromBytes(config.TpkeVerificationKey?.HexToBytes() ??
-                                          throw new ArgumentNullException());
-            var thresholdSignaturePublicKeySet = new PublicKeySet(
-                config.ThresholdSignaturePublicKeySet?
-                    .Select(s => PublicKeyShare.FromBytes(s.HexToBytes())) ?? throw new ArgumentNullException(),
-                maxFaulty
-            );
             var thresholdSignaturePrivateKeyShare = PrivateKeyShare.FromBytes(
                 config.ThresholdSignaturePrivateKey?.HexToBytes() ??
                 throw new ArgumentNullException()
             );
-            _keyPair = new ECDSAKeyPair(
+            var keyPair = new ECDSAKeyPair(
                 config.EcdsaPrivateKey?.HexToBytes().ToPrivateKey() ?? throw new ArgumentNullException(), _crypto
             );
-            if (!validatorManager.Validators.SequenceEqual(validatorsKeys))
-            {
-                throw new InvalidOperationException("Inconsistent validator numeration");
-            }
-
-            if (thresholdSignaturePublicKeySet.GetIndex(thresholdSignaturePrivateKeyShare.GetPublicKeyShare()) !=
-                validatorManager.GetValidatorIndex(_keyPair.PublicKey))
-            {
-                throw new InvalidOperationException("Inconsistent validator numeration");
-            }
 
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
-            _wallet = new Wallet(
-                config.ValidatorsEcdsaPublicKeys.Count, maxFaulty,
-                tpkePublicKey, tpkePrivateKey, tpkeVerificationKey,
-                thresholdSignaturePublicKeySet, thresholdSignaturePrivateKeyShare,
-                _keyPair.PublicKey, _keyPair.PrivateKey, validatorsKeys
-            ); // TODO: store public key info in blockchain to be able to change validators
             _terminated = false;
+
+            _consensusKeySet = new PrivateConsensusKeySet(keyPair, tpkePrivateKey, thresholdSignaturePrivateKeyShare);
             blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
-            _logger.LogDebug(
-                $"Starting consensus as validator {_validatorManager.GetValidatorIndex(_keyPair.PublicKey)}");
         }
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
@@ -101,7 +71,7 @@ namespace Phorkus.Core.Consensus
             _logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
             if ((long) e.Header.Index >= CurrentEra)
             {
-                AdvanceEra((long) e.Header.Index);                
+                AdvanceEra((long) e.Header.Index);
             }
         }
 
@@ -119,6 +89,7 @@ namespace Phorkus.Core.Consensus
                 broadcaster.Terminate();
                 _eras.Remove(i);
             }
+
             CurrentEra = newEra;
         }
 
@@ -131,6 +102,7 @@ namespace Phorkus.Core.Consensus
             {
                 _logger.LogWarning($"Consensus has not been started yet, skipping message with era {era}");
             }
+
             if (era < CurrentEra)
             {
                 _logger.LogDebug($"Skipped message for era {era} since we already advanced to {CurrentEra}");
@@ -179,7 +151,7 @@ namespace Phorkus.Core.Consensus
                 Environment.Exit(1);
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {
@@ -201,7 +173,7 @@ namespace Phorkus.Core.Consensus
             }
 
             _logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _keyPair, _wallet);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _consensusKeySet);
         }
     }
 }

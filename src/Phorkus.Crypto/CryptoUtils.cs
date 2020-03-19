@@ -7,6 +7,7 @@ namespace Phorkus.Crypto
     public static class CryptoUtils
     {
         public const int PublicKeyLength = 33;
+        private static ICrypto _crypto = CryptoProvider.GetCrypto();
 
         public static ECDSAPublicKey ToPublicKey(this byte[] buffer)
         {
@@ -16,6 +17,11 @@ namespace Phorkus.Crypto
             {
                 Buffer = ByteString.CopyFrom(buffer)
             };
+        }
+
+        public static ECDSAPublicKey GetPublicKey(this ECDSAPrivateKey key)
+        {
+            return _crypto.ComputePublicKey(key.Buffer.ToByteArray(), true).ToPublicKey();
         }
 
         public static byte[] EncodeCompressed(this ECDSAPublicKey key)

@@ -13,6 +13,7 @@ using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Crypto;
 using Phorkus.Logger;
 using Phorkus.Networking;
@@ -32,8 +33,7 @@ namespace Phorkus.Core.Consensus
         private readonly long _era;
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IMessageFactory _messageFactory;
-        private readonly IWallet _wallet;
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly IPrivateConsensusKeySet _wallet;
         private bool _terminated;
 
         /**
@@ -50,13 +50,12 @@ namespace Phorkus.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            ECDSAKeyPair keyPair, IWallet wallet
+            IPrivateConsensusKeySet wallet
         )
         {
             _messageDeliverer = messageDeliverer;
-            _messageFactory = new MessageFactory(keyPair);
+            _messageFactory = new MessageFactory(wallet.EcdsaKeyPair);
             _validatorManager = validatorManager;
-            _keyPair = keyPair;
             _wallet = wallet;
             _terminated = false;
             _era = era;
@@ -80,9 +79,9 @@ namespace Phorkus.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            foreach (var publicKey in _validatorManager.Validators)
+            foreach (var publicKey in _validatorManager.GetValidatorsPublicKeys(_era - 1))
             {
-                if (publicKey.Equals(_keyPair.PublicKey))
+                if (publicKey.Equals(_wallet.EcdsaKeyPair.PublicKey))
                 {
                     Dispatch(message, GetMyId());
                 }
@@ -108,7 +107,7 @@ namespace Phorkus.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _messageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index), payload);
+            _messageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era), payload);
         }
 
         public void Dispatch(ConsensusMessage message, int from)
@@ -244,7 +243,7 @@ namespace Phorkus.Core.Consensus
 
         public int GetMyId()
         {
-            return (int) _validatorManager.GetValidatorIndex(_keyPair.PublicKey);
+            return _validatorManager.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey, _era - 1);
         }
 
         public IConsensusProtocol? GetProtocolById(IProtocolIdentifier id)
@@ -277,34 +276,35 @@ namespace Phorkus.Core.Consensus
                 return null;
             }
 
+            var publicKeySet = _validatorManager.GetValidators(_era - 1);
             switch (id)
             {
                 case BinaryBroadcastId bbId:
-                    var bb = new BinaryBroadcast(bbId, _wallet, this);
+                    var bb = new BinaryBroadcast(bbId, publicKeySet, this);
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
-                    var coin = new CommonCoin(coinId, _wallet, this);
+                    var coin = new CommonCoin(coinId, publicKeySet, _wallet.ThresholdSignaturePrivateKeyShare, this);
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    var rbc = new MockReliableBroadcast(rbcId, _wallet, this); // TODO: unmock RBC
+                    var rbc = new MockReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:
-                    var ba = new BinaryAgreement(baId, _wallet, this);
+                    var ba = new BinaryAgreement(baId, publicKeySet, this);
                     RegisterProtocols(new[] {ba});
                     return ba;
                 case CommonSubsetId acsId:
-                    var acs = new CommonSubset(acsId, _wallet, this);
+                    var acs = new CommonSubset(acsId, publicKeySet, this);
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
-                    var hb = new HoneyBadger(hbId, _wallet, this);
+                    var hb = new HoneyBadger(hbId, publicKeySet, _wallet.TpkePrivateKey, this);
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, _wallet, this);
+                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this);
                     RegisterProtocols(new[] {root});
                     return root;
                 default:

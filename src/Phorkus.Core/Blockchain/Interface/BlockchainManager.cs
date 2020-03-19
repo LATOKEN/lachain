@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Phorkus.Core.Blockchain.Genesis;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
-using Phorkus.Core.Utils;
+using Phorkus.Crypto;
 using Phorkus.Proto;
+using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
-using Phorkus.Utility;
 using Phorkus.Utility.Utils;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Interface
 {
     public class BlockchainManager : IBlockchainManager, IBlockchainContext
     {
@@ -18,6 +19,7 @@ namespace Phorkus.Core.Blockchain
         private readonly IBlockManager _blockManager;
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
+        private readonly ISnapshotIndexRepository _snapshotIndexRepository;
 
         public ulong CurrentBlockHeight => _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
         public Block? CurrentBlock => _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(CurrentBlockHeight);
@@ -26,14 +28,17 @@ namespace Phorkus.Core.Blockchain
             IGenesisBuilder genesisBuilder,
             IBlockManager blockManager,
             IConfigManager configManager,
-            IStateManager stateManager)
+            IStateManager stateManager,
+            ISnapshotIndexRepository snapshotIndexRepository
+        )
         {
             _genesisBuilder = genesisBuilder;
             _blockManager = blockManager;
             _configManager = configManager;
             _stateManager = stateManager;
+            _snapshotIndexRepository = snapshotIndexRepository;
         }
-        
+
         public bool TryBuildGenesisBlock()
         {
             var genesisBlock = _genesisBuilder.Build();
@@ -41,20 +46,34 @@ namespace Phorkus.Core.Blockchain
                 return false;
             var snapshot = _stateManager.NewSnapshot();
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
-            if (genesisConfig?.Balances is null) throw new InvalidOperationException();
-            foreach (var entry in genesisConfig.Balances)
-                snapshot.Balances.SetBalance(entry.Key.HexToBytes().ToUInt160(), Money.Parse(entry.Value));
+            genesisConfig.ValidateOrThrow();
+            var initialConsensusState = new ConsensusState
+            {
+                TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes()),
+                TpkeVerificationKey =
+                    ByteString.CopyFrom(genesisConfig.ThresholdEncryptionVerificationKey.HexToBytes()),
+            };
+            initialConsensusState.Validators.Add(genesisConfig.Validators.Select(v => new ValidatorCredentials
+            {
+                PublicKey = v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
+                ResolvableAddress = v.ResolvableName,
+                ThresholdSignaturePublicKey = ByteString.CopyFrom(v.ThresholdSignaturePublicKey.HexToBytes()),
+            }));
+            snapshot.Validators.SetConsensusState(initialConsensusState);
             _stateManager.Approve();
-            var error = _blockManager.Execute(genesisBlock.Block, genesisBlock.Transactions, commit: false, checkStateHash: false);
+            var error = _blockManager.Execute(genesisBlock.Block, genesisBlock.Transactions, commit: false,
+                checkStateHash: false);
             if (error != OperatingError.Ok)
                 throw new InvalidBlockException(error);
             _stateManager.Commit();
+            _blockManager.BlockPersisted(genesisBlock.Block);
             return true;
         }
 
         public UInt256 CalcStateHash(Block block, IEnumerable<TransactionReceipt> transactionReceipts)
         {
-            var(operatingError, removeTransactions, stateHash, relayTransactions) = _blockManager.Emulate(block, transactionReceipts);
+            var (operatingError, removeTransactions, stateHash, relayTransactions) =
+                _blockManager.Emulate(block, transactionReceipts);
             if (operatingError != OperatingError.Ok)
                 throw new InvalidBlockException(operatingError);
             if (removeTransactions.Count > 0)

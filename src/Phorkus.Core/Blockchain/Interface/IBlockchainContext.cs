@@ -1,6 +1,6 @@
 ﻿using Phorkus.Proto;
 
-namespace Phorkus.Core.Blockchain
+namespace Phorkus.Core.Blockchain.Interface
 {
     public interface IBlockchainContext
     {

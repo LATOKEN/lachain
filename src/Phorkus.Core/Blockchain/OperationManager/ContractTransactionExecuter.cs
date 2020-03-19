@@ -33,9 +33,16 @@ namespace Phorkus.Core.Blockchain.OperationManager
             error = Verify(transaction);
             if (error != OperatingError.Ok)
                 return error;
+            if (block.Header.Index == 0) // genesis is special case, just mint tokens
+            {
+                if (!receipt.Transaction.From.Equals(UInt160Utils.Zero)) return OperatingError.InvalidTransaction;
+                if (!receipt.Transaction.Invocation.IsEmpty) return OperatingError.InvalidTransaction;
+                snapshot.Balances.AddBalance(receipt.Transaction.To, transaction.Value.ToMoney());
+                return OperatingError.Ok;
+            }
+
             /* try to transfer funds from sender to recipient */
-            if (// !transaction.Value.IsZero() && TODO: wtf is this check 
-                !snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
+            if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
                 return OperatingError.InsufficientBalance;
             /* if we have invocation block than invoke contract method */
             if (transaction.Invocation != null && !transaction.Invocation.IsEmpty)
@@ -60,7 +67,8 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 if (receipt.GasUsed > transaction.GasLimit)
                     return OperatingError.OutOfGas;
-                var result = _virtualMachine.InvokeContract(contract, context, input, transaction.GasLimit - receipt.GasUsed);
+                var result =
+                    _virtualMachine.InvokeContract(contract, context, input, transaction.GasLimit - receipt.GasUsed);
                 if (result.Status != ExecutionStatus.Ok)
                     return OperatingError.ContractFailed;
                 receipt.GasUsed += result.GasUsed;
@@ -70,6 +78,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             {
                 receipt.GasUsed += e.GasUsed;
             }
+
             return OperatingError.OutOfGas;
         }
 
@@ -126,10 +135,6 @@ namespace Phorkus.Core.Blockchain.OperationManager
         public OperatingError Verify(Transaction transaction)
         {
             if (transaction.Type != TransactionType.Transfer)
-                return OperatingError.InvalidTransaction;
-            if (transaction.To is null)
-                return OperatingError.InvalidTransaction;
-            if (transaction.Value is null)
                 return OperatingError.InvalidTransaction;
             if (!transaction.Deploy.IsEmpty)
                 return OperatingError.InvalidTransaction;

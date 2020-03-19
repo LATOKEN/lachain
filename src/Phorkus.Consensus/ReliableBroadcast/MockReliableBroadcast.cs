@@ -19,9 +19,8 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private readonly ILogger<MockReliableBroadcast> _logger =
             LoggerFactory.GetLoggerForClass<MockReliableBroadcast>();
 
-        public MockReliableBroadcast(ReliableBroadcastId reliableReliableBroadcastId, IWallet wallet,
-            IConsensusBroadcaster broadcaster)
-            : base(wallet, reliableReliableBroadcastId, broadcaster)
+        public MockReliableBroadcast(ReliableBroadcastId reliableReliableBroadcastId, IPublicConsensusKeySet wallet,
+            IConsensusBroadcaster broadcaster) : base(wallet, reliableReliableBroadcastId, broadcaster)
         {
             _reliableBroadcastId = reliableReliableBroadcastId;
         }

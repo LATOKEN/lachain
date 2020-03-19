@@ -20,7 +20,6 @@ namespace Phorkus.Consensus.RootProtocol
         private readonly ILogger<RootProtocol> _logger = LoggerFactory.GetLoggerForClass<RootProtocol>();
         private readonly ECDSAKeyPair _keyPair;
         private readonly RootProtocolId _rootId;
-        private readonly IWallet _wallet;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private IBlockProducer? _blockProducer;
         private ulong? _nonce;
@@ -31,12 +30,11 @@ namespace Phorkus.Consensus.RootProtocol
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
 
-        public RootProtocol(RootProtocolId id, IWallet wallet, IConsensusBroadcaster broadcaster)
-            : base(wallet, id, broadcaster)
+        public RootProtocol(RootProtocolId id, IPublicConsensusKeySet wallet, ECDSAPrivateKey privateKey,
+            IConsensusBroadcaster broadcaster) : base(wallet, id, broadcaster)
         {
-            _keyPair = new ECDSAKeyPair(wallet.EcdsaPrivateKey, wallet.EcdsaPublicKey);
+            _keyPair = new ECDSAKeyPair(privateKey, _crypto);
             _rootId = id;
-            _wallet = wallet;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -56,7 +54,7 @@ namespace Phorkus.Consensus.RootProtocol
                 _logger.LogDebug(
                     $"Received signature of header {signedHeaderMessage.Header.Hash().ToHex()} " +
                     $"from validator {idx}: " +
-                    $"pubKey {_wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
+                    $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
                 );
                 if (!(_header is null) && !_header.Equals(signedHeaderMessage.Header))
                 {
@@ -66,7 +64,7 @@ namespace Phorkus.Consensus.RootProtocol
                 if (!_crypto.VerifySignature(
                     signedHeaderMessage.Header.HashBytes(),
                     signedHeaderMessage.Signature.Encode(),
-                    _wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
+                    Wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
                 ))
                 {
                     _logger.LogWarning(
@@ -79,7 +77,7 @@ namespace Phorkus.Consensus.RootProtocol
                             signedHeaderMessage.Header,
                             new MultiSig.Types.SignatureByValidator
                             {
-                                Key = _wallet.EcdsaPublicKeySet[idx],
+                                Key = Wallet.EcdsaPublicKeySet[idx],
                                 Value = signedHeaderMessage.Signature,
                             }
                         )
@@ -97,7 +95,7 @@ namespace Phorkus.Consensus.RootProtocol
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
                         {
-                            foreach (var hash in _blockProducer.GetTransactionsToPropose().Select(tx => tx.Hash))
+                            foreach (var hash in _blockProducer.GetTransactionsToPropose(Id.Era).Select(tx => tx.Hash))
                             {
                                 Debug.Assert(hash.ToBytes().Length == 32);
                                 stream.Write(hash.ToBytes(), 0, 32);
@@ -177,10 +175,10 @@ namespace Phorkus.Consensus.RootProtocol
                 )
                 .Select(p => new KeyValuePair<BlockHeader, int>(p.Key, p.Count()))
                 .Aggregate((x, y) => x.Value > y.Value ? x : y);
-            if (bestHeader.Value < _wallet.N - _wallet.F) return;
+            if (bestHeader.Value < Wallet.N - Wallet.F) return;
             _logger.LogDebug($"Received {bestHeader.Value} signatures for block header");
-            _multiSig = new MultiSig {Quorum = (uint) (_wallet.N - _wallet.F)};
-            _multiSig.Validators.AddRange(_wallet.EcdsaPublicKeySet);
+            _multiSig = new MultiSig {Quorum = (uint) (Wallet.N - Wallet.F)};
+            _multiSig.Validators.AddRange(Wallet.EcdsaPublicKeySet);
             foreach (var (header, signature) in _signatures)
             {
                 if (header.Equals(bestHeader.Key))

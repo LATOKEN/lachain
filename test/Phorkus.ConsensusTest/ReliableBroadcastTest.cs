@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Linq;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.ReliableBroadcast;
 using Phorkus.Crypto.MCL.BLS12_381;
 using Phorkus.Crypto.TPKE;
+using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {
@@ -19,8 +21,8 @@ namespace Phorkus.ConsensusTest
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
-        private Random _rnd;
-        private IWallet[] _wallets;
+        private IPrivateConsensusKeySet[] _wallets;
+        private IPublicConsensusKeySet _publicKeys;
 
         [SetUp]
         public void SetUp()
@@ -29,14 +31,17 @@ namespace Phorkus.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
-            _rnd = new Random();
-            _wallets = new IWallet[N];
+            _wallets = new IPrivateConsensusKeySet[N];
 
+            _publicKeys = new PublicConsensusKeySet(
+                N, F, null, null,
+                null, Enumerable.Empty<ECDSAPublicKey>()
+            );
             Mcl.Init();
             for (var i = 0; i < N; ++i)
             {
                 _wallets[i] = TestUtils.EmptyWallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _wallets[i], _deliveryService, mixMessages: false);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
         }
@@ -46,7 +51,7 @@ namespace Phorkus.ConsensusTest
             for (uint i = 0; i < N; ++i)
             {
                 _broadcasts[i] =
-                    new ReliableBroadcast(new ReliableBroadcastId(sender, 0), _wallets[i], _broadcasters[i]);
+                    new ReliableBroadcast(new ReliableBroadcastId(sender, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }

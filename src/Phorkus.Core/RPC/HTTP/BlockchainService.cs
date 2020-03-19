@@ -2,7 +2,9 @@
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
+using Phorkus.Core.Blockchain.Pool;
 using Phorkus.Storage.State;
 using Phorkus.Utility.JSON;
 using Phorkus.Utility.Utils;

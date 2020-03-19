@@ -6,7 +6,7 @@ namespace Phorkus.Storage.State
     {
         void SafeContext(Action callback);
         
-        TR SafeContext<TR>(Func<TR> callback);
+        T SafeContext<T>(Func<T> callback);
         
         void Acquire();
 

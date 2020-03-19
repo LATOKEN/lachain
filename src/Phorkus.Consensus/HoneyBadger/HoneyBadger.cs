@@ -11,33 +11,28 @@ namespace Phorkus.Consensus.HoneyBadger
 {
     public class HoneyBadger : AbstractProtocol
     {
-        // todo investigate where id should come from
         private HoneyBadgerId _honeyBadgerId;
         private ResultStatus _requested;
-        private readonly bool[] _taken;
-
-        private IRawShare? _rawShare;
-        private EncryptedShare? _encryptedShare;
-        private readonly IRawShare[] _shares;
+        private readonly ILogger<HoneyBadger> _logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
+        
+        private readonly PrivateKey _privateKey;
 
         private readonly EncryptedShare[] _receivedShares;
-
+        private IRawShare? _rawShare;
+        private EncryptedShare? _encryptedShare;
+        private readonly IRawShare?[] _shares;
+        private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
         private ISet<IRawShare>? _result;
 
-        private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
-
-        private PublicKey? PubKey => Wallet.TpkePublicKey;
-        private PrivateKey? PrivKey => Wallet.TpkePrivateKey;
-        private VerificationKey? VerificationKey => Wallet.TpkeVerificationKey;
-
+        private readonly bool[] _taken;
         private bool _takenSet;
-        private readonly ILogger<HoneyBadger> _logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
 
-
-        public HoneyBadger(HoneyBadgerId honeyBadgerId, IWallet wallet, IConsensusBroadcaster broadcaster)
+        public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet, 
+            PrivateKey privateKey, IConsensusBroadcaster broadcaster)
             : base(wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
+            _privateKey = privateKey;
             _receivedShares = new EncryptedShare[N];
             _decryptedShares = new ISet<PartiallyDecryptedShare>[N];
             for (var i = 0; i < N; ++i)
@@ -59,7 +54,7 @@ namespace Phorkus.Consensus.HoneyBadger
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Decrypted:
-                        HandleDecryptedMessage(message.Validator, message.Decrypted);
+                        HandleDecryptedMessage(message.Decrypted);
                         break;
                     default:
                         throw new ArgumentException(
@@ -100,10 +95,9 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void CheckEncryption()
         {
-            if (PubKey == null) return;
             if (_rawShare == null) return;
             if (_encryptedShare != null) return;
-            _encryptedShare = PubKey.Encrypt(_rawShare);
+            _encryptedShare = Wallet.TpkePublicKey.Encrypt(_rawShare);
             Broadcaster.InternalRequest(
                 new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId),
                     _encryptedShare));
@@ -121,11 +115,10 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
-            if (PrivKey is null) throw new InvalidOperationException();
             _logger.LogDebug($"Common subset finished {result.From}");
-            foreach (EncryptedShare share in result.Result)
+            foreach (var share in result.Result)
             {
-                var dec = PrivKey.Decrypt(share);
+                var dec = _privateKey.Decrypt(share);
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
@@ -146,20 +139,18 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
         {
-            if (PubKey is null) throw new InvalidOperationException();
             var message = new ConsensusMessage
             {
-                Decrypted = PubKey.Encode(share)
+                Decrypted = Wallet.TpkePublicKey.Encode(share)
             };
             return message;
         }
 
-        private void HandleDecryptedMessage(Validator messageValidator, TPKEPartiallyDecryptedShareMessage msg)
+        private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg)
         {
-            if (PubKey is null || VerificationKey is null) throw new InvalidOperationException();
-            PartiallyDecryptedShare share = PubKey.Decode(msg);
+            PartiallyDecryptedShare share = Wallet.TpkePublicKey.Decode(msg);
             if (_receivedShares[share.ShareId] != null)
-                if (!VerificationKey.Verify(_receivedShares[share.ShareId], share))
+                if (!Wallet.TpkeVerificationKey.Verify(_receivedShares[share.ShareId], share))
                 {
                     // possible fault evidence
                     return;
@@ -171,7 +162,6 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private void CheckDecryptedShares(int id)
         {
-            if (PubKey is null) throw new InvalidOperationException();
             if (!_takenSet) return;
             if (!_taken[id]) return;
             if (_decryptedShares[id].Count < F + 1) return;
@@ -179,7 +169,7 @@ namespace Phorkus.Consensus.HoneyBadger
             if (_shares[id] != null) return;
 
             _logger.LogInformation($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
-            _shares[id] = PubKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
+            _shares[id] = Wallet.TpkePublicKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
             CheckAllSharesDecrypted();
         }
@@ -207,17 +197,13 @@ namespace Phorkus.Consensus.HoneyBadger
 
         private bool VerifyReceivedSharesByIndex(int i)
         {
-            if (VerificationKey is null) throw new InvalidOperationException();
             if (_receivedShares[i] == null) return false;
 
-            foreach (var part in _decryptedShares[i])
-                if (!VerificationKey.Verify(_receivedShares[i], part))
-                {
-                    _logger.LogDebug($"{GetMyId()}: Verification failed {i}");
-                    return false;
-                }
+            if (_decryptedShares[i].All(part => Wallet.TpkeVerificationKey.Verify(_receivedShares[i], part)))
+                return true;
+            _logger.LogDebug($"{GetMyId()}: Verification failed {i}");
+            return false;
 
-            return true;
         }
     }
 }

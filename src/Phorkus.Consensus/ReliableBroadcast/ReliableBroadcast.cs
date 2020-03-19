@@ -30,7 +30,8 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private int _countReadyMsg;
 
 
-        public ReliableBroadcast(ReliableBroadcastId broadcastId, IWallet wallet, IConsensusBroadcaster broadcaster) :
+        public ReliableBroadcast(
+            ReliableBroadcastId broadcastId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster) :
             base(wallet, broadcastId, broadcaster)
         {
             _broadcastId = broadcastId;

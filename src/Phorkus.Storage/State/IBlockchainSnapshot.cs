@@ -10,6 +10,7 @@ namespace Phorkus.Storage.State
         ITransactionSnapshot Transactions { get; }
         IBlockSnapshot Blocks { get; }
         IEventSnapshot Events { get; }
+        IValidatorSnapshot Validators { get; }
 
         UInt256 StateHash { get; }
     }
