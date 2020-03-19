@@ -37,8 +37,8 @@ namespace Phorkus.Crypto
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
 
             var parsedSig = new byte[65];
-            int recId = signature[0];
-            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+            int recId = signature[64];
+            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
 
             return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
@@ -56,7 +56,7 @@ namespace Phorkus.Crypto
             if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                 throw new ArgumentException();
 
-            return new[] {(byte) recId}.Concat(serialized).ToArray();
+            return serialized.Concat(new[] {(byte) recId}).ToArray();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -65,8 +65,8 @@ namespace Phorkus.Crypto
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
             var parsedSig = new byte[65];
             var pk = new byte[64];
-            int recId = signature[0];
-            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+            int recId = signature[64];
+            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
             if (!Secp256K1.Recover(pk, parsedSig, messageHash))
                 throw new ArgumentException("Bad signature");
