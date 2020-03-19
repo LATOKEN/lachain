@@ -66,5 +66,15 @@ namespace Phorkus.Utility.Utils
         {
             return buffer.HexToBytes().ToUInt160();
         }
+
+        public static ulong HexToUlong(this string buffer)
+        {
+            return ulong.Parse(buffer.Replace("0x", ""), NumberStyles.HexNumber);
+        }
+
+        public static byte[] ToBytes(this ulong number)
+        {
+            return BitConverter.GetBytes(number);
+        }
     }
 }
