@@ -12,12 +12,12 @@ namespace Phorkus.ConsensusTest
     public class CommonCoinTest
     {
         private const int N = 7, F = 2;
-        private IConsensusProtocol[] _coins;
         private IConsensusBroadcaster[] _broadcasters;
+        private IConsensusProtocol[] _coins;
         private DeliveryService _deliveryService;
+        private IPublicConsensusKeySet _publicKeys;
         private ProtocolInvoker<CoinId, CoinResult>[] _resultInterceptors;
         private IPrivateConsensusKeySet[] _wallets;
-        private IPublicConsensusKeySet _publicKeys;
 
         public void SetUp()
         {
@@ -49,16 +49,11 @@ namespace Phorkus.ConsensusTest
         private void Run()
         {
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(
                     new ProtocolRequest<CoinId, object>(_resultInterceptors[i].Id, (CoinId) _coins[i].Id, null)
                 );
-            }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _coins[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _coins[i].WaitFinish();
 
             _deliveryService.WaitFinish();
 

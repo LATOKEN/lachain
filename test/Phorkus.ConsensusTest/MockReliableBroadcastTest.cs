@@ -13,18 +13,6 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class MockReliableBroadcastTest
     {
-        private int N = 10;
-        private int F = 3;
-        private int sender = 0;
-
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
-        private Random _rnd;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private IPublicConsensusKeySet _publicKeys;
-
         [SetUp]
         public void SetUp()
         {
@@ -47,6 +35,18 @@ namespace Phorkus.ConsensusTest
             }
         }
 
+        private int N = 10;
+        private readonly int F = 3;
+        private readonly int sender = 0;
+
+        private DeliveryService _deliveryService;
+        private IConsensusProtocol[] _broadcasts;
+        private IConsensusBroadcaster[] _broadcasters;
+        private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
+        private Random _rnd;
+        private IPrivateConsensusKeySet[] _privateKeys;
+        private IPublicConsensusKeySet _publicKeys;
+
         private void SetUpAllHonest()
         {
             for (uint i = 0; i < N; ++i)
@@ -67,28 +67,13 @@ namespace Phorkus.ConsensusTest
 
             var share = new EncryptedShare(G1.Generator, new byte[] { }, G2.Generator, sender);
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? share : null
                 ));
-            }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
-            for (var i = 0; i < N; ++i)
-            {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-            }
-        }
-
-        [Test]
-        [Repeat(100)]
-        public void TestRandom10()
-        {
-            Run(10, DeliveryServiceMode.TAKE_RANDOM);
+            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
 
         [Test]
@@ -96,6 +81,13 @@ namespace Phorkus.ConsensusTest
         public void TestLast10()
         {
             Run(10, DeliveryServiceMode.TAKE_LAST);
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void TestRandom10()
+        {
+            Run(10, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]

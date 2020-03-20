@@ -1,4 +1,5 @@
-﻿using Phorkus.Consensus;
+﻿using System;
+using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
 
 namespace Phorkus.ConsensusTest
@@ -9,8 +10,9 @@ namespace Phorkus.ConsensusTest
         {
             Id = id;
         }
-        
+
         public IProtocolIdentifier Id { get; }
+
         public void ReceiveMessage(MessageEnvelope message)
         {
         }
@@ -25,12 +27,12 @@ namespace Phorkus.ConsensusTest
 
         public void WaitResult()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void Terminate()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public bool Terminated => true;

@@ -14,4 +14,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="obj" />
+  </ItemGroup>
 </Project>

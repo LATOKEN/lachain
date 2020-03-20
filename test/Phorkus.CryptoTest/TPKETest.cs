@@ -10,9 +10,9 @@ namespace Phorkus.CryptoTest
 {
     public class TPKETest
     {
-        const int N = 7, F = 2;
-        private Random _rnd;
+        private const int N = 7, F = 2;
         private const int Id = 132;
+        private Random _rnd;
 
         [SetUp]
         public void SetUp()
@@ -42,10 +42,7 @@ namespace Phorkus.CryptoTest
             var enc = pubKey.Encrypt(share);
 
             var chosen = new HashSet<int>();
-            while (chosen.Count < F)
-            {
-                chosen.Add(_rnd.Next(0, N - 1));
-            }
+            while (chosen.Count < F) chosen.Add(_rnd.Next(0, N - 1));
 
             var parts = new List<PartiallyDecryptedShare>();
             foreach (var dec in chosen.Select(i => privKey[i].Decrypt(enc)))
@@ -69,10 +66,7 @@ namespace Phorkus.CryptoTest
             var t = _rnd.Next();
             var n = _rnd.Next(0, 10);
             var zs = new List<G2>();
-            for (var i = 0; i < n; ++i)
-            {
-                zs.Add(G2.Generator * Fr.GetRandom());
-            }
+            for (var i = 0; i < n; ++i) zs.Add(G2.Generator * Fr.GetRandom());
 
             var vk = new VerificationKey(y, t, zs.ToArray());
             var enc = vk.ToProto();

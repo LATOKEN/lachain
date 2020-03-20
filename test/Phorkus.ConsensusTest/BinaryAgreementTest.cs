@@ -60,74 +60,6 @@ namespace Phorkus.ConsensusTest
             }
         }
 
-        [Test]
-        public void TestBinaryAgreementAllZero()
-        {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, false
-                ));
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitResult();
-            }
-
-            _deliveryService.WaitFinish();
-
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].Terminate();
-                Console.Error.WriteLine($"boy {i} terminated");
-                _broadcasts[i].WaitFinish();
-                Console.Error.WriteLine($"boy {i} finished");
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
-                    $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(false, _resultInterceptors[i].Result);
-            }
-        }
-
-        [Test]
-        public void TestBinaryAgreementAllOnes()
-        {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, true
-                ));
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitResult();
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].Terminate();
-                _broadcasts[i].WaitFinish();
-            }
-
-            _deliveryService.WaitFinish();
-
-            for (var i = 0; i < N; ++i)
-            {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
-                    $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(true, _resultInterceptors[i].Result);
-            }
-        }
-
 
         public void RunBinaryAgreementRandom(int n, int f, DeliveryServiceMode mode, int muteCnt = 0,
             double repeatProbability = .0)
@@ -137,10 +69,7 @@ namespace Phorkus.ConsensusTest
             SetUpAllHonest();
             _deliveryService.RepeatProbability = repeatProbability;
             _deliveryService.Mode = mode;
-            while (_deliveryService._mutedPlayers.Count < muteCnt)
-            {
-                _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
-            }
+            while (_deliveryService._mutedPlayers.Count < muteCnt) _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
 
             var used = new BoolSet();
             for (var i = 0; i < N; ++i)
@@ -198,37 +127,16 @@ namespace Phorkus.ConsensusTest
 
         [Test]
         [Repeat(100)]
+        public void RandomTestLast103()
+        {
+            RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST);
+        }
+
+        [Test]
+        [Repeat(100)]
         public void RandomTestLast41()
         {
             RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST);
-        }
-
-        [Test]
-        [Repeat(100)]
-        public void RandomTestRandom41()
-        {
-            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM);
-        }
-
-        [Test]
-        [Repeat(100)]
-        public void RandomTestRandomWithRepeat41()
-        {
-            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 0, .2);
-        }
-
-        [Test]
-        [Repeat(100)]
-        public void RandomTestRandomWithMuted41()
-        {
-            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 1);
-        }
-
-        [Test]
-        [Repeat(100)]
-        public void RandomTestLastWithMuted41()
-        {
-            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST, 1);
         }
 
         [Test]
@@ -240,6 +148,20 @@ namespace Phorkus.ConsensusTest
 
         [Test]
         [Repeat(100)]
+        public void RandomTestLastWithMuted103()
+        {
+            RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST, 3);
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void RandomTestLastWithMuted41()
+        {
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST, 1);
+        }
+
+        [Test]
+        [Repeat(100)]
         public void RandomTestLastWithMuted72()
         {
             RunBinaryAgreementRandom(7, 2, DeliveryServiceMode.TAKE_LAST, 2);
@@ -247,16 +169,81 @@ namespace Phorkus.ConsensusTest
 
         [Test]
         [Repeat(100)]
-        public void RandomTestLast103()
+        public void RandomTestRandom41()
         {
-            RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST);
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]
         [Repeat(100)]
-        public void RandomTestLastWithMuted103()
+        public void RandomTestRandomWithMuted41()
         {
-            RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST, 3);
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 1);
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void RandomTestRandomWithRepeat41()
+        {
+            RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 0, .2);
+        }
+
+        [Test]
+        public void TestBinaryAgreementAllOnes()
+        {
+            SetUpAllHonest();
+            for (var i = 0; i < N; ++i)
+                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, true
+                ));
+
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitResult();
+
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].Terminate();
+                _broadcasts[i].WaitFinish();
+            }
+
+            _deliveryService.WaitFinish();
+
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(true, _resultInterceptors[i].Result);
+            }
+        }
+
+        [Test]
+        public void TestBinaryAgreementAllZero()
+        {
+            SetUpAllHonest();
+            for (var i = 0; i < N; ++i)
+                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, false
+                ));
+
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitResult();
+
+            _deliveryService.WaitFinish();
+
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasts[i].Terminate();
+                Console.Error.WriteLine($"boy {i} terminated");
+                _broadcasts[i].WaitFinish();
+                Console.Error.WriteLine($"boy {i} finished");
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(false, _resultInterceptors[i].Result);
+            }
         }
     }
 }

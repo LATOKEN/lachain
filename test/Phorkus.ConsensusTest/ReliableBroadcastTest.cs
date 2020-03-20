@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
 using Phorkus.Consensus;
 using Phorkus.Consensus.Messages;
@@ -13,17 +12,6 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class ReliableBroadcastTest
     {
-        private const int N = 8;
-        private const int F = 2;
-        private int sender = 0;
-
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
-        private IPrivateConsensusKeySet[] _wallets;
-        private IPublicConsensusKeySet _publicKeys;
-
         [SetUp]
         public void SetUp()
         {
@@ -46,6 +34,17 @@ namespace Phorkus.ConsensusTest
             }
         }
 
+        private const int N = 8;
+        private const int F = 2;
+        private readonly int sender = 0;
+
+        private DeliveryService _deliveryService;
+        private IConsensusProtocol[] _broadcasts;
+        private IConsensusBroadcaster[] _broadcasters;
+        private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
+        private IPrivateConsensusKeySet[] _wallets;
+        private IPublicConsensusKeySet _publicKeys;
+
         private void SetUpAllHonest()
         {
             for (uint i = 0; i < N; ++i)
@@ -62,21 +61,13 @@ namespace Phorkus.ConsensusTest
             var share = new EncryptedShare(G1.Generator, null, G2.Generator, sender);
             SetUpAllHonest();
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? share : null
                 ));
-            }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
-            for (var i = 0; i < N; ++i)
-            {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-            }
+            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
     }
 }

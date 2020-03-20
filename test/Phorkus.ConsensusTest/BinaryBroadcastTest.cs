@@ -14,15 +14,6 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class BinaryBroadcastTest
     {
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
-        private const int N = 7;
-        private const int F = 2;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private IPublicConsensusKeySet _publicKeys;
-
         [SetUp]
         public void SetUp()
         {
@@ -43,6 +34,15 @@ namespace Phorkus.ConsensusTest
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
             }
         }
+
+        private DeliveryService _deliveryService;
+        private IConsensusProtocol[] _broadcasts;
+        private IConsensusBroadcaster[] _broadcasters;
+        private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
+        private const int N = 7;
+        private const int F = 2;
+        private IPrivateConsensusKeySet[] _privateKeys;
+        private IPublicConsensusKeySet _publicKeys;
 
         private void SetUpAllHonest()
         {
@@ -68,35 +68,8 @@ namespace Phorkus.ConsensusTest
             for (uint i = 0; i < N; ++i)
             {
                 if (_broadcasts[i] == null)
-                {
                     _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
-                }
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
-            }
-            
-        }
-
-        [Test]
-        public void TestBinaryBroadcastAllZero()
-        {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, false
-                ));
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result);
             }
         }
 
@@ -105,16 +78,11 @@ namespace Phorkus.ConsensusTest
         {
             SetUpAllHonest();
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, true
                 ));
-            }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
             for (var i = 0; i < N; ++i)
             {
@@ -125,21 +93,35 @@ namespace Phorkus.ConsensusTest
         }
 
         [Test]
-        public void TestRandomFailures()
+        public void TestBinaryBroadcastAllZero()
         {
-            SetupSomeSilent();
-            
+            SetUpAllHonest();
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, true
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, false
                 ));
-            }
+
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
             for (var i = 0; i < N; ++i)
             {
-                _broadcasts[i].WaitFinish();
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
+                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result);
             }
+        }
+
+        [Test]
+        public void TestRandomFailures()
+        {
+            SetupSomeSilent();
+
+            for (var i = 0; i < N; ++i)
+                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
+                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, true
+                ));
+
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
             for (var i = 0; i < N; ++i)
             {
@@ -149,7 +131,6 @@ namespace Phorkus.ConsensusTest
                     Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
                     Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
                 }
-
             }
         }
 
@@ -168,28 +149,23 @@ namespace Phorkus.ConsensusTest
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 inputsCount[inputs[i]]++;
             }
-            
+
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, inputs[i] == 1
                 ));
-            }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
             var received = new ISet<int>[N];
             for (var i = 0; i < N; ++i)
             {
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 received[i] = new SortedSet<int>();
-                
+
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 var values = _resultInterceptors[i].Result;
-                
+
                 foreach (var b in values.Values())
                     received[i].Add(b ? 1 : 0);
             }

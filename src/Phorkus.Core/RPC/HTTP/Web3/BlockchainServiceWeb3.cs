@@ -120,7 +120,7 @@ namespace Phorkus.Core.RPC.HTTP
         [JsonRpcMethod("net_version")]
         private string NetVersion()
         {
-            return "1717";
+            return "1";
         }
 
         [JsonRpcMethod("eth_blockNumber")]

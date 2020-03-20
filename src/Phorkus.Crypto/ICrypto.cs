@@ -30,6 +30,14 @@ namespace Phorkus.Crypto
         byte[] RecoverSignature(byte[] message, byte[] signature);
         
         /// <summary>
+        /// Recovers public key from signature
+        /// </summary>
+        /// <param name="messageHash"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature);
+        
+        /// <summary>
         /// Computes address from public key
         /// </summary>
         /// <param name="publicKey"></param>

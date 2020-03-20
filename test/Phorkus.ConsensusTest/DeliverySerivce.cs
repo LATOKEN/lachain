@@ -8,21 +8,18 @@ namespace Phorkus.ConsensusTest
 {
     public class DeliveryService
     {
-        public readonly ISet<int> _mutedPlayers = new HashSet<int>();
-        private readonly IDictionary<int, IConsensusBroadcaster> _broadcasters = new Dictionary<int, IConsensusBroadcaster>();
-        private readonly RandomSamplingQueue<Tuple<int, int, ConsensusMessage>> _queue = new RandomSamplingQueue<Tuple<int, int, ConsensusMessage>>();
-        private readonly object _queueLock = new object();
-        public double RepeatProbability
-        {
-            get => _queue.RepeatProbability;
-            set => _queue.RepeatProbability = value;
-        }
+        private readonly IDictionary<int, IConsensusBroadcaster> _broadcasters =
+            new Dictionary<int, IConsensusBroadcaster>();
 
-        private bool Terminated { get; set; }
+        public readonly ISet<int> _mutedPlayers = new HashSet<int>();
+
+        private readonly RandomSamplingQueue<Tuple<int, int, ConsensusMessage>> _queue =
+            new RandomSamplingQueue<Tuple<int, int, ConsensusMessage>>();
+
+        private readonly object _queueLock = new object();
 
         private readonly Thread _thread;
         private bool _stopped;
-        public DeliveryServiceMode Mode { get; set; }
 
         public DeliveryService()
         {
@@ -30,7 +27,16 @@ namespace Phorkus.ConsensusTest
             _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
         }
-        
+
+        public double RepeatProbability
+        {
+            get => _queue.RepeatProbability;
+            set => _queue.RepeatProbability = value;
+        }
+
+        private bool Terminated { get; set; }
+        public DeliveryServiceMode Mode { get; set; }
+
         public void AddPlayer(int index, IConsensusBroadcaster player)
         {
             _broadcasters.Add(index, player);
@@ -40,7 +46,7 @@ namespace Phorkus.ConsensusTest
         {
             _mutedPlayers.Add(index);
         }
-        
+
         public void WaitFinish()
         {
             Terminated = true;
@@ -49,19 +55,16 @@ namespace Phorkus.ConsensusTest
                 Monitor.Pulse(_queueLock);
                 Console.Error.WriteLine("_queueLock pulsed.");
             }
+
             _thread.Join();
         }
 
         private void Start()
         {
             while (!Terminated || !_queue.IsEmpty)
-            {
                 lock (_queueLock)
                 {
-                    while (_queue.IsEmpty && !Terminated)
-                    {
-                        Monitor.Wait(_queueLock);
-                    }
+                    while (_queue.IsEmpty && !Terminated) Monitor.Wait(_queueLock);
 
                     if (!_queue.IsEmpty)
                     {
@@ -74,22 +77,19 @@ namespace Phorkus.ConsensusTest
                             _ => throw new NotImplementedException($"Unknown mode {Mode}")
                         };
 
-                        if (!success)
-                        {
-                            throw new Exception("Can't sample from queue!");
-                        }
+                        if (!success) throw new Exception("Can't sample from queue!");
 
                         Console.Error.WriteLine($"remaining in queue: {_queue.Count}");
 
                         var from = tuple.Item1;
                         var index = tuple.Item2;
                         var message = tuple.Item3;
-                        
+
                         if (_mutedPlayers.Contains(index)) continue;
-                        
+
                         try
                         {
-                            _broadcasters[index].Dispatch(message, from);
+                            _broadcasters[index].Dispatch(message, @from);
                         }
                         catch (Exception e)
                         {
@@ -103,7 +103,6 @@ namespace Phorkus.ConsensusTest
                         if (Terminated) return;
                     }
                 }
-            }
         }
 
         private void ReceiveMessage(int from, int to, ConsensusMessage message)
@@ -118,10 +117,7 @@ namespace Phorkus.ConsensusTest
 
         public void BroadcastMessage(int from, ConsensusMessage consensusMessage)
         {
-            for (var i = 0; i < _broadcasters.Count; ++i)
-            {
-                ReceiveMessage(from, i, consensusMessage);
-            }
+            for (var i = 0; i < _broadcasters.Count; ++i) ReceiveMessage(@from, i, consensusMessage);
         }
 
         public void SendToPlayer(int from, int index, ConsensusMessage consensusMessage)

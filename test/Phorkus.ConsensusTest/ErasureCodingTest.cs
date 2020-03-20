@@ -7,14 +7,6 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class ErasureCodingTest
     {
-        private ErasureCoding _erasureCoding;
-
-        private int[] _plainText;
-        private int _countErrors;
-        private int _countErasures;
-        
-        
-        
         [SetUp]
         public void SetUp()
         {
@@ -32,43 +24,17 @@ namespace Phorkus.ConsensusTest
             _plainText = plainText;
         }
 
-        [Test]
-        public void TestEncoderDecoder()
-        {
-            //var plainText = GetInput(_nPlayers * _msgSize, _additionalInts);
-            _erasureCoding.Print("Plain Text", _plainText);
-            _erasureCoding.Encoder(_plainText);
-            _erasureCoding.Print("After encoding", _plainText);
-            
-            // emulator  net ====================================================
-            //var tips = new int[_countErasures + _countErrors];
-            var tips = CorruptionNetwork(_plainText);
-            _erasureCoding.Print("After corruption", _plainText);
-            // ==================================================================
-            
-            _erasureCoding.Decode(_plainText, tips);
-            _erasureCoding.Print("After decoding", _plainText);
-            
-            Console.WriteLine("Random Indexes");
-            _erasureCoding.Print("After decoding", tips);
-            
-        }
+        private ErasureCoding _erasureCoding;
 
-        
-        [Test]
-        public void TestErasureCodingScheme()
-        {
-            
-        }
-        
+        private int[] _plainText;
+        private int _countErrors;
+        private int _countErasures;
+
         // The modelling of corruption of the network
         private int[] CorruptionNetwork(int[] sourceData)
         {
             var tips1 = GetRandomIndex(sourceData.Length, _countErasures + _countErrors);
-            foreach (var randomIndex in tips1)
-            {
-                sourceData[randomIndex] = 0;
-            }
+            foreach (var randomIndex in tips1) sourceData[randomIndex] = 0;
             //_erasureCoding.Print(GetRandomIndex(data.Length, countErasures + countErrors));
             return tips1;
         }
@@ -80,22 +46,20 @@ namespace Phorkus.ConsensusTest
             var input = new int[summaryLength];
             for (var i = 0; i != length; i++)
                 input[i] = rnd.Next() % 255;
-            
+
             for (var i = length; i != summaryLength; i++)
                 input[i] = 0;
             return input;
         }
+
         private int[] GetRandomIndex(int range, int count)
         {
             if (range > 255)
-                return new []{0};
+                return new[] {0};
             var charMax = range;
             var box = new int[charMax];
             var indexes = new int[count];
-            for (var i = 0; i != charMax; i++)
-            {
-                box[i] = 1;
-            }
+            for (var i = 0; i != charMax; i++) box[i] = 1;
 
             var countTry = 0;
             var rnd = new Random();
@@ -106,13 +70,35 @@ namespace Phorkus.ConsensusTest
                 indexes[countTry] = currentTry;
                 countTry++;
             }
+
             return indexes;
+        }
+
+        [Test]
+        public void TestEncoderDecoder()
+        {
+            //var plainText = GetInput(_nPlayers * _msgSize, _additionalInts);
+            _erasureCoding.Print("Plain Text", _plainText);
+            _erasureCoding.Encoder(_plainText);
+            _erasureCoding.Print("After encoding", _plainText);
+
+            // emulator  net ====================================================
+            //var tips = new int[_countErasures + _countErrors];
+            var tips = CorruptionNetwork(_plainText);
+            _erasureCoding.Print("After corruption", _plainText);
+            // ==================================================================
+
+            _erasureCoding.Decode(_plainText, tips);
+            _erasureCoding.Print("After decoding", _plainText);
+
+            Console.WriteLine("Random Indexes");
+            _erasureCoding.Print("After decoding", tips);
+        }
+
+
+        [Test]
+        public void TestErasureCodingScheme()
+        {
         }
     }
 }
-
-
-
-
-
-

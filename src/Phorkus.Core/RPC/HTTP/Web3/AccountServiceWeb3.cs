@@ -43,7 +43,7 @@ namespace Phorkus.Core.RPC.HTTP.Web3
             var addressUint160 = address.HexToBytes().ToUInt160();
             var availableBalance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
-            return availableBalance.ToWei().ToUInt160().ToHex().HexToBytes().Reverse()
+            return availableBalance.ToWei().ToUInt160().Buffer.ToByteArray().Reverse()
                 // .SkipWhile(b => b == 0)
                 .ToHex();
         }
@@ -56,12 +56,12 @@ namespace Phorkus.Core.RPC.HTTP.Web3
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
             var json = new JObject
             {
-                ["hash"] = transaction.ToHash256().Buffer.ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
             };
             var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256(),
+                Hash = HashUtils.ToHash256(transaction),
                 Signature = signature.HexToBytes().ToSignature()
             };
             var result = _transactionManager.Verify(accepted);
@@ -76,7 +76,11 @@ namespace Phorkus.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_sendRawTransaction")]
         private string SendRawTransaction(string rawTx)
         {
-            var ethTx = new TransactionChainId(rawTx.HexToByteArray());
+            Console.WriteLine(rawTx);
+            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            Console.WriteLine("R");
+            Console.WriteLine(ethTx.Signature.R.ToHex());
+            byte[] signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToArray();
             try
             {
                 var transaction = new Transaction
@@ -94,19 +98,27 @@ namespace Phorkus.Core.RPC.HTTP.Web3
                     {
                         Buffer = ByteString.CopyFrom(ethTx.Key.GetPublicAddress().HexToBytes())
                     },
-                    Nonce = ulong.Parse(ethTx.Nonce.ToHex(), NumberStyles.HexNumber),
-                    GasPrice = ulong.Parse(ethTx.GasPrice.ToHex(), NumberStyles.HexNumber),
-                    GasLimit = ulong.Parse(ethTx.GasLimit.ToHex(), NumberStyles.HexNumber),
+                    Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
+                    GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
+                    GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
                 };
 
-                Console.WriteLine(transaction);
+                Console.WriteLine("From: " + transaction.From.Buffer.ToHex());
+                Console.WriteLine("To: " + transaction.To.Buffer.ToHex());
+                Console.WriteLine("Value: " + transaction.Value.Buffer.ToHex());
+                Console.WriteLine("Nonce: " + transaction.Nonce);
+                Console.WriteLine("GasPrice: " + transaction.GasPrice);
+                Console.WriteLine("GasLimit: " + transaction.GasLimit);
+                Console.WriteLine("Signing Data: " + HashUtils.GetRlpHash(transaction).ToHex());
                 
-                
+                // var result = _transactionPool.Add(
+                //     transaction, rawTx.HexToBytes().ToSignature());
+
                 var result = _transactionPool.Add(
-                    transaction, rawTx.HexToBytes().ToSignature());
+                    transaction, signature.ToSignature());
                 if (result != OperatingError.Ok)
                     return "Can not add to transaction pool";
-                return transaction.ToHash256().Buffer.ToHex();
+                return HashUtils.ToHash256(transaction).Buffer.ToHex();
             }
             catch (Exception e)
             {

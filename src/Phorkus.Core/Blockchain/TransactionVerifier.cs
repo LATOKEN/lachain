@@ -69,7 +69,7 @@ namespace Phorkus.Core.Blockchain
                 throw new ArgumentNullException(nameof(transaction));
 
             /* validate transaction hash */
-            if (!transaction.Hash.Equals(transaction.Transaction.ToHash256()))
+            if (!transaction.Hash.Equals(HashUtils.ToHash256(transaction.Transaction)))
                 return false;
             
             try
@@ -77,12 +77,17 @@ namespace Phorkus.Core.Blockchain
                 /* try to verify signature using public key cache to avoid EC recover */
                 if (cacheEnabled && _publicKeyCache.TryGetValue(transaction.Transaction.From, out var publicKey))
                     return VerifyTransactionImmediately(transaction, publicKey);
-
+                Console.WriteLine(transaction.Hash.Buffer.ToByteArray().ToHex());
+                Console.WriteLine(transaction.Signature.Buffer.ToByteArray().ToHex());
                 /* recover EC to get public key from signature to compute address */
-                var rawKey = _crypto.RecoverSignature(transaction.Hash.Buffer.ToByteArray(),
+                var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.Buffer.ToByteArray(),
                     transaction.Signature.Buffer.ToByteArray());
+                
+                Console.WriteLine(rawKey.ToHex());
                 var address = _crypto.ComputeAddress(rawKey);
 
+                Console.WriteLine(address.ToHex());
+                Console.WriteLine(transaction.Transaction.From.Buffer.ToByteArray().ToHex());
                 /* check if recovered address from public key is valid */
                 if (rawKey is null || !address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
                     return false;

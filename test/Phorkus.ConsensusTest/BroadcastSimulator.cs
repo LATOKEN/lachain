@@ -16,35 +16,16 @@ namespace Phorkus.ConsensusTest
 {
     public class BroadcastSimulator : IConsensusBroadcaster
     {
-        private readonly int _sender;
-
-        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
-            new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
-
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
             new Dictionary<IProtocolIdentifier, IProtocolIdentifier>();
 
         private readonly DeliveryService _deliveryService;
-
-        private readonly IPublicConsensusKeySet _wallet;
         private readonly IPrivateConsensusKeySet _privateKeys;
+        private readonly int _sender;
 
         private readonly ISet<int> _silenced;
 
-        private bool Terminated { set; get; } = false;
-
-        public IConsensusProtocol GetProtocolById(IProtocolIdentifier id)
-        {
-            return Registry[id];
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Terminate()
-        {
-            Terminated = true;
-        }
-
-        private bool MixMessages { get; }
+        private readonly IPublicConsensusKeySet _wallet;
 
         public BroadcastSimulator(
             int sender, IPublicConsensusKeySet wallet, IPrivateConsensusKeySet privateKeys,
@@ -60,9 +41,22 @@ namespace Phorkus.ConsensusTest
             MixMessages = mixMessages;
         }
 
-        public void Silent(int id)
+        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
+            new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
+
+        private bool Terminated { set; get; }
+
+        private bool MixMessages { get; }
+
+        public IConsensusProtocol GetProtocolById(IProtocolIdentifier id)
         {
-            _silenced.Add(id);
+            return Registry[id];
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Terminate()
+        {
+            Terminated = true;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -86,63 +80,6 @@ namespace Phorkus.ConsensusTest
         {
             message.Validator = new Validator {Era = 0};
             _deliveryService.SendToPlayer(GetMyId(), index, message);
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private void CheckRequest(IProtocolIdentifier id)
-        {
-            if (Registry.ContainsKey(id)) return;
-            Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
-            if (Terminated)
-            {
-                Console.Error.WriteLine($"{_sender}: but already terminated.");
-                return;
-            }
-
-            switch (id)
-            {
-                case BinaryBroadcastId bbId:
-                    RegisterProtocols(new[]
-                    {
-                        new BinaryBroadcast(bbId, _wallet, this)
-                    });
-                    break;
-                case CoinId coinId:
-                    RegisterProtocols(new[]
-                    {
-                        new CommonCoin(coinId, _wallet, _privateKeys.ThresholdSignaturePrivateKeyShare, this),
-                    });
-                    break;
-                case ReliableBroadcastId rbcId:
-                    RegisterProtocols(new[]
-                    {
-                        //new MockReliableBroadcast(rbcId, _wallet, this),
-                        new ReliableBroadcast(rbcId, _wallet, this)
-                    });
-                    break;
-                case BinaryAgreementId baId:
-                    RegisterProtocols(new[]
-                    {
-                        new BinaryAgreement(baId, _wallet, this),
-                    });
-                    break;
-                case CommonSubsetId acsId:
-                    RegisterProtocols(new[]
-                    {
-                        new CommonSubset(acsId, _wallet, this),
-                    });
-                    break;
-                case RootProtocolId rootId:
-                    RegisterProtocols(new[]
-                    {
-                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this),
-                    });
-                    break;
-                default:
-                    throw new Exception($"Unknown protocol type {id}");
-            }
-
-            Console.Error.WriteLine($"{_sender}: created protocol {id}.");
         }
 
         public void Dispatch(ConsensusMessage message, int from)
@@ -248,9 +185,7 @@ namespace Phorkus.ConsensusTest
             where TId : IProtocolIdentifier
         {
             if (_callback.TryGetValue(result.From, out var senderId))
-            {
                 Registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-            }
 
             // message is also delivered to self
             Registry[result.From]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
@@ -259,6 +194,68 @@ namespace Phorkus.ConsensusTest
         public int GetMyId()
         {
             return _sender;
+        }
+
+        public void Silent(int id)
+        {
+            _silenced.Add(id);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void CheckRequest(IProtocolIdentifier id)
+        {
+            if (Registry.ContainsKey(id)) return;
+            Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
+            if (Terminated)
+            {
+                Console.Error.WriteLine($"{_sender}: but already terminated.");
+                return;
+            }
+
+            switch (id)
+            {
+                case BinaryBroadcastId bbId:
+                    RegisterProtocols(new[]
+                    {
+                        new BinaryBroadcast(bbId, _wallet, this)
+                    });
+                    break;
+                case CoinId coinId:
+                    RegisterProtocols(new[]
+                    {
+                        new CommonCoin(coinId, _wallet, _privateKeys.ThresholdSignaturePrivateKeyShare, this)
+                    });
+                    break;
+                case ReliableBroadcastId rbcId:
+                    RegisterProtocols(new[]
+                    {
+                        //new MockReliableBroadcast(rbcId, _wallet, this),
+                        new ReliableBroadcast(rbcId, _wallet, this)
+                    });
+                    break;
+                case BinaryAgreementId baId:
+                    RegisterProtocols(new[]
+                    {
+                        new BinaryAgreement(baId, _wallet, this)
+                    });
+                    break;
+                case CommonSubsetId acsId:
+                    RegisterProtocols(new[]
+                    {
+                        new CommonSubset(acsId, _wallet, this)
+                    });
+                    break;
+                case RootProtocolId rootId:
+                    RegisterProtocols(new[]
+                    {
+                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this)
+                    });
+                    break;
+                default:
+                    throw new Exception($"Unknown protocol type {id}");
+            }
+
+            Console.Error.WriteLine($"{_sender}: created protocol {id}.");
         }
     }
 }

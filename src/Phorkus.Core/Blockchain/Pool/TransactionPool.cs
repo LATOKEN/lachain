@@ -80,10 +80,12 @@ namespace Phorkus.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(Transaction transaction, Signature signature)
         {
+            Console.WriteLine("Hash");
+            Console.WriteLine(HashUtils.ToHash256(transaction).ToHex());
             var acceptedTx = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256(),
+                Hash = HashUtils.ToHash256(transaction),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };

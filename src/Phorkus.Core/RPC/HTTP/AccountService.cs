@@ -52,12 +52,12 @@ namespace Phorkus.Core.RPC.HTTP
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
             var json = new JObject
             {
-                ["hash"] = transaction.ToHash256().Buffer.ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
             };
             var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256(),
+                Hash = HashUtils.ToHash256(transaction),
                 Signature = signature.HexToBytes().ToSignature()
             };
             var result = _transactionManager.Verify(accepted);
@@ -75,7 +75,7 @@ namespace Phorkus.Core.RPC.HTTP
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             var json = new JObject
             {
-                ["hash"] = transaction.ToHash256().Buffer.ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
             };
             var result = _transactionPool.Add(
                 transaction, signature.HexToBytes().ToSignature());

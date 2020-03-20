@@ -20,6 +20,7 @@ namespace Phorkus.Crypto
     {
         private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
         private readonly ILogger<BouncyCastle> _logger = LoggerFactory.GetLoggerForClass<BouncyCastle>();
+        private readonly int chainId = 1;
 
 
         private static readonly ECDomainParameters Domain
@@ -33,13 +34,19 @@ namespace Phorkus.Crypto
             var pk = new byte[64];
             if (!Secp256K1.PublicKeyParse(pk, publicKey))
                 throw new ArgumentException();
+            
+            
+            var pubkeyDeserialized = new byte[33];
+            if (!Secp256K1.PublicKeySerialize(pubkeyDeserialized, pk, Flags.SECP256K1_EC_COMPRESSED))
+                throw new ArgumentException();
 
-            var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
+            var messageHash = message.Keccak256();
 
             var parsedSig = new byte[65];
-            int recId = signature[0];
-            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Skip(1).ToArray(), recId))
+            var recId = (signature[64] - 36) / 2 / chainId;
+            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
+            
 
             return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
         }
@@ -48,28 +55,50 @@ namespace Phorkus.Crypto
         public byte[] Sign(byte[] message, byte[] privateKey)
         {
             var messageHash = message.Keccak256();
-
             var sig = new byte[65];
             if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
                 throw new ArgumentException();
             var serialized = new byte[64];
             if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                 throw new ArgumentException();
+            recId = chainId * 2 + 35 + recId; 
             return serialized.Concat(new[] {(byte) recId}).ToArray();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignature(byte[] message, byte[] signature)
         {
-            var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(message);
+            var messageHash = message.Keccak256();
             var parsedSig = new byte[65];
             var pk = new byte[64];
-            int recId = signature[64];
+            var recId = (signature[64] - 36) / 2 / chainId;
+            Console.WriteLine(recId);
             if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
             if (!Secp256K1.Recover(pk, parsedSig, messageHash))
                 throw new ArgumentException("Bad signature");
+            
+            var result = new byte[33];
+            if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+            {
+                throw new ArgumentException("Bad signature");
+            }
 
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature)
+        {
+            var parsedSig = new byte[65];
+            var pk = new byte[64];
+            var recId = (signature[64] - 36) / 2 / chainId;
+            Console.WriteLine(recId);
+            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
+                throw new ArgumentException();
+            if (!Secp256K1.Recover(pk, parsedSig, messageHash))
+                throw new ArgumentException("Bad signature");
+            
             var result = new byte[33];
             if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
             {

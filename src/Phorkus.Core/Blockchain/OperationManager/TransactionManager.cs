@@ -65,7 +65,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!receipt.Transaction.ToHash256().Equals(receipt.Hash))
+            if (!HashUtils.ToHash256(receipt.Transaction).Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check is transaction type supported */
             if (!_transactionPersisters.ContainsKey(receipt.Transaction.Type))
@@ -109,7 +109,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             byte[] rlp = ethTx.GetRLPEncodedRaw();
             var message = rlp.Keccak256();
                 
-            // var message = transaction.ToHash256().Buffer.ToByteArray();
+            // var message = HashUtils.ToHash256(transaction).Buffer.ToByteArray();
             var signature = _crypto.Sign(message, keyPair.PrivateKey.Buffer.ToByteArray());
             /* we're afraid */
             var pubKey = _crypto.RecoverSignature(message, signature);
@@ -118,7 +118,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256(),
+                Hash = HashUtils.ToHash256(transaction),
                 Signature = signature.ToSignature()
             };
             OnTransactionSigned?.Invoke(this, signed);
@@ -134,7 +134,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesis)
         {
-            if (!Equals(acceptedTransaction.Hash, acceptedTransaction.Transaction.ToHash256()))
+            if (!Equals(acceptedTransaction.Hash, HashUtils.ToHash256(acceptedTransaction.Transaction)))
                 return OperatingError.HashMismatched;
             if (isGenesis)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;

@@ -1,5 +1,4 @@
 using Phorkus.Consensus;
-using Phorkus.Proto;
 
 namespace Phorkus.ConsensusTest
 {

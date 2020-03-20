@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using Google.Protobuf;
 using Org.BouncyCastle.Crypto.Digests;
 using Phorkus.Proto;
+using Phorkus.Utility.Utils;
 
 namespace Phorkus.Crypto
 {
@@ -87,12 +89,40 @@ namespace Phorkus.Crypto
                 Buffer = ByteString.CopyFrom(t.ToByteArray().Sha256())
             };
         }
-        
-        // public static UInt256 RLPHashKeccak<T>(this T t) // TODO: wtf sha256?
-        //     where T : IMessage<T>
-        // {
-        //     
-        // }
+
+        public static UInt256 GetRlpHash(Transaction t)
+        {
+            var ethTx = new Nethereum.Signer.Transaction(
+                new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray(),
+                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
+                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
+                t.To.Buffer.ToByteArray(),
+                t.Value.Buffer.ToByteArray(),
+                Array.Empty<byte>(),
+                Array.Empty<byte>(),
+                Array.Empty<byte>(),
+                0);
+            
+            var rlp = ethTx.GetRLPEncodedRaw();
+            return new UInt256
+            {
+                Buffer = ByteString.CopyFrom(rlp)
+            };
+        }
+
+        public static UInt256 ToHash256(Transaction t)
+        {
+            var rlp = GetRlpHash(t);
+            return Keccak(rlp);
+        }
+
+        public static UInt256 Keccak(UInt256 data)
+        {
+            return new UInt256
+            {
+                Buffer = ByteString.CopyFrom(data.Buffer.ToByteArray().Keccak256())
+            };
+        }
 
         public static UInt256 Hash(this BlockHeader header)
         {

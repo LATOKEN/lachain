@@ -14,16 +14,6 @@ namespace Phorkus.ConsensusTest
     [TestFixture]
     public class TPKESecureSetupTest
     {
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<TPKESetupId, Keys>[] _resultInterceptors;
-        private const int N = 10;
-        private const int T = 5;
-        private Random _rnd;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private IPublicConsensusKeySet _publicKeys;
-
         [SetUp]
         public void SetUp()
         {
@@ -47,6 +37,16 @@ namespace Phorkus.ConsensusTest
             Mcl.Init();
         }
 
+        private DeliveryService _deliveryService;
+        private IConsensusProtocol[] _broadcasts;
+        private IConsensusBroadcaster[] _broadcasters;
+        private ProtocolInvoker<TPKESetupId, Keys>[] _resultInterceptors;
+        private const int N = 10;
+        private const int T = 5;
+        private Random _rnd;
+        private IPrivateConsensusKeySet[] _privateKeys;
+        private IPublicConsensusKeySet _publicKeys;
+
         private void SetUpAllHonest()
         {
             for (uint i = 0; i < N; ++i)
@@ -60,32 +60,42 @@ namespace Phorkus.ConsensusTest
         {
             SetUpAllHonest();
             for (var i = 0; i < N; ++i)
-            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<TPKESetupId, object>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as TPKESetupId, null
                 ));
-            }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
-            for (var i = 0; i < N; ++i)
-            {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-            }
+            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
 
         private ISet<int> ChooseRandomPlayers(int t)
         {
             ISet<int> S = new HashSet<int>();
-            while (S.Count < t)
-            {
-                S.Add(_rnd.Next(0, N - 1));
-            }
+            while (S.Count < t) S.Add(_rnd.Next(0, N - 1));
 
             return S;
+        }
+
+        [Test]
+        [Repeat(10)]
+        public void TestEncryptionDecryption()
+        {
+            var data = new byte[32];
+            _rnd.NextBytes(data);
+
+            RunAllHonest();
+            var pubKey = _resultInterceptors[0].Result.PubKey;
+
+            var share = new RawShare(data, 555);
+            var enc = pubKey.Encrypt(share);
+
+            var parts = new List<PartiallyDecryptedShare>();
+            foreach (var i in ChooseRandomPlayers(T)) parts.Add(_resultInterceptors[i].Result.PrivKey.Decrypt(enc));
+
+            var dec = pubKey.FullDecrypt(enc, parts);
+
+            Assert.True(share.Equals(dec));
         }
 
         [Test]
@@ -113,30 +123,6 @@ namespace Phorkus.ConsensusTest
 
         [Test]
         [Repeat(10)]
-        public void TestEncryptionDecryption()
-        {
-            var data = new byte[32];
-            _rnd.NextBytes(data);
-
-            RunAllHonest();
-            var pubKey = _resultInterceptors[0].Result.PubKey;
-
-            var share = new RawShare(data, 555);
-            var enc = pubKey.Encrypt(share);
-
-            var parts = new List<PartiallyDecryptedShare>();
-            foreach (var i in ChooseRandomPlayers(T))
-            {
-                parts.Add(_resultInterceptors[i].Result.PrivKey.Decrypt(enc));
-            }
-
-            var dec = pubKey.FullDecrypt(enc, parts);
-
-            Assert.True(share.Equals(dec));
-        }
-
-        [Test]
-        [Repeat(10)]
         public void TestVerification()
         {
             var data = new byte[32];
@@ -148,7 +134,7 @@ namespace Phorkus.ConsensusTest
             var share = new RawShare(data, 555);
             var enc = pubKey.Encrypt(share);
 
-            for (int j = 0; j < N; ++j)
+            for (var j = 0; j < N; ++j)
             {
                 var vk = _resultInterceptors[j].Result.VerificationKey;
                 for (var i = 0; i < N; ++i)

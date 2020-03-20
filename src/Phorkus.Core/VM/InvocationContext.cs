@@ -11,7 +11,7 @@ namespace Phorkus.Core.VM
 
         public UInt256 Value => _transaction?.Value ?? UInt256Utils.Zero;
 
-        public UInt256 TransactionHash => _transaction?.ToHash256() ?? UInt256Utils.Zero;
+        public UInt256 TransactionHash => HashUtils.ToHash256(_transaction)  ?? UInt256Utils.Zero;
 
         public ulong BlockHeight => _block?.Header?.Index ?? 0;
 
