@@ -320,7 +320,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                     buffer[j] = BitConverter.GetBytes(v[i * playersCount + j])[0];
                 }
 
-                a.Add(buffer.Keccak256().ToUInt256());
+                a.Add(buffer.Keccak());
             }
 
             return a;

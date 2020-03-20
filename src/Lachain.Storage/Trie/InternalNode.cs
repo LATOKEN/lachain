@@ -55,7 +55,7 @@ namespace Lachain.Storage.Trie
             Hash = childrenHashes
                 .Zip(childrenLabels, (bytes, i) => new[] {i}.Concat(bytes))
                 .SelectMany(bytes => bytes)
-                .Keccak256();
+                .KeccakBytes();
         }
 
         public static InternalNode WithChildren(

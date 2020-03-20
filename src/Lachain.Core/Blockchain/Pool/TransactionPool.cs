@@ -83,7 +83,7 @@ namespace Lachain.Core.Blockchain.Pool
             var acceptedTx = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256(),
+                Hash = transaction.Keccak(),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };

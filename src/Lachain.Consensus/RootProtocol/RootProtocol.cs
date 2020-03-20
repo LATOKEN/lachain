@@ -52,7 +52,7 @@ namespace Lachain.Consensus.RootProtocol
                 var signedHeaderMessage = message.SignedHeaderMessage;
                 var idx = envelope.ValidatorIndex;
                 _logger.LogDebug(
-                    $"Received signature of header {signedHeaderMessage.Header.Hash().ToHex()} " +
+                    $"Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
                     $"from validator {idx}: " +
                     $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
                 );
@@ -62,13 +62,13 @@ namespace Lachain.Consensus.RootProtocol
                 }
 
                 if (!_crypto.VerifySignature(
-                    signedHeaderMessage.Header.HashBytes(),
+                    signedHeaderMessage.Header.KeccakBytes(),
                     signedHeaderMessage.Signature.Encode(),
                     Wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
                 ))
                 {
                     _logger.LogWarning(
-                        $"Incorrect signature of header {signedHeaderMessage.Header.Hash().ToHex()} from validator {idx}"
+                        $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}"
                     );
                 }
                 else
@@ -157,11 +157,11 @@ namespace Lachain.Consensus.RootProtocol
             }
 
             var signature = _crypto.Sign(
-                _header.HashBytes(),
+                _header.KeccakBytes(),
                 _keyPair.PrivateKey.Encode()
             ).ToSignature();
             _logger.LogDebug(
-                $"Signed header {_header.Hash().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}");
+                $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}");
             Broadcaster.Broadcast(CreateSignedHeaderMessage(_header, signature));
         }
 

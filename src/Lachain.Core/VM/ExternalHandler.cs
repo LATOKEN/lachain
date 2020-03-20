@@ -233,7 +233,7 @@ namespace Lachain.Core.VM
             frame.UseGas(GasMetering.Keccak256GasCost + GasMetering.Keccak256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
                        throw new InvalidOperationException();
-            var result = data.Keccak256();
+            var result = data.KeccakBytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 
@@ -243,7 +243,7 @@ namespace Lachain.Core.VM
             frame.UseGas(GasMetering.Sha256GasGasCost + GasMetering.Sha256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
                        throw new InvalidOperationException();
-            var result = data.Sha256();
+            var result = data.Sha256Bytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 
@@ -253,7 +253,7 @@ namespace Lachain.Core.VM
             frame.UseGas(GasMetering.Ripemd160GasCost + GasMetering.Ripemd160GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
                        throw new InvalidOperationException();
-            var result = data.Ripemd160();
+            var result = data.RipemdBytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 

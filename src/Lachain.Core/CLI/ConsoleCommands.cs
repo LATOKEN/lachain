@@ -22,7 +22,6 @@ namespace Lachain.Core.CLI
         private const uint AddressLength = 20;
         private const uint TxLength = 32;
 
-        private readonly IValidatorManager _validatorManager;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
@@ -37,16 +36,15 @@ namespace Lachain.Core.CLI
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            IValidatorManager validatorManager,
             IStateManager stateManager,
             IVirtualMachine virtualMachine,
-            ECDSAKeyPair keyPair)
+            ECDSAKeyPair keyPair
+        )
         {
             _blockManager = blockManager;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
-            _validatorManager = validatorManager;
             _stateManager = stateManager;
             _keyPair = keyPair;
             _virtualMachine = virtualMachine;
@@ -138,7 +136,7 @@ namespace Lachain.Core.CLI
         {
             var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).ToHash160();
+            var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).Keccak();
             var byteCode = arguments[1].HexToBytes();
             if (!_virtualMachine.VerifyContract(byteCode))
                 return "Unable to validate smart-contract code";
@@ -223,7 +221,7 @@ namespace Lachain.Core.CLI
             var sig = arguments[2].HexToBytes().ToSignature();
             var result = _transactionPool.Add(tx, sig);
             Console.WriteLine($"Status: {result}");
-            Console.WriteLine($"Hash: {tx.ToHash256().ToHex()}");
+            Console.WriteLine($"Hash: {tx.Keccak().ToHex()}");
             return "";
         }
 
@@ -263,11 +261,11 @@ namespace Lachain.Core.CLI
             var tx = Transaction.Parser.ParseFrom(
                 arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
-            Console.WriteLine($"Tx Hash: {tx.ToHash256().Buffer.ToHex()}");
+            Console.WriteLine($"Tx Hash: {tx.Keccak().ToHex()}");
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,
-                Hash = tx.ToHash256(),
+                Hash = tx.Keccak(),
                 Signature = sig
             };
             Console.WriteLine("Transaction validity: " + _transactionManager.Verify(accepted));

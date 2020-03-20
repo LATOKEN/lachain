@@ -49,7 +49,7 @@ namespace Lachain.Core.Blockchain.Genesis
                 .Select(tx => new TransactionReceipt
                 {
                     Transaction = tx,
-                    Hash = tx.ToHash256(),
+                    Hash = tx.Keccak(),
                     Signature = SignatureUtils.Zero,
                 })
                 .ToList();
@@ -67,7 +67,7 @@ namespace Lachain.Core.Blockchain.Genesis
 
             var result = new Block
             {
-                Hash = header.ToHash256(),
+                Hash = header.Keccak(),
                 TransactionHashes = {txHashes},
                 Header = header
             };

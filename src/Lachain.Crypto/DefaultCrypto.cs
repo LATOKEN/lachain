@@ -27,7 +27,7 @@ namespace Lachain.Crypto
 
         private byte[] HashMessage(IEnumerable<byte> message)
         {
-            return message.Keccak256();
+            return message.KeccakBytes();
         }
 
         private int RecoveryFromV(byte v)
@@ -87,7 +87,7 @@ namespace Lachain.Crypto
 
         public byte[] ComputeAddress(byte[] publicKey)
         {
-            return DecodePublicKey(publicKey, false, out _, out _).Skip(1).Keccak256().Skip(12).ToArray();
+            return DecodePublicKey(publicKey, false, out _, out _).Skip(1).KeccakBytes().Skip(12).ToArray();
         }
 
         public byte[] ComputePublicKey(byte[] privateKey, bool compress = true)

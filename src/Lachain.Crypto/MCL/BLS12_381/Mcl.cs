@@ -30,7 +30,7 @@ namespace Lachain.Crypto.MCL.BLS12_381
             MclImports.mclBn_G2LagrangeInterpolation(ref res, xs, ys, xs.Length);
             return res;
         }
-        
+
         public static G1 LagrangeInterpolateG1(Fr[] xs, G1[] ys)
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
@@ -72,10 +72,10 @@ namespace Lachain.Crypto.MCL.BLS12_381
                 res += coeff * cur;
                 cur *= by;
             }
+
             return res;
         }
-        
-        
+
 //        public static G2 GetValue(IEnumerable<G2> P, int at)
 //        {
 //            var res = G2.Zero;
@@ -92,20 +92,12 @@ namespace Lachain.Crypto.MCL.BLS12_381
 //        }
 
 
-        public static byte[] CalculateHash(G1[] g1, G2[] g2)
+        public static byte[] CalculateHash(IEnumerable<G1> g1, IEnumerable<G2> g2)
         {
             var temp = new byte[0];
-            foreach (var g in g1)
-            {
-                temp = temp.Concat(G1.ToBytes(g)).ToArray();
-            }
-            
-            foreach (var g in g2)
-            {
-                temp = temp.Concat(G2.ToBytes(g)).ToArray();
-            }
-
-            return temp.Keccak256();
+            temp = g1.Aggregate(temp, (current, g) => current.Concat(G1.ToBytes(g)).ToArray());
+            temp = g2.Aggregate(temp, (current, g) => current.Concat(G2.ToBytes(g)).ToArray());
+            return temp.KeccakBytes();
         }
     }
 }

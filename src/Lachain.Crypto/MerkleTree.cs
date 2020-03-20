@@ -170,7 +170,7 @@ namespace Lachain.Crypto
                 var hash = new byte[Hash2Size];
                 Array.Copy(current.LeftChild.Hash.ToByteArray(), 0, hash, 0, HashSize);
                 Array.Copy(current.RightChild.Hash.ToByteArray(), 0, hash, HashSize, HashSize);
-                current.Hash = hash.Keccak256().ToUInt256();
+                current.Hash = hash.Keccak();
             }
 
             return Build(parents); //TailCall

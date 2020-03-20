@@ -68,7 +68,7 @@ namespace Lachain.Core.Blockchain.Pool
                              throw new InvalidOperationException();
             var header = new BlockHeader
             {
-                PrevBlockHash = _prevBlock != null ? _prevBlock.ToHash256() : UInt256Utils.Zero,
+                PrevBlockHash = _prevBlock != null ? _prevBlock.Keccak() : UInt256Utils.Zero,
                 MerkleRoot = merkleRoot,
                 Index = _prevBlock?.Index + 1 ?? 0,
                 StateHash = _stateHash,
@@ -76,7 +76,7 @@ namespace Lachain.Core.Blockchain.Pool
             };
             var block = new Block
             {
-                Hash = header.ToByteArray().ToHash256(),
+                Hash = header.Keccak(),
                 TransactionHashes = {txs.Select(tx => tx.Hash)},
                 Header = header,
                 Multisig = _multiSig ?? new MultiSig(),

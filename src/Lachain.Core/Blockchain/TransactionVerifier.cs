@@ -69,7 +69,7 @@ namespace Lachain.Core.Blockchain
                 throw new ArgumentNullException(nameof(transaction));
 
             /* validate transaction hash */
-            if (!transaction.Hash.Equals(transaction.Transaction.ToHash256()))
+            if (!transaction.Hash.Equals(transaction.Transaction.Keccak()))
                 return false;
 
             try
@@ -83,8 +83,8 @@ namespace Lachain.Core.Blockchain
                     transaction.Signature.Buffer.ToByteArray());
                 var address = _crypto.ComputeAddress(rawKey);
 
-                /* check if recovered addres from public key is valid */
-                if (rawKey is null || !address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
+                /* check if recovered address from public key is valid */
+                if (!address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
                     return false;
 
                 /* try to remember public key for this address */

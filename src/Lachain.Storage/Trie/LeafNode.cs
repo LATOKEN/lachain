@@ -9,12 +9,12 @@ namespace Lachain.Storage.Trie
     {
         public readonly byte[] KeyHash;
         public readonly byte[] Value;
-        
+
         public LeafNode(IEnumerable<byte> keyHash, IEnumerable<byte> value)
         {
             KeyHash = keyHash.ToArray();
             Value = value.ToArray();
-            Hash = BitConverter.GetBytes(KeyHash.Length).Concat(KeyHash).Concat(Value).Keccak256();
+            Hash = BitConverter.GetBytes(KeyHash.Length).Concat(KeyHash).Concat(Value).KeccakBytes();
         }
 
         public NodeType Type { get; } = NodeType.Leaf;

@@ -47,7 +47,7 @@ namespace Lachain.Storage.Trie
 
         private static byte[] Hash(IEnumerable<byte> key)
         {
-            return key.Keccak256();
+            return key.KeccakBytes();
         }
 
         public ulong Add(ulong root, byte[] key, byte[] value)
@@ -239,7 +239,8 @@ namespace Lachain.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = DeleteInternal(to, height + 1, keyHash, out value, check);
-                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
+                    return ModifyInternalNode(internalNode, h, updatedTo,
+                        GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                     {
@@ -265,7 +266,8 @@ namespace Lachain.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = UpdateInternal(to, height + 1, keyHash, value);
-                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
+                    return ModifyInternalNode(internalNode, h, updatedTo,
+                        GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                         throw new KeyNotFoundException(nameof(keyHash));

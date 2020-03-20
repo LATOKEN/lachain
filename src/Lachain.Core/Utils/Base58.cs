@@ -18,26 +18,6 @@ namespace Lachain.Core.Utils
         /// </summary>
         private static readonly BigInteger Big58 = new BigInteger(58);
 
-        public static byte[] CheckDecode(string input)
-        {
-            var buffer = Decode(input);
-            if (buffer.Length < 4)
-                throw new FormatException();
-            var checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
-            if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
-                throw new FormatException();
-            return buffer.Take(buffer.Length - 4).ToArray();
-        }
-
-        public static string CheckEncode(byte[] data)
-        {
-            var checksum = data.Sha256().Sha256();
-            var buffer = new byte[data.Length + 4];
-            Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
-            Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
-            return Encode(buffer);
-        }
-
         /// <summary>
         /// Decode
         /// </summary>

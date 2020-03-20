@@ -64,7 +64,7 @@ namespace Lachain.Core.Blockchain.OperationManager
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!receipt.Transaction.ToHash256().Equals(receipt.Hash))
+            if (!receipt.Transaction.Keccak().Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check is transaction type supported */
             if (!_transactionPersisters.ContainsKey(receipt.Transaction.Type))
@@ -93,7 +93,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         public TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
-            var message = transaction.ToHash256().Buffer.ToByteArray();
+            var message = transaction.KeccakBytes();
             var signature = _crypto.Sign(message, keyPair.PrivateKey.Buffer.ToByteArray());
             /* we're afraid */
             var pubKey = _crypto.RecoverSignature(message, signature);
@@ -102,13 +102,13 @@ namespace Lachain.Core.Blockchain.OperationManager
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.ToHash256(),
+                Hash = transaction.Keccak(),
                 Signature = signature.ToSignature()
             };
             OnTransactionSigned?.Invoke(this, signed);
             return signed;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Verify(TransactionReceipt transaction)
         {
@@ -118,7 +118,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesis)
         {
-            if (!Equals(acceptedTransaction.Hash, acceptedTransaction.Transaction.ToHash256()))
+            if (!Equals(acceptedTransaction.Hash, acceptedTransaction.Transaction.Keccak()))
                 return OperatingError.HashMismatched;
             if (isGenesis)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;

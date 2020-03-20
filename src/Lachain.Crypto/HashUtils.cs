@@ -10,32 +10,7 @@ namespace Lachain.Crypto
 {
     public static class HashUtils
     {
-        public static byte[] Sha256(this string message)
-        {
-            return Encoding.UTF8.GetBytes(message).Sha256();
-        }
-
-        public static byte[] Sha256(this byte[] message, int offset, int count)
-        {
-            var hash = new Sha256Digest();
-            hash.BlockUpdate(message, offset, count);
-
-            var result = new byte[32];
-            hash.DoFinal(result, 0);
-            return result;
-        }
-
-        public static byte[] Sha256(this byte[] message)
-        {
-            return Sha256(message, 0, message.Length);
-        }
-
-        public static byte[] Ripemd160(this string message)
-        {
-            return Encoding.ASCII.GetBytes(message).Ripemd160();
-        }
-
-        public static byte[] Ripemd160(this IEnumerable<byte> message, int offset, int count)
+        public static byte[] RipemdBytes(this IEnumerable<byte> message, int offset, int count)
         {
             var hash = new RipeMD160Digest();
             hash.BlockUpdate(message.ToArray(), offset, count);
@@ -44,32 +19,21 @@ namespace Lachain.Crypto
             return result;
         }
 
-        public static byte[] Ripemd160(this IEnumerable<byte> message)
+        public static byte[] RipemdBytes(this IEnumerable<byte> message)
         {
             var messageArray = message.ToArray();
-            return Ripemd160(messageArray, 0, messageArray.Length);
+            return RipemdBytes(messageArray, 0, messageArray.Length);
         }
 
-        public static byte[] Ed25519(this byte[] message)
+        public static UInt160 Ripemd(this IEnumerable<byte> buffer)
         {
-            throw new NotImplementedException();
-        }
-
-        public static byte[] Murmur3(this byte[] message, uint seed)
-        {
-            using (var murmur = new Murmur3(seed))
-                return murmur.ComputeHash(message);
-        }
-
-        public static uint Murmur32(this byte[] message, uint seed)
-        {
-            using (var murmur = new Murmur3(seed))
+            return new UInt160
             {
-                return BitConverter.ToUInt32(murmur.ComputeHash(message), 0);
-            }
+                Buffer = ByteString.CopyFrom(buffer.RipemdBytes())
+            };
         }
 
-        public static byte[] Keccak256(this IEnumerable<byte> message)
+        public static byte[] KeccakBytes(this IEnumerable<byte> message)
         {
             var bytes = message as byte[] ?? message.ToArray();
             var digest = new KeccakDigest(256);
@@ -79,48 +43,46 @@ namespace Lachain.Crypto
             return output;
         }
 
-        public static UInt256 ToHash256<T>(this T t) // TODO: wtf sha256?
-            where T : IMessage<T>
+        public static byte[] KeccakBytes<T>(this T t) where T : IMessage<T>
         {
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(t.ToByteArray().Sha256())
-            };
+            return t.ToByteArray().KeccakBytes();
         }
 
-        public static UInt256 Hash(this BlockHeader header)
+        public static UInt256 Keccak<T>(this T t) where T : IMessage<T>
         {
-            return header.ToByteArray().ToHash256();
+            return new UInt256 {Buffer = ByteString.CopyFrom(t.ToByteArray().KeccakBytes())};
+        }
+
+        public static UInt256 Keccak(this IEnumerable<byte> buffer)
+        {
+            return new UInt256 {Buffer = ByteString.CopyFrom(buffer.KeccakBytes())};
         }
         
-        public static byte[] HashBytes(this BlockHeader header)
+        public static byte[] Sha256Bytes(this IEnumerable<byte> message)
         {
-            return header.ToByteArray().ToHash256().Buffer.ToByteArray();
+            var bytes = message as byte[] ?? message.ToArray();
+            var digest = new Sha256Digest();
+            digest.BlockUpdate(bytes, 0, bytes.Length);
+            var output = new byte[32];
+            digest.DoFinal(output, 0);
+            return output;
+        }
+        
+        public static UInt256 Sha256(this IEnumerable<byte> buffer)
+        {
+            return new UInt256 {Buffer = ByteString.CopyFrom(buffer.Sha256Bytes())};
         }
 
-        public static UInt160 ToHash160<T>(this T t)
-            where T : IMessage<T>
+        public static byte[] Murmur3(this byte[] message, uint seed)
         {
-            return new UInt160
-            {
-                Buffer = ByteString.CopyFrom(t.ToByteArray().Ripemd160())
-            };
+            using var murmur = new Murmur3(seed);
+            return murmur.ComputeHash(message);
         }
 
-        public static UInt160 ToHash160(this IEnumerable<byte> buffer)
+        public static uint Murmur32(this byte[] message, uint seed)
         {
-            return new UInt160
-            {
-                Buffer = ByteString.CopyFrom(buffer.Ripemd160())
-            };
-        }
-
-        public static UInt256 ToHash256(this byte[] buffer)
-        {
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(buffer.Sha256())
-            };
+            using var murmur = new Murmur3(seed);
+            return BitConverter.ToUInt32(murmur.ComputeHash(message), 0);
         }
     }
 }

@@ -7,7 +7,6 @@ using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Storage.State;
@@ -16,7 +15,6 @@ namespace Lachain.Core.CLI
 {
     public class ConsoleManager : IConsoleManager
     {
-        private readonly IValidatorManager _validatorManager;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
@@ -34,7 +32,6 @@ namespace Lachain.Core.CLI
             ITransactionManager transactionManager,
             IVirtualMachine virtualMachine,
             IBlockManager blockManager,
-            IValidatorManager validatorManager,
             IStateManager stateManager
         )
         {
@@ -42,7 +39,6 @@ namespace Lachain.Core.CLI
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
-            _validatorManager = validatorManager;
             _stateManager = stateManager;
             _virtualMachine = virtualMachine;
         }
@@ -51,7 +47,7 @@ namespace Lachain.Core.CLI
         {
             _consoleCommands = new ConsoleCommands(
                 _transactionBuilder, _transactionPool, _transactionManager,
-                _blockManager, _validatorManager, _stateManager, _virtualMachine, keyPair
+                _blockManager, _stateManager, _virtualMachine, keyPair
             );
             try
             {

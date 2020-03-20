@@ -11,7 +11,7 @@ namespace Lachain.Core.VM
     public class ContractEncoder
     {
         private readonly BinaryWriter _binaryWriter;
-        
+
         public static byte[] Encode(string methodSignature, params dynamic[] values)
         {
             var encoder = new ContractEncoder(methodSignature);
@@ -19,13 +19,12 @@ namespace Lachain.Core.VM
                 (current, value) => current.Write(value));
             return encoder.ToByteArray();
         }
-        
+
         public ContractEncoder(string methodSignature)
         {
             _binaryWriter = new BinaryWriter(
                 new MemoryStream());
-            var buffer = Encoding.ASCII.GetBytes(methodSignature)
-                .Keccak256();
+            var buffer = Encoding.ASCII.GetBytes(methodSignature).KeccakBytes();
             var signature = 0;
             if (!methodSignature.StartsWith("constructor("))
                 signature = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
@@ -43,7 +42,7 @@ namespace Lachain.Core.VM
             _binaryWriter.Write(value);
             return this;
         }
-        
+
         public ContractEncoder Write(int value)
         {
             _binaryWriter.Write(value);
@@ -55,21 +54,21 @@ namespace Lachain.Core.VM
             _binaryWriter.Write(value);
             return this;
         }
-        
+
         public ContractEncoder Write(UInt256 value)
         {
             var buffer = value.Buffer.ToByteArray();
             _binaryWriter.Write(buffer);
             return this;
         }
-        
+
         public ContractEncoder Write(UInt160 value)
         {
             var buffer = value.Buffer.ToByteArray();
             _binaryWriter.Write(buffer);
             return this;
         }
-        
+
         public ContractEncoder Write(Money value)
         {
             var buffer = value.ToUInt256().Buffer.ToByteArray();

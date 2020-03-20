@@ -42,7 +42,7 @@ namespace Lachain.Storage.State
                     .Aggregate(
                         Enumerable.Empty<byte>(),
                         (current, snapshot) => current.Concat(snapshot.Hash.Buffer.ToByteArray()))
-                    .Keccak256().ToUInt256();
+                    .Keccak();
             }
         }
     }

@@ -141,7 +141,7 @@ namespace Lachain.Benchmark
             if (deployError != OperatingError.Ok)
                 throw new Exception("Unable to add deploy tx (" + deployError + ")");
             var contract = deployTx.From.Buffer.ToArray().Concat(BitConverter.GetBytes((uint) deployTx.Nonce))
-                .ToHash160();
+                .Ripemd();
 
             _Benchmark("Building TX pool... ", i =>
             {
@@ -157,31 +157,31 @@ namespace Lachain.Benchmark
             var blocks = new BlockWithTransactions[transactionPool.Size() / txPerBlock];
 
             _Benchmark("Generating blocks... ", i =>
+            {
+                var txs = transactionPool.Peek(txPerBlock, txPerBlock);
+                var latestBlock = blockchainContext.CurrentBlock;
+                if (i > 0)
+                    latestBlock = blocks[i - 1].Block;
+                var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                    .WithTransactions(txs)
+                    .Build(123456);
+                var block = blockWithTxs.Block;
+                block.Multisig = new MultiSig
                 {
-                    var txs = transactionPool.Peek(txPerBlock, txPerBlock);
-                    var latestBlock = blockchainContext.CurrentBlock;
-                    if (i > 0)
-                        latestBlock = blocks[i - 1].Block;
-                    var blockWithTxs = new BlockBuilder(latestBlock.Header)
-                        .WithTransactions(txs)
-                        .Build(123456);
-                    var block = blockWithTxs.Block;
-                    block.Multisig = new MultiSig
+                    Quorum = 1,
+                    Signatures =
                     {
-                        Quorum = 1,
-                        Signatures =
+                        new MultiSig.Types.SignatureByValidator
                         {
-                            new MultiSig.Types.SignatureByValidator
-                            {
-                                Key = keyPair.PublicKey,
-                                Value = blockManager.Sign(block.Header, keyPair)
-                            }
-                        },
-                        Validators = {keyPair.PublicKey}
-                    };
-                    blocks[i] = blockWithTxs;
-                    return i;
-                }, transactionPool.Size() / txPerBlock);
+                            Key = keyPair.PublicKey,
+                            Value = blockManager.Sign(block.Header, keyPair)
+                        }
+                    },
+                    Validators = {keyPair.PublicKey}
+                };
+                blocks[i] = blockWithTxs;
+                return i;
+            }, transactionPool.Size() / txPerBlock);
 
             var currentTime = TimeUtils.CurrentTimeMillis();
 
@@ -226,7 +226,7 @@ namespace Lachain.Benchmark
                 var stateHash = blockchainManager.CalcStateHash(blockWithTxs.Block, blockWithTxs.Transactions);
                 var block = blockWithTxs.Block;
                 block.Header.StateHash = stateHash;
-                block.Hash = block.Header.ToHash256();
+                block.Hash = block.Header.Keccak();
                 block.Multisig = new MultiSig
                 {
                     Quorum = 1,

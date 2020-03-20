@@ -302,20 +302,20 @@ namespace Lachain.Core.Blockchain.OperationManager
 
         public Signature Sign(BlockHeader block, ECDSAKeyPair keyPair)
         {
-            return _crypto.Sign(block.ToHash256().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
+            return _crypto.Sign(block.Keccak().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
                 .ToSignature();
         }
 
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
-            var result = _crypto.VerifySignature(blockHeader.ToHash256().Buffer.ToByteArray(),
+            var result = _crypto.VerifySignature(blockHeader.Keccak().Buffer.ToByteArray(),
                 signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
         public OperatingError VerifySignatures(Block block)
         {
-            if (!block.Header.ToHash256().Equals(block.Hash))
+            if (!block.Header.Keccak().Equals(block.Hash))
                 return OperatingError.HashMismatched;
             if (_IsGenesisBlock(block))
                 return OperatingError.Ok;
@@ -325,7 +325,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         public OperatingError Verify(Block block)
         {
             var header = block.Header;
-            if (!Equals(block.Hash, header.ToHash256()))
+            if (!Equals(block.Hash, header.Keccak()))
                 return OperatingError.HashMismatched;
             if (block.Header.Index != 0 && header.PrevBlockHash.IsZero())
                 return OperatingError.InvalidBlock;
