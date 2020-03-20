@@ -119,14 +119,10 @@ namespace Phorkus.Core.Network
             }
 
             /* persist block to database */
-            var txs = new List<TransactionReceipt>();
-            foreach (var txHash in block.TransactionHashes)
-            {
-                var tx = _transactionPool.GetByHash(txHash);
-                if (tx is null)
-                    continue;
-                txs.Add(tx);
-            }
+            var txs = block.TransactionHashes
+                .Select(txHash => _transactionPool.GetByHash(txHash))
+                .Where(tx => !(tx is null))
+                .ToList();
 
             var error = _stateManager.SafeContext(() =>
                 _blockManager.Execute(block, txs, commit: true, checkStateHash: true));

@@ -9,6 +9,7 @@ using Phorkus.Consensus.Messages;
 using Phorkus.Consensus.RootProtocol;
 using Phorkus.Consensus.TPKE;
 using Phorkus.Core.Blockchain;
+using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Validators;
 using Phorkus.Core.Config;
@@ -29,6 +30,7 @@ namespace Phorkus.Core.Consensus
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IBlockProducer _blockProducer;
+        private readonly IBlockchainContext _blockchainContext;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private bool _terminated;
         private readonly IPrivateConsensusKeySet _consensusKeySet;
@@ -41,7 +43,8 @@ namespace Phorkus.Core.Consensus
             IValidatorManager validatorManager,
             IConfigManager configManager,
             IBlockProducer blockProducer,
-            IBlockManager blockManager
+            IBlockManager blockManager,
+            IBlockchainContext blockchainContext
         )
         {
             var config = configManager.GetConfig<ConsensusConfig>("consensus");
@@ -60,6 +63,7 @@ namespace Phorkus.Core.Consensus
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
+            _blockchainContext = blockchainContext;
             _terminated = false;
 
             _consensusKeySet = new PrivateConsensusKeySet(keyPair, tpkePrivateKey, thresholdSignaturePrivateKeyShare);
@@ -86,7 +90,7 @@ namespace Phorkus.Core.Consensus
             for (var i = CurrentEra; i <= newEra; ++i)
             {
                 var broadcaster = EnsureEra(i);
-                broadcaster.Terminate();
+                broadcaster?.Terminate();
                 _eras.Remove(i);
             }
 
@@ -133,6 +137,12 @@ namespace Phorkus.Core.Consensus
                         Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + minBlockInterval - now));
                     }
 
+                    if ((long) _blockchainContext.CurrentBlockHeight >= CurrentEra)
+                    {
+                        AdvanceEra((long) _blockchainContext.CurrentBlockHeight);
+                        continue;
+                    }
+
                     var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                     var rootId = new RootProtocolId(CurrentEra);
                     broadcaster.InternalRequest(
@@ -164,6 +174,7 @@ namespace Phorkus.Core.Consensus
         [MethodImpl(MethodImplOptions.Synchronized)]
         private EraBroadcaster? EnsureEra(long era)
         {
+            if (era <= 0) return null;
             if (_eras.ContainsKey(era)) return _eras[era];
             _logger.LogDebug($"Creating broadcaster for era {era}");
             if (_terminated)

@@ -7,7 +7,6 @@ using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Config;
 using Phorkus.Crypto;
 using Phorkus.Proto;
-using Phorkus.Storage.Repositories;
 using Phorkus.Storage.State;
 using Phorkus.Utility.Utils;
 
@@ -19,7 +18,6 @@ namespace Phorkus.Core.Blockchain.Interface
         private readonly IBlockManager _blockManager;
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
-        private readonly ISnapshotIndexRepository _snapshotIndexRepository;
 
         public ulong CurrentBlockHeight => _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
         public Block? CurrentBlock => _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(CurrentBlockHeight);
@@ -28,15 +26,13 @@ namespace Phorkus.Core.Blockchain.Interface
             IGenesisBuilder genesisBuilder,
             IBlockManager blockManager,
             IConfigManager configManager,
-            IStateManager stateManager,
-            ISnapshotIndexRepository snapshotIndexRepository
+            IStateManager stateManager
         )
         {
             _genesisBuilder = genesisBuilder;
             _blockManager = blockManager;
             _configManager = configManager;
             _stateManager = stateManager;
-            _snapshotIndexRepository = snapshotIndexRepository;
         }
 
         public bool TryBuildGenesisBlock()

@@ -7,7 +7,7 @@ namespace Phorkus.Core.DI.Modules
     {
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
-            containerBuilder.RegisterSingleton<ICrypto, BouncyCastle>();
+            containerBuilder.RegisterSingleton<ICrypto, DefaultCrypto>();
         }
     }
 }

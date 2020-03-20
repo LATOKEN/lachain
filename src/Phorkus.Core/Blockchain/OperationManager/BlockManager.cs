@@ -127,6 +127,7 @@ namespace Phorkus.Core.Blockchain.OperationManager
                     return OperatingError.Ok;
                 _logger.LogInformation(
                     $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}, fee {totalFee}");
+                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot); // TODO: this is hack
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;
@@ -160,7 +161,10 @@ namespace Phorkus.Core.Blockchain.OperationManager
             /* check next block index */
             var currentBlockHeader = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             if (!_IsGenesisBlock(block) && currentBlockHeader + 1 != block.Header.Index)
+            {
+                _logger.LogError($"Error executing block {block.Header.Index}: latest block is {currentBlockHeader}");
                 return OperatingError.InvalidNonce;
+            }
             var exists = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
             if (exists != null)
                 return OperatingError.BlockAlreadyExists;

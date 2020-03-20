@@ -68,7 +68,7 @@ namespace Phorkus.Consensus
             lock (_queueLock)
             {
                 if (Terminated) return;
-                _logger.LogDebug($"Protocol {GetType()} is terminated");
+                _logger.LogDebug($"Protocol {Id} is terminated");
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
             }
