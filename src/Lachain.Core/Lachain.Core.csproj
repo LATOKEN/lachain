@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>8</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Lachain.Core</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AustinHarris.JsonRpc" Version="1.1.70" />
+    <PackageReference Include="BouncyCastle" Version="1.8.4" />
+    <PackageReference Include="C5" Version="3.0.0-beta" />
+    <PackageReference Include="Crc32" Version="1.1.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.6.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0-preview3-35497" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0-preview3-35497" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="SimpleInjector" Version="4.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\wasm\WebAssembly\WebAssembly.csproj" />
+    <ProjectReference Include="..\Lachain.Consensus\Lachain.Consensus.csproj" />
+    <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />
+    <ProjectReference Include="..\Lachain.Networking\Lachain.Networking.csproj" />
+    <ProjectReference Include="..\Lachain.Proto\Lachain.Proto.csproj" />
+    <ProjectReference Include="..\Lachain.Storage\Lachain.Storage.csproj" />
+    <ProjectReference Include="..\Lachain.Utility\Lachain.Utility.csproj" />
+    <ProjectReference Include="..\Lachain.Logger\Lachain.Logger.csproj" />
+  </ItemGroup>
+</Project>

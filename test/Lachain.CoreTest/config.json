@@ -1,0 +1,29 @@
+{
+  "network": {
+    "magic": 56754,
+    "port": 5050,
+    "peers": [
+      "tcp://192.168.88.154:5050",
+      "tcp://192.168.88.69:5050",
+      "tcp://192.168.88.152:5050",
+      "tcp://192.168.88.214:5050"
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100
+  },
+  "blockchain": {
+  },
+  "consensus": {
+    "validators": [
+      "0x02b3622bf4017bdfe317c58aed5f4c753f206b7db896046fa7d774bbc4bf7f8dc2",
+      "0x02103a7f7dd016558597f7960d27c516a4394fd968b9e65155eb4b013e4040406e",
+      "0x03d90c07df63e690ce77912e10ab51acc944b66860237b608c4f8f8309e71ee699",
+      "0x02a7bc55fe8684e0119768d104ba30795bdcc86619e864add26156723ed185cd62"
+    ],
+    "privateKey": "0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainLachain"
+  }
+}

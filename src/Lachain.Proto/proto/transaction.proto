@@ -1,0 +1,38 @@
+syntax = "proto3";
+option csharp_namespace = "Lachain.Proto";
+option java_package = "com.latoken.proto";
+import "default.proto";
+
+enum TransactionStatus {
+    TRANSACTION_STATUS_UNKNOWN = 0;
+    TRANSACTION_STATUS_POOL = 1;
+    TRANSACTION_STATUS_EXECUTED = 2;
+    TRANSACTION_STATUS_FAILED = 3;
+}
+
+enum TransactionType {
+    TRANSACTION_TYPE_UNKNOWN = 0;
+    TRANSACTION_TYPE_TRANSFER = 1;
+    TRANSACTION_TYPE_DEPLOY = 2;
+}
+
+message Transaction {
+    TransactionType type = 1;
+    UInt160 to = 2;
+    bytes invocation = 3;
+    UInt256 value = 4;
+    bytes deploy = 5;
+    UInt160 from = 6;
+    uint64 nonce = 7;
+    uint64 gas_price = 9;
+    uint64 gas_limit = 10;
+}
+
+message TransactionReceipt {
+    Transaction transaction = 1;
+    UInt256 hash = 2;
+    Signature signature = 3;
+    UInt256 block = 4;
+    TransactionStatus status = 5;
+    uint64 gas_used = 6;
+}

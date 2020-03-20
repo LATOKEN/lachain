@@ -1,0 +1,140 @@
+syntax = "proto3";
+option csharp_namespace = "Lachain.Proto";
+option java_package = "com.latoken.proto";
+import "default.proto";
+import "block.proto";
+
+// consensus state stored in blockchain
+
+message ValidatorCredentials {
+    ECDSAPublicKey public_key = 1;
+    string resolvable_address = 2;
+    bytes threshold_signature_public_key = 3;
+}
+
+message ConsensusState {
+    bytes tpke_public_key = 1;
+    bytes tpke_verification_key = 2;
+    repeated ValidatorCredentials validators = 3;
+}
+
+// HBBFT messages
+
+message Validator {
+    int64 version = 1;
+    reserved 2 to 3;
+    int64 era = 4;
+}
+
+message BValMessage {
+    bool value = 1;
+    int64 agreement = 2;
+    int64 epoch = 3;
+}
+
+message AuxMessage {
+    bool value = 1;
+    int64 agreement = 2;
+    int64 epoch = 3;
+}
+
+message ConfMessage {
+    repeated bool values = 1;
+    int64 agreement = 2;
+    int64 epoch = 3;
+}
+
+message CommonCoinMessage {
+    bytes signature_share = 1;
+    int64 agreement = 2;
+    int64 epoch = 3;
+}
+
+message TPKEPartiallyDecryptedShareMessage {
+    bytes share = 1;
+    int32 decryptor_id = 2;
+    int32 share_id = 3;
+}
+
+message TPKEKeysMessage {
+    bytes public_key = 1;
+    bytes private_key = 2;
+    TPKEVerificationKeyMessage verification_key = 3;
+    int64 id = 4;
+}
+
+message TPKEVerificationKeyMessage {
+    bytes y = 1;
+    int32 t = 2;
+    repeated bytes zs = 3;
+}
+
+message TPKEPolynomialValueMessage {
+    bytes value = 1;
+}
+
+message TPKEHiddenPolynomialMessage {
+    repeated bytes coeffs_g1 = 1;
+    repeated bytes coeffs_g2 = 2;
+}
+
+message TPKEConfirmationHashMessage {
+    repeated bytes hashes = 1;
+}
+
+message ValMessage {
+    UInt256 rootMerkleTree = 1;
+    bytes branchMerkleTree = 2;
+    bytes blockErasureCoding = 3;
+}
+
+message ReadyMessage {
+    UInt256 rootMerkleTree = 1;
+}
+
+message InitRBCProtocolMessage {
+    ValMessage val = 1;
+}
+
+message ECHOMessage {
+    UInt256 rootMerkleTree = 1;
+    bytes branchMerkleTree = 2;
+    bytes blockErasureCoding = 3;
+}
+
+message TPKEEncryptedShareMessage {
+    bytes u = 1;
+    bytes v = 2;
+    bytes w = 3;
+    int32 id = 4;
+}
+
+message MockRBCMessage {
+    bytes value = 1;
+}
+
+message SignedHeaderMessage {
+    BlockHeader header = 1;
+    Signature signature = 2;
+}
+
+message ConsensusMessage {
+    Validator validator = 1;
+    oneof payload {
+        BValMessage bval = 2;
+        AuxMessage aux = 3;
+        ConfMessage conf = 4;
+        CommonCoinMessage coin = 5;
+        TPKEPartiallyDecryptedShareMessage decrypted = 6;
+        TPKEKeysMessage tpkeKeys = 7;
+        InitRBCProtocolMessage init = 8;
+        TPKEPolynomialValueMessage polynomial_value = 9;
+        TPKEHiddenPolynomialMessage hidden_polynomial = 10;
+        TPKEConfirmationHashMessage confirmation_hash = 11;
+        TPKEEncryptedShareMessage encrypted_share = 12;
+        ValMessage val_message = 13;
+        ECHOMessage echo_message = 14;
+        ReadyMessage ready_message = 15;
+        SignedHeaderMessage signed_header_message = 16;
+    }
+}
