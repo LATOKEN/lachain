@@ -122,7 +122,6 @@ namespace Phorkus.CryptoTest
                 Array.Empty<byte>(),
                 Array.Empty<byte>(),
                 0);
-            ethTx.
             // ethTx.Sign();
             var rlp = ethTx.GetRLPEncodedRaw();
             Console.WriteLine("RLP " + rlp.ToHex());
@@ -193,10 +192,10 @@ namespace Phorkus.CryptoTest
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
             Console.WriteLine("ETH RLP: " + ethTx.GetRLPEncodedRaw().ToHex());
             
-            // var nonce = ethTx.Nonce.Reverse().ToArray().ToHex();
+            var nonce = ethTx.Nonce.ToHex();
 
-            Console.WriteLine("GasPrice " + Convert.ToUInt64(ethTx.Nonce.ToHex(), 16));
-            
+            Console.WriteLine("Nonce " + nonce);
+            Console.WriteLine("ChainId " + Convert.ToUInt64(ethTx.ChainId.ToHex(), 16));
             
             var tx = new Transaction
             {

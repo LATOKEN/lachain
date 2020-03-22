@@ -92,17 +92,32 @@ namespace Phorkus.Crypto
 
         public static UInt256 GetRlpHash(Transaction t)
         {
-            var ethTx = new Nethereum.Signer.Transaction(
-                new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray(),
+            // var ethTx = new Nethereum.Signer.Transaction(
+            //     new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray(),
+            //     new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
+            //     new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
+            //     t.To.Buffer.ToByteArray(),
+            //     t.Value.Buffer.ToByteArray(),
+            //     Array.Empty<byte>(),
+            //     Array.Empty<byte>(),
+            //     Array.Empty<byte>(),
+            //     0);
+            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray();
+            var ethTx = new Nethereum.Signer.TransactionChainId(
+                nonce,
                 new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
                 t.To.Buffer.ToByteArray(),
                 t.Value.Buffer.ToByteArray(),
                 Array.Empty<byte>(),
+                new BigInteger(1).ToByteArray().Reverse().ToArray(),
                 Array.Empty<byte>(),
                 Array.Empty<byte>(),
-                0);
+                Array.Empty<byte>()
+                );
             
+            Console.WriteLine("ethereum chain id: " + Convert.ToUInt64(ethTx.ChainId.ToHex(), 16));
+            Console.WriteLine("ethereum nonce: " + ethTx.Nonce.ToHex());
             var rlp = ethTx.GetRLPEncodedRaw();
             return new UInt256
             {
