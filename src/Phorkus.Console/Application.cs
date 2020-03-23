@@ -100,7 +100,7 @@ namespace Phorkus.Console
                     .Where(key => !key.Equals(keyPair.PublicKey))
             );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
-            // consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
+            consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 

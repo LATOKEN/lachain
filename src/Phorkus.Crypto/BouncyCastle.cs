@@ -20,7 +20,7 @@ namespace Phorkus.Crypto
     {
         private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
         private readonly ILogger<BouncyCastle> _logger = LoggerFactory.GetLoggerForClass<BouncyCastle>();
-        private readonly int chainId = 1;
+        private readonly int chainId = 41;
 
 
         private static readonly ECDomainParameters Domain
@@ -31,6 +31,13 @@ namespace Phorkus.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
         {
+           var messageHash = message.Keccak256();
+           return VerifySignatureHashed(messageHash, signature, publicKey);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey)
+        {
             var pk = new byte[64];
             if (!Secp256K1.PublicKeyParse(pk, publicKey))
                 throw new ArgumentException();
@@ -39,8 +46,6 @@ namespace Phorkus.Crypto
             var pubkeyDeserialized = new byte[33];
             if (!Secp256K1.PublicKeySerialize(pubkeyDeserialized, pk, Flags.SECP256K1_EC_COMPRESSED))
                 throw new ArgumentException();
-
-            var messageHash = message.Keccak256();
 
             var parsedSig = new byte[65];
             var recId = (signature[64] - 36) / 2 / chainId;

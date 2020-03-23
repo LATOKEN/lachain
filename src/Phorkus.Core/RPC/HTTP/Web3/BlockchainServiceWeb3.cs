@@ -10,6 +10,8 @@ using Phorkus.Core.Blockchain;
 using Phorkus.Core.Blockchain.Interface;
 using Phorkus.Core.Blockchain.OperationManager;
 using Phorkus.Core.Blockchain.Pool;
+using Phorkus.Core.RPC.HTTP.Web3;
+using Phorkus.Proto;
 using Phorkus.Storage.State;
 using Phorkus.Utility.JSON;
 using Phorkus.Utility.Utils;
@@ -43,31 +45,47 @@ namespace Phorkus.Core.RPC.HTTP
         {
             var height = blockHeight.HexToUlong();
             var block = _blockManager.GetByHeight(height);
-            var web3Block = new JObject
+            ulong gasUsed = 0;
+            JArray txs;
             {
+                txs = new JArray();
+                foreach (var txHash in block.TransactionHashes)
+                {
+                    var nativeTx = _transactionManager.GetByHash(txHash);
+                    gasUsed += nativeTx.GasUsed;   
+                    if (fullTx)
+                    {
+                        txs.Add(TransactionServiceWeb3.ToEthTxFormat(nativeTx, block.Hash.Buffer.ToByteArray().ToHex(true), block.Header.Index.ToHex()));
+                    }
+                }
+            }
+            if (!fullTx)
+            {
+                txs = new JArray(block.TransactionHashes.Select(txHash => txHash.Buffer.ToHex()));
+            }
+            return new JObject
+            {
+                ["number"] = block.Header.Index.ToHex(),
+                ["hash"] = block.Hash.Buffer.ToHex(),
+                ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
+                ["nonce"] = block.Header.Nonce.ToHex(),
+                ["sha3Uncles"] = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+                ["logsBloom"] =
+                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                ["transactionsRoot"] = block.Header.MerkleRoot.Buffer.ToHex(),
+                ["stateRoot"] = block.Header.StateHash.Buffer.ToHex(),
+                ["receiptsRoot"] = "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
+                ["miner"] = "0x0000000000000000000000000000000000000000",
+                ["difficulty"] = "0x0",
+                ["totalDifficulty"] = "0x0",
+                ["extraData"] = "0x",
+                ["size"] = block.CalculateSize().ToHex(),
+                ["gasLimit"] = "0x174876e800",
+                ["gasUsed"] = gasUsed.ToHex(),
+                ["timestamp"] = (block.Timestamp / 1000).ToHex(),
+                ["transactions"] = txs,
+                ["uncles"] = new JArray()
             };
-            web3Block["number"] = block.Header.Index.ToBytes().ToHex();
-            web3Block["hash"] = block.Hash.Buffer.ToHex();
-            // web3Block["parentHash"] = block..Buffer.ToHex(); // prev
-            web3Block["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000";
-            web3Block["nonce"] = "0x0000000000000000"; // hz
-            web3Block["sha3Uncles"] = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347";
-            web3Block["logsBloom"] = "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-            web3Block["transactionsRoot"] = "0xe61a6e2a6b261aec50ff7ea7ff7f6495a08fa1aeacc42f30c354a4b628670469";
-            web3Block["stateRoot"] = "0xe7f259cb4a031a43029f8466ba700c2aa9213f2693232e6d82bed7ca3c33f499";
-            web3Block["receiptsRoot"] = "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2";
-            web3Block["miner"] = "0x0000000000000000000000000000000000000000";
-            web3Block["difficulty"] = "0x0";
-            web3Block["totalDifficulty"] = "0x0";
-            web3Block["extraData"] = "0x";
-            web3Block["size"] = block.CalculateSize().ToHexBigInteger().HexValue;
-            web3Block["gasLimit"] = "0x5208";
-            web3Block["gasUsed"] = "0x5208"; // hz
-            web3Block["timestamp"] = (block.Timestamp / 1000).ToHexBigInteger().HexValue;
-            web3Block["transactions"] = new JArray();
-            web3Block["uncles"] = new JArray();
-            
-            return web3Block;
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
@@ -98,23 +116,12 @@ namespace Phorkus.Core.RPC.HTTP
             {
                 var block = _blockManager.GetByHeight(number);
                 var count = block.TransactionHashes.Count;
-                Console.WriteLine("OK");
-                Console.WriteLine(number);
                 return $"0x{count:X}";
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error");
-                Console.WriteLine(number);
                 return null;
             }
-        }
-
-        [JsonRpcMethod("eth_getTransactionByHash")]
-        private JObject? GetTransactionByHash(string txHash)
-        {
-            var tx = _transactionManager.GetByHash(txHash.HexToBytes().ToUInt256());
-            return tx?.ToJson();
         }
 
         [JsonRpcMethod("net_version")]

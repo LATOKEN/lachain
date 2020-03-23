@@ -12,6 +12,15 @@ namespace Phorkus.Crypto
         /// <param name="publicKey">Public Key</param>
         /// <returns>Bool</returns>
         bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey);
+        
+        /// <summary>
+        /// Check ECDSA Signature (secp256r1)
+        /// </summary>
+        /// <param name="messageHash">Message</param>
+        /// <param name="signature">Signature</param>
+        /// <param name="publicKey">Public Key</param>
+        /// <returns>Bool</returns>
+        bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey);
 
         /// <summary>
         /// Sign sha256 Message (secp256r1)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Google.Protobuf;
+using Nethereum.Hex.HexTypes;
 using Phorkus.Proto;
 
 namespace Phorkus.Utility.Utils
@@ -70,6 +71,16 @@ namespace Phorkus.Utility.Utils
         public static ulong HexToUlong(this string buffer)
         {
             return ulong.Parse(buffer.Replace("0x", ""), NumberStyles.HexNumber);
+        }
+
+        public static string ToHex(this ulong num)
+        {
+            return num.ToHexBigInteger().HexValue;
+        }
+
+        public static string ToHex(this int num)
+        {
+            return num.ToHexBigInteger().HexValue;
         }
 
         public static byte[] ToBytes(this ulong number)

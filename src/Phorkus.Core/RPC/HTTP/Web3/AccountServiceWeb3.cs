@@ -48,85 +48,6 @@ namespace Phorkus.Core.RPC.HTTP.Web3
                 .ToHex();
         }
 
-        [JsonRpcMethod("eth_verifyRawTransaction")]
-        private JObject VerifyRawTransaction(string rawTransation, string signature)
-        {
-            var transaction = Transaction.Parser.ParseFrom(rawTransation.HexToBytes());
-            if (!transaction.ToByteArray().SequenceEqual(rawTransation.HexToBytes()))
-                throw new Exception("Failed to validate seiralized and deserialized transactions");
-            var json = new JObject
-            {
-                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
-            };
-            var accepted = new TransactionReceipt
-            {
-                Transaction = transaction,
-                Hash = HashUtils.ToHash256(transaction),
-                Signature = signature.HexToBytes().ToSignature()
-            };
-            var result = _transactionManager.Verify(accepted);
-            json["result"] = result.ToString();
-            if (result != OperatingError.Ok)
-                json["status"] = false;
-            else
-                json["status"] = true;
-            return json;
-        }
-
-        [JsonRpcMethod("eth_sendRawTransaction")]
-        private string SendRawTransaction(string rawTx)
-        {
-            Console.WriteLine(rawTx);
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
-            Console.WriteLine("R");
-            Console.WriteLine(ethTx.Signature.R.ToHex());
-            byte[] signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToArray();
-            try
-            {
-                var transaction = new Transaction
-                {
-                    Type = TransactionType.Transfer,
-                    To = new UInt160
-                    {
-                        Buffer = ByteString.CopyFrom(ethTx.ReceiveAddress)
-                    },
-                    Value = new UInt256
-                    {
-                        Buffer = ByteString.CopyFrom(ethTx.Value)
-                    },
-                    From = new UInt160
-                    {
-                        Buffer = ByteString.CopyFrom(ethTx.Key.GetPublicAddress().HexToBytes())
-                    },
-                    Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
-                    GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
-                    GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
-                };
-
-                Console.WriteLine("From: " + transaction.From.Buffer.ToHex());
-                Console.WriteLine("To: " + transaction.To.Buffer.ToHex());
-                Console.WriteLine("Value: " + transaction.Value.Buffer.ToHex());
-                Console.WriteLine("Nonce: " + transaction.Nonce);
-                Console.WriteLine("GasPrice: " + transaction.GasPrice);
-                Console.WriteLine("GasLimit: " + transaction.GasLimit);
-                Console.WriteLine("Signing Data: " + HashUtils.GetRlpHash(transaction).ToHex());
-                
-                // var result = _transactionPool.Add(
-                //     transaction, rawTx.HexToBytes().ToSignature());
-
-                var result = _transactionPool.Add(
-                    transaction, signature.ToSignature());
-                if (result != OperatingError.Ok)
-                    return "Can not add to transaction pool";
-                return HashUtils.ToHash256(transaction).Buffer.ToHex();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return e.Message;
-            }
-        }
-
         [JsonRpcMethod("eth_getTransactionCount")]
         private ulong GetTransactionCount(string from, string blockId)
         {
@@ -141,42 +62,14 @@ namespace Phorkus.Core.RPC.HTTP.Web3
             return nonce;
         }
         
-        [JsonRpcMethod("eth_invokeContract")]
-        private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
-        {
-            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
-                contract.HexToUInt160());
-            if (contractByHash is null)
-                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
-            if (string.IsNullOrEmpty(input))
-                throw new ArgumentException("Invalid input specified", nameof(input));
-            if (string.IsNullOrEmpty(sender))
-                throw new ArgumentException("Invalid sender specified", nameof(sender));
-            var result = _stateManager.SafeContext(() =>
-            {
-                _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
-                _stateManager.Rollback();
-                return invocationResult;
-            });
-            return new JObject
-            {
-                ["status"] = result.Status.ToString(),
-                ["gasLimit"] = gasLimit,
-                ["gasUsed"] = result.GasUsed,
-                ["ok"] = result.Status == ExecutionStatus.Ok,
-                ["result"] = result.ReturnValue?.ToHex() ?? "0x"
-            };
-        }
-        
         [JsonRpcMethod("eth_getCode")]
         private string GetCode(string contract, string blockId)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 contract.HexToUInt160());
             
-            return contractByHash is null ? "0x" : "0x1";
+            // return contractByHash is null ? "0x" : "0x1";
+            return "0x1";
         }
     }
 }
