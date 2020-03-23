@@ -74,22 +74,7 @@ namespace Phorkus.Crypto
         public byte[] RecoverSignature(byte[] message, byte[] signature)
         {
             var messageHash = message.Keccak256();
-            var parsedSig = new byte[65];
-            var pk = new byte[64];
-            var recId = (signature[64] - 36) / 2 / chainId;
-            Console.WriteLine(recId);
-            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
-                throw new ArgumentException();
-            if (!Secp256K1.Recover(pk, parsedSig, messageHash))
-                throw new ArgumentException("Bad signature");
-            
-            var result = new byte[33];
-            if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
-            {
-                throw new ArgumentException("Bad signature");
-            }
-
-            return result;
+            return RecoverSignatureHashed(messageHash, signature);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
