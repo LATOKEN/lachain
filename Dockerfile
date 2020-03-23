@@ -1,27 +1,27 @@
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as build-env
-WORKDIR /phorkus
-COPY src/Phorkus.Consensus/Phorkus.Consensus.csproj ./Phorkus.Consensus/
-COPY src/Phorkus.Console/Phorkus.Console.csproj ./Phorkus.Console/
-COPY src/Phorkus.Core/Phorkus.Core.csproj ./Phorkus.Core/
-COPY src/Phorkus.Crypto/Phorkus.Crypto.csproj ./Phorkus.Crypto/
-COPY src/Phorkus.Logger/Phorkus.Logger.csproj ./Phorkus.Logger/
-COPY src/Phorkus.Networking/Phorkus.Networking.csproj ./Phorkus.Networking/
-COPY src/Phorkus.Proto/Phorkus.Proto.csproj ./Phorkus.Proto/
-COPY src/Phorkus.Storage/Phorkus.Storage.csproj ./Phorkus.Storage/
-COPY src/Phorkus.Utility/Phorkus.Utility.csproj ./Phorkus.Utility/
+WORKDIR /lachain
+COPY src/Lachain.Consensus/Lachain.Consensus.csproj ./Lachain.Consensus/
+COPY src/Lachain.Console/Lachain.Console.csproj ./Lachain.Console/
+COPY src/Lachain.Core/Lachain.Core.csproj ./Lachain.Core/
+COPY src/Lachain.Crypto/Lachain.Crypto.csproj ./Lachain.Crypto/
+COPY src/Lachain.Logger/Lachain.Logger.csproj ./Lachain.Logger/
+COPY src/Lachain.Networking/Lachain.Networking.csproj ./Lachain.Networking/
+COPY src/Lachain.Proto/Lachain.Proto.csproj ./Lachain.Proto/
+COPY src/Lachain.Storage/Lachain.Storage.csproj ./Lachain.Storage/
+COPY src/Lachain.Utility/Lachain.Utility.csproj ./Lachain.Utility/
 COPY wasm/WebAssembly/WebAssembly.csproj /wasm/WebAssembly/
-WORKDIR /phorkus/Phorkus.Console
+WORKDIR /lachain/Lachain.Console
 RUN dotnet restore
-WORKDIR /phorkus
-COPY src/ /phorkus/
+WORKDIR /lachain
+COPY src/ /lachain/
 COPY wasm/ /wasm/
-WORKDIR /phorkus/Phorkus.Console
+WORKDIR /lachain/Lachain.Console
 RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1
 RUN apt update && apt install -y libc6-dev libsnappy-dev
-WORKDIR /phorkus
-COPY --from=build-env /phorkus/Phorkus.Console/out .
+WORKDIR /lachain
+COPY --from=build-env /lachain/Lachain.Console/out .
 ARG CONFIG
 COPY $CONFIG ./config.json
-ENTRYPOINT ["dotnet", "Phorkus.Console.dll"]
+ENTRYPOINT ["dotnet", "Lachain.Console.dll"]
