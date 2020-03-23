@@ -23,7 +23,7 @@ namespace Lachain.Core.Blockchain.Pool
             _stateHash = stateHash ?? UInt256Utils.Zero;
         }
 
-        public BlockBuilder WithTransactions(IReadOnlyCollection<TransactionReceipt> transactions)
+        public BlockBuilder WithTransactions(IEnumerable<TransactionReceipt> transactions)
         {
             _transactions = new List<TransactionReceipt>(transactions);
             return this;
