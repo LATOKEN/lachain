@@ -4,7 +4,7 @@ services:
     build:
       context: ./
       args:
-        CONFIG: src/Phorkus.Console/config0.json
+        CONFIG: src/Lachain.Console/config0.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
@@ -16,7 +16,7 @@ services:
     build:
       context: ./
       args:
-        CONFIG: src/Phorkus.Console/config1.json
+        CONFIG: src/Lachain.Console/config1.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
@@ -28,7 +28,7 @@ services:
     build:
       context: ./
       args:
-        CONFIG: src/Phorkus.Console/config2.json
+        CONFIG: src/Lachain.Console/config2.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
@@ -40,7 +40,7 @@ services:
     build:
       context: ./
       args:
-        CONFIG: src/Phorkus.Console/config3.json
+        CONFIG: src/Lachain.Console/config3.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
