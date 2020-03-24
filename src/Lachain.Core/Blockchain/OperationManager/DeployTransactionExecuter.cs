@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Core.Utils;
 using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
-using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.OperationManager
 {

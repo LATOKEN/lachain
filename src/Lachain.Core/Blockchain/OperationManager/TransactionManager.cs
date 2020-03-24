@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Utils;
 using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Proto;

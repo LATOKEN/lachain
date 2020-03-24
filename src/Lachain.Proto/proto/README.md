@@ -1,2 +1,0 @@
-LaChain Proto Files
-===================

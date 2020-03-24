@@ -4,3 +4,6 @@
 [submodule "wasm"]
 	path = wasm
 	url = git@gitlab.nekotal.tech:lachain/lachain-wasm-compiler.git
+[submodule "src/Lachain.Proto/proto"]
+	path = src/Lachain.Proto/proto
+	url = git@gitlab.nekotal.tech:lachain/lachainproto.git

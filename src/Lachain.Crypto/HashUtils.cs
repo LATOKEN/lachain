@@ -57,19 +57,11 @@ namespace Lachain.Crypto
             };
         }
 
-        public static UInt256 KeccakForTx(UInt256 data)
-        {
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(data.Buffer.ToByteArray().KeccakBytes())
-            };
-        }
-
         public static UInt256 Keccak(this IEnumerable<byte> buffer)
         {
             return new UInt256 {Buffer = ByteString.CopyFrom(buffer.KeccakBytes())};
         }
-        
+
         public static byte[] Sha256Bytes(this IEnumerable<byte> message)
         {
             var bytes = message as byte[] ?? message.ToArray();
@@ -79,7 +71,7 @@ namespace Lachain.Crypto
             digest.DoFinal(output, 0);
             return output;
         }
-        
+
         public static UInt256 Sha256(this IEnumerable<byte> buffer)
         {
             return new UInt256 {Buffer = ByteString.CopyFrom(buffer.Sha256Bytes())};
@@ -96,34 +88,10 @@ namespace Lachain.Crypto
             using var murmur = new Murmur3(seed);
             return BitConverter.ToUInt32(murmur.ComputeHash(message), 0);
         }
-        
-        public static UInt256 GetRlpHash(Transaction t)
-        {
-            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray();
-            var ethTx = new Nethereum.Signer.TransactionChainId(
-                nonce,
-                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
-                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
-                t.To.Buffer.ToByteArray(),
-                t.Value.Buffer.ToByteArray().Reverse().ToArray(),
-                Array.Empty<byte>(),
-                new BigInteger(1).ToByteArray().Reverse().ToArray(),
-                Array.Empty<byte>(),
-                Array.Empty<byte>(),
-                Array.Empty<byte>()
-            );
-            
-            var rlp = ethTx.GetRLPEncodedRaw();
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(rlp)
-            };
-        }
 
         public static UInt256 ToHash256(Transaction t)
         {
-            var rlp = GetRlpHash(t);
-            return KeccakForTx(rlp);
+            return t.Rlp().Keccak();
         }
     }
 }

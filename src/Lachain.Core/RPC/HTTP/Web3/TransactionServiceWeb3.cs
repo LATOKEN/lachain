@@ -73,8 +73,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (receipt is null)
             {
                 return null;
-            } 
-            return ToEthTxFormat(receipt);
+            }
+
+            return ToEthTxFormat(receipt,
+                block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block));
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
@@ -83,18 +85,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
 
-            if (receipt is null)
-            {
-                return null;
-            } 
-            return ToEthTxFormat(receipt);
+            return receipt is null
+                ? null
+                : ToEthTxFormat(receipt,
+                    block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block));
         }
 
         [JsonRpcMethod("eth_sendRawTransaction")]
         private string SendRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
-            byte[] signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToArray();
+            var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToArray();
             try
             {
                 var transaction = new Transaction
@@ -117,8 +118,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
                 };
 
-                var result = _transactionPool.Add(
-                    transaction, signature.ToSignature());
+                var result = _transactionPool.Add(transaction, signature.ToSignature());
                 if (result != OperatingError.Ok)
                     return "Can not add to transaction pool";
                 return HashUtils.ToHash256(transaction).Buffer.ToHex();
@@ -129,7 +129,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return e.Message;
             }
         }
-        
+
         [JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
@@ -158,28 +158,31 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["result"] = result.ReturnValue?.ToHex() ?? "0x"
             };
         }
-        
+
         [JsonRpcMethod("eth_estimateGas")]
         private string EstimateGas(JObject args)
         {
             // TODO: gas estimation for contract methods 
-            return "0x2dc6c0"; 
+            return "0x2dc6c0";
         }
 
-        public static JObject ToEthTxFormat(TransactionReceipt receipt, string blockHash = null, string blockNumber = null)
+        public static JObject ToEthTxFormat(TransactionReceipt receipt, string? blockHash = null,
+            string? blockNumber = null,
+            Block? block = null)
         {
             Console.WriteLine(receipt.ToJson());
             return new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),
-                ["transactionIndex"] = "0x0",
-                ["blockNumber"] = blockNumber ?? (receipt.Block == null ? "0x0" : receipt.Block.Buffer.ToHex()),
-                ["blockHash"] = blockHash ?? (receipt.Block == null ? "0x0" : receipt.Block.Buffer.ToHex()),
+                ["transactionIndex"] = receipt.IndexInBlock,
+                ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
+                ["blockHash"] = blockHash ?? block.Hash.ToHex(),
                 ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().ToHex(true), // TODO: plus previous
                 ["gasUsed"] = receipt.GasUsed.ToBytes().ToHex(true),
                 ["contractAddress"] = null,
                 ["logs"] = new JArray(),
-                ["logsBloom"] = "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                ["logsBloom"] =
+                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 ["status"] = receipt.Status.CompareTo(TransactionStatus.Executed) == 0 ? "0x1" : "0x0",
                 ["value"] = receipt.Transaction.Value.Buffer.Reverse().ToArray().ToHex(true),
                 ["nonce"] = receipt.Transaction.Nonce.ToHex(),

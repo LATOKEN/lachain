@@ -203,7 +203,7 @@ namespace Lachain.CryptoTest
                 GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16)
             };
             
-            Console.WriteLine("RLP: " + HashUtils.GetRlpHash(tx).Buffer.ToHex());
+            Console.WriteLine("RLP: " + tx.Rlp().ToHex());
             
             var addreth = ethTx.Key.GetPublicAddress().HexToBytes();
             var from = new UInt160
