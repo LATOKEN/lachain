@@ -21,7 +21,7 @@ namespace Lachain.ConsensusTest
         private BroadcastSimulator[] _broadcasters;
         private ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[] _resultInterceptors;
         private int N = 7;
-        private int F = 2;
+        private readonly int F = 2;
         private IPrivateConsensusKeySet[] _privateKeys;
         private IPublicConsensusKeySet _publicKeys;
 
@@ -106,19 +106,14 @@ namespace Lachain.ConsensusTest
 
                 var set = outputs[i];
 
-                foreach (var share in set)
-                {
-                    Assert.True(inputs.Contains(share));
-                }
+                foreach (var share in set) Assert.True(inputs.Contains(share));
 
                 Assert.True(set.Count >= N - F);
 
                 var cnt = 0;
                 foreach (var share in set)
-                {
                     if (!faulty.Contains(share.Id))
                         cnt++;
-                }
 
                 Assert.True(cnt >= N - 2 * F);
 
@@ -126,9 +121,7 @@ namespace Lachain.ConsensusTest
                 if (canon == null)
                     canon = set.ToArray();
                 else
-                {
                     Assert.True(canon.SequenceEqual(set.ToArray()));
-                }
             }
         }
 
@@ -200,16 +193,16 @@ namespace Lachain.ConsensusTest
 
         [Test]
         [Repeat(10)]
-        public void TestSimple7()
+        public void TestRandom7()
         {
-            TestAllCommonSubset(7);
+            TestAllCommonSubset(7, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]
         [Repeat(10)]
-        public void TestRandom7()
+        public void TestSimple7()
         {
-            TestAllCommonSubset(7, DeliveryServiceMode.TAKE_RANDOM);
+            TestAllCommonSubset(7);
         }
     }
 }

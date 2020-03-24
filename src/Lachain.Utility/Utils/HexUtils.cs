@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Google.Protobuf;
+using Nethereum.Hex.HexTypes;
 using Lachain.Proto;
 
 namespace Lachain.Utility.Utils
@@ -65,6 +66,26 @@ namespace Lachain.Utility.Utils
         public static UInt160 HexToUInt160(this string buffer)
         {
             return buffer.HexToBytes().ToUInt160();
+        }
+
+        public static ulong HexToUlong(this string buffer)
+        {
+            return ulong.Parse(buffer.Replace("0x", ""), NumberStyles.HexNumber);
+        }
+
+        public static string ToHex(this ulong num)
+        {
+            return num.ToHexBigInteger().HexValue;
+        }
+
+        public static string ToHex(this int num)
+        {
+            return num.ToHexBigInteger().HexValue;
+        }
+
+        public static byte[] ToBytes(this ulong number)
+        {
+            return BitConverter.GetBytes(number);
         }
     }
 }

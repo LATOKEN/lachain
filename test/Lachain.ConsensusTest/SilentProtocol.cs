@@ -1,4 +1,4 @@
-﻿using Lachain.Consensus;
+using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 
 namespace Lachain.ConsensusTest

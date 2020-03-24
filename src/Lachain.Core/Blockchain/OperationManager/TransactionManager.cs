@@ -64,7 +64,7 @@ namespace Lachain.Core.Blockchain.OperationManager
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!receipt.Transaction.Keccak().Equals(receipt.Hash))
+            if (!HashUtils.ToHash256(receipt.Transaction).Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check is transaction type supported */
             if (!_transactionPersisters.ContainsKey(receipt.Transaction.Type))
@@ -93,7 +93,22 @@ namespace Lachain.Core.Blockchain.OperationManager
         public TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
-            var message = transaction.KeccakBytes();
+            Nethereum.Signer.Transaction ethTx = new Nethereum.Signer.Transaction(
+                transaction.Nonce.ToBytes(),
+                transaction.GasPrice.ToBytes(),
+                transaction.GasLimit.ToBytes(),
+                transaction.To.Buffer.ToByteArray(),
+                transaction.Value.Buffer.ToByteArray(),
+                transaction.Invocation.ToByteArray(),
+                Array.Empty<byte>(),
+                Array.Empty<byte>(),
+                0);
+            
+            Console.WriteLine();
+            byte[] rlp = ethTx.GetRLPEncodedRaw();
+            var message = rlp.KeccakBytes();
+                
+            // var message = HashUtils.ToHash256(transaction).Buffer.ToByteArray();
             var signature = _crypto.Sign(message, keyPair.PrivateKey.Buffer.ToByteArray());
             /* we're afraid */
             var pubKey = _crypto.RecoverSignature(message, signature);
@@ -102,7 +117,7 @@ namespace Lachain.Core.Blockchain.OperationManager
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.Keccak(),
+                Hash = HashUtils.Keccak(transaction),
                 Signature = signature.ToSignature()
             };
             OnTransactionSigned?.Invoke(this, signed);
@@ -118,7 +133,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesis)
         {
-            if (!Equals(acceptedTransaction.Hash, acceptedTransaction.Transaction.Keccak()))
+            if (!Equals(acceptedTransaction.Hash, HashUtils.ToHash256(acceptedTransaction.Transaction)))
                 return OperatingError.HashMismatched;
             if (isGenesis)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;

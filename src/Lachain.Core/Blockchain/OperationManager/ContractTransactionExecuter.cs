@@ -58,13 +58,15 @@ namespace Lachain.Core.Blockchain.OperationManager
                 return _InvokeSystemContract(transaction, snapshot);
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
             if (contract is null)
-                return OperatingError.ContractNotFound;
+                return OperatingError.Ok;
             var input = transaction.Invocation.ToByteArray();
             if (_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
             var context = new InvocationContext(transaction.From, transaction, block);
             try
             {
+                if (receipt.GasUsed > transaction.GasLimit)
+                    return OperatingError.OutOfGas;
                 var result =
                     _virtualMachine.InvokeContract(contract, context, input, transaction.GasLimit - receipt.GasUsed);
                 if (result.Status != ExecutionStatus.Ok)

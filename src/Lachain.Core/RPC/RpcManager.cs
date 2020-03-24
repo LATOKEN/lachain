@@ -1,10 +1,10 @@
 ﻿using AustinHarris.JsonRpc;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Config;
 using Lachain.Core.RPC.HTTP;
+using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.VM;
 using Lachain.Storage.State;
 
@@ -47,6 +47,9 @@ namespace Lachain.Core.RPC
             {
                 new BlockchainService(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
                 new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new BlockchainServiceWeb3(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
+                new AccountServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new TransactionServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool), 
                 new NodeService()
             };
             

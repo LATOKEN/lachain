@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NLog;
@@ -11,25 +10,28 @@ using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Security;
-using Lachain.Utility.Utils;
+using Phorkus.Logger;
+using Phorkus.Utility.Utils;
 using Secp256k1Net;
 
-namespace Lachain.Crypto
+namespace Phorkus.Crypto
 {
-    public class DefaultCrypto : ICrypto
+    public class BouncyCastle : ICrypto
     {
         private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
+        private readonly ILogger<BouncyCastle> _logger = LoggerFactory.GetLoggerForClass<BouncyCastle>();
+        private readonly int chainId = 41;
+
 
         private static readonly ECDomainParameters Domain
             = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
 
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
-        private readonly int chainId = 41;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
         {
-           var messageHash = message.KeccakBytes();
+           var messageHash = message.Keccak256();
            return VerifySignatureHashed(messageHash, signature, publicKey);
         }
 
@@ -57,7 +59,7 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] Sign(byte[] message, byte[] privateKey)
         {
-            var messageHash = message.KeccakBytes();
+            var messageHash = message.Keccak256();
             var sig = new byte[65];
             if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
                 throw new ArgumentException();
@@ -71,7 +73,7 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignature(byte[] message, byte[] signature)
         {
-            var messageHash = message.KeccakBytes();
+            var messageHash = message.Keccak256();
             return RecoverSignatureHashed(messageHash, signature);
         }
 
@@ -98,7 +100,16 @@ namespace Lachain.Crypto
 
         public byte[] ComputeAddress(byte[] publicKey)
         {
-            return DecodePublicKey(publicKey, false, out _, out _).Skip(1).KeccakBytes().Skip(12).ToArray();
+            return DecodePublicKey(publicKey, false, out _, out _).Skip(1).Keccak256().Skip(12).ToArray();
+        }
+
+        private static BigInteger CalculateE(BigInteger n, byte[] message)
+        {
+            var messageBitLength = message.Length * 8;
+            var trunc = new BigInteger(1, message);
+            if (n.BitLength < messageBitLength)
+                trunc = trunc.ShiftRight(messageBitLength - n.BitLength);
+            return trunc;
         }
 
         public byte[] ComputePublicKey(byte[] privateKey, bool compress = true)
@@ -113,7 +124,7 @@ namespace Lachain.Crypto
             return result;
         }
 
-        private byte[] DecodePublicKey(byte[] publicKey, bool compress, out System.Numerics.BigInteger x,
+        public byte[] DecodePublicKey(byte[] publicKey, bool compress, out System.Numerics.BigInteger x,
             out System.Numerics.BigInteger y)
         {
             if (publicKey == null || publicKey.Length != 33 && publicKey.Length != 64 && publicKey.Length != 65)
@@ -148,6 +159,64 @@ namespace Lachain.Crypto
             y = System.Numerics.BigInteger.Parse(y0.ToString());
 
             return ret.GetEncoded(compress);
+        }
+
+        public byte[] AesEncrypt(byte[] data, byte[] key)
+        {
+            if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
+            if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
+
+            var cipher = CipherUtilities.GetCipher("AES/ECB/NoPadding");
+            cipher.Init(true, ParameterUtilities.CreateKeyParameter("AES", key));
+
+            return cipher.DoFinal(data);
+        }
+
+        public byte[] AesDecrypt(byte[] data, byte[] key)
+        {
+            if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
+            if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
+
+            var cipher = CipherUtilities.GetCipher("AES/ECB/NoPadding");
+            cipher.Init(false, ParameterUtilities.CreateKeyParameter("AES", key));
+
+            return cipher.DoFinal(data);
+        }
+
+        public byte[] AesEncrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
+            if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
+            if (iv == null || iv.Length != 16) throw new ArgumentException(nameof(iv));
+
+            var cipher = CipherUtilities.GetCipher("AES/CBC/NoPadding");
+            cipher.Init(true, new ParametersWithIV(ParameterUtilities.CreateKeyParameter("AES", key), iv));
+
+            return cipher.DoFinal(data);
+        }
+
+        public byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            if (data == null || data.Length % 16 != 0) throw new ArgumentException(nameof(data));
+            if (key == null || key.Length != 32) throw new ArgumentException(nameof(key));
+            if (iv == null || iv.Length != 16) throw new ArgumentException(nameof(iv));
+
+            var cipher = CipherUtilities.GetCipher("AES/CBC/NoPadding");
+            cipher.Init(false, new ParametersWithIV(ParameterUtilities.CreateKeyParameter("AES", key), iv));
+
+            return cipher.DoFinal(data);
+        }
+
+        public byte[] SCrypt(byte[] P, byte[] S, int N, int r, int p, int dkLen)
+        {
+            if (P == null) throw new ArgumentException(nameof(P));
+            if (S == null) throw new ArgumentException(nameof(S));
+            if ((N & (N - 1)) != 0 || N < 2 || N >= Math.Pow(2, 128 * r / 8)) throw new ArgumentException(nameof(N));
+            if (r < 1) throw new ArgumentException(nameof(r));
+            if (p < 1 || p > int.MaxValue / (128 * r * 8)) throw new ArgumentException(nameof(p));
+            if (dkLen < 1) throw new ArgumentException(nameof(dkLen));
+
+            return Org.BouncyCastle.Crypto.Generators.SCrypt.Generate(P, S, N, r, p, dkLen);
         }
 
         public byte[] GenerateRandomBytes(int length)

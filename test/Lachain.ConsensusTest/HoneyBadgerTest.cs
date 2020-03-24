@@ -5,29 +5,15 @@ using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
-using Lachain.Consensus.TPKE;
 using Lachain.Crypto;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
-using Lachain.Proto;
-using TrustedKeyGen = Lachain.Crypto.TPKE.TrustedKeyGen;
 
 namespace Lachain.ConsensusTest
 {
     [TestFixture]
     public class HoneyBadgerTest
     {
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
-        private const int N = 7;
-        private const int F = 2;
-        private IPublicConsensusKeySet _publicKeys;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private Random _rnd;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-
         [SetUp]
         public void SetUp()
         {
@@ -37,10 +23,10 @@ namespace Lachain.ConsensusTest
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[N];
-            var keygen = new Crypto.ThresholdSignature.TrustedKeyGen(N, F);
+            var keygen = new TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
-            var tpkeKeygen = new TrustedKeyGen(N, F);
+            var tpkeKeygen = new Crypto.TPKE.TrustedKeyGen(N, F);
 
             var ecdsaKeys = Enumerable.Range(0, N)
                 .Select(i => _crypto.GenerateRandomBytes(32))
@@ -59,6 +45,17 @@ namespace Lachain.ConsensusTest
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
             }
         }
+
+        private DeliveryService _deliveryService;
+        private IConsensusProtocol[] _broadcasts;
+        private IConsensusBroadcaster[] _broadcasters;
+        private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
+        private const int N = 7;
+        private const int F = 2;
+        private IPublicConsensusKeySet _publicKeys;
+        private IPrivateConsensusKeySet[] _privateKeys;
+        private Random _rnd;
+        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         private void SetUpAllHonest()
         {
@@ -79,10 +76,7 @@ namespace Lachain.ConsensusTest
                     new HoneyBadgerId(10), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
-                foreach (var j in s)
-                {
-                    (_broadcasters[i] as BroadcastSimulator)?.Silent(j);
-                }
+                foreach (var j in s) (_broadcasters[i] as BroadcastSimulator)?.Silent(j);
             }
         }
 
@@ -98,10 +92,7 @@ namespace Lachain.ConsensusTest
                 ));
             }
 
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasts[i].WaitFinish();
-            }
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
 
             for (var i = 0; i < N; ++i)
             {
@@ -116,10 +107,7 @@ namespace Lachain.ConsensusTest
         public void TestSomeSilent()
         {
             var s = new HashSet<int>();
-            while (s.Count < F)
-            {
-                s.Add(_rnd.Next(0, N - 1));
-            }
+            while (s.Count < F) s.Add(_rnd.Next(0, N - 1));
 
             SetUpSomeSilent(s);
             for (var i = 0; i < N; ++i)

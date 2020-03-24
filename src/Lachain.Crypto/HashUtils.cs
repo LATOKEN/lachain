@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Numerics;
 using Google.Protobuf;
 using Org.BouncyCastle.Crypto.Digests;
 using Lachain.Proto;
@@ -83,6 +83,35 @@ namespace Lachain.Crypto
         {
             using var murmur = new Murmur3(seed);
             return BitConverter.ToUInt32(murmur.ComputeHash(message), 0);
+        }
+        
+        public static UInt256 GetRlpHash(Transaction t)
+        {
+            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray();
+            var ethTx = new Nethereum.Signer.TransactionChainId(
+                nonce,
+                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
+                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
+                t.To.Buffer.ToByteArray(),
+                t.Value.Buffer.ToByteArray().Reverse().ToArray(),
+                Array.Empty<byte>(),
+                new BigInteger(41).ToByteArray().Reverse().ToArray(),
+                Array.Empty<byte>(),
+                Array.Empty<byte>(),
+                Array.Empty<byte>()
+            );
+            
+            var rlp = ethTx.GetRLPEncodedRaw();
+            return new UInt256
+            {
+                Buffer = ByteString.CopyFrom(rlp)
+            };
+        }
+
+        public static UInt256 ToHash256(Transaction t)
+        {
+            var rlp = GetRlpHash(t);
+            return Keccak(rlp);
         }
     }
 }

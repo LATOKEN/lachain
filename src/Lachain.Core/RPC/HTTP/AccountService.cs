@@ -45,19 +45,19 @@ namespace Lachain.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("verifyRawTransaction")]
-        private JObject VerifyRawTransaction(string rawTransation, string signature)
+        private JObject VerifyRawTransaction(string rawTransaction, string signature)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransation.HexToBytes());
-            if (!transaction.ToByteArray().SequenceEqual(rawTransation.HexToBytes()))
+            var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
+            if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
             var json = new JObject
             {
-                ["hash"] = transaction.Keccak().ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
             };
             var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.Keccak(),
+                Hash = HashUtils.Keccak(transaction),
                 Signature = signature.HexToBytes().ToSignature()
             };
             var result = _transactionManager.Verify(accepted);
@@ -70,12 +70,12 @@ namespace Lachain.Core.RPC.HTTP
         }
 
         [JsonRpcMethod("sendRawTransaction")]
-        private JObject SendRawTransaction(string rawTransation, string signature)
+        private JObject SendRawTransaction(string rawTransaction, string signature)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransation.HexToBytes());
+            var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             var json = new JObject
             {
-                ["hash"] = transaction.Keccak().ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
             };
             var result = _transactionPool.Add(
                 transaction, signature.HexToBytes().ToSignature());

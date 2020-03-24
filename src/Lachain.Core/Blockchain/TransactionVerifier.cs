@@ -50,7 +50,7 @@ namespace Lachain.Core.Blockchain
             try
             {
                 /* verify transaction signature */
-                var result = _crypto.VerifySignature(transaction.Hash.Buffer.ToByteArray(),
+                var result = _crypto.VerifySignatureHashed(transaction.Hash.Buffer.ToByteArray(),
                     transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
                 if (!result)
                     return false;
@@ -69,7 +69,7 @@ namespace Lachain.Core.Blockchain
                 throw new ArgumentNullException(nameof(transaction));
 
             /* validate transaction hash */
-            if (!transaction.Hash.Equals(transaction.Transaction.Keccak()))
+            if (!transaction.Hash.Equals(HashUtils.ToHash256(transaction.Transaction)))
                 return false;
 
             try
@@ -79,7 +79,7 @@ namespace Lachain.Core.Blockchain
                     return VerifyTransactionImmediately(transaction, publicKey);
 
                 /* recover EC to get public key from signature to compute address */
-                var rawKey = _crypto.RecoverSignature(transaction.Hash.Buffer.ToByteArray(),
+                var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.Buffer.ToByteArray(),
                     transaction.Signature.Buffer.ToByteArray());
                 var address = _crypto.ComputeAddress(rawKey);
 

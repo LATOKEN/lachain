@@ -8,17 +8,23 @@ namespace Lachain.ConsensusTest
     public class InvokerId : IProtocolIdentifier
     {
         private static long _counter;
-        public long Era => 0;
-        public long Id { get; }
 
         public InvokerId()
         {
             Id = _counter++;
         }
 
+        public long Id { get; }
+        public long Era => 0;
+
         public IEnumerable<byte> ToByteArray()
         {
             return BitConverter.GetBytes(Id);
+        }
+
+        public bool Equals(IProtocolIdentifier other)
+        {
+            return Equals((object) other);
         }
 
         public bool Equals(InvokerId other)
@@ -31,16 +37,11 @@ namespace Lachain.ConsensusTest
             return $"Invoker {Id}";
         }
 
-        public bool Equals(IProtocolIdentifier other)
-        {
-            return Equals((object) other);
-        }
-
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals((InvokerId) obj);
         }
 
@@ -52,6 +53,9 @@ namespace Lachain.ConsensusTest
 
     public class ProtocolInvoker<TId, TResult> : IConsensusProtocol where TId : IProtocolIdentifier
     {
+        public TResult Result;
+
+        public int ResultSet;
         public IProtocolIdentifier Id { get; } = new InvokerId();
 
         public void Terminate()
@@ -60,9 +64,6 @@ namespace Lachain.ConsensusTest
         }
 
         public bool Terminated => false;
-
-        public int ResultSet = 0;
-        public TResult Result;
 
         public void ReceiveMessage(MessageEnvelope message)
         {

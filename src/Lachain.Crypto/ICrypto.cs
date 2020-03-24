@@ -48,5 +48,22 @@
         /// <param name="length">Length</param>
         /// <returns>Random bytearray</returns>
         byte[] GenerateRandomBytes(int length);
+        
+        /// <summary>
+        /// Recovers public key from signature
+        /// </summary>
+        /// <param name="messageHash"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature);
+        
+        /// <summary>
+        /// Check ECDSA Signature (secp256k1)
+        /// </summary>
+        /// <param name="messageHash">Message</param>
+        /// <param name="signature">Signature</param>
+        /// <param name="publicKey">Public Key</param>
+        /// <returns>Bool</returns>
+        bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey);
     }
 }
