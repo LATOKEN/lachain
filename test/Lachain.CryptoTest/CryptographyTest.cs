@@ -196,7 +196,7 @@ namespace Lachain.CryptoTest
                 },
                 Value = new UInt256
                 {
-                    Buffer = ByteString.CopyFrom(ethTx.Value)
+                    Buffer = ByteString.CopyFrom(ethTx.Value.Reverse().ToArray())
                 },
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                 GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),

@@ -5,6 +5,7 @@ using System.Numerics;
 using Google.Protobuf;
 using Org.BouncyCastle.Crypto.Digests;
 using Lachain.Proto;
+using Lachain.Utility.JSON;
 
 namespace Lachain.Crypto
 {
@@ -50,7 +51,18 @@ namespace Lachain.Crypto
 
         public static UInt256 Keccak<T>(this T t) where T : IMessage<T>
         {
-            return new UInt256 {Buffer = ByteString.CopyFrom(t.ToByteArray().KeccakBytes())};
+            return new UInt256
+            {
+                Buffer = ByteString.CopyFrom(t.ToByteArray().KeccakBytes())
+            };
+        }
+
+        public static UInt256 KeccakForTx(UInt256 data)
+        {
+            return new UInt256
+            {
+                Buffer = ByteString.CopyFrom(data.Buffer.ToByteArray().KeccakBytes())
+            };
         }
 
         public static UInt256 Keccak(this IEnumerable<byte> buffer)
@@ -95,7 +107,7 @@ namespace Lachain.Crypto
                 t.To.Buffer.ToByteArray(),
                 t.Value.Buffer.ToByteArray().Reverse().ToArray(),
                 Array.Empty<byte>(),
-                new BigInteger(41).ToByteArray().Reverse().ToArray(),
+                new BigInteger(1).ToByteArray().Reverse().ToArray(),
                 Array.Empty<byte>(),
                 Array.Empty<byte>(),
                 Array.Empty<byte>()
@@ -111,7 +123,7 @@ namespace Lachain.Crypto
         public static UInt256 ToHash256(Transaction t)
         {
             var rlp = GetRlpHash(t);
-            return Keccak(rlp);
+            return KeccakForTx(rlp);
         }
     }
 }

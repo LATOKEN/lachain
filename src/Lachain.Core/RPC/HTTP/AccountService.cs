@@ -57,7 +57,7 @@ namespace Lachain.Core.RPC.HTTP
             var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = HashUtils.Keccak(transaction),
+                Hash = HashUtils.ToHash256(transaction),
                 Signature = signature.HexToBytes().ToSignature()
             };
             var result = _transactionManager.Verify(accepted);

@@ -82,7 +82,7 @@ namespace Lachain.Core.Blockchain
                 var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.Buffer.ToByteArray(),
                     transaction.Signature.Buffer.ToByteArray());
                 var address = _crypto.ComputeAddress(rawKey);
-
+                
                 /* check if recovered address from public key is valid */
                 if (!address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
                     return false;

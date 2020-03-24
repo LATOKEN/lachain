@@ -115,7 +115,6 @@ namespace Lachain.Core.Blockchain.OperationManager
                     _logger.LogError($"Error occured while executing block: {operatingError}");
                     throw new InvalidBlockException(operatingError);
                 }
-
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
                 {
                     _stateManager.RollbackTo(snapshotBefore);

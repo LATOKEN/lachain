@@ -58,6 +58,12 @@ namespace Lachain.Crypto
         public byte[] Sign(byte[] message, byte[] privateKey)
         {
             var messageHash = message.KeccakBytes();
+            return SignHashed(messageHash, privateKey);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public byte[] SignHashed(byte[] messageHash, byte[] privateKey)
+        {
             var sig = new byte[65];
             if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
                 throw new ArgumentException();
@@ -81,7 +87,6 @@ namespace Lachain.Crypto
             var parsedSig = new byte[65];
             var pk = new byte[64];
             var recId = (signature[64] - 36) / 2 / chainId;
-            Console.WriteLine(recId);
             if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
             if (!Secp256K1.Recover(pk, parsedSig, messageHash))

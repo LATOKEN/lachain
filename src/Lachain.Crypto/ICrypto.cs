@@ -18,6 +18,14 @@
         /// <param name="privateKey">Private Key</param>
         /// <returns>Signature bytearray</returns>
         byte[] Sign(byte[] message, byte[] privateKey);
+
+        /// <summary>
+        /// Sign already hashed message (secp256k1)
+        /// </summary>
+        /// <param name="message">Message</param>
+        /// <param name="privateKey">Private Key</param>
+        /// <returns>Signature bytearray</returns>
+        byte[] SignHashed(byte[] messageHash, byte[] privateKey);
         
         /// <summary>
         /// Recovers public key from signature

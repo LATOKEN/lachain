@@ -221,7 +221,7 @@ namespace Lachain.Core.CLI
             var sig = arguments[2].HexToBytes().ToSignature();
             var result = _transactionPool.Add(tx, sig);
             Console.WriteLine($"Status: {result}");
-            Console.WriteLine($"Hash: {HashUtils.Keccak(tx).ToHex()}");
+            Console.WriteLine($"Hash: {HashUtils.ToHash256(tx).ToHex()}");
             return "";
         }
 
@@ -265,7 +265,7 @@ namespace Lachain.Core.CLI
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,
-                Hash = HashUtils.Keccak(tx),
+                Hash = HashUtils.ToHash256(tx),
                 Signature = sig
             };
             Console.WriteLine("Transaction validity: " + _transactionManager.Verify(accepted));
