@@ -29,7 +29,7 @@ namespace Lachain.Utility.JSON
                 ["transaction"] = acceptedTransaction.Transaction?.ToJson(),
                 ["hash"] = acceptedTransaction.Hash?.Buffer?.ToHex(),
                 ["signature"] = acceptedTransaction.Signature?.Buffer?.ToHex(),
-                ["block"] = acceptedTransaction.Block?.Buffer?.ToHex(),
+                ["block"] = acceptedTransaction.Block,
                 ["status"] = acceptedTransaction.Status.ToString()
             };
             return json;

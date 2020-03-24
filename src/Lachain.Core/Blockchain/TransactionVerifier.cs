@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Utils;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -79,12 +78,12 @@ namespace Lachain.Core.Blockchain
                     return VerifyTransactionImmediately(transaction, publicKey);
 
                 /* recover EC to get public key from signature to compute address */
-                var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.Buffer.ToByteArray(),
-                    transaction.Signature.Buffer.ToByteArray());
+                var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.Buffer.ToArray(),
+                    transaction.Signature.Buffer.ToArray());
                 var address = _crypto.ComputeAddress(rawKey);
-
+                
                 /* check if recovered address from public key is valid */
-                if (!address.SequenceEqual(transaction.Transaction.From.Buffer.ToByteArray()))
+                if (!address.SequenceEqual(transaction.Transaction.From.Buffer.ToArray()))
                     return false;
 
                 /* try to remember public key for this address */

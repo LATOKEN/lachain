@@ -196,14 +196,14 @@ namespace Lachain.CryptoTest
                 },
                 Value = new UInt256
                 {
-                    Buffer = ByteString.CopyFrom(ethTx.Value)
+                    Buffer = ByteString.CopyFrom(ethTx.Value.Reverse().ToArray())
                 },
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                 GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
                 GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16)
             };
             
-            Console.WriteLine("RLP: " + HashUtils.GetRlpHash(tx).Buffer.ToHex());
+            Console.WriteLine("RLP: " + tx.Rlp().ToHex());
             
             var addreth = ethTx.Key.GetPublicAddress().HexToBytes();
             var from = new UInt160

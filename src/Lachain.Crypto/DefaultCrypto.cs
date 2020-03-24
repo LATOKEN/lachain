@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using NLog;
-using Org.BouncyCastle.Asn1;
+using Lachain.Proto;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
-using Org.BouncyCastle.Security;
-using Lachain.Utility.Utils;
 using Secp256k1Net;
 
 namespace Lachain.Crypto
@@ -24,8 +18,7 @@ namespace Lachain.Crypto
             = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
 
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
-        private readonly int chainId = 41;
-
+        
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
         {
@@ -46,7 +39,7 @@ namespace Lachain.Crypto
                 throw new ArgumentException();
 
             var parsedSig = new byte[65];
-            var recId = (signature[64] - 36) / 2 / chainId;
+            var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
             if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
             
@@ -58,13 +51,19 @@ namespace Lachain.Crypto
         public byte[] Sign(byte[] message, byte[] privateKey)
         {
             var messageHash = message.KeccakBytes();
+            return SignHashed(messageHash, privateKey);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public byte[] SignHashed(byte[] messageHash, byte[] privateKey)
+        {
             var sig = new byte[65];
             if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
                 throw new ArgumentException();
             var serialized = new byte[64];
             if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                 throw new ArgumentException();
-            recId = chainId * 2 + 35 + recId; 
+            recId = TransactionUtils.ChainId * 2 + 35 + recId; 
             return serialized.Concat(new[] {(byte) recId}).ToArray();
         }
 
@@ -80,8 +79,7 @@ namespace Lachain.Crypto
         {
             var parsedSig = new byte[65];
             var pk = new byte[64];
-            var recId = (signature[64] - 36) / 2 / chainId;
-            Console.WriteLine(recId);
+            var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
             if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
             if (!Secp256K1.Recover(pk, parsedSig, messageHash))

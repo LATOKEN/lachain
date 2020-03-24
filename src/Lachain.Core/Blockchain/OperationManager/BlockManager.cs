@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Validators;
-using Lachain.Core.Utils;
 using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -188,12 +187,13 @@ namespace Lachain.Core.Blockchain.OperationManager
             }
 
             /* execute transactions */
-            foreach (var txHash in block.TransactionHashes)
+            foreach (var (txHash, i) in block.TransactionHashes.Select((tx, i) => (tx, i)))
             {
                 /* try to find transaction by hash */
                 var transaction = currentTransactions[txHash];
-                transaction.Block = block.Hash;
+                transaction.Block = block.Header.Index;
                 transaction.GasUsed = GasMetering.DefaultTxTransferGasCost;
+                transaction.IndexInBlock = (ulong) i;
                 var snapshot = _stateManager.NewSnapshot();
 
                 var gasLimitCheck = _CheckTransactionGasLimit(transaction.Transaction, snapshot);
