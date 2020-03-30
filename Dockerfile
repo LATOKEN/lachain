@@ -22,6 +22,6 @@ FROM mcr.microsoft.com/dotnet/core/runtime:3.1
 RUN apt update && apt install -y libc6-dev libsnappy-dev
 WORKDIR /lachain
 COPY --from=build-env /lachain/Lachain.Console/out .
-ARG CONFIG
-COPY $CONFIG ./config.json
-ENTRYPOINT ["dotnet", "Lachain.Console.dll"]
+ARG CONFIG=src/Lachain.Console/config1.json
+COPY $CONFIG /lachain/config.json
+ENTRYPOINT ["dotnet", "/lachain/Lachain.Console.dll"]

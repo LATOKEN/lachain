@@ -92,7 +92,7 @@ namespace Lachain.Consensus.TPKE
             }
         }
 
-        private void HandleInputMessage(ProtocolRequest<TPKESetupId, Object> request)
+        private void HandleInputMessage(ProtocolRequest<TPKESetupId, object> request)
         {
             _logger.LogDebug($"Player {GetMyId()} got input");
             _requested = ResultStatus.Requested;

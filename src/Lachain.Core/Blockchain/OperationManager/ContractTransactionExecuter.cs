@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.VM;
 using Lachain.Proto;
@@ -13,6 +14,7 @@ namespace Lachain.Core.Blockchain.OperationManager
     {
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IVirtualMachine _virtualMachine;
+        public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
         public ContractTransactionExecuter(
             IContractRegisterer contractRegisterer,
@@ -41,13 +43,24 @@ namespace Lachain.Core.Blockchain.OperationManager
                 return OperatingError.Ok;
             }
 
+            var contract = snapshot.Contracts.GetContractByHash(transaction.To);
+            if (contract is null)
+            {
+                /*
+                 * Destination address is not smart-contract
+                 * So we just call transfer method of system contract
+                 */
+                if (snapshot.Balances.GetBalance(transaction.From) < new Money(transaction.Value))
+                    return OperatingError.InsufficientBalance;
+                var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
+                return _InvokeSystemContract(ContractRegisterer.LatokenContract, invocation, transaction, snapshot);
+            }
+
             /* try to transfer funds from sender to recipient */
             if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
                 return OperatingError.InsufficientBalance;
-            /* if we have invocation block than invoke contract method */
-            if (transaction.Invocation != null && !transaction.Invocation.IsEmpty)
-                return _InvokeContract(block, receipt, snapshot);
-            return OperatingError.Ok;
+            /* invoke required function or fallback */
+            return _InvokeContract(block, receipt, snapshot);
         }
 
         private OperatingError _InvokeContract(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
@@ -55,10 +68,9 @@ namespace Lachain.Core.Blockchain.OperationManager
             var transaction = receipt.Transaction;
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
             if (systemContract != null)
-                return _InvokeSystemContract(transaction, snapshot);
+                return _InvokeSystemContract(transaction.To, transaction.Invocation.ToArray(), transaction, snapshot);
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
-            if (contract is null)
-                return OperatingError.Ok;
+            if (contract is null) return OperatingError.ContractFailed; // this should not happen
             var input = transaction.Invocation.ToByteArray();
             if (_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
@@ -101,9 +113,12 @@ namespace Lachain.Core.Blockchain.OperationManager
                    buffer[3] == 0;
         }
 
-        private OperatingError _InvokeSystemContract(Transaction transaction, IBlockchainSnapshot snapshot)
+        private OperatingError _InvokeSystemContract(
+            UInt160 address, byte[] invocation, Transaction transaction,
+            IBlockchainSnapshot snapshot
+        )
         {
-            var result = _contractRegisterer.DecodeContract(transaction.To, transaction.Invocation.ToByteArray());
+            var result = _contractRegisterer.DecodeContract(address, invocation);
             if (result is null)
                 return OperatingError.ContractFailed;
             var (contract, method, args) = result;
@@ -117,6 +132,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                 };
                 var inst = Activator.CreateInstance(contract, context);
                 method.Invoke(inst, args);
+                OnSystemContractInvoked?.Invoke(this, context);
             }
             catch (NotSupportedException e)
             {

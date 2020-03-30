@@ -20,14 +20,18 @@ namespace Lachain.Core.VM
             return encoder.ToByteArray();
         }
 
+        public static uint MethodSignatureBytes(string methodSignature)
+        {
+            var buffer = Encoding.ASCII.GetBytes(methodSignature).KeccakBytes();
+            if (methodSignature.StartsWith("constructor(")) return 0;
+            return buffer[0] | ((uint) buffer[1] << 8) | ((uint) buffer[2] << 16) | ((uint) buffer[3] << 24);
+        }
+
         public ContractEncoder(string methodSignature)
         {
             _binaryWriter = new BinaryWriter(
                 new MemoryStream());
-            var buffer = Encoding.ASCII.GetBytes(methodSignature).KeccakBytes();
-            var signature = 0;
-            if (!methodSignature.StartsWith("constructor("))
-                signature = buffer[0] | buffer[1] << 8 | buffer[2] << 16 | buffer[3] << 24;
+            var signature = MethodSignatureBytes(methodSignature);
             _binaryWriter.Write(signature);
         }
 

@@ -19,6 +19,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         private readonly IReadOnlyDictionary<TransactionType, ITransactionExecuter> _transactionPersisters;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
+        public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
@@ -26,9 +27,11 @@ namespace Lachain.Core.Blockchain.OperationManager
             IContractRegisterer contractRegisterer,
             IStateManager stateManager)
         {
+            var contractTransactionExecuter = new ContractTransactionExecuter(contractRegisterer, virtualMachine);
+            contractTransactionExecuter.OnSystemContractInvoked += OnSystemContractInvoked;
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
-                {TransactionType.Transfer, new ContractTransactionExecuter(contractRegisterer, virtualMachine)},
+                {TransactionType.Transfer, contractTransactionExecuter},
                 {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine)}
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
@@ -93,7 +96,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         {
             /* use raw byte arrays to sign transaction hash */
             var messageHash = HashUtils.ToHash256(transaction);
-            
+
             var signature = _crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Buffer.ToByteArray());
             /* we're afraid */
             var pubKey = _crypto.RecoverSignatureHashed(messageHash.ToBytes(), signature);
