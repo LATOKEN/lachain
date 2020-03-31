@@ -25,11 +25,11 @@ namespace Lachain.Core.VM
 
         public object[] Decode(string signature)
         {
-            var regExp = new Regex("[\\w\\d_]+\\(([\\w\\d_,]+)\\)");
-            var matches = regExp.Matches(signature);
-            if (matches.Count == 0)
+            var parts = signature.Split('(');
+            if (parts.Length != 2)
                 throw new Exception("Unable to parse ABI method signature (" + signature.Length + ")");
-            var types = matches[1].Value.Split(',');
+            parts[1] = parts[1].TrimEnd(')');
+            var types = parts[1].Split(',');
             var result = new List<object>(types.Length);
             if (_binaryReader.ReadUInt32() != ContractEncoder.MethodSignatureBytes(signature))
                 throw new ArgumentException("Decoded ABI does not match method signature");                

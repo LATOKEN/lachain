@@ -41,7 +41,7 @@ namespace Lachain.Storage.State
                 return new ISnapshot[] {Balances, Contracts, Storage, Transactions, Events, Validators}
                     .Aggregate(
                         Enumerable.Empty<byte>(),
-                        (current, snapshot) => current.Concat(snapshot.Hash.Buffer.ToByteArray()))
+                        (current, snapshot) => current.Concat(snapshot.Hash.ToBytes()))
                     .Keccak();
             }
         }

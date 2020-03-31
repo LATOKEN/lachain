@@ -52,27 +52,26 @@ namespace Lachain.Benchmark
             var stateManager = _container.Resolve<IStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
-            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToByteArray().ToHex());
-            Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToByteArray().ToHex());
-            Console.WriteLine(
-                "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToByteArray()).ToHex());
+            Console.WriteLine("Private Key: " + keyPair.PrivateKey.Encode().ToHex());
+            Console.WriteLine("Public Key: " + keyPair.PublicKey.EncodeCompressed().ToHex());
+            Console.WriteLine("Address: " + crypto.ComputeAddress(keyPair.PublicKey.EncodeCompressed()).ToHex());
             Console.WriteLine("-------------------------------");
 
             if (blockchainManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
             var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
-            Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
-            Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
-            Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
+            Console.WriteLine("Genesis Block: " + genesisBlock.Hash.ToHex());
+            Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
+            Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
             Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
             Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.Count}");
             foreach (var s in genesisBlock.TransactionHashes)
-                Console.WriteLine($" + - {s.Buffer.ToHex()}");
-            Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
+                Console.WriteLine($" + - {s.ToHex()}");
+            Console.WriteLine($" + hash: {genesisBlock.Hash.ToHex()}");
 
             var address1 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
@@ -136,7 +135,7 @@ namespace Lachain.Benchmark
             var deployError = transactionPool.Add(transactionSigner.Sign(deployTx, keyPair));
             if (deployError != OperatingError.Ok)
                 throw new Exception("Unable to add deploy tx (" + deployError + ")");
-            var contract = deployTx.From.Buffer.ToArray().Concat(BitConverter.GetBytes((uint) deployTx.Nonce))
+            var contract = deployTx.From.ToBytes().Concat(BitConverter.GetBytes((uint) deployTx.Nonce))
                 .Ripemd();
 
             _Benchmark("Building TX pool... ", i =>

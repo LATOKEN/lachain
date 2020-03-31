@@ -33,7 +33,7 @@ namespace Lachain.Consensus.RootProtocol
         public RootProtocol(RootProtocolId id, IPublicConsensusKeySet wallet, ECDSAPrivateKey privateKey,
             IConsensusBroadcaster broadcaster) : base(wallet, id, broadcaster)
         {
-            _keyPair = new ECDSAKeyPair(privateKey, _crypto);
+            _keyPair = new ECDSAKeyPair(privateKey);
             _rootId = id;
         }
 
@@ -187,7 +187,7 @@ namespace Lachain.Consensus.RootProtocol
                 }
                 else
                 {
-                    _logger.LogWarning($"Validator {signature.Key.Buffer.ToHex()} signed wrong block header: {header}");
+                    _logger.LogWarning($"Validator {signature.Key.ToHex()} signed wrong block header: {header}");
                 }
             }
 

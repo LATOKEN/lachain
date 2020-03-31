@@ -31,7 +31,6 @@ namespace Lachain.Core.Consensus
         private readonly IValidatorManager _validatorManager;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockchainContext _blockchainContext;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private bool _terminated;
         private readonly IPrivateConsensusKeySet _consensusKeySet;
         private long CurrentEra { get; set; } = -1;
@@ -57,7 +56,7 @@ namespace Lachain.Core.Consensus
                 throw new ArgumentNullException()
             );
             var keyPair = new ECDSAKeyPair(
-                config.EcdsaPrivateKey?.HexToBytes().ToPrivateKey() ?? throw new ArgumentNullException(), _crypto
+                config.EcdsaPrivateKey?.HexToBytes().ToPrivateKey() ?? throw new ArgumentNullException()
             );
 
             _messageDeliverer = messageDeliverer;

@@ -6,6 +6,7 @@ using Google.Protobuf;
 using Org.BouncyCastle.Crypto.Digests;
 using Lachain.Proto;
 using Lachain.Utility.JSON;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Crypto
 {
@@ -28,10 +29,7 @@ namespace Lachain.Crypto
 
         public static UInt160 Ripemd(this IEnumerable<byte> buffer)
         {
-            return new UInt160
-            {
-                Buffer = ByteString.CopyFrom(buffer.RipemdBytes())
-            };
+            return buffer.RipemdBytes().ToUInt160();
         }
 
         public static byte[] KeccakBytes(this IEnumerable<byte> message)
@@ -51,15 +49,12 @@ namespace Lachain.Crypto
 
         public static UInt256 Keccak<T>(this T t) where T : IMessage<T>
         {
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(t.ToByteArray().KeccakBytes())
-            };
+            return t.ToByteArray().KeccakBytes().ToUInt256();
         }
 
         public static UInt256 Keccak(this IEnumerable<byte> buffer)
         {
-            return new UInt256 {Buffer = ByteString.CopyFrom(buffer.KeccakBytes())};
+            return buffer.KeccakBytes().ToUInt256();
         }
 
         public static byte[] Sha256Bytes(this IEnumerable<byte> message)
@@ -74,7 +69,7 @@ namespace Lachain.Crypto
 
         public static UInt256 Sha256(this IEnumerable<byte> buffer)
         {
-            return new UInt256 {Buffer = ByteString.CopyFrom(buffer.Sha256Bytes())};
+            return buffer.Sha256Bytes().ToUInt256();
         }
 
         public static byte[] Murmur3(this byte[] message, uint seed)

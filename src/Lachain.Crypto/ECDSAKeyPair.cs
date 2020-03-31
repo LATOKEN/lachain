@@ -15,13 +15,10 @@ namespace Lachain.Crypto
             PublicKey = publicKey;
         }
 
-        public ECDSAKeyPair(ECDSAPrivateKey privateKey, ICrypto crypto)
+        public ECDSAKeyPair(ECDSAPrivateKey privateKey)
         {
             PrivateKey = privateKey;
-            PublicKey = new ECDSAPublicKey
-            {
-                Buffer = ByteString.CopyFrom(crypto.ComputePublicKey(privateKey.Buffer.ToByteArray(), true))
-            };
+            PublicKey = privateKey.GetPublicKey();
         }
 
         public bool Equals(ECDSAKeyPair? other)

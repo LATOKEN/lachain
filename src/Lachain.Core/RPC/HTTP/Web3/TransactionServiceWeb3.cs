@@ -47,7 +47,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new Exception("Failed to validate serialized and deserialized transactions");
             var json = new JObject
             {
-                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
             };
             var accepted = new TransactionReceipt
             {
@@ -101,18 +101,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var transaction = new Transaction
                 {
                     Type = TransactionType.Transfer,
-                    To = new UInt160
-                    {
-                        Buffer = ByteString.CopyFrom(ethTx.ReceiveAddress)
-                    },
-                    Value = new UInt256
-                    {
-                        Buffer = ByteString.CopyFrom(ethTx.Value.Reverse().ToArray())
-                    },
-                    From = new UInt160
-                    {
-                        Buffer = ByteString.CopyFrom(ethTx.Key.GetPublicAddress().HexToBytes())
-                    },
+                    To = ethTx.ReceiveAddress.ToUInt160(),
+                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
                     GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
@@ -121,11 +112,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
                 if (result != OperatingError.Ok)
                     return "Can not add to transaction pool";
-                return HashUtils.ToHash256(transaction).Buffer.ToHex();
+                return HashUtils.ToHash256(transaction).ToHex();
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return e.Message;
             }
         }
@@ -184,11 +176,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["logsBloom"] =
                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 ["status"] = receipt.Status.CompareTo(TransactionStatus.Executed) == 0 ? "0x1" : "0x0",
-                ["value"] = receipt.Transaction.Value.Buffer.Reverse().ToArray().ToHex(true),
+                ["value"] = receipt.Transaction.Value.ToBytes().Reverse().ToHex(),
                 ["nonce"] = receipt.Transaction.Nonce.ToHex(),
-                ["r"] = receipt.Signature.Buffer.ToArray().Take(32).ToArray().ToHex(true),
-                ["s"] = receipt.Signature.Buffer.ToArray().Skip(32).Take(32).ToArray().ToHex(true),
-                ["v"] = receipt.Signature.Buffer.ToArray().Skip(64).ToArray().ToHex(true),
+                ["r"] = receipt.Signature.Encode().Take(32).ToHex(),
+                ["s"] = receipt.Signature.Encode().Skip(32).Take(32).ToHex(),
+                ["v"] = receipt.Signature.Encode().Skip(64).ToHex(),
                 ["input"] = receipt.Transaction.Invocation.ToHex(),
                 ["gasPrice"] = receipt.Transaction.GasPrice.ToHex(),
                 ["gas"] = receipt.Transaction.GasLimit.ToHex(),

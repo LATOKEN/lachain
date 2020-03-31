@@ -28,12 +28,12 @@ namespace Lachain.Utility.Utils
 
         public static string ToHex(this UInt160 value, bool prefix = true)
         {
-            return value.Buffer.ToHex(prefix);
+            return value.ToBytes().ToHex(prefix);
         }
 
         public static string ToHex(this UInt256 value, bool prefix = true)
         {
-            return value.Buffer.ToHex(prefix);
+            return value.ToBytes().ToHex(prefix);
         }
         public static string ToHex(this ECDSAPublicKey key, bool prefix = true)
         {

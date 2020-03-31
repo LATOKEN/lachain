@@ -29,7 +29,6 @@ namespace Lachain.Console
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<CryptographyModule>();
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
@@ -42,7 +41,6 @@ namespace Lachain.Console
             var blockchainManager = _container.Resolve<IBlockchainManager>();
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
-            var crypto = _container.Resolve<ICrypto>();
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var validatorManager = _container.Resolve<IValidatorManager>();
@@ -56,27 +54,26 @@ namespace Lachain.Console
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var storageConfig = configManager.GetConfig<StorageConfig>("storage");
 
-            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey(), crypto);
+            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
 
             System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.Buffer.ToHex());
-            System.Console.WriteLine("Public Key: " + keyPair.PublicKey.Buffer.ToHex());
-            System.Console.WriteLine(
-                "Address: " + crypto.ComputeAddress(keyPair.PublicKey.Buffer.ToArray()).ToHex());
+            System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.ToHex());
+            System.Console.WriteLine("Public Key: " + keyPair.PublicKey.ToHex());
+            System.Console.WriteLine("Address: " + keyPair.PublicKey.GetAddress().ToHex());
             System.Console.WriteLine("-------------------------------");
 
             if (blockchainManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
 
             var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
-            System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.Buffer.ToHex());
-            System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.Buffer.ToHex()}");
-            System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.Buffer.ToHex()}");
+            System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.ToHex());
+            System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
+            System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
             System.Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
             System.Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.ToArray().Length}");
             foreach (var s in genesisBlock.TransactionHashes)
-                System.Console.WriteLine($" + - {s.Buffer.ToHex()}");
-            System.Console.WriteLine($" + hash: {genesisBlock.Hash.Buffer.ToHex()}");
+                System.Console.WriteLine($" + - {s.ToHex()}");
+            System.Console.WriteLine($" + hash: {genesisBlock.Hash.ToHex()}");
 
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);

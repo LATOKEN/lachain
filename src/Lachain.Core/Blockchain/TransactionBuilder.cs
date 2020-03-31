@@ -57,7 +57,7 @@ namespace Lachain.Core.Blockchain
         public Transaction TokenTransferTransaction(UInt160 contract, UInt160 from, UInt160 to, Money value)
         {
             var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
-            var abi = ContractEncoder.Encode("transfer(address,uint256)", to, value);
+            var abi = ContractEncoder.Encode("transfer(address,uint256)", to, value.ToUInt256());
             var tx = new Transaction
             {
                 Type = TransactionType.Transfer,

@@ -31,7 +31,7 @@ namespace Lachain.ConsensusTest
             var ecdsaKeys = Enumerable.Range(0, N)
                 .Select(i => _crypto.GenerateRandomBytes(32))
                 .Select(x => x.ToPrivateKey())
-                .Select(k => new ECDSAKeyPair(k, _crypto))
+                .Select(k => new ECDSAKeyPair(k))
                 .ToArray();
             _publicKeys = new PublicConsensusKeySet(
                 N, F, tpkeKeygen.GetPubKey(), tpkeKeygen.GetVerificationKey(),

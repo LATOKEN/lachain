@@ -97,11 +97,12 @@ namespace Lachain.Core.Blockchain.OperationManager
             /* use raw byte arrays to sign transaction hash */
             var messageHash = HashUtils.ToHash256(transaction);
 
-            var signature = _crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Buffer.ToByteArray());
-            /* we're afraid */
+            var signature = _crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode());
+            
+            /* we're afraid TODO: remove this checks */
             var pubKey = _crypto.RecoverSignatureHashed(messageHash.ToBytes(), signature);
-            if (!pubKey.SequenceEqual(keyPair.PublicKey.Buffer.ToByteArray()))
-                throw new InvalidKeyPairException();
+            if (!pubKey.SequenceEqual(keyPair.PublicKey.EncodeCompressed())) throw new InvalidKeyPairException();
+            
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,

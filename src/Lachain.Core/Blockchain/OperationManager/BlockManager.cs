@@ -240,7 +240,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                     if (!isEmulation)
                         throw new InvalidBlockException(OperatingError.BlockGasOverflow);
                     _logger.LogWarning(
-                        $"Unable to take transaction {txHash.Buffer.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
+                        $"Unable to take transaction {txHash.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
                     continue;
                 }
 
@@ -251,7 +251,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                     removeTransactions.Add(transaction);
                     _stateManager.Rollback();
                     _logger.LogWarning(
-                        $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
+                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
                     continue;
                 }
 
@@ -259,7 +259,7 @@ namespace Lachain.Core.Blockchain.OperationManager
 
                 /* mark transaction as executed */
                 _logger.LogDebug(
-                    $"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
+                    $"Successfully executed transaction {txHash.ToHex()} with nonce ({transaction.Transaction.Nonce})");
                 snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
                 _stateManager.Approve();
             }
@@ -298,21 +298,22 @@ namespace Lachain.Core.Blockchain.OperationManager
             return _validatorManager.GetValidatorsPublicKeys(block - 1)
                 .Any(validator =>
                     !snapshot.Balances.TransferBalance(transaction.Transaction.From,
-                        _crypto.ComputeAddress(validator.Buffer.ToByteArray()).ToUInt160(), sharedFee))
+                        _crypto.ComputeAddress(validator.EncodeCompressed()).ToUInt160(), sharedFee))
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
 
         public Signature Sign(BlockHeader block, ECDSAKeyPair keyPair)
         {
-            return _crypto.Sign(block.Keccak().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
+            return _crypto.Sign(block.KeccakBytes(), keyPair.PrivateKey.Encode())
                 .ToSignature();
         }
 
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
-            var result = _crypto.VerifySignature(blockHeader.Keccak().Buffer.ToByteArray(),
-                signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+            var result = _crypto.VerifySignature(
+                blockHeader.KeccakBytes(), signature.Encode(), publicKey.EncodeCompressed()
+            );
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 

@@ -49,6 +49,14 @@
         /// <param name="compress">Compress pubkey</param>
         /// <returns>Bytearray Public Key</returns>
         byte[] ComputePublicKey(byte[] privateKey, bool compress);
+        
+        /// <summary>
+        /// Parse public key and serialize it again to 33/65 bytes compressed/uncompressed format
+        /// </summary>
+        /// <param name="publicKey">Public Key</param>
+        /// <param name="compress">Compress public key?</param>
+        /// <returns>Bytearray Public Key</returns>
+        byte[] DecodePublicKey(byte[] publicKey, bool compress);
 
         /// <summary>
         /// Generates random bytes

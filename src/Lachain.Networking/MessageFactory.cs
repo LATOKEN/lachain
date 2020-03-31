@@ -168,35 +168,11 @@ namespace Lachain.Networking
             };
         }
 
-        public NetworkMessage ThresholdRequest(byte[] message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public NetworkMessage ChangeViewRequest()
-        {
-            throw new NotImplementedException();
-        }
-
-        public NetworkMessage BlockPrepareRequest()
-        {
-            throw new NotImplementedException();
-        }
-
-        public NetworkMessage BlockPrepareReply()
-        {
-            throw new NotImplementedException();
-        }
-
         private Signature _SignMessage(IMessage message)
         {
-            var rawSig = _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Buffer.ToByteArray());
-            if (rawSig.Length != 65)
-                throw new ArgumentOutOfRangeException(nameof(rawSig));
-            return new Signature
-            {
-                Buffer = ByteString.CopyFrom(rawSig)
-            };
+            var rawSig = _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Encode());
+            if (rawSig.Length != 65) throw new ArgumentOutOfRangeException(nameof(rawSig));
+            return new Signature {Buffer = ByteString.CopyFrom(rawSig)};
         }
     }
 }

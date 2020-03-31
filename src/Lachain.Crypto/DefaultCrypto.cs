@@ -18,12 +18,12 @@ namespace Lachain.Crypto
             = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
 
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
         {
-           var messageHash = message.KeccakBytes();
-           return VerifySignatureHashed(messageHash, signature, publicKey);
+            var messageHash = message.KeccakBytes();
+            return VerifySignatureHashed(messageHash, signature, publicKey);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -32,8 +32,8 @@ namespace Lachain.Crypto
             var pk = new byte[64];
             if (!Secp256K1.PublicKeyParse(pk, publicKey))
                 throw new ArgumentException();
-            
-            
+
+
             var pubkeyDeserialized = new byte[33];
             if (!Secp256K1.PublicKeySerialize(pubkeyDeserialized, pk, Flags.SECP256K1_EC_COMPRESSED))
                 throw new ArgumentException();
@@ -42,7 +42,7 @@ namespace Lachain.Crypto
             var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
             if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
-            
+
 
             return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
         }
@@ -63,7 +63,7 @@ namespace Lachain.Crypto
             var serialized = new byte[64];
             if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                 throw new ArgumentException();
-            recId = TransactionUtils.ChainId * 2 + 35 + recId; 
+            recId = TransactionUtils.ChainId * 2 + 35 + recId;
             return serialized.Concat(new[] {(byte) recId}).ToArray();
         }
 
@@ -84,7 +84,7 @@ namespace Lachain.Crypto
                 throw new ArgumentException();
             if (!Secp256K1.Recover(pk, parsedSig, messageHash))
                 throw new ArgumentException("Bad signature");
-            
+
             var result = new byte[33];
             if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
             {
@@ -96,7 +96,7 @@ namespace Lachain.Crypto
 
         public byte[] ComputeAddress(byte[] publicKey)
         {
-            return DecodePublicKey(publicKey, false, out _, out _).Skip(1).KeccakBytes().Skip(12).ToArray();
+            return DecodePublicKey(publicKey, false).Skip(1).KeccakBytes().Skip(12).ToArray();
         }
 
         public byte[] ComputePublicKey(byte[] privateKey, bool compress = true)
@@ -111,41 +111,18 @@ namespace Lachain.Crypto
             return result;
         }
 
-        private byte[] DecodePublicKey(byte[] publicKey, bool compress, out System.Numerics.BigInteger x,
-            out System.Numerics.BigInteger y)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public byte[] DecodePublicKey(byte[] publicKey, bool compress)
         {
-            if (publicKey == null || publicKey.Length != 33 && publicKey.Length != 64 && publicKey.Length != 65)
+            var pubKeyParsed = new byte[64];
+            if (!Secp256K1.PublicKeyParse(pubKeyParsed, publicKey))
                 throw new ArgumentException(nameof(publicKey));
-
-            switch (publicKey.Length)
-            {
-                case 33 when publicKey[0] != 0x02 && publicKey[0] != 0x03:
-                    throw new ArgumentException(nameof(publicKey));
-                case 65 when publicKey[0] != 0x04:
-                    throw new ArgumentException(nameof(publicKey));
-            }
-
-            byte[] fullPublicKey;
-
-            if (publicKey.Length == 64)
-            {
-                fullPublicKey = new byte[65];
-                fullPublicKey[0] = 0x04;
-                Array.Copy(publicKey, 0, fullPublicKey, 1, publicKey.Length);
-            }
-            else
-            {
-                fullPublicKey = publicKey;
-            }
-
-            var ret = new ECPublicKeyParameters("ECDSA", Curve.Curve.DecodePoint(fullPublicKey), Domain).Q;
-            var x0 = ret.XCoord.ToBigInteger();
-            var y0 = ret.YCoord.ToBigInteger();
-
-            x = System.Numerics.BigInteger.Parse(x0.ToString());
-            y = System.Numerics.BigInteger.Parse(y0.ToString());
-
-            return ret.GetEncoded(compress);
+            var result = compress ? new byte[33] : new byte[65];
+            if (!Secp256K1.PublicKeySerialize(result, pubKeyParsed,
+                compress ? Flags.SECP256K1_EC_COMPRESSED : Flags.SECP256K1_EC_UNCOMPRESSED)
+            )
+                throw new ArgumentException(nameof(publicKey));
+            return result;
         }
 
         public byte[] GenerateRandomBytes(int length)

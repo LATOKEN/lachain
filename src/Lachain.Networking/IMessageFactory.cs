@@ -26,13 +26,5 @@ namespace Lachain.Networking
         NetworkMessage GetTransactionsByHashesRequest(IEnumerable<UInt256> transactionHashes);
 
         NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions);
-        
-        NetworkMessage ThresholdRequest(byte[] message);
-
-        NetworkMessage ChangeViewRequest();
-        
-        NetworkMessage BlockPrepareRequest();
-        
-        NetworkMessage BlockPrepareReply();
     }
 }
