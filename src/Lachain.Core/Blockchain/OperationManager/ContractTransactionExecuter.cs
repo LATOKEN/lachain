@@ -53,7 +53,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                 if (snapshot.Balances.GetBalance(transaction.From) < new Money(transaction.Value))
                     return OperatingError.InsufficientBalance;
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
-                return _InvokeSystemContract(ContractRegisterer.LatokenContract, invocation, transaction, snapshot);
+                return _InvokeSystemContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot);
             }
 
             /* try to transfer funds from sender to recipient */
@@ -68,7 +68,7 @@ namespace Lachain.Core.Blockchain.OperationManager
             var transaction = receipt.Transaction;
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
             if (systemContract != null)
-                return _InvokeSystemContract(transaction.To, transaction.Invocation.ToArray(), transaction, snapshot);
+                return _InvokeSystemContract(transaction.To, transaction.Invocation.ToArray(), receipt, snapshot);
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
             if (contract is null) return OperatingError.ContractFailed; // this should not happen
             var input = transaction.Invocation.ToByteArray();
@@ -114,8 +114,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         }
 
         private OperatingError _InvokeSystemContract(
-            UInt160 address, byte[] invocation, Transaction transaction,
-            IBlockchainSnapshot snapshot
+            UInt160 address, byte[] invocation, TransactionReceipt receipt, IBlockchainSnapshot snapshot
         )
         {
             var result = _contractRegisterer.DecodeContract(address, invocation);
@@ -127,8 +126,8 @@ namespace Lachain.Core.Blockchain.OperationManager
                 var context = new ContractContext
                 {
                     Snapshot = snapshot,
-                    Sender = transaction.From,
-                    Transaction = transaction
+                    Sender = receipt.Transaction.From,
+                    Receipt = receipt
                 };
                 var inst = Activator.CreateInstance(contract, context);
                 method.Invoke(inst, args);

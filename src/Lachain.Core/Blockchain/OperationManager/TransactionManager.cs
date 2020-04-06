@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
@@ -92,7 +93,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair)
+        public TransactionReceipt Sign(Transaction transaction, EcdsaKeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
             var messageHash = HashUtils.ToHash256(transaction);

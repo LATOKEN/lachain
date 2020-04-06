@@ -11,6 +11,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -32,7 +33,6 @@ namespace Lachain.Benchmark
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<CryptographyModule>();
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
@@ -52,7 +52,7 @@ namespace Lachain.Benchmark
             var stateManager = _container.Resolve<IStateManager>();
 
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
-            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
+            var keyPair = new EcdsaKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
 
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Private Key: " + keyPair.PrivateKey.Encode().ToHex());
@@ -115,7 +115,7 @@ namespace Lachain.Benchmark
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IBlockchainManager blockchainManager,
-            ECDSAKeyPair keyPair)
+            EcdsaKeyPair keyPair)
         {
             var address1 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
             var address2 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
@@ -197,7 +197,7 @@ namespace Lachain.Benchmark
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IBlockchainManager blockchainManager,
-            ECDSAKeyPair keyPair)
+            EcdsaKeyPair keyPair)
         {
             var address1 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
             var address2 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();

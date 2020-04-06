@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
@@ -33,16 +36,14 @@ namespace Lachain.Crypto
             if (!Secp256K1.PublicKeyParse(pk, publicKey))
                 throw new ArgumentException();
 
-
-            var pubkeyDeserialized = new byte[33];
-            if (!Secp256K1.PublicKeySerialize(pubkeyDeserialized, pk, Flags.SECP256K1_EC_COMPRESSED))
+            var publicKeySerialized = new byte[33];
+            if (!Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED))
                 throw new ArgumentException();
 
             var parsedSig = new byte[65];
             var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
             if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                 throw new ArgumentException();
-
 
             return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
         }
@@ -101,13 +102,12 @@ namespace Lachain.Crypto
 
         public byte[] ComputePublicKey(byte[] privateKey, bool compress = true)
         {
-            if (privateKey == null)
-                throw new ArgumentException(nameof(privateKey));
-
-            var q = Domain.G.Multiply(new BigInteger(1, privateKey));
-            var publicParams = new ECPublicKeyParameters(q, Domain);
-
-            var result = publicParams.Q.GetEncoded(compress);
+            var publicKey = new byte[64];
+            var result = new byte[33];
+            if (!Secp256K1.PublicKeyCreate(publicKey, privateKey))
+                throw new ArgumentException("Bad private key");
+            if (!Secp256K1.PublicKeySerialize(result, publicKey, Flags.SECP256K1_EC_COMPRESSED))
+                throw new ArgumentException("Bad public key");
             return result;
         }
 
@@ -131,10 +131,77 @@ namespace Lachain.Crypto
                 throw new ArgumentException(nameof(length));
 
             var privateKey = new byte[length];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            using (var rng = RandomNumberGenerator.Create())
                 rng.GetBytes(privateKey);
 
             return privateKey;
+        }
+
+        public byte[] GeneratePrivateKey()
+        {
+            for (;;)
+            {
+                var key = GenerateRandomBytes(32);
+                if (Secp256K1.SecretKeyVerify(key)) return key;
+            }
+        }
+
+        public byte[] AesGcmEncrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> plaintext)
+        {
+            var tag = new byte[AesGcm.TagByteSizes.MaxSize];
+            var nonce = GenerateRandomBytes(AesGcm.NonceByteSizes.MaxSize);
+            var ciphertext = new byte[plaintext.Length];
+            using var aes = new AesGcm(key);
+            aes.Encrypt(nonce, plaintext, ciphertext, tag);
+            return tag.Concat(nonce).Concat(ciphertext).ToArray();
+        }
+
+        public byte[] AesGcmDecrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> ciphertext)
+        {
+            var tag = ciphertext.Slice(0, AesGcm.TagByteSizes.MaxSize);
+            var nonce = ciphertext.Slice(AesGcm.TagByteSizes.MaxSize, AesGcm.NonceByteSizes.MaxSize);
+            var result = new byte[ciphertext.Length - AesGcm.NonceByteSizes.MaxSize - AesGcm.TagByteSizes.MaxSize];
+            using var aes = new AesGcm(key);
+            aes.Decrypt(
+                nonce, ciphertext.Slice(AesGcm.TagByteSizes.MaxSize + AesGcm.NonceByteSizes.MaxSize), tag, result
+            );
+            return result;
+        }
+
+        public byte[] Secp256K1Encrypt(Span<byte> recipientPublicKey, ReadOnlySpan<byte> plaintext)
+        {
+            var ephemeralPrivateKey = GeneratePrivateKey();
+            var ephemeralPublicKey = new byte[64];
+            var recipientPublicKeyParsed = new byte[64];
+            if (!Secp256K1.PublicKeyCreate(ephemeralPublicKey, ephemeralPrivateKey))
+                throw new Exception("Corrupted private key");
+            if (!Secp256K1.PublicKeyParse(recipientPublicKeyParsed, recipientPublicKey))
+                throw new Exception("Corrupted recipient public key");
+
+            var sessionKey = new byte[32];
+            if (!Secp256K1.Ecdh(sessionKey, recipientPublicKeyParsed, ephemeralPrivateKey))
+                throw new Exception("Ecdh failed");
+
+            var ephemeralPublicKeySerialized = new byte[33];
+            if (!Secp256K1.PublicKeySerialize(ephemeralPublicKeySerialized, ephemeralPublicKey,
+                Flags.SECP256K1_EC_COMPRESSED))
+                throw new Exception("Corrupted public key");
+
+            return ephemeralPublicKeySerialized.Concat(AesGcmEncrypt(sessionKey, plaintext)).ToArray();
+        }
+
+        public byte[] Secp256K1Decrypt(Span<byte> privateKey, Span<byte> ciphertext)
+        {
+            var senderPublicKeySerialized = ciphertext.Slice(0, 33);
+            var senderPublicKey = new byte[64];
+            if (!Secp256K1.PublicKeyParse(senderPublicKey, senderPublicKeySerialized))
+                throw new ArgumentException("Invalid ciphertext: corrupted public key");
+
+            var sessionKey = new byte[32];
+            if (!Secp256K1.Ecdh(sessionKey, senderPublicKey, privateKey))
+                throw new Exception("Ecdh failed");
+
+            return AesGcmDecrypt(sessionKey, ciphertext.Slice(33));
         }
     }
 }

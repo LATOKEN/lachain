@@ -23,7 +23,6 @@ namespace Lachain.Benchmark
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<CryptographyModule>();
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();

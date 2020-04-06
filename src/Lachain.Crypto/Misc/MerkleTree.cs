@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Lachain.Proto;
-using Lachain.Utility.Utils;
 
-namespace Lachain.Crypto
+namespace Lachain.Crypto.Misc
 {
     public class MerkleTreeNode
     {

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
@@ -323,7 +324,7 @@ namespace Lachain.Networking
 
         public bool IsReady => _serverWorker != null && _serverWorker.IsActive;
 
-        public void Start(NetworkConfig networkConfig, ECDSAKeyPair keyPair, IMessageHandler messageHandler)
+        public void Start(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IMessageHandler messageHandler)
         {
             if (networkConfig?.Peers is null)
                 throw new ArgumentNullException();

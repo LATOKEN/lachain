@@ -7,8 +7,8 @@ using Lachain.Logger;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
-using Lachain.Consensus.TPKE;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
@@ -18,7 +18,7 @@ namespace Lachain.Consensus.RootProtocol
     public class RootProtocol : AbstractProtocol
     {
         private readonly ILogger<RootProtocol> _logger = LoggerFactory.GetLoggerForClass<RootProtocol>();
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly EcdsaKeyPair _keyPair;
         private readonly RootProtocolId _rootId;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private IBlockProducer? _blockProducer;
@@ -33,7 +33,7 @@ namespace Lachain.Consensus.RootProtocol
         public RootProtocol(RootProtocolId id, IPublicConsensusKeySet wallet, ECDSAPrivateKey privateKey,
             IConsensusBroadcaster broadcaster) : base(wallet, id, broadcaster)
         {
-            _keyPair = new ECDSAKeyPair(privateKey);
+            _keyPair = new EcdsaKeyPair(privateKey);
             _rootId = id;
         }
 

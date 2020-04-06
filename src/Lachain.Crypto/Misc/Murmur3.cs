@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
-namespace Lachain.Crypto
+namespace Lachain.Crypto.Misc
 {
     sealed class Murmur3 : HashAlgorithm
     {

@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Nethereum.Signer;
 using NUnit.Framework;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -14,10 +15,34 @@ namespace Lachain.CryptoTest
 {
     public class CryptographyTest
     {
-        private const int N = 2;
+        [Test]
+        public void Test_EncryptDecryptRoundTrip()
+        {
+            var crypto = CryptoProvider.GetCrypto();
+            var key = crypto.GenerateRandomBytes(32);
+            var plaintext =
+                "0xf86d808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a76400008025a0115105d96a43f41a5ea562bb3e591cbfa431a8cdae9c3030457adca2cb854f78a012fb41922c53c73473563003667ed8e783359c91d95b42301e1955d530b1ca33"
+                    .HexToBytes();
+            var cipher = crypto.AesGcmEncrypt(key, plaintext);
+            var decrypted = crypto.AesGcmDecrypt(key, cipher);
+            Assert.IsTrue(plaintext.SequenceEqual(decrypted));
+        }
 
         [Test]
-        public void Test_BouncyCastle_SignRoundTrip()
+        public void Test_Secp256K1EncryptDecryptRoundTrip()
+        {
+            var crypto = CryptoProvider.GetCrypto();
+            var key = crypto.GeneratePrivateKey();
+            var plaintext =
+                "0xf86d808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a76400008025a0115105d96a43f41a5ea562bb3e591cbfa431a8cdae9c3030457adca2cb854f78a012fb41922c53c73473563003667ed8e783359c91d95b42301e1955d530b1ca33"
+                    .HexToBytes();
+            var cipher = crypto.Secp256K1Encrypt(key.ToPrivateKey().GetPublicKey().EncodeCompressed(), plaintext);
+            var decrypted = crypto.Secp256K1Decrypt(key, cipher);
+            Assert.IsTrue(plaintext.SequenceEqual(decrypted));
+        }
+
+        [Test]
+        public void Test_SignRoundTrip()
         {
             var crypto = new DefaultCrypto();
             var privateKey = "0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes();
@@ -27,6 +52,7 @@ namespace Lachain.CryptoTest
             CollectionAssert.AreEqual(address, crypto.ComputeAddress(publicKey));
 
             var startTs = TimeUtils.CurrentTimeMillis();
+            const int N = 2;
             for (var it = 0; it < N; ++it)
             {
                 // var message = "0xdeadbeef" + it.ToString("X4");
@@ -66,9 +92,6 @@ namespace Lachain.CryptoTest
         public void Test_EIP_155()
         {
             var crypto = CryptoProvider.GetCrypto();
-            ulong nonce = 9;
-            var nonceBig = new BigInteger(nonce);
-            nonceBig.ToByteArray();
             var tx = new Transaction
             {
                 Type = TransactionType.Transfer,
@@ -83,7 +106,7 @@ namespace Lachain.CryptoTest
                 .ToPrivateKey();
             var publicKey = privateKey.GetPublicKey();
 
-            Sign(tx, new ECDSAKeyPair(privateKey, publicKey));
+            Sign(tx, new EcdsaKeyPair(privateKey, publicKey));
 
             // var message = "0xdeadbeef".HexToBytes();
             // var signature =
@@ -110,10 +133,12 @@ namespace Lachain.CryptoTest
             };
             var rlp = tx.Rlp();
             // compare with actual RLP from metamask
-            Assert.IsTrue(rlp.SequenceEqual("0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080298080".HexToBytes()));
+            Assert.IsTrue(rlp.SequenceEqual(
+                "0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080298080"
+                    .HexToBytes()));
         }
 
-        public void Sign(Transaction transaction, ECDSAKeyPair keyPair)
+        public void Sign(Transaction transaction, EcdsaKeyPair keyPair)
         {
             // Console.WriteLine(transaction.Nonce.ToBytes().ToUInt160().ToHex());
             /* use raw byte arrays to sign transaction hash */
@@ -132,11 +157,8 @@ namespace Lachain.CryptoTest
             Console.WriteLine("RLP " + rlp.ToHex());
             // var message = rlp.Keccak256();
 
-
             var crypto = CryptoProvider.GetCrypto();
-
             var signature = crypto.Sign(rlp, keyPair.PrivateKey.Encode());
-
             Console.WriteLine(signature.Take(32).ToHex());
             Console.WriteLine(signature.Skip(32).Take(32).ToHex());
 
@@ -153,7 +175,7 @@ namespace Lachain.CryptoTest
 
 
         [Test]
-        public void Test_BouncyCastle_RecoverSignature()
+        public void Test_RecoverSignature()
         {
             var crypto = new DefaultCrypto();
 
@@ -161,7 +183,8 @@ namespace Lachain.CryptoTest
             var publicKey = crypto.ComputePublicKey(privateKey);
 
             var startTs = TimeUtils.CurrentTimeMillis();
-            for (var it = 0; it < N; ++it)
+            const int n = 2;
+            for (var it = 0; it < n; ++it)
             {
                 var message = ("0xbadcab1e" + it.ToString("X4")).HexToBytes();
                 var signature = crypto.Sign(message, privateKey);
@@ -171,7 +194,7 @@ namespace Lachain.CryptoTest
 
             var endTs = TimeUtils.CurrentTimeMillis();
             Console.WriteLine(endTs - startTs);
-            Console.WriteLine((endTs - startTs) / N);
+            Console.WriteLine((endTs - startTs) / n);
         }
 
 

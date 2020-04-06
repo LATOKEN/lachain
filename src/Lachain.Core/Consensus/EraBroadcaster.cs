@@ -15,6 +15,7 @@ using Lachain.Consensus.RootProtocol;
 using Lachain.Consensus.TPKE;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -33,7 +34,7 @@ namespace Lachain.Core.Consensus
         private readonly long _era;
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IMessageFactory _messageFactory;
-        private readonly IPrivateConsensusKeySet _wallet;
+        private readonly IPrivateWallet _wallet;
         private bool _terminated;
 
         /**
@@ -50,7 +51,7 @@ namespace Lachain.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            IPrivateConsensusKeySet wallet
+            IPrivateWallet wallet
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -284,7 +285,8 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
-                    var coin = new CommonCoin(coinId, publicKeySet, _wallet.ThresholdSignaturePrivateKeyShare, this);
+                    var coin = new CommonCoin(coinId, publicKeySet,
+                        _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1), this);
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
@@ -300,7 +302,8 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
-                    var hb = new HoneyBadger(hbId, publicKeySet, _wallet.TpkePrivateKey, this);
+                    var hb = new HoneyBadger(hbId, publicKeySet, _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1),
+                        this);
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:

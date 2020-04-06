@@ -1,4 +1,4 @@
-using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
 
@@ -7,7 +7,7 @@ namespace Lachain.Consensus
     public class PrivateConsensusKeySet : IPrivateConsensusKeySet
     {
         public PrivateConsensusKeySet(
-            ECDSAKeyPair ecdsaKeyPair, PrivateKey tpkePrivateKey,
+            EcdsaKeyPair ecdsaKeyPair, PrivateKey tpkePrivateKey,
             PrivateKeyShare thresholdSignaturePrivateKeyShare)
         {
             EcdsaKeyPair = ecdsaKeyPair;
@@ -17,6 +17,6 @@ namespace Lachain.Consensus
 
         public PrivateKey TpkePrivateKey { get; }
         public PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; }
-        public ECDSAKeyPair EcdsaKeyPair { get; }
+        public EcdsaKeyPair EcdsaKeyPair { get; }
     }
 }

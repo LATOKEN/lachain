@@ -9,6 +9,7 @@ using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Storage.State;
 
 namespace Lachain.Core.CLI
@@ -43,7 +44,7 @@ namespace Lachain.Core.CLI
             _virtualMachine = virtualMachine;
         }
 
-        private void _Worker(ECDSAKeyPair keyPair)
+        private void _Worker(EcdsaKeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(
                 _transactionBuilder, _transactionPool, _transactionManager,
@@ -88,7 +89,7 @@ namespace Lachain.Core.CLI
             }
         }
 
-        public void Start(ECDSAKeyPair keyPair)
+        public void Start(EcdsaKeyPair keyPair)
         {
             Task.Factory.StartNew(() =>
             {

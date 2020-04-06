@@ -2,7 +2,7 @@
 {
     public class GovernanceInterface : IContractInterface
     {
-        public const string MethodChangeValidators = "changeValidators(address[])";
+        public const string MethodChangeValidators = "changeValidators(bytes[])";
         public const string MethodKeygenCommit = "keygenCommit(bytes,bytes,bytes)";
         public const string MethodKeygenSendValue = "keygenSendValue(bytes)";
         public const string MethodKeygenConfirm = "keygenConfirm(uint256,bytes)";

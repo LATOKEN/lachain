@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Lachain.Core.Blockchain.ContractManager;
+using Lachain.Core.Consensus;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -18,11 +19,6 @@ namespace Lachain.Core.VM
             _binaryReader = new BinaryReader(new MemoryStream(input));
         }
 
-        public ContractDecoder(BinaryReader binaryReader)
-        {
-            _binaryReader = binaryReader;
-        }
-
         public object[] Decode(string signature)
         {
             var parts = signature.Split('(');
@@ -32,35 +28,32 @@ namespace Lachain.Core.VM
             var types = parts[1].Split(',');
             var result = new List<object>(types.Length);
             if (_binaryReader.ReadUInt32() != ContractEncoder.MethodSignatureBytes(signature))
-                throw new ArgumentException("Decoded ABI does not match method signature");                
-            foreach (var type in types)
+                throw new ArgumentException("Decoded ABI does not match method signature");
+            result.AddRange(types.Select(type => type switch
             {
-                object value;
-                switch (type)
-                {
-                    case "uint256":
-                    case "uint":
-                        value = DecodeUInt256();
-                        break;
-                    case "address":
-                    case "uint160":
-                        value = DecodeUInt160();
-                        break;
-                    case "address[]":
-                    case "uint160[]":
-                        value = DecodeUInt160List();
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(type),
-                            "Unsupported type in method signature (" + type + ")");
-                }
-
-                result.Add(value);
-            }
+                "uint256" => (object) DecodeUInt256(),
+                "uint" => DecodeUInt256(),
+                "address" => DecodeUInt160(),
+                "uint160" => DecodeUInt160(),
+                "address[]" => DecodeUInt160List(),
+                "uint160[]" => DecodeUInt160List(),
+                "bytes[]" => DecodeBytesList(),
+                "bytes" => DecodeBytes(),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), "Unsupported type in method signature (" + type + ")")
+            }));
 
             return result.ToArray();
         }
 
+        private byte[] DecodeBytes()
+        {
+            var len = DecodeUInt256().ToBigInteger();
+            if (len > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(len), "Encoded array length is too long");
+            var words = ((int) len + 31) / 32;
+            return _binaryReader.ReadBytes(words * 32).Take((int) len).ToArray();
+        }
+        
         private UInt256 DecodeUInt256()
         {
             return _binaryReader.ReadBytes(32).ToUInt256();
@@ -71,14 +64,23 @@ namespace Lachain.Core.VM
             return _binaryReader.ReadBytes(20).ToUInt160();
         }
 
+        private byte[][] DecodeBytesList()
+        {
+            var len = DecodeUInt256().ToBigInteger();
+            if (len > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(len), "Encoded array length is too long");
+            return Enumerable.Range(0, (int) len)
+                .Select(_ => DecodeBytes())
+                .ToArray();
+        }
+        
         private UInt160[] DecodeUInt160List()
         {
             var len = DecodeUInt256().ToBigInteger();
             if (len > int.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(len), "Encoded array length is too long");
             return Enumerable.Range(0, (int) len)
-                .Select(_ => _binaryReader.ReadBytes(20))
-                .Select(x => x.ToUInt160())
+                .Select(_ => DecodeUInt160())
                 .ToArray();
         }
     }

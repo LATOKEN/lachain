@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -16,16 +17,14 @@ namespace Lachain.Core.CLI
 {
     public class ConsoleCommands : IConsoleCommands
     {
-        private const uint AddressLength = 20;
         private const uint TxLength = 32;
 
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly EcdsaKeyPair _keyPair;
         private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
@@ -35,7 +34,7 @@ namespace Lachain.Core.CLI
             IBlockManager blockManager,
             IStateManager stateManager,
             IVirtualMachine virtualMachine,
-            ECDSAKeyPair keyPair
+            EcdsaKeyPair keyPair
         )
         {
             _blockManager = blockManager;

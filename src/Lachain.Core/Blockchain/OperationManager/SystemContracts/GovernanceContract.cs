@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.Blockchain.ContractManager.Attributes;
 using Lachain.Core.Blockchain.ContractManager.Standards;
+using Lachain.Crypto;
 using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
@@ -17,9 +19,8 @@ namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
         
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
 
-        public void ChangeValidators(UInt160[] newValidators)
+        public void ChangeValidators(byte[][] newValidators)
         {
-            
         }
 
         [ContractProperty(GovernanceInterface.MethodKeygenCommit)]

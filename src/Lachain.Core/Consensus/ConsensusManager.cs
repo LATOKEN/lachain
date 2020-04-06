@@ -14,6 +14,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
@@ -32,7 +33,8 @@ namespace Lachain.Core.Consensus
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockchainContext _blockchainContext;
         private bool _terminated;
-        private readonly IPrivateConsensusKeySet _consensusKeySet;
+        private readonly IPrivateWallet _privateWallet;
+
         private long CurrentEra { get; set; } = -1;
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
@@ -40,32 +42,19 @@ namespace Lachain.Core.Consensus
         public ConsensusManager(
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
-            IConfigManager configManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext
+            IBlockchainContext blockchainContext,
+            IPrivateWallet privateWallet
         )
         {
-            var config = configManager.GetConfig<ConsensusConfig>("consensus");
-            if (config is null) throw new ArgumentNullException(nameof(config));
-
-            var tpkePrivateKey =
-                PrivateKey.FromBytes(config.TpkePrivateKey?.HexToBytes() ?? throw new ArgumentNullException());
-            var thresholdSignaturePrivateKeyShare = PrivateKeyShare.FromBytes(
-                config.ThresholdSignaturePrivateKey?.HexToBytes() ??
-                throw new ArgumentNullException()
-            );
-            var keyPair = new ECDSAKeyPair(
-                config.EcdsaPrivateKey?.HexToBytes().ToPrivateKey() ?? throw new ArgumentNullException()
-            );
-
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
             _blockchainContext = blockchainContext;
+            _privateWallet = privateWallet;
             _terminated = false;
 
-            _consensusKeySet = new PrivateConsensusKeySet(keyPair, tpkePrivateKey, thresholdSignaturePrivateKeyShare);
             blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
         }
 
@@ -183,7 +172,7 @@ namespace Lachain.Core.Consensus
             }
 
             _logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _consensusKeySet);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet);
         }
     }
 }

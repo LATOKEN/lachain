@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Lachain.Crypto
+namespace Lachain.Crypto.ECDSA
 {
     public class InvalidKeyPairException : Exception
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.OperationManager
@@ -20,7 +20,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         
         OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash, bool commit);        
         
-        Signature Sign(BlockHeader block, ECDSAKeyPair keyPair);
+        Signature Sign(BlockHeader block, EcdsaKeyPair keyPair);
         
         OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey);
         

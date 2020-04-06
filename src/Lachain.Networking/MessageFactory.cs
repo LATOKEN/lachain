@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 
 namespace Lachain.Networking
 {
     public class MessageFactory : IMessageFactory
     {
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly EcdsaKeyPair _keyPair;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
-        public MessageFactory(ECDSAKeyPair keyPair)
+        public MessageFactory(EcdsaKeyPair keyPair)
         {
             _keyPair = keyPair;
         }

@@ -11,6 +11,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Networking;
 using Lachain.Storage;
 using Lachain.Storage.State;
@@ -54,7 +55,7 @@ namespace Lachain.Console
             var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
             var storageConfig = configManager.GetConfig<StorageConfig>("storage");
 
-            var keyPair = new ECDSAKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
+            var keyPair = new EcdsaKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
 
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.ToHex());

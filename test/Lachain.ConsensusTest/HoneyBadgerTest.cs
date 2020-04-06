@@ -6,6 +6,7 @@ using Lachain.Consensus;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 
@@ -31,7 +32,7 @@ namespace Lachain.ConsensusTest
             var ecdsaKeys = Enumerable.Range(0, N)
                 .Select(i => _crypto.GenerateRandomBytes(32))
                 .Select(x => x.ToPrivateKey())
-                .Select(k => new ECDSAKeyPair(k))
+                .Select(k => new EcdsaKeyPair(k))
                 .ToArray();
             _publicKeys = new PublicConsensusKeySet(
                 N, F, tpkeKeygen.GetPubKey(), tpkeKeygen.GetVerificationKey(),

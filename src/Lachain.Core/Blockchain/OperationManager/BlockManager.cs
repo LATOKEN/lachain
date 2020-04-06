@@ -7,6 +7,8 @@ using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.Misc;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -303,7 +305,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                 : OperatingError.Ok;
         }
 
-        public Signature Sign(BlockHeader block, ECDSAKeyPair keyPair)
+        public Signature Sign(BlockHeader block, EcdsaKeyPair keyPair)
         {
             return _crypto.Sign(block.KeccakBytes(), keyPair.PrivateKey.Encode())
                 .ToSignature();
