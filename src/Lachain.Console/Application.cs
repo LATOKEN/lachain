@@ -10,6 +10,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Network;
 using Lachain.Core.RPC;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Networking;
@@ -25,8 +26,7 @@ namespace Lachain.Console
 
         public Application()
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json"));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json"));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -51,17 +51,7 @@ namespace Lachain.Console
             var commandManager = _container.Resolve<IConsoleManager>();
             var rpcManager = _container.Resolve<IRpcManager>();
             var stateManager = _container.Resolve<IStateManager>();
-
-            var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
-            var storageConfig = configManager.GetConfig<StorageConfig>("storage");
-
-            var keyPair = new EcdsaKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
-
-            System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Private Key: " + keyPair.PrivateKey.ToHex());
-            System.Console.WriteLine("Public Key: " + keyPair.PublicKey.ToHex());
-            System.Console.WriteLine("Address: " + keyPair.PublicKey.GetAddress().ToHex());
-            System.Console.WriteLine("-------------------------------");
+            var wallet = _container.Resolve<IPrivateWallet>();
 
             if (blockchainManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
@@ -81,21 +71,21 @@ namespace Lachain.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            networkManager.Start(networkConfig, keyPair, messageHandler);
+            networkManager.Start(networkConfig, wallet.EcdsaKeyPair, messageHandler);
             transactionVerifier.Start();
-            commandManager.Start(keyPair);
+            commandManager.Start(wallet.EcdsaKeyPair);
             rpcManager.Start();
 
             blockSynchronizer.Start();
             System.Console.WriteLine("Waiting for consensus peers to handshake...");
             networkManager.WaitForHandshake(validatorManager
                 .GetValidatorsPublicKeys((long) blockchainContext.CurrentBlockHeight)
-                .Where(key => !key.Equals(keyPair.PublicKey))
+                .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             System.Console.WriteLine("Handshake successful, synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys((long) blockchainContext.CurrentBlockHeight)
-                    .Where(key => !key.Equals(keyPair.PublicKey))
+                    .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);

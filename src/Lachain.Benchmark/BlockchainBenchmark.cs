@@ -9,6 +9,7 @@ using Lachain.Core.Consensus;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Vault;
 using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
@@ -50,9 +51,9 @@ namespace Lachain.Benchmark
             var transactionManager = _container.Resolve<ITransactionManager>();
             var blockManager = _container.Resolve<IBlockManager>();
             var stateManager = _container.Resolve<IStateManager>();
+            var wallet = _container.Resolve<IPrivateWallet>();
 
-            var consensusConfig = configManager.GetConfig<ConsensusConfig>("consensus");
-            var keyPair = new EcdsaKeyPair(consensusConfig.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
+            var keyPair = wallet.EcdsaKeyPair;
 
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Private Key: " + keyPair.PrivateKey.Encode().ToHex());

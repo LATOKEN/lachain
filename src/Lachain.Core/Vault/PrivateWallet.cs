@@ -23,18 +23,14 @@ namespace Lachain.Core.Vault
 
         private readonly ISortedDictionary<ulong, PrivateKey> _tpkeKeys = new TreeDictionary<ulong, PrivateKey>();
 
+        private readonly string _walletPath;
+
         public PrivateWallet(IConfigManager configManager)
         {
             var config = configManager.GetConfig<VaultConfig>("vault");
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
-
-            if (!File.Exists(config.Path) && config.CreateIfMissing)
-            {
-                using var stream = File.Create(config.Path);
-                // TODO: what to do with root ECDSA key?
-            }
-
+            _walletPath = config.Path;
             var encryptedContent = File.ReadAllBytes(config.Path);
             var key = Encoding.UTF8.GetBytes(config.Password).KeccakBytes();
             var decryptedContent =
@@ -42,10 +38,7 @@ namespace Lachain.Core.Vault
 
             var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
 
-            EcdsaKeyPair = new EcdsaKeyPair(
-                wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey() ??
-                throw new ArgumentException("invalid private key provided")
-            );
+            EcdsaKeyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
             _tpkeKeys.AddAll(wallet.TpkePrivateKeys
                 .Select(p => new KeyValuePair<ulong, PrivateKey>(p.Key, PrivateKey.FromBytes(p.Value.HexToBytes()))));
             _tsKeys.AddAll(wallet.ThresholdSignatureKeys

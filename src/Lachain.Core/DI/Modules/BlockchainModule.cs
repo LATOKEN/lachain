@@ -10,6 +10,7 @@ using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
 using Lachain.Core.RPC;
+using Lachain.Core.Vault;
 using Lachain.Core.VM;
 
 namespace Lachain.Core.DI.Modules
@@ -28,6 +29,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockProducer, BlockProducer>();
             containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
+            containerBuilder.RegisterSingleton<IPrivateWallet, PrivateWallet>();
             /* genesis */
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();
             /* operation manager */

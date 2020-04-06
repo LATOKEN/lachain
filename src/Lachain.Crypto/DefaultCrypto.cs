@@ -158,6 +158,8 @@ namespace Lachain.Crypto
 
         public byte[] AesGcmDecrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> ciphertext)
         {
+            if (ciphertext.Length < AesGcm.NonceByteSizes.MaxSize + AesGcm.TagByteSizes.MaxSize)
+                throw new ArgumentException("Ciphertext is too short", nameof(ciphertext));
             var tag = ciphertext.Slice(0, AesGcm.TagByteSizes.MaxSize);
             var nonce = ciphertext.Slice(AesGcm.TagByteSizes.MaxSize, AesGcm.NonceByteSizes.MaxSize);
             var result = new byte[ciphertext.Length - AesGcm.NonceByteSizes.MaxSize - AesGcm.TagByteSizes.MaxSize];
@@ -192,6 +194,7 @@ namespace Lachain.Crypto
 
         public byte[] Secp256K1Decrypt(Span<byte> privateKey, Span<byte> ciphertext)
         {
+            if (ciphertext.Length < 33) throw new ArgumentException("Ciphertext is too short", nameof(ciphertext));
             var senderPublicKeySerialized = ciphertext.Slice(0, 33);
             var senderPublicKey = new byte[64];
             if (!Secp256K1.PublicKeyParse(senderPublicKey, senderPublicKeySerialized))

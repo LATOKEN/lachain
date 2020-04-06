@@ -6,6 +6,5 @@ namespace Lachain.Core.Vault
     {
         [JsonProperty("path")] public string? Path { get; set; }
         [JsonProperty("password")] public string? Password { get; set; }
-        [JsonProperty("createIfMissing")] public bool CreateIfMissing { get; set; }
     }
 }

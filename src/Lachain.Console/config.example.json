@@ -30,10 +30,9 @@
     ],
     "port": 7070
   },
-  "consensus": {
-    "ECDSAPrivateKey": "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48",
-    "TPKEPrivateKey": "0x000000000000000000000000000000000000000000000000000000000000000000000000",
-    "ThresholdSignaturePrivateKey": "0xcb436d851f7d58773a36daf94350f25635b06fb970dc670059529f6b3797b668"
+  "vault": {
+    "path": "wallet.json",
+    "password": "12345"
   },
   "storage": {
     "provider": "RocksDB",

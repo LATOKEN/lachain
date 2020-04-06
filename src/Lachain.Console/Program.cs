@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using Lachain.Core.Blockchain.Genesis;
-using Lachain.Core.Consensus;
 using Lachain.Core.RPC;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Networking;
@@ -18,7 +19,7 @@ namespace Lachain.Console
         [JsonProperty("network")] public NetworkConfig Network { get; set; }
         [JsonProperty("genesis")] public GenesisConfig Genesis { get; set; }
         [JsonProperty("rpc")] public RpcConfig Rpc { get; set; }
-        [JsonProperty("consensus")] public ConsensusConfig Consensus { get; set; }
+        [JsonProperty("vault")] public VaultConfig Vault { get; set; }
         [JsonProperty("storage")] public StorageConfig Storage { get; set; }
     }
 
@@ -70,7 +71,6 @@ namespace Lachain.Console
 
             for (var i = 0; i < n; ++i)
             {
-                using var file = new StreamWriter($"config{i + 1:D2}.json");
                 var net = new NetworkConfig
                 {
                     Magic = 56754,
@@ -103,11 +103,13 @@ namespace Lachain.Console
                     Hosts = new[] {"+"},
                     Port = 7070,
                 };
-                var consensus = new ConsensusConfig
+                var vault = new VaultConfig
                 {
-                    EcdsaPrivateKey = ecdsaPrivateKeys[i],
-                    TpkePrivateKey = tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
-                    ThresholdSignaturePrivateKey = privShares[i].ToByteArray().ToHex(),
+                    Path = "wallet.json",
+                    Password = "12345"
+                    // EcdsaPrivateKey = ecdsaPrivateKeys[i],
+                    // TpkePrivateKey = tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
+                    // ThresholdSignaturePrivateKey = privShares[i].ToByteArray().ToHex(),
                 };
                 var storage = new StorageConfig
                 {
@@ -119,26 +121,48 @@ namespace Lachain.Console
                     Network = net,
                     Genesis = genesis,
                     Rpc = rpc,
-                    Consensus = consensus,
+                    Vault = vault,
                     Storage = storage,
                 };
-                file.Write(JsonConvert.SerializeObject(config, Formatting.Indented));
-                // System.Console.WriteLine($"Player {i} config:");
-                // System.Console.WriteLine($"    \"TPKEPublicKey\": \"{tpkePubKey.ToByteArray().ToHex()}\",");
-                // System.Console.WriteLine(
-                //     $"    \"TPKEPrivateKey\": \"{tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex()}\",");
-                // System.Console.WriteLine(
-                //     $"    \"TPKEVerificationKey\": \"{tpkeVerificationKey.ToByteArray().ToHex()}\",");
-                // System.Console.WriteLine($"    \"ThresholdSignaturePublicKeys\": [{pubShares}],");
-                // System.Console.WriteLine(
-                //     $"    \"ThresholdSignaturePrivateKey\": \"{privShares[i].ToByteArray().ToHex()}\"");
-                // System.Console.WriteLine();
+                File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
+                GenWallet(
+                    $"wallet{i + 1:D2}.json",
+                    ecdsaPrivateKeys[i],
+                    tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
+                    privShares[i].ToByteArray().ToHex()
+                );
             }
+        }
+
+        private static void GenWallet(string path, string ecdsaKey, string tpkeKey, string tsKey)
+        {
+            var config = new JsonWallet
+            {
+                EcdsaPrivateKey = ecdsaKey,
+                ThresholdSignatureKeys = new Dictionary<ulong, string>
+                {
+                    {0, tsKey}
+                },
+                TpkePrivateKeys = new Dictionary<ulong, string>
+                {
+                    {0, tpkeKey}
+                }
+            };
+            var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
+            var passwordHash = Encoding.UTF8.GetBytes("12345").KeccakBytes();
+            var crypto = CryptoProvider.GetCrypto();
+            File.WriteAllBytes(path, crypto.AesGcmEncrypt(passwordHash, json));
         }
 
         internal static void Main(string[] args)
         {
             Mcl.Init();
+            // GenWallet(
+            //     "wallet.json", 
+            //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 
+            //     "0x000000000000000000000000000000000000000000000000000000000000000000000000",
+            //     "0xcb436d851f7d58773a36daf94350f25635b06fb970dc670059529f6b3797b668"
+            // );
             var app = new Application();
             app.Start(args);
         }
