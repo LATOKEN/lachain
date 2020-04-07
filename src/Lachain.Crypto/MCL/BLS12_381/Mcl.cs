@@ -46,51 +46,47 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return res;
         }
 
-//        public static Fr GetValue(IEnumerable<Fr> P, int at)
-//        {
-//            var res = Fr.FromInt(0);
-//            var by = Fr.FromInt(at);
-//            var cur = Fr.FromInt(1);
-//
-//            foreach (var coeff in P)
-//            {
-//                res += cur * coeff;
-//                cur *= by;
-//            }
-//
-//            return res;
-//        }
-
-        public static dynamic GetValue(IEnumerable<dynamic> P, int at, dynamic zero)
+        public static G1 GetValue(IEnumerable<G1> poly, int at)
         {
-            var res = zero;
+            var res = G1.Zero;
             var by = Fr.FromInt(at);
             var cur = Fr.FromInt(1);
-
-            foreach (var coeff in P)
+            foreach (var c in poly)
             {
-                res += coeff * cur;
+                res += c * cur;
                 cur *= by;
             }
 
             return res;
         }
 
-//        public static G2 GetValue(IEnumerable<G2> P, int at)
-//        {
-//            var res = G2.Zero;
-//            var by = Fr.FromInt(at);
-//            var cur = Fr.FromInt(1);
-//
-//            foreach (var coeff in P)
-//            {
-//                res += coeff * cur;
-//                cur *= by;
-//            }
-//
-//            return res;
-//        }
+        public static Fr GetValue(IEnumerable<Fr> poly, int at)
+        {
+            var res = Fr.Zero;
+            var by = Fr.FromInt(at);
+            var cur = Fr.FromInt(1);
+            foreach (var c in poly)
+            {
+                res += c * cur;
+                cur *= by;
+            }
 
+            return res;
+        }
+
+        public static G2 GetValue(IEnumerable<G2> poly, int at)
+        {
+            var res = G2.Zero;
+            var by = Fr.FromInt(at);
+            var cur = Fr.FromInt(1);
+            foreach (var c in poly)
+            {
+                res += c * cur;
+                cur *= by;
+            }
+
+            return res;
+        }
 
         public static byte[] CalculateHash(IEnumerable<G1> g1, IEnumerable<G2> g2)
         {
@@ -98,6 +94,14 @@ namespace Lachain.Crypto.MCL.BLS12_381
             temp = g1.Aggregate(temp, (current, g) => current.Concat(G1.ToBytes(g)).ToArray());
             temp = g2.Aggregate(temp, (current, g) => current.Concat(G2.ToBytes(g)).ToArray());
             return temp.KeccakBytes();
+        }
+
+        public static Fr[] Powers(Fr x, int n)
+        {
+            var result = new Fr[n];
+            result[0] = Fr.One;
+            for (var i = 1; i < n; ++i) result[i] = result[i - 1] * x;
+            return result;
         }
     }
 }

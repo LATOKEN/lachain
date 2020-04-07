@@ -27,7 +27,7 @@ namespace Lachain.Crypto.ThresholdSignature
         {
             var shares = new Fr[_parties];
             for (var i = 0; i < _parties; ++i)
-                shares[i] = Mcl.GetValue(_coeffs.AsDynamic(), i + 1, Fr.Zero);
+                shares[i] = Mcl.GetValue(_coeffs, i + 1);
             return shares.Select(share => new PrivateKeyShare(share));
         }
     }

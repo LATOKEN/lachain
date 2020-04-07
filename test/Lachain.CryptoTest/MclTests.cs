@@ -45,7 +45,7 @@ namespace Lachain.CryptoTest
         {
             var a = Fr.GetRandom();
             var enc = Fr.ToBytes(a);
-            Console.Error.WriteLine($"Fr len = {enc.Length}");
+            Assert.AreEqual(enc.Length, 32);
             var b = Fr.FromBytes(enc);
             Assert.True(a.Equals(b));
         }

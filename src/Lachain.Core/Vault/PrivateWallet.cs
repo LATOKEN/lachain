@@ -1,5 +1,5 @@
-#nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,6 +24,7 @@ namespace Lachain.Core.Vault
         private readonly ISortedDictionary<ulong, PrivateKey> _tpkeKeys = new TreeDictionary<ulong, PrivateKey>();
 
         private readonly string _walletPath;
+        private readonly string _walletPassword;
 
         public PrivateWallet(IConfigManager configManager)
         {
@@ -31,19 +32,9 @@ namespace Lachain.Core.Vault
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
             _walletPath = config.Path;
-            var encryptedContent = File.ReadAllBytes(config.Path);
-            var key = Encoding.UTF8.GetBytes(config.Password).KeccakBytes();
-            var decryptedContent =
-                Encoding.UTF8.GetString(Crypto.AesGcmDecrypt(key, encryptedContent));
-
-            var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
-
-            EcdsaKeyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
-            _tpkeKeys.AddAll(wallet.TpkePrivateKeys
-                .Select(p => new KeyValuePair<ulong, PrivateKey>(p.Key, PrivateKey.FromBytes(p.Value.HexToBytes()))));
-            _tsKeys.AddAll(wallet.ThresholdSignatureKeys
-                .Select(p =>
-                    new KeyValuePair<ulong, PrivateKeyShare>(p.Key, PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
+            _walletPassword = config.Password;
+            RestoreWallet(_walletPath, _walletPassword, out var keyPair);
+            EcdsaKeyPair = keyPair;
         }
 
         public EcdsaKeyPair EcdsaKeyPair { get; }
@@ -63,6 +54,7 @@ namespace Lachain.Core.Vault
         public void AddTpkePrivateKeyAfterBlock(ulong block, PrivateKey key)
         {
             _tpkeKeys.Add(block, key);
+            SaveWallet(_walletPath, _walletPassword);
         }
 
         public PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block)
@@ -80,6 +72,52 @@ namespace Lachain.Core.Vault
         public void AddThresholdSignatureKeyAfterBlock(ulong block, PrivateKeyShare key)
         {
             _tsKeys.Add(block, key);
+            SaveWallet(_walletPath, _walletPassword);
+        }
+
+        private void SaveWallet(string path, string password)
+        {
+            var wallet = new JsonWallet
+            {
+                EcdsaPrivateKey = EcdsaKeyPair.PrivateKey.ToHex(),
+                ThresholdSignatureKeys = new Dictionary<ulong, string>(
+                    _tsKeys.Select(p =>
+                        new System.Collections.Generic.KeyValuePair<ulong, string>(
+                            p.Key, p.Value.ToByteArray().ToHex()
+                        )
+                    )
+                ),
+                TpkePrivateKeys = new Dictionary<ulong, string>(
+                    _tpkeKeys.Select(p =>
+                        new System.Collections.Generic.KeyValuePair<ulong, string>(
+                            p.Key, p.Value.ToByteArray().ToHex()
+                        )
+                    )
+                )
+            };
+            var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(wallet));
+            var key = Encoding.UTF8.GetBytes(password).KeccakBytes();
+            var encryptedContent = Crypto.AesGcmEncrypt(key, json);
+            File.WriteAllBytes(path, encryptedContent);
+        }
+
+        private void RestoreWallet(string path, string password, out EcdsaKeyPair keyPair)
+        {
+            var encryptedContent = File.ReadAllBytes(path);
+            var key = Encoding.UTF8.GetBytes(password).KeccakBytes();
+            var decryptedContent =
+                Encoding.UTF8.GetString(Crypto.AesGcmDecrypt(key, encryptedContent));
+
+            var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
+
+            keyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
+            _tpkeKeys.AddAll(wallet.TpkePrivateKeys
+                .Select(p =>
+                    new C5.KeyValuePair<ulong, PrivateKey>(p.Key, PrivateKey.FromBytes(p.Value.HexToBytes()))));
+            _tsKeys.AddAll(wallet.ThresholdSignatureKeys
+                .Select(p =>
+                    new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
+                        PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
         }
     }
 }
