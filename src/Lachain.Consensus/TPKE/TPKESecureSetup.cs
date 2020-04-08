@@ -107,7 +107,7 @@ namespace Lachain.Consensus.TPKE
                 {
                     PolynomialValue = new TPKEPolynomialValueMessage
                     {
-                        Value = ByteString.CopyFrom(Fr.ToBytes(Mcl.GetValue(_p, j + 1)))
+                        Value = ByteString.CopyFrom(Fr.ToBytes(Mcl.GetValue(_p, Fr.FromInt(j + 1))))
                     }
                 };
                 Broadcaster.SendToValidator(polyVal, j);
@@ -244,11 +244,11 @@ namespace Lachain.Consensus.TPKE
 
             // verify values
             for (var i = 0; i < N; ++i)
-                if (!(G1.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolyG1[i], GetMyId() + 1)))
+                if (!(G1.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolyG1[i], Fr.FromInt(GetMyId() + 1))))
                     throw new Exception($"Party {i} sent inconsistent hidden polynomial!");
 
             for (var i = 0; i < N; ++i)
-                if (!(G2.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolyG2[i], GetMyId() + 1)))
+                if (!(G2.Generator * _received[i]).Equals(Mcl.GetValue(_hiddenPolyG2[i], Fr.FromInt(GetMyId() + 1))))
                     throw new Exception($"Party {i} sent inconsistent hidden polynomial!");
 
             // verify hashes
@@ -277,7 +277,7 @@ namespace Lachain.Consensus.TPKE
                 var cur = G2.Zero;
                 for (var j = 0; j < N; ++j)
                 {
-                    cur += Mcl.GetValue(_hiddenPolyG2[j], i + 1);
+                    cur += Mcl.GetValue(_hiddenPolyG2[j], Fr.FromInt(i + 1));
                 }
 
                 tmp.Add(cur);

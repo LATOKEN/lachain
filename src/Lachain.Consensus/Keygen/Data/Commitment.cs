@@ -2,27 +2,27 @@ using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
 
-namespace Lachain.Consensus.TPKE.Data
+namespace Lachain.Consensus.Keygen.Data
 {
     public class Commitment
     {
         private readonly G1[] _coefficients;
-        private readonly int _degree;
+        public readonly int Degree;
 
-        internal Commitment(int degree, IEnumerable<G1> c)
+        internal Commitment(int degree, IEnumerable<G1> g1)
         {
-            _coefficients = c.ToArray();
-            _degree = degree;
+            _coefficients = g1.ToArray();
+            Degree = degree;
         }
 
         public G1 Evaluate(int x, int y)
         {
             var result = G1.Zero;
-            var powX = Mcl.Powers(Fr.FromInt(x), _degree + 1);
-            var powY = Mcl.Powers(Fr.FromInt(y), _degree + 1);
-            for (var i = 0; i <= _degree; ++i)
+            var powX = Mcl.Powers(Fr.FromInt(x), Degree + 1);
+            var powY = Mcl.Powers(Fr.FromInt(y), Degree + 1);
+            for (var i = 0; i <= Degree; ++i)
             {
-                for (var j = 0; j <= _degree; ++j)
+                for (var j = 0; j <= Degree; ++j)
                 {
                     result += _coefficients[Index(i, j)] * powX[i] * powY[j];
                 }
@@ -33,12 +33,12 @@ namespace Lachain.Consensus.TPKE.Data
 
         public IEnumerable<G1> Evaluate(int x)
         {
-            var row = Enumerable.Range(0, _degree + 1).Select(_ => G1.Zero).ToArray();
-            for (var i = 0; i <= _degree; ++i)
+            var row = Enumerable.Range(0, Degree + 1).Select(_ => G1.Zero).ToArray();
+            for (var i = 0; i <= Degree; ++i)
             {
                 var xPowJ = Fr.One;
                 var frX = Fr.FromInt(x);
-                for (var j = 0; j <= _degree; ++j)
+                for (var j = 0; j <= Degree; ++j)
                 {
                     row[i] += _coefficients[Index(i, j)] * xPowJ;
                     xPowJ *= frX;

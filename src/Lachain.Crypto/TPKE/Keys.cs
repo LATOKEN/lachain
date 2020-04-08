@@ -5,7 +5,7 @@ namespace Lachain.Crypto.TPKE
         public PublicKey PubKey { get; }
         public PrivateKey PrivKey { get; }
         
-        public VerificationKey VerificationKey { get;  }
+        public VerificationKey VerificationKey { get; }
 
         public Keys(PublicKey pubKey, PrivateKey privKey, VerificationKey verificationKey)
         {

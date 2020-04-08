@@ -5,7 +5,7 @@ using Lachain.Crypto.MCL.BLS12_381;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
-    public class PublicKeySet
+    public class PublicKeySet : IEquatable<PublicKeySet>
     {
         private readonly IDictionary<PublicKeyShare, int> _keyIndex;
         public PublicKey SharedPublicKey { get; }
@@ -13,7 +13,6 @@ namespace Lachain.Crypto.ThresholdSignature
 
         public PublicKeySet(IEnumerable<PublicKeyShare> pubKeyShares, int faulty)
         {
-            // TODO: ctor
             _keys = pubKeyShares.ToArray();
             _keyIndex = _keys.Select((share, i) => (share, i)).ToDictionary(t => t.Item1, t => t.Item2);
             SharedPublicKey = new PublicKey(AssemblePublicKey(_keys.Select(share => share.RawKey), _keys.Length));
@@ -46,6 +45,26 @@ namespace Lachain.Crypto.ThresholdSignature
             if (xs.Length <= Threshold || ys.Length <= Threshold)
                 throw new ArgumentException("not enough shares for signature");
             return new Signature(Mcl.LagrangeInterpolateG2(xs, ys));
+        }
+
+        public bool Equals(PublicKeySet? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return _keys.SequenceEqual(other._keys);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((PublicKeySet) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return _keys.GetHashCode();
         }
     }
 }

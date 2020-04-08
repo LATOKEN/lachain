@@ -7,7 +7,7 @@ using Lachain.Proto;
 
 namespace Lachain.Crypto.TPKE
 {
-    public class PublicKey
+    public class PublicKey : IEquatable<PublicKey>
     {
         public G1 Y;
         private readonly int _t;
@@ -85,6 +85,26 @@ namespace Lachain.Crypto.TPKE
             var decT = BitConverter.ToInt32(buffer, 0);
             var decY = G1.FromBytes(buffer.Skip(4).ToArray());
             return new PublicKey(decY, decT);
+        }
+
+        public bool Equals(PublicKey? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Y.Equals(other.Y) && _t == other._t;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((PublicKey) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Y, _t);
         }
     }
 }

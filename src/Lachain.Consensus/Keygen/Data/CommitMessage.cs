@@ -1,4 +1,4 @@
-namespace Lachain.Consensus.TPKE.Data
+namespace Lachain.Consensus.Keygen.Data
 {
     public class CommitMessage
     {

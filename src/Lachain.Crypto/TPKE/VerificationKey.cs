@@ -59,7 +59,7 @@ namespace Lachain.Crypto.TPKE
 
             if (!Mcl.Pairing(part.Ui, G2.Generator).Equals(Mcl.Pairing(share.U, Zs[part.DecryptorId])))
             {
-                return false;
+                return false; // TODO: do we even need to check it? maybe abandon verification keys all together?
             }
 
             return true;

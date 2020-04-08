@@ -133,6 +133,16 @@ namespace Lachain.Crypto.MCL.BLS12_381
             MclImports.mclBnFr_div(ref this, ref x, ref y);
         }
 
+        public static bool operator ==(Fr x, Fr y)
+        {
+            return MclImports.mclBnFr_isEqual(ref x, ref y) != 0;
+        }
+
+        public static bool operator !=(Fr x, Fr y)
+        {
+            return !(x == y);
+        }
+
         public static Fr operator -(Fr x)
         {
             var y = new Fr();

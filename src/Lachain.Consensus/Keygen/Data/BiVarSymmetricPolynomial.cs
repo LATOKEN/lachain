@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using NLog.LayoutRenderers;
 
-namespace Lachain.Consensus.TPKE.Data
+namespace Lachain.Consensus.Keygen.Data
 {
     public class BiVarSymmetricPolynomial
     {
@@ -15,7 +17,8 @@ namespace Lachain.Consensus.TPKE.Data
         {
             _coefficients = c.ToArray();
             _degree = degree;
-            if (_coefficients.Length != _degree * (_degree + 1) / 2)
+            Debug.Assert(Index(_degree, _degree) + 1 == (_degree + 2) * (_degree + 1) / 2);
+            if (_coefficients.Length != (_degree + 2) * (_degree + 1) / 2)
                 throw new ArgumentException("Wrong number of coefficients");
         }
 
@@ -30,7 +33,10 @@ namespace Lachain.Consensus.TPKE.Data
 
         public Commitment Commit()
         {
-            return new Commitment(_degree, _coefficients.Select(x => G1.Generator * x));
+            return new Commitment(
+                _degree,
+                _coefficients.Select(x => G1.Generator * x)
+            );
         }
 
         public IEnumerable<Fr> Evaluate(int x)

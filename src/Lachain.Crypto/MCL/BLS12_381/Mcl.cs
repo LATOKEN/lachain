@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Lachain.Crypto.MCL.BLS12_381
@@ -39,6 +38,14 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return res;
         }
 
+        public static Fr LagrangeInterpolateFr(Fr[] xs, Fr[] ys)
+        {
+            if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
+            var res = new Fr();
+            MclImports.mclBn_FrLagrangeInterpolation(ref res, xs, ys, xs.Length);
+            return res;
+        }
+
         public static GT Pairing(G1 x, G2 y)
         {
             var res = new GT();
@@ -46,45 +53,24 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return res;
         }
 
-        public static G1 GetValue(IEnumerable<G1> poly, int at)
-        {
-            var res = G1.Zero;
-            var by = Fr.FromInt(at);
-            var cur = Fr.FromInt(1);
-            foreach (var c in poly)
-            {
-                res += c * cur;
-                cur *= by;
-            }
-
-            return res;
-        }
-
-        public static Fr GetValue(IEnumerable<Fr> poly, int at)
+        public static Fr GetValue(Fr[] poly, Fr at)
         {
             var res = Fr.Zero;
-            var by = Fr.FromInt(at);
-            var cur = Fr.FromInt(1);
-            foreach (var c in poly)
-            {
-                res += c * cur;
-                cur *= by;
-            }
-
+            MclImports.mclBn_FrEvaluatePolynomial(ref res, poly, poly.Length, ref at);
             return res;
         }
 
-        public static G2 GetValue(IEnumerable<G2> poly, int at)
+        public static G1 GetValue(G1[] poly, Fr at)
+        {
+            var res = G1.Zero;
+            MclImports.mclBn_G1EvaluatePolynomial(ref res, poly, poly.Length, ref at);
+            return res;
+        }
+        
+        public static G2 GetValue(G2[] poly, Fr at)
         {
             var res = G2.Zero;
-            var by = Fr.FromInt(at);
-            var cur = Fr.FromInt(1);
-            foreach (var c in poly)
-            {
-                res += c * cur;
-                cur *= by;
-            }
-
+            MclImports.mclBn_G2EvaluatePolynomial(ref res, poly, poly.Length, ref at);
             return res;
         }
 

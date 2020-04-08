@@ -1,15 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Consensus.TPKE.Data;
+using Lachain.Consensus.Keygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Crypto.ThresholdSignature;
+using Lachain.Crypto.TPKE;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
-namespace Lachain.Consensus.TPKE
+namespace Lachain.Consensus.Keygen
 {
     public class TrustlessKeygen
     {
@@ -31,7 +34,7 @@ namespace Lachain.Consensus.TPKE
             _n = _publicKeys.Length;
             _f = f;
             _myIdx = _publicKeys.FirstIndexOf(keyPair.PublicKey);
-            _keyGenStates = new State[_n];
+            _keyGenStates = Enumerable.Range(0, _n).Select(_ => new State(_n)).ToArray();
         }
 
         public CommitMessage StartKeygen()
@@ -67,7 +70,7 @@ namespace Lachain.Consensus.TPKE
                 Proposer = sender,
                 EncryptedValues = Enumerable.Range(0, _n).Select(i => Crypto.Secp256K1Encrypt(
                     _publicKeys[i].EncodeCompressed(),
-                    Fr.ToBytes(Mcl.GetValue(myRow, i + 1))
+                    Fr.ToBytes(Mcl.GetValue(myRow, Fr.FromInt(i + 1)))
                 )).ToArray()
             };
         }
@@ -76,14 +79,45 @@ namespace Lachain.Consensus.TPKE
         {
             if (_keyGenStates[message.Proposer].Acks[sender])
                 throw new ArgumentException("Already handled this value");
+            _keyGenStates[message.Proposer].Acks[sender] = true;
             var myValue = Fr.FromBytes(Crypto.Secp256K1Decrypt(
                 _keyPair.PrivateKey.Encode(), message.EncryptedValues[_myIdx]
             ));
-            if (!_keyGenStates[message.Proposer].Commitment.Evaluate(sender + 1, _myIdx + 1)
+            if (!_keyGenStates[message.Proposer].Commitment.Evaluate(_myIdx + 1, sender + 1)
                 .Equals(G1.Generator * myValue)
             )
                 throw new ArgumentException("Decrypted value does not match commitment");
             _keyGenStates[message.Proposer].Values[sender] = myValue;
+        }
+
+        public bool Finished()
+        {
+            return _keyGenStates.Count(s => s.ValueCount() > 2 * _f) > _f;
+        }
+
+        public ThresholdKeyring? TryGetKeys()
+        {
+            if (!Finished()) return null;
+
+            var pubKeys = new G1[_f + 1];
+            var secretKey = Fr.Zero;
+            foreach (var s in _keyGenStates.Where(s => s.ValueCount() > 2 * _f))
+            {
+                var rowZero = s.Commitment.Evaluate(0).ToArray();
+
+                foreach (var (x, i) in rowZero.WithIndex())
+                    pubKeys[i] += x;
+                secretKey += s.InterpolateValues();
+            }
+
+            return new ThresholdKeyring
+            {
+                TpkePrivateKey = new PrivateKey(secretKey, _myIdx),
+                TpkePublicKey = new PublicKey(pubKeys[0], _f),
+                ThresholdSignaturePrivateKey = new PrivateKeyShare(secretKey),
+                ThresholdSignaturePublicKeySet =
+                    new PublicKeySet(pubKeys.Skip(1).Select(x => new PublicKeyShare(x)), _f)
+            };
         }
 
         private static byte[] EncryptRow(IEnumerable<Fr> row, ECDSAPublicKey publicKey)

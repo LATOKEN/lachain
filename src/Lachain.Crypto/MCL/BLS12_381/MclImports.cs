@@ -220,7 +220,7 @@ namespace Lachain.Crypto.MCL.BLS12_381
         internal static extern void mclBn_millerLoop(ref GT z, ref G1 x, ref G2 y);
 
         [DllImport(Libmcl)]
-        internal static extern void mclBn_G2LagrangeInterpolation(
+        internal static extern int mclBn_G2LagrangeInterpolation(
             ref G2 res,
             [In] [MarshalAs(UnmanagedType.LPArray)]
             Fr[] xVec,
@@ -230,13 +230,51 @@ namespace Lachain.Crypto.MCL.BLS12_381
         );
         
         [DllImport(Libmcl)]
-        internal static extern void mclBn_G1LagrangeInterpolation(
+        internal static extern int mclBn_G1LagrangeInterpolation(
             ref G1 res,
             [In] [MarshalAs(UnmanagedType.LPArray)]
             Fr[] xVec,
             [In] [MarshalAs(UnmanagedType.LPArray)]
             G1[] yVec,
             long k
+        );
+
+        
+        [DllImport(Libmcl)]
+        internal static extern int mclBn_FrLagrangeInterpolation(
+            ref Fr res,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            Fr[] xVec,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            Fr[] yVec,
+            long k
+        );
+        
+        [DllImport(Libmcl)]
+        internal static extern int mclBn_FrEvaluatePolynomial(
+            ref Fr res,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            Fr[] cVec,
+            long k,
+            ref Fr at
+        );
+        
+        [DllImport(Libmcl)]
+        internal static extern int mclBn_G1EvaluatePolynomial(
+            ref G1 res,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            G1[] cVec,
+            long k,
+            ref Fr at
+        );
+        
+        [DllImport(Libmcl)]
+        internal static extern int mclBn_G2EvaluatePolynomial(
+            ref G2 res,
+            [In] [MarshalAs(UnmanagedType.LPArray)]
+            G2[] cVec,
+            long k,
+            ref Fr at
         );
     }
 }

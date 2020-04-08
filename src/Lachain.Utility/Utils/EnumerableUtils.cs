@@ -27,5 +27,10 @@ namespace Lachain.Utility.Utils
                 .Select((t, i) => (t, i))
                 .First(x => x.t.Equals(needle)).i;
         }
+
+        public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> source)
+        {
+            return source.Select((item, index) => (item, index));
+        }
     }
 }

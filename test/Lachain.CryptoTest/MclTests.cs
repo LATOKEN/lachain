@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
 
@@ -77,6 +79,35 @@ namespace Lachain.CryptoTest
             var X = Mcl.Pairing(A, B);
             var Y = GT.Pow(Mcl.Pairing(G1.Generator, G2.Generator), a * b);
             Assert.True(X.Equals(Y));
+        }
+
+        private static Fr DummyEval(IEnumerable<Fr> poly, Fr x)
+        {
+            var res = Fr.Zero;
+            var xPowI = Fr.One;
+            foreach (var t in poly)
+            {
+                res += xPowI * t;
+                xPowI *= x;
+            }
+
+            return res;
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void EvalInterpolateTestFr()
+        {
+            const int n = 10;
+            var poly = Enumerable.Range(0, n).Select(_ => Fr.GetRandom()).ToArray();
+            var values = Enumerable.Range(100, n + 1).Select(i => Mcl.GetValue(poly, Fr.FromInt(i))).ToArray();
+            for (var i = 0; i < n + 1; ++i)
+                Assert.AreEqual(DummyEval(poly, Fr.FromInt(100 + i)), values[i]);
+            var intercept = Mcl.LagrangeInterpolateFr(
+                Enumerable.Range(100, n + 1).Select(Fr.FromInt).ToArray(),
+                values
+            );
+            Assert.AreEqual(poly[0], intercept);
         }
     }
 }

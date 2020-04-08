@@ -24,12 +24,12 @@ namespace Lachain.Crypto.TPKE
 
         public PublicKey GetPubKey()
         {
-            return new PublicKey(G1.Generator * Mcl.GetValue(_coeffs, 0), _degree);
+            return new PublicKey(G1.Generator * Mcl.GetValue(_coeffs, Fr.FromInt(0)), _degree);
         }
 
         public PrivateKey GetPrivKey(int i)
         {
-            return new PrivateKey(Mcl.GetValue(_coeffs, i + 1), i);
+            return new PrivateKey(Mcl.GetValue(_coeffs, Fr.FromInt(i + 1)), i);
         }
 
         public VerificationKey GetVerificationKey()
@@ -37,10 +37,10 @@ namespace Lachain.Crypto.TPKE
             var zs = new List<G2>();
             for (var i = 0; i < _parties; ++i)
             {
-                zs.Add(G2.Generator * Mcl.GetValue(_coeffs, i + 1));
+                zs.Add(G2.Generator * Mcl.GetValue(_coeffs, Fr.FromInt(i + 1)));
             }
 
-            return new VerificationKey(G1.Generator * Mcl.GetValue(_coeffs, 0), _degree, zs.ToArray());
+            return new VerificationKey(G1.Generator * Mcl.GetValue(_coeffs, Fr.FromInt(0)), _degree, zs.ToArray());
         }
     }
 }

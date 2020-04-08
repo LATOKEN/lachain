@@ -6,7 +6,7 @@ using System.Text;
 namespace Lachain.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 144)]
-    public struct G1
+    public struct G1 : IEquatable<G1>
     {
         public const int BYTE_SIZE = 48;
         public static G1 GetGenerator()
