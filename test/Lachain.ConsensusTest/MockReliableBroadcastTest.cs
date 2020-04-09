@@ -22,10 +22,7 @@ namespace Lachain.ConsensusTest
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
             _rnd = new Random();
             _privateKeys = new IPrivateConsensusKeySet[N];
-            _publicKeys = new PublicConsensusKeySet(
-                N, F, null, null,
-                null, Enumerable.Empty<ECDSAPublicKey>()
-            );
+            _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
             Mcl.Init();
             for (var i = 0; i < N; ++i)
             {

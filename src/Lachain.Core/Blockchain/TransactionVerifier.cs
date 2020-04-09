@@ -79,16 +79,16 @@ namespace Lachain.Core.Blockchain
                     return VerifyTransactionImmediately(transaction, publicKey);
 
                 /* recover EC to get public key from signature to compute address */
-                var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.ToBytes(), transaction.Signature.Encode());
-                var address = _crypto.ComputeAddress(rawKey);
+                publicKey = transaction.RecoverPublicKey();
+                var address = publicKey.GetAddress();
 
                 /* check if recovered address from public key is valid */
-                if (!address.SequenceEqual(transaction.Transaction.From.ToBytes()))
+                if (!address.Equals(transaction.Transaction.From))
                     return false;
 
                 /* try to remember public key for this address */
                 if (cacheEnabled)
-                    _publicKeyCache.Add(transaction.Transaction.From, rawKey.ToPublicKey());
+                    _publicKeyCache.Add(transaction.Transaction.From, publicKey);
             }
             catch (Exception)
             {

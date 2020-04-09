@@ -7,7 +7,7 @@ using System.Text;
 namespace Lachain.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct Fr
+    public struct Fr : IEquatable<Fr>
     {
         public static Fr Zero = FromInt(0);
         public static Fr One = FromInt(1);
@@ -34,7 +34,6 @@ namespace Lachain.Crypto.MCL.BLS12_381
             var fr = new Fr();
             if (MclImports.mclBnFr_deserialize(ref fr, buf, buf.Length) == 0)
                 throw new Exception("Failed to deserialize Fr");
-
             return fr;
         }
 
@@ -176,6 +175,17 @@ namespace Lachain.Crypto.MCL.BLS12_381
             var z = new Fr();
             z.Div(x, y);
             return z;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj.GetType() == GetType() && Equals((Fr) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }

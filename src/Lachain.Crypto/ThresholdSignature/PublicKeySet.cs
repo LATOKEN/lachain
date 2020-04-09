@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
@@ -9,6 +10,8 @@ namespace Lachain.Crypto.ThresholdSignature
     {
         private readonly IDictionary<PublicKeyShare, int> _keyIndex;
         public PublicKey SharedPublicKey { get; }
+        public IReadOnlyCollection<PublicKeyShare> Keys => _keys;
+
         private readonly PublicKeyShare[] _keys;
 
         public PublicKeySet(IEnumerable<PublicKeyShare> pubKeyShares, int faulty)
@@ -25,6 +28,7 @@ namespace Lachain.Crypto.ThresholdSignature
             var ys = shares.ToArray();
             return Mcl.LagrangeInterpolateG1(xs, ys);
         }
+
 
         public int Count => _keyIndex.Count;
         public int Threshold { get; }

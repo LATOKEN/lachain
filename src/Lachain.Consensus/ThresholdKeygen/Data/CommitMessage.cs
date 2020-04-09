@@ -1,6 +1,6 @@
-namespace Lachain.Consensus.Keygen.Data
+namespace Lachain.Consensus.ThresholdKeygen.Data
 {
-    public class CommitMessage
+    public struct CommitMessage
     {
         public Commitment Commitment;
         public byte[][] EncryptedRows;

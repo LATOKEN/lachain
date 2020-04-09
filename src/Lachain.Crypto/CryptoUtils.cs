@@ -45,5 +45,11 @@ namespace Lachain.Crypto
             if (key.Buffer.Length != 32) throw new InvalidOperationException("Corrupted private key");
             return key.Buffer.ToByteArray();
         }
+
+        public static ECDSAPublicKey RecoverPublicKey(this TransactionReceipt receipt)
+        {
+            return Crypto.RecoverSignature(receipt.Hash.ToBytes(), receipt.Signature.Encode())
+                .ToPublicKey();
+        }
     }
 }

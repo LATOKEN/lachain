@@ -109,5 +109,17 @@ namespace Lachain.CryptoTest
             );
             Assert.AreEqual(poly[0], intercept);
         }
+
+        [Test]
+        public void EvalFrPolyConstantTest()
+        {
+            var poly = new Fr[] {Fr.GetRandom()};
+            var v0 = Mcl.GetValue(poly, Fr.Zero);
+            var v1 = Mcl.GetValue(poly, Fr.One);
+            var v2 = Mcl.GetValue(poly, Fr.FromInt(319948));
+            Assert.AreEqual(poly[0], v0);
+            Assert.AreEqual(poly[0], v1);
+            Assert.AreEqual(poly[0], v2);
+        }
     }
 }

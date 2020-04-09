@@ -31,8 +31,7 @@ namespace Lachain.Console
             const int n = 4, f = 1;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
-            var tpkeVerificationKey = tpkeKeyGen.GetVerificationKey();
-
+            
             var sigKeyGen = new Crypto.ThresholdSignature.TrustedKeyGen(n, f);
             var privShares = sigKeyGen.GetPrivateShares().ToArray();
             var pubShares = sigKeyGen.GetPrivateShares()
@@ -95,8 +94,7 @@ namespace Lachain.Console
                         EcdsaPublicKey = ecdsaPublicKeys[j],
                         ThresholdSignaturePublicKey = pubShares[j]
                     }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToByteArray().ToHex(),
-                    ThresholdEncryptionVerificationKey = tpkeVerificationKey.ToByteArray().ToHex()
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToByteArray().ToHex()
                 };
                 var rpc = new RpcConfig
                 {

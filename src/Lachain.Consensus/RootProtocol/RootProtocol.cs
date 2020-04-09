@@ -41,7 +41,7 @@ namespace Lachain.Consensus.RootProtocol
         {
             if (envelope.External)
             {
-                var message = envelope.ExternalMessage;
+                var message = envelope.ExternalMessage ?? throw new Exception("impossible");
                 if (message.PayloadCase != ConsensusMessage.PayloadOneofCase.SignedHeaderMessage)
                 {
                     throw new InvalidOperationException(

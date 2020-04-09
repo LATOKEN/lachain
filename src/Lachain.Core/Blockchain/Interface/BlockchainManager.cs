@@ -45,9 +45,7 @@ namespace Lachain.Core.Blockchain.Interface
             genesisConfig.ValidateOrThrow();
             var initialConsensusState = new ConsensusState
             {
-                TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes()),
-                TpkeVerificationKey =
-                    ByteString.CopyFrom(genesisConfig.ThresholdEncryptionVerificationKey.HexToBytes()),
+                TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes())
             };
             initialConsensusState.Validators.Add(genesisConfig.Validators.Select(v => new ValidatorCredentials
             {

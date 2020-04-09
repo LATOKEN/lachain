@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
-using NLog.LayoutRenderers;
 
-namespace Lachain.Consensus.Keygen.Data
+namespace Lachain.Consensus.ThresholdKeygen.Data
 {
     public class BiVarSymmetricPolynomial
     {
@@ -33,19 +32,16 @@ namespace Lachain.Consensus.Keygen.Data
 
         public Commitment Commit()
         {
-            return new Commitment(
-                _degree,
-                _coefficients.Select(x => G1.Generator * x)
-            );
+            return new Commitment(_coefficients.Select(x => G1.Generator * x));
         }
 
         public IEnumerable<Fr> Evaluate(int x)
         {
             var row = Enumerable.Range(0, _degree + 1).Select(_ => Fr.Zero).ToArray();
+            var frX = Fr.FromInt(x);
             for (var i = 0; i <= _degree; ++i)
             {
                 var xPowJ = Fr.One;
-                var frX = Fr.FromInt(x);
                 for (var j = 0; j <= _degree; ++j)
                 {
                     row[i] += _coefficients[Index(i, j)] * xPowJ;
@@ -58,6 +54,7 @@ namespace Lachain.Consensus.Keygen.Data
 
         private int Index(int i, int j)
         {
+            if (i > j) (i, j) = (j, i);
             return i * (i + 1) / 2 + j;
         }
     }

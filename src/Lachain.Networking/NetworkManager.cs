@@ -286,7 +286,7 @@ namespace Lachain.Networking
 
         private void _HandleMessage(byte[] buffer)
         {
-            NetworkMessage message = null;
+            NetworkMessage? message = null;
             try
             {
                 message = NetworkMessage.Parser.ParseFrom(buffer);

@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Consensus.Keygen.Data
+namespace Lachain.Consensus.ThresholdKeygen.Data
 {
     public class State
     {
@@ -26,6 +24,7 @@ namespace Lachain.Consensus.Keygen.Data
 
         public Fr InterpolateValues()
         {
+            if (Commitment is null) throw new ArgumentException("Cannot interpolate without commitment");
             var xs = Acks.WithIndex()
                 .Where(x => x.item)
                 .Select(x => x.index)

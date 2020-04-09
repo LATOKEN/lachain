@@ -12,14 +12,12 @@ namespace Lachain.Consensus
         public int N { get; }
         public int F { get; }
         public PublicKey TpkePublicKey { get; }
-        public VerificationKey TpkeVerificationKey { get; }
-
         public PublicKeySet ThresholdSignaturePublicKeySet { get; }
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
         public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
 
         public PublicConsensusKeySet(int n, int f,
-            PublicKey tpkePublicKey, VerificationKey tpkeVerificationKey,
+            PublicKey tpkePublicKey,
             PublicKeySet thresholdSignaturePublicKeySet,
             IEnumerable<ECDSAPublicKey> ecdsaPublicKeys
         )
@@ -27,7 +25,6 @@ namespace Lachain.Consensus
             N = n;
             F = f;
             TpkePublicKey = tpkePublicKey;
-            TpkeVerificationKey = tpkeVerificationKey;
             ThresholdSignaturePublicKeySet = thresholdSignaturePublicKeySet;
             _ecdsaPublicKeys = ecdsaPublicKeys.ToList();
         }

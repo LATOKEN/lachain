@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Consensus;
@@ -12,14 +11,10 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
-using Lachain.Consensus.TPKE;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
-using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
-using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
 namespace Lachain.Core.Consensus
@@ -144,22 +139,6 @@ namespace Lachain.Core.Consensus
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
                     EnsureProtocol(idCoin).ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.TpkeKeys:
-                    var idTpkeKeys = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idTpkeKeys).ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.PolynomialValue:
-                    var idPolynomialValue = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idPolynomialValue)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
-                    var idHiddenPolynomial = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idHiddenPolynomial)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
-                    var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idConfirmationHash).ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);

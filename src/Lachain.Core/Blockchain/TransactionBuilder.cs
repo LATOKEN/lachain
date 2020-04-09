@@ -73,6 +73,25 @@ namespace Lachain.Core.Blockchain
             return tx;
         }
 
+        public Transaction InvokeTransaction(UInt160 from, UInt160 contract, Money value, string methodSignature, params dynamic[] values)
+        {
+            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
+            var abi = ContractEncoder.Encode(methodSignature, values);
+            var tx = new Transaction
+            {
+                Type = TransactionType.Transfer,
+                To = contract,
+                Invocation = ByteString.CopyFrom(abi),
+                From = from,
+                GasPrice = _CalcEstimatedBlockFee(),
+                /* TODO: "calculate gas limit for input size" */
+                GasLimit = GasMetering.DefaultBlockGasLimit,
+                Nonce = nonce,
+                Value = value.ToUInt256()
+            };
+            return tx;
+        }
+
         private ulong _CalcEstimatedBlockFee()
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(

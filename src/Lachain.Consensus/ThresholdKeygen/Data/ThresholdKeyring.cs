@@ -1,6 +1,6 @@
-namespace Lachain.Consensus.Keygen.Data
+namespace Lachain.Consensus.ThresholdKeygen.Data
 {
-    public class ThresholdKeyring
+    public struct ThresholdKeyring
     {
         public Crypto.TPKE.PrivateKey TpkePrivateKey;
         public Crypto.TPKE.PublicKey TpkePublicKey;

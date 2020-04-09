@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Consensus.Keygen.Data;
+using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.MCL.BLS12_381;
@@ -12,7 +12,7 @@ using Lachain.Proto;
 using Lachain.Utility.Utils;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
-namespace Lachain.Consensus.Keygen
+namespace Lachain.Consensus.ThresholdKeygen
 {
     public class TrustlessKeygen
     {
@@ -21,28 +21,27 @@ namespace Lachain.Consensus.Keygen
 
         private readonly EcdsaKeyPair _keyPair;
         private readonly ECDSAPublicKey[] _publicKeys;
-        private readonly int _n;
-        private readonly int _f;
         private readonly int _myIdx;
-
         private readonly State[] _keyGenStates;
+
+        public int Faulty { get; }
+        public int Players { get; }
 
         public TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f)
         {
             _keyPair = keyPair;
             _publicKeys = publicKeys.ToArray();
-            _n = _publicKeys.Length;
-            _f = f;
+            Players = _publicKeys.Length;
+            Faulty = f;
             _myIdx = _publicKeys.FirstIndexOf(keyPair.PublicKey);
-            _keyGenStates = Enumerable.Range(0, _n).Select(_ => new State(_n)).ToArray();
+            _keyGenStates = Enumerable.Range(0, Players).Select(_ => new State(Players)).ToArray();
         }
 
         public CommitMessage StartKeygen()
         {
-            var biVarPoly = BiVarSymmetricPolynomial.Random(_f);
+            var biVarPoly = BiVarSymmetricPolynomial.Random(Faulty);
             var commitment = biVarPoly.Commit();
-
-            var rows = Enumerable.Range(1, _n)
+            var rows = Enumerable.Range(1, Players)
                 .Select(i => biVarPoly.Evaluate(i))
                 .Select((row, i) => EncryptRow(row, _publicKeys[i]))
                 .ToArray();
@@ -54,9 +53,21 @@ namespace Lachain.Consensus.Keygen
             };
         }
 
+        public int GetSenderByPublicKey(ECDSAPublicKey publicKey)
+        {
+            try
+            {
+                return _publicKeys.FirstIndexOf(publicKey);
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+
         public ValueMessage HandleCommit(int sender, CommitMessage message)
         {
-            if (message.EncryptedRows.Length != _n) throw new ArgumentException();
+            if (message.EncryptedRows.Length != Players) throw new ArgumentException();
             if (_keyGenStates[sender].Commitment != null)
                 throw new ArgumentException($"Double commit from sender {sender}");
             _keyGenStates[sender].Commitment = message.Commitment;
@@ -68,7 +79,7 @@ namespace Lachain.Consensus.Keygen
             return new ValueMessage
             {
                 Proposer = sender,
-                EncryptedValues = Enumerable.Range(0, _n).Select(i => Crypto.Secp256K1Encrypt(
+                EncryptedValues = Enumerable.Range(0, Players).Select(i => Crypto.Secp256K1Encrypt(
                     _publicKeys[i].EncodeCompressed(),
                     Fr.ToBytes(Mcl.GetValue(myRow, Fr.FromInt(i + 1)))
                 )).ToArray()
@@ -83,6 +94,8 @@ namespace Lachain.Consensus.Keygen
             var myValue = Fr.FromBytes(Crypto.Secp256K1Decrypt(
                 _keyPair.PrivateKey.Encode(), message.EncryptedValues[_myIdx]
             ));
+            if (_keyGenStates[message.Proposer].Commitment is null)
+                throw new ArgumentException("Cannot handle value since there was no commitment yet");
             if (!_keyGenStates[message.Proposer].Commitment.Evaluate(_myIdx + 1, sender + 1)
                 .Equals(G1.Generator * myValue)
             )
@@ -92,16 +105,16 @@ namespace Lachain.Consensus.Keygen
 
         public bool Finished()
         {
-            return _keyGenStates.Count(s => s.ValueCount() > 2 * _f) > _f;
+            return _keyGenStates.Count(s => s.ValueCount() > 2 * Faulty) > Faulty;
         }
 
         public ThresholdKeyring? TryGetKeys()
         {
             if (!Finished()) return null;
 
-            var pubKeys = new G1[_f + 1];
+            var pubKeys = new G1[Faulty + 1];
             var secretKey = Fr.Zero;
-            foreach (var s in _keyGenStates.Where(s => s.ValueCount() > 2 * _f))
+            foreach (var s in _keyGenStates.Where(s => s.ValueCount() > 2 * Faulty))
             {
                 var rowZero = s.Commitment.Evaluate(0).ToArray();
 
@@ -113,10 +126,10 @@ namespace Lachain.Consensus.Keygen
             return new ThresholdKeyring
             {
                 TpkePrivateKey = new PrivateKey(secretKey, _myIdx),
-                TpkePublicKey = new PublicKey(pubKeys[0], _f),
+                TpkePublicKey = new PublicKey(pubKeys[0], Faulty),
                 ThresholdSignaturePrivateKey = new PrivateKeyShare(secretKey),
                 ThresholdSignaturePublicKeySet =
-                    new PublicKeySet(pubKeys.Skip(1).Select(x => new PublicKeyShare(x)), _f)
+                    new PublicKeySet(pubKeys.Skip(1).Select(x => new PublicKeyShare(x)), Faulty)
             };
         }
 

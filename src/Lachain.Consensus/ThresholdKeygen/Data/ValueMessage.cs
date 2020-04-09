@@ -1,6 +1,6 @@
-namespace Lachain.Consensus.Keygen.Data
+namespace Lachain.Consensus.ThresholdKeygen.Data
 {
-    public class ValueMessage
+    public struct ValueMessage
     {
         public int Proposer;
         public byte[][] EncryptedValues;

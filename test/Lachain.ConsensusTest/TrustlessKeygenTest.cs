@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Consensus.Keygen;
-using Lachain.Consensus.Keygen.Data;
+using Lachain.Consensus.ThresholdKeygen;
+using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
-using Org.BouncyCastle.Crypto.Engines;
 
 namespace Lachain.ConsensusTest
 {
@@ -28,28 +27,8 @@ namespace Lachain.ConsensusTest
             return Mcl.GetValue(t, Fr.FromInt(y));
         }
 
-        [Test]
-        [Repeat(100)]
-        public void SymmetricPolynomialIsSymmetric()
+        private static void SimulateKeygen(int n, int f)
         {
-            var rnd = new Random();
-            var p = BiVarSymmetricPolynomial.Random(5);
-            int x = rnd.Next(), y = rnd.Next();
-            var vxy = Eval(p, x, y);
-            var vyx = Eval(p, y, x);
-            Assert.AreEqual(vxy, vyx);
-
-            var c = p.Commit();
-            var cxy = c.Evaluate(x, y);
-            var cyx = c.Evaluate(y, x);
-            Assert.AreEqual(cxy, cyx);
-        }
-
-        [Test]
-        public void RunAllHonest()
-        {
-            // const int n = 22, f = 7;
-            const int n = 7, f = 2;
             var ecdsaKeys = Enumerable.Range(0, n)
                 .Select(_ => Crypto.GeneratePrivateKey())
                 .Select(x => x.ToPrivateKey())
@@ -88,15 +67,50 @@ namespace Lachain.ConsensusTest
 
             for (var i = 0; i < n; ++i) Assert.IsTrue(keyGens[i].Finished());
 
-            var keys = keyGens.Select(x => x.TryGetKeys())
+            var keys = keyGens
+                .Select(x => x.TryGetKeys() ?? throw new Exception())
                 .ToArray();
-            Assert.IsFalse(keys.Any(x => x is null));
-
+            
             for (var i = 0; i < n; ++i)
             {
                 Assert.AreEqual(keys[0].TpkePublicKey, keys[i].TpkePublicKey);
                 Assert.AreEqual(keys[0].ThresholdSignaturePublicKeySet, keys[i].ThresholdSignaturePublicKeySet);
             }
+        }
+
+        [Test]
+        [Repeat(100)]
+        public void SymmetricPolynomialIsSymmetric()
+        {
+            var rnd = new Random();
+            var p = BiVarSymmetricPolynomial.Random(5);
+            int x = rnd.Next(), y = rnd.Next();
+            var vxy = Eval(p, x, y);
+            var vyx = Eval(p, y, x);
+            Assert.AreEqual(vxy, vyx);
+
+            var c = p.Commit();
+            var cxy = c.Evaluate(x, y);
+            var cyx = c.Evaluate(y, x);
+            Assert.AreEqual(cxy, cyx);
+        }
+
+        [Test]
+        public void RunAllHonest_7_2()
+        {
+            SimulateKeygen(7, 2);            
+        }
+        
+        [Test]
+        public void RunAllHonest_22_7()
+        {
+            SimulateKeygen(22, 7);            
+        }
+        
+        [Test]
+        public void RunOneGuy()
+        {
+            SimulateKeygen(1, 0);
         }
     }
 }

@@ -30,6 +30,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IPrivateWallet, PrivateWallet>();
+            containerBuilder.RegisterSingleton<KeyGenManager, KeyGenManager>();
             /* genesis */
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();
             /* operation manager */

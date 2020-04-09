@@ -26,7 +26,6 @@ namespace Lachain.Core.Blockchain.Validators
             return new PublicConsensusKeySet(
                 n, f,
                 PublicKey.FromBytes(state.TpkePublicKey.ToByteArray()),
-                VerificationKey.FromBytes(state.TpkeVerificationKey.ToByteArray()),
                 new PublicKeySet(
                     state.Validators.Select(v => PublicKeyShare.FromBytes(v.ThresholdSignaturePublicKey.ToByteArray())),
                     f

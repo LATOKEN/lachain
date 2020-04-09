@@ -38,10 +38,7 @@ namespace Lachain.ConsensusTest
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
 
-            _publicKeys = new PublicConsensusKeySet(
-                N, F, null, null,
-                pubKeys, Enumerable.Empty<ECDSAPublicKey>()
-            );
+            _publicKeys = new PublicConsensusKeySet(N, F, null, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();

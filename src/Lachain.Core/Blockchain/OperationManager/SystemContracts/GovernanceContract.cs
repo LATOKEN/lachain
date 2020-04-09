@@ -16,7 +16,7 @@ namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
         }
-        
+
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
 
         public void ChangeValidators(byte[][] newValidators)
@@ -24,23 +24,18 @@ namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
         }
 
         [ContractProperty(GovernanceInterface.MethodKeygenCommit)]
-        public void KeyGenCommit(byte[] commitment, byte[] encryptedRows)
+        public void KeyGenCommit(byte[] commitment, byte[][] encryptedRows)
         {
-            
         }
 
         [ContractProperty(GovernanceInterface.MethodKeygenSendValue)]
-        public void KeyGenSendValue(byte[] encryptedValue)
+        public void KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues)
         {
-            
         }
-        
+
         [ContractProperty(GovernanceInterface.MethodKeygenConfirm)]
         public void KeyGenConfirm(UInt256 hash)
         {
-            
         }
-        
-        
     }
 }
