@@ -32,5 +32,10 @@ namespace Lachain.Utility.Utils
         {
             return source.Select((item, index) => (item, index));
         }
+
+        public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> source)
+        {
+            return source.SelectMany(x => x);
+        }
     }
 }

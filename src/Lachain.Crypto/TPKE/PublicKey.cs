@@ -75,7 +75,7 @@ namespace Lachain.Crypto.TPKE
             return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
         }
 
-        public byte[] ToByteArray()
+        public byte[] ToBytes()
         {
             return BitConverter.GetBytes(_t).Concat(G1.ToBytes(Y)).ToArray();
         }

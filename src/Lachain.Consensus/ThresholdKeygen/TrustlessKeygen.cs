@@ -129,16 +129,13 @@ namespace Lachain.Consensus.ThresholdKeygen
                 TpkePublicKey = new PublicKey(pubKeys[0], Faulty),
                 ThresholdSignaturePrivateKey = new PrivateKeyShare(secretKey),
                 ThresholdSignaturePublicKeySet =
-                    new PublicKeySet(pubKeys.Skip(1).Select(x => new PublicKeyShare(x)), Faulty)
+                    new PublicKeySet(pubKeys.Skip(1).Select(x => new Crypto.ThresholdSignature.PublicKey(x)), Faulty)
             };
         }
 
         private static byte[] EncryptRow(IEnumerable<Fr> row, ECDSAPublicKey publicKey)
         {
-            var serializedRow = row.Select(Fr.ToBytes)
-                .Cast<IEnumerable<byte>>()
-                .Aggregate((a, b) => a.Concat(b))
-                .ToArray();
+            var serializedRow = row.Select(Fr.ToBytes).Flatten().ToArray();
             return Crypto.Secp256K1Encrypt(publicKey.EncodeCompressed(), serializedRow);
         }
 

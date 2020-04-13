@@ -36,7 +36,7 @@ namespace Lachain.Console
             var privShares = sigKeyGen.GetPrivateShares().ToArray();
             var pubShares = sigKeyGen.GetPrivateShares()
                 .Select(s => s.GetPublicKeyShare())
-                .Select(s => s.ToByteArray().ToHex())
+                .Select(s => s.ToBytes().ToHex())
                 .ToArray();
 
             // var ips = new[]
@@ -94,7 +94,7 @@ namespace Lachain.Console
                         EcdsaPublicKey = ecdsaPublicKeys[j],
                         ThresholdSignaturePublicKey = pubShares[j]
                     }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToByteArray().ToHex()
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToBytes().ToHex()
                 };
                 var rpc = new RpcConfig
                 {

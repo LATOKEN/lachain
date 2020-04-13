@@ -27,7 +27,7 @@ namespace Lachain.Core.Blockchain.Validators
                 n, f,
                 PublicKey.FromBytes(state.TpkePublicKey.ToByteArray()),
                 new PublicKeySet(
-                    state.Validators.Select(v => PublicKeyShare.FromBytes(v.ThresholdSignaturePublicKey.ToByteArray())),
+                    state.Validators.Select(v => Crypto.ThresholdSignature.PublicKey.FromBytes(v.ThresholdSignaturePublicKey.ToByteArray())),
                     f
                 ),
                 state.Validators.Select(v => v.PublicKey)

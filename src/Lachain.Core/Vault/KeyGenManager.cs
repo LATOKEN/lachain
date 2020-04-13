@@ -12,10 +12,12 @@ using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Vault
 {
@@ -100,8 +102,8 @@ namespace Lachain.Core.Vault
                 );
                 var keys = _currentKeygen.TryGetKeys();
                 if (!keys.HasValue) return;
-                Logger.LogDebug("NEW KEYS GENERATED!!!!!");
                 _transactionPool.Add(MakeConfirmTransaction(keys.Value));
+                Logger.LogDebug("NEW KEYS GENERATED!!!!!");
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenConfirm))
             {
@@ -110,7 +112,13 @@ namespace Lachain.Core.Vault
                 if (sender < 0) return;
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
-                var keyringHash = args[0] as UInt256 ?? throw new Exception();
+                var tpkePublicKey = PublicKey.FromBytes(args[0] as byte[] ?? throw new Exception());
+                var tsKeys = new PublicKeySet(
+                    (args[1] as byte[][] ?? throw new Exception()).Select(Crypto.ThresholdSignature.PublicKey.FromBytes),
+                    _currentKeygen.Faulty
+                );
+                var keyringHash = tpkePublicKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
+                // TODO: somehow calculate confirmations in contract and trigger this by event
 
                 _confirmations.PutIfAbsent(keyringHash, 0);
                 _confirmations[keyringHash] += 1;
@@ -128,19 +136,13 @@ namespace Lachain.Core.Vault
 
         private TransactionReceipt MakeConfirmTransaction(ThresholdKeyring keyring)
         {
-            var hash = keyring.TpkePublicKey.ToByteArray()
-                .Concat(keyring.ThresholdSignaturePublicKeySet.Keys
-                    .Select(x => x.ToByteArray())
-                    .Cast<IEnumerable<byte>>()
-                    .Aggregate((a, b) => a.Concat(b)))
-                .Keccak();
-
             var tx = _transactionBuilder.InvokeTransaction(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenConfirm,
-                hash
+                keyring.TpkePublicKey.ToBytes(),
+                keyring.ThresholdSignaturePublicKeySet.ToBytes()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
         }

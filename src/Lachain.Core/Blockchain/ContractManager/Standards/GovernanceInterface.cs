@@ -5,7 +5,7 @@
         public const string MethodChangeValidators = "changeValidators(bytes[])";
         public const string MethodKeygenCommit = "keygenCommit(bytes,bytes[])";
         public const string MethodKeygenSendValue = "keygenSendValue(uint256,bytes[])";
-        public const string MethodKeygenConfirm = "keygenConfirm(uint256)";
+        public const string MethodKeygenConfirm = "keygenConfirm(bytes,bytes[])";
         
         public string[] Methods { get; } =
         {

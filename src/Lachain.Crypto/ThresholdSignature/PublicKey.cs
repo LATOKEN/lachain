@@ -1,14 +1,20 @@
-﻿using Lachain.Crypto.MCL.BLS12_381;
+﻿using System;
+using Lachain.Crypto.MCL.BLS12_381;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
-    public class PublicKey
+    public class PublicKey : IEquatable<PublicKey>
     {
+        public PublicKey(G1 rawKey)
+        {
+            RawKey = rawKey;
+        }
+
         public G1 RawKey { get; }
 
-        public PublicKey(G1 pubKey)
+        public byte[] ToBytes()
         {
-            RawKey = pubKey;
+            return G1.ToBytes(RawKey);
         }
 
         public bool ValidateSignature(Signature signature, byte[] message)
@@ -18,14 +24,27 @@ namespace Lachain.Crypto.ThresholdSignature
             return Mcl.Pairing(RawKey, mappedMessage).Equals(Mcl.Pairing(G1.Generator, signature.RawSignature));
         }
 
-        public byte[] ToByteArray()
-        {
-            return G1.ToBytes(RawKey);
-        }
-
         public static PublicKey FromBytes(byte[] buffer)
         {
             return new PublicKey(G1.FromBytes(buffer));
+        }
+
+        public bool Equals(PublicKey other)
+        {
+            return other != null && RawKey.Equals(other.RawKey);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((PublicKey) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return RawKey.GetHashCode();
         }
     }
 }

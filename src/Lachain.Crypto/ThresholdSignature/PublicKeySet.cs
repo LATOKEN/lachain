@@ -3,18 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
     public class PublicKeySet : IEquatable<PublicKeySet>
     {
-        private readonly IDictionary<PublicKeyShare, int> _keyIndex;
+        private readonly IDictionary<PublicKey, int> _keyIndex;
         public PublicKey SharedPublicKey { get; }
-        public IReadOnlyCollection<PublicKeyShare> Keys => _keys;
+        public IReadOnlyCollection<PublicKey> Keys => _keys;
 
-        private readonly PublicKeyShare[] _keys;
+        private readonly PublicKey[] _keys;
 
-        public PublicKeySet(IEnumerable<PublicKeyShare> pubKeyShares, int faulty)
+        public PublicKeySet(IEnumerable<PublicKey> pubKeyShares, int faulty)
         {
             _keys = pubKeyShares.ToArray();
             _keyIndex = _keys.Select((share, i) => (share, i)).ToDictionary(t => t.Item1, t => t.Item2);
@@ -33,13 +34,13 @@ namespace Lachain.Crypto.ThresholdSignature
         public int Count => _keyIndex.Count;
         public int Threshold { get; }
 
-        public int GetIndex(PublicKeyShare key)
+        public int GetIndex(PublicKey key)
         {
             if (!_keyIndex.TryGetValue(key, out var idx)) return -1;
             return idx;
         }
 
-        public PublicKeyShare this[int idx] => _keys[idx];
+        public PublicKey this[int idx] => _keys[idx];
 
         public Signature AssembleSignature(IEnumerable<KeyValuePair<int, SignatureShare>> shares)
         {
@@ -69,6 +70,11 @@ namespace Lachain.Crypto.ThresholdSignature
         public override int GetHashCode()
         {
             return _keys.GetHashCode();
+        }
+
+        public IEnumerable<byte> ToBytes()
+        {
+            return _keys.Select(key => key.ToBytes()).Flatten();
         }
     }
 }

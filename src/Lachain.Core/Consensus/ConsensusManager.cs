@@ -26,6 +26,9 @@ namespace Lachain.Core.Consensus
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
 
+        private readonly IDictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>> _postponedMessages
+            = new Dictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>>();
+
         private long CurrentEra { get; set; } = -1;
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
@@ -78,21 +81,22 @@ namespace Lachain.Core.Consensus
 
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Dispatch(ConsensusMessage message, int from)
+        public void Dispatch(ConsensusMessage message, ECDSAPublicKey from)
         {
             var era = message.Validator.Era;
             if (CurrentEra == -1)
-            {
                 _logger.LogWarning($"Consensus has not been started yet, skipping message with era {era}");
-            }
-
-            if (era < CurrentEra)
-            {
+            else if (era < CurrentEra)
                 _logger.LogDebug($"Skipped message for era {era} since we already advanced to {CurrentEra}");
-                return;
+            else if (era > CurrentEra)
+                _postponedMessages
+                    .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
+                    .Add((message, from));
+            else
+            {
+                var fromIndex = _validatorManager.GetValidatorIndex(from, era - 1);
+                EnsureEra(era)?.Dispatch(message, fromIndex);
             }
-
-            EnsureEra(era)?.Dispatch(message, from);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -127,6 +131,19 @@ namespace Lachain.Core.Consensus
                     broadcaster.InternalRequest(
                         new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId, _blockProducer)
                     );
+
+                    if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
+                    {
+                        _logger.LogDebug($"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
+                        foreach (var (message, from) in savedMessages)
+                        {
+                            var fromIndex = _validatorManager.GetValidatorIndex(from, CurrentEra - 1);
+                            broadcaster.Dispatch(message, fromIndex);
+                        }
+
+                        _postponedMessages.Remove(CurrentEra);
+                    }
+
                     broadcaster.WaitFinish();
                     broadcaster.Terminate();
                     _eras.Remove(CurrentEra);

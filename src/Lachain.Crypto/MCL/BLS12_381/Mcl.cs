@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Lachain.Crypto.MCL.BLS12_381
 {
@@ -66,20 +64,12 @@ namespace Lachain.Crypto.MCL.BLS12_381
             MclImports.mclBn_G1EvaluatePolynomial(ref res, poly, poly.Length, ref at);
             return res;
         }
-        
+
         public static G2 GetValue(G2[] poly, Fr at)
         {
             var res = G2.Zero;
             MclImports.mclBn_G2EvaluatePolynomial(ref res, poly, poly.Length, ref at);
             return res;
-        }
-
-        public static byte[] CalculateHash(IEnumerable<G1> g1, IEnumerable<G2> g2)
-        {
-            var temp = new byte[0];
-            temp = g1.Aggregate(temp, (current, g) => current.Concat(G1.ToBytes(g)).ToArray());
-            temp = g2.Aggregate(temp, (current, g) => current.Concat(G2.ToBytes(g)).ToArray());
-            return temp.KeccakBytes();
         }
 
         public static Fr[] Powers(Fr x, int n)

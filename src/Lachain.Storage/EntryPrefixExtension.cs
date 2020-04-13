@@ -49,9 +49,7 @@ namespace Lachain.Storage
         {
             if (keys.Length == 0)
                 throw new ArgumentOutOfRangeException(nameof(keys));
-            var buffer = keys
-                .Select(k => k.ToBytes() as IEnumerable<byte>)
-                .Aggregate((k1, k2) => k1.Concat(k2));
+            var buffer = keys.Select(k => k.ToBytes() as IEnumerable<byte>).Flatten();
             return BuildPrefix(prefix, buffer);
         }
 
@@ -69,9 +67,7 @@ namespace Lachain.Storage
         {
             if (keys.Length == 0)
                 throw new ArgumentOutOfRangeException(nameof(keys));
-            var buffer = keys
-                .Select(k => k.ToBytes() as IEnumerable<byte>)
-                .Aggregate((k1, k2) => k1.Concat(k2));
+            var buffer = keys.Select(k => k.ToBytes() as IEnumerable<byte>).Flatten();
             return BuildPrefix(prefix, buffer);
         }
 

@@ -150,11 +150,6 @@ namespace Lachain.Consensus.HoneyBadger
         private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg)
         {
             var share = Wallet.TpkePublicKey.Decode(msg);
-            if (_receivedShares[share.ShareId] != null)
-            {
-                return;
-            }
-
             _decryptedShares[share.ShareId].Add(share);
             CheckDecryptedShares(share.ShareId);
         }
@@ -178,7 +173,7 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (!_takenSet) return;
             if (_result != null) return;
-            if (_taken.Zip(_shares, (b, share) => b && share is null).Any()) return;
+            if (_taken.Zip(_shares, (b, share) => b && share is null).Any(x => x)) return;
 
             _result = _taken.Zip(_shares, (b, share) => (b, share))
                 .Where(x => x.b)

@@ -61,10 +61,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public byte[] ToBytes()
         {
-            return _coefficients.Select(G1.ToBytes)
-                .Cast<IEnumerable<byte>>()
-                .Aggregate((a, b) => a.Concat(b))
-                .ToArray();
+            return _coefficients.Select(G1.ToBytes).Flatten().ToArray();
         }
 
         public static Commitment FromBytes(IEnumerable<byte> buffer)

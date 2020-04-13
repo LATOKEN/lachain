@@ -33,7 +33,7 @@ namespace Lachain.Crypto.ThresholdSignature
             return _privateKeyShare.HashAndSign(_dataToSign);
         }
 
-        public bool AddShare(PublicKeyShare pubKey, SignatureShare sigShare, out Signature? result)
+        public bool AddShare(PublicKey pubKey, SignatureShare sigShare, out Signature? result)
         {
             result = null;
             var idx = _publicKeySet.GetIndex(pubKey);
@@ -75,7 +75,7 @@ namespace Lachain.Crypto.ThresholdSignature
             return true;
         }
 
-        private bool IsShareValid(PublicKeyShare pubKey, SignatureShare sigShare)
+        private bool IsShareValid(PublicKey pubKey, SignatureShare sigShare)
         {
             return pubKey.ValidateSignature(sigShare, _dataToSign);
         }

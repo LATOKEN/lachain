@@ -151,8 +151,8 @@ namespace Lachain.Consensus.CommonSubset
             if (_cntBinaryAgreementsCompleted < N) return;
 
             if (_binaryAgreementResult
-                .Zip(_reliableBroadcastResult, (b, share) => b == true && share == null)
-                .Any()
+                .Zip(_reliableBroadcastResult, (b, share) => b == true && share is null)
+                .Any(x => x)
             ) return;
 
             _result = _binaryAgreementResult
