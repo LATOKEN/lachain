@@ -1,6 +1,9 @@
 ﻿using System.Linq;
 using System.Threading;
+using Lachain.Core.Blockchain.ContractManager;
+using Lachain.Core.Blockchain.ContractManager.Standards;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
@@ -12,10 +15,9 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
-using Lachain.Crypto.ECDSA;
 using Lachain.Networking;
-using Lachain.Storage;
 using Lachain.Storage.State;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Console
@@ -90,6 +92,27 @@ namespace Lachain.Console
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
 
+            if (blockchainContext.CurrentBlockHeight == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
+            {
+                var txPool = _container.Resolve<ITransactionPool>();
+                var signer = _container.Resolve<ITransactionSigner>();
+                var builder = _container.Resolve<ITransactionBuilder>();
+                var newValidators = new[]
+                {
+                    // CryptoProvider.GetCrypto().GeneratePrivateKey().ToPrivateKey().GetPublicKey().EncodeCompressed()
+                    wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
+                }; 
+                var tx = builder.InvokeTransaction(
+                    wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                    ContractRegisterer.GovernanceContract,
+                    Money.Zero,
+                    GovernanceInterface.MethodChangeValidators,
+                    (object) newValidators
+                );
+                txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
+            }
+
+            System.Console.WriteLine(ContractRegisterer.GovernanceContract.ToHex());
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 
             while (!_interrupt)

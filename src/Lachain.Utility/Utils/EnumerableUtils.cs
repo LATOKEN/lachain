@@ -37,5 +37,20 @@ namespace Lachain.Utility.Utils
         {
             return source.SelectMany(x => x);
         }
+
+        public static IEnumerable<T> PadRight<T>(this IEnumerable<T> source, T withElement, int toSize)
+        {
+            var cnt = 0;
+            foreach (var x in source)
+            {
+                yield return x;
+                cnt += 1;
+            }
+
+            for (; cnt < toSize; ++cnt)
+            {
+                yield return withElement;
+            }
+        }
     }
 }

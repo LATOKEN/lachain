@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
@@ -10,6 +11,7 @@ using Lachain.Crypto.TPKE;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Secp256k1Net;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Consensus.ThresholdKeygen
@@ -45,7 +47,6 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Select(i => biVarPoly.Evaluate(i))
                 .Select((row, i) => EncryptRow(row, _publicKeys[i]))
                 .ToArray();
-
             return new CommitMessage
             {
                 Commitment = commitment,
@@ -111,17 +112,22 @@ namespace Lachain.Consensus.ThresholdKeygen
         public ThresholdKeyring? TryGetKeys()
         {
             if (!Finished()) return null;
-
-            var pubKeys = new G1[Faulty + 1];
+            var pubKeyPoly = Enumerable.Range(0, Faulty + 1)
+                .Select(_ => G1.Zero)
+                .ToArray();
             var secretKey = Fr.Zero;
-            foreach (var s in _keyGenStates.Where(s => s.ValueCount() > 2 * Faulty))
+            foreach (var (s, dealer) in _keyGenStates.WithIndex().Where(s => s.item.ValueCount() > 2 * Faulty))
             {
                 var rowZero = s.Commitment.Evaluate(0).ToArray();
-
                 foreach (var (x, i) in rowZero.WithIndex())
-                    pubKeys[i] += x;
+                    pubKeyPoly[i] += x;
+                var interpolatedValue = s.InterpolateValues();
                 secretKey += s.InterpolateValues();
             }
+
+            var pubKeys = Enumerable.Range(0, Players + 1)
+                .Select(i => Mcl.GetValue(pubKeyPoly, Fr.FromInt(i)))
+                .ToArray();
 
             return new ThresholdKeyring
             {

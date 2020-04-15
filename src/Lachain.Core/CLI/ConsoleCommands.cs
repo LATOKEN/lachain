@@ -22,6 +22,7 @@ namespace Lachain.Core.CLI
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly EcdsaKeyPair _keyPair;
@@ -31,6 +32,7 @@ namespace Lachain.Core.CLI
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
+            ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IStateManager stateManager,
             IVirtualMachine virtualMachine,
@@ -41,6 +43,7 @@ namespace Lachain.Core.CLI
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
+            _transactionSigner = transactionSigner;
             _stateManager = stateManager;
             _keyPair = keyPair;
             _virtualMachine = virtualMachine;
@@ -138,7 +141,7 @@ namespace Lachain.Core.CLI
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }
@@ -204,7 +207,7 @@ namespace Lachain.Core.CLI
             var value = Money.Parse(arguments[2]);
             var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value);
-            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
         }
 
@@ -235,7 +238,7 @@ namespace Lachain.Core.CLI
             var fee = Money.Parse(arguments[3]);
             var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value);
-            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }

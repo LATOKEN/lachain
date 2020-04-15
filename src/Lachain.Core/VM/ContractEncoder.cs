@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -12,7 +13,7 @@ namespace Lachain.Core.VM
     public class ContractEncoder
     {
         private readonly BinaryWriter _binaryWriter;
-        
+
         public ContractEncoder(string methodSignature)
         {
             _binaryWriter = new BinaryWriter(new MemoryStream());
@@ -35,6 +36,22 @@ namespace Lachain.Core.VM
             return buffer[0] | ((uint) buffer[1] << 8) | ((uint) buffer[2] << 16) | ((uint) buffer[3] << 24);
         }
 
+        public ContractEncoder Write(byte[] array)
+        {
+            Write(new BigInteger(array.Length).ToUInt256());
+            foreach (var word in array.Batch(32))
+                _binaryWriter.Write(word.PadRight((byte) 0, 32).ToArray());
+            return this;
+        }
+
+        public ContractEncoder Write(byte[][] array)
+        {
+            Write(new BigInteger(array.Length).ToUInt256());
+            foreach (var x in array)
+                Write(x);
+            return this;
+        }
+
         public ContractEncoder Write(bool value)
         {
             _binaryWriter.Write(value);
@@ -52,7 +69,7 @@ namespace Lachain.Core.VM
             _binaryWriter.Write(value);
             return this;
         }
-        
+
         public ContractEncoder Write(uint value)
         {
             _binaryWriter.Write(value);

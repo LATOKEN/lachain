@@ -27,6 +27,9 @@ namespace Lachain.Core.Blockchain.OperationManager
         private readonly ILogger<BlockManager> _logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private ContractContext? _contractTxJustExecuted = null;
+        
+        public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
         public BlockManager(
             ITransactionManager transactionManager,
@@ -43,10 +46,15 @@ namespace Lachain.Core.Blockchain.OperationManager
             _multisigVerifier = multisigVerifier;
             _stateManager = stateManager;
             _snapshotIndexRepository = snapshotIndexRepository;
+            _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
+        }
+
+        private void TransactionManagerOnSystemContractInvoked(object sender, ContractContext e)
+        {
+            _contractTxJustExecuted = e;
         }
 
         public event EventHandler<Block>? OnBlockPersisted;
-        public event EventHandler<Block>? OnBlockSigned;
 
         public Block? GetByHeight(ulong blockHeight)
         {
@@ -105,7 +113,7 @@ namespace Lachain.Core.Blockchain.OperationManager
         public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash,
             bool commit)
         {
-            return _stateManager.SafeContext(() =>
+            var error = _stateManager.SafeContext(() =>
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
@@ -134,6 +142,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                 BlockPersisted(block);
                 return OperatingError.Ok;
             });
+            return error;
         }
 
         private OperatingError _Execute(
@@ -264,6 +273,12 @@ namespace Lachain.Core.Blockchain.OperationManager
                     $"Successfully executed transaction {txHash.ToHex()} with nonce ({transaction.Transaction.Nonce})");
                 snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
                 _stateManager.Approve();
+
+                if (_contractTxJustExecuted != null && !isEmulation)
+                {
+                    OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
+                    _contractTxJustExecuted = null;
+                }
             }
 
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);

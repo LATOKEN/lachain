@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Utils;
+using NLog.Targets;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {
@@ -27,7 +28,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             if (Commitment is null) throw new ArgumentException("Cannot interpolate without commitment");
             var xs = Acks.WithIndex()
                 .Where(x => x.item)
-                .Select(x => x.index)
+                .Select(x => x.index + 1)
                 .Select(Fr.FromInt)
                 .Take(Commitment.Degree + 1)
                 .ToArray();

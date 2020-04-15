@@ -156,10 +156,28 @@ namespace Lachain.Console
         {
             Mcl.Init();
             // GenWallet(
-            //     "wallet.json", 
-            //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 
-            //     "0x000000000000000000000000000000000000000000000000000000000000000000000000",
-            //     "0xcb436d851f7d58773a36daf94350f25635b06fb970dc670059529f6b3797b668"
+            //     "wallet0.json", 
+            //     "0a63d1202aa7b5052e2a823eb3873ee9f53709e967778bf39efcf1ea05bb3907", 
+            //     "0x000000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
+            //     "0xbc055e0f7bc72bdf9b0129f85c925eff36c4b8da5a6235a4b33b2e1131c24c20"
+            // );
+            // GenWallet(
+            //     "wallet1.json", 
+            //     "7125553f3ffbaa1a0e6b8787f1ad060e201adb338a28e838f93fb06f6b7fc5de", 
+            //     "0x010000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
+            //     "0xd12e210c67814de8aed0fe42ed7ce846803f7fcfeb163ab4c38aa7bd147bf823"
+            // );
+            // GenWallet(
+            //     "wallet2.json", 
+            //     "49ace3986253b6e0300ca1fe486ece278d557e896b1f7f446d498586913b9bf4", 
+            //     "0x020000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
+            //     "0xe657e408533b6ff1c19fd48d7d67728ec9ba45c47ccb3ec4d3d9206af833a427"
+            // );
+            // GenWallet(
+            //     "wallet3.json", 
+            //     "68fcd0c7ee8ca176ef46dd2c2296f20ae17e1046dd36a7a8ff25c0f9bde6002a", 
+            //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
+            //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
             var app = new Application();
             app.Start(args);

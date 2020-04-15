@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
@@ -124,6 +125,13 @@ namespace Lachain.Core.Consensus
                     {
                         AdvanceEra((long) _blockchainContext.CurrentBlockHeight);
                         continue;
+                    }
+                    
+                    if (!_validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet
+                        .Contains(_privateWallet.EcdsaKeyPair.PublicKey))
+                    {
+                        _logger.LogInformation($"We are not validator for era {CurrentEra}, halting consensus");
+                        return;
                     }
 
                     var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();

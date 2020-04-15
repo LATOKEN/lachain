@@ -18,7 +18,6 @@ namespace Lachain.Core.Blockchain.OperationManager
     {
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IReadOnlyDictionary<TransactionType, ITransactionExecuter> _transactionPersisters;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
         public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
@@ -29,7 +28,8 @@ namespace Lachain.Core.Blockchain.OperationManager
             IStateManager stateManager)
         {
             var contractTransactionExecuter = new ContractTransactionExecuter(contractRegisterer, virtualMachine);
-            contractTransactionExecuter.OnSystemContractInvoked += OnSystemContractInvoked;
+            contractTransactionExecuter.OnSystemContractInvoked +=
+                (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
                 {TransactionType.Transfer, contractTransactionExecuter},
@@ -48,7 +48,6 @@ namespace Lachain.Core.Blockchain.OperationManager
         public event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         public event EventHandler<TransactionReceipt>? OnTransactionFailed;
         public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
-        public event EventHandler<TransactionReceipt>? OnTransactionSigned;
 
         public TransactionReceipt? GetByHash(UInt256 transactionHash)
         {
@@ -90,22 +89,6 @@ namespace Lachain.Core.Blockchain.OperationManager
             /* finalize transaction state */
             OnTransactionExecuted?.Invoke(this, receipt);
             return OperatingError.Ok;
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public TransactionReceipt Sign(Transaction transaction, EcdsaKeyPair keyPair)
-        {
-            /* use raw byte arrays to sign transaction hash */
-            var messageHash = HashUtils.ToHash256(transaction);
-            var signature = _crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode());
-            var signed = new TransactionReceipt
-            {
-                Transaction = transaction,
-                Hash = messageHash,
-                Signature = signature.ToSignature()
-            };
-            OnTransactionSigned?.Invoke(this, signed);
-            return signed;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

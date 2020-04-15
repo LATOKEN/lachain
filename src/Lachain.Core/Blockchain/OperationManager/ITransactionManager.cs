@@ -5,12 +5,11 @@ using Lachain.Storage.State;
 
 namespace Lachain.Core.Blockchain.OperationManager
 {
-    public interface ITransactionManager : ITransactionSigner
+    public interface ITransactionManager
     {
         event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         event EventHandler<TransactionReceipt>? OnTransactionFailed;
         event EventHandler<TransactionReceipt>? OnTransactionExecuted;
-        event EventHandler<TransactionReceipt>? OnTransactionSigned;
         event EventHandler<ContractContext>? OnSystemContractInvoked;
 
         TransactionReceipt? GetByHash(UInt256 transactionHash);

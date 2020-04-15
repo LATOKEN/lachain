@@ -44,10 +44,11 @@ namespace Lachain.Core.Blockchain.OperationManager
             }
 
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
-            if (contract is null)
+            var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
+            if (contract is null && systemContract is null)
             {
                 /*
-                 * Destination address is not smart-contract
+                 * Destination address is not smart-contract, just plain address
                  * So we just call transfer method of system contract
                  */
                 if (snapshot.Balances.GetBalance(transaction.From) < new Money(transaction.Value))

@@ -24,7 +24,8 @@ namespace Lachain.Crypto.MCL.BLS12_381
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
             var res = new G2();
-            MclImports.mclBn_G2LagrangeInterpolation(ref res, xs, ys, xs.Length);
+            if (MclImports.mclBn_G2LagrangeInterpolation(ref res, xs, ys, xs.Length) != 0)
+                throw new Exception("Lagrange interpolation failed");
             return res;
         }
 
@@ -32,7 +33,8 @@ namespace Lachain.Crypto.MCL.BLS12_381
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
             var res = new G1();
-            MclImports.mclBn_G1LagrangeInterpolation(ref res, xs, ys, xs.Length);
+            if (MclImports.mclBn_G1LagrangeInterpolation(ref res, xs, ys, xs.Length) != 0)
+                throw new Exception("Lagrange interpolation failed");
             return res;
         }
 
@@ -40,7 +42,8 @@ namespace Lachain.Crypto.MCL.BLS12_381
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
             var res = new Fr();
-            MclImports.mclBn_FrLagrangeInterpolation(ref res, xs, ys, xs.Length);
+            if (MclImports.mclBn_FrLagrangeInterpolation(ref res, xs, ys, xs.Length) != 0)
+                throw new Exception("Lagrange interpolation failed");
             return res;
         }
 
@@ -54,21 +57,24 @@ namespace Lachain.Crypto.MCL.BLS12_381
         public static Fr GetValue(Fr[] poly, Fr at)
         {
             var res = Fr.Zero;
-            MclImports.mclBn_FrEvaluatePolynomial(ref res, poly, poly.Length, ref at);
+            if (MclImports.mclBn_FrEvaluatePolynomial(ref res, poly, poly.Length, ref at) != 0)
+                throw new Exception("Polynomial evaluation failed");
             return res;
         }
 
         public static G1 GetValue(G1[] poly, Fr at)
         {
             var res = G1.Zero;
-            MclImports.mclBn_G1EvaluatePolynomial(ref res, poly, poly.Length, ref at);
+            if (MclImports.mclBn_G1EvaluatePolynomial(ref res, poly, poly.Length, ref at) != 0)
+                throw new Exception("Polynomial evaluation failed");
             return res;
         }
 
         public static G2 GetValue(G2[] poly, Fr at)
         {
             var res = G2.Zero;
-            MclImports.mclBn_G2EvaluatePolynomial(ref res, poly, poly.Length, ref at);
+            if (MclImports.mclBn_G2EvaluatePolynomial(ref res, poly, poly.Length, ref at) != 0)
+                throw new Exception("Polynomial evaluation failed");
             return res;
         }
 

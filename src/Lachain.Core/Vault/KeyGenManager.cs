@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -21,7 +20,7 @@ using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Vault
 {
-    public class KeyGenManager
+    public class KeyGenManager : IKeyGenManager
     {
         private static readonly ILogger<KeyGenManager> Logger = LoggerFactory.GetLoggerForClass<KeyGenManager>();
 
@@ -33,7 +32,7 @@ namespace Lachain.Core.Vault
         private IDictionary<UInt256, int> _confirmations;
 
         public KeyGenManager(
-            ITransactionManager transactionManager,
+            IBlockManager blockManager,
             ITransactionBuilder transactionBuilder,
             IPrivateWallet privateWallet,
             ITransactionPool transactionPool,
@@ -45,10 +44,10 @@ namespace Lachain.Core.Vault
             _transactionPool = transactionPool;
             _transactionSigner = transactionSigner;
             _confirmations = new Dictionary<UInt256, int>();
-            transactionManager.OnSystemContractInvoked += TransactionManagerOnOnSystemContractInvoked;
+            blockManager.OnSystemContractInvoked += BlockManagerOnSystemContractInvoked;
         }
 
-        private void TransactionManagerOnOnSystemContractInvoked(object _, ContractContext context)
+        private void BlockManagerOnSystemContractInvoked(object _, ContractContext context)
         {
             var tx = context.Receipt.Transaction;
             if (!tx.To.Equals(ContractRegisterer.GovernanceContract)) return;
@@ -69,7 +68,9 @@ namespace Lachain.Core.Vault
                 var faulty = (publicKeys.Length - 1) / 3;
                 _currentKeygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
                 _confirmations = new Dictionary<UInt256, int>();
-                _transactionPool.Add(MakeCommitTransaction(_currentKeygen.StartKeygen()));
+                var commitTx = MakeCommitTransaction(_currentKeygen.StartKeygen());
+                if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
+                    Logger.LogError($"Error creating commit transaction ({commitTx.Hash}): {error}");
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenCommit))
             {
@@ -80,12 +81,14 @@ namespace Lachain.Core.Vault
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
                 var commitment = Commitment.FromBytes(args[0] as byte[]);
                 var encryptedRows = args[1] as byte[][];
-                _transactionPool.Add(MakeSendValueTransaction(
+                var sendValueTx = MakeSendValueTransaction(
                     _currentKeygen.HandleCommit(
                         sender,
                         new CommitMessage {Commitment = commitment, EncryptedRows = encryptedRows}
                     )
-                ));
+                );
+                if (_transactionPool.Add(sendValueTx) is var error && error != OperatingError.Ok)
+                    Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash}): {error}");
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenSendValue))
             {
@@ -102,8 +105,9 @@ namespace Lachain.Core.Vault
                 );
                 var keys = _currentKeygen.TryGetKeys();
                 if (!keys.HasValue) return;
-                _transactionPool.Add(MakeConfirmTransaction(keys.Value));
-                Logger.LogDebug("NEW KEYS GENERATED!!!!!");
+                var confirmTx = MakeConfirmTransaction(keys.Value); 
+                if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
+                    Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash}): {error}");
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenConfirm))
             {
@@ -114,7 +118,8 @@ namespace Lachain.Core.Vault
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
                 var tpkePublicKey = PublicKey.FromBytes(args[0] as byte[] ?? throw new Exception());
                 var tsKeys = new PublicKeySet(
-                    (args[1] as byte[][] ?? throw new Exception()).Select(Crypto.ThresholdSignature.PublicKey.FromBytes),
+                    (args[1] as byte[][] ?? throw new Exception()).Select(Crypto.ThresholdSignature.PublicKey
+                        .FromBytes),
                     _currentKeygen.Faulty
                 );
                 var keyringHash = tpkePublicKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
@@ -142,7 +147,7 @@ namespace Lachain.Core.Vault
                 Money.Zero,
                 GovernanceInterface.MethodKeygenConfirm,
                 keyring.TpkePublicKey.ToBytes(),
-                keyring.ThresholdSignaturePublicKeySet.ToBytes()
+                keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
         }

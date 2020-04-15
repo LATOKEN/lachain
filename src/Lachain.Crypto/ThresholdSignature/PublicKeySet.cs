@@ -18,6 +18,7 @@ namespace Lachain.Crypto.ThresholdSignature
         public PublicKeySet(IEnumerable<PublicKey> pubKeyShares, int faulty)
         {
             _keys = pubKeyShares.ToArray();
+            // TODO: this won't work when faulty = 0 and there are >1 players
             _keyIndex = _keys.Select((share, i) => (share, i)).ToDictionary(t => t.Item1, t => t.Item2);
             SharedPublicKey = new PublicKey(AssemblePublicKey(_keys.Select(share => share.RawKey), _keys.Length));
             Threshold = faulty;

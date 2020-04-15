@@ -7,6 +7,8 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Utils;
+using Nethereum.Hex.HexConvertors.Extensions;
 
 namespace Lachain.ConsensusTest
 {
@@ -27,7 +29,7 @@ namespace Lachain.ConsensusTest
             return Mcl.GetValue(t, Fr.FromInt(y));
         }
 
-        private static void SimulateKeygen(int n, int f)
+        private static ThresholdKeyring[] SimulateKeygen(int n, int f)
         {
             var ecdsaKeys = Enumerable.Range(0, n)
                 .Select(_ => Crypto.GeneratePrivateKey())
@@ -70,12 +72,27 @@ namespace Lachain.ConsensusTest
             var keys = keyGens
                 .Select(x => x.TryGetKeys() ?? throw new Exception())
                 .ToArray();
-            
+
             for (var i = 0; i < n; ++i)
             {
                 Assert.AreEqual(keys[0].TpkePublicKey, keys[i].TpkePublicKey);
                 Assert.AreEqual(keys[0].ThresholdSignaturePublicKeySet, keys[i].ThresholdSignaturePublicKeySet);
             }
+
+            return keys;
+        }
+
+        private void CheckKeys(IList<ThresholdKeyring> keys)
+        {
+            var payload = "0xDeadBeef".HexToBytes();
+            var ciphertext = keys[0].TpkePublicKey.Encrypt(new RawShare(payload, 0));
+            var partiallyDecryptedShares = keys
+                .Select(keyring => keyring.TpkePrivateKey)
+                .Select(key => key.Decrypt(ciphertext))
+                .ToList();
+
+            var restored = keys[0].TpkePublicKey.FullDecrypt(ciphertext, partiallyDecryptedShares);
+            Assert.AreEqual(payload.ToHex(), restored.Data.ToHex());
         }
 
         [Test]
@@ -96,21 +113,31 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        public void RunAllHonest_4_1()
+        {
+            var keys = SimulateKeygen(4, 1);
+            CheckKeys(keys);
+        }
+
+        [Test]
         public void RunAllHonest_7_2()
         {
-            SimulateKeygen(7, 2);            
+            var keys = SimulateKeygen(7, 2);
+            CheckKeys(keys);
         }
-        
+
         [Test]
         public void RunAllHonest_22_7()
         {
-            SimulateKeygen(22, 7);            
+            var keys = SimulateKeygen(22, 7);
+            CheckKeys(keys);
         }
-        
+
         [Test]
         public void RunOneGuy()
         {
-            SimulateKeygen(1, 0);
+            var keys = SimulateKeygen(1, 0);
+            CheckKeys(keys);
         }
     }
 }
