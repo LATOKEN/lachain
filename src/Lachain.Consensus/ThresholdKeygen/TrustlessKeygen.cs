@@ -116,7 +116,10 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Select(_ => G1.Zero)
                 .ToArray();
             var secretKey = Fr.Zero;
-            foreach (var (s, dealer) in _keyGenStates.WithIndex().Where(s => s.item.ValueCount() > 2 * Faulty))
+            foreach (var (s, dealer) in _keyGenStates.WithIndex()
+                .Where(s => s.item.ValueCount() > 2 * Faulty)
+                .Take(Faulty + 1) // This is principal moment: we always have to take same amount of shares
+            )
             {
                 var rowZero = s.Commitment.Evaluate(0).ToArray();
                 foreach (var (x, i) in rowZero.WithIndex())

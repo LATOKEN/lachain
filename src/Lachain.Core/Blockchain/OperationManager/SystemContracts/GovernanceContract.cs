@@ -32,22 +32,18 @@ namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
             _contractContext.Snapshot.Validators.NewValidators(
                 newValidators.Select(x => x.ToPublicKey())
             );
-            Logger.LogInformation(
-                $"Validator change called with keys: {string.Join(", ", newValidators.Select(x => x.ToHex()))}");
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenCommit)]
         public void KeyGenCommit(byte[] commitment, byte[][] encryptedRows)
         {
             // TODO: validate everything
-            Logger.LogInformation("Keygen commit called");
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenSendValue)]
         public void KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues)
         {
             // TODO: validate everything
-            Logger.LogInformation("Keygen send value called");
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenConfirm)]
@@ -61,7 +57,7 @@ namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
             if (confirmations == 2 * faulty + 1)
             {
                 _contractContext.Snapshot.Validators.UpdateValidators(tsKeys, tpkeKey);
-                Logger.LogInformation("Enough confirmations collected, validators will be changed in the next block");
+                Logger.LogError("Enough confirmations collected, validators will be changed in the next block");
             }
         }
     }

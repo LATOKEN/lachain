@@ -24,7 +24,7 @@ namespace Lachain.Crypto.ThresholdSignature
             return new SignatureShare(mappedMessage);
         }
 
-        public byte[] ToByteArray()
+        public byte[] ToBytes()
         {
             return Fr.ToBytes(_privateKey);
         }

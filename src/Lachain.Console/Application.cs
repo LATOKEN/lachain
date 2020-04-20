@@ -70,6 +70,8 @@ namespace Lachain.Console
 
             System.Console.WriteLine("-------------------------------");
             System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
+            System.Console.WriteLine($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
+            System.Console.WriteLine($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
@@ -112,7 +114,6 @@ namespace Lachain.Console
                 txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
             }
 
-            System.Console.WriteLine(ContractRegisterer.GovernanceContract.ToHex());
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 
             while (!_interrupt)

@@ -29,6 +29,7 @@ namespace Lachain.Core.Vault
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
         private TrustlessKeygen? _currentKeygen;
+        private bool _confirmSent;
         private IDictionary<UInt256, int> _confirmations;
 
         public KeyGenManager(
@@ -49,6 +50,7 @@ namespace Lachain.Core.Vault
 
         private void BlockManagerOnSystemContractInvoked(object _, ContractContext context)
         {
+            Logger.LogInformation($"Detected call of GovernanceContract");
             var tx = context.Receipt.Transaction;
             if (!tx.To.Equals(ContractRegisterer.GovernanceContract)) return;
             if (tx.Invocation.Length < 4) return;
@@ -57,23 +59,35 @@ namespace Lachain.Core.Vault
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
             if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodChangeValidators))
             {
+                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
                 var args = decoder.Decode(GovernanceInterface.MethodChangeValidators);
                 var publicKeys =
                     (args[0] as byte[][] ?? throw new ArgumentException("Cannot parse method args"))
                     .Select(x => x.ToPublicKey())
                     .ToArray();
-                if (!publicKeys.Contains(_privateWallet.EcdsaKeyPair.PublicKey)) return;
+                if (!publicKeys.Contains(_privateWallet.EcdsaKeyPair.PublicKey))
+                {
+                    Logger.LogInformation("Skipping validator change event since we are not new validator");
+                    return;
+                }
                 if (_currentKeygen != null)
                     throw new ArgumentException("Cannot start keygen, since one is already running");
                 var faulty = (publicKeys.Length - 1) / 3;
                 _currentKeygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
+                _confirmSent = false;
                 _confirmations = new Dictionary<UInt256, int>();
                 var commitTx = MakeCommitTransaction(_currentKeygen.StartKeygen());
                 if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
-                    Logger.LogError($"Error creating commit transaction ({commitTx.Hash}): {error}");
+                    Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
+                else
+                {
+                    Logger.LogInformation($"Commit transaction {commitTx.Hash.ToHex()} successfully sent");
+                    Logger.LogError($"tx={commitTx.Hash.ToHex()} from={commitTx.Transaction.From.ToHex()} nonce={commitTx.Transaction.Nonce}");
+                }
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenCommit))
             {
+                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
                 if (_currentKeygen is null) return;
                 var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
@@ -88,10 +102,17 @@ namespace Lachain.Core.Vault
                     )
                 );
                 if (_transactionPool.Add(sendValueTx) is var error && error != OperatingError.Ok)
-                    Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash}): {error}");
+                    Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash.ToHex()}): {error}");
+                else
+                {
+                    Logger.LogInformation($"Send value transaction {sendValueTx.Hash.ToHex()} successfully sent");
+                    Logger.LogError($"tx={sendValueTx.Hash.ToHex()} from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}");
+                }
+                    
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenSendValue))
             {
+                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 if (_currentKeygen is null) return;
                 var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
@@ -104,13 +125,20 @@ namespace Lachain.Core.Vault
                     new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
                 );
                 var keys = _currentKeygen.TryGetKeys();
-                if (!keys.HasValue) return;
+                if (!keys.HasValue || _confirmSent) return;
                 var confirmTx = MakeConfirmTransaction(keys.Value); 
                 if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
-                    Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash}): {error}");
+                    Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
+                else
+                {
+                    _confirmSent = true;
+                    Logger.LogInformation($"Confirm transaction {confirmTx.Hash.ToHex()} successfully sent");
+                    Logger.LogError($"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}");
+                }
             }
             else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenConfirm))
             {
+                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
                 if (_currentKeygen is null) return;
                 var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;

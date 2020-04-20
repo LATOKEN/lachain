@@ -138,7 +138,7 @@ namespace Lachain.Core.Consensus
                 _logger.LogInformation($"Block persist completed: {blockWithTransactions.Block.Hash.ToHex()}");
             else
                 _logger.LogError(
-                    $"Block {blockWithTransactions.Block.Header.Index} (${blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}");
+                    $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}");
         }
     }
 }

@@ -127,7 +127,7 @@ namespace Lachain.Console
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
-                    privShares[i].ToByteArray().ToHex()
+                    privShares[i].ToBytes().ToHex()
                 );
             }
         }
@@ -155,6 +155,12 @@ namespace Lachain.Console
         internal static void Main(string[] args)
         {
             Mcl.Init();
+            // GenWallet(
+            //     "wallet.json", 
+            //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 
+            //     "0x000000000000000000000000000000000000000000000000000000000000000000000000",
+            //     "0xcb436d851f7d58773a36daf94350f25635b06fb970dc670059529f6b3797b668"
+            // );
             // GenWallet(
             //     "wallet0.json", 
             //     "0a63d1202aa7b5052e2a823eb3873ee9f53709e967778bf39efcf1ea05bb3907", 

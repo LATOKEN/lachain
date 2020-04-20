@@ -54,5 +54,10 @@ namespace Lachain.Core.Blockchain.Validators
                 .Select(arg => arg.index)
                 .First();
         }
+
+        public bool IsValidatorForBlock(ECDSAPublicKey key, long block)
+        {
+            return GetValidatorsPublicKeys(block - 1).Contains(key);
+        }
     }
 }

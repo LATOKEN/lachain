@@ -7,6 +7,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 
@@ -93,6 +94,19 @@ namespace Lachain.ConsensusTest
 
             var restored = keys[0].TpkePublicKey.FullDecrypt(ciphertext, partiallyDecryptedShares);
             Assert.AreEqual(payload.ToHex(), restored.Data.ToHex());
+
+            var sigShares = keys
+                .Select(keyring => keyring.ThresholdSignaturePrivateKey)
+                .Select(key => key.HashAndSign(payload))
+                .ToArray();
+            foreach (var (share, i) in sigShares.WithIndex())
+            foreach (var keyring in keys)
+                Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet[i].ValidateSignature(share, payload));
+
+            var sig = keys[0].ThresholdSignaturePublicKeySet
+                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share)));
+            foreach (var keyring in keys)
+                Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet.SharedPublicKey.ValidateSignature(sig, payload));
         }
 
         [Test]

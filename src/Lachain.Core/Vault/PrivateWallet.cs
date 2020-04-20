@@ -59,14 +59,7 @@ namespace Lachain.Core.Vault
 
         public PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block)
         {
-            try
-            {
-                return _tsKeys.Predecessor(block + 1).Value;
-            }
-            catch (NoSuchItemException)
-            {
-                return null;
-            }
+            return !_tsKeys.TryPredecessor(block + 1, out var predecessor) ? null : predecessor.Value;
         }
 
         public void AddThresholdSignatureKeyAfterBlock(ulong block, PrivateKeyShare key)
@@ -83,7 +76,7 @@ namespace Lachain.Core.Vault
                 ThresholdSignatureKeys = new Dictionary<ulong, string>(
                     _tsKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
-                            p.Key, p.Value.ToByteArray().ToHex()
+                            p.Key, p.Value.ToBytes().ToHex()
                         )
                     )
                 ),

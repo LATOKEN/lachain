@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -12,16 +15,28 @@ namespace Lachain.Core.Blockchain
 {
     public class TransactionBuilder : ITransactionBuilder
     {
-        private readonly IStateManager _stateManager;
+        private static readonly ILogger<TransactionBuilder> Logger =
+            LoggerFactory.GetLoggerForClass<TransactionBuilder>();
 
-        public TransactionBuilder(IStateManager stateManager)
+        private readonly IStateManager _stateManager;
+        private readonly ITransactionPool _transactionPool;
+
+        public TransactionBuilder(IStateManager stateManager, ITransactionPool transactionPool)
         {
             _stateManager = stateManager;
+            _transactionPool = transactionPool;
+        }
+
+        public ulong GetCurrentNonceForAddress(UInt160 address)
+        {
+            var poolNonce = _transactionPool.GetMaxNonceForAddress(address);
+            var stateNonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(address);
+            return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
         }
 
         public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[]? input)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
+            var nonce = GetCurrentNonceForAddress(from);
             var tx = new Transaction
             {
                 Type = TransactionType.Transfer,
@@ -39,7 +54,7 @@ namespace Lachain.Core.Blockchain
 
         public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
+            var nonce = GetCurrentNonceForAddress(from);
             var tx = new Transaction
             {
                 Type = TransactionType.Deploy,
@@ -56,7 +71,7 @@ namespace Lachain.Core.Blockchain
 
         public Transaction TokenTransferTransaction(UInt160 contract, UInt160 from, UInt160 to, Money value)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
+            var nonce = GetCurrentNonceForAddress(from);
             var abi = ContractEncoder.Encode("transfer(address,uint256)", to, value.ToUInt256());
             var tx = new Transaction
             {
@@ -73,9 +88,15 @@ namespace Lachain.Core.Blockchain
             return tx;
         }
 
-        public Transaction InvokeTransaction(UInt160 from, UInt160 contract, Money value, string methodSignature, params dynamic[] values)
+        public Transaction InvokeTransaction(UInt160 from, UInt160 contract, Money value, string methodSignature,
+            params dynamic[] values)
         {
-            var nonce = _stateManager.CurrentSnapshot.Transactions.GetTotalTransactionCount(from);
+            var nonce = GetCurrentNonceForAddress(from);
+            Logger.LogError(
+                $"Building invoke tx from={from.ToHex()} to={contract.ToHex()}, " +
+                $"cur block={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()} " +
+                $"txs={_stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from)}"
+            );
             var abi = ContractEncoder.Encode(methodSignature, values);
             var tx = new Transaction
             {

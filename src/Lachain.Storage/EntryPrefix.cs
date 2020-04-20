@@ -36,5 +36,6 @@
         ConsensusState = 0x0b01,
         PendingValidators = 0x0b02,
         ConfirmationMessage = 0x0b03,
+        ValidatorsGeneration = 0x0b04,
     }
 }

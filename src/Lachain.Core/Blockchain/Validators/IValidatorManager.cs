@@ -10,5 +10,6 @@ namespace Lachain.Core.Blockchain.Validators
         IReadOnlyCollection<ECDSAPublicKey> GetValidatorsPublicKeys(long afterBlock);
         int GetValidatorIndex(ECDSAPublicKey publicKey, long afterBlock);
         ECDSAPublicKey GetPublicKey(uint validatorIndex, long afterBlock);
+        bool IsValidatorForBlock(ECDSAPublicKey key, long block);
     }
 }

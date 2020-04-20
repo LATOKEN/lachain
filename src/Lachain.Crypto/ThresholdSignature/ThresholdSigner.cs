@@ -20,6 +20,11 @@ namespace Lachain.Crypto.ThresholdSignature
 
         public ThresholdSigner(IEnumerable<byte> dataToSign, PrivateKeyShare privateKeyShare, PublicKeySet publicKeySet)
         {
+            if (!publicKeySet.Keys.Contains(privateKeyShare.GetPublicKeyShare()))
+                throw new ArgumentException(
+                    "Invalid private key share for threshold signature: " +
+                    "corresponding public key is not in keyring"
+                );
             _dataToSign = dataToSign.ToArray();
             _privateKeyShare = privateKeyShare;
             _publicKeySet = publicKeySet;
@@ -54,6 +59,7 @@ namespace Lachain.Crypto.ThresholdSignature
                 _logger.LogWarning($"Signature share {idx} is not valid: {sigShare.ToBytes().ToHex()}");
                 return false;
             }
+
             if (_collectedSharesNumber > _publicKeySet.Threshold)
             {
                 result = _signature;

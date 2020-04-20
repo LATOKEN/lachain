@@ -230,5 +230,15 @@ namespace Lachain.Core.Blockchain.Pool
             _transactions.Clear();
             _transactionsQueue.Clear();
         }
+
+        public ulong? GetMaxNonceForAddress(UInt160 address)
+        {
+            var txs = _transactions.Values
+                .Select(receipt => receipt.Transaction)
+                .Where(tx => tx.From.Equals(address))
+                .ToArray();
+            if (txs.Length == 0) return null;
+            return txs.Max(tx => tx.Nonce);
+        }
     }
 }
