@@ -48,7 +48,7 @@ namespace Lachain.Benchmark
             var configManager = _container.Resolve<IConfigManager>();
             var crypto = _container.Resolve<ICrypto>();
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
-            var transactionManager = _container.Resolve<ITransactionManager>();
+            var transactionSigner = _container.Resolve<ITransactionSigner>();
             var blockManager = _container.Resolve<IBlockManager>();
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
@@ -84,7 +84,7 @@ namespace Lachain.Benchmark
             Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
 
-            _BenchTxProcessing(transactionBuilder, blockchainContext, transactionManager, blockManager,
+            _BenchTxProcessing(transactionBuilder, blockchainContext, transactionSigner, blockManager,
                 blockchainManager, keyPair);
         }
 
