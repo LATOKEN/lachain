@@ -18,7 +18,7 @@ namespace Lachain.ConsensusTest
             var plainText = GetInput(players * msgSize, additionalInts);
             // --------------------------------------
 
-            _erasureCoding = new ErasureCoding();
+            _erasureCoding = new ErasureCoding(additionalInts);
             _countErrors = 2;
             _countErasures = 3;
             _plainText = plainText;
@@ -79,7 +79,7 @@ namespace Lachain.ConsensusTest
         {
             //var plainText = GetInput(_nPlayers * _msgSize, _additionalInts);
             _erasureCoding.Print("Plain Text", _plainText);
-            _erasureCoding.Encoder(_plainText);
+            _erasureCoding.EncoderInPlace(_plainText);
             _erasureCoding.Print("After encoding", _plainText);
 
             // emulator  net ====================================================

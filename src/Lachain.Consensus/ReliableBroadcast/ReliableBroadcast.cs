@@ -9,6 +9,7 @@ using Lachain.Crypto.Misc;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.Consensus.ReliableBroadcast
 {
