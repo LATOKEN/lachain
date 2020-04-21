@@ -258,5 +258,7 @@ PublishProfiles
 
 src/Lachain.Console/config.json
 src/Lachain.Benchmark/config.json
+src/Lachain.Console/wallet.json
+src/Lachain.Benchmark/wallet.json
 
 src/Lachain.Proto/*.cs
