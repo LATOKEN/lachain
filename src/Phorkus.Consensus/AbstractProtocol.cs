@@ -15,7 +15,8 @@ namespace Phorkus.Consensus
         public bool Terminated { get; protected set; }
         public IProtocolIdentifier Id { get; }
         protected readonly IConsensusBroadcaster Broadcaster;
-        private readonly Thread _thread;
+        private readonlyThread _thread;
+ 
         protected readonly IWallet Wallet;
         protected int N => Wallet.N;
         protected int F => Wallet.F;

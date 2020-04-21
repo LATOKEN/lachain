@@ -10,4 +10,7 @@
     <PackageReference Include="Grpc.Tools" Version="2.26.0" />
     <Protobuf Include="proto/*.proto" ProtoRoot="proto/" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="proto\.git" />
+  </ItemGroup>
 </Project>

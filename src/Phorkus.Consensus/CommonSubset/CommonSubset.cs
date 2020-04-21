@@ -29,6 +29,9 @@ namespace Phorkus.Consensus.CommonSubset
             _commonSubsetId = commonSubsetId;
             _binaryAgreementInput = new bool?[N];
             _binaryAgreementResult = new bool?[N];
+            
+            // var resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
+            // broadcaster.RegisterProtocols(new[] {_broadcasts[i], resultInterceptors});
             _reliableBroadcastResult = new EncryptedShare[N];
             _result = null;
         }
@@ -75,6 +78,11 @@ namespace Phorkus.Consensus.CommonSubset
         {
             _requested = ResultStatus.Requested;
 
+
+            //var sender = 0; // todo: temporarily 
+            //var broadcast = new ReliableBroadcast.ReliableBroadcast(new ReliableBroadcastId(sender, 0), _wallet, _broadcaster);
+            //_broadcaster.RegisterProtocols(new[] {broadcast, _resultInterceptors[i]});
+            
             Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                 (Id, new ReliableBroadcastId(GetMyId(), (int) _commonSubsetId.Era), request.Input));
 

@@ -1,5 +1,10 @@
+using System;
+using System.Data;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using Phorkus.Crypto.MCL.BLS12_381;
+using Phorkus.Proto;
 
 namespace Phorkus.Crypto.TPKE
 {
@@ -43,5 +48,37 @@ namespace Phorkus.Crypto.TPKE
             Id = id;
         }
         
+        public byte[] ToByte()
+        {   
+            return G1.ToBytesDelimited(U).
+                Concat(G2.ToBytesDelimited(W).
+                    Concat(BitConverter.GetBytes(Id).
+                        Concat(BitConverter.GetBytes(V.Length).
+                            Concat(V)))).ToArray();
+        }
+
+        public static EncryptedShare FromByte(byte[] buf)
+        {
+            var lenBuf = buf.Length;
+            var lenInt = 4;
+            if (lenBuf == 0)
+                throw new Exception("Failed to deserialize EncryptedShare");
+            var szG1 = BitConverter.ToInt32(buf.Take(lenInt).ToArray(), 0);
+            
+            var serU = G1.FromBytes(buf.Skip(lenInt).Take(szG1).ToArray());
+            var indentTo2 = lenInt + szG1;
+            var szG2 = BitConverter.ToInt32(buf.Skip(indentTo2).Take(lenInt).ToArray(), 0);
+            
+            var serW = G2.FromBytes(buf.Skip(indentTo2 + lenInt).Take(szG2).ToArray());
+            var indentToId = indentTo2 + lenInt + szG2;
+            var Id = BitConverter.ToInt32(buf.Skip(indentToId).Take(lenInt).ToArray(), 0);
+            
+            var indentToV = indentToId + lenInt;
+            var szV = BitConverter.ToInt32(buf.Skip(indentToV).Take(lenInt).ToArray(), 0);
+            
+            var serV = buf.Skip(indentToV + lenInt).Take(szV).ToArray();
+            return new EncryptedShare(serU, serV, serW, Id);
+            
+        }
     }
 }

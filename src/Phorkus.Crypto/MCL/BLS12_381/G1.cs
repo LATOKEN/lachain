@@ -36,7 +36,13 @@ namespace Phorkus.Crypto.MCL.BLS12_381
             }
             return buf.Take((int) len).ToArray();
         }
-
+        
+        public static byte[] ToBytesDelimited(G1 g1)
+        {
+            var buffer = ToBytes(g1);
+            return BitConverter.GetBytes(buffer.Length).Concat(buffer).ToArray();
+        }
+        
         public static G1 FromBytes(byte[] buf)
         {
             G1 g = new G1();

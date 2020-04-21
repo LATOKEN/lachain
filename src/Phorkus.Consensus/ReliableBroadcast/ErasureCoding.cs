@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using STH1123.ReedSolomon;
 
 namespace Phorkus.Consensus.ReliableBroadcast
@@ -15,19 +16,57 @@ namespace Phorkus.Consensus.ReliableBroadcast
         private int _dataSize;
         private int _additionalBits;
         
-        public ErasureCoding()
+        public ErasureCoding(int additionalBits)
         {
             _field = new GenericGF(285, 256, 0);
             _dataSize = 0;
-            _additionalBits = 0;
+            _additionalBits = additionalBits;
         }
-        public void Encoder(int [] plainData)
+        
+        public void  EncoderInPlace(int [] plainData)
         {
-            _dataSize = plainData.Length;
-            _additionalBits = _dataSize / 2 - 3;
             
             var rse = new ReedSolomonEncoder(_field);
-            rse.Encode(plainData, _additionalBits);
+            
+            rse.Encode(plainData, plainData.Length / 2);
+
+        }
+        
+        public byte[] EncoderToByte(int [] plainData, int additionalInts)
+        {
+            _dataSize = plainData.Length;
+            var countItems = _dataSize + additionalInts;
+            var tmp = new int[countItems];
+            for (var i = 0; i < _dataSize; i++)
+            {
+                tmp[i] = plainData[i];
+            }
+            for (var i = _dataSize; i < countItems; i++)
+            {
+                tmp[i] = 0;
+            }
+            var rse = new ReedSolomonEncoder(_field);
+            
+            rse.Encode(tmp, _dataSize);
+
+            return tmp.Select(current => BitConverter.GetBytes(current)[0]).ToArray();
+        }
+        public int[] Encoder(int [] plainData, int additionalInts)
+        {
+            _dataSize = plainData.Length;
+            var tmp = new int[_dataSize + additionalInts];
+            for (var i = 0; i < _dataSize; i++)
+            {
+                tmp[i] = plainData[i];
+            }
+            for (var i = _dataSize; i < _dataSize + additionalInts; i++)
+            {
+                tmp[i] = 0;
+            }
+            var rse = new ReedSolomonEncoder(_field);
+            
+            rse.Encode(tmp, _dataSize);
+            return tmp;
         }
         public void Decode(int [] encryptionText, int[] tips)
         {
@@ -36,7 +75,6 @@ namespace Phorkus.Consensus.ReliableBroadcast
             if(rsd.Decode(encryptionText, _additionalBits, tips))
             {
                 Console.WriteLine("Data corrected.");
-                //Console.WriteLine(String.Join(", ", afterRecieve.ToArray()));
             }
             else
             {

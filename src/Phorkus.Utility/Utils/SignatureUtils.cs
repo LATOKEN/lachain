@@ -12,7 +12,8 @@ namespace Phorkus.Utility.Utils
 
         public static bool IsZero(this Signature signature)
         {
-            return Zero.Equals(signature);
+            return Zero.
+                Equals(signature);
         }
         
         public static Signature ToSignature(this byte[] signature)
