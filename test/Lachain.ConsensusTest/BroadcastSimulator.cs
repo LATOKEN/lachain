@@ -117,22 +117,27 @@ namespace Lachain.ConsensusTest
                     CheckRequest(hbbftId);
                     Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
+                case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                    var rbIdReadyMsg = new ReliableBroadcastId( message.ReadyMessage.Sender, (int) message.Validator.Era);
+                    CheckRequest(rbIdReadyMsg);
+                    Registry[rbIdReadyMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
+                    break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(from, (int) message.Validator.Era);
+                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.Sender, (int) message.Validator.Era);
                     CheckRequest(reliableBroadcastId);
                     Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
+                    break; 
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(from, (int) message.Validator.Era);
+                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.Sender, (int) message.Validator.Era);
                     CheckRequest(rbIdEchoMsg);
                     Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
-                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                    var idEncryptedShare =
-                        new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
-                    CheckRequest(idEncryptedShare);
-                    Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
+                // case ConsensusMessage.PayloadOneofCase.EncryptedShare:
+                //     var idEncryptedShare =
+                //         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
+                //     CheckRequest(idEncryptedShare);
+                //     Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var idRoot = new RootProtocolId(message.Validator.Era);
                     CheckRequest(idRoot);

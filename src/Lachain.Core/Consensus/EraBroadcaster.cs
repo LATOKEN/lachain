@@ -152,16 +152,21 @@ namespace Lachain.Core.Consensus
                     var rbIdEchoMsg = new ReliableBroadcastId(from, (int) message.Validator.Era);
                     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
+                case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                    var rbIdReadyMsg = new ReliableBroadcastId(from, (int) message.Validator.Era);
+                    EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var rootId = new RootProtocolId(message.Validator.Era);
                     EnsureProtocol(rootId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
-                // TODO: this is only for mock RBC
-                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                    var idEncryptedShare =
-                        new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
-                    EnsureProtocol(idEncryptedShare)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
+
+                // // TODO: this is only for mock RBC
+                // case ConsensusMessage.PayloadOneofCase.EncryptedShare:
+                //     var idEncryptedShare =
+                //         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
+                //     EnsureProtocol(idEncryptedShare)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");
             }
@@ -269,7 +274,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    var rbc = new MockReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
+                    var rbc = new ReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:

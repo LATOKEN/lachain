@@ -59,7 +59,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                 _receivedBatchesOfBlocks[i] = new List<int>();
             }
 
-            _store = new List<int>(); // todo: store должен быть int[] и превратится в EncryptedShare
+            _store = new List<int>();
 
             // additional bits in Erasure Coding = the count of players (N)
             var coeff = 1; // may be var to decrease 0.5 
@@ -123,7 +123,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 "Thread {0} ID {1} was called HandleInputMessage()", Thread.CurrentThread.ManagedThreadId, GetMyId());
             if (broadcastRequested.Input == null) return;
             var realInput = broadcastRequested.Input.ToByte();
-
 
             // for debug
             // var lPeice = N;

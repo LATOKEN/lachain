@@ -31,8 +31,8 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        private const int N = 8;
-        private const int F = 2;
+        private const int N = 22;
+        private const int F = 5;
         private readonly int sender = 0;
 
         private DeliveryService _deliveryService;
@@ -55,16 +55,24 @@ namespace Lachain.ConsensusTest
         [Test]
         public void Run()
         {
-            var share = new EncryptedShare(G1.Generator, null, G2.Generator, sender);
+            var share = new EncryptedShare(G1.Generator, new byte[]{1, 2, 3, 4, 5, 6}, G2.Generator, sender);
             SetUpAllHonest();
             for (var i = 0; i < N; ++i)
+            {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? share : null
+                    //_resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? share : share
                 ));
-
+            }
+            
             for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
-
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.AreEqual(share, _resultInterceptors[i].Result);
+            }
+            
             for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+            
         }
     }
 }
