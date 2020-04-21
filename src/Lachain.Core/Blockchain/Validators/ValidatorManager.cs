@@ -26,9 +26,8 @@ namespace Lachain.Core.Blockchain.Validators
             return new PublicConsensusKeySet(
                 n, f,
                 PublicKey.FromBytes(state.TpkePublicKey.ToByteArray()),
-                VerificationKey.FromBytes(state.TpkeVerificationKey.ToByteArray()),
                 new PublicKeySet(
-                    state.Validators.Select(v => PublicKeyShare.FromBytes(v.ThresholdSignaturePublicKey.ToByteArray())),
+                    state.Validators.Select(v => Crypto.ThresholdSignature.PublicKey.FromBytes(v.ThresholdSignaturePublicKey.ToByteArray())),
                     f
                 ),
                 state.Validators.Select(v => v.PublicKey)
@@ -54,6 +53,11 @@ namespace Lachain.Core.Blockchain.Validators
                 .Where(arg => publicKey.Equals(arg.key))
                 .Select(arg => arg.index)
                 .First();
+        }
+
+        public bool IsValidatorForBlock(ECDSAPublicKey key, long block)
+        {
+            return GetValidatorsPublicKeys(block - 1).Contains(key);
         }
     }
 }

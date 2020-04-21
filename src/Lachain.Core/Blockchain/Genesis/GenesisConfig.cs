@@ -27,15 +27,12 @@ namespace Lachain.Core.Blockchain.Genesis
         [JsonProperty("TPKEPublicKey")]
         public string? ThresholdEncryptionPublicKey;
         
-        [JsonProperty("TPKEVerificationKey")]
-        public string? ThresholdEncryptionVerificationKey;
-
         public void ValidateOrThrow()
         {
             if (Validators.Count == 0) throw new ArgumentException("Initial validators must be specified in genesis config");
             if (Validators.Any(v => v.EcdsaPublicKey is null || v.ResolvableName is null || v.ThresholdSignaturePublicKey is null))
                 throw new ArgumentException("Incorrect validator information in config");
-            if (ThresholdEncryptionPublicKey is null || ThresholdEncryptionVerificationKey is null)
+            if (ThresholdEncryptionPublicKey is null)
                 throw new ArgumentException("Initial threshold encryption keyring is incomplete");
         }
     }

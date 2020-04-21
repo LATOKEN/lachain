@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
@@ -17,8 +18,8 @@ namespace Lachain.Core.Blockchain.OperationManager
     {
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IReadOnlyDictionary<TransactionType, ITransactionExecuter> _transactionPersisters;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
+        public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
@@ -26,9 +27,12 @@ namespace Lachain.Core.Blockchain.OperationManager
             IContractRegisterer contractRegisterer,
             IStateManager stateManager)
         {
+            var contractTransactionExecuter = new ContractTransactionExecuter(contractRegisterer, virtualMachine);
+            contractTransactionExecuter.OnSystemContractInvoked +=
+                (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
             _transactionPersisters = new Dictionary<TransactionType, ITransactionExecuter>
             {
-                {TransactionType.Transfer, new ContractTransactionExecuter(contractRegisterer, virtualMachine)},
+                {TransactionType.Transfer, contractTransactionExecuter},
                 {TransactionType.Deploy, new DeployTransactionExecuter(virtualMachine)}
             };
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
@@ -44,7 +48,6 @@ namespace Lachain.Core.Blockchain.OperationManager
         public event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         public event EventHandler<TransactionReceipt>? OnTransactionFailed;
         public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
-        public event EventHandler<TransactionReceipt>? OnTransactionSigned;
 
         public TransactionReceipt? GetByHash(UInt256 transactionHash)
         {
@@ -86,27 +89,6 @@ namespace Lachain.Core.Blockchain.OperationManager
             /* finalize transaction state */
             OnTransactionExecuted?.Invoke(this, receipt);
             return OperatingError.Ok;
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public TransactionReceipt Sign(Transaction transaction, ECDSAKeyPair keyPair)
-        {
-            /* use raw byte arrays to sign transaction hash */
-            var messageHash = HashUtils.ToHash256(transaction);
-            
-            var signature = _crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Buffer.ToByteArray());
-            /* we're afraid */
-            var pubKey = _crypto.RecoverSignatureHashed(messageHash.ToBytes(), signature);
-            if (!pubKey.SequenceEqual(keyPair.PublicKey.Buffer.ToByteArray()))
-                throw new InvalidKeyPairException();
-            var signed = new TransactionReceipt
-            {
-                Transaction = transaction,
-                Hash = messageHash,
-                Signature = signature.ToSignature()
-            };
-            OnTransactionSigned?.Invoke(this, signed);
-            return signed;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

@@ -12,13 +12,13 @@ namespace Lachain.Consensus.HoneyBadger
 {
     public class HoneyBadger : AbstractProtocol
     {
-        private HoneyBadgerId _honeyBadgerId;
+        private readonly HoneyBadgerId _honeyBadgerId;
         private ResultStatus _requested;
         private readonly ILogger<HoneyBadger> _logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
-        
+
         private readonly PrivateKey _privateKey;
 
-        private readonly EncryptedShare[] _receivedShares;
+        private readonly EncryptedShare?[] _receivedShares;
         private IRawShare? _rawShare;
         private EncryptedShare? _encryptedShare;
         private readonly IRawShare?[] _shares;
@@ -28,7 +28,7 @@ namespace Lachain.Consensus.HoneyBadger
         private readonly bool[] _taken;
         private bool _takenSet;
 
-        public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet, 
+        public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet,
             PrivateKey privateKey, IConsensusBroadcaster broadcaster)
             : base(wallet, honeyBadgerId, broadcaster)
         {
@@ -130,7 +130,7 @@ namespace Lachain.Consensus.HoneyBadger
 
             _takenSet = true;
 
-            foreach (EncryptedShare share in result.Result)
+            foreach (var share in result.Result)
             {
                 CheckDecryptedShares(share.Id);
             }
@@ -149,14 +149,7 @@ namespace Lachain.Consensus.HoneyBadger
 
         private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg)
         {
-            PartiallyDecryptedShare share = Wallet.TpkePublicKey.Decode(msg);
-            if (_receivedShares[share.ShareId] != null)
-                if (!Wallet.TpkeVerificationKey.Verify(_receivedShares[share.ShareId], share))
-                {
-                    // possible fault evidence
-                    return;
-                }
-
+            var share = Wallet.TpkePublicKey.Decode(msg);
             _decryptedShares[share.ShareId].Add(share);
             CheckDecryptedShares(share.ShareId);
         }
@@ -168,6 +161,7 @@ namespace Lachain.Consensus.HoneyBadger
             if (_decryptedShares[id].Count < F + 1) return;
 
             if (_shares[id] != null) return;
+            if (_receivedShares[id] is null) return;
 
             _logger.LogInformation($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
             _shares[id] = Wallet.TpkePublicKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
@@ -179,32 +173,14 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (!_takenSet) return;
             if (_result != null) return;
+            if (_taken.Zip(_shares, (b, share) => b && share is null).Any(x => x)) return;
 
-            for (var i = 0; i < N; ++i)
-                if (_taken[i] && _shares[i] == null)
-                    return;
-
-            _result = new HashSet<IRawShare>();
-
-            for (var i = 0; i < N; ++i)
-                if (_taken[i])
-                {
-                    _logger.LogDebug($"Added share {i} to result");
-                    _result.Add(_shares[i]);
-                }
+            _result = _taken.Zip(_shares, (b, share) => (b, share))
+                .Where(x => x.b)
+                .Select(x => x.share ?? throw new Exception("impossible"))
+                .ToHashSet();
 
             CheckResult();
-        }
-
-        private bool VerifyReceivedSharesByIndex(int i)
-        {
-            if (_receivedShares[i] == null) return false;
-
-            if (_decryptedShares[i].All(part => Wallet.TpkeVerificationKey.Verify(_receivedShares[i], part)))
-                return true;
-            _logger.LogDebug($"{GetMyId()}: Verification failed {i}");
-            return false;
-
         }
     }
 }

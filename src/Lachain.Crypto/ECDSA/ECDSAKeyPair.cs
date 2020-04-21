@@ -1,30 +1,26 @@
 ﻿using System;
-using Google.Protobuf;
 using Lachain.Proto;
 
-namespace Lachain.Crypto
+namespace Lachain.Crypto.ECDSA
 {
-    public class ECDSAKeyPair : IEquatable<ECDSAKeyPair>
+    public class EcdsaKeyPair : IEquatable<EcdsaKeyPair>
     {
         public readonly ECDSAPrivateKey PrivateKey;
         public readonly ECDSAPublicKey PublicKey;
 
-        public ECDSAKeyPair(ECDSAPrivateKey privateKey, ECDSAPublicKey publicKey)
+        public EcdsaKeyPair(ECDSAPrivateKey privateKey, ECDSAPublicKey publicKey)
         {
             PrivateKey = privateKey;
             PublicKey = publicKey;
         }
 
-        public ECDSAKeyPair(ECDSAPrivateKey privateKey, ICrypto crypto)
+        public EcdsaKeyPair(ECDSAPrivateKey privateKey)
         {
             PrivateKey = privateKey;
-            PublicKey = new ECDSAPublicKey
-            {
-                Buffer = ByteString.CopyFrom(crypto.ComputePublicKey(privateKey.Buffer.ToByteArray(), true))
-            };
+            PublicKey = privateKey.GetPublicKey();
         }
 
-        public bool Equals(ECDSAKeyPair? other)
+        public bool Equals(EcdsaKeyPair? other)
         {
             if (ReferenceEquals(this, other))
                 return true;
@@ -33,7 +29,7 @@ namespace Lachain.Crypto
 
         public override bool Equals(object? obj)
         {
-            return Equals(obj as ECDSAKeyPair);
+            return Equals(obj as EcdsaKeyPair);
         }
 
         public override int GetHashCode()

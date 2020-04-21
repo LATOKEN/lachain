@@ -127,26 +127,22 @@ namespace Lachain.Core.Network
                 envelope.RemotePeer ?? throw new InvalidOperationException()
             );
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
         {
             try
             {
-                var index = _validatorManager.GetValidatorIndex(
-                    envelope.PublicKey ?? throw new InvalidOperationException(),
-                    message.Validator.Era - 1
-                );
                 if (envelope.Signature is null ||
                     !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
                         envelope.PublicKey.EncodeCompressed())
                 )
                 {
                     throw new UnauthorizedAccessException(
-                        $"Message signed by validator {index}, but signature is not correct");
+                        $"Message signed by validator {envelope.PublicKey.ToHex()}, but signature is not correct");
                 }
 
-                _consensusManager.Dispatch(message, index);
+                _consensusManager.Dispatch(message, envelope.PublicKey);
             }
             catch (ConsensusStateNotPresentException)
             {

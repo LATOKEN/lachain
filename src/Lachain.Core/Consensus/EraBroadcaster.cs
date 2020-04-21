@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Consensus;
@@ -12,13 +11,10 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
-using Lachain.Consensus.TPKE;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Validators;
-using Lachain.Crypto;
+using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
-using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
 namespace Lachain.Core.Consensus
@@ -33,7 +29,7 @@ namespace Lachain.Core.Consensus
         private readonly long _era;
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IMessageFactory _messageFactory;
-        private readonly IPrivateConsensusKeySet _wallet;
+        private readonly IPrivateWallet _wallet;
         private bool _terminated;
 
         /**
@@ -50,7 +46,7 @@ namespace Lachain.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            IPrivateConsensusKeySet wallet
+            IPrivateWallet wallet
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -143,22 +139,6 @@ namespace Lachain.Core.Consensus
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
                     EnsureProtocol(idCoin).ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.TpkeKeys:
-                    var idTpkeKeys = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idTpkeKeys).ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.PolynomialValue:
-                    var idPolynomialValue = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idPolynomialValue)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
-                    var idHiddenPolynomial = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idHiddenPolynomial)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
-                    var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
-                    EnsureProtocol(idConfirmationHash).ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
@@ -284,7 +264,8 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
-                    var coin = new CommonCoin(coinId, publicKeySet, _wallet.ThresholdSignaturePrivateKeyShare, this);
+                    var coin = new CommonCoin(coinId, publicKeySet,
+                        _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1), this);
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
@@ -300,7 +281,8 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
-                    var hb = new HoneyBadger(hbId, publicKeySet, _wallet.TpkePrivateKey, this);
+                    var hb = new HoneyBadger(hbId, publicKeySet, _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1),
+                        this);
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:

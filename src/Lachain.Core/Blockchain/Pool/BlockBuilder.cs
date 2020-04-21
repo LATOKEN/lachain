@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Crypto;
+using Lachain.Crypto.Misc;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 

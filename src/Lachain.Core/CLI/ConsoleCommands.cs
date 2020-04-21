@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -16,32 +17,33 @@ namespace Lachain.Core.CLI
 {
     public class ConsoleCommands : IConsoleCommands
     {
-        private const uint AddressLength = 20;
         private const uint TxLength = 32;
 
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly IStateManager _stateManager;
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly EcdsaKeyPair _keyPair;
         private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
+            ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IStateManager stateManager,
             IVirtualMachine virtualMachine,
-            ECDSAKeyPair keyPair
+            EcdsaKeyPair keyPair
         )
         {
             _blockManager = blockManager;
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
+            _transactionSigner = transactionSigner;
             _stateManager = stateManager;
             _keyPair = keyPair;
             _virtualMachine = virtualMachine;
@@ -131,26 +133,26 @@ namespace Lachain.Core.CLI
 
         public string DeployContract(string[] arguments)
         {
-            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var from = _keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var hash = from.Buffer.ToByteArray().Concat(BitConverter.GetBytes(nonce)).Keccak();
+            var hash = from.ToBytes().Concat(BitConverter.GetBytes(nonce)).Keccak();
             var byteCode = arguments[1].HexToBytes();
             if (!_virtualMachine.VerifyContract(byteCode))
                 return "Unable to validate smart-contract code";
-            Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
+            Console.WriteLine("Contract Hash: " + hash.ToHex());
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
-            return signedTx.Hash.Buffer.ToHex();
+            return signedTx.Hash.ToHex();
         }
 
         public string CallContract(string[] arguments)
         {
-            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var from = _keyPair.PublicKey.GetAddress();
             var contractHash = arguments[1].HexToUInt160();
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
             if (contract is null)
-                return $"Unable to find contract by hash {contractHash.Buffer.ToHex()}";
+                return $"Unable to find contract by hash {contractHash.ToHex()}";
             Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
             var result = _stateManager.SafeContext(() =>
             {
@@ -203,9 +205,9 @@ namespace Lachain.Core.CLI
         {
             var to = arguments[1].HexToUInt160();
             var value = Money.Parse(arguments[2]);
-            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value);
-            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
             return signedTx.Signature.ToString();
         }
 
@@ -234,9 +236,9 @@ namespace Lachain.Core.CLI
             var to = arguments[1].HexToUInt160();
             var value = Money.Parse(arguments[2]);
             var fee = Money.Parse(arguments[3]);
-            var from = _crypto.ComputeAddress(_keyPair.PublicKey.Buffer.ToByteArray()).ToUInt160();
+            var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value);
-            var signedTx = _transactionManager.Sign(tx, _keyPair);
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }
@@ -258,7 +260,7 @@ namespace Lachain.Core.CLI
             var tx = Transaction.Parser.ParseFrom(
                 arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
-            Console.WriteLine($"Tx Hash: {HashUtils.ToHash256(tx).Buffer.ToHex()}");
+            Console.WriteLine($"Tx Hash: {HashUtils.ToHash256(tx).ToHex()}");
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,

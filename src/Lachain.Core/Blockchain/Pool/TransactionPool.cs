@@ -25,8 +25,8 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
 
-        private ISet<TransactionReceipt> _transactionsQueue = new HashSet<TransactionReceipt>();
-        private ISet<TransactionReceipt> _relayQueue = new HashSet<TransactionReceipt>();
+        private ISet<TransactionReceipt> _transactionsQueue;
+        private ISet<TransactionReceipt> _relayQueue;
 
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
@@ -42,6 +42,8 @@ namespace Lachain.Core.Blockchain.Pool
             _transactionManager = transactionManager;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
+            _transactionsQueue = new HashSet<TransactionReceipt>();
+            _relayQueue = new HashSet<TransactionReceipt>();
 
             blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
             Restore();
@@ -227,6 +229,16 @@ namespace Lachain.Core.Blockchain.Pool
         {
             _transactions.Clear();
             _transactionsQueue.Clear();
+        }
+
+        public ulong? GetMaxNonceForAddress(UInt160 address)
+        {
+            var txs = _transactions.Values
+                .Select(receipt => receipt.Transaction)
+                .Where(tx => tx.From.Equals(address))
+                .ToArray();
+            if (txs.Length == 0) return null;
+            return txs.Max(tx => tx.Nonce);
         }
     }
 }

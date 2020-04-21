@@ -28,7 +28,7 @@ namespace Lachain.Networking
 
         public static PeerAddress FromNode(Node node)
         {
-            var publicKeyHex = node.PublicKey.Buffer.ToHex();
+            var publicKeyHex = node.PublicKey.ToHex();
             if (publicKeyHex.StartsWith("0x"))
                 publicKeyHex = publicKeyHex.Substring(2);
             var match = IpEndPointPattern.Match(node.Address);
@@ -80,7 +80,7 @@ namespace Lachain.Networking
         
         public override string ToString()
         {
-            return $"{Protocol.ToString().ToLower()}://{Host}:{Port}@{PublicKey?.Buffer?.ToHex()?.Substring(2)}";
+            return $"{Protocol.ToString().ToLower()}://{Host}:{Port}@{PublicKey?.ToHex().Substring(2)}";
         }
         
         public override int GetHashCode()

@@ -30,12 +30,12 @@ namespace Lachain.Core.Blockchain.OperationManager
                 /* if there is no validator's public key than skip it */
                 if (!multisig.Validators.Contains(entry.Key))
                     continue;
-                var publicKey = entry.Key.Buffer.ToByteArray();
-                var sig = entry.Value.Buffer.ToByteArray();
+                var publicKey = entry.Key.EncodeCompressed();
+                var sig = entry.Value.Encode();
                 try
                 {
                     /* if signature invalid that skip it */
-                    if (!_crypto.VerifySignature(hash.Buffer.ToByteArray(), sig, publicKey))
+                    if (!_crypto.VerifySignature(hash.ToBytes(), sig, publicKey))
                         continue;
                     /* increment count of verified signatures */
                     ++verified;

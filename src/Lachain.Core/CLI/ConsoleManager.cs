@@ -9,6 +9,7 @@ using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Storage.State;
 
 namespace Lachain.Core.CLI
@@ -18,6 +19,7 @@ namespace Lachain.Core.CLI
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
@@ -30,6 +32,7 @@ namespace Lachain.Core.CLI
             ITransactionBuilder transactionBuilder,
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
+            ITransactionSigner transactionSigner,
             IVirtualMachine virtualMachine,
             IBlockManager blockManager,
             IStateManager stateManager
@@ -39,14 +42,15 @@ namespace Lachain.Core.CLI
             _transactionBuilder = transactionBuilder;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
+            _transactionSigner = transactionSigner;
             _stateManager = stateManager;
             _virtualMachine = virtualMachine;
         }
 
-        private void _Worker(ECDSAKeyPair keyPair)
+        private void _Worker(EcdsaKeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(
-                _transactionBuilder, _transactionPool, _transactionManager,
+                _transactionBuilder, _transactionPool, _transactionManager, _transactionSigner,
                 _blockManager, _stateManager, _virtualMachine, keyPair
             );
             try
@@ -88,7 +92,7 @@ namespace Lachain.Core.CLI
             }
         }
 
-        public void Start(ECDSAKeyPair keyPair)
+        public void Start(EcdsaKeyPair keyPair)
         {
             Task.Factory.StartNew(() =>
             {

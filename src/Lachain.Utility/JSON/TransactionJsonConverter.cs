@@ -11,10 +11,10 @@ namespace Lachain.Utility.JSON
             var json = new JObject
             {
                 ["type"] = transaction.Type.ToString(),
-                ["to"] = transaction.To?.ToHex(),
-                ["invocation"] = transaction.Invocation?.ToHex(),
-                ["value"] = transaction.Value.Buffer.ToHex(),
-                ["from"] = transaction.From.Buffer?.ToHex(),
+                ["to"] = transaction.To.ToHex(),
+                ["invocation"] = transaction.Invocation.ToHex(),
+                ["value"] = transaction.Value.ToHex(),
+                ["from"] = transaction.From.ToHex(),
                 ["nonce"] = transaction.Nonce,
                 ["gasLimit"] = transaction.GasLimit,
                 ["gasPrice"] = transaction.GasPrice,
@@ -26,9 +26,9 @@ namespace Lachain.Utility.JSON
         {
             var json = new JObject
             {
-                ["transaction"] = acceptedTransaction.Transaction?.ToJson(),
-                ["hash"] = acceptedTransaction.Hash?.Buffer?.ToHex(),
-                ["signature"] = acceptedTransaction.Signature?.Buffer?.ToHex(),
+                ["transaction"] = acceptedTransaction.Transaction.ToJson(),
+                ["hash"] = acceptedTransaction.Hash.ToHex(),
+                ["signature"] = acceptedTransaction.Signature.ToHex(),
                 ["block"] = acceptedTransaction.Block,
                 ["status"] = acceptedTransaction.Status.ToString()
             };

@@ -26,15 +26,5 @@ namespace Lachain.Utility.Utils
 
             return oldValue;
         }
-
-        public static V Compute<U, V>(this IDictionary<U, V> dictionary, U key, Func<U, V, V> fn)
-        {
-            if (!dictionary.TryGetValue(key, out var oldValue))
-            {
-                return dictionary[key] = fn(key, default);
-            }
-
-            return dictionary[key] = fn(key, oldValue);
-        }
     }
 }

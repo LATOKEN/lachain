@@ -17,7 +17,7 @@ namespace Lachain.Consensus.CommonCoin
         private readonly IThresholdSigner _thresholdSigner;
         private CoinResult? _result;
         private ResultStatus _requested = ResultStatus.NotRequested;
-        private readonly ILogger<CommonCoin> _logger = LoggerFactory.GetLoggerForClass<CommonCoin>();
+        private static readonly ILogger<CommonCoin> Logger = LoggerFactory.GetLoggerForClass<CommonCoin>();
 
         public CommonCoin(
             CoinId coinId, IPublicConsensusKeySet wallet, PrivateKeyShare privateKeyShare,
@@ -29,6 +29,7 @@ namespace Lachain.Consensus.CommonCoin
                 _coinId.ToByteArray(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
             );
             _result = null;
+            Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToBytes().ToHex()}");
         }
 
         private void CheckResult()
@@ -61,7 +62,7 @@ namespace Lachain.Consensus.CommonCoin
                 if (!_thresholdSigner.AddShare(
                     Wallet.ThresholdSignaturePublicKeySet[envelope.ValidatorIndex], signatureShare, out var signature))
                 {
-                    _logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
+                    Logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
                     return; // potential fault evidence
                 }
 

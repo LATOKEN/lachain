@@ -38,7 +38,7 @@ namespace Lachain.Core.RPC.HTTP
             var addressUint160 = address.HexToBytes().ToUInt160();
             var availableBalance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
-            return availableBalance.ToUInt256().Buffer.ToHex();
+            return availableBalance.ToUInt256().ToHex();
         }
 
         [JsonRpcMethod("verifyRawTransaction")]
@@ -49,7 +49,7 @@ namespace Lachain.Core.RPC.HTTP
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
             var json = new JObject
             {
-                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
             };
             var accepted = new TransactionReceipt
             {
@@ -72,7 +72,7 @@ namespace Lachain.Core.RPC.HTTP
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             var json = new JObject
             {
-                ["hash"] = HashUtils.ToHash256(transaction).Buffer.ToHex()
+                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
             };
             var result = _transactionPool.Add(
                 transaction, signature.HexToBytes().ToSignature());
@@ -91,7 +91,7 @@ namespace Lachain.Core.RPC.HTTP
                 from.HexToBytes().ToUInt160());
             return result;
         }
-        
+
         [JsonRpcMethod("invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {

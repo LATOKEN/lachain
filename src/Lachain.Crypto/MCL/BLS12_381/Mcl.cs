@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace Lachain.Crypto.MCL.BLS12_381
 {
@@ -27,7 +24,8 @@ namespace Lachain.Crypto.MCL.BLS12_381
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
             var res = new G2();
-            MclImports.mclBn_G2LagrangeInterpolation(ref res, xs, ys, xs.Length);
+            if (MclImports.mclBn_G2LagrangeInterpolation(ref res, xs, ys, xs.Length) != 0)
+                throw new Exception("Lagrange interpolation failed");
             return res;
         }
 
@@ -35,7 +33,17 @@ namespace Lachain.Crypto.MCL.BLS12_381
         {
             if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
             var res = new G1();
-            MclImports.mclBn_G1LagrangeInterpolation(ref res, xs, ys, xs.Length);
+            if (MclImports.mclBn_G1LagrangeInterpolation(ref res, xs, ys, xs.Length) != 0)
+                throw new Exception("Lagrange interpolation failed");
+            return res;
+        }
+
+        public static Fr LagrangeInterpolateFr(Fr[] xs, Fr[] ys)
+        {
+            if (xs.Length != ys.Length) throw new ArgumentException("arrays are unequal length");
+            var res = new Fr();
+            if (MclImports.mclBn_FrLagrangeInterpolation(ref res, xs, ys, xs.Length) != 0)
+                throw new Exception("Lagrange interpolation failed");
             return res;
         }
 
@@ -46,58 +54,36 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return res;
         }
 
-//        public static Fr GetValue(IEnumerable<Fr> P, int at)
-//        {
-//            var res = Fr.FromInt(0);
-//            var by = Fr.FromInt(at);
-//            var cur = Fr.FromInt(1);
-//
-//            foreach (var coeff in P)
-//            {
-//                res += cur * coeff;
-//                cur *= by;
-//            }
-//
-//            return res;
-//        }
-
-        public static dynamic GetValue(IEnumerable<dynamic> P, int at, dynamic zero)
+        public static Fr GetValue(Fr[] poly, Fr at)
         {
-            var res = zero;
-            var by = Fr.FromInt(at);
-            var cur = Fr.FromInt(1);
-
-            foreach (var coeff in P)
-            {
-                res += coeff * cur;
-                cur *= by;
-            }
-
+            var res = Fr.Zero;
+            if (MclImports.mclBn_FrEvaluatePolynomial(ref res, poly, poly.Length, ref at) != 0)
+                throw new Exception("Polynomial evaluation failed");
             return res;
         }
 
-//        public static G2 GetValue(IEnumerable<G2> P, int at)
-//        {
-//            var res = G2.Zero;
-//            var by = Fr.FromInt(at);
-//            var cur = Fr.FromInt(1);
-//
-//            foreach (var coeff in P)
-//            {
-//                res += coeff * cur;
-//                cur *= by;
-//            }
-//
-//            return res;
-//        }
-
-
-        public static byte[] CalculateHash(IEnumerable<G1> g1, IEnumerable<G2> g2)
+        public static G1 GetValue(G1[] poly, Fr at)
         {
-            var temp = new byte[0];
-            temp = g1.Aggregate(temp, (current, g) => current.Concat(G1.ToBytes(g)).ToArray());
-            temp = g2.Aggregate(temp, (current, g) => current.Concat(G2.ToBytes(g)).ToArray());
-            return temp.KeccakBytes();
+            var res = G1.Zero;
+            if (MclImports.mclBn_G1EvaluatePolynomial(ref res, poly, poly.Length, ref at) != 0)
+                throw new Exception("Polynomial evaluation failed");
+            return res;
+        }
+
+        public static G2 GetValue(G2[] poly, Fr at)
+        {
+            var res = G2.Zero;
+            if (MclImports.mclBn_G2EvaluatePolynomial(ref res, poly, poly.Length, ref at) != 0)
+                throw new Exception("Polynomial evaluation failed");
+            return res;
+        }
+
+        public static Fr[] Powers(Fr x, int n)
+        {
+            var result = new Fr[n];
+            result[0] = Fr.One;
+            for (var i = 1; i < n; ++i) result[i] = result[i - 1] * x;
+            return result;
         }
     }
 }

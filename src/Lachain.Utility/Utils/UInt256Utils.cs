@@ -17,10 +17,10 @@ namespace Lachain.Utility.Utils
         {
             return Zero.Equals(value);
         }
-        
+
         public static BigInteger ToBigInteger(this UInt256 value)
         {
-            return new BigInteger(value.Buffer.ToByteArray().Concat(new byte[] {0}).ToArray());
+            return new BigInteger(value.ToBytes().Concat(new byte[] {0}).ToArray());
         }
 
         public static UInt256 ToUInt256(this BigInteger value)
@@ -38,18 +38,22 @@ namespace Lachain.Utility.Utils
             return new Money(value.ToBigInteger());
         }
 
-        public static byte[] ToBytes(this UInt256 value)
+        public static byte[] ToBytes(this UInt256 value, bool stripTrailingZeros = false)
         {
-            return value.Buffer.ToByteArray();
+            if (!stripTrailingZeros) return value.Buffer.ToByteArray();
+            var idx = value.Buffer.Length - 1;
+            while (idx >= 0 && value.Buffer[idx] == 0) --idx;
+            return value.Buffer.Take(idx + 1).ToArray();
         }
 
-        public static UInt256 ToUInt256(this byte[] buffer)
+        public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false)
         {
-            if (buffer.Length != 32)
+            if (!addTrailingZeros && buffer.Length != 32 || buffer.Length > 32)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
+
             return new UInt256
             {
-                Buffer = ByteString.CopyFrom(buffer)
+                Buffer = ByteString.CopyFrom(buffer.Concat(Enumerable.Repeat((byte) 0, 32 - buffer.Length)).ToArray())
             };
         }
     }

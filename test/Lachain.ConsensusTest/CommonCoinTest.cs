@@ -30,10 +30,7 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<CoinId, CoinResult>[N];
             _wallets = new IPrivateConsensusKeySet[N];
-            _publicKeys = new PublicConsensusKeySet(
-                N, F, null, null,
-                pubKeys, Enumerable.Empty<ECDSAPublicKey>()
-            );
+            _publicKeys = new PublicConsensusKeySet(N, F, null, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();

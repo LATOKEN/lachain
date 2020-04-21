@@ -28,7 +28,7 @@ namespace Lachain.Core.Blockchain
 
         public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey)
         {
-            var address = _crypto.ComputeAddress(publicKey.Buffer.ToByteArray()).ToUInt160();
+            var address = _crypto.ComputeAddress(publicKey.EncodeCompressed()).ToUInt160();
             _publicKeyCache.Add(address, publicKey);
             VerifyTransaction(acceptedTransaction);
         }
@@ -49,8 +49,9 @@ namespace Lachain.Core.Blockchain
             try
             {
                 /* verify transaction signature */
-                var result = _crypto.VerifySignatureHashed(transaction.Hash.Buffer.ToByteArray(),
-                    transaction.Signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+                var result = _crypto.VerifySignatureHashed(
+                    transaction.Hash.ToBytes(), transaction.Signature.Encode(), publicKey.EncodeCompressed()
+                );
                 if (!result)
                     return false;
             }
@@ -78,17 +79,16 @@ namespace Lachain.Core.Blockchain
                     return VerifyTransactionImmediately(transaction, publicKey);
 
                 /* recover EC to get public key from signature to compute address */
-                var rawKey = _crypto.RecoverSignatureHashed(transaction.Hash.Buffer.ToArray(),
-                    transaction.Signature.Buffer.ToArray());
-                var address = _crypto.ComputeAddress(rawKey);
-                
+                publicKey = transaction.RecoverPublicKey();
+                var address = publicKey.GetAddress();
+
                 /* check if recovered address from public key is valid */
-                if (!address.SequenceEqual(transaction.Transaction.From.Buffer.ToArray()))
+                if (!address.Equals(transaction.Transaction.From))
                     return false;
 
                 /* try to remember public key for this address */
                 if (cacheEnabled)
-                    _publicKeyCache.Add(transaction.Transaction.From, rawKey.ToPublicKey());
+                    _publicKeyCache.Add(transaction.Transaction.From, publicKey);
             }
             catch (Exception)
             {

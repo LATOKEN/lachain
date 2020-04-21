@@ -5,23 +5,23 @@ using Lachain.Storage.State;
 
 namespace Lachain.Core.Blockchain.OperationManager
 {
-    public interface ITransactionManager : ITransactionSigner
+    public interface ITransactionManager
     {
         event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         event EventHandler<TransactionReceipt>? OnTransactionFailed;
         event EventHandler<TransactionReceipt>? OnTransactionExecuted;
-        event EventHandler<TransactionReceipt>? OnTransactionSigned;
-        
+        event EventHandler<ContractContext>? OnSystemContractInvoked;
+
         TransactionReceipt? GetByHash(UInt256 transactionHash);
 
         OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot);
-        
+
         OperatingError Verify(TransactionReceipt transaction);
 
         OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey);
-        
+
         OperatingError VerifySignature(TransactionReceipt transaction, bool cacheEnabled = true);
-        
+
         ulong CalcNextTxNonce(UInt160 from);
     }
 }

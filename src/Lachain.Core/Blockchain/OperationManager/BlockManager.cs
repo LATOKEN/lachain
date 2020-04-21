@@ -7,6 +7,8 @@ using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.VM;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.Misc;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -25,6 +27,9 @@ namespace Lachain.Core.Blockchain.OperationManager
         private readonly ILogger<BlockManager> _logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private ContractContext? _contractTxJustExecuted = null;
+
+        public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
         public BlockManager(
             ITransactionManager transactionManager,
@@ -41,10 +46,15 @@ namespace Lachain.Core.Blockchain.OperationManager
             _multisigVerifier = multisigVerifier;
             _stateManager = stateManager;
             _snapshotIndexRepository = snapshotIndexRepository;
+            _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
+        }
+
+        private void TransactionManagerOnSystemContractInvoked(object sender, ContractContext e)
+        {
+            _contractTxJustExecuted = e;
         }
 
         public event EventHandler<Block>? OnBlockPersisted;
-        public event EventHandler<Block>? OnBlockSigned;
 
         public Block? GetByHeight(ulong blockHeight)
         {
@@ -74,7 +84,7 @@ namespace Lachain.Core.Blockchain.OperationManager
                     transactions,
                     out var removedTransactions,
                     out var relayedTransactions,
-                    false,
+                    true,
                     out var gasUsed,
                     out _);
                 if (error != OperatingError.Ok)
@@ -103,11 +113,11 @@ namespace Lachain.Core.Blockchain.OperationManager
         public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash,
             bool commit)
         {
-            return _stateManager.SafeContext(() =>
+            var error = _stateManager.SafeContext(() =>
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
-                var operatingError = _Execute(block, transactions, out _, out _, true, out var gasUsed,
+                var operatingError = _Execute(block, transactions, out _, out _, false, out var gasUsed,
                     out var totalFee);
                 if (operatingError != OperatingError.Ok)
                 {
@@ -117,6 +127,10 @@ namespace Lachain.Core.Blockchain.OperationManager
 
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))
                 {
+                    _logger.LogError(
+                        $"Cannot execute block {block.Hash.ToHex()} " +
+                        $"with stateHash={block.Header.StateHash.ToHex()} specified in header," +
+                        $"since computed state hash is {_stateManager.LastApprovedSnapshot.StateHash}");
                     _stateManager.RollbackTo(snapshotBefore);
                     return OperatingError.InvalidStateHash;
                 }
@@ -125,13 +139,17 @@ namespace Lachain.Core.Blockchain.OperationManager
                 if (!commit)
                     return OperatingError.Ok;
                 _logger.LogInformation(
-                    $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, gas used {gasUsed}, fee {totalFee}");
+                    $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
+                    $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, " +
+                    $"gas used {gasUsed}, fee {totalFee}"
+                );
                 _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index,
                     _stateManager.LastApprovedSnapshot); // TODO: this is hack
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;
             });
+            return error;
         }
 
         private OperatingError _Execute(
@@ -190,39 +208,41 @@ namespace Lachain.Core.Blockchain.OperationManager
             foreach (var (txHash, i) in block.TransactionHashes.Select((tx, i) => (tx, i)))
             {
                 /* try to find transaction by hash */
-                var transaction = currentTransactions[txHash];
-                transaction.Block = block.Header.Index;
-                transaction.GasUsed = GasMetering.DefaultTxTransferGasCost;
-                transaction.IndexInBlock = (ulong) i;
+                var receipt = currentTransactions[txHash];
+                receipt.Block = block.Header.Index;
+                receipt.GasUsed = GasMetering.DefaultTxTransferGasCost;
+                receipt.IndexInBlock = (ulong) i;
+                var transaction = receipt.Transaction;
                 var snapshot = _stateManager.NewSnapshot();
 
-                var gasLimitCheck = _CheckTransactionGasLimit(transaction.Transaction, snapshot);
+                var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
                 if (gasLimitCheck != OperatingError.Ok)
                 {
-                    removeTransactions.Add(transaction);
+                    removeTransactions.Add(receipt);
                     _stateManager.Rollback();
                     _logger.LogWarning(
-                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Transaction?.Nonce}): not enough balance for gas"
+                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): not enough balance for gas"
                     );
                     continue;
                 }
 
                 /* try to execute transaction */
-                var result = _transactionManager.Execute(block, transaction, snapshot);
+                var result = _transactionManager.Execute(block, receipt, snapshot);
                 if (result != OperatingError.Ok)
                 {
                     _stateManager.Rollback();
                     if (result == OperatingError.InvalidNonce)
                     {
-                        removeTransactions.Add(transaction);
+                        removeTransactions.Add(receipt);
                         _logger.LogWarning(
-                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Transaction?.Nonce}): invalid nonce"
+                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): invalid nonce"
                         );
                     }
                     else
                     {
                         snapshot = _stateManager.NewSnapshot();
-                        snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Failed);
+                        snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
+                        _logger.LogError($"Transaction {txHash.ToHex()} failed because of error: {result}");
                         _stateManager.Approve();
                     }
 
@@ -230,28 +250,28 @@ namespace Lachain.Core.Blockchain.OperationManager
                 }
 
                 /* check block gas limit after execution */
-                gasUsed += transaction.GasUsed;
+                gasUsed += receipt.GasUsed;
                 if (gasUsed > GasMetering.DefaultBlockGasLimit)
                 {
-                    removeTransactions.Add(transaction);
-                    relayTransactions.Add(transaction);
+                    removeTransactions.Add(receipt);
+                    relayTransactions.Add(receipt);
                     _stateManager.Rollback();
                     /* this should never happen cuz that mean that someone applied overflowed block */
                     if (!isEmulation)
                         throw new InvalidBlockException(OperatingError.BlockGasOverflow);
                     _logger.LogWarning(
-                        $"Unable to take transaction {txHash.Buffer.ToHex()} with gas {transaction.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
+                        $"Unable to take transaction {txHash.ToHex()} with gas {receipt.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
                     continue;
                 }
 
                 /* try to take fee from sender */
-                result = _TakeTransactionFee((long) block.Header.Index, transaction, snapshot, out var fee);
+                result = _TakeTransactionFee((long) block.Header.Index, receipt, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
-                    removeTransactions.Add(transaction);
+                    removeTransactions.Add(receipt);
                     _stateManager.Rollback();
                     _logger.LogWarning(
-                        $"Unable to execute transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction?.Nonce}), {result}");
+                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}), {result}");
                     continue;
                 }
 
@@ -259,9 +279,15 @@ namespace Lachain.Core.Blockchain.OperationManager
 
                 /* mark transaction as executed */
                 _logger.LogDebug(
-                    $"Successfully executed transaction {txHash.Buffer.ToHex()} with nonce ({transaction.Transaction.Nonce})");
-                snapshot.Transactions.AddTransaction(transaction, TransactionStatus.Executed);
+                    $"Successfully executed transaction {txHash.ToHex()} from={transaction.From.ToHex()} with nonce ({receipt.Transaction.Nonce})");
+                snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
                 _stateManager.Approve();
+
+                if (_contractTxJustExecuted != null && !isEmulation)
+                {
+                    OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
+                    _contractTxJustExecuted = null;
+                }
             }
 
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
@@ -298,21 +324,22 @@ namespace Lachain.Core.Blockchain.OperationManager
             return _validatorManager.GetValidatorsPublicKeys(block - 1)
                 .Any(validator =>
                     !snapshot.Balances.TransferBalance(transaction.Transaction.From,
-                        _crypto.ComputeAddress(validator.Buffer.ToByteArray()).ToUInt160(), sharedFee))
+                        _crypto.ComputeAddress(validator.EncodeCompressed()).ToUInt160(), sharedFee))
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
 
-        public Signature Sign(BlockHeader block, ECDSAKeyPair keyPair)
+        public Signature Sign(BlockHeader block, EcdsaKeyPair keyPair)
         {
-            return _crypto.Sign(block.Keccak().Buffer.ToByteArray(), keyPair.PrivateKey.Buffer.ToByteArray())
+            return _crypto.Sign(block.KeccakBytes(), keyPair.PrivateKey.Encode())
                 .ToSignature();
         }
 
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
-            var result = _crypto.VerifySignature(blockHeader.Keccak().Buffer.ToByteArray(),
-                signature.Buffer.ToByteArray(), publicKey.Buffer.ToByteArray());
+            var result = _crypto.VerifySignature(
+                blockHeader.KeccakBytes(), signature.Encode(), publicKey.EncodeCompressed()
+            );
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 

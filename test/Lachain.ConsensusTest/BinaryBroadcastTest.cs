@@ -23,10 +23,7 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
             _privateKeys = new IPrivateConsensusKeySet[N];
-            _publicKeys = new PublicConsensusKeySet(
-                N, F, null, null,
-                null, Enumerable.Empty<ECDSAPublicKey>()
-            );
+            _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();

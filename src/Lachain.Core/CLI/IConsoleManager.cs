@@ -1,11 +1,10 @@
-using Lachain.Crypto;
-using Lachain.Proto;
+using Lachain.Crypto.ECDSA;
 
 namespace Lachain.Core.CLI
 {
     public interface IConsoleManager
     {
-        void Start(ECDSAKeyPair keyPair);
+        void Start(EcdsaKeyPair keyPair);
 
         void Stop();
 

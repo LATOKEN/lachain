@@ -9,7 +9,6 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
-using Lachain.Consensus.TPKE;
 using Lachain.Proto;
 
 namespace Lachain.ConsensusTest
@@ -112,26 +111,6 @@ namespace Lachain.ConsensusTest
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
                     CheckRequest(idCoin);
                     Registry[idCoin]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.TpkeKeys:
-                    var idTpkeKeys = new TPKESetupId((int) message.Validator.Era);
-                    CheckRequest(idTpkeKeys);
-                    Registry[idTpkeKeys]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.PolynomialValue:
-                    var idPolynomialValue = new TPKESetupId((int) message.Validator.Era);
-                    CheckRequest(idPolynomialValue);
-                    Registry[idPolynomialValue]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.HiddenPolynomial:
-                    var idHiddenPolynomial = new TPKESetupId((int) message.Validator.Era);
-                    CheckRequest(idHiddenPolynomial);
-                    Registry[idHiddenPolynomial]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.ConfirmationHash:
-                    var idConfirmationHash = new TPKESetupId((int) message.Validator.Era);
-                    CheckRequest(idConfirmationHash);
-                    Registry[idConfirmationHash]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);

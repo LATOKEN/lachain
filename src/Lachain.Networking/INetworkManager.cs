@@ -1,6 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Lachain.Crypto;
+﻿using System.Collections.Generic;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -26,7 +25,7 @@ namespace Lachain.Networking
         IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey);
         bool IsReady { get; }
 
-        void Start(NetworkConfig networkConfig, ECDSAKeyPair keyPair, IMessageHandler messageHandler);
+        void Start(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IMessageHandler messageHandler);
 
         void WaitForHandshake(IEnumerable<ECDSAPublicKey> peerKeys);
 

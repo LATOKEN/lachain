@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Google.Protobuf;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage
 {
@@ -43,12 +44,12 @@ namespace Lachain.Storage
             bytes[5] = (byte) ((key >> 24) & 0xff);
             return bytes;
         }
-        
+
         public static byte[] BuildPrefix(this EntryPrefix prefix, params UInt160[] keys)
         {
             if (keys.Length == 0)
                 throw new ArgumentOutOfRangeException(nameof(keys));
-            var buffer = keys.Select(k => k.Buffer as IEnumerable<byte>).Aggregate((k1, k2) => k1.Concat(k2));
+            var buffer = keys.Select(k => k.ToBytes() as IEnumerable<byte>).Flatten();
             return BuildPrefix(prefix, buffer);
         }
 
@@ -66,7 +67,7 @@ namespace Lachain.Storage
         {
             if (keys.Length == 0)
                 throw new ArgumentOutOfRangeException(nameof(keys));
-            var buffer = keys.Select(k => k.Buffer as IEnumerable<byte>).Aggregate((k1, k2) => k1.Concat(k2));
+            var buffer = keys.Select(k => k.ToBytes() as IEnumerable<byte>).Flatten();
             return BuildPrefix(prefix, buffer);
         }
 

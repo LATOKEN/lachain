@@ -6,15 +6,16 @@ using System.Text;
 namespace Lachain.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 144)]
-    public struct G1
+    public struct G1 : IEquatable<G1>
     {
-        public const int BYTE_SIZE = 48;
+        public const int ByteSize = 48;
+
         public static G1 GetGenerator()
         {
             // Some fixed generator can be obtained via hashing any message
             // (all non trivial elements are generators since group has prime order)
             var res = new G1();
-            res.SetHashOf(new byte[]{0xde, 0xad, 0xbe, 0xef});
+            res.SetHashOf(new byte[] {0xde, 0xad, 0xbe, 0xef});
             return res;
         }
 
@@ -27,30 +28,23 @@ namespace Lachain.Crypto.MCL.BLS12_381
 
         public static byte[] ToBytes(G1 g)
         {
-            const int BUF_SIZE = 200;
-            var buf = new byte[BUF_SIZE];
-            var len = MclImports.mclBnG1_serialize(buf, BUF_SIZE, ref g);
-            if (len == 0)
-            {
-                throw new Exception("Failed to serialize G1");
-            }
+            var buf = new byte[ByteSize];
+            var len = MclImports.mclBnG1_serialize(buf, ByteSize, ref g);
+            if (len != ByteSize) throw new Exception("Failed to serialize G1");
             return buf.Take((int) len).ToArray();
         }
 
         public static G1 FromBytes(byte[] buf)
         {
-            G1 g = new G1();
+            var g = new G1();
             if (MclImports.mclBnG1_deserialize(ref g, buf, buf.Length) == 0)
-            {
                 throw new Exception("Failed to deserialize G1");
-            }
-
             return g;
         }
 
         public static G1 Generator = GetGenerator();
         public static G1 Zero = GetZero();
-        
+
         public void Clear()
         {
             MclImports.mclBnG1_clear(ref this);
@@ -112,7 +106,7 @@ namespace Lachain.Crypto.MCL.BLS12_381
         {
             MclImports.mclBnG1_mul(ref this, ref x, ref y);
         }
-        
+
         public static G1 operator +(G1 x, G1 y)
         {
             var z = new G1();

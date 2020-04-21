@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using Lachain.Logger;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.Messages;
@@ -149,23 +150,16 @@ namespace Lachain.Consensus.CommonSubset
 
             if (_cntBinaryAgreementsCompleted < N) return;
 
-            for (var i = 0; i < N; ++i)
-            {
-                if (_binaryAgreementResult[i] == true)
-                {
-                    if (_reliableBroadcastResult[i] == null) return;
-                }
-            }
+            if (_binaryAgreementResult
+                .Zip(_reliableBroadcastResult, (b, share) => b == true && share is null)
+                .Any(x => x)
+            ) return;
 
-            _result = new HashSet<EncryptedShare>();
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (_binaryAgreementResult[i] == true)
-                {
-                    _result.Add(_reliableBroadcastResult[i]);
-                }
-            }
+            _result = _binaryAgreementResult
+                .Zip(_reliableBroadcastResult, (b, share) => (b, share))
+                .Where(x => x.b == true)
+                .Select(x => x.share ?? throw new Exception())
+                .ToHashSet();
 
             CheckResult();
         }

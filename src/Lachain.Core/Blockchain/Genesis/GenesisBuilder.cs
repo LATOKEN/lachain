@@ -3,6 +3,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Config;
 using Lachain.Proto;
 using Lachain.Crypto;
+using Lachain.Crypto.Misc;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 

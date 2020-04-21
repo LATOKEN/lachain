@@ -9,6 +9,6 @@ namespace Lachain.Core.Blockchain.OperationManager
         
         public UInt160? Sender { get; set; }
 
-        public Transaction? Transaction { get; set; }
+        public TransactionReceipt? Receipt { get; set; }
     }
 }

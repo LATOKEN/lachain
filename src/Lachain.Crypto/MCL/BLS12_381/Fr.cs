@@ -7,9 +7,12 @@ using System.Text;
 namespace Lachain.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct Fr
+    public struct Fr : IEquatable<Fr>
     {
         public static Fr Zero = FromInt(0);
+        public static Fr One = FromInt(1);
+        public static int ByteSize = 32;
+
         public static Fr FromBytes(IEnumerable<byte> array)
         {
             var res = new Fr();
@@ -17,30 +20,23 @@ namespace Lachain.Crypto.MCL.BLS12_381
             MclImports.mclBnFr_setStr(ref res, bytes, bytes.Length, 512);
             return res;
         }
-        
+
         public static byte[] ToBytes(Fr fr)
         {
-            const int BUF_SIZE = 200;
-            var buf = new byte[BUF_SIZE];
-            var len = MclImports.mclBnFr_serialize(buf, BUF_SIZE, ref fr);
-            if (len == 0)
-            {
-                throw new Exception("Failed to serialize G1");
-            }
-            return buf.Take((int) len).ToArray();
+            var buf = new byte[ByteSize];
+            var len = MclImports.mclBnFr_serialize(buf, ByteSize, ref fr);
+            if (len != 32) throw new Exception("Failed to serialize Fr");
+            return buf;
         }
 
         public static Fr FromBytes(byte[] buf)
         {
-            Fr fr = new Fr();
+            var fr = new Fr();
             if (MclImports.mclBnFr_deserialize(ref fr, buf, buf.Length) == 0)
-            {
-                throw new Exception("Failed to deserialize G1");
-            }
-
+                throw new Exception("Failed to deserialize Fr");
             return fr;
         }
-        
+
         public static Fr GetRandom()
         {
             // todo replace with cryptographic random
@@ -136,6 +132,16 @@ namespace Lachain.Crypto.MCL.BLS12_381
             MclImports.mclBnFr_div(ref this, ref x, ref y);
         }
 
+        public static bool operator ==(Fr x, Fr y)
+        {
+            return MclImports.mclBnFr_isEqual(ref x, ref y) != 0;
+        }
+
+        public static bool operator !=(Fr x, Fr y)
+        {
+            return !(x == y);
+        }
+
         public static Fr operator -(Fr x)
         {
             var y = new Fr();
@@ -171,5 +177,15 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return z;
         }
 
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj.GetType() == GetType() && Equals((Fr) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 }

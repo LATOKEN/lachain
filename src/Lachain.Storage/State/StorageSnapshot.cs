@@ -27,7 +27,7 @@ namespace Lachain.Storage.State
         public UInt256 GetValue(UInt160 contract, UInt256 key)
         {
             var value = _state.Get(
-                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.Buffer.ToByteArray()).ToArray() 
+                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.ToBytes()).ToArray() 
             );
             return value is null ? UInt256Utils.Zero : value.ToUInt256();
         }
@@ -35,15 +35,15 @@ namespace Lachain.Storage.State
         public void SetValue(UInt160 contract, UInt256 key, UInt256 value)
         {
             _state.AddOrUpdate(
-                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.Buffer.ToByteArray()).ToArray(),
-                value.Buffer.ToByteArray()
+                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.ToBytes()).ToArray(),
+                value.ToBytes()
             );
         }
 
         public void DeleteValue(UInt160 contract, UInt256 key, out UInt256 value)
         {
             _state.TryDelete(
-                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.Buffer.ToByteArray()).ToArray(),
+                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.ToBytes()).ToArray(),
                 out var buffer
             );
             value = buffer is null ? UInt256Utils.Zero : buffer.ToUInt256();

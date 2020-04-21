@@ -46,28 +46,31 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 foreach (var txHash in block.TransactionHashes)
                 {
                     var nativeTx = _transactionManager.GetByHash(txHash);
-                    gasUsed += nativeTx.GasUsed;   
+                    gasUsed += nativeTx.GasUsed;
                     if (fullTx)
                     {
-                        txs.Add(TransactionServiceWeb3.ToEthTxFormat(nativeTx, block.Hash.Buffer.ToByteArray().ToHex(true), block.Header.Index.ToHex()));
+                        txs.Add(TransactionServiceWeb3.ToEthTxFormat(
+                            nativeTx, block.Hash.ToHex(), block.Header.Index.ToHex())
+                        );
                     }
                 }
             }
             if (!fullTx)
             {
-                txs = new JArray(block.TransactionHashes.Select(txHash => txHash.Buffer.ToHex()));
+                txs = new JArray(block.TransactionHashes.Select(txHash => txHash.ToHex()));
             }
+
             return new JObject
             {
                 ["number"] = block.Header.Index.ToHex(),
-                ["hash"] = block.Hash.Buffer.ToHex(),
+                ["hash"] = block.Hash.ToHex(),
                 ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
                 ["nonce"] = block.Header.Nonce.ToHex(),
                 ["sha3Uncles"] = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
                 ["logsBloom"] =
                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                ["transactionsRoot"] = block.Header.MerkleRoot.Buffer.ToHex(),
-                ["stateRoot"] = block.Header.StateHash.Buffer.ToHex(),
+                ["transactionsRoot"] = block.Header.MerkleRoot.ToHex(),
+                ["stateRoot"] = block.Header.StateHash.ToHex(),
                 ["receiptsRoot"] = "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
                 ["miner"] = "0x0000000000000000000000000000000000000000",
                 ["difficulty"] = "0x0",
@@ -88,7 +91,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             return block?.ToJson();
         }
-        
+
         [JsonRpcMethod("eth_getTransactionsByBlockHash")]
         private JObject? GetTransactionsByBlockHash(string blockHash)
         {
@@ -101,7 +104,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["transactions"] = new JArray(txs),
             };
         }
-        
+
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
         private string GetBlockTransactionsCountByNumber(string blockHeight)
         {
@@ -138,14 +141,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var jArray = new JArray();
             for (var i = 0; i < txEvents; i++)
             {
-                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash, (uint) i);
+                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
+                    (uint) i);
                 if (ev is null)
                     continue;
                 jArray.Add(ev.ToJson());
             }
+
             return jArray;
         }
-        
+
         [JsonRpcMethod("eth_getTransactionPool")]
         private JArray GetTransactionPool()
         {
@@ -155,10 +160,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 jArray.Add(txHash.ToHex());
             }
+
             return jArray;
         }
-        
-        
+
+
         [JsonRpcMethod("eth_getTransactionPoolByHash")]
         private JObject? GetTransactionPoolByHash(string txHash)
         {

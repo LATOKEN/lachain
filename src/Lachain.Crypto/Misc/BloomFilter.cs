@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Linq;
 
-namespace Lachain.Crypto
+namespace Lachain.Crypto.Misc
 {
     public class BloomFilter
     {

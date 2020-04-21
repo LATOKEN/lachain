@@ -18,19 +18,21 @@ namespace Lachain.Utility.Utils
             }
         }
 
+        
         public static T SelectRandom<T>(this Random rng, IEnumerable<T> collection)
         {
-            var current = default(T);
-            var cnt = 0;
-            foreach (var element in collection)
+            using var enumerator = collection.GetEnumerator();
+            if (!enumerator.MoveNext()) throw new ArgumentException("Empty collection", nameof(collection));
+            var current = enumerator.Current;
+            var cnt = 1;
+            while (enumerator.MoveNext())
             {
                 ++cnt;
                 if (rng.Next(cnt) == 0)
                 {
-                    current = element;
+                    current = enumerator.Current;
                 }
             }
-
             return current;
         }
     }

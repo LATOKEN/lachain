@@ -25,5 +25,6 @@ namespace Lachain.Core.Blockchain.Pool
         void Delete(UInt256 transactionHash);
 
         void Clear();
+        ulong? GetMaxNonceForAddress(UInt160 address);
     }
 }

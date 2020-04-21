@@ -23,7 +23,6 @@ namespace Lachain.Benchmark
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<CryptographyModule>();
             containerBuilder.RegisterModule<MessagingModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
@@ -51,7 +50,7 @@ namespace Lachain.Benchmark
             snapshot.Contracts.AddContract(UInt160Utils.Zero, contract);
             stateManager.Approve();
 
-            Console.WriteLine("Contract Hash: " + hash.Buffer.ToHex());
+            Console.WriteLine("Contract Hash: " + hash.ToHex());
 
             for (var i = 0; i < 1; ++i)
             {
@@ -83,7 +82,7 @@ namespace Lachain.Benchmark
                 }
                 {
                     /* mint */
-                    Console.WriteLine($"\nERC-20: mint({sender.Buffer.ToHex()},{Money.FromDecimal(100)})");
+                    Console.WriteLine($"\nERC-20: mint({sender.ToHex()},{Money.FromDecimal(100)})");
                     var input = ContractEncoder.Encode("mint(address,uint256)", sender, Money.FromDecimal(100));
                     // Console.WriteLine("ABI: " + input.ToHex());
                     var status = virtualMachine.InvokeContract(contract, context, input, 100_000_000_000_000UL);

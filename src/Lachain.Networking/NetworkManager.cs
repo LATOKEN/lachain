@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
@@ -166,13 +167,10 @@ namespace Lachain.Networking
                 throw new ArgumentNullException(nameof(signature));
             var bytes = message.ToByteArray();
             /* TODO: "we can cache public key to avoid recovers" */
-            var rawPublicKey = _crypto.RecoverSignature(bytes, signature.Buffer.ToByteArray());
+            var rawPublicKey = _crypto.RecoverSignature(bytes, signature.Encode());
             if (rawPublicKey == null)
                 throw new Exception("Unable to recover public key from signature");
-            var publicKey = new ECDSAPublicKey
-            {
-                Buffer = ByteString.CopyFrom(rawPublicKey)
-            };
+            var publicKey = rawPublicKey.ToPublicKey();
             if (!_authorizedKeys.Keys.Contains(publicKey))
                 throw new Exception("This node hasn't been authorized (" + rawPublicKey.ToHex() + ")");
             var envelope = new MessageEnvelope
@@ -192,9 +190,9 @@ namespace Lachain.Networking
                 throw new ArgumentNullException();
             if (request.Node.PublicKey is null)
                 throw new Exception("Public key can't be null");
-            var isValid = _crypto.VerifySignature(request.ToByteArray(), signature.Buffer.ToByteArray(),
-                request.Node.PublicKey.Buffer.ToByteArray());
-            if (!isValid)
+            if (!_crypto.VerifySignature(
+                request.ToByteArray(), signature.Encode(), request.Node.PublicKey.EncodeCompressed()
+            ))
                 throw new Exception("Unable to verify message using public key specified");
             var address = PeerAddress.FromNode(request.Node);
             var peer = _clientWorkers.TryGetValue(address, out var clientWorker)
@@ -208,8 +206,9 @@ namespace Lachain.Networking
         {
             if (signature is null)
                 throw new ArgumentNullException(nameof(signature));
-            var isValid = _crypto.VerifySignature(reply.ToByteArray(), signature.Buffer.ToByteArray(),
-                reply.Node.PublicKey.Buffer.ToByteArray());
+            var isValid = _crypto.VerifySignature(
+                reply.ToByteArray(), signature.Encode(), reply.Node.PublicKey.EncodeCompressed()
+            );
             if (!isValid)
                 throw new Exception("Unable to verify message using public key specified");
             var publicKey = reply.Node.PublicKey;
@@ -287,7 +286,7 @@ namespace Lachain.Networking
 
         private void _HandleMessage(byte[] buffer)
         {
-            NetworkMessage message = null;
+            NetworkMessage? message = null;
             try
             {
                 message = NetworkMessage.Parser.ParseFrom(buffer);
@@ -325,7 +324,7 @@ namespace Lachain.Networking
 
         public bool IsReady => _serverWorker != null && _serverWorker.IsActive;
 
-        public void Start(NetworkConfig networkConfig, ECDSAKeyPair keyPair, IMessageHandler messageHandler)
+        public void Start(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IMessageHandler messageHandler)
         {
             if (networkConfig?.Peers is null)
                 throw new ArgumentNullException();

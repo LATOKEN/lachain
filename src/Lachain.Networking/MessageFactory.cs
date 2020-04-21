@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 
 namespace Lachain.Networking
 {
     public class MessageFactory : IMessageFactory
     {
-        private readonly ECDSAKeyPair _keyPair;
+        private readonly EcdsaKeyPair _keyPair;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
-        public MessageFactory(ECDSAKeyPair keyPair)
+        public MessageFactory(EcdsaKeyPair keyPair)
         {
             _keyPair = keyPair;
         }
@@ -168,35 +169,11 @@ namespace Lachain.Networking
             };
         }
 
-        public NetworkMessage ThresholdRequest(byte[] message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public NetworkMessage ChangeViewRequest()
-        {
-            throw new NotImplementedException();
-        }
-
-        public NetworkMessage BlockPrepareRequest()
-        {
-            throw new NotImplementedException();
-        }
-
-        public NetworkMessage BlockPrepareReply()
-        {
-            throw new NotImplementedException();
-        }
-
         private Signature _SignMessage(IMessage message)
         {
-            var rawSig = _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Buffer.ToByteArray());
-            if (rawSig.Length != 65)
-                throw new ArgumentOutOfRangeException(nameof(rawSig));
-            return new Signature
-            {
-                Buffer = ByteString.CopyFrom(rawSig)
-            };
+            var rawSig = _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Encode());
+            if (rawSig.Length != 65) throw new ArgumentOutOfRangeException(nameof(rawSig));
+            return new Signature {Buffer = ByteString.CopyFrom(rawSig)};
         }
     }
 }

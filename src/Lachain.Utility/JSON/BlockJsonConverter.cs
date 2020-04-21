@@ -11,9 +11,9 @@ namespace Lachain.Utility.JSON
         {
             var json = new JObject
             {
-                ["prevBlockHash"] = blockHeader.PrevBlockHash.Buffer.ToHex(),
-                ["merkleRoot"] = blockHeader.MerkleRoot.Buffer.ToHex(),
-                ["stateHash"] = blockHeader.StateHash.Buffer.ToHex(),
+                ["prevBlockHash"] = blockHeader.PrevBlockHash.ToHex(),
+                ["merkleRoot"] = blockHeader.MerkleRoot.ToHex(),
+                ["stateHash"] = blockHeader.StateHash.ToHex(),
                 ["index"] = blockHeader.Index,
                 ["nonce"] = blockHeader.Index
             };
@@ -25,8 +25,8 @@ namespace Lachain.Utility.JSON
             var json = new JObject
             {
                 ["header"] = block.Header.ToJson(),
-                ["hash"] = block.Hash.Buffer.ToHex(),
-                ["transactionHashes"] = new JArray(block.TransactionHashes.Select(txHash => txHash.Buffer.ToHex())),
+                ["hash"] = block.Hash.ToHex(),
+                ["transactionHashes"] = new JArray(block.TransactionHashes.Select(txHash => txHash.ToHex())),
                 ["multisig"] = null,
                 ["gasPrice"] = block.GasPrice,
                 ["timestamp"] = block.Timestamp,

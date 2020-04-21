@@ -7,6 +7,7 @@ using Google.Protobuf;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast.ReedSolomon.ReedSolomon;
 using Lachain.Crypto;
+using Lachain.Crypto.Misc;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Lachain.Utility.Utils;

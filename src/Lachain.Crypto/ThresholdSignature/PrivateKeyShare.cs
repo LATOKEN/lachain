@@ -11,9 +11,9 @@ namespace Lachain.Crypto.ThresholdSignature
             _privateKey = privateKey;
         }
 
-        public PublicKeyShare GetPublicKeyShare()
+        public PublicKey GetPublicKeyShare()
         {
-            return new PublicKeyShare(G1.Generator * _privateKey);
+            return new PublicKey(G1.Generator * _privateKey);
         }
 
         public SignatureShare HashAndSign(byte[] message)
@@ -24,7 +24,7 @@ namespace Lachain.Crypto.ThresholdSignature
             return new SignatureShare(mappedMessage);
         }
 
-        public byte[] ToByteArray()
+        public byte[] ToBytes()
         {
             return Fr.ToBytes(_privateKey);
         }

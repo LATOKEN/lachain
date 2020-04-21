@@ -33,7 +33,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var addressUint160 = address.HexToBytes().ToUInt160();
             var availableBalance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
-            return availableBalance.ToWei().ToUInt160().Buffer.ToByteArray().Reverse()
+            return availableBalance.ToWei().ToUInt160().ToBytes().Reverse()
                 // .SkipWhile(b => b == 0)
                 .ToHex();
         }

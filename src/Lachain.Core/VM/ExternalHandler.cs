@@ -175,7 +175,7 @@ namespace Lachain.Core.VM
             if (key.Length < 32)
                 key = _AlignTo32(key);
             var value = VirtualMachine.BlockchainSnapshot.Storage.GetValue(frame.CurrentAddress, key.ToUInt256());
-            if (!SafeCopyToMemory(frame.Memory, value.Buffer.ToByteArray(), valueOffset))
+            if (!SafeCopyToMemory(frame.Memory, value.ToBytes(), valueOffset))
                 throw new RuntimeException("Cannot copy storageload result to memory");
         }
 
@@ -216,7 +216,7 @@ namespace Lachain.Core.VM
         public static void Handler_Env_GetSender(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.Sender.Buffer.ToByteArray();
+            var data = frame.Context.Sender.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to GETSENDER");
@@ -298,7 +298,7 @@ namespace Lachain.Core.VM
         public static void Handler_Env_GetTransferredFunds(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.TransactionHash.Buffer.ToByteArray();
+            var data = frame.Context.Value.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transferred_funds)");
@@ -307,7 +307,7 @@ namespace Lachain.Core.VM
         public static void Handler_Env_GetBlockHash(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.BlockHash.Buffer.ToByteArray();
+            var data = frame.Context.BlockHash.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to (get_block_hash)");
@@ -325,7 +325,7 @@ namespace Lachain.Core.VM
         public static void Handler_Env_GetTransactionHash(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.TransactionHash.Buffer.ToByteArray();
+            var data = frame.Context.TransactionHash.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transaction_hash)");

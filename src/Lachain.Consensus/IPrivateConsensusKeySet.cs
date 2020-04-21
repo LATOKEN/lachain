@@ -1,5 +1,4 @@
-using Lachain.Crypto;
-using Lachain.Proto;
+using Lachain.Crypto.ECDSA;
 
 namespace Lachain.Consensus
 {
@@ -7,6 +6,6 @@ namespace Lachain.Consensus
     {
         Crypto.TPKE.PrivateKey TpkePrivateKey { get; }
         Crypto.ThresholdSignature.PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; }
-        ECDSAKeyPair EcdsaKeyPair { get; }
+        EcdsaKeyPair EcdsaKeyPair { get; }
     }
 }

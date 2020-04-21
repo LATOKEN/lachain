@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
-    public class PublicKeySet
+    public class PublicKeySet : IEquatable<PublicKeySet>
     {
-        private readonly IDictionary<PublicKeyShare, int> _keyIndex;
+        private readonly IDictionary<PublicKey, int> _keyIndex;
         public PublicKey SharedPublicKey { get; }
-        private readonly PublicKeyShare[] _keys;
+        public IReadOnlyCollection<PublicKey> Keys => _keys;
 
-        public PublicKeySet(IEnumerable<PublicKeyShare> pubKeyShares, int faulty)
+        private readonly PublicKey[] _keys;
+
+        public PublicKeySet(IEnumerable<PublicKey> pubKeyShares, int faulty)
         {
-            // TODO: ctor
             _keys = pubKeyShares.ToArray();
+            // TODO: this won't work when faulty = 0 and there are >1 players
             _keyIndex = _keys.Select((share, i) => (share, i)).ToDictionary(t => t.Item1, t => t.Item2);
             SharedPublicKey = new PublicKey(AssemblePublicKey(_keys.Select(share => share.RawKey), _keys.Length));
             Threshold = faulty;
@@ -27,16 +31,17 @@ namespace Lachain.Crypto.ThresholdSignature
             return Mcl.LagrangeInterpolateG1(xs, ys);
         }
 
+
         public int Count => _keyIndex.Count;
         public int Threshold { get; }
 
-        public int GetIndex(PublicKeyShare key)
+        public int GetIndex(PublicKey key)
         {
             if (!_keyIndex.TryGetValue(key, out var idx)) return -1;
             return idx;
         }
 
-        public PublicKeyShare this[int idx] => _keys[idx];
+        public PublicKey this[int idx] => _keys[idx];
 
         public Signature AssembleSignature(IEnumerable<KeyValuePair<int, SignatureShare>> shares)
         {
@@ -46,6 +51,31 @@ namespace Lachain.Crypto.ThresholdSignature
             if (xs.Length <= Threshold || ys.Length <= Threshold)
                 throw new ArgumentException("not enough shares for signature");
             return new Signature(Mcl.LagrangeInterpolateG2(xs, ys));
+        }
+
+        public bool Equals(PublicKeySet? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return _keys.SequenceEqual(other._keys);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((PublicKeySet) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return _keys.GetHashCode();
+        }
+
+        public IEnumerable<byte> ToBytes()
+        {
+            return _keys.Select(key => key.ToBytes()).Flatten();
         }
     }
 }

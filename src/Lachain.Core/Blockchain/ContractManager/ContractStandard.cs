@@ -2,6 +2,7 @@
 {
     public enum ContractStandard
     {
-        Lrc20
+        GovernanceContract,
+        Lrc20,
     }
 }

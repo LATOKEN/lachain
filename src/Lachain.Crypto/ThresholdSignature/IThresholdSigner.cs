@@ -3,6 +3,6 @@
     public interface IThresholdSigner
     {
         SignatureShare Sign();
-        bool AddShare(PublicKeyShare pubKey, SignatureShare sigShare, out Signature? signature);
+        bool AddShare(PublicKey pubKey, SignatureShare sigShare, out Signature? signature);
     }
 }

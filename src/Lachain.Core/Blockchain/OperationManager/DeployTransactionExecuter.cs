@@ -5,6 +5,7 @@ using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.OperationManager
 {
@@ -28,7 +29,7 @@ namespace Lachain.Core.Blockchain.OperationManager
             if (error != OperatingError.Ok)
                 return error;
             /* calculate contract hash and register it */
-            var hash = transaction.From.Buffer
+            var hash = transaction.From.ToBytes()
                 .Concat(BitConverter.GetBytes((uint) transaction.Nonce))
                 .Ripemd();
             var contract = new Contract
