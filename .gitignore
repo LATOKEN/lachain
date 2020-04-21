@@ -256,15 +256,10 @@ paket-files/
 
 PublishProfiles
 
-**/Chain_*/
-**/Index_*/
+src/Lachain.Console/config.json
+src/Lachain.Console/wallet.json
+src/Lachain.Benchmark/config.json
+src/Lachain.Console/wallet.json
+src/Lachain.Benchmark/wallet.json
 
-**/Chain*/
-**/Index*/
-
-neo-cli/config.json
-src/NeoSharp.Application/appsettings.json
-src/Phorkus.Console/config.json
-src/Phorkus.Benchmark/config.json
-
-src/Phorkus.Proto/*.cs
+src/Lachain.Proto/*.cs
