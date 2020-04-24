@@ -125,12 +125,13 @@ namespace Lachain.Core.Blockchain.OperationManager
             UInt160 address, byte[] invocation, TransactionReceipt receipt, IBlockchainSnapshot snapshot
         )
         {
-            var result = _contractRegisterer.DecodeContract(address, invocation);
-            if (result is null)
-                return OperatingError.ContractFailed;
-            var (contract, method, args) = result;
             try
             {
+                var result = _contractRegisterer.DecodeContract(address, invocation);
+                if (result is null)
+                    return OperatingError.ContractFailed;
+                var (contract, method, args) = result;
+                
                 var context = new ContractContext
                 {
                     Snapshot = snapshot,
@@ -147,7 +148,8 @@ namespace Lachain.Core.Blockchain.OperationManager
             catch (Exception e) when (
                 e is NotSupportedException ||
                 e is InvalidOperationException || // TODO: InvalidOperation is too generic, what does it really mean?
-                e is TargetInvocationException
+                e is TargetInvocationException ||
+                e is ContractAbiException
             )
             {
                 return OperatingError.ContractFailed;

@@ -14,7 +14,7 @@ namespace Lachain.Core.Blockchain.Pool
 
         OperatingError Add(Transaction transaction, Signature signature);
         
-        OperatingError Add(TransactionReceipt transaction);
+        OperatingError Add(TransactionReceipt receipt);
         
         IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
 
@@ -26,5 +26,6 @@ namespace Lachain.Core.Blockchain.Pool
 
         void Clear();
         ulong? GetMaxNonceForAddress(UInt160 address);
+        ulong GetNextNonceForAddress(UInt160 address);
     }
 }

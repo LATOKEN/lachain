@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Google.Protobuf;
 using Nethereum.Signer;
 using NUnit.Framework;
@@ -15,6 +16,16 @@ namespace Lachain.CryptoTest
 {
     public class CryptographyTest
     {
+        [Test]
+        public void Test_KeccakTestVector()
+        {
+            var message = Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
+            Assert.AreEqual(
+                "0x45d3b367a6904e6e8d502ee04999a7c27647f91fa845d456525fd352ae3d7371",
+                message.KeccakBytes().ToHex()
+            );
+        }
+
         [Test]
         public void Test_AesGcmEncryptDecryptRoundTrip()
         {

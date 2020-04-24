@@ -93,28 +93,30 @@ namespace Lachain.Core.Blockchain.Pool
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Add(TransactionReceipt transaction)
+        public OperatingError Add(TransactionReceipt receipt)
         {
-            if (transaction is null)
-                throw new ArgumentNullException(nameof(transaction));
+            if (receipt is null)
+                throw new ArgumentNullException(nameof(receipt));
             /* don't add to transaction pool transactions with the same hashes */
-            if (_transactions.ContainsKey(transaction.Hash))
+            if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
             /* verify transaction before adding */
-            var result = _transactionManager.Verify(transaction);
+            var result = _transactionManager.Verify(receipt);
             if (result != OperatingError.Ok)
                 return result;
-            _transactionVerifier.VerifyTransaction(transaction);
+            _transactionVerifier.VerifyTransaction(receipt);
+            if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                return OperatingError.InvalidNonce;
             /* put transaction to pool queue */
-            _transactions[transaction.Hash] = transaction;
-            _transactionsQueue.Add(transaction);
+            _transactions[receipt.Hash] = receipt;
+            _transactionsQueue.Add(receipt);
             /* write transaction to persistence storage */
-            if (!_poolRepository.ContainsTransactionByHash(transaction.Hash))
-                _poolRepository.AddTransaction(transaction);
+            if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
+                _poolRepository.AddTransaction(receipt);
             if (!_networkManager.IsReady)
                 return OperatingError.Ok;
             var message = _networkManager.MessageFactory?.GetTransactionsByHashesReply(
-                new[] {transaction}
+                new[] {receipt}
             ) ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(message);
             return OperatingError.Ok;
@@ -239,6 +241,13 @@ namespace Lachain.Core.Blockchain.Pool
                 .ToArray();
             if (txs.Length == 0) return null;
             return txs.Max(tx => tx.Nonce);
+        }
+
+        public ulong GetNextNonceForAddress(UInt160 address)
+        {
+            var poolNonce = GetMaxNonceForAddress(address);
+            var stateNonce = _transactionManager.CalcNextTxNonce(address);
+            return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
         }
     }
 }

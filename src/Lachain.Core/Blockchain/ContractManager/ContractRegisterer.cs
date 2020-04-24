@@ -34,7 +34,6 @@ namespace Lachain.Core.Blockchain.ContractManager
             RegisterContract<BasicLaTokenContract>(LatokenContract);
             /* address <<0x2>> references Governance contract */
             RegisterContract<GovernanceContract>(GovernanceContract);
-            
         }
 
         public void RegisterContract<T>(UInt160 address)
@@ -48,8 +47,11 @@ namespace Lachain.Core.Blockchain.ContractManager
                 .Select(tuple => Tuple.Create(tuple.Item2.Property, tuple.Item1)).ToList();
             _signatures.Add(address,
                 signatures.Concat(props)
-                    .ToDictionary(tuple => BitConverter.ToUInt32(ContractEncoder.Encode(tuple.Item1), 0),
-                        tuple => tuple));
+                    .ToDictionary(
+                        tuple => ContractEncoder.MethodSignatureAsInt(tuple.Item1),
+                        tuple => tuple
+                    )
+            );
         }
 
         public Type? GetContractByAddress(UInt160 address)
@@ -61,10 +63,10 @@ namespace Lachain.Core.Blockchain.ContractManager
         {
             if (input.Length < 4)
                 throw new ArgumentOutOfRangeException(nameof(input));
-            if (!_contracts.TryGetValue(address, out var contract) || !_signatures.TryGetValue(address, out var sigs))
+            if (!_contracts.TryGetValue(address, out var contract) || !_signatures.TryGetValue(address, out var signatures))
                 return null;
-            var signature = BitConverter.ToUInt32(input, 0);
-            if (!sigs.TryGetValue(signature, out var tuple))
+            var signature = ContractEncoder.MethodSignatureAsInt(input);
+            if (!signatures.TryGetValue(signature, out var tuple))
                 return null;
             var (methodName, methodInfo) = tuple;
             var decoder = new ContractDecoder(input);

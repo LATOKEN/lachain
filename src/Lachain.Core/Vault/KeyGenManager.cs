@@ -57,7 +57,7 @@ namespace Lachain.Core.Vault
 
             var signature = BitConverter.ToUInt32(tx.Invocation.Take(4).ToArray(), 0);
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
-            if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodChangeValidators))
+            if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodChangeValidators))
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
                 var args = decoder.Decode(GovernanceInterface.MethodChangeValidators);
@@ -85,7 +85,7 @@ namespace Lachain.Core.Vault
                     Logger.LogError($"tx={commitTx.Hash.ToHex()} from={commitTx.Transaction.From.ToHex()} nonce={commitTx.Transaction.Nonce}");
                 }
             }
-            else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenCommit))
+            else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
                 if (_currentKeygen is null) return;
@@ -110,7 +110,7 @@ namespace Lachain.Core.Vault
                 }
                     
             }
-            else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenSendValue))
+            else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenSendValue))
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 if (_currentKeygen is null) return;
@@ -136,7 +136,7 @@ namespace Lachain.Core.Vault
                     Logger.LogError($"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}");
                 }
             }
-            else if (signature == ContractEncoder.MethodSignatureBytes(GovernanceInterface.MethodKeygenConfirm))
+            else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
                 if (_currentKeygen is null) return;

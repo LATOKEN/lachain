@@ -17,7 +17,7 @@ namespace Lachain.Core.VM
         public ContractEncoder(string methodSignature)
         {
             _binaryWriter = new BinaryWriter(new MemoryStream());
-            var signature = MethodSignatureBytes(methodSignature);
+            var signature = MethodSignatureAsInt(methodSignature);
             _binaryWriter.Write(signature);
         }
 
@@ -29,10 +29,14 @@ namespace Lachain.Core.VM
             return encoder.ToByteArray();
         }
 
-        public static uint MethodSignatureBytes(string methodSignature)
+        public static uint MethodSignatureAsInt(string methodSignature)
         {
             var buffer = Encoding.ASCII.GetBytes(methodSignature).KeccakBytes();
-            if (methodSignature.StartsWith("constructor(")) return 0;
+            return MethodSignatureAsInt(buffer);
+        }
+
+        public static uint MethodSignatureAsInt(byte[] buffer)
+        {
             return buffer[0] | ((uint) buffer[1] << 8) | ((uint) buffer[2] << 16) | ((uint) buffer[3] << 24);
         }
 

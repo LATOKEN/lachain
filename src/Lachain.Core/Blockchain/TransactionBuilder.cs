@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Interface;
@@ -27,16 +26,9 @@ namespace Lachain.Core.Blockchain
             _transactionPool = transactionPool;
         }
 
-        public ulong GetCurrentNonceForAddress(UInt160 address)
-        {
-            var poolNonce = _transactionPool.GetMaxNonceForAddress(address);
-            var stateNonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(address);
-            return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
-        }
-
         public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[]? input)
         {
-            var nonce = GetCurrentNonceForAddress(from);
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
             var tx = new Transaction
             {
                 To = to,
@@ -53,23 +45,24 @@ namespace Lachain.Core.Blockchain
 
         public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
-            // TODO: fix this
-            var nonce = GetCurrentNonceForAddress(from);
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
             var tx = new Transaction
             {
                 Invocation = ByteString.CopyFrom(input ?? new byte[0]),
                 From = from,
+                To = UInt160Utils.Empty, // transaction to empty address is deploy
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = GasMetering.DefaultBlockGasLimit,
-                Nonce = nonce
+                Nonce = nonce,
+                Value = UInt256Utils.Zero,
             };
             return tx;
         }
 
         public Transaction TokenTransferTransaction(UInt160 contract, UInt160 from, UInt160 to, Money value)
         {
-            var nonce = GetCurrentNonceForAddress(from);
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
             var abi = ContractEncoder.Encode("transfer(address,uint256)", to, value.ToUInt256());
             var tx = new Transaction
             {
@@ -88,7 +81,7 @@ namespace Lachain.Core.Blockchain
         public Transaction InvokeTransaction(UInt160 from, UInt160 contract, Money value, string methodSignature,
             params dynamic[] values)
         {
-            var nonce = GetCurrentNonceForAddress(from);
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
             var abi = ContractEncoder.Encode(methodSignature, values);
             var tx = new Transaction
             {
