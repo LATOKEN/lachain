@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -31,13 +32,14 @@ namespace Lachain.Core.VM
 
         public static uint MethodSignatureAsInt(string methodSignature)
         {
-            var buffer = Encoding.ASCII.GetBytes(methodSignature).KeccakBytes();
-            return MethodSignatureAsInt(buffer);
+            return MethodSignatureAsInt(Encoding.ASCII.GetBytes(methodSignature).KeccakBytes());
         }
 
-        public static uint MethodSignatureAsInt(byte[] buffer)
+        public static uint MethodSignatureAsInt(IEnumerable<byte> bytes)
         {
-            return buffer[0] | ((uint) buffer[1] << 8) | ((uint) buffer[2] << 16) | ((uint) buffer[3] << 24);
+            return bytes.Take(4)
+                .Select(((b, i) => (uint) b << (8 * i)))
+                .Aggregate((x, y) => x | y);
         }
 
         public ContractEncoder Write(byte[] array)

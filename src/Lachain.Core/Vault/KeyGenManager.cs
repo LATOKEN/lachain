@@ -55,7 +55,7 @@ namespace Lachain.Core.Vault
             if (!tx.To.Equals(ContractRegisterer.GovernanceContract)) return;
             if (tx.Invocation.Length < 4) return;
 
-            var signature = BitConverter.ToUInt32(tx.Invocation.Take(4).ToArray(), 0);
+            var signature = ContractEncoder.MethodSignatureAsInt(tx.Invocation);
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
             if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodChangeValidators))
             {

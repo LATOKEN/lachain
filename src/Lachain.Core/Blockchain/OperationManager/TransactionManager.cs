@@ -35,12 +35,11 @@ namespace Lachain.Core.Blockchain.OperationManager
             IStateManager stateManager
         )
         {
-            var contractTransactionExecuter = new TransactionExecuter(contractRegisterer, virtualMachine);
-            contractTransactionExecuter.OnSystemContractInvoked +=
-                (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
             _transactionExecuter = new TransactionExecuter(contractRegisterer, virtualMachine);
+            _transactionExecuter.OnSystemContractInvoked +=
+                (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
             transactionVerifier.OnTransactionVerified += (sender, transaction) =>
                 _verifiedTransactions.TryAdd(transaction.Hash, transaction.Hash);
         }

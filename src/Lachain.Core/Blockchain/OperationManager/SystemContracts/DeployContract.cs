@@ -49,6 +49,7 @@ namespace Lachain.Core.Blockchain.OperationManager.SystemContracts
             _contractContext.Snapshot.Contracts.AddContract(receipt.Transaction.From, contract);
             if (_InvokeConstructor(contract, receipt) != OperatingError.Ok)
                 throw new InvalidContractException();
+            // TODO: change this to eth-like deploy
         }
 
         private OperatingError _InvokeConstructor(Contract contract, TransactionReceipt receipt)
