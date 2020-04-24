@@ -140,8 +140,8 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                // const ulong minBlockInterval = 5_000;
-                const ulong minBlockInterval = 1_000;
+                const ulong minBlockInterval = 5_000;
+                // const ulong minBlockInterval = 1_000;
                 for (;; CurrentEra += 1)
                 {
                     if (CurrentEra == 10 && _privateWallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")

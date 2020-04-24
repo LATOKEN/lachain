@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.VM;
 using Lachain.Proto;
@@ -10,13 +11,13 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.OperationManager
 {
-    public class ContractTransactionExecuter : ITransactionExecuter
+    public class TransactionExecuter : ITransactionExecuter
     {
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IVirtualMachine _virtualMachine;
         public event EventHandler<ContractContext>? OnSystemContractInvoked;
 
-        public ContractTransactionExecuter(
+        public TransactionExecuter(
             IContractRegisterer contractRegisterer,
             IVirtualMachine virtualMachine)
         {
@@ -43,6 +44,12 @@ namespace Lachain.Core.Blockchain.OperationManager
                 return OperatingError.Ok;
             }
 
+            if (receipt.Transaction.To.Buffer.IsEmpty) // this is deploy transaction
+            {
+                var invocation = ContractEncoder.Encode("deploy(bytes)", transaction.Invocation.ToArray());
+                return _InvokeSystemContract(ContractRegisterer.DeployContract, invocation, receipt, snapshot);
+            }
+
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
             if (contract is null && systemContract is null)
@@ -61,10 +68,10 @@ namespace Lachain.Core.Blockchain.OperationManager
             if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
                 return OperatingError.InsufficientBalance;
             /* invoke required function or fallback */
-            return _InvokeContract(block, receipt, snapshot);
+            return _InvokeContract(receipt, snapshot);
         }
 
-        private OperatingError _InvokeContract(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
+        private OperatingError _InvokeContract(TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
             var transaction = receipt.Transaction;
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
@@ -75,7 +82,7 @@ namespace Lachain.Core.Blockchain.OperationManager
             var input = transaction.Invocation.ToByteArray();
             if (_IsConstructorCall(input))
                 return OperatingError.InvalidInput;
-            var context = new InvocationContext(transaction.From, transaction, block);
+            var context = new InvocationContext(transaction.From, receipt);
             try
             {
                 if (receipt.GasUsed > transaction.GasLimit)
@@ -130,18 +137,19 @@ namespace Lachain.Core.Blockchain.OperationManager
                     Sender = receipt.Transaction.From,
                     Receipt = receipt
                 };
-                var inst = Activator.CreateInstance(contract, context);
-                method.Invoke(inst, args);
+                // Special case for deploy contract: it needs VM to validate contracts
+                var instance = address.Equals(ContractRegisterer.DeployContract)
+                    ? Activator.CreateInstance(contract, context, _virtualMachine)
+                    : Activator.CreateInstance(contract, context);
+                method.Invoke(instance, args);
                 OnSystemContractInvoked?.Invoke(this, context);
             }
-            catch (NotSupportedException e)
+            catch (Exception e) when (
+                e is NotSupportedException ||
+                e is InvalidOperationException || // TODO: InvalidOperation is too generic, what does it really mean?
+                e is TargetInvocationException
+            )
             {
-                Console.Error.WriteLine(e);
-                return OperatingError.ContractFailed;
-            }
-            catch (InvalidOperationException e)
-            {
-                Console.Error.WriteLine(e);
                 return OperatingError.ContractFailed;
             }
 
@@ -150,10 +158,6 @@ namespace Lachain.Core.Blockchain.OperationManager
 
         public OperatingError Verify(Transaction transaction)
         {
-            if (transaction.Type != TransactionType.Transfer)
-                return OperatingError.InvalidTransaction;
-            if (!transaction.Deploy.IsEmpty)
-                return OperatingError.InvalidTransaction;
             return _VerifyInvocation(transaction);
         }
 

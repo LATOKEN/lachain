@@ -40,28 +40,41 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_verifyRawTransaction")]
-        private JObject VerifyRawTransaction(string rawTransaction, string signature)
+        private string VerifyRawTransaction(string rawTx)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
-            if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
-                throw new Exception("Failed to validate serialized and deserialized transactions");
-            var json = new JObject
+            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature();
+            try
             {
-                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
-            };
-            var accepted = new TransactionReceipt
+                var transaction = new Transaction
+                {
+                    // this is special case where empty uint160 is allowed
+                    To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
+                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
+                    Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
+                    GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
+                    GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                };
+
+                var txHash = transaction.FullHash(signature);
+                var result = _transactionManager.Verify(new TransactionReceipt
+                {
+                    Hash = txHash,
+                    Signature = signature,
+                    Status = TransactionStatus.Pool,
+                    Transaction = transaction
+                });
+
+                if (result != OperatingError.Ok) return $"Transaction is invalid: {result}";
+                return txHash.ToHex();
+            }
+            catch (Exception e)
             {
-                Transaction = transaction,
-                Hash = HashUtils.ToHash256(transaction),
-                Signature = signature.HexToBytes().ToSignature()
-            };
-            var result = _transactionManager.Verify(accepted);
-            json["result"] = result.ToString();
-            if (result != OperatingError.Ok)
-                json["status"] = false;
-            else
-                json["status"] = true;
-            return json;
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return e.Message;
+            }
         }
 
         [JsonRpcMethod("eth_getTransactionReceipt")]
@@ -100,19 +113,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var transaction = new Transaction
                 {
-                    Type = TransactionType.Transfer,
-                    To = ethTx.ReceiveAddress.ToUInt160(),
+                    // this is special case where empty uint160 is allowed
+                    To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
                     Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
                     From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
                     GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                    Invocation = ByteString.CopyFrom(ethTx.Data),
                 };
+                if (!ethTx.ChainId.SequenceEqual(new byte[] {TransactionUtils.ChainId}))
+                {
+                    return "Can not add to transaction pool: BadChainId";
+                }
 
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
-                if (result != OperatingError.Ok)
-                    return "Can not add to transaction pool";
-                return HashUtils.ToHash256(transaction).ToHex();
+                if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
+                return transaction.FullHash(signature.ToSignature()).ToHex();
             }
             catch (Exception e)
             {

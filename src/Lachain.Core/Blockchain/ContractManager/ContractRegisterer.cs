@@ -22,15 +22,19 @@ namespace Lachain.Core.Blockchain.ContractManager
         private readonly Dictionary<UInt160, Dictionary<uint, Tuple<string, MethodInfo>>> _signatures
             = new Dictionary<UInt160, Dictionary<uint, Tuple<string, MethodInfo>>>();
 
-        public static readonly UInt160 LatokenContract = UInt160Utils.Zero;
-        public static readonly UInt160 GovernanceContract = BigInteger.One.ToUInt160();
+        public static readonly UInt160 DeployContract = new BigInteger(0).ToUInt160();
+        public static readonly UInt160 LatokenContract = new BigInteger(1).ToUInt160();
+        public static readonly UInt160 GovernanceContract = new BigInteger(2).ToUInt160();
 
         public ContractRegisterer()
         {
-            /* zero address references to LaToken contract */
+            /* address <<0x0>> references contract to deploy other contracts */
+            RegisterContract<DeployContract>(DeployContract);
+            /* address <<0x1>> references LaToken contract */
             RegisterContract<BasicLaTokenContract>(LatokenContract);
-            /* address <<0x1>> references to Governance contract */
+            /* address <<0x2>> references Governance contract */
             RegisterContract<GovernanceContract>(GovernanceContract);
+            
         }
 
         public void RegisterContract<T>(UInt160 address)

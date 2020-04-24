@@ -48,7 +48,8 @@ namespace Lachain.Crypto
 
         public static ECDSAPublicKey RecoverPublicKey(this TransactionReceipt receipt)
         {
-            return Crypto.RecoverSignatureHashed(receipt.Hash.ToBytes(), receipt.Signature.Encode())
+            return Crypto
+                .RecoverSignatureHashed(receipt.Transaction.RawHash().ToBytes(), receipt.Signature.Encode())
                 .ToPublicKey();
         }
     }

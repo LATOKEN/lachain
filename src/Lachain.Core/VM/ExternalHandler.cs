@@ -304,23 +304,23 @@ namespace Lachain.Core.VM
                 throw new RuntimeException("Bad call to (get_transferred_funds)");
         }
 
-        public static void Handler_Env_GetBlockHash(int dataOffset)
-        {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.BlockHash.ToBytes();
-            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
-            if (!ret)
-                throw new RuntimeException("Bad call to (get_block_hash)");
-        }
+        // public static void Handler_Env_GetBlockHash(int dataOffset)
+        // {
+        //     var frame = VirtualMachine.ExecutionFrames.Peek();
+        //     var data = frame.Context.BlockHash.ToBytes();
+        //     var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+        //     if (!ret)
+        //         throw new RuntimeException("Bad call to (get_block_hash)");
+        // }
 
-        public static void Handler_Env_GetBlockHeight(int dataOffset)
-        {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = BitConverter.GetBytes(frame.Context.BlockHeight);
-            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
-            if (!ret)
-                throw new RuntimeException("Bad call to (get_transferred_funds)");
-        }
+        // public static void Handler_Env_GetBlockHeight(int dataOffset)
+        // {
+        //     var frame = VirtualMachine.ExecutionFrames.Peek();
+        //     var data = BitConverter.GetBytes(frame.Context.BlockHeight);
+        //     var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+        //     if (!ret)
+        //         throw new RuntimeException("Bad call to (get_transferred_funds)");
+        // }
 
         public static void Handler_Env_GetTransactionHash(int dataOffset)
         {
@@ -383,8 +383,8 @@ namespace Lachain.Core.VM
                 {EnvModule, "get_sender", CreateImport(nameof(Handler_Env_GetSender))},
                 {EnvModule, "system_halt", CreateImport(nameof(Handler_Env_SystemHalt))},
                 {EnvModule, "get_transferred_funds", CreateImport(nameof(Handler_Env_GetTransferredFunds))},
-                {EnvModule, "get_block_hash", CreateImport(nameof(Handler_Env_GetBlockHash))},
-                {EnvModule, "get_block_height", CreateImport(nameof(Handler_Env_GetBlockHeight))},
+                // {EnvModule, "get_block_hash", CreateImport(nameof(Handler_Env_GetBlockHash))},
+                // {EnvModule, "get_block_height", CreateImport(nameof(Handler_Env_GetBlockHeight))},
                 {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 // /* crypto hash bindings */

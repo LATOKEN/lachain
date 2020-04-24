@@ -10,7 +10,6 @@ namespace Lachain.Utility.JSON
         {
             var json = new JObject
             {
-                ["type"] = transaction.Type.ToString(),
                 ["to"] = transaction.To.ToHex(),
                 ["invocation"] = transaction.Invocation.ToHex(),
                 ["value"] = transaction.Value.ToHex(),

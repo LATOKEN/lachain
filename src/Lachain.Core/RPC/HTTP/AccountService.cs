@@ -47,15 +47,14 @@ namespace Lachain.Core.RPC.HTTP
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
-            var json = new JObject
-            {
-                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
-            };
+            var s = signature.HexToBytes().ToSignature();
+            var txHash = transaction.FullHash(s);
+            var json = new JObject {["hash"] = txHash.ToHex()};
             var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = HashUtils.ToHash256(transaction),
-                Signature = signature.HexToBytes().ToSignature()
+                Hash = txHash,
+                Signature = s
             };
             var result = _transactionManager.Verify(accepted);
             json["result"] = result.ToString();
@@ -70,10 +69,8 @@ namespace Lachain.Core.RPC.HTTP
         private JObject SendRawTransaction(string rawTransaction, string signature)
         {
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
-            var json = new JObject
-            {
-                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
-            };
+            var s = signature.HexToBytes().ToSignature();
+            var json = new JObject {["hash"] = transaction.FullHash(s).ToHex()};
             var result = _transactionPool.Add(
                 transaction, signature.HexToBytes().ToSignature());
             if (result != OperatingError.Ok)

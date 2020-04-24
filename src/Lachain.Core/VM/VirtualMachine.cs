@@ -36,12 +36,10 @@ namespace Lachain.Core.VM
                     Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.Error.WriteLine(e);
+                return false;
             }
-
-            return false;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

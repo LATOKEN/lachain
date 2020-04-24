@@ -39,7 +39,6 @@ namespace Lachain.Core.Blockchain
             var nonce = GetCurrentNonceForAddress(from);
             var tx = new Transaction
             {
-                Type = TransactionType.Transfer,
                 To = to,
                 Value = value.ToUInt256(),
                 From = from,
@@ -54,12 +53,11 @@ namespace Lachain.Core.Blockchain
 
         public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
+            // TODO: fix this
             var nonce = GetCurrentNonceForAddress(from);
             var tx = new Transaction
             {
-                Type = TransactionType.Deploy,
                 Invocation = ByteString.CopyFrom(input ?? new byte[0]),
-                Deploy = ByteString.CopyFrom(byteCode.ToArray()),
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
@@ -75,7 +73,6 @@ namespace Lachain.Core.Blockchain
             var abi = ContractEncoder.Encode("transfer(address,uint256)", to, value.ToUInt256());
             var tx = new Transaction
             {
-                Type = TransactionType.Transfer,
                 To = contract,
                 Invocation = ByteString.CopyFrom(abi),
                 From = from,
@@ -92,15 +89,9 @@ namespace Lachain.Core.Blockchain
             params dynamic[] values)
         {
             var nonce = GetCurrentNonceForAddress(from);
-            Logger.LogError(
-                $"Building invoke tx from={from.ToHex()} to={contract.ToHex()}, " +
-                $"cur block={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()} " +
-                $"txs={_stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from)}"
-            );
             var abi = ContractEncoder.Encode(methodSignature, values);
             var tx = new Transaction
             {
-                Type = TransactionType.Transfer,
                 To = contract,
                 Invocation = ByteString.CopyFrom(abi),
                 From = from,

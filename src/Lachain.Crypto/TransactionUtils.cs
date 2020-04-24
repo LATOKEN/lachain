@@ -18,7 +18,7 @@ namespace Lachain.Crypto
                 nonce,
                 new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
-                t.To.ToBytes(),
+                t.To.ToBytes(), // this may be empty, same as passing null
                 t.Value.ToBytes(true).Reverse().ToArray(),
                 t.Invocation.ToArray(),
                 new BigInteger(ChainId).ToByteArray().Reverse().ToArray(),
@@ -26,7 +26,41 @@ namespace Lachain.Crypto
                 Array.Empty<byte>(),
                 Array.Empty<byte>()
             );
-            return ethTx.GetRLPEncodedRaw().Concat(t.From.ToBytes()); // TODO: hackity hack
+            return ethTx.GetRLPEncodedRaw();
+        }
+
+        public static IEnumerable<byte> RlpWithSignature(this Transaction t, Signature s)
+        {
+            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray();
+            var sig = s.Encode().AsSpan();
+            var ethTx = new Nethereum.Signer.TransactionChainId(
+                nonce,
+                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
+                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
+                t.To.ToBytes(), // this may be empty, same as passing null
+                t.Value.ToBytes(true).Reverse().ToArray(),
+                t.Invocation.ToArray(),
+                new BigInteger(ChainId).ToByteArray().Reverse().ToArray(),
+                sig.Slice(0, 32).ToArray(),
+                sig.Slice(32, 32).ToArray(),
+                sig.Slice(64, 1).ToArray()
+            );
+            return ethTx.GetRLPEncodedRaw();
+        }
+        
+        public static UInt256 RawHash(this Transaction t)
+        {
+            return t.Rlp().Keccak();
+        }
+        
+        public static UInt256 FullHash(this Transaction t, Signature s)
+        {
+            return t.RlpWithSignature(s).Keccak();
+        }
+
+        public static UInt256 FullHash(this TransactionReceipt r)
+        {
+            return r.Transaction.FullHash(r.Signature);
         }
     }
 }

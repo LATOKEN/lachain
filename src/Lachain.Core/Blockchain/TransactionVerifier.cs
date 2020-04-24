@@ -69,7 +69,7 @@ namespace Lachain.Core.Blockchain
                 throw new ArgumentNullException(nameof(transaction));
 
             /* validate transaction hash */
-            if (!transaction.Hash.Equals(HashUtils.ToHash256(transaction.Transaction)))
+            if (!transaction.Hash.Equals(transaction.FullHash()))
                 return false;
 
             try

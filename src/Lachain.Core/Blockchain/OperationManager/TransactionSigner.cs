@@ -10,18 +10,18 @@ namespace Lachain.Core.Blockchain.OperationManager
     public class TransactionSigner : ITransactionSigner
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public TransactionReceipt Sign(Transaction transaction, EcdsaKeyPair keyPair)
         {
             /* use raw byte arrays to sign transaction hash */
-            var messageHash = HashUtils.ToHash256(transaction);
-            var signature = Crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode());
+            var messageHash = transaction.RawHash();
+            var signature = Crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode()).ToSignature();
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = messageHash,
-                Signature = signature.ToSignature()
+                Hash = transaction.FullHash(signature),
+                Signature = signature
             };
             return signed;
         }

@@ -84,10 +84,5 @@ namespace Lachain.Crypto
             using var murmur = new Murmur3(seed);
             return BitConverter.ToUInt32(murmur.ComputeHash(message), 0);
         }
-
-        public static UInt256 ToHash256(Transaction t)
-        {
-            return t.Rlp().Keccak();
-        }
     }
 }

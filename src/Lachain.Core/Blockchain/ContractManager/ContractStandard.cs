@@ -2,6 +2,7 @@
 {
     public enum ContractStandard
     {
+        DeployContract,
         GovernanceContract,
         Lrc20,
     }
