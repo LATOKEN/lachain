@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Lachain.Core.Blockchain.OperationManager;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.Pool

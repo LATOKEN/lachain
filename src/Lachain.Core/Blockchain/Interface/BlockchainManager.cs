@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
-using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Config;
 using Lachain.Crypto;
 using Lachain.Proto;

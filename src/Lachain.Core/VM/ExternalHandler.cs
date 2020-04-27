@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility;

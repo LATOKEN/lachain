@@ -2,8 +2,9 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Interface;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.VM;
 using Lachain.Crypto;

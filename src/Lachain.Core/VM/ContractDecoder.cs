@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Lachain.Core.Blockchain.ContractManager;
 using Lachain.Core.Consensus;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
