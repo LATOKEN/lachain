@@ -8,11 +8,11 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
-    public class BasicLaTokenContract : ISystemContract
+    public class NativeTokenContract : ISystemContract
     {
         private readonly ContractContext _contractContext;
 
-        public BasicLaTokenContract(ContractContext contractContext)
+        public NativeTokenContract(ContractContext contractContext)
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
         }

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
 using WebAssembly;
 using WebAssembly.Runtime;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.VM
 {
     public class ExecutionFrame : IDisposable
     {

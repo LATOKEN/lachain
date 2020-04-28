@@ -2,7 +2,7 @@ using System.Numerics;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;

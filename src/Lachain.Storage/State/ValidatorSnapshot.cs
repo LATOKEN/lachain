@@ -46,62 +46,18 @@ namespace Lachain.Storage.State
             return GetConsensusState().Validators.Select(v => v.PublicKey);
         }
 
-        public void NewValidators(IEnumerable<ECDSAPublicKey> publicKeys)
-        {
-            _state.AddOrUpdate(
-                EntryPrefix.PendingValidators.BuildPrefix(),
-                publicKeys.Select(x => x.EncodeCompressed()).Flatten().ToArray()
-            );
-        }
-
-        public int ConfirmCredentials(PublicKeySet tsKeys, PublicKey tpkePublicKey)
-        {
-            var keyringHash = tpkePublicKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
-            var dbKey = EntryPrefix.ConfirmationMessage.BuildPrefix(keyringHash);
-            var gen = GetValidatorGeneration();
-            var votes = GetVotesForGeneration(dbKey, gen);
-            SetVotesForGeneration(dbKey, gen, votes + 1);
-            return votes + 1;
-        }
-
-        public void UpdateValidators(PublicKeySet tsKeys, PublicKey tpkePublicKey)
+        public void UpdateValidators(
+            IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey
+        )
         {
             var state = new ConsensusState {TpkePublicKey = ByteString.CopyFrom(tpkePublicKey.ToBytes())};
-            var ecdsaPublicKeys = _state.Get(EntryPrefix.PendingValidators.BuildPrefix())
-                .Batch(CryptoUtils.PublicKeyLength)
-                .Select(x => x.ToArray().ToPublicKey());
-            state.Validators.AddRange(ecdsaPublicKeys.Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials
+            state.Validators.AddRange(ecdsaKeys.Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials
             {
                 PublicKey = ecdsaKey,
                 ResolvableAddress = "",
                 ThresholdSignaturePublicKey = ByteString.CopyFrom(tsKey.ToBytes())
             }));
             SetConsensusState(state);
-            SetValidatorsGeneration(GetValidatorGeneration() + 1); // this clears confirmations
-        }
-
-        private int GetVotesForGeneration(byte[] key, int gen)
-        {
-            var rawValue = _state.Get(key);
-            if (rawValue == null) return 0;
-            if (BitConverter.ToInt32(rawValue, 0) != gen) return 0;
-            return BitConverter.ToInt32(rawValue, 4);
-        }
-
-        private void SetVotesForGeneration(byte[] key, int gen, int votes)
-        {
-            _state.AddOrUpdate(key, BitConverter.GetBytes(gen).Concat(BitConverter.GetBytes(votes)).ToArray());
-        }
-
-        private int GetValidatorGeneration()
-        {
-            var value = _state.Get(EntryPrefix.ValidatorsGeneration.BuildPrefix());
-            return value == null ? 0 : BitConverter.ToInt32(value);
-        }
-
-        private void SetValidatorsGeneration(int generation)
-        {
-            _state.AddOrUpdate(EntryPrefix.ValidatorsGeneration.BuildPrefix(), BitConverter.GetBytes(generation));
         }
     }
 

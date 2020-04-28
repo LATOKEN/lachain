@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Reflection;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -30,7 +30,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             /* address <<0x0>> references contract to deploy other contracts */
             RegisterContract<DeployContract>(DeployContract);
             /* address <<0x1>> references LaToken contract */
-            RegisterContract<BasicLaTokenContract>(LatokenContract);
+            RegisterContract<NativeTokenContract>(LatokenContract);
             /* address <<0x2>> references Governance contract */
             RegisterContract<GovernanceContract>(GovernanceContract);
         }

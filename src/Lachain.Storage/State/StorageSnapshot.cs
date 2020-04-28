@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -8,14 +9,14 @@ namespace Lachain.Storage.State
     class StorageSnapshot : IStorageSnapshot
     {
         private readonly IStorageState _state;
-        
+
         public ulong Version => _state.CurrentVersion;
 
         public StorageSnapshot(IStorageState state)
         {
             _state = state;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {
@@ -27,7 +28,7 @@ namespace Lachain.Storage.State
         public UInt256 GetValue(UInt160 contract, UInt256 key)
         {
             var value = _state.Get(
-                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.ToBytes()).ToArray() 
+                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key.ToBytes()).ToArray()
             );
             return value is null ? UInt256Utils.Zero : value.ToUInt256();
         }
@@ -47,6 +48,19 @@ namespace Lachain.Storage.State
                 out var buffer
             );
             value = buffer is null ? UInt256Utils.Zero : buffer.ToUInt256();
+        }
+
+        public byte[] GetRawValue(UInt160 contract, IEnumerable<byte> key)
+        {
+            return _state.Get(EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key).ToArray()) ?? new byte[] { };
+        }
+
+        public void SetRawValue(UInt160 contract, IEnumerable<byte> key, byte[] value)
+        {
+            _state.AddOrUpdate(
+                EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key).ToArray(),
+                value
+            );
         }
     }
 }

@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -15,7 +12,7 @@ using WebAssembly.Runtime;
 
 // ReSharper disable MemberCanBePrivate.Global
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.VM
 {
     public class ExternalHandler : IExternalHandler
     {

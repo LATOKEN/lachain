@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
-using WebAssembly;
 using WebAssembly.Runtime;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.VM
 {
     public class VirtualMachine : IVirtualMachine
     {

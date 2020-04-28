@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using WebAssembly.Runtime;
+﻿using WebAssembly.Runtime;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.VM
 {
     public interface IBlockchainInterface
     {

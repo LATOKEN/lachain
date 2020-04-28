@@ -4,13 +4,14 @@ using System.Linq;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Config;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Core.Blockchain.Interface
+namespace Lachain.Core.Blockchain.Operations
 {
     public class BlockchainManager : IBlockchainManager, IBlockchainContext
     {

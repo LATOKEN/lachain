@@ -1,10 +1,11 @@
 ﻿using System;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
-using Lachain.Core.VM;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;

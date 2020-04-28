@@ -1,4 +1,4 @@
-﻿namespace Lachain.Core.VM
+﻿namespace Lachain.Core.Blockchain.VM
 {
     public class GasMetering
     {

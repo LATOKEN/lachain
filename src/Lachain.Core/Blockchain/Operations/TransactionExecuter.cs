@@ -5,7 +5,7 @@ using System.Reflection;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;

@@ -6,12 +6,12 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
 using Lachain.Core.RPC;
 using Lachain.Core.Vault;
-using Lachain.Core.VM;
 
 namespace Lachain.Core.DI.Modules
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.Error
 {
     public class ContractAbiException : Exception
     {

@@ -1,6 +1,7 @@
-﻿using Lachain.Proto;
+﻿using Lachain.Core.Blockchain.VM;
+using Lachain.Proto;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.Interface
 {
     public interface IVirtualMachine
     {

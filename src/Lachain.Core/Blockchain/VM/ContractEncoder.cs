@@ -9,7 +9,7 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.VM
 {
     public class ContractEncoder
     {

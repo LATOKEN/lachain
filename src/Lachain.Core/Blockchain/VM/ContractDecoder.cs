@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using Lachain.Core.Consensus;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Core.VM
+namespace Lachain.Core.Blockchain.VM
 {
     public class ContractDecoder
     {
