@@ -45,7 +45,7 @@ namespace Lachain.Crypto
                 sig.Slice(32, 32).ToArray(),
                 sig.Slice(64, 1).ToArray()
             );
-            return ethTx.GetRLPEncodedRaw();
+            return ethTx.GetRLPEncoded();
         }
         
         public static UInt256 RawHash(this Transaction t)

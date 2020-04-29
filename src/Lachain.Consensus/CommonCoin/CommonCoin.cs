@@ -24,12 +24,12 @@ namespace Lachain.Consensus.CommonCoin
             IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
+            Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToBytes().ToHex()}");
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
                 _coinId.ToByteArray(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
             );
             _result = null;
-            Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToBytes().ToHex()}");
         }
 
         private void CheckResult()

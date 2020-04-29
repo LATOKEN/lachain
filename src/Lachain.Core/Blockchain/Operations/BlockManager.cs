@@ -58,6 +58,11 @@ namespace Lachain.Core.Blockchain.Operations
 
         public event EventHandler<Block>? OnBlockPersisted;
 
+        public ulong GetHeight()
+        {
+            return _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+        }
+
         public Block? GetByHeight(ulong blockHeight)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
@@ -124,7 +129,7 @@ namespace Lachain.Core.Blockchain.Operations
                 if (operatingError != OperatingError.Ok)
                 {
                     _logger.LogError($"Error occured while executing block: {operatingError}");
-                    throw new InvalidBlockException(operatingError);
+                    return operatingError;
                 }
 
                 if (checkStateHash && !_stateManager.LastApprovedSnapshot.StateHash.Equals(block.Header.StateHash))

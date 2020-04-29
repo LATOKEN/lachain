@@ -29,7 +29,7 @@ namespace Lachain.Crypto.TPKE
             return new PartiallyDecryptedShare(ui, Id, share.Id);
         }
 
-        public byte[] ToByteArray()
+        public byte[] ToBytes()
         {
             return BitConverter.GetBytes(Id).Concat(Fr.ToBytes(X)).ToArray();
         }

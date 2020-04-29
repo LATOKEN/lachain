@@ -65,7 +65,7 @@ namespace Lachain.Storage.Repositories
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
                 BitConverter.GetBytes(repository).Concat(BitConverter.GetBytes(block)))
             );
-            return rawVersion != null ? BitConverter.ToUInt64(rawVersion, 0) : 0u;
+            return BitConverter.ToUInt64(rawVersion, 0);
         }
 
         private void SetVersion(uint repository, ulong block, ulong version)

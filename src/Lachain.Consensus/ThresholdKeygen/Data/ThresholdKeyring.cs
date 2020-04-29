@@ -1,3 +1,7 @@
+using System.Linq;
+using Lachain.Crypto;
+using Lachain.Proto;
+
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {
     public struct ThresholdKeyring
@@ -6,5 +10,10 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
         public Crypto.TPKE.PublicKey TpkePublicKey;
         public Crypto.ThresholdSignature.PublicKeySet ThresholdSignaturePublicKeySet;
         public Crypto.ThresholdSignature.PrivateKeyShare ThresholdSignaturePrivateKey;
+
+        public UInt256 PublicPartHash()
+        {
+            return TpkePublicKey.ToBytes().Concat(ThresholdSignaturePublicKeySet.ToBytes()).Keccak();
+        }
     }
 }

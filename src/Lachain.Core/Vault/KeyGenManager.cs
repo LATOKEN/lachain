@@ -51,7 +51,7 @@ namespace Lachain.Core.Vault
 
         private void BlockManagerOnSystemContractInvoked(object _, ContractContext context)
         {
-            Logger.LogInformation($"Detected call of GovernanceContract");
+            Logger.LogInformation("Detected call of GovernanceContract");
             var tx = context.Receipt.Transaction;
             if (!tx.To.Equals(ContractRegisterer.GovernanceContract)) return;
             if (tx.Invocation.Length < 4) return;
@@ -60,7 +60,8 @@ namespace Lachain.Core.Vault
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
             if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodChangeValidators))
             {
-                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
+                Logger.LogInformation(
+                    $"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
                 var args = decoder.Decode(GovernanceInterface.MethodChangeValidators);
                 var publicKeys =
                     (args[0] as byte[][] ?? throw new ArgumentException("Cannot parse method args"))
@@ -71,6 +72,7 @@ namespace Lachain.Core.Vault
                     Logger.LogInformation("Skipping validator change event since we are not new validator");
                     return;
                 }
+
                 if (_currentKeygen != null)
                     throw new ArgumentException("Cannot start keygen, since one is already running");
                 var faulty = (publicKeys.Length - 1) / 3;
@@ -82,8 +84,10 @@ namespace Lachain.Core.Vault
                     Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
                 else
                 {
-                    Logger.LogInformation($"Commit transaction {commitTx.Hash.ToHex()} successfully sent");
-                    Logger.LogError($"tx={commitTx.Hash.ToHex()} from={commitTx.Transaction.From.ToHex()} nonce={commitTx.Transaction.Nonce}");
+                    Logger.LogInformation(
+                        $"Commit transaction {commitTx.Hash.ToHex()} successfully sent: " +
+                        $"tx={commitTx.Hash.ToHex()} from={commitTx.Transaction.From.ToHex()} nonce={commitTx.Transaction.Nonce}"
+                    );
                 }
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
@@ -106,14 +110,16 @@ namespace Lachain.Core.Vault
                     Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash.ToHex()}): {error}");
                 else
                 {
-                    Logger.LogInformation($"Send value transaction {sendValueTx.Hash.ToHex()} successfully sent");
-                    Logger.LogError($"tx={sendValueTx.Hash.ToHex()} from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}");
+                    Logger.LogInformation(
+                        $"Send value transaction {sendValueTx.Hash.ToHex()} successfully sent: " +
+                        $"tx={sendValueTx.Hash.ToHex()} from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}"
+                    );
                 }
-                    
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenSendValue))
             {
-                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
+                Logger.LogInformation(
+                    $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 if (_currentKeygen is null) return;
                 var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
@@ -127,14 +133,16 @@ namespace Lachain.Core.Vault
                 );
                 var keys = _currentKeygen.TryGetKeys();
                 if (!keys.HasValue || _confirmSent) return;
-                var confirmTx = MakeConfirmTransaction(keys.Value); 
+                var confirmTx = MakeConfirmTransaction(keys.Value);
                 if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
                     Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
                 else
                 {
                     _confirmSent = true;
-                    Logger.LogInformation($"Confirm transaction {confirmTx.Hash.ToHex()} successfully sent");
-                    Logger.LogError($"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}");
+                    Logger.LogInformation(
+                        $"Confirm transaction {confirmTx.Hash.ToHex()} for hash {keys.Value.PublicPartHash().ToHex()} successfully sent: " +
+                        $"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}"
+                    );
                 }
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))
@@ -157,8 +165,17 @@ namespace Lachain.Core.Vault
                 _confirmations.PutIfAbsent(keyringHash, 0);
                 _confirmations[keyringHash] += 1;
 
+                Logger.LogInformation(
+                    $"Collected {_confirmations[keyringHash]} confirmations for hash {keyringHash.ToHex()}");
                 if (_confirmations[keyringHash] != _currentKeygen.Players - _currentKeygen.Faulty) return;
                 var keys = _currentKeygen.TryGetKeys() ?? throw new Exception();
+                Logger.LogInformation($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
+
+                if (!keyringHash.Equals(keys.PublicPartHash()))
+                {
+                    throw new Exception();
+                }
+
                 _privateWallet.AddThresholdSignatureKeyAfterBlock(
                     context.Receipt.Block, keys.ThresholdSignaturePrivateKey);
                 _privateWallet.AddTpkePrivateKeyAfterBlock(context.Receipt.Block, keys.TpkePrivateKey);

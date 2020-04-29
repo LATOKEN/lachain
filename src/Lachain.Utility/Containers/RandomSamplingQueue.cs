@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
-namespace Lachain.Consensus
+namespace Lachain.Utility.Containers
 {
     public class RandomSamplingQueue<T> where T : class
     {
@@ -15,13 +14,14 @@ namespace Lachain.Consensus
         public double RepeatProbability { get; set; } = 0;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryDequeue(out T result, double repeatProb=.0)
+        public bool TryDequeue(out T result, double repeatProb = .0)
         {
             var success = _queue.TryDequeue(out result);
             if (success && _rnd.NextDouble() < repeatProb)
             {
                 Enqueue(result);
             }
+
             return success;
         }
 
@@ -40,7 +40,7 @@ namespace Lachain.Consensus
                 Enqueue(res);
             }
 
-            return TryDequeue(out result, repeatProb: RepeatProbability);
+            return TryDequeue(out result, RepeatProbability);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -50,7 +50,7 @@ namespace Lachain.Consensus
             var k = _rnd.Next(0, size - 1);
             return TryTake(k, out result);
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryTakeLast(out T? result)
         {
@@ -63,6 +63,5 @@ namespace Lachain.Consensus
         {
             _queue.Enqueue(item);
         }
-
     }
 }

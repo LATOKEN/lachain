@@ -83,7 +83,7 @@ namespace Lachain.Core.Vault
                 TpkePrivateKeys = new Dictionary<ulong, string>(
                     _tpkeKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
-                            p.Key, p.Value.ToByteArray().ToHex()
+                            p.Key, p.Value.ToBytes().ToHex()
                         )
                     )
                 )

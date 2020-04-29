@@ -25,6 +25,7 @@ namespace Lachain.Consensus.ThresholdKeygen
         private readonly ECDSAPublicKey[] _publicKeys;
         private readonly int _myIdx;
         private readonly State[] _keyGenStates;
+        private readonly IList<int> _finished = new List<int>();
 
         public int Faulty { get; }
         public int Players { get; }
@@ -102,6 +103,10 @@ namespace Lachain.Consensus.ThresholdKeygen
             )
                 throw new ArgumentException("Decrypted value does not match commitment");
             _keyGenStates[message.Proposer].Values[sender] = myValue;
+            if (_keyGenStates[message.Proposer].ValueCount() > 2 * Faulty && !_finished.Contains(message.Proposer))
+            {
+                _finished.Add(message.Proposer);
+            }
         }
 
         public bool Finished()
@@ -116,15 +121,13 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Select(_ => G1.Zero)
                 .ToArray();
             var secretKey = Fr.Zero;
-            foreach (var (s, dealer) in _keyGenStates.WithIndex()
-                .Where(s => s.item.ValueCount() > 2 * Faulty)
-                .Take(Faulty + 1) // This is principal moment: we always have to take same amount of shares
-            )
+            foreach (var dealer in _finished.Take(Faulty + 1))
             {
+                var s = _keyGenStates[dealer];
+                if (s.ValueCount() <= 2 * Faulty) throw new Exception("Impossible"); // just in case
                 var rowZero = s.Commitment.Evaluate(0).ToArray();
                 foreach (var (x, i) in rowZero.WithIndex())
                     pubKeyPoly[i] += x;
-                var interpolatedValue = s.InterpolateValues();
                 secretKey += s.InterpolateValues();
             }
 

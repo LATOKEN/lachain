@@ -124,13 +124,16 @@ namespace Lachain.Core.Network
                 .Where(tx => !(tx is null))
                 .ToList();
 
-            if (block.Header.Index != _blockchainContext.CurrentBlockHeight + 1)
-            {
-                _logger.LogWarning($"Black was already persisted while we were waiting for txs");
-                return;
-            }
             var error = _stateManager.SafeContext(() =>
-                _blockManager.Execute(block, txs, commit: true, checkStateHash: true));
+            {
+                if (_blockManager.GetHeight() + 1 != block.Header.Index)
+                {
+                    _logger.LogWarning($"Black was already persisted while we were waiting for txs");
+                    return OperatingError.BlockAlreadyExists;
+                }
+
+                return _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
+            });
             if (error == OperatingError.BlockAlreadyExists)
                 return;
             if (error != OperatingError.Ok)

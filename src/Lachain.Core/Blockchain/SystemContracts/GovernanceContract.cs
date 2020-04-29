@@ -89,8 +89,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .Select(x => x.ToArray().ToPublicKey());
 
             _contractContext.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-            Logger.LogError("Enough confirmations collected, validators will be changed in the next block");
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
+            Logger.LogError("Enough confirmations collected, validators will be changed in the next block");
         }
         
         private int GetConsensusGeneration()

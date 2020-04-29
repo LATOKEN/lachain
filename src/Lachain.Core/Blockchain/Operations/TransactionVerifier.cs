@@ -43,51 +43,46 @@ namespace Lachain.Core.Blockchain.Operations
             }
         }
 
-        public bool VerifyTransactionImmediately(TransactionReceipt transaction, ECDSAPublicKey publicKey)
+        public bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey)
         {
             try
             {
-                /* verify transaction signature */
-                var result = _crypto.VerifySignatureHashed(
-                    transaction.Hash.ToBytes(), transaction.Signature.Encode(), publicKey.EncodeCompressed()
+                return _crypto.VerifySignatureHashed(
+                    receipt.Transaction.RawHash().ToBytes(), receipt.Signature.Encode(), publicKey.EncodeCompressed()
                 );
-                if (!result)
-                    return false;
             }
             catch (Exception)
             {
                 return false;
             }
-
-            return true;
         }
 
-        public bool VerifyTransactionImmediately(TransactionReceipt transaction, bool cacheEnabled = true)
+        public bool VerifyTransactionImmediately(TransactionReceipt receipt, bool cacheEnabled = true)
         {
-            if (transaction is null)
-                throw new ArgumentNullException(nameof(transaction));
+            if (receipt is null)
+                throw new ArgumentNullException(nameof(receipt));
 
             /* validate transaction hash */
-            if (!transaction.Hash.Equals(transaction.FullHash()))
+            if (!receipt.Hash.Equals(receipt.FullHash()))
                 return false;
 
             try
             {
                 /* try to verify signature using public key cache to avoid EC recover */
-                if (cacheEnabled && _publicKeyCache.TryGetValue(transaction.Transaction.From, out var publicKey))
-                    return VerifyTransactionImmediately(transaction, publicKey);
+                if (cacheEnabled && _publicKeyCache.TryGetValue(receipt.Transaction.From, out var publicKey))
+                    return VerifyTransactionImmediately(receipt, publicKey);
 
                 /* recover EC to get public key from signature to compute address */
-                publicKey = transaction.RecoverPublicKey();
+                publicKey = receipt.RecoverPublicKey();
                 var address = publicKey.GetAddress();
 
                 /* check if recovered address from public key is valid */
-                if (!address.Equals(transaction.Transaction.From))
+                if (!address.Equals(receipt.Transaction.From))
                     return false;
 
                 /* try to remember public key for this address */
                 if (cacheEnabled)
-                    _publicKeyCache.Add(transaction.Transaction.From, publicKey);
+                    _publicKeyCache.Add(receipt.Transaction.From, publicKey);
             }
             catch (Exception)
             {
@@ -116,7 +111,7 @@ namespace Lachain.Core.Blockchain.Operations
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Transaction verified failed: " + e);
+                    _logger.LogError("Transaction verification failed: " + e);
                 }
             }
         }

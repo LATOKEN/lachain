@@ -126,7 +126,7 @@ namespace Lachain.Console
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
-                    tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
+                    tpkeKeyGen.GetPrivKey(i).ToBytes().ToHex(),
                     privShares[i].ToBytes().ToHex()
                 );
             }
