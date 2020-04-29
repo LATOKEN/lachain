@@ -12,5 +12,7 @@ namespace Lachain.Storage.State
         byte[] GetRawValue(UInt160 contract, IEnumerable<byte> key);
 
         void SetRawValue(UInt160 contract, IEnumerable<byte> key, byte[] value);
+
+        void DeleteRawValue(UInt160 contract, IEnumerable<byte> key);
     }
 }

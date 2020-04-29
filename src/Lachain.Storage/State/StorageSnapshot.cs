@@ -62,5 +62,10 @@ namespace Lachain.Storage.State
                 value
             );
         }
+
+        public void DeleteRawValue(UInt160 contract, IEnumerable<byte> key)
+        {
+            _state.Delete(EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key).ToArray(), out _);
+        }
     }
 }

@@ -27,5 +27,10 @@ namespace Lachain.Core.Blockchain.SystemContracts.Storage
         {
             _snapshot.SetRawValue(_contract, _location.Buffer.Concat(key), value);
         }
+
+        public void Delete(IEnumerable<byte> key)
+        {
+            _snapshot.DeleteRawValue(_contract, _location.Buffer.Concat(key));
+        }
     }
 }
