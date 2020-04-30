@@ -96,6 +96,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public ContractEncoder Write(UInt160 value)
         {
+            // encode uint160 as 32 byte zero padded
+            _binaryWriter.Write(new byte[12]);
             _binaryWriter.Write(value.ToBytes());
             return this;
         }

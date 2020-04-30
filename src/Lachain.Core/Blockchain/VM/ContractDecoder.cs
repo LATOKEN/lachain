@@ -58,7 +58,8 @@ namespace Lachain.Core.Blockchain.VM
 
         private UInt160 DecodeUInt160()
         {
-            return _binaryReader.ReadBytes(20).ToUInt160();
+            // decode uint160 as 32 byte zero padded
+            return _binaryReader.ReadBytes(32).Skip(12).ToArray().ToUInt160();
         }
 
         private byte[][] DecodeBytesList()
