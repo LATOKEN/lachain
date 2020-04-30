@@ -256,5 +256,19 @@ namespace Lachain.ConsensusTest
             var keys = SimulateKeygen(1, 0, DeliveryServiceMode.TAKE_LAST);
             CheckKeys(keys);
         }
+        
+        [Test]
+        public void RunAllHonest_2_0()
+        {
+            var keys = SimulateKeygen(3, 0, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_3_0()
+        {
+            var keys = SimulateKeygen(3, 0, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
     }
 }

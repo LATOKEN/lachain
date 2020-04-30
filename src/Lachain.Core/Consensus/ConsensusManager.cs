@@ -105,7 +105,7 @@ namespace Lachain.Core.Consensus
             if (CurrentEra == -1)
                 Logger.LogWarning($"Consensus has not been started yet, skipping message with era {era}");
             else if (era < CurrentEra)
-                Logger.LogDebug($"Skipped message for era {era} since we already advanced to {CurrentEra}");
+                Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
             else if (era > CurrentEra)
                 _postponedMessages
                     .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())

@@ -9,7 +9,6 @@ namespace Lachain.Crypto.ThresholdSignature
 {
     public class PublicKeySet : IEquatable<PublicKeySet>
     {
-        private readonly IDictionary<PublicKey, int> _keyIndex;
         public PublicKey SharedPublicKey { get; }
         public IReadOnlyCollection<PublicKey> Keys => _keys;
 
@@ -19,7 +18,6 @@ namespace Lachain.Crypto.ThresholdSignature
         {
             _keys = pubKeyShares.ToArray();
             // TODO: this won't work when faulty = 0 and there are >1 players
-            _keyIndex = _keys.Select((share, i) => (share, i)).ToDictionary(t => t.Item1, t => t.Item2);
             SharedPublicKey = new PublicKey(AssemblePublicKey(_keys.Select(share => share.RawKey), _keys.Length));
             Threshold = faulty;
         }
@@ -32,14 +30,8 @@ namespace Lachain.Crypto.ThresholdSignature
         }
 
 
-        public int Count => _keyIndex.Count;
+        public int Count => _keys.Length;
         public int Threshold { get; }
-
-        public int GetIndex(PublicKey key)
-        {
-            if (!_keyIndex.TryGetValue(key, out var idx)) return -1;
-            return idx;
-        }
 
         public PublicKey this[int idx] => _keys[idx];
 

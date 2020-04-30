@@ -27,8 +27,8 @@ namespace Lachain.Console
     {
         static void TrustedKeyGen()
         {
-            // const int n = 22, f = 7;
-            const int n = 4, f = 1;
+            const int n = 22, f = 7;
+            // const int n = 4, f = 1;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
             
@@ -57,11 +57,13 @@ namespace Lachain.Console
 
             var ecdsaPrivateKeys = new string[n];
             var ecdsaPublicKeys = new string[n];
+            var addresses = new string[n];
             var crypto = CryptoProvider.GetCrypto();
             for (var i = 0; i < n; ++i)
             {
                 ecdsaPrivateKeys[i] = crypto.GenerateRandomBytes(32).ToHex(false);
                 ecdsaPublicKeys[i] = crypto.ComputePublicKey(ecdsaPrivateKeys[i].HexToBytes(), true).ToHex(false);
+                addresses[i] = ecdsaPrivateKeys[i].HexToBytes().ToPrivateKey().GetPublicKey().GetAddress().ToHex();
             }
 
             var peers = ips.Zip(ecdsaPublicKeys)
@@ -96,6 +98,10 @@ namespace Lachain.Console
                     }).ToList(),
                     ThresholdEncryptionPublicKey = tpkePubKey.ToBytes().ToHex()
                 };
+                for (var j = 0; j < n; ++j)
+                {
+                    genesis.Balances[addresses[j]] = "1000000";
+                }
                 var rpc = new RpcConfig
                 {
                     Hosts = new[] {"+"},

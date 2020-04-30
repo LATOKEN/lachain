@@ -32,7 +32,7 @@ namespace Lachain.CryptoTest
             {
                 for (var j = 0; j < n; ++j)
                 {
-                    success[i] &= signers[i].AddShare(pubKeys[j], signatureShares[j], out var sig);
+                    success[i] &= signers[i].AddShare(j, signatureShares[j], out var sig);
                     if (sigs[i] == null && sig != null)
                         sigs[i] = sig;
                 }

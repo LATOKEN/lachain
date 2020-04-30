@@ -8,8 +8,8 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="RocksDbNative" Version="5.4.6.10" />
-    <PackageReference Include="RocksDbSharp" Version="5.4.6.11" />
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
+    <PackageReference Include="RocksDbSharp" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />

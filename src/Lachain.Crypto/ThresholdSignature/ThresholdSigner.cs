@@ -38,16 +38,16 @@ namespace Lachain.Crypto.ThresholdSignature
             return _privateKeyShare.HashAndSign(_dataToSign);
         }
 
-        public bool AddShare(PublicKey pubKey, SignatureShare sigShare, out Signature? result)
+        public bool AddShare(int idx, SignatureShare sigShare, out Signature? result)
         {
             result = null;
-            var idx = _publicKeySet.GetIndex(pubKey);
             if (idx < 0 || idx >= _publicKeySet.Count)
             {
-                _logger.LogWarning($"Public key {pubKey} is not recognized (index {idx})");
+                _logger.LogWarning($"Public key (?) is not recognized (index {idx})");
                 return false;
             }
 
+            var pubKey = _publicKeySet[idx];
             if (_collectedShares[idx] != null)
             {
                 _logger.LogWarning($"Signature share {idx} input twice");

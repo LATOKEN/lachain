@@ -121,7 +121,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
                     GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
-                    Invocation = ByteString.CopyFrom(ethTx.Data ?? new byte[] { }),
+                    Invocation = ethTx.Data is null ? ByteString.Empty : ByteString.CopyFrom(ethTx.Data),
                 };
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {TransactionUtils.ChainId}))
                 {

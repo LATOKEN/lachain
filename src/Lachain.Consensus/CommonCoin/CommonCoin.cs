@@ -59,8 +59,7 @@ namespace Lachain.Consensus.CommonCoin
 
                 // _logger.LogDebug($"Received share from {envelope.ValidatorIndex}");
                 var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
-                if (!_thresholdSigner.AddShare(
-                    Wallet.ThresholdSignaturePublicKeySet[envelope.ValidatorIndex], signatureShare, out var signature))
+                if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
                 {
                     Logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
                     return; // potential fault evidence
