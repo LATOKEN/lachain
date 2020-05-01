@@ -9,7 +9,7 @@ namespace Lachain.Crypto.VRF
 {
     public static class Vrf
     {
-        public static (byte[], byte[], BigInteger) evaluate(byte[] privateKey, byte[] seed, byte[] role, BigInteger tau,
+        public static (byte[], byte[], BigInteger) Evaluate(byte[] privateKey, byte[] seed, byte[] role, BigInteger tau,
             BigInteger w, BigInteger W)
         {
             var prv = privateKey.ToHex(false);
@@ -20,12 +20,12 @@ namespace Lachain.Crypto.VRF
             return (proof, value, j);
         }
         
-        public static bool isWinner(byte[] publicKey, byte[] proofBytes, byte[] seed, byte[] role, BigInteger tau,
+        public static bool IsWinner(byte[] publicKey, byte[] proofBytes, byte[] seed, byte[] role, BigInteger tau,
             BigInteger w, BigInteger W)
         {
             var pub = publicKey.ToHex(false);
             var proof = proofBytes.ToHex(false);
-            var value = VrfImports.proof_to_hash(proof).HexToBytes();
+            var value = ProofToHash(proofBytes);
             var message = Combine(seed, role).ToHex(false);
             var result = VrfImports.verify(pub, proof, message);
             if (!result)
@@ -35,6 +35,11 @@ namespace Lachain.Crypto.VRF
             var j = Sortition.GetVotes(value, w, tau, W);
             return j > 0;
         }
+
+        public static byte[] ProofToHash(byte[] proof)
+        {
+            return VrfImports.proof_to_hash(proof.ToHex()).HexToBytes();
+        } 
     
         private static byte[] Combine(params byte[][] arrays)
         {

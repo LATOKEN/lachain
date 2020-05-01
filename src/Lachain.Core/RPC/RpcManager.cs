@@ -18,6 +18,7 @@ namespace Lachain.Core.RPC
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
+        private readonly IContractRegisterer _contractRegisterer;
 
         public RpcManager(
             ITransactionManager transactionManager,
@@ -26,7 +27,8 @@ namespace Lachain.Core.RPC
             IConfigManager configManager,
             IStateManager stateManager,
             ITransactionPool transactionPool,
-            IVirtualMachine virtualMachine)
+            IVirtualMachine virtualMachine,
+            IContractRegisterer contractRegisterer)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -35,6 +37,7 @@ namespace Lachain.Core.RPC
             _stateManager = stateManager;
             _transactionPool = transactionPool;
             _virtualMachine = virtualMachine;
+            _contractRegisterer = contractRegisterer;
         }
 
         private HttpService? _httpService;
@@ -48,7 +51,7 @@ namespace Lachain.Core.RPC
                 new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
                 new AccountServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
-                new TransactionServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool), 
+                new TransactionServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool, _contractRegisterer), 
                 new NodeService()
             };
             

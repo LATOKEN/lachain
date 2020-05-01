@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using AustinHarris.JsonRpc;
@@ -10,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
@@ -27,17 +29,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
+        private readonly IContractRegisterer _contractRegisterer;
 
         public TransactionServiceWeb3(
             IVirtualMachine virtualMachine,
             IStateManager stateManager,
             ITransactionManager transactionManager,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool,
+            IContractRegisterer contractRegisterer)
         {
             _virtualMachine = virtualMachine;
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
+            _contractRegisterer = contractRegisterer;
         }
 
         [JsonRpcMethod("eth_verifyRawTransaction")]
@@ -163,10 +168,50 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 ["status"] = result.Status.ToString(),
                 ["gasLimit"] = gasLimit,
-                ["gasUsed"] = result.GasUsed,
+                ["gasUsed"] = result.GasUsed.ToHex(),
                 ["ok"] = result.Status == ExecutionStatus.Ok,
                 ["result"] = result.ReturnValue?.ToHex() ?? "0x"
             };
+        }
+
+        [JsonRpcMethod("eth_call")]
+        private string Call(JObject opts, string? blockId)
+        {
+            string from = (string)opts["from"];
+            string to = (string)opts["to"];
+            string data = (string)opts["data"];
+            //string from, string to, string gas, string gasPrice, string value, string data
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
+                to.HexToUInt160());
+            var systemContract= _contractRegisterer.GetContractByAddress(to.HexToUInt160());
+            if (contract is null && systemContract is null)
+                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
+            if (string.IsNullOrEmpty(data))
+                throw new ArgumentException("Invalid input specified", nameof(data));
+            if (string.IsNullOrEmpty(from))
+                from = UInt160Utils.Zero.ToHex();
+
+            if (contract != null)
+            {
+                InvocationResult result = _stateManager.SafeContext(() =>
+                {
+                    _stateManager.NewSnapshot();
+                    var invocationResult = _virtualMachine.InvokeContract(contract,
+                        new InvocationContext(from.HexToUInt160()), data.HexToBytes(), 100000000);
+                    _stateManager.Rollback();
+                    return invocationResult;
+                });
+
+                return result.ReturnValue?.ToHex() ?? "0x";
+            }
+            
+            var (err, invocationResult) = _InvokeSystemContract(to.HexToUInt160(), data.HexToBytes(), from.HexToUInt160(), _stateManager.LastApprovedSnapshot);
+            if (err != OperatingError.Ok)
+            {
+                return "0x";
+            }
+            UInt256 resBytes = (UInt256) invocationResult;
+            return resBytes.ToHex();
         }
 
         [JsonRpcMethod("eth_estimateGas")]
@@ -206,6 +251,41 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["to"] = receipt.Transaction.To.ToHex(),
                 ["from"] = receipt.Transaction.From.ToHex(),
             };
+        }
+        
+        
+
+        private (OperatingError, object?) _InvokeSystemContract(
+            UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot
+        )
+        {
+            object invResult;
+            try
+            {
+                var result = _contractRegisterer.DecodeContract(address, invocation);
+                if (result is null)
+                    return (OperatingError.ContractFailed, null);
+                var (contract, method, args) = result;
+                
+                var context = new ContractContext
+                {
+                    Snapshot = snapshot,
+                    Sender = from,
+                };
+                var instance =  Activator.CreateInstance(contract, context);
+                invResult = method.Invoke(instance, args);
+            }
+            catch (Exception e) when (
+                e is NotSupportedException ||
+                e is InvalidOperationException ||
+                e is TargetInvocationException ||
+                e is ContractAbiException
+            )
+            {
+                return (OperatingError.ContractFailed, null);
+            }
+
+            return (OperatingError.Ok, invResult);
         }
     }
 }

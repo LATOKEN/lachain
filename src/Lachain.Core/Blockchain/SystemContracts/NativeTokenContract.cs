@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Linq;
+using System.Numerics;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -11,10 +14,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class NativeTokenContract : ISystemContract
     {
         private readonly ContractContext _contractContext;
+        
+        private readonly StorageMapping _allowance;
 
         public NativeTokenContract(ContractContext contractContext)
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
+            _allowance = new StorageMapping(
+                ContractRegisterer.GovernanceContract,
+                contractContext.Snapshot.Storage,
+                BigInteger.Zero.ToUInt256()
+            );
         }
         
         public ContractStandard ContractStandard => ContractStandard.Lrc20;
@@ -56,28 +66,53 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (_contractContext.Snapshot is null) return false;
             _contractContext.Snapshot.Balances.TransferBalance(
-                _contractContext.Sender ?? throw new InvalidOperationException(),
-                recipient, value.ToMoney()
+                MsgSender(),
+                recipient, value.ToMoney(true)
             );
             return true;
         }
 
         [ContractMethod(Lrc20Interface.MethodTransferFrom)]
-        public void TransferFrom(UInt160 from, UInt160 recipient, UInt256 value)
+        public bool TransferFrom(UInt160 from, UInt160 recipient, UInt256 value)
         {
-            throw new NotImplementedException();
+            if (_contractContext.Snapshot is null) return false;
+            SubAllowance(from, MsgSender(), value);
+            _contractContext.Snapshot.Balances.TransferBalance(from,recipient, value.ToMoney(true));
+            return true;
         }
 
         [ContractMethod(Lrc20Interface.MethodApprove)]
-        public void Approve(UInt160 spender, UInt256 value)
+        public bool Approve(UInt160 spender, UInt256 amount)
         {
-            throw new NotImplementedException();
+            if (_contractContext.Snapshot is null) return false;
+            SetAllowance(MsgSender(), spender, amount);
+            return true;
         }
 
         [ContractMethod(Lrc20Interface.MethodAllowance)]
-        public void Allowance(UInt160 owner, UInt160 spender)
+        public UInt256 Allowance(UInt160 owner, UInt160 spender)
         {
-            throw new NotImplementedException();
+            var amountBytes = _allowance.GetValue(owner.ToBytes().Concat(spender.ToBytes()));
+            if (amountBytes.Length == 0) return UInt256Utils.Zero;
+            return amountBytes.ToUInt256();
+        }
+        
+        private void SetAllowance(UInt160 owner, UInt160 spender, UInt256 amount)
+        {
+            _allowance.SetValue(owner.ToBytes().Concat(spender.ToBytes()), amount.ToBytes());
+        }
+
+        private UInt160 MsgSender()
+        {
+            return _contractContext.Sender ?? throw new InvalidOperationException();
+        }
+
+        public UInt256 SubAllowance(UInt160 owner, UInt160 spender, UInt256 value)
+        {
+            var allowance = Allowance(owner, spender).ToMoney(true);
+            allowance -= value.ToMoney(true);
+            SetAllowance(owner, spender, allowance.ToUInt256());
+            return allowance.ToUInt256();
         }
     }
 }

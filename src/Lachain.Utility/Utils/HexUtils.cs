@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using Google.Protobuf;
 using Nethereum.Hex.HexTypes;
@@ -85,7 +86,14 @@ namespace Lachain.Utility.Utils
 
         public static byte[] ToBytes(this ulong number)
         {
-            return BitConverter.GetBytes(number);
+            var bytes = BitConverter.GetBytes(number);
+            return BitConverter.IsLittleEndian ? bytes.Reverse().ToArray() : bytes;
+        }
+
+        public static byte[] TrimLeadingZeros(this byte[] array)
+        {
+            int firstIndex = Array.FindIndex(array, b => b != 0);
+            return array.Skip(firstIndex).ToArray();
         }
     }
 }
