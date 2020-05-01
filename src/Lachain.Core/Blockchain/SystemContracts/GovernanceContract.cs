@@ -73,7 +73,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodKeygenConfirm)]
         public void KeyGenConfirm(byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys)
         {
-            var faulty = (thresholdSignaturePublicKeys.Length - 1) / 3;
+            var players = thresholdSignaturePublicKeys.Length;
+            var faulty = (players - 1) / 3;
             var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(PublicKey.FromBytes), faulty);
             var tpkeKey = Crypto.TPKE.PublicKey.FromBytes(tpkePublicKey);
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
@@ -82,15 +83,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
             
-            if (votes + 1 != 2 * faulty + 1) return;
+            if (votes + 1 != players - faulty) return;
             
             var ecdsaPublicKeys = _pendingValidators.Get()
                 .Batch(CryptoUtils.PublicKeyLength)
-                .Select(x => x.ToArray().ToPublicKey());
+                .Select(x => x.ToArray().ToPublicKey())
+                .ToArray();
 
             _contractContext.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
-            Logger.LogError("Enough confirmations collected, validators will be changed in the next block");
+            Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
+            Logger.LogWarning($"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
+            Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToBytes().ToHex()))}");
+            Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToBytes().ToHex()}");
         }
         
         private int GetConsensusGeneration()

@@ -51,7 +51,7 @@ namespace Lachain.Core.Vault
 
         private void BlockManagerOnSystemContractInvoked(object _, ContractContext context)
         {
-            Logger.LogInformation("Detected call of GovernanceContract");
+            if (context.Receipt is null) return;
             var tx = context.Receipt.Transaction;
             if (!tx.To.Equals(ContractRegisterer.GovernanceContract)) return;
             if (tx.Invocation.Length < 4) return;
@@ -169,17 +169,27 @@ namespace Lachain.Core.Vault
                     $"Collected {_confirmations[keyringHash]} confirmations for hash {keyringHash.ToHex()}");
                 if (_confirmations[keyringHash] != _currentKeygen.Players - _currentKeygen.Faulty) return;
                 var keys = _currentKeygen.TryGetKeys() ?? throw new Exception();
-                Logger.LogInformation($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
-
+                Logger.LogWarning($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
                 if (!keyringHash.Equals(keys.PublicPartHash()))
                 {
                     throw new Exception();
                 }
 
+                // Logger.LogWarning($"  - TPKE private key: {keys.TpkePrivateKey.ToBytes().ToHex()}");
+                Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToBytes().ToHex()}");
+                // Logger.LogWarning($"  - TS private key: {keys.ThresholdSignaturePrivateKey.ToBytes().ToHex()}");
+                Logger.LogWarning(
+                    "  - TS public key: " +
+                    keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToBytes().ToHex()
+                );
+                Logger.LogWarning(
+                    "  - TS public key set: " +
+                    string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes().ToHex()))
+                );
                 _privateWallet.AddThresholdSignatureKeyAfterBlock(
                     context.Receipt.Block, keys.ThresholdSignaturePrivateKey);
                 _privateWallet.AddTpkePrivateKeyAfterBlock(context.Receipt.Block, keys.TpkePrivateKey);
-
+                Logger.LogInformation("Keyring saved to wallet");
                 _currentKeygen = null;
                 _confirmations.Clear();
             }
