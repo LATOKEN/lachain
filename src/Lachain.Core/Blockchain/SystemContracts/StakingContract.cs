@@ -24,7 +24,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly ulong _cycleDuration = 1000; // in blocks
         private readonly ulong _submissionPhaseDuration = 500; // in blocks
         private readonly ulong _keyGenPhaseDuration = 500; // in blocks
-        private readonly int PUBLIC_KEY_LENGTH = 33;
+        private readonly int PUBLIC_KEY_LENGTH = 65;
         private readonly BigInteger _tokenUnitsInRoll = BigInteger.Pow(10, 21);
         private readonly StorageVariable _currentCycle; // int
         private readonly StorageVariable _nextValidators; // array of public keys
@@ -33,8 +33,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _nextVrfSeed;
         private readonly byte[] _role = Encoding.ASCII.GetBytes("staker");
         private readonly BigInteger _expectedValidatorsCount = 22;
-        private readonly byte[] _dummyPublicKey =
-            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
         private readonly StorageMapping _userToStakerId;
         private readonly StorageMapping _userToPubKey;
         private readonly StorageMapping _userToStake;
@@ -82,7 +80,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(6).ToUInt256()
             );
-            AddStaker(_dummyPublicKey);
+            TryInitStoarge();
         }
 
         public ContractStandard ContractStandard => ContractStandard.StakingContract;
@@ -95,35 +93,35 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             // TODO: allow adding to existing stake
             var stake = GetStake(MsgSender());
+            if (!stake.Equals(UInt256Utils.Zero))
             {
-                if (!stake.Equals(UInt256Utils.Zero))
-                {
-                    throw new Exception("Already staker");
-                }
+                throw new Exception("Already staker");
             }
 
             var latoken = new NativeTokenContract(_contractContext);
             
             var balance = latoken.BalanceOf(MsgSender()) ?? UInt256Utils.Zero;
-            if (UInt256Utils.ToMoney(balance).CompareTo(UInt256Utils.ToMoney(amount)) == -1)
+            if (balance.ToMoney().CompareTo(amount.ToMoney(true)) == -1)
             {
                 throw new Exception("Insufficient balance");
             }
             
-            var allowance = latoken.Allowance(MsgSender(), ContractRegisterer.StakingContract) ?? UInt256Utils.Zero;
-            if (UInt256Utils.ToMoney(allowance).CompareTo(UInt256Utils.ToMoney(allowance)) == -1)
-            {
-                throw new Exception("Insufficient allowance");
-            }
-            
-            var ok = latoken.TransferFrom(MsgSender(), ContractRegisterer.StakingContract, amount);
+            var ok = latoken.Transfer(ContractRegisterer.StakingContract, amount);
             if (!ok)
             {
                 throw new Exception("Transfer failure");
             }
+
+            var startingCycle = GetCurrentCycle() + 1;
+            // Special case for initial cycle
+            if (startingCycle == 1)
+            {
+                startingCycle--;
+            }
+
             SetStake(MsgSender(), amount);
             SetPublicKey(MsgSender(), publicKey);
-            SetStartCycle(MsgSender(), GetCurrentCycle() + 1);
+            SetStartCycle(MsgSender(), startingCycle);
             var id = AddStaker(publicKey);
             SetStakerId(MsgSender(), id);
         }
@@ -165,12 +163,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var stake = GetStake(MsgSender());
             EnsurePositive(stake);
-            
+
+            // save the real sender
+            var user = MsgSender();
+            // change the sender of the transaction to perform money transfer from this contract 
+            _contractContext.Sender = ContractRegisterer.StakingContract;
             var latoken = new NativeTokenContract(_contractContext);
-            var ok = latoken.Transfer(MsgSender(), stake);
+            
+            var ok = latoken.Transfer(user, stake);
             if (!ok) throw new Exception("Transfer failure");
 
-            DeleteStaker(MsgSender());
+            DeleteStaker(user);
         }
 
 
@@ -287,6 +290,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
         }
 
+        [ContractMethod(StakingInterface.MethodTotalActiveStake)]
         public UInt256 GetTotalActiveStake()
         {
             Money stakeSum = UInt256Utils.Zero.ToMoney();
@@ -295,21 +299,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 var stakerPublicKey = stakers.Skip(startByte).Take(PUBLIC_KEY_LENGTH).ToArray();
                 var stakerAddress = PublicKeyToAddress(stakerPublicKey);
-                if (GetStartCycle(stakerAddress) >= GetCurrentCycle() 
-                    && (GetWithdrawRequestCycle(stakerAddress) == 0 
+                if (GetStartCycle(stakerAddress) >= GetCurrentCycle()
+                    && (GetWithdrawRequestCycle(stakerAddress) == 0
                         || GetWithdrawRequestCycle(stakerAddress) == GetCurrentCycle()))
                 {
-                    stakeSum += GetStake(stakerAddress).ToMoney();
+                    stakeSum += GetStake(stakerAddress).ToMoney(true);
                 }
             }
 
-            return stakeSum.ToUInt256();
+            return stakeSum.ToUInt256(true);
         }
 
-        private bool IsAbleToBeAValidator(UInt160 staker)
+        
+        [ContractMethod(StakingInterface.MethodIsAbleToBeAValidator)]
+        public bool IsAbleToBeAValidator(UInt160 staker)
         {
             var stake = GetStake(staker);
-            if (stake.ToMoney().CompareTo(UInt256Utils.Zero.ToMoney()) != 1)
+            if (stake.ToMoney(true).CompareTo(UInt256Utils.Zero.ToMoney()) != 1)
             {
                 return false;
             }
@@ -320,7 +326,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetStake(UInt160 staker, UInt256 amount)
         {
             var key = staker.ToBytes();
-            if (amount.ToMoney().CompareTo(UInt256Utils.Zero.ToMoney()) == 0)
+            if (amount.ToMoney(true).CompareTo(UInt256Utils.Zero.ToMoney()) == 0)
             {
                 _userToStake.Delete(key);
                 return;
@@ -383,7 +389,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return;
             }
             var value = BitConverter.GetBytes(id);
-            _userToWithdrawRequestCycle.SetValue(key, value);
+            _userToStakerId.SetValue(key, value);
         }
 
         public int GetStakerId(UInt160 staker)
@@ -396,13 +402,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetStartCycle(UInt160 staker, int cycle)
         {
             var key = staker.ToBytes();
-            if (cycle == 0)
-            {
-                _userToStartCycle.Delete(key);
-                return;
-            }
             var value = BitConverter.GetBytes(cycle);
             _userToStartCycle.SetValue(key, value);
+        }
+        
+        private void DeleteStartCycle(UInt160 staker)
+        {
+            var key = staker.ToBytes();
+            _userToStartCycle.Delete(key);
         }
 
         private void EnsurePublicKeyOwner(byte[] publicKey, UInt160 expectedOwner)
@@ -419,7 +426,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SetWithdrawRequestCycle(staker, 0);
             SetStake(staker, UInt256Utils.Zero);
             SetPublicKey(staker, new byte[]{});
-            SetStartCycle(staker, 0);
+            DeleteStartCycle(staker);
             SetStakerId(staker, 0);
         }
         
@@ -429,6 +436,18 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var id = stakers.Length  / PUBLIC_KEY_LENGTH;
             _stakers.Set(stakers.Concat(publicKey).ToArray());
             return id;
+        }
+
+        private void TryInitStoarge()
+        {
+            if (_stakers.Get().Length == 0)
+            {
+                AddStaker(new String('f', PUBLIC_KEY_LENGTH * 2).HexToBytes());
+            }
+            if (_vrfSeed.Get().Length == 0)
+            {
+                _vrfSeed.Set("74657374".HexToBytes()); // initial seed
+            }
         }
         
         private byte[] getStakerPublicKeyById(int id)
@@ -445,7 +464,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private static void EnsurePositive(UInt256 amount)
         {
-            if (amount.ToMoney().CompareTo(UInt256Utils.ToUInt256(0).ToMoney()) != 1)
+            if (amount.ToMoney(true).CompareTo(UInt256Utils.ToUInt256(0).ToMoney()) != 1)
             {
                 throw new Exception("Should be positive");
             }

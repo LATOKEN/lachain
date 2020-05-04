@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Lachain.Core.Blockchain.Error;
@@ -10,10 +11,12 @@ namespace Lachain.Core.Blockchain.VM
     public class ContractDecoder
     {
         private readonly BinaryReader _binaryReader;
+        private readonly byte[] _input;
 
         public ContractDecoder(byte[] input)
         {
             _binaryReader = new BinaryReader(new MemoryStream(input));
+            _input = input;
         }
 
         public object[] Decode(string signature)
@@ -21,11 +24,15 @@ namespace Lachain.Core.Blockchain.VM
             var parts = signature.Split('(');
             if (parts.Length != 2)
                 throw new ContractAbiException("Unable to parse ABI method signature (" + signature.Length + ")");
-            parts[1] = parts[1].TrimEnd(')');
-            var types = parts[1].Split(',');
-            var result = new List<object>(types.Length);
             if (_binaryReader.ReadUInt32() != ContractEncoder.MethodSignatureAsInt(signature))
                 throw new ContractAbiException("Decoded ABI does not match method signature");
+            parts[1] = parts[1].TrimEnd(')');
+            if (parts[1] == "")
+            {
+                return new object[]{};
+            }
+            var types = parts[1].Split(',');
+            var result = new List<object>(types.Length);
             result.AddRange(types.Select(type => type switch
             {
                 "uint256" => (object) DecodeUInt256(),
@@ -44,11 +51,12 @@ namespace Lachain.Core.Blockchain.VM
 
         private byte[] DecodeBytes()
         {
-            var len = DecodeUInt256().ToBigInteger();
-            if (len > int.MaxValue)
+            var dynamicOffset = DecodeUInt256().ToBigInteger(true) + 4;
+            if (dynamicOffset > int.MaxValue)
                 throw new ContractAbiException("Encoded array length is too long");
-            var words = ((int) len + 31) / 32;
-            return _binaryReader.ReadBytes(words * 32).Take((int) len).ToArray();
+            var len = (int)_input.Skip((int) dynamicOffset).Take(32).ToArray().ToUInt256().ToBigInteger(true);
+            var res = _input.Skip((int) (dynamicOffset + 32)).Take(len).ToArray();
+            return res;
         }
 
         private UInt256 DecodeUInt256()

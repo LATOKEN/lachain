@@ -10,10 +10,9 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodSubmitVrf = "submitVrf(bytes,bytes,bytes)";
         public const string MethodFinishCycle = "finishCycle()";
         public const string MethodTotalActiveStake = "totalActiveStake()";
-        public const string MethodHasStake = "hasStake(address)";
         public const string MethodGetStake = "getStake(address)";
-        public const string MethodIsActiveStaker = "isActiveStaker(address)";
-        public const string MethodGetCurrentCycle = "getCurrentCycle(address)";
+        public const string MethodIsAbleToBeAValidator = "isAbleToBeAValidator(address)";
+        public const string MethodGetCurrentCycle = "getCurrentCycle()";
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
         public const string MethodGetVrfSeed = "getVrfSeed()";
         
@@ -25,9 +24,8 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodSubmitVrf,
             MethodFinishCycle,
             MethodTotalActiveStake,
-            MethodHasStake,
             MethodGetStake,
-            MethodIsActiveStaker,
+            MethodIsAbleToBeAValidator,
             MethodGetCurrentCycle,
             MethodIsNextValidator,
             MethodGetVrfSeed,

@@ -210,8 +210,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 return "0x";
             }
-            UInt256 resBytes = (UInt256) invocationResult;
-            return resBytes.ToHex();
+
+            switch (invocationResult)
+            {
+                case UInt256 result:
+                    return result.ToHex();
+                case int result:
+                    return result.ToString();
+                case bool result:
+                    return result ? "0x1" : "0x0";
+                default:
+                    return "0x";
+            }
         }
 
         [JsonRpcMethod("eth_estimateGas")]
