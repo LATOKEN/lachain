@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
+using Lachain.Logger;
 
 namespace Lachain.ConsensusTest
 {
@@ -57,13 +59,23 @@ namespace Lachain.ConsensusTest
 
         public int ResultSet;
         public IProtocolIdentifier Id { get; } = new InvokerId();
-
+        
+        private readonly object _queueLock = new object();
+        private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+        public bool Terminated { get; private set; }
+        
         public void Terminate()
         {
-            throw new NotImplementedException();
+            lock (_queueLock)
+            {
+                if (Terminated) return;
+                _logger.LogDebug($"Protocol {Id} is terminated");
+                Terminated = true;
+                Monitor.Pulse(_queueLock);
+            }
         }
 
-        public bool Terminated => false;
+        //public bool Terminated => false;
 
         public void ReceiveMessage(MessageEnvelope message)
         {

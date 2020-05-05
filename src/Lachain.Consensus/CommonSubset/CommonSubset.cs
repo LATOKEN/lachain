@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.Messages;
@@ -59,6 +60,8 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     case ProtocolRequest<CommonSubsetId, EncryptedShare> commonSubsetRequested:
                         HandleInputMessage(commonSubsetRequested);
+                        Console.Error.WriteLine(
+                            "Thread {0} ID_ACS {1} HandleInputMessage() into ACS", Thread.CurrentThread.ManagedThreadId, GetMyId());
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> _:
                         Terminated = true;
@@ -79,14 +82,10 @@ namespace Lachain.Consensus.CommonSubset
         private void HandleInputMessage(ProtocolRequest<CommonSubsetId, EncryptedShare> request)
         {
             _requested = ResultStatus.Requested;
-
-
-            //var sender = 0; // todo: temporarily 
-            //var broadcast = new ReliableBroadcast.ReliableBroadcast(new ReliableBroadcastId(sender, 0), _wallet, _broadcaster);
-            //_broadcaster.RegisterProtocols(new[] {broadcast, _resultInterceptors[i]});
-            
             Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                 (Id, new ReliableBroadcastId(GetMyId(), (int) _commonSubsetId.Era), request.Input));
+            Console.Error.WriteLine(
+                "Thread {0} ID_ACS {1} create RBC from HandleInputMessage", Thread.CurrentThread.ManagedThreadId, GetMyId());
 
             for (var j = 0; j < N; ++j)
             {
@@ -94,9 +93,10 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(Id,
                         new ReliableBroadcastId(j, (int) _commonSubsetId.Era), null));
+                    Console.Error.WriteLine(
+                        "Thread {0} ID_ACS {1} create RBC from HandleInputMessage", Thread.CurrentThread.ManagedThreadId, GetMyId());
                 }
             }
-
             CheckResult();
         }
 
@@ -113,6 +113,9 @@ namespace Lachain.Consensus.CommonSubset
 
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
+            if(result.Result == null) 
+                return;
+            
             var j = result.Id.AssociatedValidatorId;
             _logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: {j}-th RBC completed.");
 
@@ -168,14 +171,17 @@ namespace Lachain.Consensus.CommonSubset
                 .Where(x => x.b == true)
                 .Select(x => x.share ?? throw new Exception())
                 .ToHashSet();
-
+            
+            
             CheckResult();
         }
 
         private void CheckResult()
         {
-            if (_result == null) return;
-            if (_requested != ResultStatus.Requested) return;
+            if (_result == null) 
+                return;
+            if (_requested != ResultStatus.Requested) 
+                return;
             _requested = ResultStatus.Sent;
             SetResult();
             _logger.LogDebug($"{GetMyId()} ACS terminated.");

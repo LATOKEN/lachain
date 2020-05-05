@@ -118,17 +118,17 @@ namespace Lachain.ConsensusTest
                     Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId( message.ReadyMessage.Sender, (int) message.Validator.Era);
+                    var rbIdReadyMsg = new ReliableBroadcastId( message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
                     CheckRequest(rbIdReadyMsg);
                     Registry[rbIdReadyMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.Sender, (int) message.Validator.Era);
+                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
                     CheckRequest(reliableBroadcastId);
                     Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break; 
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.Sender, (int) message.Validator.Era);
+                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
                     CheckRequest(rbIdEchoMsg);
                     Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
@@ -188,7 +188,8 @@ namespace Lachain.ConsensusTest
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void CheckRequest(IProtocolIdentifier id)
         {
-            if (Registry.ContainsKey(id)) return;
+            if (Registry.ContainsKey(id)) 
+                return;
             Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
             if (Terminated)
             {

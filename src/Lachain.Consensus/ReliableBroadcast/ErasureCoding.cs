@@ -25,11 +25,21 @@ namespace Lachain.Consensus.ReliableBroadcast
         
         public void  EncoderInPlace(int [] plainData)
         {
+            var rse = new ReedSolomonEncoder(_field);
+            rse.Encode(plainData, plainData.Length / 2);
+        }
+        
+        public int[]  EncoderInPlaceNew(int [] plainData, int addInt)
+        {
+            var res = new int[plainData.Length];
+            for (var i = 0; i < plainData.Length; i++)
+            {
+                res[i] = plainData[i];
+            }
             
             var rse = new ReedSolomonEncoder(_field);
-            
-            rse.Encode(plainData, plainData.Length / 2);
-
+            rse.Encode(res, addInt);
+            return res;
         }
         
         public byte[] EncoderToByte(int [] plainData, int additionalInts)
@@ -74,7 +84,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             
             if(rsd.Decode(encryptionText, _additionalBits, tips))
             {
-                Console.WriteLine("Data corrected.");
+                //Console.WriteLine("Data corrected.");
             }
             else
             {
