@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -122,7 +121,7 @@ namespace Lachain.Storage.Trie
             return _nodeCache.TryGetValue(id, out var node) ? node : _repository.GetNode(id);
         }
 
-        private ulong ModifyInternalNode(InternalNode node, byte h, ulong value, byte[] valueHash)
+        private ulong ModifyInternalNode(InternalNode node, byte h, ulong value, byte[]? valueHash)
         {
             if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
             {
@@ -239,8 +238,7 @@ namespace Lachain.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = DeleteInternal(to, height + 1, keyHash, out value, check);
-                    return ModifyInternalNode(internalNode, h, updatedTo,
-                        GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash);
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                     {

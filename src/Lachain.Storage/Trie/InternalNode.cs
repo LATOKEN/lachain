@@ -77,7 +77,7 @@ namespace Lachain.Storage.Trie
         }
 
         public static IHashTrieNode? ModifyChildren(
-            InternalNode node, byte h, ulong value, IEnumerable<byte[]> childrenHashes, byte[] valueHash
+            InternalNode node, byte h, ulong value, IEnumerable<byte[]> childrenHashes, byte[]? valueHash
         )
         {
             if (node == null)
@@ -96,6 +96,7 @@ namespace Lachain.Storage.Trie
             var pos = (int) BitsUtils.PositionOf(node.ChildrenMask, h);
             if (was == 0)
             {
+                if (valueHash is null) throw new ArgumentNullException(nameof(valueHash));
                 newNode._children = new ulong[node._children.Length + 1];
                 for (var i = 0; i <= node._children.Length; ++i)
                     newNode._children[i] = i < pos ? node._children[i] : (i == pos ? value : node._children[i - 1]);
