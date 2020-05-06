@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using Google.Protobuf;
 using Nethereum.Hex.HexTypes;
 using Lachain.Proto;
 

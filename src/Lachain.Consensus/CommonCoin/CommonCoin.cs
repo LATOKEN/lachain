@@ -6,6 +6,7 @@ using Lachain.Logger;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Signature = Lachain.Crypto.ThresholdSignature.Signature;
 
@@ -24,7 +25,7 @@ namespace Lachain.Consensus.CommonCoin
             IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
-            Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToBytes().ToHex()}");
+            Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToHex()}");
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
                 _coinId.ToByteArray(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
@@ -58,7 +59,7 @@ namespace Lachain.Consensus.CommonCoin
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
 
                 // _logger.LogDebug($"Received share from {envelope.ValidatorIndex}");
-                var signatureShare = SignatureShare.FromBytes(message.Coin.SignatureShare.ToByteArray());
+                var signatureShare = Signature.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
                 {
                     Logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");

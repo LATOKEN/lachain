@@ -11,6 +11,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -75,7 +76,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
-            var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(PublicKey.FromBytes), faulty);
+            var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(x => PublicKey.FromBytes(x)), faulty);
             var tpkeKey = Crypto.TPKE.PublicKey.FromBytes(tpkePublicKey);
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 
@@ -94,8 +95,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
             Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
             Logger.LogWarning($"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
-            Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToBytes().ToHex()))}");
-            Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToBytes().ToHex()}");
+            Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
+            Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToHex()}");
         }
         
         private int GetConsensusGeneration()

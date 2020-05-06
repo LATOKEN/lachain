@@ -10,6 +10,7 @@ using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
@@ -83,7 +84,7 @@ namespace Lachain.Consensus.ThresholdKeygen
                 Proposer = sender,
                 EncryptedValues = Enumerable.Range(0, Players).Select(i => Crypto.Secp256K1Encrypt(
                     _publicKeys[i].EncodeCompressed(),
-                    Fr.ToBytes(Mcl.GetValue(myRow, Fr.FromInt(i + 1)))
+                    Mcl.GetValue(myRow, Fr.FromInt(i + 1)).ToBytes()
                 )).ToArray()
             };
         }
@@ -147,7 +148,7 @@ namespace Lachain.Consensus.ThresholdKeygen
 
         private static byte[] EncryptRow(IEnumerable<Fr> row, ECDSAPublicKey publicKey)
         {
-            var serializedRow = row.Select(Fr.ToBytes).Flatten().ToArray();
+            var serializedRow = row.Select(x => x.ToBytes()).Flatten().ToArray();
             return Crypto.Secp256K1Encrypt(publicKey.EncodeCompressed(), serializedRow);
         }
 
@@ -155,7 +156,7 @@ namespace Lachain.Consensus.ThresholdKeygen
         {
             return Crypto.Secp256K1Decrypt(privateKey.Encode(), encryptedRow)
                 .Batch(Fr.ByteSize)
-                .Select(Fr.FromBytes);
+                .Select(b => Fr.FromBytes(b.ToArray()));
         }
     }
 }

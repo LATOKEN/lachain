@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Crypto.ThresholdSignature
@@ -10,9 +11,12 @@ namespace Lachain.Crypto.ThresholdSignature
     public class PublicKeySet : IEquatable<PublicKeySet>
     {
         public PublicKey SharedPublicKey { get; }
-        public IReadOnlyCollection<PublicKey> Keys => _keys;
-
         private readonly PublicKey[] _keys;
+        public int Threshold { get; }
+
+        public IReadOnlyCollection<PublicKey> Keys => _keys;
+        public int Count => _keys.Length;
+        public PublicKey this[int idx] => _keys[idx];
 
         public PublicKeySet(IEnumerable<PublicKey> pubKeyShares, int faulty)
         {
@@ -29,15 +33,9 @@ namespace Lachain.Crypto.ThresholdSignature
             return Mcl.LagrangeInterpolateG1(xs, ys);
         }
 
-
-        public int Count => _keys.Length;
-        public int Threshold { get; }
-
-        public PublicKey this[int idx] => _keys[idx];
-
-        public Signature AssembleSignature(IEnumerable<KeyValuePair<int, SignatureShare>> shares)
+        public Signature AssembleSignature(IEnumerable<KeyValuePair<int, Signature>> shares)
         {
-            var keyValuePairs = shares as KeyValuePair<int, SignatureShare>[] ?? shares.ToArray();
+            var keyValuePairs = shares as KeyValuePair<int, Signature>[] ?? shares.ToArray();
             var xs = keyValuePairs.Take(Threshold + 1).Select(pair => Fr.FromInt(pair.Key + 1)).ToArray();
             var ys = keyValuePairs.Take(Threshold + 1).Select(pair => pair.Value.RawSignature).ToArray();
             if (xs.Length <= Threshold || ys.Length <= Threshold)
@@ -67,7 +65,13 @@ namespace Lachain.Crypto.ThresholdSignature
 
         public IEnumerable<byte> ToBytes()
         {
-            return _keys.Select(key => key.ToBytes()).Flatten();
+            return Threshold.ToBytes().Concat(FixedWithSerializer.SerializeArray(_keys));
+        }
+
+        public static PublicKeySet FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var faulty = bytes.Span.Slice(0, 4).ToInt32();
+            return new PublicKeySet(FixedWithSerializer.DeserializeHomogeneous<PublicKey>(bytes.Slice(4)), faulty);
         }
     }
 }

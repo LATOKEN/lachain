@@ -33,10 +33,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(DeployInterface.MethodDeploy)]
         public void Deploy(byte[] byteCode)
         {
-            var receipt = _contractContext.Receipt;
+            var receipt = _contractContext.Receipt ?? throw new InvalidOperationException();
             /* calculate contract hash and register it */
             var hash = receipt.Transaction.From.ToBytes()
-                .Concat(BitConverter.GetBytes((uint) receipt.Transaction.Nonce))
+                .Concat(receipt.Transaction.Nonce.ToBytes())
                 .Ripemd();
 
             var contract = new Contract
@@ -59,7 +59,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 );
                 if (result.Status != ExecutionStatus.Ok || result.ReturnValue is null)
                     throw new InvalidContractException();
-                
+
                 _contractContext.Snapshot.Contracts.AddContract(_contractContext.Sender, new Contract
                 {
                     ByteCode = ByteString.CopyFrom(result.ReturnValue),

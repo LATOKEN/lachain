@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Lachain.Crypto.MCL.BLS12_381
@@ -76,24 +75,22 @@ namespace Lachain.Crypto.MCL.BLS12_381
         internal static extern int mclBnG1_isZero(ref G1 x);
         
         [DllImport(Libmcl)]
-        internal static extern long mclBnG2_serialize([Out] [MarshalAs(UnmanagedType.LPArray, SizeConst = 200)] byte[] buf, long maxBufSize, ref G2 x);
+        internal static extern unsafe long mclBnG2_serialize(byte* buf, long maxBufSize, G2* x);
+        
+        [DllImport(Libmcl)]
+        internal static extern unsafe long mclBnG2_deserialize(ref G2 x, byte* buf, long bufSize);
 
         [DllImport(Libmcl)]
-        internal static extern long mclBnG2_deserialize(ref G2 x, [In] [MarshalAs(UnmanagedType.LPArray)] byte[] buf, long bufSize);
+        internal static extern unsafe long mclBnG1_serialize(byte* buf, long maxBufSize, G1* x);
 
         [DllImport(Libmcl)]
-        internal static extern long mclBnG1_serialize([Out] [MarshalAs(UnmanagedType.LPArray, SizeConst = 200)] byte[] buf, long maxBufSize, ref G1 x);
+        internal static extern unsafe long mclBnG1_deserialize(ref G1 x, byte* buf, long bufSize);
 
         [DllImport(Libmcl)]
-        internal static extern long mclBnG1_deserialize(ref G1 x, [In] [MarshalAs(UnmanagedType.LPArray)] byte[] buf, long bufSize);
+        internal static extern unsafe long mclBnFr_serialize(byte* buf, long maxBufSize, Fr* fr);
 
         [DllImport(Libmcl)]
-        internal static extern long mclBnFr_serialize([Out] [MarshalAs(UnmanagedType.LPArray, SizeConst = 200)]
-            byte[] buf, long maxBufSize, ref Fr fr);
-
-        [DllImport(Libmcl)]
-        internal static extern long mclBnFr_deserialize(ref Fr fr, [In] [MarshalAs(UnmanagedType.LPArray)]
-            byte[] buf, long bufSize);
+        internal static extern unsafe long mclBnFr_deserialize(ref Fr fr, byte* buf, long bufSize);
         
         [DllImport(Libmcl)]
         internal static extern long mclBnG1_getStr([Out] StringBuilder buf, long maxBufSize, ref G1 x, int ioMode);

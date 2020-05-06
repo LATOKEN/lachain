@@ -1,6 +1,7 @@
 using System.Linq;
 using Lachain.Crypto;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
@@ -61,14 +62,15 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public byte[] ToBytes()
         {
-            return _coefficients.Select(G1.ToBytes).Flatten().ToArray();
+            return _coefficients.Select(x => x.ToBytes()).Flatten().ToArray();
         }
 
         public static Commitment FromBytes(IEnumerable<byte> buffer)
         {
             return new Commitment(buffer.Batch(G1.ByteSize)
                 .Select(x => x.ToArray())
-                .Select(G1.FromBytes));
+                .Select(b => G1.FromBytes(b.ToArray()))
+            );
         }
     }
 }

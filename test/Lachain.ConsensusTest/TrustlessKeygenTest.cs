@@ -9,6 +9,7 @@ using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Containers;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 
@@ -151,7 +152,7 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet[i].ValidateSignature(share, payload));
 
             var sig = keys[0].ThresholdSignaturePublicKeySet
-                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share)));
+                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, Signature>(i, share)));
             foreach (var keyring in keys)
                 Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet.SharedPublicKey.ValidateSignature(sig, payload));
         }
@@ -260,7 +261,7 @@ namespace Lachain.ConsensusTest
         [Test]
         public void RunAllHonest_2_0()
         {
-            var keys = SimulateKeygen(3, 0, DeliveryServiceMode.TAKE_FIRST);
+            var keys = SimulateKeygen(2, 0, DeliveryServiceMode.TAKE_FIRST);
             CheckKeys(keys);
         }
         

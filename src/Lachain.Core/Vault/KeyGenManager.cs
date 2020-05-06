@@ -16,6 +16,7 @@ using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
@@ -155,8 +156,9 @@ namespace Lachain.Core.Vault
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
                 var tpkePublicKey = PublicKey.FromBytes(args[0] as byte[] ?? throw new Exception());
                 var tsKeys = new PublicKeySet(
-                    (args[1] as byte[][] ?? throw new Exception()).Select(Crypto.ThresholdSignature.PublicKey
-                        .FromBytes),
+                    (args[1] as byte[][] ?? throw new Exception()).Select(x =>
+                        Crypto.ThresholdSignature.PublicKey.FromBytes(x)
+                    ),
                     _currentKeygen.Faulty
                 );
                 var keyringHash = tpkePublicKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
@@ -175,19 +177,17 @@ namespace Lachain.Core.Vault
                     throw new Exception();
                 }
 
-                // Logger.LogWarning($"  - TPKE private key: {keys.TpkePrivateKey.ToBytes().ToHex()}");
-                Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToBytes().ToHex()}");
-                // Logger.LogWarning($"  - TS private key: {keys.ThresholdSignaturePrivateKey.ToBytes().ToHex()}");
+                Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
                 Logger.LogWarning(
-                    "  - TS public key: " +
-                    keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToBytes().ToHex()
+                    "  - TS public key: " + keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()
                 );
                 Logger.LogWarning(
                     "  - TS public key set: " +
-                    string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes().ToHex()))
+                    string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))
                 );
                 _privateWallet.AddThresholdSignatureKeyAfterBlock(
-                    context.Receipt.Block, keys.ThresholdSignaturePrivateKey);
+                    context.Receipt.Block, keys.ThresholdSignaturePrivateKey
+                );
                 _privateWallet.AddTpkePrivateKeyAfterBlock(context.Receipt.Block, keys.TpkePrivateKey);
                 Logger.LogInformation("Keyring saved to wallet");
                 _currentKeygen = null;

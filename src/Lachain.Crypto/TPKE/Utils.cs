@@ -4,6 +4,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.TPKE
 {
@@ -12,7 +13,7 @@ namespace Lachain.Crypto.TPKE
         public static byte[] XorWithHash(G1 g, byte[] data)
         {
             var prng = new DigestRandomGenerator(new Sha3Digest());
-            prng.AddSeedMaterial(G1.ToBytes(g));
+            prng.AddSeedMaterial(g.ToBytes());
             var pseudoRandomBytes = new byte[data.Length];
             prng.NextBytes(pseudoRandomBytes);
             return Xor(pseudoRandomBytes, data);
@@ -20,7 +21,7 @@ namespace Lachain.Crypto.TPKE
 
         public static G2 HashToG2(G1 g, IEnumerable<byte> w)
         {
-            var join = G1.ToBytes(g).Concat(w).ToArray();
+            var join = g.ToBytes().Concat(w).ToArray();
             var res = new G2();
             res.SetHashOf(join);
             return res;
