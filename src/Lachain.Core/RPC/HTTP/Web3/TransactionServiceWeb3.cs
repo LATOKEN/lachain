@@ -217,6 +217,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return result.ToHex();
                 case int result:
                     return result.ToString();
+                case byte[] result:
+                    return result.ToHex(true);
                 case bool result:
                     return result ? "0x1" : "0x0";
                 default:

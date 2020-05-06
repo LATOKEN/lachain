@@ -15,7 +15,7 @@ namespace Lachain.Crypto.VRF
             var prv = privateKey.ToHex(false);
             var message = Combine(seed, role).ToHex(false);
             var proof = VrfImports.evaluate(prv, message).HexToBytes();
-            var value = VrfImports.proof_to_hash(proof.ToHex()).HexToBytes();
+            var value = VrfImports.proof_to_hash(proof.ToHex(false)).HexToBytes();
             var j = Sortition.GetVotes(value, w, tau, W); 
             return (proof, value, j);
         }
@@ -38,7 +38,7 @@ namespace Lachain.Crypto.VRF
 
         public static byte[] ProofToHash(byte[] proof)
         {
-            return VrfImports.proof_to_hash(proof.ToHex()).HexToBytes();
+            return VrfImports.proof_to_hash(proof.ToHex(false)).HexToBytes();
         } 
     
         private static byte[] Combine(params byte[][] arrays)
