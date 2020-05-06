@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using WebAssembly.Runtime;
 
@@ -146,7 +147,7 @@ namespace Lachain.Core.Blockchain.VM
             var gasBuffer = SafeCopyFromMemory(frame.Memory, gasOffset, 8);
             if (gasBuffer is null)
                 throw new RuntimeException("Bad call to call function");
-            var gasLimit = BitConverter.ToUInt64(gasBuffer, 0);
+            var gasLimit = gasBuffer.AsReadOnlySpan().ToUInt64();
             if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
                 gasLimit = frame.GasLimit - frame.GasUsed;
             var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame, gasLimit);

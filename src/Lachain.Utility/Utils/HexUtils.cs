@@ -81,10 +81,5 @@ namespace Lachain.Utility.Utils
         {
             return num.ToHexBigInteger().HexValue;
         }
-
-        public static byte[] ToBytes(this ulong number)
-        {
-            return BitConverter.GetBytes(number);
-        }
     }
 }

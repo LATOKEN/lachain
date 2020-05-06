@@ -28,7 +28,7 @@ namespace Lachain.Consensus.CommonCoin
             Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToHex()}");
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
-                _coinId.ToByteArray(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
+                _coinId.ToBytes(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
             );
             _result = null;
         }

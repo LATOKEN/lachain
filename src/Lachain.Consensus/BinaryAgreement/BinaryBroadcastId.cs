@@ -16,14 +16,7 @@ namespace Lachain.Consensus.BinaryAgreement
         public long Era { get; }
         public long Agreement { get; }
         public long Epoch { get; }
-
-        public IEnumerable<byte> ToByteArray()
-        {
-            return BitConverter.GetBytes(Era)
-                .Concat(BitConverter.GetBytes(Agreement))
-                .Concat(BitConverter.GetBytes(Epoch));
-        }
-
+        
         protected bool Equals(BinaryBroadcastId other)
         {
             return Era == other.Era && Agreement == other.Agreement && Epoch == other.Epoch;

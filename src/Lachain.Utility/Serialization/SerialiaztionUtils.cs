@@ -157,7 +157,32 @@ namespace Lachain.Utility.Serialization
             return BitConverter.IsLittleEndian ? span : span.ToArray().Reverse().ToArray();
         }
 
+        public static IEnumerable<byte> ToBytes(this short x)
+        {
+            return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
+        }
+
+        public static IEnumerable<byte> ToBytes(this ushort x)
+        {
+            return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
+        }
+
         public static IEnumerable<byte> ToBytes(this int x)
+        {
+            return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
+        }
+
+        public static IEnumerable<byte> ToBytes(this uint x)
+        {
+            return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
+        }
+
+        public static IEnumerable<byte> ToBytes(this long x)
+        {
+            return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
+        }
+
+        public static IEnumerable<byte> ToBytes(this ulong x)
         {
             return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
         }
@@ -226,6 +251,16 @@ namespace Lachain.Utility.Serialization
         public static ushort ToUInt16(this ReadOnlySpan<byte> bytes)
         {
             return BitConverter.ToUInt16(ToLittleEndian(bytes));
+        }
+
+        public static ReadOnlySpan<byte> ToReadOnly(this Span<byte> span)
+        {
+            return span;
+        }
+
+        public static ReadOnlySpan<byte> AsReadOnlySpan(this byte[] array)
+        {
+            return array.AsSpan().ToReadOnly();
         }
     }
 }

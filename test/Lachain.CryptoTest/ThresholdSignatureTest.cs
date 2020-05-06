@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.CryptoTest
@@ -16,7 +17,7 @@ namespace Lachain.CryptoTest
             const int n = 7, f = 2;
             var keygen = new TrustedKeyGen(n, f);
             var shares = keygen.GetPrivateShares().ToArray();
-            var data = BitConverter.GetBytes(0xdeadbeef);
+            var data = 0xdeadbeef.ToBytes().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
             var signers = new IThresholdSigner[n];
             for (var i = 0; i < n; ++i)

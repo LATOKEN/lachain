@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.State
 {
@@ -28,27 +30,31 @@ namespace Lachain.Storage.State
         public ulong GetTotalTransactionCount(UInt160 from)
         {
             var raw = _state.Get(EntryPrefix.TransactionCountByFrom.BuildPrefix(from));
-            return raw == null ? 0UL : BitConverter.ToUInt64(raw, 0);
+            return raw?.AsReadOnlySpan().ToUInt64() ?? 0u;
         }
-        
+
         public TransactionReceipt? GetTransactionByHash(UInt256 transactionHash)
         {
             var raw = _state.Get(EntryPrefix.TransactionByHash.BuildPrefix(transactionHash));
             return raw != null ? TransactionReceipt.Parser.ParseFrom(raw) : null;
         }
-        
+
         public void AddTransaction(TransactionReceipt receipt, TransactionStatus status)
         {
             var expectedNonce = GetTotalTransactionCount(receipt.Transaction.From);
             if (expectedNonce != receipt.Transaction.Nonce)
-                throw new Exception($"This should never happen, transaction nonce mismatch: {receipt.Transaction.Nonce} but should be {expectedNonce}");
+                throw new Exception(
+                    $"This should never happen, transaction nonce mismatch: {receipt.Transaction.Nonce} but should be {expectedNonce}");
             /* save transaction status */
             receipt.Status = status;
             /* write transaction to storage */
             _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(receipt.Hash),
                 receipt.ToByteArray());
             /* update current address nonce */
-            _state.AddOrUpdate(EntryPrefix.TransactionCountByFrom.BuildPrefix(receipt.Transaction.From), BitConverter.GetBytes(expectedNonce + 1));
+            _state.AddOrUpdate(
+                EntryPrefix.TransactionCountByFrom.BuildPrefix(receipt.Transaction.From),
+                (expectedNonce + 1).ToBytes().ToArray()
+            );
         }
     }
 }

@@ -17,11 +17,6 @@ namespace Lachain.ConsensusTest
         public long Id { get; }
         public long Era => 0;
 
-        public IEnumerable<byte> ToByteArray()
-        {
-            return BitConverter.GetBytes(Id);
-        }
-
         public bool Equals(IProtocolIdentifier other)
         {
             return Equals((object) other);
