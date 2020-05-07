@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -325,6 +325,12 @@ namespace Lachain.Core.Blockchain.Operations
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
 
+            var senderBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
+            if (senderBalance < fee)
+            {
+                return OperatingError.InsufficientBalance;
+            }
+            
             // block - 1 because current block is only mined now and uses old validators
             var n = _validatorManager.GetValidators(block - 1).N;
             var sharedFee = fee / n;

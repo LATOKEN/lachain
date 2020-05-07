@@ -21,7 +21,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
             _allowance = new StorageMapping(
-                ContractRegisterer.GovernanceContract,
+                ContractRegisterer.LatokenContract,
                 contractContext.Snapshot.Storage,
                 BigInteger.Zero.ToUInt256()
             );
@@ -48,7 +48,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(Lrc20Interface.MethodTotalSupply)]
-        public void TotalSupply()
+        public UInt256 TotalSupply()
         {
             throw new NotImplementedException();
         }
@@ -107,12 +107,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return _contractContext.Sender ?? throw new InvalidOperationException();
         }
 
-        public UInt256 SubAllowance(UInt160 owner, UInt160 spender, UInt256 value)
+        public void SubAllowance(UInt160 owner, UInt160 spender, UInt256 value)
         {
             var allowance = Allowance(owner, spender).ToMoney(true);
             allowance -= value.ToMoney(true);
             SetAllowance(owner, spender, allowance.ToUInt256());
-            return allowance.ToUInt256();
         }
     }
 }
