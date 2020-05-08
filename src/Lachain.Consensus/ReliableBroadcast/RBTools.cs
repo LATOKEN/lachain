@@ -40,10 +40,7 @@ namespace Phorkus.Consensus.ReliableBroadcast
         
         public static List<int> GetCorrectInput(int[] input, int players)
         {
-            if (players < 2)
-            {
-                throw new Exception($"Something wrong: players in protocol - {players}");
-            }
+            if (players < 0) throw new Exception($"Something wrong: players in protocol - {players}");
             
             var len = input.Length;
             var lenInBytes = BitConverter.GetBytes(len);

@@ -78,11 +78,11 @@ namespace Lachain.Consensus.ReliableBroadcast
             rse.Encode(tmp, _dataSize);
             return tmp;
         }
-        public void Decode(int [] encryptionText, int[] tips)
+        public void Decode(int [] encryptionText, int additionalBits, int[] tips)
         {
             var rsd = new ReedSolomonDecoder(_field);
             
-            if(rsd.Decode(encryptionText, _additionalBits, tips))
+            if(rsd.Decode(encryptionText, additionalBits, tips))
             {
                 //Console.WriteLine("Data corrected.");
             }

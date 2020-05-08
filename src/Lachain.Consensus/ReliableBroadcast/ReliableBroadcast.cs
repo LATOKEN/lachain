@@ -373,7 +373,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             var storeLength = toDecode.Count / 2;
             //var _erasureCoding = new ErasureCoding(additionalSpot);
             var tmp = toDecode.ToArray();
-            _erasureCoding.Decode(tmp, null);
+            _erasureCoding.Decode(tmp, additionalSpot,null);
             return tmp.Take(storeLength).ToList();
         }
 

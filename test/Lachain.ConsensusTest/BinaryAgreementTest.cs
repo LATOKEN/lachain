@@ -64,8 +64,8 @@ namespace Lachain.ConsensusTest
             N = n;
             F = f;
             SetUpAllHonest();
-            _deliveryService.RepeatProbability = repeatProbability;
-            _deliveryService.Mode = mode;
+            _deliveryService.RepeatProbability = repeatProbability; // вероятность повтора индивидуального сообщения
+            _deliveryService.Mode = mode; // порядок доставки сообщения
             while (_deliveryService._mutedPlayers.Count < muteCnt) _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
 
             var used = new BoolSet();
