@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Nethereum.Hex.HexConvertors.Extensions;
@@ -8,7 +6,6 @@ using Nethereum.Signer;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
@@ -114,7 +111,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string SendRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
-            var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToArray();
+            
+            var r = ethTx.Signature.R;
+            while (r.Length < 32)
+                r = "00".HexToBytes().Concat(r).ToArray();
+            
+            var s = ethTx.Signature.S;
+            while (s.Length < 32)
+                s = "00".HexToBytes().Concat(s).ToArray();
+            
+            var signature = r.Concat(s).Concat(ethTx.Signature.V).ToArray();
             try
             {
                 var transaction = new Transaction

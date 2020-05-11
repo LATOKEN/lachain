@@ -54,7 +54,7 @@ namespace Lachain.Core.Blockchain.Operations
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(receipt, block.Header.Index == 0);
+            var verifyError = Verify(receipt, block.Header.Index == 0 || receipt.IndexInBlock == 0);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
@@ -84,11 +84,11 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesis)
+        private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesisOrCoinbase)
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-            if (isGenesis)
+            if (isGenesisOrCoinbase)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
 
             var result = VerifySignature(acceptedTransaction);

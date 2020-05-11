@@ -8,11 +8,16 @@ using Lachain.Consensus;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Network;
 using Lachain.Crypto;
 using Lachain.Proto;
+using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus
@@ -25,6 +30,8 @@ namespace Lachain.Core.Consensus
         private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
+        private readonly ITransactionBuilder _transactionBuilder;
+        private readonly IStateManager _stateManager;
         private const int BatchSize = 1000; // TODO: calculate batch size
 
         public BlockProducer(
@@ -32,7 +39,9 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockchainContext blockchainContext,
             IBlockSynchronizer blockSynchronizer,
-            IBlockManager blockManager
+            IBlockManager blockManager,
+            IStateManager stateManager,
+            ITransactionBuilder transactionBuilder
         )
         {
             _transactionPool = transactionPool;
@@ -40,6 +49,8 @@ namespace Lachain.Core.Consensus
             _blockchainContext = blockchainContext;
             _blockSynchronizer = blockSynchronizer;
             _blockManager = blockManager;
+            _stateManager = stateManager;
+            _transactionBuilder = transactionBuilder;
         }
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
@@ -67,6 +78,8 @@ namespace Lachain.Core.Consensus
                 .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
+
+            receipts = new []{GetCoinbaseTxReceipt()}.Concat(receipts).ToList();
 
             if (_blockchainContext.CurrentBlock is null) throw new InvalidOperationException("No previous block");
             if (_blockchainContext.CurrentBlock.Header.Index + 1 != index)
@@ -107,8 +120,9 @@ namespace Lachain.Core.Consensus
 
         public void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig)
         {
+            
             var receipts = txHashes
-                .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
+                .Select((hash, i) => i == 0 ? GetCoinbaseTxReceipt() : _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
@@ -138,6 +152,31 @@ namespace Lachain.Core.Consensus
             else
                 _logger.LogError(
                     $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}");
+        }
+
+        private TransactionReceipt GetCoinbaseTxReceipt()
+        {
+
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
+            var abi = ContractEncoder.Encode(GovernanceInterface.MethodDistributeBlockReward);
+            var transaction = new Transaction
+            {
+                To = ContractRegisterer.GovernanceContract,
+                Value = UInt256Utils.Zero,
+                From = UInt160Utils.Zero,
+                Nonce = nonce,
+                GasPrice = 0,
+                /* TODO: gas estimation */
+                GasLimit = 100000000,
+                Invocation = ByteString.CopyFrom(abi),
+            };
+            return new TransactionReceipt
+            {
+                Hash = transaction.FullHash(SignatureUtils.Zero),
+                Status = TransactionStatus.Pool,
+                Transaction = transaction,
+                Signature = SignatureUtils.Zero,
+            };
         }
     }
 }

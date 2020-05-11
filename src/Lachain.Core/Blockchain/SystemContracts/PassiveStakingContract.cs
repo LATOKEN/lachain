@@ -16,22 +16,22 @@ using Lachain.Utility;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
-    public class ReserveFundContract : ISystemContract
+    public class PassiveStakingContract : ISystemContract
     {
         
         private readonly ContractContext _contractContext;
         
-        private static readonly ILogger<ReserveFundContract> Logger =
-            LoggerFactory.GetLoggerForClass<ReserveFundContract>();
+        private static readonly ILogger<PassiveStakingContract> Logger =
+            LoggerFactory.GetLoggerForClass<PassiveStakingContract>();
 
-        public ReserveFundContract(ContractContext contractContext)
+        public PassiveStakingContract(ContractContext contractContext)
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
         }
 
         public ContractStandard ContractStandard => ContractStandard.ReserveFundContract;
 
-        [ContractMethod(ReserveFundInterface.MethodPack)]
+        [ContractMethod(PassiveStakingInterface.MethodPack)]
         public UInt256 Pack(UInt256 laAmount)
         {
             EnsurePositive(laAmount);
@@ -39,14 +39,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var laToken = new NativeTokenContract(_contractContext);
             
             var balance = laToken.BalanceOf(MsgSender()) ?? UInt256Utils.Zero;
-            if (balance.ToMoney().CompareTo(laAmount.ToMoney(true)) == -1)
+            if (balance.ToMoney(true).CompareTo(laAmount.ToMoney(true)) == -1)
             {
                 throw new Exception("Insufficient balance");
             }
             
-            var laInFund = laToken.BalanceOf(ContractRegisterer.ReserveFundContract);
+            var laInFund = laToken.BalanceOf(ContractRegisterer.PassiveStakingContract);
             
-            var ok = laToken.Transfer(ContractRegisterer.ReserveFundContract, laAmount);
+            var ok = laToken.Transfer(ContractRegisterer.PassiveStakingContract, laAmount);
             if (!ok)
             {
                 throw new Exception("Transfer failure");
@@ -55,59 +55,60 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var user = MsgSender();
             
             // change the sender of the transaction to perform token minting 
-            _contractContext.Sender = ContractRegisterer.ReserveFundContract;
-            var lrfToken = new ReserveFundTokenContract(_contractContext);
-            var lrfSupply = lrfToken.TotalSupply();
-            BigInteger lrfAmount;
-            if (lrfSupply.Equals(UInt256Utils.Zero))
+            _contractContext.Sender = ContractRegisterer.PassiveStakingContract;
+            var lpsToken = new PassiveStakingTokenContract(_contractContext);
+            var lpsSupply = lpsToken.TotalSupply();
+            BigInteger lpsAmount;
+            if (lpsSupply.Equals(UInt256Utils.Zero))
             {
-                lrfAmount = laAmount.ToBigInteger(true);
+                lpsAmount = laAmount.ToBigInteger(true);
             }
             else
             {
-                lrfAmount = laAmount.ToBigInteger(true) * lrfSupply.ToBigInteger(true) / laInFund.ToBigInteger(true);
+                lpsAmount = laAmount.ToBigInteger(true) * lpsSupply.ToBigInteger(true) / laInFund.ToBigInteger(true);
             }
 
-            if (!lrfToken.Mint(user, lrfAmount.ToUInt256())) 
+            if (!lpsToken.Mint(user, lpsAmount.ToUInt256(true))) 
                 throw new Exception("Mint failure");
             
-            return lrfAmount.ToUInt256();
+            return lpsAmount.ToUInt256(true);
         }
 
-        [ContractMethod(ReserveFundInterface.MethodRedeem)]
-        public UInt256 Redeem(UInt256 lrfAmount)
+        [ContractMethod(PassiveStakingInterface.MethodRedeem)]
+        public UInt256 Redeem(UInt256 lpsAmount)
         {
-            EnsurePositive(lrfAmount);
+            EnsurePositive(lpsAmount);
 
-            // change the sender of the transaction to burn tokens and transfer from this contract
-            _contractContext.Sender = ContractRegisterer.ReserveFundContract;
+            var user = MsgSender();
             
-            var lrfToken = new ReserveFundTokenContract(_contractContext);
+            // change the sender of the transaction to burn tokens and transfer from this contract
+            _contractContext.Sender = ContractRegisterer.PassiveStakingContract;
+            
+            var lpsToken = new PassiveStakingTokenContract(_contractContext);
             var laToken = new NativeTokenContract(_contractContext);
             
-            var balance = lrfToken.BalanceOf(MsgSender());
-            if (balance.ToMoney().CompareTo(lrfAmount.ToMoney(true)) == -1)
+            var balance = lpsToken.BalanceOf(user);
+            if (balance.ToMoney(true).CompareTo(lpsAmount.ToMoney(true)) == -1)
             {
                 throw new Exception("Insufficient balance");
             }
 
-            var user = MsgSender();
-            var lrfSupply = lrfToken.TotalSupply();
-            var laInFund = laToken.BalanceOf(ContractRegisterer.ReserveFundContract);
+            var lpsSupply = lpsToken.TotalSupply();
+            var laInFund = laToken.BalanceOf(ContractRegisterer.PassiveStakingContract);
            
-            var laAmount = lrfAmount.ToBigInteger(true) * laInFund.ToBigInteger(true) / lrfSupply.ToBigInteger(true);
+            var laAmount = lpsAmount.ToBigInteger(true) * laInFund.ToBigInteger(true) / lpsSupply.ToBigInteger(true);
             
-            if (!lrfToken.Burn(user, lrfAmount))
+            if (!lpsToken.Burn(user, lpsAmount))
             {
                 throw new Exception("Burn failure");
             }
             
-            if (!laToken.Transfer(user, laAmount.ToUInt256()))
+            if (!laToken.Transfer(user, laAmount.ToUInt256(true)))
             {
                 throw new Exception("Transfer failure");
             }
             
-            return laAmount.ToUInt256();
+            return laAmount.ToUInt256(true);
         }
 
         private static void EnsurePositive(UInt256 amount)

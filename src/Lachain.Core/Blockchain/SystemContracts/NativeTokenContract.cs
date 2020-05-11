@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -58,7 +59,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             /* TODO: add gas metering */
             var balance = _contractContext.Snapshot?.Balances.GetBalance(address);
-            return balance?.ToUInt256();
+            return balance?.ToUInt256(true);
         }
 
         [ContractMethod(Lrc20Interface.MethodTransfer)]
@@ -70,6 +71,21 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 recipient, value.ToMoney(true)
             );
             return true;
+        }
+
+        public void MintBlockRewards(UInt160[] validators, Money value)
+        {
+            if (!_contractContext.Sender.Equals(ContractRegisterer.GovernanceContract))
+                throw new Exception("Auth failure");
+            
+            if (validators.Length == 0) throw new Exception("Cannot mint block rewards: empty validator set");
+            var reward = value / validators.Length;
+            foreach (var recipient in validators)
+            {
+                _contractContext.Snapshot.Balances.AddBalance(
+                    recipient, reward
+                );
+            }
         }
 
         [ContractMethod(Lrc20Interface.MethodTransferFrom)]

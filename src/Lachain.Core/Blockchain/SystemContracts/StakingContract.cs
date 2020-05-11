@@ -116,7 +116,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var latoken = new NativeTokenContract(_contractContext);
             
             var balance = latoken.BalanceOf(MsgSender()) ?? UInt256Utils.Zero;
-            if (balance.ToMoney().CompareTo(amount.ToMoney(true)) == -1)
+            if (balance.ToMoney(true).CompareTo(amount.ToMoney(true)) == -1)
             {
                 throw new Exception("Insufficient balance");
             }

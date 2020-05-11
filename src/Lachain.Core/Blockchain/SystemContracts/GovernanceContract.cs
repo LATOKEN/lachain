@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
@@ -19,12 +20,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
     {
         private readonly ContractContext _contractContext;
 
+        private static readonly ICrypto CryptoUtils = CryptoProvider.GetCrypto();
         private static readonly ILogger<GovernanceContract> Logger =
             LoggerFactory.GetLoggerForClass<GovernanceContract>();
 
         private readonly StorageVariable _consensusGeneration;
         private readonly StorageVariable _pendingValidators;
         private readonly StorageMapping _confirmations;
+        private readonly StorageVariable _blockReward;
 
         public GovernanceContract(ContractContext contractContext)
         {
@@ -44,6 +47,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(2).ToUInt256()
             );
+            _blockReward = new StorageVariable(
+                ContractRegisterer.GovernanceContract,
+                contractContext.Snapshot.Storage,
+                new BigInteger(3).ToUInt256()
+            );
+            TryInitStorage();
         }
 
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
@@ -51,11 +60,31 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
         public void ChangeValidators(byte[][] newValidators)
         {
+            /* TODO: only staking contract can call this function */ 
             _pendingValidators.Set(newValidators
                 .Select(x => x.ToPublicKey().EncodeCompressed())
                 .Flatten()
                 .ToArray()
             );
+        }
+
+        [ContractMethod(GovernanceInterface.MethodDistributeBlockReward)]
+        public void DistributeBlockReward()
+        {
+            var validators = 
+                _contractContext.Snapshot.Validators.GetValidatorsPublicKeys().Select(x => PublicKeyToAddress(x.Buffer.ToByteArray())).ToArray();
+            _contractContext.Sender = ContractRegisterer.GovernanceContract;
+            validators = validators.Concat(new []{ContractRegisterer.PassiveStakingContract}).ToArray();
+            var laToken = new NativeTokenContract(_contractContext);
+            laToken.MintBlockRewards(validators, GetBlockReward().ToMoney());
+        }
+
+        private void TryInitStorage()
+        {
+            if (_blockReward.Get().Length == 0)
+            {
+                _blockReward.Set(BigInteger.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes());
+            }
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenCommit)]
@@ -86,7 +115,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (votes + 1 != players - faulty) return;
             
             var ecdsaPublicKeys = _pendingValidators.Get()
-                .Batch(CryptoUtils.PublicKeyLength)
+                .Batch(Crypto.CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
 
@@ -102,6 +131,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var gen = _consensusGeneration.Get();
             return gen.Length == 0 ? 0 : BitConverter.ToInt32(gen);
+        }
+        
+        private UInt256 GetBlockReward()
+        {
+            var reward = _blockReward.Get();
+            return reward.ToUInt256();
         }
 
         private void SetConsensusGeneration(int generation)
@@ -120,6 +155,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetConfirmations(IEnumerable<byte> key, int gen, int votes)
         {
             _confirmations.SetValue(key, BitConverter.GetBytes(gen).Concat(BitConverter.GetBytes(votes)).ToArray());
+        }
+
+        private UInt160 PublicKeyToAddress(byte[] publicKey)
+        {
+            return CryptoUtils.ComputeAddress(publicKey).ToUInt160();
         }
     }
 }

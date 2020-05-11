@@ -12,7 +12,7 @@ using NetMQ;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
-    public class ReserveFundTokenContract : ISystemContract
+    public class PassiveStakingTokenContract : ISystemContract
     {
         private readonly ContractContext _contractContext;
         
@@ -20,7 +20,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageMapping _allowance;
         private readonly StorageMapping _balance;
 
-        public ReserveFundTokenContract(ContractContext contractContext)
+        public PassiveStakingTokenContract(ContractContext contractContext)
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
             _balance = new StorageMapping(
@@ -45,7 +45,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractProperty(Lrc20Interface.PropertyName)]
         public string Name()
         {
-            return "LaReserveFundToken";
+            return "LaPassiveStakingToken";
         }
 
         [ContractProperty(Lrc20Interface.PropertyDecimals)]
@@ -57,14 +57,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractProperty(Lrc20Interface.PropertySymbol)]
         public string Symbol()
         {
-            return "LRF";
+            return "LPS";
         }
 
         [ContractMethod(Lrc20Interface.MethodTotalSupply)]
         public UInt256 TotalSupply()
         {
             var totalSupply = _totalSupply.Get();
-            return totalSupply.Length == 0 ? UInt256Utils.Zero : totalSupply.ToUInt256();
+            return totalSupply.Length == 0 ? UInt256Utils.Zero : totalSupply.Reverse().ToArray().ToUInt256();
         }
 
         [ContractMethod(Lrc20Interface.MethodBalanceOf)]
@@ -72,7 +72,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             /* TODO: add gas metering */
             var balance = _balance.GetValue(address.ToBytes());
-            return balance.Length == 0 ? UInt256Utils.Zero : balance.ToUInt256();
+            return balance.Length == 0 ? UInt256Utils.Zero : balance.Reverse().ToArray().ToUInt256();
         }
 
         [ContractMethod(Lrc20Interface.MethodTransfer)]
@@ -87,7 +87,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public bool Mint(UInt160 to, UInt256 amount)
         {
-            if (!MsgSender().Equals(ContractRegisterer.ReserveFundContract)) return false;
+            if (!MsgSender().Equals(ContractRegisterer.PassiveStakingContract)) return false;
             AddSupply(amount);
             AddBalance(to, amount);
             return true;
@@ -95,7 +95,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public bool Burn(UInt160 from, UInt256 amount)
         {
-            if (!MsgSender().Equals(ContractRegisterer.ReserveFundContract)) return false;
+            if (!MsgSender().Equals(ContractRegisterer.PassiveStakingContract)) return false;
             var availableBalance = BalanceOf(from);
             if (availableBalance.ToMoney(true).CompareTo(amount.ToMoney(true)) < 0)
                 return false;
