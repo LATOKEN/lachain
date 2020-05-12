@@ -14,8 +14,8 @@ namespace Lachain.Utility.Utils
             if (y is null) return 1;
             if (!x.Transaction.From.Equals(y.Transaction.From))
             {
-                return x.Transaction.From.Buffer.Cast<IComparable<byte>>()
-                    .CompareLexicographically(y.Transaction.From.Buffer);
+                return y.Transaction.From.Buffer.Cast<IComparable<byte>>()
+                    .CompareLexicographically(x.Transaction.From.Buffer);
             }
 
             return x.Transaction.Nonce.CompareTo(y.Transaction.Nonce);

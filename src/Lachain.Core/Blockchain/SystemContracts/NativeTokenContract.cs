@@ -73,13 +73,21 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return true;
         }
 
-        public void MintBlockRewards(UInt160[] validators, Money value)
+        public void MintBlockRewards(UInt160[] validators, Money value, Money fees)
         {
             if (!_contractContext.Sender.Equals(ContractRegisterer.GovernanceContract))
                 throw new Exception("Auth failure");
             
             if (validators.Length == 0) throw new Exception("Cannot mint block rewards: empty validator set");
-            var reward = value / validators.Length;
+
+            if (fees > Money.Zero)
+            {
+                _contractContext.Snapshot.Balances.SubBalance(
+                    ContractRegisterer.GovernanceContract, fees
+                );
+            }
+            
+            var reward = (value + fees) / validators.Length;
             foreach (var recipient in validators)
             {
                 _contractContext.Snapshot.Balances.AddBalance(

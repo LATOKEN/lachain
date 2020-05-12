@@ -108,7 +108,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             // TODO: allow adding to existing stake
             var stake = GetStake(MsgSender());
-            if (!stake.Equals(UInt256Utils.Zero))
+            if (!stake.IsZero())
             {
                 throw new Exception("Already staker");
             }

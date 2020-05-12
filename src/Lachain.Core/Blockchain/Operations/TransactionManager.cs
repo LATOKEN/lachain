@@ -54,7 +54,7 @@ namespace Lachain.Core.Blockchain.Operations
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(receipt, block.Header.Index == 0 || receipt.IndexInBlock == 0);
+            var verifyError = Verify(receipt, block.Header.Index == 0 || (int) receipt.IndexInBlock == block.TransactionHashes.Count - 1);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */

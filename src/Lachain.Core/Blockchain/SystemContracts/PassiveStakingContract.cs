@@ -59,7 +59,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var lpsToken = new PassiveStakingTokenContract(_contractContext);
             var lpsSupply = lpsToken.TotalSupply();
             BigInteger lpsAmount;
-            if (lpsSupply.Equals(UInt256Utils.Zero))
+            if (lpsSupply.IsZero())
             {
                 lpsAmount = laAmount.ToBigInteger(true);
             }

@@ -65,10 +65,11 @@ namespace Lachain.Core.Blockchain.Operations
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
                 return _InvokeSystemContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot);
             }
-
+            
             /* try to transfer funds from sender to recipient */
-            if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
-                return OperatingError.InsufficientBalance;
+            if (new Money(transaction.Value) > Money.Zero)
+                if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
+                    return OperatingError.InsufficientBalance;
             /* invoke required function or fallback */
             return _InvokeContract(receipt, snapshot);
         }

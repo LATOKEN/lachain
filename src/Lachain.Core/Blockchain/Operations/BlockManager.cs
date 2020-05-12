@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
@@ -320,24 +321,20 @@ namespace Lachain.Core.Blockchain.Operations
             long block, TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
+            
             /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
-
+            
             var senderBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
             if (senderBalance < fee)
             {
                 return OperatingError.InsufficientBalance;
             }
-            
-            // block - 1 because current block is only mined now and uses old validators
-            var n = _validatorManager.GetValidators(block - 1).N;
-            var sharedFee = fee / n;
-            return _validatorManager.GetValidatorsPublicKeys(block - 1)
-                .Any(validator =>
-                    !snapshot.Balances.TransferBalance(transaction.Transaction.From,
-                        _crypto.ComputeAddress(validator.EncodeCompressed()).ToUInt160(), sharedFee))
+            //
+            return !snapshot.Balances.TransferBalance(transaction.Transaction.From,
+                ContractRegisterer.GovernanceContract, fee)
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
