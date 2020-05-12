@@ -79,7 +79,7 @@ namespace Lachain.Core.Consensus
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
-            receipts = new []{GetCoinbaseTxReceipt()}.Concat(receipts).ToList();
+            receipts = receipts.Concat(new []{GetCoinbaseTxReceipt()}).ToList();
 
             if (_blockchainContext.CurrentBlock is null) throw new InvalidOperationException("No previous block");
             if (_blockchainContext.CurrentBlock.Header.Index + 1 != index)
@@ -120,9 +120,9 @@ namespace Lachain.Core.Consensus
 
         public void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig)
         {
-            
+            var txCount = txHashes.Count();
             var receipts = txHashes
-                .Select((hash, i) => i == 0 ? GetCoinbaseTxReceipt() : _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
+                .Select((hash, i) => i == txCount - 1  ? GetCoinbaseTxReceipt() : _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
