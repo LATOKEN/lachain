@@ -11,6 +11,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.CLI
@@ -135,7 +136,7 @@ namespace Lachain.Core.CLI
         {
             var from = _keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var hash = from.ToBytes().Concat(BitConverter.GetBytes(nonce)).Keccak();
+            var hash = from.ToBytes().Concat(nonce.ToBytes()).Keccak();
             var byteCode = arguments[1].HexToBytes();
             if (!_virtualMachine.VerifyContract(byteCode))
                 return "Unable to validate smart-contract code";

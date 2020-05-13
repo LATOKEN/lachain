@@ -1,41 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct Fr : IEquatable<Fr>
+    public struct Fr : IEquatable<Fr>, IFixedWidth
     {
+        public const int ByteSize = 32;
+
         public static Fr Zero = FromInt(0);
         public static Fr One = FromInt(1);
-        public static int ByteSize = 32;
-
-        public static Fr FromBytes(IEnumerable<byte> array)
-        {
-            var res = new Fr();
-            var bytes = array.ToArray();
-            MclImports.mclBnFr_setStr(ref res, bytes, bytes.Length, 512);
-            return res;
-        }
-
-        public static byte[] ToBytes(Fr fr)
-        {
-            var buf = new byte[ByteSize];
-            var len = MclImports.mclBnFr_serialize(buf, ByteSize, ref fr);
-            if (len != 32) throw new Exception("Failed to serialize Fr");
-            return buf;
-        }
-
-        public static Fr FromBytes(byte[] buf)
-        {
-            var fr = new Fr();
-            if (MclImports.mclBnFr_deserialize(ref fr, buf, buf.Length) == 0)
-                throw new Exception("Failed to deserialize Fr");
-            return fr;
-        }
 
         public static Fr GetRandom()
         {
@@ -73,11 +50,6 @@ namespace Lachain.Crypto.MCL.BLS12_381
         public bool IsValid()
         {
             return MclImports.mclBnFr_isValid(ref this) == 1;
-        }
-
-        public bool Equals(Fr rhs)
-        {
-            return MclImports.mclBnFr_isEqual(ref this, ref rhs) == 1;
         }
 
         public bool IsZero()
@@ -177,15 +149,59 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return z;
         }
 
-        public override bool Equals(object obj)
+        public static int Width()
         {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj.GetType() == GetType() && Equals((Fr) obj);
+            return ByteSize;
+        }
+
+        public readonly void Serialize(Memory<byte> bytes)
+        {
+            long len;
+            unsafe
+            {
+                using var handle = bytes.Pin();
+                fixed (Fr* thisPtr = &this)
+                {
+                    len = MclImports.mclBnFr_serialize((byte*) handle.Pointer, ByteSize, thisPtr);
+                }
+            }
+
+            if (len != ByteSize) throw new Exception("Failed to serialize Fr");
+        }
+
+        public static Fr FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var fr = new Fr();
+            long ret;
+            unsafe
+            {
+                using var handle = bytes.Pin();
+                ret = MclImports.mclBnFr_deserialize(ref fr, (byte*) handle.Pointer, bytes.Length);
+            }
+
+            if (ret == 0) throw new Exception("Failed to deserialize Fr");
+            return fr;
+        }
+
+        public bool Equals(Fr other)
+        {
+            return MclImports.mclBnFr_isEqual(ref this, ref other) == 1;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Fr other && Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            unsafe
+            {
+                fixed (Fr* ptr = &this)
+                {
+                    return ((int*) ptr)[0];
+                }
+            }
         }
     }
 }

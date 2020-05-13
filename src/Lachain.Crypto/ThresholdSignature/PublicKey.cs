@@ -1,9 +1,10 @@
 ﻿using System;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
-    public class PublicKey : IEquatable<PublicKey>
+    public class PublicKey : IEquatable<PublicKey>, IFixedWidth
     {
         public PublicKey(G1 rawKey)
         {
@@ -12,21 +13,11 @@ namespace Lachain.Crypto.ThresholdSignature
 
         public G1 RawKey { get; }
 
-        public byte[] ToBytes()
-        {
-            return G1.ToBytes(RawKey);
-        }
-
         public bool ValidateSignature(Signature signature, byte[] message)
         {
             var mappedMessage = new G2();
             mappedMessage.SetHashOf(message);
             return Mcl.Pairing(RawKey, mappedMessage).Equals(Mcl.Pairing(G1.Generator, signature.RawSignature));
-        }
-
-        public static PublicKey FromBytes(byte[] buffer)
-        {
-            return new PublicKey(G1.FromBytes(buffer));
         }
 
         public bool Equals(PublicKey other)
@@ -45,6 +36,21 @@ namespace Lachain.Crypto.ThresholdSignature
         public override int GetHashCode()
         {
             return RawKey.GetHashCode();
+        }
+
+        public static int Width()
+        {
+            return G1.Width();
+        }
+
+        public void Serialize(Memory<byte> bytes)
+        {
+            RawKey.Serialize(bytes);
+        }
+
+        public static PublicKey FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            return new PublicKey(G1.FromBytes(bytes));
         }
     }
 }

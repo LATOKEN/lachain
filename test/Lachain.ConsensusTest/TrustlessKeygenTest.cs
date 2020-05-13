@@ -9,6 +9,7 @@ using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Containers;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 
@@ -109,6 +110,11 @@ namespace Lachain.ConsensusTest
                         .SequenceEqual(curKeys[i].Value.TpkePrivateKey.ToBytes()));
                     Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i].Value.PublicPartHash());
                 }
+
+                for (var i = 0; i < n; ++i)
+                {
+                    keyGens[i] = TestSerializationRoundTrip(keyGens[i], ecdsaKeys[i]);
+                }
             }
 
             for (var i = 0; i < n; ++i)
@@ -128,6 +134,14 @@ namespace Lachain.ConsensusTest
             }
 
             return keys;
+        }
+
+        private static TrustlessKeygen TestSerializationRoundTrip(TrustlessKeygen keyGen, EcdsaKeyPair keyPair)
+        {
+            var bytes = keyGen.ToBytes();
+            var restored = TrustlessKeygen.FromBytes(bytes, keyPair);
+            Assert.AreEqual(restored, keyGen);
+            return restored;
         }
 
         private void CheckKeys(IList<ThresholdKeyring> keys)
@@ -151,7 +165,7 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet[i].ValidateSignature(share, payload));
 
             var sig = keys[0].ThresholdSignaturePublicKeySet
-                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share)));
+                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, Signature>(i, share)));
             foreach (var keyring in keys)
                 Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet.SharedPublicKey.ValidateSignature(sig, payload));
         }
@@ -260,7 +274,7 @@ namespace Lachain.ConsensusTest
         [Test]
         public void RunAllHonest_2_0()
         {
-            var keys = SimulateKeygen(3, 0, DeliveryServiceMode.TAKE_FIRST);
+            var keys = SimulateKeygen(2, 0, DeliveryServiceMode.TAKE_FIRST);
             CheckKeys(keys);
         }
         

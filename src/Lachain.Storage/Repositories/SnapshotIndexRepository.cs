@@ -1,6 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Lachain.Storage.State;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.Repositories
 {
@@ -63,16 +63,18 @@ namespace Lachain.Storage.Repositories
         private ulong GetVersion(uint repository, ulong block)
         {
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
-                BitConverter.GetBytes(repository).Concat(BitConverter.GetBytes(block)))
-            );
-            return BitConverter.ToUInt64(rawVersion, 0);
+                repository.ToBytes().Concat(block.ToBytes()).ToArray()
+            ));
+            return rawVersion.AsReadOnlySpan().ToUInt64();
         }
 
         private void SetVersion(uint repository, ulong block, ulong version)
         {
-            _dbContext.Save(EntryPrefix.SnapshotIndex.BuildPrefix(
-                    BitConverter.GetBytes(repository).Concat(BitConverter.GetBytes(block))),
-                BitConverter.GetBytes(version)
+            _dbContext.Save(
+                EntryPrefix.SnapshotIndex.BuildPrefix(
+                    repository.ToBytes().Concat(block.ToBytes()).ToArray()
+                ),
+                version.ToBytes()
             );
         }
     }

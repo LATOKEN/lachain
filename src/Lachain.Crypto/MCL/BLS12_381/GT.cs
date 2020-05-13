@@ -6,16 +6,11 @@ namespace Lachain.Crypto.MCL.BLS12_381
 {
     // ReSharper disable once InconsistentNaming
     [StructLayout(LayoutKind.Explicit, Size = 576)]
-    public struct GT
+    public struct GT : IEquatable<GT>
     {
         public void Clear()
         {
             MclImports.mclBnGT_clear(ref this);
-        }
-
-        public bool Equals(GT rhs)
-        {
-            return MclImports.mclBnGT_isEqual(ref this, ref rhs) == 1;
         }
 
         public bool IsZero()
@@ -130,6 +125,27 @@ namespace Lachain.Crypto.MCL.BLS12_381
         public void MillerLoop(G1 x, G2 y)
         {
             MclImports.mclBn_millerLoop(ref this, ref x, ref y);
+        }
+        
+        public bool Equals(GT other)
+        {
+            return MclImports.mclBnGT_isEqual(ref this, ref other) == 1;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is GT other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unsafe
+            {
+                fixed (GT* ptr = &this)
+                {
+                    return ((int*) ptr)[0];
+                }
+            }
         }
     }
 }

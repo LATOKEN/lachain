@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.CryptoTest
 {
@@ -19,12 +20,10 @@ namespace Lachain.CryptoTest
         public void DeserializationG1Test()
         {
             var x = Fr.GetRandom();
-            var A = G1.Generator * x;
-
-            var enc = G1.ToBytes(A);
-            Console.Error.Write($"G1 len = {enc.Length}");
-            var B = G1.FromBytes(enc);
-            Assert.True(A.Equals(B));
+            var a = G1.Generator * x;
+            var enc = a.ToBytes();
+            var b = G1.FromBytes(enc);
+            Assert.True(a.Equals(b));
         }
 
         [Test]
@@ -32,13 +31,10 @@ namespace Lachain.CryptoTest
         public void DeserializationG2Test()
         {
             var x = Fr.GetRandom();
-            var A = G2.Generator * x;
-
-            var enc = G2.ToBytes(A);
-            Console.Error.Write($"G2 len = {enc.Length}");
-
-            var B = G2.FromBytes(enc);
-            Assert.True(A.Equals(B));
+            var a = G2.Generator * x;
+            var enc = a.ToBytes();
+            var b = G2.FromBytes(enc);
+            Assert.True(a.Equals(b));
         }
 
         [Test]
@@ -46,7 +42,7 @@ namespace Lachain.CryptoTest
         public void DeserializationFrTest()
         {
             var a = Fr.GetRandom();
-            var enc = Fr.ToBytes(a);
+            var enc = a.ToBytes();
             Assert.AreEqual(enc.Length, 32);
             var b = Fr.FromBytes(enc);
             Assert.True(a.Equals(b));

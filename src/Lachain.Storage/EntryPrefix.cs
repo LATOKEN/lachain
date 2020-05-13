@@ -34,5 +34,6 @@
 
         /* consensus */
         ConsensusState = 0x0b01,
+        KeyGenState = 0x0b02,
     }
 }

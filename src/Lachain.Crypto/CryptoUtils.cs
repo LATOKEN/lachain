@@ -17,6 +17,11 @@ namespace Lachain.Crypto
             return new ECDSAPublicKey {Buffer = ByteString.CopyFrom(Crypto.DecodePublicKey(buffer, true))};
         }
 
+        public static ECDSAPublicKey ToPublicKey(this ReadOnlyMemory<byte> bytes)
+        {
+            return bytes.ToArray().ToPublicKey();
+        }
+
         public static ECDSAPublicKey GetPublicKey(this ECDSAPrivateKey key)
         {
             return Crypto.ComputePublicKey(key.Encode(), true).ToPublicKey();

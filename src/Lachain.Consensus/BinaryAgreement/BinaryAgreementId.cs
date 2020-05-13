@@ -15,11 +15,6 @@ namespace Lachain.Consensus.BinaryAgreement
         public long Era { get; }
         public long AssociatedValidatorId { get; }
         
-        public IEnumerable<byte> ToByteArray()
-        {
-            return BitConverter.GetBytes(Era).Concat(BitConverter.GetBytes(AssociatedValidatorId));
-        }
-
         protected bool Equals(BinaryAgreementId other)
         {
             return Era == other.Era && AssociatedValidatorId == other.AssociatedValidatorId;
@@ -40,10 +35,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                return (Era.GetHashCode() * 397) ^ AssociatedValidatorId.GetHashCode();
-            }
+            return HashCode.Combine(Era, AssociatedValidatorId);
         }
         
         public override string ToString()

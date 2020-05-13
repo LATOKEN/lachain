@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using Google.Protobuf;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.State
 {
@@ -12,9 +14,9 @@ namespace Lachain.Storage.State
         {
             _state = state;
         }
-        
+
         public ulong Version => _state.CurrentVersion;
-        
+
         public void Commit()
         {
             _state.Commit();
@@ -26,8 +28,10 @@ namespace Lachain.Storage.State
         {
             var total = GetTotalTransactionEvents(@event.TransactionHash);
             @event.Index = total;
-            _state.AddOrUpdate(EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash),
-                BitConverter.GetBytes(total + 1));
+            _state.AddOrUpdate(
+                EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash),
+                (total + 1).ToBytes().ToArray()
+            );
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash, total);
             _state.AddOrUpdate(prefix, @event.ToByteArray());
         }
@@ -42,7 +46,7 @@ namespace Lachain.Storage.State
         public uint GetTotalTransactionEvents(UInt256 transactionHash)
         {
             var raw = _state.Get(EntryPrefix.EventCountByTransactionHash.BuildPrefix(transactionHash));
-            return raw is null ? 0 : BitConverter.ToUInt32(raw, 0);
+            return raw?.AsReadOnlySpan().ToUInt32() ?? 0u;
         }
     }
 }

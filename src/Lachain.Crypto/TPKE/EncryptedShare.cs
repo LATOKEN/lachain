@@ -1,17 +1,46 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.TPKE
 {
-    public class EncryptedShare
+    public class EncryptedShare : IEquatable<EncryptedShare>
     {
-        protected bool Equals(EncryptedShare other)
+        
+        public G1 U { get; }
+        public byte[] V { get; }
+        public G2 W { get; }
+        public int Id { get; }
+
+        public EncryptedShare(G1 u, byte[] v, G2 w, int id)
         {
+            U = u;
+            V = v;
+            W = w;
+            Id = id;
+        }
+        
+        public IEnumerable<byte> ToBytes()
+        {
+            return Id.ToBytes().Concat(U.ToBytes()).Concat(W.ToBytes()).Concat(V);
+        }
+
+        public static EncryptedShare FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var res = FixedWithSerializer.Deserialize(bytes, out var offset, typeof(int), typeof(G1), typeof(G2));
+            return new EncryptedShare((G1) res[1], bytes.Slice(offset).ToArray(), (G2) res[2], (int) res[0]);
+        }
+
+        public bool Equals(EncryptedShare? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
             return U.Equals(other.U) && V.SequenceEqual(other.V) && W.Equals(other.W) && Id == other.Id;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
@@ -21,60 +50,7 @@ namespace Lachain.Crypto.TPKE
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var hashCode = U.GetHashCode();
-                hashCode = (hashCode * 397) ^ (V != null ? V.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ W.GetHashCode();
-                hashCode = (hashCode * 397) ^ Id;
-                return hashCode;
-            }
-        }
-
-        public G1 U { get; }
-        public byte[] V { get; }
-        public G2 W { get; }
-        public int Id { get; }
-
-        public EncryptedShare(G1 _U, byte[] _V, G2 _W, int id)
-        {
-            U = _U;
-            V = _V;
-            W = _W;
-            Id = id;
-        }
-        
-        public byte[] ToByte()
-        {   
-            return G1.ToBytesDelimited(U).
-                Concat(G2.ToBytesDelimited(W).
-                    Concat(BitConverter.GetBytes(Id).
-                        Concat(BitConverter.GetBytes(V.Length).
-                            Concat(V)))).ToArray();
-        }
-
-        public static EncryptedShare FromByte(byte[] buf)
-        {
-            var lenBuf = buf.Length;
-            var lenInt = 4;
-            if (lenBuf == 0)
-                throw new Exception("Failed to deserialize EncryptedShare");
-            var szG1 = BitConverter.ToInt32(buf.Take(lenInt).ToArray(), 0);
-            
-            var serU = G1.FromBytes(buf.Skip(lenInt).Take(szG1).ToArray());
-            var indentTo2 = lenInt + szG1;
-            var szG2 = BitConverter.ToInt32(buf.Skip(indentTo2).Take(lenInt).ToArray(), 0);
-            
-            var serW = G2.FromBytes(buf.Skip(indentTo2 + lenInt).Take(szG2).ToArray());
-            var indentToId = indentTo2 + lenInt + szG2;
-            var Id = BitConverter.ToInt32(buf.Skip(indentToId).Take(lenInt).ToArray(), 0);
-            
-            var indentToV = indentToId + lenInt;
-            var szV = BitConverter.ToInt32(buf.Skip(indentToV).Take(lenInt).ToArray(), 0);
-            
-            var serV = buf.Skip(indentToV + lenInt).Take(szV).ToArray();
-            return new EncryptedShare(serU, serV, serW, Id);
-            
+            return HashCode.Combine(U, V, W, Id);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
@@ -8,15 +7,10 @@ using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
-using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
-using Lachain.Storage.State;
-using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus

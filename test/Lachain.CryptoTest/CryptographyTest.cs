@@ -9,6 +9,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Transaction = Lachain.Proto.Transaction;
 
@@ -38,7 +39,7 @@ namespace Lachain.CryptoTest
             var startTs = TimeUtils.CurrentTimeMillis();
             for (var it = 0; it < n; ++it)
             {
-                var plaintext = baseText.Concat(BitConverter.GetBytes(it)).ToArray();
+                var plaintext = baseText.Concat(it.ToBytes()).ToArray();
                 var cipher = crypto.AesGcmEncrypt(key, plaintext);
                 var decrypted = crypto.AesGcmDecrypt(key, cipher);
                 Assert.IsTrue(plaintext.SequenceEqual(decrypted));
@@ -61,7 +62,7 @@ namespace Lachain.CryptoTest
             var startTs = TimeUtils.CurrentTimeMillis();
             for (var it = 0; it < n; ++it)
             {
-                var plaintext = baseText.Concat(BitConverter.GetBytes(it)).ToArray();
+                var plaintext = baseText.Concat(it.ToBytes()).ToArray();
                 var cipher = crypto.Secp256K1Encrypt(key.ToPrivateKey().GetPublicKey().EncodeCompressed(), plaintext);
                 var decrypted = crypto.Secp256K1Decrypt(key, cipher);
                 Assert.IsTrue(plaintext.SequenceEqual(decrypted));

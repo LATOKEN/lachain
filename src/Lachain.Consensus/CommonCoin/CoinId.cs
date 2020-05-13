@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Consensus.CommonCoin
 {
@@ -17,11 +18,9 @@ namespace Lachain.Consensus.CommonCoin
         public long Agreement { get; }
         public long Epoch { get; }
 
-        public IEnumerable<byte> ToByteArray()
+        public IEnumerable<byte> ToBytes()
         {
-            return BitConverter.GetBytes(Era)
-                .Concat(BitConverter.GetBytes(Agreement))
-                .Concat(BitConverter.GetBytes(Epoch));
+            return Era.ToBytes().Concat(Agreement.ToBytes()).Concat(Epoch.ToBytes());
         }
 
         public bool Equals(CoinId other)
@@ -41,7 +40,7 @@ namespace Lachain.Consensus.CommonCoin
             if (obj.GetType() != this.GetType()) return false;
             return Equals((CoinId) obj);
         }
-        
+
         public override string ToString()
         {
             return $"CC (Er={Era}, A={Agreement}, Ep={Epoch})";
@@ -49,13 +48,7 @@ namespace Lachain.Consensus.CommonCoin
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var hashCode = Era.GetHashCode();
-                hashCode = (hashCode * 397) ^ Agreement.GetHashCode();
-                hashCode = (hashCode * 397) ^ Epoch.GetHashCode();
-                return hashCode;
-            }
+            return HashCode.Combine(Era, Agreement, Epoch);
         }
     }
 }

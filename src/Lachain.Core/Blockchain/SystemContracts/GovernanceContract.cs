@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Lachain.Core.Blockchain.Genesis;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
@@ -12,6 +13,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -106,33 +108,41 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
-            var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(PublicKey.FromBytes), faulty);
+            var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(x => PublicKey.FromBytes(x)), faulty);
             var tpkeKey = Crypto.TPKE.PublicKey.FromBytes(tpkePublicKey);
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 
             var gen = GetConsensusGeneration();
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
-            
+
             if (votes + 1 != players - faulty) return;
-            
+
             var ecdsaPublicKeys = _pendingValidators.Get()
                 .Batch(Crypto.CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
 
             _contractContext.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
+            _contractContext.Snapshot.Events.AddEvent(new Event
+            {
+               Contract = ContractRegisterer.GovernanceContract,
+               Data = ByteString.Empty,
+               Index = 0,
+               TransactionHash = _contractContext.Receipt?.Hash
+            });
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
             Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
-            Logger.LogWarning($"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
-            Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToBytes().ToHex()))}");
-            Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToBytes().ToHex()}");
+            Logger.LogWarning(
+                $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
+            Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
+            Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToHex()}");
         }
-        
-        private int GetConsensusGeneration()
+
+        private ulong GetConsensusGeneration()
         {
             var gen = _consensusGeneration.Get();
-            return gen.Length == 0 ? 0 : BitConverter.ToInt32(gen);
+            return gen.Length == 0 ? 0 : gen.AsReadOnlySpan().ToUInt64();
         }
         
         private UInt256 GetBlockReward()
@@ -141,22 +151,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return reward.Reverse().ToArray().ToUInt256();
         }
 
-        private void SetConsensusGeneration(int generation)
+        private void SetConsensusGeneration(ulong generation)
         {
-            _consensusGeneration.Set(BitConverter.GetBytes(generation));
+            _consensusGeneration.Set(generation.ToBytes().ToArray());
         }
-        
-        private int GetConfirmations(IEnumerable<byte> key, int gen)
+
+        private int GetConfirmations(IEnumerable<byte> key, ulong gen)
         {
             var votes = _confirmations.GetValue(key);
             if (votes.Length == 0) return 0;
-            if (BitConverter.ToInt32(votes, 0) != gen) return 0;
-            return BitConverter.ToInt32(votes, 4);
+            if (votes.AsReadOnlySpan().ToUInt64() != gen) return 0;
+            return votes.AsReadOnlySpan().Slice(8).ToInt32();
         }
 
-        private void SetConfirmations(IEnumerable<byte> key, int gen, int votes)
+        private void SetConfirmations(IEnumerable<byte> key, ulong gen, int votes)
         {
-            _confirmations.SetValue(key, BitConverter.GetBytes(gen).Concat(BitConverter.GetBytes(votes)).ToArray());
+            _confirmations.SetValue(key, gen.ToBytes().Concat(votes.ToBytes()).ToArray());
         }
 
         private UInt160 PublicKeyToAddress(byte[] publicKey)

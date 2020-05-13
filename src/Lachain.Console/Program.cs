@@ -10,6 +10,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Networking;
 using Lachain.Storage;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Console
@@ -36,7 +37,7 @@ namespace Lachain.Console
             var privShares = sigKeyGen.GetPrivateShares().ToArray();
             var pubShares = sigKeyGen.GetPrivateShares()
                 .Select(s => s.GetPublicKeyShare())
-                .Select(s => s.ToBytes().ToHex())
+                .Select(s => s.ToHex())
                 .ToArray();
 
             // var ips = new[]
@@ -96,7 +97,7 @@ namespace Lachain.Console
                         EcdsaPublicKey = ecdsaPublicKeys[j],
                         ThresholdSignaturePublicKey = pubShares[j]
                     }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToBytes().ToHex()
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex()
                 };
                 for (var j = 0; j < n; ++j)
                 {
@@ -132,8 +133,8 @@ namespace Lachain.Console
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
-                    tpkeKeyGen.GetPrivKey(i).ToBytes().ToHex(),
-                    privShares[i].ToBytes().ToHex()
+                    tpkeKeyGen.GetPrivKey(i).ToHex(),
+                    privShares[i].ToHex()
                 );
             }
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.Trie
 {
@@ -14,7 +15,7 @@ namespace Lachain.Storage.Trie
         {
             KeyHash = keyHash.ToArray();
             Value = value.ToArray();
-            Hash = BitConverter.GetBytes(KeyHash.Length).Concat(KeyHash).Concat(Value).KeccakBytes();
+            Hash = KeyHash.Length.ToBytes().Concat(KeyHash).Concat(Value).KeccakBytes();
         }
 
         public NodeType Type { get; } = NodeType.Leaf;

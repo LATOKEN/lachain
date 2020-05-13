@@ -6,6 +6,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Consensus.ReliableBroadcast
 {
@@ -72,9 +73,9 @@ namespace Lachain.Consensus.ReliableBroadcast
             {
                 EncryptedShare = new TPKEEncryptedShareMessage
                 {
-                    U = ByteString.CopyFrom(G1.ToBytes(share.U)),
+                    U = ByteString.CopyFrom(share.U.ToBytes()),
                     V = ByteString.CopyFrom(share.V),
-                    W = ByteString.CopyFrom(G2.ToBytes(share.W)),
+                    W = ByteString.CopyFrom(share.W.ToBytes()),
                     Id = share.Id
                 }
             };

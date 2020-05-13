@@ -122,7 +122,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             Console.Error.WriteLine(
                 "Thread {0} ID {1} was called HandleInputMessage()", Thread.CurrentThread.ManagedThreadId, GetMyId());
             if (broadcastRequested.Input == null) return;
-            var realInput = broadcastRequested.Input.ToByte();
+            var realInput = broadcastRequested.Input.ToBytes().ToArray();
 
 
             // for debug
@@ -297,7 +297,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                 {
                     var tmp = RBTools.GetOriginalInput(_store.ToArray());
                     var tmp1 = RBTools.IntToByte(tmp);
-                    var es = EncryptedShare.FromByte(tmp1);
+                    var es = EncryptedShare.FromBytes(tmp1);
                     Broadcaster.InternalResponse(
                         new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, es));
                 }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Google.Protobuf;
 using Nethereum.Hex.HexTypes;
 using Lachain.Proto;
 
@@ -82,12 +81,6 @@ namespace Lachain.Utility.Utils
         public static string ToHex(this int num)
         {
             return num.ToHexBigInteger().HexValue;
-        }
-
-        public static byte[] ToBytes(this ulong number)
-        {
-            var bytes = BitConverter.GetBytes(number);
-            return BitConverter.IsLittleEndian ? bytes.Reverse().ToArray() : bytes;
         }
 
         public static byte[] TrimLeadingZeros(this byte[] array)

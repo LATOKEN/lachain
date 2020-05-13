@@ -8,11 +8,6 @@ namespace Lachain.Consensus.RootProtocol
 
         public long Era { get; }
         
-        public IEnumerable<byte> ToByteArray()
-        {
-            throw new NotImplementedException();
-        }
-
         public RootProtocolId(long era)
         {
             Era = era;

@@ -16,6 +16,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Benchmark
@@ -136,8 +137,7 @@ namespace Lachain.Benchmark
             var deployError = transactionPool.Add(transactionSigner.Sign(deployTx, keyPair));
             if (deployError != OperatingError.Ok)
                 throw new Exception("Unable to add deploy tx (" + deployError + ")");
-            var contract = deployTx.From.ToBytes().Concat(BitConverter.GetBytes((uint) deployTx.Nonce))
-                .Ripemd();
+            var contract = deployTx.From.ToBytes().Concat(deployTx.Nonce.ToBytes()).Ripemd();
 
             _Benchmark("Building TX pool... ", i =>
             {
