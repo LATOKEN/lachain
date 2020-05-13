@@ -15,6 +15,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -30,23 +31,22 @@ namespace Lachain.Core.Vault
         private readonly IPrivateWallet _privateWallet;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
-        private TrustlessKeygen? _currentKeygen;
-        private bool _confirmSent;
-        private IDictionary<UInt256, int> _confirmations;
+        private readonly IKeyGenRepository _keyGenRepository;
 
         public KeyGenManager(
             IBlockManager blockManager,
             ITransactionBuilder transactionBuilder,
             IPrivateWallet privateWallet,
             ITransactionPool transactionPool,
-            ITransactionSigner transactionSigner
+            ITransactionSigner transactionSigner,
+            IKeyGenRepository keyGenRepository
         )
         {
             _transactionBuilder = transactionBuilder;
             _privateWallet = privateWallet;
             _transactionPool = transactionPool;
             _transactionSigner = transactionSigner;
-            _confirmations = new Dictionary<UInt256, int>();
+            _keyGenRepository = keyGenRepository;
             blockManager.OnSystemContractInvoked += BlockManagerOnSystemContractInvoked;
         }
 
@@ -74,13 +74,12 @@ namespace Lachain.Core.Vault
                     return;
                 }
 
-                if (_currentKeygen != null)
+                var keygen = GetCurrentKeyGen();
+                if (keygen != null)
                     throw new ArgumentException("Cannot start keygen, since one is already running");
                 var faulty = (publicKeys.Length - 1) / 3;
-                _currentKeygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
-                _confirmSent = false;
-                _confirmations = new Dictionary<UInt256, int>();
-                var commitTx = MakeCommitTransaction(_currentKeygen.StartKeygen());
+                keygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
+                var commitTx = MakeCommitTransaction(keygen.StartKeygen());
                 if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
                     Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
                 else
@@ -90,19 +89,22 @@ namespace Lachain.Core.Vault
                         $"tx={commitTx.Hash.ToHex()} from={commitTx.Transaction.From.ToHex()} nonce={commitTx.Transaction.Nonce}"
                     );
                 }
+
+                _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
-                if (_currentKeygen is null) return;
-                var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
+                var keygen = GetCurrentKeyGen();
+                if (keygen is null) return;
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
-                var commitment = Commitment.FromBytes(args[0] as byte[]);
-                var encryptedRows = args[1] as byte[][];
+                var commitment = Commitment.FromBytes(args[0] as byte[] ?? throw new Exception());
+                var encryptedRows = args[1] as byte[][] ?? throw new Exception();
                 var sendValueTx = MakeSendValueTransaction(
-                    _currentKeygen.HandleCommit(
+                    keygen.HandleCommit(
                         sender,
                         new CommitMessage {Commitment = commitment, EncryptedRows = encryptedRows}
                     )
@@ -116,41 +118,47 @@ namespace Lachain.Core.Vault
                         $"tx={sendValueTx.Hash.ToHex()} from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}"
                     );
                 }
+
+                _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenSendValue))
             {
                 Logger.LogInformation(
                     $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
-                if (_currentKeygen is null) return;
-                var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
+                var keygen = GetCurrentKeyGen();
+                if (keygen is null) return;
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
-
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
-                var proposer = args[0] as UInt256;
-                var encryptedValues = args[1] as byte[][];
-                _currentKeygen.HandleSendValue(
+                var proposer = args[0] as UInt256 ?? throw new Exception();
+                var encryptedValues = args[1] as byte[][] ?? throw new Exception();
+
+                if (keygen.HandleSendValue(
                     sender,
                     new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
-                );
-                var keys = _currentKeygen.TryGetKeys();
-                if (!keys.HasValue || _confirmSent) return;
-                var confirmTx = MakeConfirmTransaction(keys.Value);
-                if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
-                    Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
-                else
+                ))
                 {
-                    _confirmSent = true;
-                    Logger.LogInformation(
-                        $"Confirm transaction {confirmTx.Hash.ToHex()} for hash {keys.Value.PublicPartHash().ToHex()} successfully sent: " +
-                        $"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}"
-                    );
+                    var keys = keygen.TryGetKeys() ?? throw new Exception();
+                    var confirmTx = MakeConfirmTransaction(keys);
+                    if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
+                        Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
+                    else
+                    {
+                        Logger.LogInformation(
+                            $"Confirm transaction {confirmTx.Hash.ToHex()} for hash {keys.PublicPartHash().ToHex()} successfully sent: " +
+                            $"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}"
+                        );
+                    }
                 }
+
+                _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
-                if (_currentKeygen is null) return;
-                var sender = _currentKeygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
+                var keygen = GetCurrentKeyGen();
+                if (keygen is null) return;
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
@@ -159,39 +167,32 @@ namespace Lachain.Core.Vault
                     (args[1] as byte[][] ?? throw new Exception()).Select(x =>
                         Crypto.ThresholdSignature.PublicKey.FromBytes(x)
                     ),
-                    _currentKeygen.Faulty
+                    keygen.Faulty
                 );
-                var keyringHash = tpkePublicKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
-                // TODO: somehow calculate confirmations in contract and trigger this by event
 
-                _confirmations.PutIfAbsent(keyringHash, 0);
-                _confirmations[keyringHash] += 1;
-
-                Logger.LogInformation(
-                    $"Collected {_confirmations[keyringHash]} confirmations for hash {keyringHash.ToHex()}");
-                if (_confirmations[keyringHash] != _currentKeygen.Players - _currentKeygen.Faulty) return;
-                var keys = _currentKeygen.TryGetKeys() ?? throw new Exception();
-                Logger.LogWarning($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
-                if (!keyringHash.Equals(keys.PublicPartHash()))
+                if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
                 {
-                    throw new Exception();
+                    var keys = keygen.TryGetKeys() ?? throw new Exception();
+                    Logger.LogWarning($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
+                    Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
+                    Logger.LogWarning(
+                        "  - TS public key: " + keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()
+                    );
+                    Logger.LogWarning(
+                        "  - TS public key set: " +
+                        string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))
+                    );
+                    _privateWallet.AddThresholdSignatureKeyAfterBlock(
+                        context.Receipt.Block, keys.ThresholdSignaturePrivateKey
+                    );
+                    _privateWallet.AddTpkePrivateKeyAfterBlock(context.Receipt.Block, keys.TpkePrivateKey);
+                    Logger.LogInformation("Keyring saved to wallet");
+                    _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
                 }
-
-                Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
-                Logger.LogWarning(
-                    "  - TS public key: " + keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()
-                );
-                Logger.LogWarning(
-                    "  - TS public key set: " +
-                    string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))
-                );
-                _privateWallet.AddThresholdSignatureKeyAfterBlock(
-                    context.Receipt.Block, keys.ThresholdSignaturePrivateKey
-                );
-                _privateWallet.AddTpkePrivateKeyAfterBlock(context.Receipt.Block, keys.TpkePrivateKey);
-                Logger.LogInformation("Keyring saved to wallet");
-                _currentKeygen = null;
-                _confirmations.Clear();
+                else
+                {
+                    _keyGenRepository.SaveKeyGenState(keygen.ToBytes());                    
+                }
             }
         }
 
@@ -232,6 +233,13 @@ namespace Lachain.Core.Vault
                 commitMessage.EncryptedRows
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
+        }
+
+        private TrustlessKeygen? GetCurrentKeyGen()
+        {
+            var bytes = _keyGenRepository.LoadKeyGenState();
+            if (bytes is null || bytes.Length == 0) return null;
+            return TrustlessKeygen.FromBytes(bytes, _privateWallet.EcdsaKeyPair);
         }
     }
 }

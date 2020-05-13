@@ -93,6 +93,11 @@ namespace Lachain.Crypto.MCL.BLS12_381
             z.Mul(x, y);
             return z;
         }
+        
+        public static G2 operator *(G2 x, int y)
+        {
+            return x * Fr.FromInt(y);
+        }
 
         public static int Width()
         {

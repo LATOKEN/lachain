@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
@@ -13,7 +14,6 @@ using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
-using Nethereum.Util;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -93,6 +93,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .ToArray();
 
             _contractContext.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
+            _contractContext.Snapshot.Events.AddEvent(new Event
+            {
+               Contract = ContractRegisterer.GovernanceContract,
+               Data = ByteString.Empty,
+               Index = 0,
+               TransactionHash = _contractContext.Receipt?.Hash
+            });
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
             Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
             Logger.LogWarning(
@@ -112,15 +119,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _consensusGeneration.Set(generation.ToBytes().ToArray());
         }
 
-        private int GetConfirmations(IEnumerable<byte> key, int gen)
+        private int GetConfirmations(IEnumerable<byte> key, ulong gen)
         {
             var votes = _confirmations.GetValue(key);
             if (votes.Length == 0) return 0;
-            if (votes.AsReadOnlySpan().ToInt32() != gen) return 0;
-            return votes.AsReadOnlySpan().Slice(4).ToInt32();
+            if (votes.AsReadOnlySpan().ToUInt64() != gen) return 0;
+            return votes.AsReadOnlySpan().Slice(8).ToInt32();
         }
 
-        private void SetConfirmations(IEnumerable<byte> key, int gen, int votes)
+        private void SetConfirmations(IEnumerable<byte> key, ulong gen, int votes)
         {
             _confirmations.SetValue(key, gen.ToBytes().Concat(votes.ToBytes()).ToArray());
         }

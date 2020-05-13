@@ -11,6 +11,7 @@ using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts

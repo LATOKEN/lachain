@@ -7,7 +7,7 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {
-    public class Commitment
+    public class Commitment : IEquatable<Commitment>
     {
         private readonly G1[] _coefficients;
         public readonly int Degree;
@@ -71,6 +71,26 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
                 .Select(x => x.ToArray())
                 .Select(b => G1.FromBytes(b.ToArray()))
             );
+        }
+
+        public bool Equals(Commitment? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return _coefficients.SequenceEqual(other._coefficients);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Commitment) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return _coefficients.GetHashCode();
         }
     }
 }

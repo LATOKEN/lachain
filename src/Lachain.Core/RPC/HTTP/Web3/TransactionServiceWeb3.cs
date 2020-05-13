@@ -16,6 +16,7 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Transaction = Lachain.Proto.Transaction;
 
@@ -186,9 +187,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["transactionHash"] = receipt.Hash.ToHex(),
                 ["transactionIndex"] = receipt.IndexInBlock,
                 ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
-                ["blockHash"] = blockHash ?? block.Hash.ToHex(),
-                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().ToHex(true), // TODO: plus previous
-                ["gasUsed"] = receipt.GasUsed.ToBytes().ToHex(true),
+                ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
+                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().ToHex(), // TODO: plus previous
+                ["gasUsed"] = receipt.GasUsed.ToBytes().ToHex(),
                 ["contractAddress"] = null,
                 ["logs"] = new JArray(),
                 ["logsBloom"] =

@@ -110,6 +110,11 @@ namespace Lachain.ConsensusTest
                         .SequenceEqual(curKeys[i].Value.TpkePrivateKey.ToBytes()));
                     Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i].Value.PublicPartHash());
                 }
+
+                for (var i = 0; i < n; ++i)
+                {
+                    keyGens[i] = TestSerializationRoundTrip(keyGens[i], ecdsaKeys[i]);
+                }
             }
 
             for (var i = 0; i < n; ++i)
@@ -129,6 +134,14 @@ namespace Lachain.ConsensusTest
             }
 
             return keys;
+        }
+
+        private static TrustlessKeygen TestSerializationRoundTrip(TrustlessKeygen keyGen, EcdsaKeyPair keyPair)
+        {
+            var bytes = keyGen.ToBytes();
+            var restored = TrustlessKeygen.FromBytes(bytes, keyPair);
+            Assert.AreEqual(restored, keyGen);
+            return restored;
         }
 
         private void CheckKeys(IList<ThresholdKeyring> keys)
