@@ -73,8 +73,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var validators = 
                 _contractContext.Snapshot.Validators.GetValidatorsPublicKeys().Select(x => PublicKeyToAddress(x.Buffer.ToByteArray())).ToArray();
-            _contractContext.Sender = ContractRegisterer.GovernanceContract;
             validators = validators.Concat(new []{ContractRegisterer.PassiveStakingContract}).ToArray();
+            
+            _contractContext.Sender = ContractRegisterer.GovernanceContract;
             var laToken = new NativeTokenContract(_contractContext);
             var txFees = laToken.BalanceOf(ContractRegisterer.GovernanceContract).ToMoney(true);
             laToken.MintBlockRewards(validators, GetBlockReward().ToMoney(), txFees);

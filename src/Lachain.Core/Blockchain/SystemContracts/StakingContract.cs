@@ -24,10 +24,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private const ulong CycleDuration = 1000; // in blocks
         private const ulong SubmissionPhaseDuration = 500; // in blocks
         private const ulong KeyGenPhaseDuration = 100; // in blocks
+        private const ulong OfflineDetectionDuration = 100; // in blocks
         private const int PublicKeyLength = 33;
         private readonly BigInteger _tokenUnitsInRoll = BigInteger.Pow(10, 21);
-        private readonly StorageVariable _currentCycle; // int
         private readonly StorageVariable _nextValidators; // array of public keys
+        private readonly StorageVariable _previousValidators; // array of public keys
+        private readonly StorageVariable _faultDetectorCheckIns; // array of public keys
         private readonly StorageVariable _stakers; // array of public keys
         private readonly StorageVariable _vrfSeed;
         private readonly StorageVariable _nextVrfSeed;
@@ -38,6 +40,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageMapping _userToStake;
         private readonly StorageMapping _userToStartCycle;
         private readonly StorageMapping _userToWithdrawRequestCycle;
+        private readonly StorageMapping _faultVotes;
 
         private static readonly ILogger<StakingContract> Logger =
             LoggerFactory.GetLoggerForClass<StakingContract>();
@@ -45,7 +48,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public StakingContract(ContractContext contractContext)
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
-            _currentCycle = new StorageVariable(
+            _nextVrfSeed = new StorageVariable(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 BigInteger.Zero.ToUInt256()
@@ -90,10 +93,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(8).ToUInt256()
             );
-            _nextVrfSeed = new StorageVariable(
+            _previousValidators = new StorageVariable(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 new BigInteger(9).ToUInt256()
+            );
+            _faultDetectorCheckIns = new StorageVariable(
+                ContractRegisterer.StakingContract,
+                contractContext.Snapshot.Storage,
+                new BigInteger(10).ToUInt256()
+            );
+            _faultVotes = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                contractContext.Snapshot.Storage,
+                new BigInteger(11).ToUInt256()
             );
             TryInitStoarge();
         }
@@ -135,7 +148,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             SetStake(MsgSender(), amount);
-            SetPublicKey(MsgSender(), publicKey);
+            SetStakerPublicKey(MsgSender(), publicKey);
             SetStartCycle(MsgSender(), startingCycle);
             var id = AddStaker(publicKey);
             SetStakerId(MsgSender(), id);
@@ -165,6 +178,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public void WithdrawStake(byte[] publicKey)
         {
             EnsurePublicKeyOwner(publicKey, MsgSender());
+            EnsureWithdrawalPhase();
             
             if (GetWithdrawRequestCycle(MsgSender()) == 0)
             {
@@ -190,8 +204,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             DeleteStaker(user);
         }
-
-
 
         [ContractMethod(StakingInterface.MethodSubmitVrf)]
         public void SubmitVrf(byte[] publicKey, byte[] proof)
@@ -226,6 +238,84 @@ namespace Lachain.Core.Blockchain.SystemContracts
             TrySetNextVrfSeed(Vrf.ProofToHash(proof));
         }
 
+        [ContractMethod(StakingInterface.MethodSubmitVrf)]
+        public void SubmitOfflineDetection(byte[][] faultPersons, int[] faultBlocksCounts)
+        {
+            EnsureOfflineDetectorPhase();
+            var senderPublicKey = GetStakerPublicKey(MsgSender());
+            EnsurePreviousValidator(senderPublicKey);
+
+            if (faultPersons.Length != faultBlocksCounts.Length)
+            {
+                throw new Exception("Arguments length mismatch");
+            }
+            FaultDetectorCheckIn(senderPublicKey);
+
+            for (var i = 0; i < faultPersons.Length; i++)
+            {
+                EnsurePreviousValidator(faultPersons[i]);
+                VoteForFault(faultPersons[i], faultBlocksCounts[i]);
+            }
+        }
+
+        private void VoteForFault(byte[] faultPerson, int faultBlocksCount)
+        {
+            // var votes = 
+        }
+
+        private void FaultDetectorCheckIn(byte[] publicKey)
+        {
+            if (IsCheckedInFaultDetector(publicKey))
+                throw new Exception("Already checked in");
+            
+            _faultDetectorCheckIns.Set(_faultDetectorCheckIns.Get().Concat(publicKey).ToArray());
+        }
+
+        private bool IsCheckedInFaultDetector(byte[] publicKey)
+        {
+            var seenValidatorsBytes = _faultDetectorCheckIns.Get();
+            for (var startByte = 0; startByte < seenValidatorsBytes.Length; startByte += PublicKeyLength)
+            {
+                var validator = seenValidatorsBytes.Skip(startByte).Take(PublicKeyLength).ToArray();
+                if (validator.SequenceEqual(publicKey))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public void SlashFaultyValidators()
+        {
+            if (_contractContext.Receipt.Block % CycleDuration != OfflineDetectionDuration)
+            {
+                throw new Exception();
+            }
+
+            if (!MsgSender().IsZero())
+            {
+                throw new Exception("Auth failure");
+            }
+            
+            var validators = _previousValidators.Get();
+            for (var startByte = 0; startByte < validators.Length; startByte += PublicKeyLength)
+            {
+                var validator = validators.Skip(startByte).Take(PublicKeyLength).ToArray();
+                if (!IsCheckedInFaultDetector(validator))
+                {
+                    SlashStake(validator, 1000);
+                }
+                else
+                {
+                    var missedBlocksCount = GetMissedBlocksCount(validator);
+                    if (missedBlocksCount > 0)
+                    {
+                        SlashStake(validator, missedBlocksCount);
+                    }
+                }
+                
+            }
+        }
+
         [ContractMethod(StakingInterface.MethodFinishCycle)]
         public void FinishCycle()
         {
@@ -238,11 +328,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _vrfSeed.Set(GetNextVrfSeed());
             _nextVrfSeed.Set(new byte[]{});
             _nextValidators.Set(new byte[]{});
-            SetCurrentCycle(GetCurrentCycle() + 1);
-            ApplyValidatorSet(nextValidators);
+            ApplyNextAndStorePreviousValidatorSet(nextValidators);
         }
 
-        private void ApplyValidatorSet(byte[] validatorSet)
+        private void ApplyNextAndStorePreviousValidatorSet(byte[] validatorSet)
         {
             byte[][] validators = {};
             for (var startByte = 0; startByte < validatorSet.Length; startByte += PublicKeyLength)
@@ -250,7 +339,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var validatorPublicKey = validatorSet.Skip(startByte).Take(PublicKeyLength).ToArray();
                 validators = validators.Concat(new[] {validatorPublicKey}).ToArray();
             }
-         
+
+            var previousValidators = _contractContext.Snapshot.Validators.GetValidatorsPublicKeys().Select(pk => pk.Buffer.ToByteArray());
+            SetPreviousValidators(previousValidators.ToArray());
+            
             var governance = new GovernanceContract(_contractContext);   
             governance.ChangeValidators(validators);
         }
@@ -258,13 +350,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodGetCurrentCycle)]
         public int GetCurrentCycle()
         {
-            var cycle = _currentCycle.Get();
-            return cycle.Length == 0 ? 0 : BitConverter.ToInt32(cycle);
-        }
-
-        private void SetCurrentCycle(int cycle)
-        {
-            _currentCycle.Set(BitConverter.GetBytes(cycle));
+            return (int)(_contractContext.Snapshot.Blocks.GetTotalBlockHeight() / 1000);
         }
 
         [ContractMethod(StakingInterface.MethodGetVrfSeed)]
@@ -280,9 +366,30 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(StakingInterface.MethodIsNextValidator)]
-        public Boolean IsNextValidator(byte[] publicKey)
+        public bool IsNextValidator(byte[] publicKey)
         {
             var validators = _nextValidators.Get();
+            for (var startByte = 0; startByte < validators.Length; startByte += PublicKeyLength)
+            {
+                var validator = validators.Skip(startByte).Take(PublicKeyLength).ToArray();
+                if (validator.SequenceEqual(publicKey))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void EnsurePreviousValidator(byte[] publicKey)
+        {
+            if (!IsPreviousValidator(publicKey)) 
+                throw new Exception("Not a previous validator");
+        }
+
+        public bool IsPreviousValidator(byte[] publicKey)
+        {
+            var validators = _previousValidators.Get();
             for (var startByte = 0; startByte < validators.Length; startByte += PublicKeyLength)
             {
                 var validator = validators.Skip(startByte).Take(PublicKeyLength).ToArray();
@@ -298,6 +405,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetNextValidator(byte[] publicKey)
         {
             _nextValidators.Set(_nextValidators.Get().Concat(publicKey).ToArray());
+        }
+
+        private void SetPreviousValidators(byte[][] publicKeys)
+        {
+            _previousValidators.Set(publicKeys.Flatten().ToArray());
         }
 
         private void TrySetNextVrfSeed(byte[] vrfSeed)
@@ -334,7 +446,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public bool IsAbleToBeAValidator(UInt160 staker)
         {
             var stake = GetStake(staker);
-            if (stake.ToMoney(true).CompareTo(UInt256Utils.Zero.ToMoney()) != 1)
+            if (stake.ToMoney(true) == Money.Zero)
             {
                 return false;
             }
@@ -345,7 +457,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetStake(UInt160 staker, UInt256 amount)
         {
             var key = staker.ToBytes();
-            if (amount.ToMoney(true).CompareTo(UInt256Utils.Zero.ToMoney()) == 0)
+            if (amount.IsZero())
             {
                 _userToStake.Delete(key);
                 return;
@@ -376,7 +488,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return BitConverter.ToInt32(withdrawRequestCycleBytes);
         }
          
-        private void SetPublicKey(UInt160 staker, byte[] publicKey)
+        private void SetStakerPublicKey(UInt160 staker, byte[] publicKey)
         {
             var key = staker.ToBytes();
             if (publicKey.Length == 0)
@@ -444,7 +556,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             SetWithdrawRequestCycle(staker, 0);
             SetStake(staker, UInt256Utils.Zero);
-            SetPublicKey(staker, new byte[]{});
+            SetStakerPublicKey(staker, new byte[]{});
             DeleteStartCycle(staker);
             SetStakerId(staker, 0);
         }
@@ -469,11 +581,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
         }
         
-        private byte[] getStakerPublicKeyById(int id)
+        private byte[] GetStakerPublicKey(UInt160 staker)
         {
-            var stakers = _stakers.Get();
-            var toSkip = id  * PublicKeyLength;
-            return stakers.Skip(toSkip).Take(PublicKeyLength).ToArray();
+            var pubKey = _userToPubKey.GetValue(staker.ToBytes());
+            if (pubKey.Length == 0)
+            {
+                throw new Exception("Not a staker");
+            }
+
+            return pubKey;
         }
 
         private UInt160 PublicKeyToAddress(byte[] publicKey)
@@ -504,6 +620,26 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var blockNumber = _contractContext.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
             if (blockInCycle < SubmissionPhaseDuration || blockInCycle >= CycleDuration - KeyGenPhaseDuration)
+            {
+                throw new Exception("Not a finish phase");
+            }
+        }
+
+        private void EnsureWithdrawalPhase()
+        {
+            var blockNumber = _contractContext.Receipt.Block;
+            var blockInCycle = blockNumber % CycleDuration;
+            if (blockInCycle < OfflineDetectionDuration)
+            {
+                throw new Exception("Not a finish phase");
+            }
+        }
+
+        private void EnsureOfflineDetectorPhase()
+        {
+            var blockNumber = _contractContext.Receipt.Block;
+            var blockInCycle = blockNumber % CycleDuration;
+            if (blockInCycle >= OfflineDetectionDuration)
             {
                 throw new Exception("Not a finish phase");
             }
