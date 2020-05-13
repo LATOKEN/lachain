@@ -76,14 +76,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _contractContext.Sender = ContractRegisterer.GovernanceContract;
             validators = validators.Concat(new []{ContractRegisterer.PassiveStakingContract}).ToArray();
             var laToken = new NativeTokenContract(_contractContext);
-            laToken.MintBlockRewards(validators, GetBlockReward().ToMoney());
+            var txFees = laToken.BalanceOf(ContractRegisterer.GovernanceContract).ToMoney(true);
+            laToken.MintBlockRewards(validators, GetBlockReward().ToMoney(), txFees);
         }
 
         private void TryInitStorage()
         {
             if (_blockReward.Get().Length == 0)
             {
-                _blockReward.Set(BigInteger.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes());
+                _blockReward.Set(BigInteger.Parse(GenesisConfig.BlockReward).ToUInt256(true).ToBytes());
             }
         }
 
@@ -136,7 +137,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private UInt256 GetBlockReward()
         {
             var reward = _blockReward.Get();
-            return reward.ToUInt256();
+            return reward.Reverse().ToArray().ToUInt256();
         }
 
         private void SetConsensusGeneration(int generation)
