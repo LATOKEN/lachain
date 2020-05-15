@@ -20,7 +20,6 @@ namespace Lachain.Core.Network
     {
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly IBlockchainContext _blockchainContext;
         private readonly ILogger<BlockSynchronizer> _logger = LoggerFactory.GetLoggerForClass<BlockSynchronizer>();
         private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
@@ -37,7 +36,6 @@ namespace Lachain.Core.Network
         public BlockSynchronizer(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext,
             INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
@@ -46,7 +44,6 @@ namespace Lachain.Core.Network
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
-            _blockchainContext = blockchainContext;
             _networkContext = networkContext;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
@@ -105,7 +102,7 @@ namespace Lachain.Core.Network
 
         public void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout)
         {
-            var myHeight = _blockchainContext.CurrentBlockHeight;
+            var myHeight = _blockManager.GetHeight();
             if (block.Header.Index != myHeight + 1)
                 return;
             /* if we don't have transactions from block than request it */
@@ -139,7 +136,7 @@ namespace Lachain.Core.Network
             if (error != OperatingError.Ok)
             {
                 _logger.LogWarning(
-                    $"Unable to persist block {block.Header.Index} (current height {_blockchainContext.CurrentBlockHeight}), got error {error}, dropping peer");
+                    $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
                 return;
             }
 
@@ -161,7 +158,7 @@ namespace Lachain.Core.Network
         public bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers)
         {
             if (_networkContext.LocalNode is null) throw new InvalidOperationException();
-            var myHeight = _blockchainContext.CurrentBlockHeight;
+            var myHeight = _blockManager.GetHeight();
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
             var setOfPeers = new HashSet<ECDSAPublicKey>(peers);
@@ -195,7 +192,7 @@ namespace Lachain.Core.Network
         private void _Worker()
         {
             if (_networkContext.LocalNode is null) throw new InvalidOperationException();
-            var myHeight = _blockchainContext.CurrentBlockHeight;
+            var myHeight = _blockManager.GetHeight();
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
 

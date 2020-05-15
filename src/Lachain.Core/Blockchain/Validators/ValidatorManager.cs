@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Lachain.Consensus;
 using Lachain.Crypto.ThresholdSignature;
-using Lachain.Crypto.TPKE;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
@@ -12,6 +13,7 @@ namespace Lachain.Core.Blockchain.Validators
     public class ValidatorManager : IValidatorManager
     {
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private static readonly ILogger<ValidatorManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorManager>();
 
         public ValidatorManager(ISnapshotIndexRepository snapshotIndexRepository)
         {

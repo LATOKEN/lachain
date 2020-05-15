@@ -20,7 +20,6 @@ namespace Lachain.Core.DI.Modules
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             /* global */
-            containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
             containerBuilder.RegisterSingleton<IConsoleManager, ConsoleManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();

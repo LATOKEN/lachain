@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
-using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
-using Lachain.Utility.Utils;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Storage.State

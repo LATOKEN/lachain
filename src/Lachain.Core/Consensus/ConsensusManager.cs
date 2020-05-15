@@ -21,7 +21,7 @@ namespace Lachain.Core.Consensus
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IBlockProducer _blockProducer;
-        private readonly IBlockchainContext _blockchainContext;
+        private readonly IBlockManager _blockManager;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
 
@@ -38,18 +38,17 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext,
             IPrivateWallet privateWallet
         )
         {
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
-            _blockchainContext = blockchainContext;
+            _blockManager = blockManager;
             _privateWallet = privateWallet;
             _terminated = false;
 
-            blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
+            _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
         }
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
@@ -138,10 +137,18 @@ namespace Lachain.Core.Consensus
                         Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + minBlockInterval - now));
                     }
 
-                    if ((long) _blockchainContext.CurrentBlockHeight >= CurrentEra)
+                    if ((long) _blockManager.GetHeight() >= CurrentEra)
                     {
-                        AdvanceEra((long) _blockchainContext.CurrentBlockHeight);
+                        AdvanceEra((long) _blockManager.GetHeight());
                         continue;
+                    }
+                    
+                    while ((long) _blockManager.GetHeight() != CurrentEra - 1)
+                    {
+                        lock (_blockPersistedLock)
+                        {
+                            Monitor.Wait(_blockPersistedLock);
+                        }
                     }
 
                     var weAreValidator = _validatorManager
@@ -152,7 +159,7 @@ namespace Lachain.Core.Consensus
                     if (!weAreValidator)
                     {
                         Logger.LogWarning($"We are not validator for era {CurrentEra}, waiting");
-                        while ((long) _blockchainContext.CurrentBlockHeight < CurrentEra)
+                        while ((long) _blockManager.GetHeight() < CurrentEra)
                         {
                             lock (_blockPersistedLock)
                             {

@@ -12,10 +12,12 @@ namespace Lachain.Core.Blockchain.Interface
         event EventHandler<Block> OnBlockPersisted;
         event EventHandler<ContractContext> OnSystemContractInvoked;
 
-        void BlockPersisted(Block block);
         ulong GetHeight();
+        Block LatestBlock();
         Block? GetByHeight(ulong blockHeight);
         Block? GetByHash(UInt256 blockHash);
+
+        bool TryBuildGenesisBlock();
 
         Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(Block block,
             IEnumerable<TransactionReceipt> transactions);

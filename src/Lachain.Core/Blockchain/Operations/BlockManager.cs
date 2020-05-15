@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Config;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
@@ -29,6 +31,7 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly ILogger<BlockManager> _logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private readonly IConfigManager _configManager;
         private ContractContext? _contractTxJustExecuted = null;
 
         public event EventHandler<ContractContext>? OnSystemContractInvoked;
@@ -39,7 +42,8 @@ namespace Lachain.Core.Blockchain.Operations
             IGenesisBuilder genesisBuilder,
             IMultisigVerifier multisigVerifier,
             IStateManager stateManager,
-            ISnapshotIndexRepository snapshotIndexRepository
+            ISnapshotIndexRepository snapshotIndexRepository,
+            IConfigManager configManager
         )
         {
             _transactionManager = transactionManager;
@@ -48,6 +52,7 @@ namespace Lachain.Core.Blockchain.Operations
             _multisigVerifier = multisigVerifier;
             _stateManager = stateManager;
             _snapshotIndexRepository = snapshotIndexRepository;
+            _configManager = configManager;
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
         }
 
@@ -58,26 +63,36 @@ namespace Lachain.Core.Blockchain.Operations
 
         public event EventHandler<Block>? OnBlockPersisted;
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetHeight()
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
         }
 
+        public Block LatestBlock()
+        {
+            return GetByHeight(GetHeight()) ?? throw new InvalidOperationException("No blocks in blockchain");
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHeight(ulong blockHeight)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHash(UInt256 blockHash)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private bool _IsGenesisBlock(Block block)
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(
             Block block, IEnumerable<TransactionReceipt> transactions
         )
@@ -110,7 +125,8 @@ namespace Lachain.Core.Blockchain.Operations
             return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);
         }
 
-        public void BlockPersisted(Block block)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void BlockPersisted(Block block)
         {
             _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
             OnBlockPersisted?.Invoke(this, block);
@@ -145,13 +161,13 @@ namespace Lachain.Core.Blockchain.Operations
                 /* flush changes to database */
                 if (!commit)
                     return OperatingError.Ok;
+                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index,
+                    _stateManager.LastApprovedSnapshot); // TODO: this is hack
                 _logger.LogInformation(
                     $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
                     $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, " +
                     $"gas used {gasUsed}, fee {totalFee}"
                 );
-                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index,
-                    _stateManager.LastApprovedSnapshot); // TODO: this is hack
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;
@@ -159,6 +175,7 @@ namespace Lachain.Core.Blockchain.Operations
             return error;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _Execute(
             Block block,
             IEnumerable<TransactionReceipt> transactions,
@@ -307,6 +324,7 @@ namespace Lachain.Core.Blockchain.Operations
             return OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _CheckTransactionGasLimit(Transaction transaction, IBlockchainSnapshot snapshot)
         {
             /* check available LA balance */
@@ -316,6 +334,7 @@ namespace Lachain.Core.Blockchain.Operations
                 : OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _TakeTransactionFee(
             long block, TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
@@ -336,12 +355,14 @@ namespace Lachain.Core.Blockchain.Operations
                 : OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Signature Sign(BlockHeader block, EcdsaKeyPair keyPair)
         {
             return _crypto.Sign(block.KeccakBytes(), keyPair.PrivateKey.Encode())
                 .ToSignature();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
             var result = _crypto.VerifySignature(
@@ -350,6 +371,7 @@ namespace Lachain.Core.Blockchain.Operations
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignatures(Block block)
         {
             if (!block.Header.Keccak().Equals(block.Hash))
@@ -359,6 +381,7 @@ namespace Lachain.Core.Blockchain.Operations
             return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Verify(Block block)
         {
             var header = block.Header;
@@ -374,6 +397,7 @@ namespace Lachain.Core.Blockchain.Operations
             return OperatingError.Ok;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private static ulong _CalcEstimatedBlockFee(IEnumerable<TransactionReceipt> txs)
         {
             var txsArray = txs as TransactionReceipt[] ?? txs.ToArray();
@@ -383,6 +407,7 @@ namespace Lachain.Core.Blockchain.Operations
             return sum / (ulong) txsArray.Length;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong CalcEstimatedFee(UInt256 blockHash)
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash) ??
@@ -397,6 +422,7 @@ namespace Lachain.Core.Blockchain.Operations
             return _CalcEstimatedBlockFee(txs);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong CalcEstimatedFee()
         {
             var currentHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
@@ -410,6 +436,34 @@ namespace Lachain.Core.Blockchain.Operations
                 return tx is null ? Enumerable.Empty<TransactionReceipt>() : new[] {tx};
             });
             return _CalcEstimatedBlockFee(txs);
+        }
+
+        public bool TryBuildGenesisBlock()
+        {
+            var genesisBlock = _genesisBuilder.Build();
+            if (_stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0) != null)
+                return false;
+            var snapshot = _stateManager.NewSnapshot();
+            var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
+            if (genesisConfig is null) return false;
+            genesisConfig.ValidateOrThrow();
+            var initialConsensusState = new ConsensusState
+            {
+                TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes())
+            };
+            initialConsensusState.Validators.Add(genesisConfig.Validators.Select(v => new ValidatorCredentials
+            {
+                PublicKey = v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
+                ResolvableAddress = v.ResolvableName,
+                ThresholdSignaturePublicKey = ByteString.CopyFrom(v.ThresholdSignaturePublicKey.HexToBytes()),
+            }));
+            snapshot.Validators.SetConsensusState(initialConsensusState);
+            _stateManager.Approve();
+            var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: false, checkStateHash: false);
+            if (error != OperatingError.Ok) throw new InvalidBlockException(error);
+            _stateManager.Commit();
+            BlockPersisted(genesisBlock.Block);
+            return true;
         }
     }
 }

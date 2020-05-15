@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Lachain.Logger;
 using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
 
@@ -8,6 +9,9 @@ namespace Lachain.Storage.Repositories
     {
         private readonly IRocksDbContext _dbContext;
         private readonly IStorageManager _storageManager;
+
+        private static readonly ILogger<SnapshotIndexRepository> Logger =
+            LoggerFactory.GetLoggerForClass<SnapshotIndexRepository>();
 
         public SnapshotIndexRepository(IRocksDbContext dbContext, IStorageManager storageManager)
         {
