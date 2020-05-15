@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.Messages;
-using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus
 {

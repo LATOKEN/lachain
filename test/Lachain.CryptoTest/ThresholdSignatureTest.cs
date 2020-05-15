@@ -1,10 +1,8 @@
-using System;
 using System.Linq;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Serialization;
-using Lachain.Utility.Utils;
 
 namespace Lachain.CryptoTest
 {

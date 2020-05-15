@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using Google.Protobuf;
 using Lachain.Utility.Utils;
-using Nethereum.Util;
 
 namespace Lachain.Crypto.VRF
 {

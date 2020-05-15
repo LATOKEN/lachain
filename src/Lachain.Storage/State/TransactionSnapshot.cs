@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;

@@ -1,6 +1,3 @@
-using System;
-using System.Security.Cryptography;
-using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.VRF;
 using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;

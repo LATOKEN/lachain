@@ -6,7 +6,6 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP.Web3

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Lachain.Consensus.HoneyBadger
+﻿namespace Lachain.Consensus.HoneyBadger
 
 {
     public class HoneyBadgerId : IProtocolIdentifier

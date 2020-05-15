@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Storage.State;

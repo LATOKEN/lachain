@@ -1,7 +1,6 @@
 ﻿using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
 using Lachain.Core.RPC.HTTP;
 using Lachain.Core.RPC.HTTP.Web3;
