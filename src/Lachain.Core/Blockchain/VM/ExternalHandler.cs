@@ -4,14 +4,13 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using WebAssembly.Runtime;
-
-// ReSharper disable MemberCanBePrivate.Global
 
 namespace Lachain.Core.Blockchain.VM
 {
@@ -23,7 +22,7 @@ namespace Lachain.Core.Blockchain.VM
             UInt160 caller,
             UInt160 address,
             byte[] input,
-            out ExecutionFrame? frame,
+            out WasmExecutionFrame? frame,
             ulong gasLimit)
         {
             var contract = VirtualMachine.BlockchainSnapshot?.Contracts?.GetContractByHash(address);
@@ -34,9 +33,9 @@ namespace Lachain.Core.Blockchain.VM
             }
 
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
-            var status = ExecutionFrame.FromInternalCall(
+            var status = FrameFactory.FromInternalCall(
                 contract.ByteCode.ToByteArray(),
-                currentFrame.Context.NextContext(caller),
+                currentFrame.InvocationContext.NextContext(caller),
                 address,
                 input,
                 VirtualMachine.BlockchainInterface,
@@ -105,7 +104,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_CopyCallValue(int from, int to, int offset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call COPYCALLVALUE outside wasm frame");
             if (from < 0 || to > frame.Input.Length || from > to)
                 throw new RuntimeException("Copy to contract memory failed: bad range");
             if (!SafeCopyToMemory(frame.Memory, frame.Input.Skip(from).Take(to - from).ToArray(), offset))
@@ -114,7 +114,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_WriteLog(int offset, int length)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call WRITELOG outside wasm frame");
             var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
             if (buffer == null)
                 throw new RuntimeException("Bad call to WRITELOG");
@@ -125,7 +126,8 @@ namespace Lachain.Core.Blockchain.VM
             int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset,
             int returnValueOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call INVOKECONTRACT outside wasm frame");
             var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
             if (addressBuffer is null || inputBuffer is null)
@@ -157,7 +159,8 @@ namespace Lachain.Core.Blockchain.VM
             status = newFrame.Execute();
             if (status != ExecutionStatus.Ok)
                 throw new RuntimeException("Cannot invoke call: " + status);
-            newFrame = VirtualMachine.ExecutionFrames.Pop();
+            newFrame = VirtualMachine.ExecutionFrames.Pop() as WasmExecutionFrame ??
+                       throw new RuntimeException("Cannot invoke call: frame stack corruption");
             var returned = newFrame.ReturnValue;
             if (!SafeCopyToMemory(frame.Memory, returned, returnValueOffset))
                 throw new RuntimeException("Cannot invoke call: cannot pass return value");
@@ -166,7 +169,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call LOADSTORAGE outside wasm frame");
             frame.UseGas(GasMetering.LoadStorageGasCost);
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null || VirtualMachine.BlockchainSnapshot is null)
@@ -180,7 +184,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_SaveStorage(int keyOffset, int valueOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call SAVESTORAGE outside wasm frame");
             frame.UseGas(GasMetering.SaveStorageGasCost);
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
@@ -205,7 +210,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_SetReturn(int offset, int length)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call SETRETURN outside wasm frame");
             var ret = SafeCopyFromMemory(frame.Memory, offset, length);
             if (ret is null)
                 throw new RuntimeException("Bad call to SETRETURN");
@@ -214,8 +220,9 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_GetSender(int dataOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.Sender.ToBytes();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETSENDER outside wasm frame");
+            var data = frame.InvocationContext.Sender.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to GETSENDER");
@@ -228,7 +235,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_CryptoKeccak256(int dataOffset, int dataLength, int resultOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call KECCAK256 outside wasm frame");
             frame.UseGas(GasMetering.Keccak256GasCost + GasMetering.Keccak256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
                        throw new InvalidOperationException();
@@ -238,7 +246,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_CryptoSha256(int dataOffset, int dataLength, int resultOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call SHA256 outside wasm frame");
             frame.UseGas(GasMetering.Sha256GasGasCost + GasMetering.Sha256GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
                        throw new InvalidOperationException();
@@ -248,7 +257,8 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_CryptoRipemd160(int dataOffset, int dataLength, int resultOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call RIPEMD outside wasm frame");
             frame.UseGas(GasMetering.Ripemd160GasCost + GasMetering.Ripemd160GasPerByte * (ulong) dataLength);
             var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
                        throw new InvalidOperationException();
@@ -256,20 +266,11 @@ namespace Lachain.Core.Blockchain.VM
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 
-        public static void Handler_Env_CryptoMurmur3(int dataOffset, int dataLength, int resultOffset, int seed)
-        {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
-            frame.UseGas(GasMetering.Murmur3GasCost + GasMetering.Murmur3GasPerByte * (ulong) dataLength);
-            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength) ??
-                       throw new InvalidOperationException();
-            var result = data.Murmur3((uint) seed);
-            SafeCopyToMemory(frame.Memory, result, resultOffset);
-        }
-
         public static void Handler_Env_CryptoRecover(int messageOffset, int messageLength, int signatureOffset,
             int resultOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call ECRECOVER outside wasm frame");
             frame.UseGas(GasMetering.RecoverGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength) ??
                           throw new InvalidOperationException();
@@ -282,7 +283,8 @@ namespace Lachain.Core.Blockchain.VM
         public static void Handler_Env_CryptoVerify(int messageOffset, int messageLength, int signatureOffset,
             int publicKeyOffset, int resultOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call ECVERIFY outside wasm frame");
             frame.UseGas(GasMetering.VerifyGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength) ??
                           throw new InvalidOperationException();
@@ -296,35 +298,19 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_GetTransferredFunds(int dataOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.Value.ToBytes();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETCALLVALUE outside wasm frame");
+            var data = frame.InvocationContext.Value.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transferred_funds)");
         }
 
-        // public static void Handler_Env_GetBlockHash(int dataOffset)
-        // {
-        //     var frame = VirtualMachine.ExecutionFrames.Peek();
-        //     var data = frame.Context.BlockHash.ToBytes();
-        //     var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
-        //     if (!ret)
-        //         throw new RuntimeException("Bad call to (get_block_hash)");
-        // }
-
-        // public static void Handler_Env_GetBlockHeight(int dataOffset)
-        // {
-        //     var frame = VirtualMachine.ExecutionFrames.Peek();
-        //     var data = BitConverter.GetBytes(frame.Context.BlockHeight);
-        //     var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
-        //     if (!ret)
-        //         throw new RuntimeException("Bad call to (get_transferred_funds)");
-        // }
-
         public static void Handler_Env_GetTransactionHash(int dataOffset)
         {
-            var frame = VirtualMachine.ExecutionFrames.Peek();
-            var data = frame.Context.TransactionHash.ToBytes();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call TXHASH outside wasm frame");
+            var data = frame.InvocationContext.TransactionHash.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new RuntimeException("Bad call to (get_transaction_hash)");
@@ -333,7 +319,8 @@ namespace Lachain.Core.Blockchain.VM
         public static void Handle_Env_WriteEvent(int signatureOffset, int valueOffset, int valueLength)
         {
             if (VirtualMachine.BlockchainSnapshot is null) throw new InvalidOperationException();
-            var frame = VirtualMachine.ExecutionFrames.Peek();
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call WRITEEVENT outside wasm frame");
             frame.UseGas(GasMetering.WriteEventPerByteGas * (uint) (valueLength + 32));
             var signature = SafeCopyFromMemory(frame.Memory, signatureOffset, 32) ??
                             throw new InvalidOperationException();
@@ -343,7 +330,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 Contract = frame.CurrentAddress,
                 Data = ByteString.CopyFrom(value),
-                TransactionHash = frame.Context.TransactionHash,
+                TransactionHash = frame.InvocationContext.TransactionHash,
                 Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
                 SignatureHash = signature.ToUInt256()
             };
@@ -382,15 +369,12 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_sender", CreateImport(nameof(Handler_Env_GetSender))},
                 {EnvModule, "system_halt", CreateImport(nameof(Handler_Env_SystemHalt))},
                 {EnvModule, "get_transferred_funds", CreateImport(nameof(Handler_Env_GetTransferredFunds))},
-                // {EnvModule, "get_block_hash", CreateImport(nameof(Handler_Env_GetBlockHash))},
-                // {EnvModule, "get_block_height", CreateImport(nameof(Handler_Env_GetBlockHeight))},
                 {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
                 {EnvModule, "crypto_ripemd160", CreateImport(nameof(Handler_Env_CryptoRipemd160))},
-                {EnvModule, "crypto_murmur3", CreateImport(nameof(Handler_Env_CryptoMurmur3))},
                 // /* cryptography methods */
                 {EnvModule, "crypto_recover", CreateImport(nameof(Handler_Env_CryptoRecover))},
                 {EnvModule, "crypto_verify", CreateImport(nameof(Handler_Env_CryptoVerify))},

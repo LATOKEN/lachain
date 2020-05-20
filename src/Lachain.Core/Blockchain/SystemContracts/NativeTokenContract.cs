@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Text;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -16,67 +19,81 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
         }
-        
+
         public ContractStandard ContractStandard => ContractStandard.Lrc20;
 
-        [ContractProperty(Lrc20Interface.PropertyName)]
-        public string Name()
+        [ContractMethod(Lrc20Interface.MethodName)]
+        public ExecutionStatus Name(SystemContractExecutionFrame frame)
         {
-            return "LaToken";
+            frame.UseGas(GasMetering.NativeTokenNameCost);
+            frame.ReturnValue = Encoding.ASCII.GetBytes("LaToken");
+            return ExecutionStatus.Ok;
         }
 
-        [ContractProperty(Lrc20Interface.PropertyDecimals)]
-        public uint Decimals()
+        [ContractMethod(Lrc20Interface.MethodDecimals)]
+        public ExecutionStatus Decimals(SystemContractExecutionFrame frame)
         {
-            return 18;
+            frame.UseGas(GasMetering.NativeTokenDecimalsCost);
+            frame.ReturnValue = 18.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
-        [ContractProperty(Lrc20Interface.PropertySymbol)]
-        public string Symbol()
+        [ContractMethod(Lrc20Interface.MethodSymbol)]
+        public ExecutionStatus Symbol(SystemContractExecutionFrame frame)
         {
-            return "LA";
+            frame.UseGas(GasMetering.NativeTokenSymbolCost);
+            frame.ReturnValue = Encoding.ASCII.GetBytes("LA");
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodTotalSupply)]
-        public void TotalSupply()
+        public ExecutionStatus TotalSupply(SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.NativeTokenTotalSupplyCost);
             throw new NotImplementedException();
         }
 
         [ContractMethod(Lrc20Interface.MethodBalanceOf)]
-        public UInt256? BalanceOf(UInt160 address)
+        public ExecutionStatus BalanceOf(UInt160 address, SystemContractExecutionFrame frame)
         {
-            /* TODO: add gas metering */
+            frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
             var balance = _contractContext.Snapshot?.Balances.GetBalance(address);
-            return balance?.ToUInt256();
+            if (balance is null) return ExecutionStatus.ExecutionHalted;
+            frame.ReturnValue = balance.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodTransfer)]
-        public bool Transfer(UInt160 recipient, UInt256 value)
+        public ExecutionStatus Transfer(UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame)
         {
-            if (_contractContext.Snapshot is null) return false;
-            _contractContext.Snapshot.Balances.TransferBalance(
+            frame.UseGas(GasMetering.NativeTokenTransferCost);
+            if (_contractContext.Snapshot is null) return ExecutionStatus.ExecutionHalted;
+            var result = _contractContext.Snapshot.Balances.TransferBalance(
                 _contractContext.Sender ?? throw new InvalidOperationException(),
                 recipient, value.ToMoney()
             );
-            return true;
+            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodTransferFrom)]
-        public void TransferFrom(UInt160 from, UInt160 recipient, UInt256 value)
+        public ExecutionStatus TransferFrom(UInt160 from, UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.NativeTokenTransferFromCost);
             throw new NotImplementedException();
         }
 
         [ContractMethod(Lrc20Interface.MethodApprove)]
-        public void Approve(UInt160 spender, UInt256 value)
+        public ExecutionStatus Approve(UInt160 spender, UInt256 value, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.NativeTokenApproveCost);
             throw new NotImplementedException();
         }
 
         [ContractMethod(Lrc20Interface.MethodAllowance)]
-        public void Allowance(UInt160 owner, UInt160 spender)
+        public ExecutionStatus Allowance(UInt160 owner, UInt160 spender, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.NativeTokenAllowanceCost);
             throw new NotImplementedException();
         }
     }

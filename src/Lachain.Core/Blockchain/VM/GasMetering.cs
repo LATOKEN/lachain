@@ -18,10 +18,26 @@
         public const ulong Sha256GasPerByte = 100_000;
         public const ulong Ripemd160GasCost = 0;
         public const ulong Ripemd160GasPerByte = 100_000;
-        public const ulong Murmur3GasCost = 0;
-        public const ulong Murmur3GasPerByte = 100_000;
         public const ulong RecoverGasCost = 100_000;
         public const ulong VerifyGasCost = 60_000;
         public const ulong WriteEventPerByteGas = SaveStorageGasCost / 32;
+
+        public const ulong ChangeValidatorsCost = 1_000_000;
+        public const ulong KeygenCommitCost = 1_000_000;
+        public const ulong KeygenSendValueCost = 1_000_000;
+        public const ulong KeygenConfirmCost = 1_000_000;
+        
+        public const ulong DeployCost = 1_000_000;
+        public const ulong DeployCostPerByte = 1_000;
+        
+        public const ulong NativeTokenNameCost = 1_000;
+        public const ulong NativeTokenDecimalsCost = 1_000;
+        public const ulong NativeTokenSymbolCost = 1_000;
+        public const ulong NativeTokenTotalSupplyCost = 1_000;
+        public const ulong NativeTokenBalanceOfCost = 1_000;
+        public const ulong NativeTokenTransferCost = 21_000;
+        public const ulong NativeTokenTransferFromCost = 21_000;
+        public const ulong NativeTokenApproveCost = 21_000;
+        public const ulong NativeTokenAllowanceCost = 21_000;
     }
 }

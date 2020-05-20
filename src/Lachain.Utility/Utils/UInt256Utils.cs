@@ -23,6 +23,12 @@ namespace Lachain.Utility.Utils
             return new BigInteger(value.ToBytes().Concat(new byte[] {0}).ToArray());
         }
 
+        public static UInt256 ToUInt256(this int value)
+        {
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            return ((BigInteger) value).ToUInt256();
+        }
+
         public static UInt256 ToUInt256(this BigInteger value)
         {
             if (value < 0)

@@ -8,6 +8,8 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
@@ -51,30 +53,44 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
 
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
-        public void ChangeValidators(byte[][] newValidators)
+        public ExecutionStatus ChangeValidators(byte[][] newValidators, SystemContractExecutionFrame frame)
         {
+            frame.ReturnValue = new byte[] { };
+            frame.UseGas(GasMetering.ChangeValidatorsCost);
             _pendingValidators.Set(newValidators
                 .Select(x => x.ToPublicKey().EncodeCompressed())
                 .Flatten()
                 .ToArray()
             );
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenCommit)]
-        public void KeyGenCommit(byte[] commitment, byte[][] encryptedRows)
+        public ExecutionStatus KeyGenCommit(byte[] commitment, byte[][] encryptedRows,
+            SystemContractExecutionFrame frame)
         {
             // TODO: validate everything
+            frame.ReturnValue = new byte[] { };
+            frame.UseGas(GasMetering.KeygenCommitCost);
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenSendValue)]
-        public void KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues)
+        public ExecutionStatus KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues,
+            SystemContractExecutionFrame frame)
         {
             // TODO: validate everything
+            frame.ReturnValue = new byte[] { };
+            frame.UseGas(GasMetering.KeygenSendValueCost);
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenConfirm)]
-        public void KeyGenConfirm(byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys)
+        public ExecutionStatus KeyGenConfirm(byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys,
+            SystemContractExecutionFrame frame)
         {
+            frame.ReturnValue = new byte[] { };
+            frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
             var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(x => PublicKey.FromBytes(x)), faulty);
@@ -85,7 +101,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
-            if (votes + 1 != players - faulty) return;
+            if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
 
             var ecdsaPublicKeys = _pendingValidators.Get()
                 .Batch(CryptoUtils.PublicKeyLength)
@@ -95,10 +111,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _contractContext.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
             _contractContext.Snapshot.Events.AddEvent(new Event
             {
-               Contract = ContractRegisterer.GovernanceContract,
-               Data = ByteString.Empty,
-               Index = 0,
-               TransactionHash = _contractContext.Receipt?.Hash
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.Empty,
+                Index = 0,
+                TransactionHash = _contractContext.Receipt?.Hash
             });
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
             Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
@@ -106,6 +122,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
             Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
             Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToHex()}");
+            return ExecutionStatus.Ok;
         }
 
         private ulong GetConsensusGeneration()

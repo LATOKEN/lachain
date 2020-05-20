@@ -8,6 +8,7 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -32,8 +33,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ContractStandard ContractStandard => ContractStandard.DeployContract;
 
         [ContractMethod(DeployInterface.MethodDeploy)]
-        public void Deploy(byte[] byteCode)
+        public ExecutionStatus Deploy(byte[] byteCode, SystemContractExecutionFrame frame)
         {
+            frame.ReturnValue = new byte[]{};
+            frame.UseGas(checked(GasMetering.DeployCost + GasMetering.DeployCostPerByte * (ulong) byteCode.Length));
             var receipt = _contractContext.Receipt ?? throw new InvalidOperationException();
             /* calculate contract hash and register it */
             var hash = receipt.Transaction.From.ToBytes()
@@ -48,7 +51,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             };
 
             if (!_virtualMachine.VerifyContract(contract.ByteCode.ToByteArray()))
-                throw new InvalidContractException();
+                return ExecutionStatus.ExecutionHalted;
 
             try
             {
@@ -59,7 +62,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     _contractContext.GasRemaining
                 );
                 if (result.Status != ExecutionStatus.Ok || result.ReturnValue is null)
-                    throw new InvalidContractException();
+                    return ExecutionStatus.ExecutionHalted;
 
                 _contractContext.Snapshot.Contracts.AddContract(_contractContext.Sender, new Contract
                 {
@@ -70,9 +73,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
             catch (OutOfGasException e)
             {
-                receipt.GasUsed += e.GasUsed;
-                throw new InvalidContractException();
+                frame.UseGas(e.GasUsed);
+                return ExecutionStatus.GasOverflow;
             }
+
+            return ExecutionStatus.Ok;
         }
     }
 }

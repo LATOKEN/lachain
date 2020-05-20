@@ -4,6 +4,8 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -13,12 +15,12 @@ namespace Lachain.Core.Blockchain.VM
 {
     public class VirtualMachine : IVirtualMachine
     {
-        internal static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
+        internal static Stack<IExecutionFrame> ExecutionFrames { get; } = new Stack<IExecutionFrame>();
 
         internal static IBlockchainSnapshot? BlockchainSnapshot => StateManager?.CurrentSnapshot;
         internal static IBlockchainInterface BlockchainInterface { get; } = new BlockchainInterface();
 
-        private static IStateManager StateManager { get; set; }
+        private static IStateManager? StateManager { get; set; }
 
         internal static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
@@ -43,32 +45,53 @@ namespace Lachain.Core.Blockchain.VM
             }
         }
 
+        public InvocationResult InvokeSystemContract(
+            SystemContractCall systemContractCall, InvocationContext context, byte[] input, ulong gasLimit
+        )
+        {
+            if (ExecutionFrames.Count != 0)
+                return InvocationResult.WithStatus(ExecutionStatus.VmStackCorruption);
+            var status = FrameFactory.FromSystemContractCall(
+                systemContractCall,
+                context,
+                input,
+                out var rootFrame,
+                gasLimit
+            );
+            return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public InvocationResult InvokeContract(Contract contract, InvocationContext context, byte[] input,
-            ulong gasLimit)
+        public InvocationResult InvokeContract(
+            Contract contract, InvocationContext context, byte[] input, ulong gasLimit
+        )
+        {
+            if (ExecutionFrames.Count != 0)
+                return InvocationResult.WithStatus(ExecutionStatus.VmStackCorruption);
+            var status = FrameFactory.FromInvocation(
+                contract.ByteCode.ToByteArray(),
+                context,
+                contract.ContractAddress,
+                input,
+                BlockchainInterface,
+                out var rootFrame,
+                gasLimit
+            );
+            return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
+        }
+
+        private InvocationResult ExecuteFrame(IExecutionFrame frame)
         {
             var executionStatus = ExecutionStatus.Ok;
             var returnValue = new byte[] { };
             var gasUsed = 0UL;
             try
             {
-                if (ExecutionFrames.Count != 0)
-                    return InvocationResult.FactoryDefault(ExecutionStatus.VmStackCorruption);
-                var status = ExecutionFrame.FromInvocation(
-                    contract.ByteCode.ToByteArray(),
-                    context,
-                    contract.ContractAddress,
-                    input,
-                    BlockchainInterface,
-                    out var rootFrame,
-                    gasLimit);
-                if (status != ExecutionStatus.Ok)
-                    return InvocationResult.FactoryDefault(status);
-                ExecutionFrames.Push(rootFrame);
-                var result = rootFrame.Execute();
+                ExecutionFrames.Push(frame);
+                var result = frame.Execute();
                 if (result == ExecutionStatus.Ok)
-                    returnValue = rootFrame.ReturnValue;
-                gasUsed = rootFrame.GasUsed;
+                    returnValue = frame.ReturnValue;
+                gasUsed = frame.GasUsed;
                 ExecutionFrames.Pop();
             }
             catch (OutOfGasException e)

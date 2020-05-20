@@ -127,36 +127,22 @@ namespace Lachain.Core.Blockchain.Operations
             UInt160 address, byte[] invocation, TransactionReceipt receipt, IBlockchainSnapshot snapshot
         )
         {
-            try
+            var transaction = receipt.Transaction;
+            var contractContext = new ContractContext
             {
-                var result = _contractRegisterer.DecodeContract(address, invocation);
-                if (result is null)
-                    return OperatingError.ContractFailed;
-                var (contract, method, args) = result;
-                
-                var context = new ContractContext
-                {
-                    Snapshot = snapshot,
-                    Sender = receipt.Transaction.From,
-                    Receipt = receipt
-                };
-                // Special case for deploy contract: it needs VM to validate contracts
-                var instance = address.Equals(ContractRegisterer.DeployContract)
-                    ? Activator.CreateInstance(contract, context, _virtualMachine)
-                    : Activator.CreateInstance(contract, context);
-                method.Invoke(instance, args);
-                OnSystemContractInvoked?.Invoke(this, context);
-            }
-            catch (Exception e) when (
-                e is NotSupportedException ||
-                e is InvalidOperationException || // TODO: InvalidOperation is too generic, what does it really mean?
-                e is TargetInvocationException ||
-                e is ContractAbiException
-            )
-            {
+                Snapshot = snapshot,
+                Sender = transaction.From,
+                Receipt = receipt
+            };
+            var call = _contractRegisterer.DecodeContract(contractContext, address, invocation);
+            if (call is null) return OperatingError.ContractFailed;
+            var invocationContext = new InvocationContext(transaction.From, receipt);
+            var result = _virtualMachine.InvokeSystemContract(
+                call, invocationContext, invocation, transaction.GasLimit - receipt.GasUsed
+            );
+            if (result.Status != ExecutionStatus.Ok)
                 return OperatingError.ContractFailed;
-            }
-
+            OnSystemContractInvoked?.Invoke(this, contractContext);
             return OperatingError.Ok;
         }
 

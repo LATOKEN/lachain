@@ -6,22 +6,23 @@ using Lachain.Proto;
 using WebAssembly;
 using WebAssembly.Runtime;
 
-namespace Lachain.Core.Blockchain.VM
+namespace Lachain.Core.Blockchain.VM.ExecutionFrame
 {
-    public class ExecutionFrame : IDisposable
+    public class WasmExecutionFrame : IExecutionFrame
     {
-        private ExecutionFrame(
-            Instance<JitEntryPoint> invocationContext,
-            InvocationContext context,
+        internal WasmExecutionFrame(
+            Instance<JitEntryPoint> compiledInstance,
+            InvocationContext invocationContext,
             UInt160 currentAddress,
             byte[] input,
-            ulong gasLimit)
+            ulong gasLimit
+        )
         {
-            InvocationContext = invocationContext;
-            Exports = InvocationContext.Exports.GetType();
+            CompiledInstance = compiledInstance;
+            Exports = CompiledInstance.Exports.GetType();
             if (Exports is null)
                 throw new RuntimeException("ill-formed contract binary");
-            Context = context;
+            InvocationContext = invocationContext;
             CurrentAddress = currentAddress;
             Input = input;
             ReturnValue = new byte[] { };
@@ -30,55 +31,24 @@ namespace Lachain.Core.Blockchain.VM
 
         public abstract class JitEntryPoint
         {
+            // ReSharper disable once InconsistentNaming
             public abstract void start();
         }
 
-        public static ExecutionStatus FromInvocation(
-            byte[] code,
-            InvocationContext context,
-            UInt160 contract,
-            byte[] input,
-            IBlockchainInterface blockchainInterface,
-            out ExecutionFrame frame,
-            ulong gasLimit)
-        {
-            frame = new ExecutionFrame(
-                _CompileWasm(contract, code, blockchainInterface.GetFunctionImports()),
-                context, contract, input, gasLimit
-            );
-            return ExecutionStatus.Ok;
-        }
-
-        public static ExecutionStatus FromInternalCall(
-            byte[] code,
-            InvocationContext context,
-            UInt160 currentAddress,
-            byte[] input,
-            IBlockchainInterface blockchainInterface,
-            out ExecutionFrame frame,
-            ulong gasLimit)
-        {
-            frame = new ExecutionFrame(
-                _CompileWasm(currentAddress, code, blockchainInterface.GetFunctionImports()),
-                context, currentAddress, input, gasLimit
-            );
-            return ExecutionStatus.Ok;
-        }
-
-        public Instance<JitEntryPoint> InvocationContext { get; }
-        private System.Type Exports { get; }
+        public Instance<JitEntryPoint> CompiledInstance { get; }
+        private Type Exports { get; }
 
         public UnmanagedMemory Memory
         {
             get
             {
                 var memoryGetter = Exports.GetMethod("get_memory");
-                return memoryGetter?.Invoke(InvocationContext.Exports, new object[] { }) as UnmanagedMemory ??
+                return memoryGetter?.Invoke(CompiledInstance.Exports, new object[] { }) as UnmanagedMemory ??
                        throw new InvalidOperationException();
             }
         }
 
-        public InvocationContext Context { get; }
+        public InvocationContext InvocationContext { get; }
         public UInt160 CurrentAddress { get; }
 
         public byte[] ReturnValue { get; set; }
@@ -87,7 +57,7 @@ namespace Lachain.Core.Blockchain.VM
         public ulong GasLimit { get; }
         public ulong GasUsed { get; private set; }
 
-        internal void UseGas(ulong gas)
+        public void UseGas(ulong gas)
         {
             var gasLimitField = Exports.GetField("💩 GasLimit");
             var currentGas = (ulong) gasLimitField.GetValue(null);
@@ -108,7 +78,7 @@ namespace Lachain.Core.Blockchain.VM
             gasLimitField.SetValue(null, GasLimit);
             try
             {
-                InvocationContext.Exports.start();
+                CompiledInstance.Exports.start();
             }
             catch (OverflowException)
             {
@@ -129,13 +99,14 @@ namespace Lachain.Core.Blockchain.VM
 
         public void Dispose()
         {
-            InvocationContext?.Dispose();
+            CompiledInstance?.Dispose();
         }
 
+        // TODO: this is not used properly?
         private static readonly ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>> ByteCodeCache
             = new ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>>();
 
-        private static Instance<JitEntryPoint> _CompileWasm(
+        internal static Instance<JitEntryPoint> CompileWasm(
             UInt160 contract, byte[] buffer, ImportDictionary imports = null
         )
         {
