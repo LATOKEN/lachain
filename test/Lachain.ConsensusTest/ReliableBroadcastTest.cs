@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
@@ -8,6 +9,7 @@ using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.ConsensusTest
 {
@@ -31,16 +33,13 @@ namespace Lachain.ConsensusTest
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
-
-            _rnd = new Random();
-            var rnd = new byte[5000];
-            _rnd.NextBytes(rnd);
-            _testShare = new EncryptedShare(G1.Generator, rnd, G2.Generator, sender);
+            
+            _testShare = new EncryptedShare(G1.Generator, RBTools.GetPermanentInput(32), G2.Generator, sender);
         }
 
         
         private const int N = 22;
-        private const int F = 5;
+        private const int F = 7;
         private readonly int sender = 0;
 
         private DeliveryService _deliveryService;
@@ -59,6 +58,16 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasts[i] =
                     new ReliableBroadcast(new ReliableBroadcastId(sender, 0), _publicKeys, _broadcasters[i]);
+                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+            }
+        }
+        
+        private void SetUpAllHonestNSenders()
+        {
+            for (uint i = 0; i < N; ++i)
+            {
+                _broadcasts[i] =
+                    new ReliableBroadcast(new ReliableBroadcastId((int)i, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
@@ -122,7 +131,7 @@ namespace Lachain.ConsensusTest
         }
         
         [Test]
-        public void RunSetUpHonest()
+        public void RunSetUpHonestOneSender()
         {
             SetUpAllHonest();
             for (var i = 0; i < N; ++i)
@@ -132,9 +141,78 @@ namespace Lachain.ConsensusTest
                 ));
             }
             for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
-            for (var i = 0; i < N; ++i) Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+            for (var i = 0; i < N; ++i)
+            {
+                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                    // if (_resultInterceptors[i].Result != null)
+                    // {
+                    //     var id = _resultInterceptors[i].Id;
+                    //     var res = _resultInterceptors[i].Result;
+                    //     var resultSet = _resultInterceptors[i].ResultSet;
+                    //     var terminated = _resultInterceptors[i].Terminated;
+                    //     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                    // }
+                    // else
+                    // {
+                    //     var id = _resultInterceptors[i].Id;
+                    //     var res = _resultInterceptors[i].Result;
+                    //     var resultSet = _resultInterceptors[i].ResultSet;
+                    //     var terminated = _resultInterceptors[i].Terminated;
+                    // }
+            }
+                
             for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
+        
+        [Test]
+        public void RunSetUpHonestNSenders()
+        {
+            SetUpAllHonestNSenders();
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
+                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
+                Console.Error.WriteLine(
+                    "Thread {0} ID_ACS {1} create RBC from HandleInputMessage11", Thread.CurrentThread.ManagedThreadId, i);
+
+                for (var j = 0; j < N; ++j)
+                {
+                    if (j != i)
+                    {
+                        _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
+                        (_resultInterceptors[i].Id, new ReliableBroadcastId(j, 0), null));
+                        Console.Error.WriteLine(
+                            "Thread {0} ID_ACS {1} create RBC from HandleInputMessage22", Thread.CurrentThread.ManagedThreadId, i);
+                    }
+                }    
+            }
+            
+            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < N; ++i)
+            {
+                Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                // if (_resultInterceptors[i].Result != null)
+                // {
+                //     var id = _resultInterceptors[i].Id;
+                //     var res = _resultInterceptors[i].Result;
+                //     var resultSet = _resultInterceptors[i].ResultSet;
+                //     var terminated = _resultInterceptors[i].Terminated;
+                //     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                // }
+                // else
+                // {
+                //     var id = _resultInterceptors[i].Id;
+                //     var res = _resultInterceptors[i].Result;
+                //     var resultSet = _resultInterceptors[i].ResultSet;
+                //     var terminated = _resultInterceptors[i].Terminated;
+                // }
+                
+                    
+            }
+                
+            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+        }        
+        
         [Test]
         public void RunSomeSilent()
         {

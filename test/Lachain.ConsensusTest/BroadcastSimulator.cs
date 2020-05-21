@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
@@ -132,12 +133,6 @@ namespace Lachain.ConsensusTest
                     CheckRequest(rbIdEchoMsg);
                     Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
-                // case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                //     var idEncryptedShare =
-                //         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
-                //     CheckRequest(idEncryptedShare);
-                //     Registry[idEncryptedShare]?.ReceiveMessage(new MessageEnvelope(message, from));
-                //     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var idRoot = new RootProtocolId(message.Validator.Era);
                     CheckRequest(idRoot);

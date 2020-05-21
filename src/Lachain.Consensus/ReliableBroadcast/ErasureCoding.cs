@@ -75,7 +75,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             }
             var rse = new ReedSolomonEncoder(_field);
             
-            rse.Encode(tmp, _dataSize);
+            rse.Encode(tmp, additionalInts);
             return tmp;
         }
         public void Decode(int [] encryptionText, int additionalBits, int[] tips)
@@ -84,7 +84,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             
             if(rsd.Decode(encryptionText, additionalBits, tips))
             {
-                //Console.WriteLine("Data corrected.");
+                Console.WriteLine("Data corrected.");
             }
             else
             {

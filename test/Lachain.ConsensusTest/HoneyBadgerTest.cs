@@ -9,6 +9,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
+using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.ConsensusTest
 {
@@ -50,7 +51,7 @@ namespace Lachain.ConsensusTest
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
         private const int N = 22;
-        private const int F = 5;
+        private const int F = 7;
         private const int Era = 0;
         private IPublicConsensusKeySet _publicKeys;
         private IPrivateConsensusKeySet[] _privateKeys;
