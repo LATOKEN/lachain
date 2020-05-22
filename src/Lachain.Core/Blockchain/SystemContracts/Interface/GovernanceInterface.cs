@@ -8,13 +8,15 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodKeygenCommit = "keygenCommit(bytes,bytes[])";
         public const string MethodKeygenSendValue = "keygenSendValue(uint256,bytes[])";
         public const string MethodKeygenConfirm = "keygenConfirm(bytes,bytes[])";
-        public const string MethodDistributeBlockReward = "distibuteBlockReward()";
+        public const string MethodFinishCycle = "finishCycle()";
+        public const string MethodDistributeCycleRewardsAndPenalties = "distibuteCycleRewardsAndPenalties()";
         
         public string[] Methods { get; } =
         {
             MethodChangeValidators,
             MethodKeygenCommit,
             MethodKeygenSendValue,
+            MethodFinishCycle,
             MethodKeygenConfirm
         };
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Lachain.Consensus.ThresholdKeygen;
@@ -8,6 +7,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
@@ -54,18 +54,22 @@ namespace Lachain.Core.Vault
         {
             if (context.Receipt is null) return;
             var tx = context.Receipt.Transaction;
-            if (!tx.To.Equals(ContractRegisterer.GovernanceContract)) return;
+            if (
+                !tx.To.Equals(ContractRegisterer.GovernanceContract) &&
+                !tx.To.Equals(ContractRegisterer.StakingContract)
+                ) return;
             if (tx.Invocation.Length < 4) return;
 
             var signature = ContractEncoder.MethodSignatureAsInt(tx.Invocation);
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
-            if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodChangeValidators))
+            if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
             {
                 Logger.LogInformation(
                     $"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
-                var args = decoder.Decode(GovernanceInterface.MethodChangeValidators);
+                // var data = decoder.Decode(GovernanceInterface.MethodChangeValidators);
+                var data = new GovernanceContract(context).GetNextValidators();
                 var publicKeys =
-                    (args[0] as byte[][] ?? throw new ArgumentException("Cannot parse method args"))
+                    (data ?? throw new ArgumentException("Cannot parse method args"))
                     .Select(x => x.ToPublicKey())
                     .ToArray();
                 if (!publicKeys.Contains(_privateWallet.EcdsaKeyPair.PublicKey))
@@ -182,10 +186,11 @@ namespace Lachain.Core.Vault
                         "  - TS public key set: " +
                         string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))
                     );
+                    var lastBlockInCurrentCycle = (context.Receipt.Block / 1000 + 1) * 1000;
                     _privateWallet.AddThresholdSignatureKeyAfterBlock(
-                        context.Receipt.Block, keys.ThresholdSignaturePrivateKey
+                        lastBlockInCurrentCycle, keys.ThresholdSignaturePrivateKey
                     );
-                    _privateWallet.AddTpkePrivateKeyAfterBlock(context.Receipt.Block, keys.TpkePrivateKey);
+                    _privateWallet.AddTpkePrivateKeyAfterBlock(lastBlockInCurrentCycle, keys.TpkePrivateKey);
                     Logger.LogInformation("Keyring saved to wallet");
                     _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
                 }

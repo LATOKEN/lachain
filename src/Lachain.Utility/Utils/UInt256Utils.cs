@@ -18,9 +18,9 @@ namespace Lachain.Utility.Utils
             return Zero.Equals(value);
         }
 
-        public static BigInteger ToBigInteger(this UInt256 value, bool reverse = false)
+        public static BigInteger ToBigInteger(this UInt256 value, bool reversed = false)
         {
-            var valueBytes = reverse ? value.ToBytes().Reverse().ToArray() : value.ToBytes();
+            var valueBytes = reversed ? value.ToBytes().Reverse().ToArray() : value.ToBytes();
             return new BigInteger(valueBytes.Concat(new byte[] {0}).ToArray());
         }
 
@@ -35,9 +35,9 @@ namespace Lachain.Utility.Utils
             return reversed ? paddedBytes.Reverse().ToArray().ToUInt256() : paddedBytes.ToUInt256();
         }
 
-        public static Money ToMoney(this UInt256 value, bool reverseBytes = false)
+        public static Money ToMoney(this UInt256 value, bool reversed = false)
         {
-            return new Money(value.ToBigInteger(reverseBytes));
+            return new Money(value.ToBigInteger(reversed));
         }
 
         public static byte[] ToBytes(this UInt256 value, bool stripTrailingZeros = false)

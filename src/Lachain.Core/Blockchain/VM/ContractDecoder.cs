@@ -10,13 +10,14 @@ namespace Lachain.Core.Blockchain.VM
 {
     public class ContractDecoder
     {
-        private readonly BinaryReader _binaryReader;
-        private readonly byte[] _input;
+        private BinaryReader _binaryReaderStatic;
+        private BinaryReader _binaryReaderDynamic;
+        private readonly byte[] _inputData;
 
         public ContractDecoder(byte[] input)
         {
-            _binaryReader = new BinaryReader(new MemoryStream(input));
-            _input = input;
+            _binaryReaderStatic = new BinaryReader(new MemoryStream(input));
+            _inputData = input;
         }
 
         public object[] Decode(string signature)
@@ -24,7 +25,7 @@ namespace Lachain.Core.Blockchain.VM
             var parts = signature.Split('(');
             if (parts.Length != 2)
                 throw new ContractAbiException("Unable to parse ABI method signature (" + signature.Length + ")");
-            if (_binaryReader.ReadUInt32() != ContractEncoder.MethodSignatureAsInt(signature))
+            if (_binaryReaderStatic.ReadUInt32() != ContractEncoder.MethodSignatureAsInt(signature))
                 throw new ContractAbiException("Decoded ABI does not match method signature");
             parts[1] = parts[1].TrimEnd(')');
             if (parts[1] == "")
@@ -33,10 +34,16 @@ namespace Lachain.Core.Blockchain.VM
             }
             var types = parts[1].Split(',');
             var result = new List<object>(types.Length);
+            var staticInput = _inputData.Skip(4).Take(types.Length * 32).ToArray();
+            var dynamicInput = _inputData.Skip(4 + staticInput.Length).ToArray();
+            _binaryReaderStatic = new BinaryReader(new MemoryStream(staticInput));
+            _binaryReaderDynamic = new BinaryReader(new MemoryStream(dynamicInput));
             result.AddRange(types.Select(type => type switch
             {
                 "uint256" => (object) DecodeUInt256(),
+                "uint256[]" => (object) DecodeUInt256List(),
                 "uint" => DecodeUInt256(),
+                "uint[]" => DecodeUInt256List(),
                 "address" => DecodeUInt160(),
                 "uint160" => DecodeUInt160(),
                 "address[]" => DecodeUInt160List(),
@@ -49,34 +56,56 @@ namespace Lachain.Core.Blockchain.VM
             return result.ToArray();
         }
 
-        private byte[] DecodeBytes()
+        private byte[] DecodeBytes(bool readFromDynamic = false)
         {
-            var dynamicOffset = DecodeUInt256().ToBigInteger(true) + 4;
-            if (dynamicOffset > int.MaxValue)
-                throw new ContractAbiException("Encoded array length is too long");
-            var len = (int)_input.Skip((int) dynamicOffset).Take(32).ToArray().ToUInt256().ToBigInteger(true);
-            var res = _input.Skip((int) (dynamicOffset + 32)).Take(len).ToArray();
+            var offset = DecodeUInt256(readFromDynamic).ToBigInteger(true);
+            if (offset > int.MaxValue)
+                throw new ContractAbiException("Offset is too big");
+            var lenUint = DecodeUInt256(true);
+            var len = (int) lenUint.ToBigInteger(true);
+            var words = len % 32 == 0 ? len / 32 : len / 32 + 1;
+            var res = _binaryReaderDynamic.ReadBytes(words * 32).Take(len).ToArray();
             return res;
         }
 
-        private UInt256 DecodeUInt256()
+        private UInt256 DecodeUInt256(bool readFromDynamic = false)
         {
-            return _binaryReader.ReadBytes(32).ToUInt256();
+            return readFromDynamic
+                ? _binaryReaderDynamic.ReadBytes(32).ToUInt256()
+                : _binaryReaderStatic.ReadBytes(32).ToUInt256();
         }
 
-        private UInt160 DecodeUInt160()
+        private UInt160 DecodeUInt160(bool readFromDynamic = false)
         {
             // decode uint160 as 32 byte zero padded
-            return _binaryReader.ReadBytes(32).Skip(12).ToArray().ToUInt160();
+            return readFromDynamic
+                ? _binaryReaderDynamic.ReadBytes(32).Skip(12).ToArray().ToUInt160()
+                : _binaryReaderStatic.ReadBytes(32).Skip(12).ToArray().ToUInt160();
         }
 
         private byte[][] DecodeBytesList()
         {
-            var len = DecodeUInt256().ToBigInteger();
-            if (len > int.MaxValue)
-                throw new ContractAbiException("Encoded array length is too long");
-            return Enumerable.Range(0, (int) len)
-                .Select(_ => DecodeBytes())
+            var offset = DecodeUInt256().ToBigInteger(true);
+            if (offset > int.MaxValue)
+                throw new ContractAbiException("Offset is too large");
+            var lenOfArray = (int) DecodeUInt256(true).ToBigInteger(true);
+            var offsets = Enumerable.Range(1, lenOfArray)
+                .Select(_ => DecodeUInt256(true).ToBigInteger(true));
+            
+            return Enumerable.Range(1, lenOfArray)
+                .Select(_ => DecodeBytes(true))
+                .ToArray();
+        }
+
+        private UInt256[] DecodeUInt256List()
+        {
+            var offset = DecodeUInt256().ToBigInteger(true);
+            if (offset > int.MaxValue)
+                throw new ContractAbiException("Offset is too big");
+            var lenOfArray = (int) DecodeUInt256(true).ToBigInteger(true);
+            
+            return Enumerable.Range(1, lenOfArray)
+                .Select(_ => DecodeUInt256(true))
                 .ToArray();
         }
 

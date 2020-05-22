@@ -7,6 +7,7 @@ using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 
 namespace Lachain.ConsensusTest
 {
@@ -27,7 +28,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _privateKeys[i] = TestUtils.EmptyWallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false, _validatorAttendanceRepository);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
         }
@@ -43,6 +44,7 @@ namespace Lachain.ConsensusTest
         private Random _rnd;
         private IPrivateConsensusKeySet[] _privateKeys;
         private IPublicConsensusKeySet _publicKeys;
+        private IValidatorAttendanceRepository _validatorAttendanceRepository;
 
         private void SetUpAllHonest()
         {

@@ -11,6 +11,7 @@ using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus
@@ -20,6 +21,7 @@ namespace Lachain.Core.Consensus
         private static readonly ILogger<ConsensusManager> Logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockchainContext _blockchainContext;
         private bool _terminated;
@@ -39,7 +41,8 @@ namespace Lachain.Core.Consensus
             IBlockProducer blockProducer,
             IBlockManager blockManager,
             IBlockchainContext blockchainContext,
-            IPrivateWallet privateWallet
+            IPrivateWallet privateWallet,
+            IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -47,6 +50,7 @@ namespace Lachain.Core.Consensus
             _blockProducer = blockProducer;
             _blockchainContext = blockchainContext;
             _privateWallet = privateWallet;
+            _validatorAttendanceRepository = validatorAttendanceRepository;
             _terminated = false;
 
             blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
@@ -129,7 +133,7 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                const ulong minBlockInterval = 5_000;
+                const ulong minBlockInterval = 000;
                 for (;; CurrentEra += 1)
                 {
                     var now = TimeUtils.CurrentTimeMillis();
@@ -218,7 +222,7 @@ namespace Lachain.Core.Consensus
             }
 
             Logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet, _validatorAttendanceRepository);
         }
     }
 }

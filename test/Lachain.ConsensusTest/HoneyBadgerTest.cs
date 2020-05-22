@@ -9,6 +9,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
+using Lachain.Storage.Repositories;
 
 namespace Lachain.ConsensusTest
 {
@@ -41,7 +42,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
                 _privateKeys[i] = new PrivateConsensusKeySet(ecdsaKeys[i], tpkeKeygen.GetPrivKey(i), shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true, _validatorAttendanceRepository);
             }
         }
 
@@ -54,6 +55,7 @@ namespace Lachain.ConsensusTest
         private IPublicConsensusKeySet _publicKeys;
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
+        private IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         private void SetUpAllHonest()

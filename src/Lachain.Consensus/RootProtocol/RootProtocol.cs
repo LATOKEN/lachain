@@ -7,9 +7,11 @@ using Lachain.Logger;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
@@ -21,6 +23,7 @@ namespace Lachain.Consensus.RootProtocol
         private readonly ILogger<RootProtocol> _logger = LoggerFactory.GetLoggerForClass<RootProtocol>();
         private readonly EcdsaKeyPair _keyPair;
         private readonly RootProtocolId _rootId;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private IBlockProducer? _blockProducer;
         private ulong? _nonce;
@@ -32,10 +35,11 @@ namespace Lachain.Consensus.RootProtocol
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
 
         public RootProtocol(RootProtocolId id, IPublicConsensusKeySet wallet, ECDSAPrivateKey privateKey,
-            IConsensusBroadcaster broadcaster) : base(wallet, id, broadcaster)
+            IConsensusBroadcaster broadcaster, IValidatorAttendanceRepository validatorAttendanceRepository) : base(wallet, id, broadcaster)
         {
             _keyPair = new EcdsaKeyPair(privateKey);
             _rootId = id;
+            _validatorAttendanceRepository = validatorAttendanceRepository;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -83,6 +87,9 @@ namespace Lachain.Consensus.RootProtocol
                             }
                         )
                     );
+                    var validatorAttendance = GetOrCreateValidatorAttendance(_header.Index);
+                    validatorAttendance.IncrementAttendance(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(), _header.Index);
+                    _validatorAttendanceRepository.SaveState(validatorAttendance.ToBytes());
                 }
 
                 CheckSignatures();
@@ -234,6 +241,13 @@ namespace Lachain.Consensus.RootProtocol
                 }
             };
             return new ConsensusMessage(message);
+        }
+
+        private ValidatorAttendance? GetOrCreateValidatorAttendance(ulong headerIndex)
+        {
+            var bytes = _validatorAttendanceRepository.LoadState();
+            if (bytes is null || bytes.Length == 0) return new ValidatorAttendance(headerIndex / 1000);
+            return ValidatorAttendance.FromBytes(bytes, _header.Index / 1000);
         }
     }
 }

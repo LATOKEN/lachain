@@ -10,6 +10,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 
 namespace Lachain.ConsensusTest
 {
@@ -25,10 +26,11 @@ namespace Lachain.ConsensusTest
         private readonly ISet<int> _silenced;
 
         private readonly IPublicConsensusKeySet _wallet;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
 
         public BroadcastSimulator(
             int sender, IPublicConsensusKeySet wallet, IPrivateConsensusKeySet privateKeys,
-            DeliveryService deliveryService, bool mixMessages
+            DeliveryService deliveryService, bool mixMessages, IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _sender = sender;
@@ -38,6 +40,7 @@ namespace Lachain.ConsensusTest
             _privateKeys = privateKeys;
             _silenced = new HashSet<int>();
             MixMessages = mixMessages;
+            _validatorAttendanceRepository = validatorAttendanceRepository;
         }
 
         public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
@@ -227,7 +230,7 @@ namespace Lachain.ConsensusTest
                 case RootProtocolId rootId:
                     RegisterProtocols(new[]
                     {
-                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this)
+                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository)
                     });
                     break;
                 default:

@@ -1,10 +1,10 @@
 ﻿using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
 using Lachain.Core.RPC.HTTP;
 using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Storage.State;
 
 namespace Lachain.Core.RPC
@@ -19,6 +19,8 @@ namespace Lachain.Core.RPC
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
         private readonly IContractRegisterer _contractRegisterer;
+        private readonly IValidatorStatusManager _validatorStatusManager;
+        
 
         public RpcManager(
             ITransactionManager transactionManager,
@@ -28,7 +30,9 @@ namespace Lachain.Core.RPC
             IStateManager stateManager,
             ITransactionPool transactionPool,
             IVirtualMachine virtualMachine,
-            IContractRegisterer contractRegisterer)
+            IContractRegisterer contractRegisterer,
+            IValidatorStatusManager validatorStatusManager
+            )
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -38,6 +42,7 @@ namespace Lachain.Core.RPC
             _transactionPool = transactionPool;
             _virtualMachine = virtualMachine;
             _contractRegisterer = contractRegisterer;
+            _validatorStatusManager = validatorStatusManager;
         }
 
         private HttpService? _httpService;
@@ -51,6 +56,7 @@ namespace Lachain.Core.RPC
                 new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _blockchainContext, _transactionPool, _stateManager),
                 new AccountServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new ValidatorServiceWeb3(_validatorStatusManager), 
                 new TransactionServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool, _contractRegisterer), 
                 new NodeService()
             };

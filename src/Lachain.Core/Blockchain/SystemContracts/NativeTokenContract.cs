@@ -6,6 +6,7 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -15,6 +16,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class NativeTokenContract : ISystemContract
     {
         private readonly ContractContext _contractContext;
+        private static readonly Func<byte[], byte[]> ToAddress = CryptoProvider.GetCrypto().ComputeAddress;
         
         private readonly StorageMapping _allowance;
 
@@ -73,21 +75,24 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return true;
         }
 
-        public void MintBlockRewards(UInt160[] validators, Money value, Money fees)
+        public void MintBlockRewards(Money rewardAmount, Money feesAmount)
         {
             if (!_contractContext.Sender.Equals(ContractRegisterer.GovernanceContract))
                 throw new Exception("Auth failure");
             
+            var stakingContract = new StakingContract(_contractContext);
+            var validators = stakingContract.GetPreviousValidators().Select(x => ToAddress(x).ToUInt160()).ToArray();
+            
             if (validators.Length == 0) throw new Exception("Cannot mint block rewards: empty validator set");
 
-            if (fees > Money.Zero)
+            if (feesAmount > Money.Zero)
             {
                 _contractContext.Snapshot.Balances.SubBalance(
-                    ContractRegisterer.GovernanceContract, fees
+                    ContractRegisterer.GovernanceContract, feesAmount
                 );
             }
             
-            var reward = (value + fees) / validators.Length;
+            var reward = (rewardAmount + feesAmount) / validators.Length;
             foreach (var recipient in validators)
             {
                 _contractContext.Snapshot.Balances.AddBalance(

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -13,6 +14,7 @@ using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Crypto.VRF;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -21,26 +23,24 @@ namespace Lachain.Core.Blockchain.SystemContracts
         
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly ContractContext _contractContext;
-        private const ulong CycleDuration = 1000; // in blocks
-        private const ulong SubmissionPhaseDuration = 500; // in blocks
-        private const ulong KeyGenPhaseDuration = 100; // in blocks
-        private const ulong OfflineDetectionDuration = 100; // in blocks
-        private const int PublicKeyLength = 33;
-        private readonly BigInteger _tokenUnitsInRoll = BigInteger.Pow(10, 21);
+        public static readonly ulong CycleDuration = 1000; // in blocks
+        public static readonly ulong SubmissionPhaseDuration = 500; // in blocks
+        public static readonly ulong AttendanceDetectionDuration = 100; // in blocks
+        public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
         private readonly StorageVariable _nextValidators; // array of public keys
         private readonly StorageVariable _previousValidators; // array of public keys
-        private readonly StorageVariable _faultDetectorCheckIns; // array of public keys
+        private readonly StorageVariable _attendancetDetectorCheckIns; // array of public keys
         private readonly StorageVariable _stakers; // array of public keys
         private readonly StorageVariable _vrfSeed;
         private readonly StorageVariable _nextVrfSeed;
-        private readonly byte[] _role = Encoding.ASCII.GetBytes("staker");
-        private readonly BigInteger _expectedValidatorsCount = 22;
+        public static readonly byte[] Role = Encoding.ASCII.GetBytes("staker");
+        public static readonly BigInteger ExpectedValidatorsCount = 22;
         private readonly StorageMapping _userToStakerId;
         private readonly StorageMapping _userToPubKey;
         private readonly StorageMapping _userToStake;
         private readonly StorageMapping _userToStartCycle;
         private readonly StorageMapping _userToWithdrawRequestCycle;
-        private readonly StorageMapping _faultVotes;
+        private readonly StorageMapping _attendanceVotes;
 
         private static readonly ILogger<StakingContract> Logger =
             LoggerFactory.GetLoggerForClass<StakingContract>();
@@ -98,12 +98,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(9).ToUInt256()
             );
-            _faultDetectorCheckIns = new StorageVariable(
+            _attendancetDetectorCheckIns = new StorageVariable(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 new BigInteger(10).ToUInt256()
             );
-            _faultVotes = new StorageMapping(
+            _attendanceVotes = new StorageMapping(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 new BigInteger(11).ToUInt256()
@@ -117,7 +117,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public void BecomeStaker(byte[] publicKey, UInt256 amount)
         {
             EnsurePublicKeyOwner(publicKey, MsgSender());
-            EnsurePositive(amount);
+            
+            if (amount.ToBigInteger(true) < TokenUnitsInRoll)
+                throw new Exception("Amount is less than 1 roll");
 
             // TODO: allow adding to existing stake
             var stake = GetStake(MsgSender());
@@ -126,21 +128,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 throw new Exception("Already staker");
             }
 
-            var latoken = new NativeTokenContract(_contractContext);
+            var laToken = new NativeTokenContract(_contractContext);
             
-            var balance = latoken.BalanceOf(MsgSender()) ?? UInt256Utils.Zero;
+            var balance = laToken.BalanceOf(MsgSender()) ?? UInt256Utils.Zero;
             if (balance.ToMoney(true).CompareTo(amount.ToMoney(true)) == -1)
             {
                 throw new Exception("Insufficient balance");
             }
             
-            var ok = latoken.Transfer(ContractRegisterer.StakingContract, amount);
+            var ok = laToken.Transfer(ContractRegisterer.StakingContract, amount.ToBytes().ToUInt256());
             if (!ok)
             {
                 throw new Exception("Transfer failure");
             }
 
             var startingCycle = GetCurrentCycle() + 1;
+            
             // Special case for initial cycle
             if (startingCycle == 1)
             {
@@ -199,7 +202,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _contractContext.Sender = ContractRegisterer.StakingContract;
             var latoken = new NativeTokenContract(_contractContext);
             
-            var ok = latoken.Transfer(user, stake);
+            var ok = latoken.Transfer(user, stake.ToBytes().ToUInt256());
             if (!ok) throw new Exception("Transfer failure");
 
             DeleteStaker(user);
@@ -220,28 +223,29 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 throw new Exception("Cannot be a validator");
             }
 
+            var totalRolls = GetTotalActiveStake().ToBigInteger(true) / TokenUnitsInRoll;
             var ok = Vrf.IsWinner(
                 publicKey,
                 proof,
                 GetVrfSeed(),
-                _role,
-                _expectedValidatorsCount,
-                GetStake(MsgSender()).ToBigInteger(true) / _tokenUnitsInRoll,
-                GetTotalActiveStake().ToBigInteger(true) / _tokenUnitsInRoll
+                Role,
+                ExpectedValidatorsCount,
+                GetStake(MsgSender()).ToBigInteger(true) / TokenUnitsInRoll,
+                totalRolls
             );
 
             if (!ok)
             {
-                throw new Exception("Invalid vrf");
+                throw new Exception("Invalid vrf proof");
             }
             SetNextValidator(publicKey);
             TrySetNextVrfSeed(Vrf.ProofToHash(proof));
         }
 
-        [ContractMethod(StakingInterface.MethodSubmitVrf)]
-        public void SubmitOfflineDetection(byte[][] faultPersons, int[] faultBlocksCounts)
+        [ContractMethod(StakingInterface.MethodSubmitAttendanceDetection)]
+        public void SubmitAttendanceDetection(byte[][] faultPersons, UInt256[] faultBlocksCounts)
         {
-            EnsureOfflineDetectorPhase();
+            EnsureDetectorPhase();
             var senderPublicKey = GetStakerPublicKey(MsgSender());
             EnsurePreviousValidator(senderPublicKey);
 
@@ -249,34 +253,62 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 throw new Exception("Arguments length mismatch");
             }
-            FaultDetectorCheckIn(senderPublicKey);
+            AttendanceDetectorCheckIn(senderPublicKey);
 
             for (var i = 0; i < faultPersons.Length; i++)
             {
                 EnsurePreviousValidator(faultPersons[i]);
-                VoteForFault(faultPersons[i], faultBlocksCounts[i]);
+                var detectedBlocks = faultBlocksCounts[i].ToBigInteger(true);
+                if (detectedBlocks > CycleDuration)
+                {
+                    throw new Exception("Argument out of range");
+                }
+                VoteForAttendance(faultPersons[i], (int) detectedBlocks);
             }
         }
 
-        private void VoteForFault(byte[] faultPerson, int faultBlocksCount)
+        private void VoteForAttendance(byte[] faultPerson, int faultBlocksCount)
         {
-            // var votes = 
+            var votes = _attendanceVotes.GetValue(faultPerson);
+            _attendanceVotes.SetValue(faultPerson, votes.Concat(faultBlocksCount.ToBytes().ToArray()).ToArray());
         }
 
-        private void FaultDetectorCheckIn(byte[] publicKey)
+        private void ClearAttendanceVotes(byte[] faultPerson)
+        {
+            _attendanceVotes.Delete(faultPerson);
+        }
+
+        private int[] GetAttendanceVotes(byte[] faultPerson)
+        {
+            var votesBytes = _attendanceVotes.GetValue(faultPerson);
+            var votes = new int[votesBytes.Length / 4];
+            for (var i = 0; i < votes.Length; i += 1)
+            {
+                votes[i] = votesBytes.AsReadOnlySpan().Slice(4 * i).ToInt32();
+            }
+
+            return votes;
+        }
+
+        private void AttendanceDetectorCheckIn(byte[] publicKey)
         {
             if (IsCheckedInFaultDetector(publicKey))
                 throw new Exception("Already checked in");
             
-            _faultDetectorCheckIns.Set(_faultDetectorCheckIns.Get().Concat(publicKey).ToArray());
+            _attendancetDetectorCheckIns.Set(_attendancetDetectorCheckIns.Get().Concat(publicKey).ToArray());
         }
 
-        private bool IsCheckedInFaultDetector(byte[] publicKey)
+        private void ClearAttendanceDetectorCheckIns()
         {
-            var seenValidatorsBytes = _faultDetectorCheckIns.Get();
-            for (var startByte = 0; startByte < seenValidatorsBytes.Length; startByte += PublicKeyLength)
+           _attendancetDetectorCheckIns.Set(new byte[]{});
+        }
+
+        public bool IsCheckedInFaultDetector(byte[] publicKey)
+        {
+            var seenValidatorsBytes = _attendancetDetectorCheckIns.Get();
+            for (var startByte = 0; startByte < seenValidatorsBytes.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                var validator = seenValidatorsBytes.Skip(startByte).Take(PublicKeyLength).ToArray();
+                var validator = seenValidatorsBytes.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (validator.SequenceEqual(publicKey))
                     return true;
             }
@@ -284,47 +316,91 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return false;
         }
 
-        public void SlashFaultyValidators()
+        public void DistributeRewardsAndPenalties(Money totalReward)
         {
-            if (_contractContext.Receipt.Block % CycleDuration != OfflineDetectionDuration)
-            {
-                throw new Exception();
-            }
 
-            if (!MsgSender().IsZero())
+            if (!MsgSender().Equals(ContractRegisterer.GovernanceContract))
             {
                 throw new Exception("Auth failure");
             }
             
-            var validators = _previousValidators.Get();
-            for (var startByte = 0; startByte < validators.Length; startByte += PublicKeyLength)
+            if (_contractContext.Receipt.Block % CycleDuration != AttendanceDetectionDuration)
             {
-                var validator = validators.Skip(startByte).Take(PublicKeyLength).ToArray();
+                throw new Exception("Wrong submission");
+            }
+            
+            var validatorsData = _previousValidators.Get();
+            var validatorsCount = validatorsData.Length / CryptoUtils.PublicKeyLength;
+            var maxValidatorReward = totalReward / validatorsCount; 
+            for (var i = 0; i < validatorsCount; i ++)
+            {
+                var validator = validatorsData.Skip(i * CryptoUtils.PublicKeyLength).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (!IsCheckedInFaultDetector(validator))
                 {
-                    SlashStake(validator, 1000);
+                    SlashStake(validator, (int) CycleDuration);
                 }
                 else
                 {
-                    var missedBlocksCount = GetMissedBlocksCount(validator);
-                    if (missedBlocksCount > 0)
+                    var activeBlocks = GetActiveBlocksCount(validator);
+                    var validatorReward = maxValidatorReward * activeBlocks / (int) CycleDuration;
+                    if (validatorReward > Money.Zero)
                     {
-                        SlashStake(validator, missedBlocksCount);
+                        _contractContext.Snapshot.Balances.AddBalance(
+                            PublicKeyToAddress(validator), validatorReward
+                        );
                     }
                 }
-                
+                ClearAttendanceVotes(validator);
             }
+
+            ClearAttendanceDetectorCheckIns();
         }
 
-        [ContractMethod(StakingInterface.MethodFinishCycle)]
-        public void FinishCycle()
+        private int GetActiveBlocksCount(byte[] validator)
+        {
+            var votes = GetAttendanceVotes(validator);
+            if (votes.Length == 0) return 0;
+            var middleIndex = votes.Length / 2;
+            if (votes.Length % 2 == 0)
+            {
+                var median1 = QuickSelect(votes, middleIndex);
+                var median2 = QuickSelect(votes, middleIndex + 1);
+                
+                return (median1 + median2) / 2;
+            }
+
+            return QuickSelect(votes, middleIndex);
+        }
+
+        private void SlashStake(byte[] validator, int faultBlocksCount)
+        {
+            var validatorAddress = PublicKeyToAddress(validator);
+            var stake = GetStake(validatorAddress).ToMoney(true);
+            
+            // TODO: determine correct number
+            var penalty = stake * faultBlocksCount / (int) CycleDuration / 2;
+            if (penalty <= Money.Zero) return;
+            
+            SetStake(validatorAddress, (stake - penalty).ToUInt256(true));
+            _contractContext.Snapshot.Balances.SubBalance(
+                ContractRegisterer.StakingContract, penalty
+            );
+        }
+
+
+        [ContractMethod(StakingInterface.MethodFinishVrfLottery)]
+        public void FinishVrfLottery()
         {
             var nextValidators = _nextValidators.Get();
+            
             if (nextValidators.Length == 0)
-            {
                 throw new Exception("Empty validator set");
-            }
-            EnsureFinishPhase();
+            
+            EnsureFinishBlock();
+            
+            if (!MsgSender().IsZero()) 
+                throw new Exception("Auth failure");
+            
             _vrfSeed.Set(GetNextVrfSeed());
             _nextVrfSeed.Set(new byte[]{});
             _nextValidators.Set(new byte[]{});
@@ -334,15 +410,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void ApplyNextAndStorePreviousValidatorSet(byte[] validatorSet)
         {
             byte[][] validators = {};
-            for (var startByte = 0; startByte < validatorSet.Length; startByte += PublicKeyLength)
+            for (var startByte = 0; startByte < validatorSet.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                var validatorPublicKey = validatorSet.Skip(startByte).Take(PublicKeyLength).ToArray();
+                var validatorPublicKey = validatorSet.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 validators = validators.Concat(new[] {validatorPublicKey}).ToArray();
             }
 
             var previousValidators = _contractContext.Snapshot.Validators.GetValidatorsPublicKeys().Select(pk => pk.Buffer.ToByteArray());
             SetPreviousValidators(previousValidators.ToArray());
-            
+
+            _contractContext.Sender = ContractRegisterer.StakingContract;
             var governance = new GovernanceContract(_contractContext);   
             governance.ChangeValidators(validators);
         }
@@ -369,9 +446,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public bool IsNextValidator(byte[] publicKey)
         {
             var validators = _nextValidators.Get();
-            for (var startByte = 0; startByte < validators.Length; startByte += PublicKeyLength)
+            for (var startByte = 0; startByte < validators.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                var validator = validators.Skip(startByte).Take(PublicKeyLength).ToArray();
+                var validator = validators.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (validator.SequenceEqual(publicKey))
                 {
                     return true;
@@ -379,6 +456,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             return false;
+        }
+
+        [ContractMethod(StakingInterface.MethodGetPreviousValidators)]
+        public byte[][] GetPreviousValidators()
+        {
+            var validatorsData = _previousValidators.Get();
+            byte[][] validators = {};
+            for (var startByte = 0; startByte < validatorsData.Length; startByte += CryptoUtils.PublicKeyLength)
+            {
+                var validator = validatorsData.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
+                validators = validators.Concat(new[] {validator}).ToArray();
+            }
+
+            return validators;
         }
 
         public void EnsurePreviousValidator(byte[] publicKey)
@@ -390,9 +481,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public bool IsPreviousValidator(byte[] publicKey)
         {
             var validators = _previousValidators.Get();
-            for (var startByte = 0; startByte < validators.Length; startByte += PublicKeyLength)
+            for (var startByte = 0; startByte < validators.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                var validator = validators.Skip(startByte).Take(PublicKeyLength).ToArray();
+                var validator = validators.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (validator.SequenceEqual(publicKey))
                 {
                     return true;
@@ -426,11 +517,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             Money stakeSum = UInt256Utils.Zero.ToMoney();
             var stakers = _stakers.Get();
-            for (var startByte = PublicKeyLength; startByte < stakers.Length; startByte += PublicKeyLength)
+            for (var startByte = CryptoUtils.PublicKeyLength; startByte < stakers.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                var stakerPublicKey = stakers.Skip(startByte).Take(PublicKeyLength).ToArray();
+                var stakerPublicKey = stakers.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 var stakerAddress = PublicKeyToAddress(stakerPublicKey);
-                if (GetStartCycle(stakerAddress) >= GetCurrentCycle()
+                if (GetCurrentCycle() >= GetStartCycle(stakerAddress)
                     && (GetWithdrawRequestCycle(stakerAddress) == 0
                         || GetWithdrawRequestCycle(stakerAddress) == GetCurrentCycle()))
                 {
@@ -446,7 +537,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public bool IsAbleToBeAValidator(UInt160 staker)
         {
             var stake = GetStake(staker);
-            if (stake.ToMoney(true) == Money.Zero)
+            if (stake.ToBigInteger(true) < TokenUnitsInRoll)
             {
                 return false;
             }
@@ -564,7 +655,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private int AddStaker(byte[] publicKey)
         {
             var stakers = _stakers.Get();
-            var id = stakers.Length  / PublicKeyLength;
+            var id = stakers.Length  / CryptoUtils.PublicKeyLength;
             _stakers.Set(stakers.Concat(publicKey).ToArray());
             return id;
         }
@@ -573,7 +664,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (_stakers.Get().Length == 0)
             {
-                AddStaker(new String('f', PublicKeyLength * 2).HexToBytes());
+                AddStaker(new String('f', CryptoUtils.PublicKeyLength * 2).HexToBytes());
             }
             if (_vrfSeed.Get().Length == 0)
             {
@@ -615,11 +706,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
         }
 
-        private void EnsureFinishPhase()
+        private void EnsureFinishBlock()
         {
             var blockNumber = _contractContext.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle < SubmissionPhaseDuration || blockInCycle >= CycleDuration - KeyGenPhaseDuration)
+            if (blockInCycle != CycleDuration / 2)
             {
                 throw new Exception("Not a finish phase");
             }
@@ -629,17 +720,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var blockNumber = _contractContext.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle < OfflineDetectionDuration)
+            if (blockInCycle < AttendanceDetectionDuration)
             {
                 throw new Exception("Not a finish phase");
             }
         }
 
-        private void EnsureOfflineDetectorPhase()
+        private void EnsureDetectorPhase()
         {
             var blockNumber = _contractContext.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle >= OfflineDetectionDuration)
+            if (blockInCycle >= AttendanceDetectionDuration)
             {
                 throw new Exception("Not a finish phase");
             }
@@ -655,6 +746,51 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private UInt160 MsgSender()
         {
             return _contractContext.Sender ?? throw new InvalidOperationException();
+        }
+        
+        /**
+           * @dev Returns the kth value of the ordered array
+           * See: http://www.cs.yale.edu/homes/aspnes/pinewiki/QuickSelect.html
+           * @param _a The list of elements to pull from
+           * @param _k The index, 1 based, of the elements you want to pull from when ordered
+        */
+        private int QuickSelect(int[] a, int k)
+        {
+            var aLen = a.Length;
+            var a1 = new int[aLen];
+            var a2 = new int[aLen];
+            if (aLen == 1) return a[0];
+
+            while (true) {
+                var pivot = a[aLen / 2];
+                var a1Len = 0;
+                var a2Len = 0;
+                int i;
+                for (i = 0; i < aLen; i++) {
+                    if (a[i] < pivot) {
+                        a1[a1Len] = a[i];
+                        a1Len++;
+                    } else if (a[i] > pivot) {
+                        a2[a2Len] = a[i];
+                        a2Len++;
+                    }
+                }
+                if (k <= a1Len) {
+                    aLen = a1Len;
+                    (a, a1) = Swap(a, a1);
+                } else if (k > (aLen - a2Len)) {
+                    k -= (aLen - a2Len);
+                    aLen = a2Len;
+                    (a, a2) = Swap(a, a2);
+                } else {
+                    return pivot;
+                }
+            }
+        }
+
+        private static (int[], int[]) Swap(int[] a, int[] b)
+        {
+            return (b, a);
         }
     }
 }

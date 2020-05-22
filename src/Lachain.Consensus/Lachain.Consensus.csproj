@@ -9,5 +9,6 @@
     <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />
     <ProjectReference Include="..\Lachain.Proto\Lachain.Proto.csproj" />
     <ProjectReference Include="..\Lachain.Logger\Lachain.Logger.csproj" />
+    <ProjectReference Include="..\Lachain.Storage\Lachain.Storage.csproj" />
   </ItemGroup>
 </Project>

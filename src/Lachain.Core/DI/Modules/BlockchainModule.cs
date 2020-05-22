@@ -11,6 +11,7 @@ using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
 using Lachain.Core.RPC;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 
 namespace Lachain.Core.DI.Modules
@@ -31,6 +32,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IPrivateWallet, PrivateWallet>();
             containerBuilder.RegisterSingleton<IKeyGenManager, KeyGenManager>();
+            containerBuilder.RegisterSingleton<IValidatorStatusManager, ValidatorStatusManager>();
             /* genesis */
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();
             /* operation manager */

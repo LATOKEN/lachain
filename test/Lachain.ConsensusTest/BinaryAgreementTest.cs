@@ -7,6 +7,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 
 namespace Lachain.ConsensusTest
@@ -23,6 +24,7 @@ namespace Lachain.ConsensusTest
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
         private IPublicConsensusKeySet _publicKeys;
+        private IValidatorAttendanceRepository _validatorAttendanceRepository;
 
         //        [SetUp]
         public void SetUp()
@@ -43,7 +45,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
                 _privateKeys[i] = new PrivateConsensusKeySet(null, null, shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true, _validatorAttendanceRepository);
             }
         }
 

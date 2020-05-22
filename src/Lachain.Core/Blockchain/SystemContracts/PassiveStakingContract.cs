@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Linq;
 using System.Numerics;
-using System.Text;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
-using Lachain.Core.Blockchain.SystemContracts.Storage;
-using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
-using Lachain.Crypto.VRF;
-using Lachain.Utility;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -46,7 +40,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             var laInFund = laToken.BalanceOf(ContractRegisterer.PassiveStakingContract);
             
-            var ok = laToken.Transfer(ContractRegisterer.PassiveStakingContract, laAmount);
+            var ok = laToken.Transfer(ContractRegisterer.PassiveStakingContract, laAmount.ToBytes().ToUInt256());
             if (!ok)
             {
                 throw new Exception("Transfer failure");

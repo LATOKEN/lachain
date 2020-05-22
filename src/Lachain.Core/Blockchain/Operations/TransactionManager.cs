@@ -54,7 +54,16 @@ namespace Lachain.Core.Blockchain.Operations
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(receipt, block.Header.Index == 0 || (int) receipt.IndexInBlock == block.TransactionHashes.Count - 1);
+            var indexInCycle = block.Header.Index % 1000;
+            var cycle = block.Header.Index / 1000;
+            var canTransactionMissVerification = block.Header.Index == 0
+                                                 || cycle > 0 && indexInCycle == 100 && (int) receipt.IndexInBlock ==
+                                                 block.TransactionHashes.Count - 1
+                                                 || indexInCycle == 500 && (int) receipt.IndexInBlock ==
+                                                 block.TransactionHashes.Count - 1
+                                                 || cycle > 0 && indexInCycle == 0 && (int) receipt.IndexInBlock ==
+                                                 block.TransactionHashes.Count - 1;
+            var verifyError = Verify(receipt, canTransactionMissVerification);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
@@ -84,11 +93,13 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesisOrCoinbase)
+        private OperatingError Verify(TransactionReceipt acceptedTransaction, bool missVerification)
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-            if (isGenesisOrCoinbase)
+            
+            // case of system txs 
+            if (missVerification)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
 
             var result = VerifySignature(acceptedTransaction);

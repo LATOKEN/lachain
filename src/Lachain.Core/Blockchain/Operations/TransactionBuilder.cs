@@ -90,7 +90,27 @@ namespace Lachain.Core.Blockchain.Operations
                 From = from,
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
-                GasLimit = GasMetering.DefaultBlockGasLimit,
+                GasLimit = 100000000,
+                Nonce = nonce,
+                Value = value.ToUInt256()
+            };
+            return tx;
+        }
+
+        public Transaction InvokeTransactionWithGasPrice(UInt160 from, UInt160 contract, Money value, string methodSignature,
+            ulong gasPrice,
+            params dynamic[] values)
+        {
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
+            var abi = ContractEncoder.Encode(methodSignature, values);
+            var tx = new Transaction
+            {
+                To = contract,
+                Invocation = ByteString.CopyFrom(abi),
+                From = from,
+                GasPrice = gasPrice,
+                /* TODO: "calculate gas limit for input size" */
+                GasLimit = 100000000,
                 Nonce = nonce,
                 Value = value.ToUInt256()
             };

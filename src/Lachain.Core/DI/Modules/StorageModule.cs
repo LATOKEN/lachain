@@ -18,6 +18,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IPoolRepository, PoolRepository>();
             containerBuilder.RegisterSingleton<ISnapshotIndexRepository, SnapshotIndexRepository>();
             containerBuilder.RegisterSingleton<IKeyGenRepository, KeyGenRepository>();
+            containerBuilder.RegisterSingleton<IValidatorAttendanceRepository, ValidatorAttendanceRepository>();
         }
     }
 }

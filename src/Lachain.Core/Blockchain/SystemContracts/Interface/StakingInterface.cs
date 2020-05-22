@@ -8,7 +8,8 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodRequestStakeWithdrawal = "requestStakeWithdrawal(bytes)";
         public const string MethodWithdrawStake = "withdrawStake(bytes)";
         public const string MethodSubmitVrf = "submitVrf(bytes,bytes)";
-        public const string MethodFinishCycle = "finishCycle()";
+        public const string MethodSubmitAttendanceDetection = "submitAttendanceDetection(bytes[],uint[])";
+        public const string MethodFinishVrfLottery = "finishVrfLottery()";
         public const string MethodTotalActiveStake = "totalActiveStake()";
         public const string MethodGetStake = "getStake(address)";
         public const string MethodIsAbleToBeAValidator = "isAbleToBeAValidator(address)";
@@ -16,6 +17,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
         public const string MethodGetVrfSeed = "getVrfSeed()";
         public const string MethodGetNextVrfSeed = "getNextVrfSeed()";
+        public const string MethodGetPreviousValidators = "getPreviousValidators()";
         
         public string[] Methods { get; } =
         {
@@ -23,13 +25,15 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodRequestStakeWithdrawal,
             MethodWithdrawStake,
             MethodSubmitVrf,
-            MethodFinishCycle,
+            MethodFinishVrfLottery,
             MethodTotalActiveStake,
             MethodGetStake,
             MethodIsAbleToBeAValidator,
             MethodGetCurrentCycle,
             MethodIsNextValidator,
             MethodGetVrfSeed,
+            MethodSubmitAttendanceDetection,
+            MethodGetPreviousValidators,
         };
 
         public string[] Properties { get; } =

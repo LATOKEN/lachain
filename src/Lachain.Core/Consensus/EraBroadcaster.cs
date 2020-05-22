@@ -15,6 +15,7 @@ using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
 namespace Lachain.Core.Consensus
@@ -30,6 +31,7 @@ namespace Lachain.Core.Consensus
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private bool _terminated;
 
         /**
@@ -46,7 +48,7 @@ namespace Lachain.Core.Consensus
 
         public EraBroadcaster(
             long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
-            IPrivateWallet wallet
+            IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -55,6 +57,7 @@ namespace Lachain.Core.Consensus
             _wallet = wallet;
             _terminated = false;
             _era = era;
+            _validatorAttendanceRepository = validatorAttendanceRepository;
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -286,7 +289,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this);
+                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository);
                     RegisterProtocols(new[] {root});
                     return root;
                 default:

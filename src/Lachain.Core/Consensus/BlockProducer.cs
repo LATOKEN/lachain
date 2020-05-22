@@ -10,6 +10,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
@@ -79,7 +80,20 @@ namespace Lachain.Core.Consensus
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
-            receipts = receipts.Concat(new []{GetCoinbaseTxReceipt()}).ToList();
+            var cycle = index / StakingContract.CycleDuration;
+            var indexInCycle = index % StakingContract.CycleDuration;
+            if (cycle > 0 && indexInCycle == 100)
+            {
+                receipts = receipts.Concat(new[] {DistributeCycleRewardsAndPenaltiesTxReceipt()}).ToList();
+            } 
+            else if (indexInCycle == 500)
+            {
+                receipts = receipts.Concat(new[] {FinishVrfLotteryTxReceipt()}).ToList();   
+            }
+            else if (cycle > 0 && indexInCycle == 0)
+            {
+                receipts = receipts.Concat(new[] {FinishCycleTxReceipt()}).ToList();   
+            }
 
             if (_blockchainContext.CurrentBlock is null) throw new InvalidOperationException("No previous block");
             if (_blockchainContext.CurrentBlock.Header.Index + 1 != index)
@@ -120,9 +134,22 @@ namespace Lachain.Core.Consensus
 
         public void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig)
         {
-            var txCount = txHashes.Count();
-            var receipts = txHashes
-                .Select((hash, i) => i == txCount - 1  ? GetCoinbaseTxReceipt() : _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
+            var hashes = txHashes as UInt256[] ?? txHashes.ToArray();
+            var txCount = hashes.Count();
+            var indexInCycle = header.Index % 1000;
+            var cycle = header.Index / 1000;
+            var receipts = hashes
+                .Select((hash, i) =>
+                {
+                    if (cycle > 0 && indexInCycle == 100 && i == txCount - 1)
+                        return DistributeCycleRewardsAndPenaltiesTxReceipt();
+                    if (indexInCycle == 500 && i == txCount - 1)
+                        return FinishVrfLotteryTxReceipt();
+                    if (cycle > 0 && indexInCycle == 0 && i == txCount - 1)
+                        return FinishCycleTxReceipt();
+                    return _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException();
+                    
+                })
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
@@ -154,14 +181,31 @@ namespace Lachain.Core.Consensus
                     $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}");
         }
 
-        private TransactionReceipt GetCoinbaseTxReceipt()
+        private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt(int nonceInc = 0)
         {
+            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties, nonceInc);
+        }
 
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
-            var abi = ContractEncoder.Encode(GovernanceInterface.MethodDistributeBlockReward);
+        private TransactionReceipt FinishVrfLotteryTxReceipt(int nonceInc = 0)
+        {
+            return BuildSystemContractTxReceipt(ContractRegisterer.StakingContract,
+                StakingInterface.MethodFinishVrfLottery, nonceInc);
+        }
+
+        private TransactionReceipt FinishCycleTxReceipt(int nonceInc = 0)
+        {
+            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+                GovernanceInterface.MethodFinishCycle, nonceInc);
+        }
+
+        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature, int nonceInc)
+        {
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero) + (ulong) nonceInc;
+            var abi = ContractEncoder.Encode(mehodSignature);
             var transaction = new Transaction
             {
-                To = ContractRegisterer.GovernanceContract,
+                To = contractAddress,
                 Value = UInt256Utils.Zero,
                 From = UInt160Utils.Zero,
                 Nonce = nonce,

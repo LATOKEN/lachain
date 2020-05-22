@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using AustinHarris.JsonRpc;
@@ -14,7 +15,6 @@ using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
-using Lachain.Utility.JSON;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Transaction = Lachain.Proto.Transaction;
@@ -82,7 +82,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionReceipt")]
-        private JObject GetTransactionReceipt(string txHash)
+        private JObject? GetTransactionReceipt(string txHash)
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -97,7 +97,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
-        private JObject GetTransactionByHash(string txHash)
+        private JObject? GetTransactionByHash(string txHash)
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -223,11 +223,28 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 case UInt256 result:
                     return result.ToHex();
                 case int result:
-                    return result.ToString();
+                    var res = result.ToHex();
+                    while (res.Length < 64)
+                        res = "0" + res;
+                    return "0x" + res;
+                case uint result:
+                    var uintHex = result.ToBytes().Reverse().ToHex(false);
+                    while (uintHex.Length < 64)
+                        uintHex = "0" + uintHex;
+                    return "0x" + uintHex;
                 case byte[] result:
                     return result.ToHex(true);
                 case bool result:
                     return result ? "0x1" : "0x0";
+                case string result:
+                    const string start = "0x0000000000000000000000000000000000000000000000000000000000000020";
+                    var value= Encoding.ASCII.GetBytes(result).ToHex();
+                    var len = (value.Length / 2).ToBytes().Reverse().ToHex(false);
+                    while (len.Length < 64)
+                        len = '0' + len;
+                    while (value.Length < 64)
+                        value += '0';
+                    return start + len + value;
                 default:
                     return "0x";
             }
@@ -244,15 +261,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
             string? blockNumber = null,
             Block? block = null)
         {
-            Console.WriteLine(receipt.ToJson());
+            // Console.WriteLine(receipt.ToJson());
             return new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),
                 ["transactionIndex"] = receipt.IndexInBlock,
                 ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
                 ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
-                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().ToHex(), // TODO: plus previous
-                ["gasUsed"] = receipt.GasUsed.ToBytes().ToHex(),
+                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(), // TODO: plus previous
+                ["gasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(),
                 ["contractAddress"] = null,
                 ["logs"] = new JArray(),
                 ["logsBloom"] =

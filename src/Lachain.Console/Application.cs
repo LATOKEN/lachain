@@ -13,6 +13,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Network;
 using Lachain.Core.RPC;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
@@ -45,6 +46,7 @@ namespace Lachain.Console
             var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
+            var validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var validatorManager = _container.Resolve<IValidatorManager>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
@@ -93,6 +95,7 @@ namespace Lachain.Console
             );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
+            validatorStatusManager.Start(false);
 
             if (blockchainContext.CurrentBlockHeight == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
             {
