@@ -57,10 +57,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                     "Thread {0} ID {1} _cntRBC = {2}", Thread.CurrentThread.ManagedThreadId, GetMyId(), _cntRBC);
             }
 
-
             _broadcastId = broadcastId;
-            
-            //_requested = ResultStatus.NotRequested;
 
             _receivedBatchesOfBlocks = new Dictionary<int, List<int>>();
             _receivedCorrectEchoFrom = new Dictionary<int, bool>();
@@ -102,8 +99,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
-                        Console.Error.WriteLine("Thread {0} ID {1} before call HandleValMessage()",
-                            Thread.CurrentThread.ManagedThreadId, GetMyId());
                         HandleValMessage(message.ValMessage);
                         break;
                     case ConsensusMessage.PayloadOneofCase.EchoMessage:
@@ -128,8 +123,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
                         Terminate();
-                        Console.Error.WriteLine(
-                            "Thread {0} ID {1} after Terminate()", Thread.CurrentThread.ManagedThreadId, GetMyId());
                         break;
                     default:    
                         throw new InvalidOperationException(
@@ -149,17 +142,14 @@ namespace Lachain.Consensus.ReliableBroadcast
             
             Console.Error.WriteLine(
                 "Thread {0} ID {1} was called HandleInputMessage()", Thread.CurrentThread.ManagedThreadId, GetMyId());
+            
             if (broadcastRequested.Input == null) 
                 return;
             
             var realInput = broadcastRequested.Input.ToByte();
-
-            var correctRealInput = RBTools.GetCorrectInput(RBTools.ByteToInt(realInput), N, false, 11).ToArray();
             for (var indexAddressee = 0; indexAddressee < N; indexAddressee++)
             {
-                //Broadcaster.SendToValidator(CreateValMessage(input, indexAddressee), indexAddressee); // for debug
-                Broadcaster.SendToValidator(CreateValMessage(RBTools.ByteToInt(realInput), indexAddressee),
-                    indexAddressee); // realInput
+                Broadcaster.SendToValidator(CreateValMessage(RBTools.ByteToInt(realInput), indexAddressee), indexAddressee);
                 Console.Error.WriteLine("Thread {0} ID {1} created VAL_TYPE and sent to ID {2}",
                     Thread.CurrentThread.ManagedThreadId, GetMyId(), indexAddressee);
             }
@@ -180,21 +170,28 @@ namespace Lachain.Consensus.ReliableBroadcast
             Console.Error.WriteLine("Thread {0} ID {1} broadcast ECHO_TYPE",
                 Thread.CurrentThread.ManagedThreadId, GetMyId());
             Broadcaster.Broadcast(CreateECHOMessage(val));
-            
         }
 
         private void HandleEchoMessage(ECHOMessage echo, int validator)
-        {
-            
+        {   
+            Console.Error.WriteLine(
+                "Thread # {0} ID {1} mark1",
+                Thread.CurrentThread.ManagedThreadId, GetMyId());
             if (_receivedCorrectEchoFrom[validator])
-                return;
+            {
+                Console.Error.WriteLine(
+                    "Thread # {0} ID {1} return from HandleEchoMessage",
+                    Thread.CurrentThread.ManagedThreadId, GetMyId());
+                return;    
+            }
+            
             
             var (flag, goodBatchOfBlocks, receivedRoots) = CheckEchoMsgNew(echo);
 
             if (flag)
             {   
                 _receivedBatchesOfBlocks[echo.IndexAddressee] = goodBatchOfBlocks;
-                _receivedRoots = receivedRoots; // todo: нужно подумать нужно ли индексировать полученные roots
+                _receivedRoots = receivedRoots;
                 if (!_receivedCorrectEchoFrom[validator])
                 {
                     _receivedCorrectEchoFrom[validator] = true;
@@ -214,7 +211,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             
             if (_countCorrectECHOMsg == N - F)
             {
-                var stripes = new List<int[]>();
                 var recalculatedRootsToSend = new List<UInt256>();
                 var segmentSize = echo.Settings.LengthSegment;
                 var countStripes = echo.Settings.CountStripes;
@@ -248,34 +244,12 @@ namespace Lachain.Consensus.ReliableBroadcast
                     }
 
                     var accumulateCurrentStripeArray = accumulateCurrentStripe.ToArray();
-                    stripes.Add(accumulateCurrentStripeArray);
-                    
                     RBTools.Print(accumulateCurrentStripeArray);
-                    if (_fromWhomReceived.Count == F)
-                    {
-                        Console.Error.WriteLine( "Thread # {0} ID {1} Mark1",
-                            Thread.CurrentThread.ManagedThreadId, GetMyId());
-                    }
-                    else if (_fromWhomReceived.Count == F + 1)
-                    {
-                        Console.Error.WriteLine( "Thread # {0} ID {1} Mark2",
-                            Thread.CurrentThread.ManagedThreadId, GetMyId());
-                    }
-                    else
-                    {
-                        Console.Error.WriteLine( "Thread # {0} ID {1} Mark3",
-                            Thread.CurrentThread.ManagedThreadId, GetMyId());
-                    }
                     
                     var currentDecodeStripe = DecodeNew(accumulateCurrentStripeArray.ToList(), _fromWhomReceived.ToArray());
                     var againEncodeCurrentStripe = Encode(currentDecodeStripe.Take(currentDecodeStripe.Count - F).ToList());
                     var currentNewHashes = RecalculateMerkleRoot(againEncodeCurrentStripe);
 
-                    
-                    // debug
-                    var tmp1 = receivedRoots[numberStripes];
-                    var tmp2 = currentNewHashes;
-                    // debug
                     if (receivedRoots[numberStripes].Equals(currentNewHashes))
                     {
                         recalculatedRootsToSend.Add(currentNewHashes);
@@ -285,7 +259,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                         Abort();
                     }
                     
-                    // вынимаю в store части (первую половину) полезных данных из decode блоков
                     foreach (var item in currentDecodeStripe.Take(N - F))
                     {
                         _store.Add(item);
@@ -293,16 +266,19 @@ namespace Lachain.Consensus.ReliableBroadcast
                 }
 
                 // debug
+                Console.Error.WriteLine(
+                    "Thread # {0} ID {1} mark2",
+                    Thread.CurrentThread.ManagedThreadId, GetMyId());
                 if (echo.Plaintext.SequenceEqual(_store))
                 {
                     Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext = _store into HandleEchoMessage()",
+                        "Thread # {0} ID {1} plaintext == _store into HandleEchoMessage()",
                         Thread.CurrentThread.ManagedThreadId, GetMyId());
                 }
                 else
                 {
                     Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext = _store into HandleEchoMessage() -- PROBLEM",
+                        "Thread # {0} ID {1} plaintext != _store into HandleEchoMessage() -- PROBLEM",
                         Thread.CurrentThread.ManagedThreadId, GetMyId());
                     
                 }
@@ -312,7 +288,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 {
                     if (!_sentReadyMsg[GetMyId()])
                     {
-                        var tmp = GetMyId();
                         Broadcaster.Broadcast(CreateReadyMessage(recalculatedRootsToSend, echo.Plaintext.ToArray()));
                         _sentReadyMsg[GetMyId()] = true;
                         Console.Error.WriteLine(
@@ -355,23 +330,21 @@ namespace Lachain.Consensus.ReliableBroadcast
                             Thread.CurrentThread.ManagedThreadId, GetMyId());
                     }
                 }
-                else if (_countReadyMsg == 2 * F + 1)
-                {
-                    if (_countCorrectECHOMsg == N - 2 * F)
-                    {
-                        //Decode(_receivedBatchesOfBlocks[0]);
-                    }
-                }
+                // else if (_countReadyMsg == 2 * F + 1)
+                // {
+                //     if (_countCorrectECHOMsg == N - 2 * F)
+                //     {
+                //         // todo: может влияет на silent case
+                //         //Here should be decode if operations of interpolation
+                //         //from blocks and decode could be make in different place
+                //     }
+                // }
 
+                
+                
+                // todo: debug
                 if (plaintext.SequenceEqual(_store))
-                {
-                    
-                    var tmp = RBTools.GetOriginalInput(_store.ToArray());
-                    var tmp1 = RBTools.IntToByte(tmp);
-                    _result = EncryptedShare.FromByte(tmp1);
-
-                    _requested = ResultStatus.Requested;
-                    CheckResult();
+                {   
                     
                     Console.Error.WriteLine(
                         "Thread # {0} ID {1} plaintext = _store into HandleReadyMessage()",
@@ -380,39 +353,32 @@ namespace Lachain.Consensus.ReliableBroadcast
                 else
                 {
                     Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext != _store into HandleReadyMessage() -- PROBLEM ",
-                        Thread.CurrentThread.ManagedThreadId, GetMyId());
+                        "Thread # {0} ID {1} plaintext != _store into HandleReadyMessage() -- PROBLEM _store.Count {2} ",
+                        Thread.CurrentThread.ManagedThreadId, GetMyId(), _store.Count);
                 }
-                
+                // debug
+
+                if (_store.Count != 0)
+                {
+                    var originalInput = RBTools.GetOriginalInput(_store.ToArray());
+                    _result = EncryptedShare.FromByte(RBTools.IntToByte(originalInput));
+                }
+                else
+                {
+                    _result = null;
+                }
+                _requested = ResultStatus.Requested;
+                CheckResult();
             }
         }
         
         private void CheckResult()
         {
-            if (_result == null)
-            {
-                Console.Error.WriteLine(
-                    "Thread {0} ID {1} was in CheckResult in condition (_result == null) A = {2}", 
-                    Thread.CurrentThread.ManagedThreadId, GetMyId(), _broadcastId.AssociatedValidatorId);
-                return;
-            }
-
+            // if (_result == null) 
+            //     return;
             if (_requested != ResultStatus.Requested)
-            {
-                Console.Error.WriteLine(
-                    "Thread {0} ID {1} was in CheckResult in condition (_requested != ResultStatus.Requested) A = {2}", 
-                    Thread.CurrentThread.ManagedThreadId, GetMyId(), _broadcastId.AssociatedValidatorId);
                 return;
-            }
             _requested = ResultStatus.Sent;
-            
-            Console.Error.WriteLine(
-                "Thread {0} ID {1} was in CheckResult A = {2}", 
-                Thread.CurrentThread.ManagedThreadId, GetMyId(), _broadcastId.AssociatedValidatorId);
-            Console.Error.WriteLine(
-                "Thread {0} ID {1} InternalResponse with EncryptedShare", Thread.CurrentThread.ManagedThreadId, GetMyId());
-            
-            
             Broadcaster.InternalResponse(
                 new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, _result));
         }
@@ -436,15 +402,15 @@ namespace Lachain.Consensus.ReliableBroadcast
                 
             return tmp.Take(toDecode.Count).ToList();
         }
-        private List<int> Decode(List<int> toDecode)
-        {
-            var additionalSpot = toDecode.Count / 2;
-            var storeLength = toDecode.Count / 2;
-            //var _erasureCoding = new ErasureCoding(additionalSpot);
-            var tmp = toDecode.ToArray();
-            _erasureCoding.Decode(tmp, additionalSpot,null);
-            return tmp.Take(storeLength).ToList();
-        }
+        // private List<int> Decode(List<int> toDecode)
+        // {
+        //     var additionalSpot = toDecode.Count / 2;
+        //     var storeLength = toDecode.Count / 2;
+        //     //var _erasureCoding = new ErasureCoding(additionalSpot);
+        //     var tmp = toDecode.ToArray();
+        //     _erasureCoding.Decode(tmp, additionalSpot,null);
+        //     return tmp.Take(storeLength).ToList();
+        // }
 
         private List<int> Encode(List<int> toEncode)
         {
@@ -646,7 +612,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                 ValMessage = new ValMessage
                 {
                     RootMerkleTree = {roots},
-                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId, //Sender = GetMyId(), todo: WTF?
+                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId,
                     IndexAddressee = indexAddressee,
                     Batch = {batch},
                     Plaintext = {correctInputForDebug}, // todo: fordebug
@@ -763,15 +729,15 @@ namespace Lachain.Consensus.ReliableBroadcast
             }
 
             // отправляю сам себe свою шару ставлю флаг, что она отправлена
-            if (!_receivedCorrectEchoFrom[GetMyId()])
-            {
-                var selfShare = GsV2.Select(G => G[GetMyId()]).ToList();
-                _receivedBatchesOfBlocks[GetMyId()] = selfShare;
-                _receivedCorrectEchoFrom[GetMyId()] = true;
-                Console.Error.WriteLine(                                // <----  debug
-                    "Thread {0} ID {1} wrote selfshare", 
-                    Thread.CurrentThread.ManagedThreadId, GetMyId());
-            }
+            // if (!_receivedCorrectEchoFrom[GetMyId()])
+            // {
+            //     var selfShare = GsV2.Select(G => G[GetMyId()]).ToList();
+            //     _receivedBatchesOfBlocks[GetMyId()] = selfShare;
+            //     _receivedCorrectEchoFrom[GetMyId()] = true;
+            //     Console.Error.WriteLine(                                // <----  debug
+            //         "Thread {0} ID {1} wrote selfshare", 
+            //         Thread.CurrentThread.ManagedThreadId, GetMyId());
+            // }
             
             var res = new Tuple<int[], List<int[]>>(supplementedInput.ToArray(), GsV2);
             return res;

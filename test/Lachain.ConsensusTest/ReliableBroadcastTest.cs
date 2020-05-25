@@ -92,7 +92,60 @@ namespace Lachain.ConsensusTest
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
-        
+
+        public void RunSetUpNSendersSomeDelay(DeliveryServiceMode mode=DeliveryServiceMode.TAKE_RANDOM, int muteCnt = 0, double repeatProbability = .0)
+        {
+            SetUpAllHonestNSenders();
+            _deliveryService.RepeatProbability = repeatProbability; // вероятность повтора индивидуального сообщения
+            _deliveryService.Mode = mode; // порядок доставки сообщения
+            var rnd = new Random();
+            var mutePlayers = new List<int>();
+            while (_deliveryService._mutedPlayers.Count < muteCnt)
+            {
+                var tmp = rnd.Next(0, N - 1);
+                _deliveryService.MutePlayer(tmp);
+                mutePlayers.Add(tmp);
+            }
+            
+            
+            
+            for (var i = 0; i < N; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
+                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
+                Console.Error.WriteLine(
+                    "Thread {0} ID_ACS {1} create RBC from HandleInputMessage11", Thread.CurrentThread.ManagedThreadId, i);
+
+                for (var j = 0; j < N; ++j)
+                {
+                    if (j != i)
+                    {
+                        _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
+                            (_resultInterceptors[i].Id, new ReliableBroadcastId(j, 0), null));
+                        Console.Error.WriteLine(
+                            "Thread {0} ID_ACS {1} create RBC from HandleInputMessage22", Thread.CurrentThread.ManagedThreadId, i);
+                    }
+                }    
+            }
+            
+            
+            for (var i = 0; i < N; ++i)
+            {
+                if(!mutePlayers.Contains(i))
+                    _broadcasts[i].WaitFinish();
+            }
+            for (var i = 0; i < N; ++i)
+            {
+                if(!mutePlayers.Contains(i))
+                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+            }
+
+            for (var i = 0; i < N; ++i)
+            {
+                if(!mutePlayers.Contains(i))
+                    Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+            }   
+        }
         public void RunSetUpSomeDelay(DeliveryServiceMode mode=DeliveryServiceMode.TAKE_RANDOM, int muteCnt = 0, double repeatProbability = .0)
         {
             SetUpAllHonest();
@@ -106,12 +159,16 @@ namespace Lachain.ConsensusTest
                 _deliveryService.MutePlayer(tmp);
                 mutePlayers.Add(tmp);
             }
+            
+            
             for (var i = 0; i < N; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? _testShare : null
                 ));
             }
+            
+            
             for (var i = 0; i < N; ++i)
             {
                 if(!mutePlayers.Contains(i))
@@ -235,34 +292,50 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
 
+        
+        private const int count = 5;
+        
         [Test]
+        [Repeat(5)]
+        public void RunSetUpNSendersSomeDelay1()
+        {
+            RunSetUpNSendersSomeDelay(DeliveryServiceMode.TAKE_FIRST);
+        }
+        
+        
+        [Test]
+        [Repeat(count)]
         public void RunSetUpSomeDelay1()
         {
             RunSetUpSomeDelay(DeliveryServiceMode.TAKE_FIRST);
         }
         [Test]
+        [Repeat(count)]
         public void RunSetUpSomeDelay2()
         {
             RunSetUpSomeDelay(DeliveryServiceMode.TAKE_LAST);
         }
         [Test]
+        [Repeat(count)]
         public void RunSetUpSomeDelay3()
-        {
-            
+        {   
             RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.2);
         }
         [Test]
+        [Repeat(count)]
         public void RunSetUpSomeDelay4()
         {
             
             RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.5);
         }        
         [Test]
+        [Repeat(count)]
         public void RunSetUpSomeDelay5()
         {   
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.9);
+            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.7);
         }
         [Test]
+        [Repeat(count)]
         public void RunSetUpSomeDelayAndMute()
         {   
             RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 5, 0.5);
