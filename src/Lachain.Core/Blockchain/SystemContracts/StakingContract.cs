@@ -427,7 +427,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodGetCurrentCycle)]
         public int GetCurrentCycle()
         {
-            return (int)(_contractContext.Snapshot.Blocks.GetTotalBlockHeight() / 1000);
+            return (int)(_contractContext.Snapshot.Blocks.GetTotalBlockHeight() / CycleDuration);
         }
 
         [ContractMethod(StakingInterface.MethodGetVrfSeed)]
