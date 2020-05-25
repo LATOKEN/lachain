@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Storage.State;
@@ -14,21 +13,18 @@ namespace Lachain.Core.RPC.HTTP
     {
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly IBlockchainContext _blockchainContext;
         private readonly IStateManager _stateManager;
         private readonly ITransactionPool _transactionPool;
 
         public BlockchainService(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext,
             ITransactionPool transactionPool,
             IStateManager stateManager)
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
-            _blockchainContext = blockchainContext;
             _stateManager = stateManager;
         }
 
@@ -71,7 +67,7 @@ namespace Lachain.Core.RPC.HTTP
         {
             var json = new JObject
             {
-                ["currentHeight"] = _blockchainContext.CurrentBlockHeight
+                ["currentHeight"] = _blockManager.GetHeight()
             };
             return json;
         }

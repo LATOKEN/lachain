@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Lachain.Consensus.RootProtocol
 {
     public class RootProtocolId : IProtocolIdentifier

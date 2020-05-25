@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Lachain.Consensus.ReliableBroadcast
 {
     public class ReliableBroadcastId : IProtocolIdentifier

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;

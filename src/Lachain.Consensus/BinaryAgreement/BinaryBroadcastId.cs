@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Lachain.Consensus.BinaryAgreement
+﻿namespace Lachain.Consensus.BinaryAgreement
 {
     public class BinaryBroadcastId : IProtocolIdentifier
     {

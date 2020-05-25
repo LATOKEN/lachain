@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
-using Lachain.Utility.Utils;
 
 namespace Lachain.Crypto.ThresholdSignature
 {

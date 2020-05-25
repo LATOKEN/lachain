@@ -1,5 +1,4 @@
 using Lachain.Consensus;
-using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
@@ -21,7 +20,6 @@ namespace Lachain.Core.DI.Modules
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             /* global */
-            containerBuilder.RegisterSingleton<IBlockchainManager, BlockchainManager>();
             containerBuilder.RegisterSingleton<IConsoleManager, ConsoleManager>();
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();

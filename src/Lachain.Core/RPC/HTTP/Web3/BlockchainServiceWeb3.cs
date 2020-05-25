@@ -6,7 +6,6 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
-using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -15,21 +14,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
     {
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly IBlockchainContext _blockchainContext;
         private readonly IStateManager _stateManager;
         private readonly ITransactionPool _transactionPool;
 
         public BlockchainServiceWeb3(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext,
             ITransactionPool transactionPool,
             IStateManager stateManager)
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
-            _blockchainContext = blockchainContext;
             _stateManager = stateManager;
         }
 
@@ -129,7 +125,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_blockNumber")]
         private string GetBlockNumber()
         {
-            return $"0x{_blockchainContext.CurrentBlockHeight:X}";
+            return $"0x{_blockManager.GetHeight():X}";
         }
 
         [JsonRpcMethod("eth_getEventsByTransactionHash")]

@@ -2,7 +2,6 @@
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 

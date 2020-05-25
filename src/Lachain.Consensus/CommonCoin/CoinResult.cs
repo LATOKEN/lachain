@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using Org.BouncyCastle.Asn1.CryptoPro;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.CommonCoin

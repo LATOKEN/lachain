@@ -1,4 +1,3 @@
-using System;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
 using NUnit.Framework;

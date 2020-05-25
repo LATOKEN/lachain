@@ -7,7 +7,6 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
-using Lachain.Utility.Utils;
 using Signature = Lachain.Crypto.ThresholdSignature.Signature;
 
 namespace Lachain.Consensus.CommonCoin
