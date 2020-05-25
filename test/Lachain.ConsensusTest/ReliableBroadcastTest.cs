@@ -96,8 +96,8 @@ namespace Lachain.ConsensusTest
         public void RunSetUpNSendersSomeDelay(DeliveryServiceMode mode=DeliveryServiceMode.TAKE_RANDOM, int muteCnt = 0, double repeatProbability = .0)
         {
             SetUpAllHonestNSenders();
-            _deliveryService.RepeatProbability = repeatProbability; // вероятность повтора индивидуального сообщения
-            _deliveryService.Mode = mode; // порядок доставки сообщения
+            _deliveryService.RepeatProbability = repeatProbability;
+            _deliveryService.Mode = mode; 
             var rnd = new Random();
             var mutePlayers = new List<int>();
             while (_deliveryService._mutedPlayers.Count < muteCnt)
@@ -113,8 +113,6 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                     (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
-                Console.Error.WriteLine(
-                    "Thread {0} ID_ACS {1} create RBC from HandleInputMessage11", Thread.CurrentThread.ManagedThreadId, i);
 
                 for (var j = 0; j < N; ++j)
                 {
@@ -122,8 +120,6 @@ namespace Lachain.ConsensusTest
                     {
                         _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                             (_resultInterceptors[i].Id, new ReliableBroadcastId(j, 0), null));
-                        Console.Error.WriteLine(
-                            "Thread {0} ID_ACS {1} create RBC from HandleInputMessage22", Thread.CurrentThread.ManagedThreadId, i);
                     }
                 }    
             }
@@ -149,8 +145,8 @@ namespace Lachain.ConsensusTest
         public void RunSetUpSomeDelay(DeliveryServiceMode mode=DeliveryServiceMode.TAKE_RANDOM, int muteCnt = 0, double repeatProbability = .0)
         {
             SetUpAllHonest();
-            _deliveryService.RepeatProbability = repeatProbability; // вероятность повтора индивидуального сообщения
-            _deliveryService.Mode = mode; // порядок доставки сообщения
+            _deliveryService.RepeatProbability = repeatProbability;
+            _deliveryService.Mode = mode; 
             var rnd = new Random();
             var mutePlayers = new List<int>();
             while (_deliveryService._mutedPlayers.Count < muteCnt)
@@ -159,16 +155,14 @@ namespace Lachain.ConsensusTest
                 _deliveryService.MutePlayer(tmp);
                 mutePlayers.Add(tmp);
             }
-            
-            
+
             for (var i = 0; i < N; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
                     _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? _testShare : null
                 ));
             }
-            
-            
+
             for (var i = 0; i < N; ++i)
             {
                 if(!mutePlayers.Contains(i))
@@ -201,21 +195,6 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-                    // if (_resultInterceptors[i].Result != null)
-                    // {
-                    //     var id = _resultInterceptors[i].Id;
-                    //     var res = _resultInterceptors[i].Result;
-                    //     var resultSet = _resultInterceptors[i].ResultSet;
-                    //     var terminated = _resultInterceptors[i].Terminated;
-                    //     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-                    // }
-                    // else
-                    // {
-                    //     var id = _resultInterceptors[i].Id;
-                    //     var res = _resultInterceptors[i].Result;
-                    //     var resultSet = _resultInterceptors[i].ResultSet;
-                    //     var terminated = _resultInterceptors[i].Terminated;
-                    // }
             }
                 
             for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
@@ -229,8 +208,6 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                     (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
-                Console.Error.WriteLine(
-                    "Thread {0} ID_ACS {1} create RBC from HandleInputMessage11", Thread.CurrentThread.ManagedThreadId, i);
 
                 for (var j = 0; j < N; ++j)
                 {
@@ -238,8 +215,6 @@ namespace Lachain.ConsensusTest
                     {
                         _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                         (_resultInterceptors[i].Id, new ReliableBroadcastId(j, 0), null));
-                        Console.Error.WriteLine(
-                            "Thread {0} ID_ACS {1} create RBC from HandleInputMessage22", Thread.CurrentThread.ManagedThreadId, i);
                     }
                 }    
             }
@@ -248,29 +223,13 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-                // if (_resultInterceptors[i].Result != null)
-                // {
-                //     var id = _resultInterceptors[i].Id;
-                //     var res = _resultInterceptors[i].Result;
-                //     var resultSet = _resultInterceptors[i].ResultSet;
-                //     var terminated = _resultInterceptors[i].Terminated;
-                //     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-                // }
-                // else
-                // {
-                //     var id = _resultInterceptors[i].Id;
-                //     var res = _resultInterceptors[i].Result;
-                //     var resultSet = _resultInterceptors[i].ResultSet;
-                //     var terminated = _resultInterceptors[i].Terminated;
-                // }
-                
-                    
             }
                 
             for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }        
         
         [Test]
+        [Repeat(1)]
         public void RunSomeSilent()
         {
             var SilentID = new List<int>();
@@ -283,9 +242,9 @@ namespace Lachain.ConsensusTest
             }
             for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
             
-            // Check true share only for NOT silent players
             for (var i = 0; i < N; ++i)
             {   
+                // Check true share only for NOT silent players
                 if(!SilentID.Contains(i))
                     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
             }

@@ -28,7 +28,6 @@ namespace Lachain.Consensus.ReliableBroadcast
         private EncryptedShare? _result;
         private List<UInt256> _receivedRoots;
         private ResultStatus _requested;
-        //private BoolSet? _result;
         private ErasureCoding _erasureCoding;
 
         private readonly bool[] _sentReadyMsg;
@@ -74,10 +73,8 @@ namespace Lachain.Consensus.ReliableBroadcast
             _fromWhomReceived = new List<int>();
 
             _store = new List<int>();
-
-            // additional bits in Erasure Coding = the count of players (N)
-            var coeff = 1; // may be var to decrease 0.5 
-            _erasureCoding = new ErasureCoding(N * coeff);
+            
+            _erasureCoding = new ErasureCoding(N);
 
             _receivedRoots = new List<UInt256>();
             _sentReadyMsg = new bool[N];
@@ -140,9 +137,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 CheckResult();
             }
             
-            Console.Error.WriteLine(
-                "Thread {0} ID {1} was called HandleInputMessage()", Thread.CurrentThread.ManagedThreadId, GetMyId());
-            
             if (broadcastRequested.Input == null) 
                 return;
             
@@ -150,8 +144,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             for (var indexAddressee = 0; indexAddressee < N; indexAddressee++)
             {
                 Broadcaster.SendToValidator(CreateValMessage(RBTools.ByteToInt(realInput), indexAddressee), indexAddressee);
-                Console.Error.WriteLine("Thread {0} ID {1} created VAL_TYPE and sent to ID {2}",
-                    Thread.CurrentThread.ManagedThreadId, GetMyId(), indexAddressee);
             }
         }
 
@@ -256,6 +248,9 @@ namespace Lachain.Consensus.ReliableBroadcast
                     }
                     else
                     {
+                        Console.Error.WriteLine(
+                            "Thread #{0} ID {1} received root != recalculated hash",
+                            Thread.CurrentThread.ManagedThreadId, GetMyId());
                         Abort();
                     }
                     
@@ -265,30 +260,11 @@ namespace Lachain.Consensus.ReliableBroadcast
                     }
                 }
 
-                // debug
-                Console.Error.WriteLine(
-                    "Thread # {0} ID {1} mark2",
-                    Thread.CurrentThread.ManagedThreadId, GetMyId());
-                if (echo.Plaintext.SequenceEqual(_store))
-                {
-                    Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext == _store into HandleEchoMessage()",
-                        Thread.CurrentThread.ManagedThreadId, GetMyId());
-                }
-                else
-                {
-                    Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext != _store into HandleEchoMessage() -- PROBLEM",
-                        Thread.CurrentThread.ManagedThreadId, GetMyId());
-                    
-                }
-                // debug
-
-                if (receivedRoots.SequenceEqual(recalculatedRootsToSend))
+                if (receivedRoots.SequenceEqual(recalculatedRootsToSend)) // may be this check unneccesary
                 {
                     if (!_sentReadyMsg[GetMyId()])
                     {
-                        Broadcaster.Broadcast(CreateReadyMessage(recalculatedRootsToSend, echo.Plaintext.ToArray()));
+                        Broadcaster.Broadcast(CreateReadyMessage(recalculatedRootsToSend));
                         _sentReadyMsg[GetMyId()] = true;
                         Console.Error.WriteLine(
                             "Thread #{0} ID {1} broadcast ReadyMessageType from HandleEchoMessage()",
@@ -308,7 +284,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 return;
             
             var rootsToCheck = readyMessage.RootMerkleTree.ToList();
-            var plaintext = readyMessage.Plaintext.ToArray();
             if (CheckReadyMsg(rootsToCheck))
             {
                 if (!_receivedCorrectReadyFrom[validator])
@@ -323,7 +298,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                 {
                     if (!_sentReadyMsg[GetMyId()])
                     {
-                        Broadcaster.Broadcast(CreateReadyMessage(rootsToCheck, plaintext));
+                        Broadcaster.Broadcast(CreateReadyMessage(rootsToCheck));
                         _sentReadyMsg[GetMyId()] = true;
                         Console.Error.WriteLine(
                             "Thread #{0} ID {1} broadcast ReadyMessageType HandleReadyMessage()",
@@ -339,24 +314,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 //         //from blocks and decode could be make in different place
                 //     }
                 // }
-
-                
-                
-                // todo: debug
-                if (plaintext.SequenceEqual(_store))
-                {   
-                    
-                    Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext = _store into HandleReadyMessage()",
-                        Thread.CurrentThread.ManagedThreadId, GetMyId());
-                }
-                else
-                {
-                    Console.Error.WriteLine(
-                        "Thread # {0} ID {1} plaintext != _store into HandleReadyMessage() -- PROBLEM _store.Count {2} ",
-                        Thread.CurrentThread.ManagedThreadId, GetMyId(), _store.Count);
-                }
-                // debug
 
                 if (_store.Count != 0)
                 {
@@ -374,8 +331,8 @@ namespace Lachain.Consensus.ReliableBroadcast
         
         private void CheckResult()
         {
-            // if (_result == null) 
-            //     return;
+            if (_result == null) 
+                return;
             if (_requested != ResultStatus.Requested)
                 return;
             _requested = ResultStatus.Sent;
@@ -387,30 +344,22 @@ namespace Lachain.Consensus.ReliableBroadcast
         
         private List<int> DecodeNew(List<int> toDecode, int[] tips)
         {
-            //var correctInput = RBTools.GetOriginalInputWithoutSize(toDecode.ToArray(), extraNumbers);
             var tmp = toDecode.ToArray();
-            //_erasureCoding.Decode(tmp, tips.Length, tips);
             if (tips.Length == F)
             {
                 _erasureCoding.Decode(tmp, F, tips);
             }
             else
-            {// because I can restore from any (N - 2F) parts
+            {
+                Console.Error.WriteLine(
+                    "WARN: Thread #{0} ID {1} need to reduce count of tips",
+                    Thread.CurrentThread.ManagedThreadId, GetMyId());
                 var reducedTips = tips.Take(F).ToArray();
                 _erasureCoding.Decode(tmp, F, reducedTips);
             }
                 
             return tmp.Take(toDecode.Count).ToList();
         }
-        // private List<int> Decode(List<int> toDecode)
-        // {
-        //     var additionalSpot = toDecode.Count / 2;
-        //     var storeLength = toDecode.Count / 2;
-        //     //var _erasureCoding = new ErasureCoding(additionalSpot);
-        //     var tmp = toDecode.ToArray();
-        //     _erasureCoding.Decode(tmp, additionalSpot,null);
-        //     return tmp.Take(storeLength).ToList();
-        // }
 
         private List<int> Encode(List<int> toEncode)
         {
@@ -453,12 +402,8 @@ namespace Lachain.Consensus.ReliableBroadcast
                             reCalcRootNew = MerkleTree.ComputeRoot(new[] {reCalcRootNew, sibling.Node});
                         }
                     }
-
                     if (reCalcRootNew.Equals(destinationRoot))
                     {
-                        // Console.Error.WriteLine(
-                        //     "Thread {0} ID {1} Into checkECHOMsgNew() received messages with index addressee {2} : TRUE",
-                        //     Thread.CurrentThread.ManagedThreadId, GetMyId(), msg.IndexAddressee);
                         goodBlocks.Add(sourceBlock);
                     }
                     else
@@ -535,7 +480,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             return reCalcRootNew.Equals(destinationRoot);
         }
 
-        private (List<Region>, List<UInt256>, int, int, int[]) GetBatch(int[] input, int indexAddressee)
+        private (List<Region>, List<UInt256>, int, int) GetBatch(int[] input, int indexAddressee)
         {
             var (correctInputForDebug, Gs) = f1(input);
 
@@ -569,9 +514,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                     var testingBranch = CreateBranch(hashes, destinationHash);
                     if (checkConsistencyOfSiblings(testingBranch, destinationRoot, destinationBlock))
                     {
-                        // Console.WriteLine(" CONSISTENT: Block {0} Root {1} Branch {2}", 
-                        //     destinationBlock, destinationRoot, testingBranch.ToArray());
-
                         currentFingerPrint.Branch = new Branch
                         {
                             BranchOfHashes = {testingBranch}
@@ -596,16 +538,15 @@ namespace Lachain.Consensus.ReliableBroadcast
                 }
 
                 roots.Add(destinationRoot);
-                //batch.Add(currentRegion);
                 indexStripe++;
             }
-            return (batch, roots, sizeSegment, countStripes, correctInputForDebug);
+            return (batch, roots, sizeSegment, countStripes);
         }
 
         private ConsensusMessage CreateValMessage(int[] input, int indexAddressee)
         {   
             
-            var (batch, roots, segment, countStripes, correctInputForDebug) = GetBatch(input, indexAddressee);
+            var (batch, roots, segment, countStripes) = GetBatch(input, indexAddressee);
             
             var message = new ConsensusMessage
             {
@@ -615,32 +556,15 @@ namespace Lachain.Consensus.ReliableBroadcast
                     AssociatedValidatorId = _broadcastId.AssociatedValidatorId,
                     IndexAddressee = indexAddressee,
                     Batch = {batch},
-                    Plaintext = {correctInputForDebug}, // todo: fordebug
                     Settings = new Settings()
                     {
                         LengthSegment = segment,
-                        CountStripes = countStripes, 
-                        ExtraNumbers = 0 // todo: depricated 
+                        CountStripes = countStripes,
                     }
                 }
             };
             return message;
         }
-
-        private ConsensusMessage CreateReadyMessage(List<UInt256> roots, int[] pt)
-        {
-            var message = new ConsensusMessage
-            {
-                ReadyMessage = new ReadyMessage
-                {
-                    RootMerkleTree = {roots},
-                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId,
-                    Plaintext = {pt}
-                }
-            };
-            return message;
-        }
-
         private ConsensusMessage CreateECHOMessage(ValMessage valMessage)
         {
             
@@ -660,6 +584,18 @@ namespace Lachain.Consensus.ReliableBroadcast
                         ExtraNumbers = valMessage.Settings.ExtraNumbers
                         
                     }
+                }
+            };
+            return message;
+        }
+        private ConsensusMessage CreateReadyMessage(List<UInt256> roots)
+        {
+            var message = new ConsensusMessage
+            {
+                ReadyMessage = new ReadyMessage
+                {
+                    RootMerkleTree = {roots},
+                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId
                 }
             };
             return message;
@@ -688,9 +624,9 @@ namespace Lachain.Consensus.ReliableBroadcast
                 currentNode = currentNode.Parent;
             }
 
-            //branch.Add(currentNode.Hash); // todo: if need to add root value  as like last notice in the branch
+            //branch.Add(currentNode.Hash); // uncomment: if need to add root value  as like last notice in the branch
             /*
-             * todo: можно оптимизировать по объему пересылке, так как изменяются только ближайшие к листьям значения хешей
+             * todo: можно оптимизировать по объему пересылки, так как изменяются только ближайшие к листьям значения хешей
              */
             return branch;
         }
@@ -715,20 +651,21 @@ namespace Lachain.Consensus.ReliableBroadcast
             // изменяем input так что бы его длина делилась на k N - F
             // размер store (объем хранения) записываем в начало
             var K = 1; // это значение в дальнейшем равноценно segmentLength
+            var fillValue = 13; // any value
             var stripeLength = K * N - F;
-            var supplementedInput = RBTools.GetCorrectInput(input, stripeLength, false, 13);
+            var supplementedInput = RBTools.GetCorrectInput(input, stripeLength, false, fillValue);
            
             
             var countStripes = supplementedInput.Count / stripeLength;
-            var GsV2 = new List<int[]>();
+            var Gs = new List<int[]>();
             for (var i = 0; i < countStripes; i++)
             {
                 var currentStripe = supplementedInput.Skip(i * stripeLength).Take(stripeLength).ToArray();
                 var GV2 = _erasureCoding.Encoder(currentStripe, F);
-                GsV2.Add(GV2);
+                Gs.Add(GV2);
             }
 
-            // отправляю сам себe свою шару ставлю флаг, что она отправлена
+            // отправляю сам себe свою шару ставлю флаг, что она отправлена // todo: share problem. 
             // if (!_receivedCorrectEchoFrom[GetMyId()])
             // {
             //     var selfShare = GsV2.Select(G => G[GetMyId()]).ToList();
@@ -739,7 +676,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             //         Thread.CurrentThread.ManagedThreadId, GetMyId());
             // }
             
-            var res = new Tuple<int[], List<int[]>>(supplementedInput.ToArray(), GsV2);
+            var res = new Tuple<int[], List<int[]>>(supplementedInput.ToArray(), Gs);
             return res;
         }
 
