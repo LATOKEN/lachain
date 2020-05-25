@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 
@@ -10,7 +11,7 @@ namespace Lachain.Core.Blockchain.Interface
     public interface IBlockManager
     {
         event EventHandler<Block> OnBlockPersisted;
-        event EventHandler<ContractContext> OnSystemContractInvoked;
+        event EventHandler<InvocationContext> OnSystemContractInvoked;
 
         ulong GetHeight();
         Block LatestBlock();

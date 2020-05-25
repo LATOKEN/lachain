@@ -20,21 +20,20 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly ConcurrentDictionary<UInt256, UInt256> _verifiedTransactions
             = new ConcurrentDictionary<UInt256, UInt256>();
 
-        public event EventHandler<ContractContext>? OnSystemContractInvoked;
+        public event EventHandler<InvocationContext>? OnSystemContractInvoked;
         public event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         public event EventHandler<TransactionReceipt>? OnTransactionFailed;
         public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
 
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
-            IVirtualMachine virtualMachine,
             IContractRegisterer contractRegisterer,
             IStateManager stateManager
         )
         {
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            _transactionExecuter = new TransactionExecuter(contractRegisterer, virtualMachine);
+            _transactionExecuter = new TransactionExecuter(contractRegisterer);
             _transactionExecuter.OnSystemContractInvoked +=
                 (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
             transactionVerifier.OnTransactionVerified += (sender, transaction) =>

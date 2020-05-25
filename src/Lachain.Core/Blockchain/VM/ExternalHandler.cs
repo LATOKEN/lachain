@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -18,33 +19,15 @@ namespace Lachain.Core.Blockchain.VM
     {
         private const string EnvModule = "env";
 
-        private static ExecutionStatus DoInternalCall(
+        private static InvocationResult DoInternalCall(
             UInt160 caller,
             UInt160 address,
             byte[] input,
-            out WasmExecutionFrame? frame,
             ulong gasLimit)
         {
-            var contract = VirtualMachine.BlockchainSnapshot?.Contracts?.GetContractByHash(address);
-            if (contract is null)
-            {
-                frame = null;
-                return ExecutionStatus.ContractNotFound;
-            }
-
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
-            var status = FrameFactory.FromInternalCall(
-                contract.ByteCode.ToByteArray(),
-                currentFrame.InvocationContext.NextContext(caller),
-                address,
-                input,
-                VirtualMachine.BlockchainInterface,
-                out frame,
-                gasLimit
-            );
-            if (status != ExecutionStatus.Ok) return status;
-            VirtualMachine.ExecutionFrames.Push(frame);
-            return status;
+            var context = currentFrame.InvocationContext.NextContext(caller);
+            return ContractInvoker.Invoke(address, context, input, gasLimit);
         }
 
         private static byte[]? SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)
@@ -128,6 +111,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call INVOKECONTRACT outside wasm frame");
+            var snapshot = frame.InvocationContext.Snapshot;
             var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
             if (addressBuffer is null || inputBuffer is null)
@@ -139,9 +123,7 @@ namespace Lachain.Core.Blockchain.VM
             if (value > Money.Zero)
             {
                 frame.UseGas(GasMetering.TransferFundsGasCost);
-                if (VirtualMachine.BlockchainSnapshot is null) throw new InvalidOperationException();
-                var result = VirtualMachine.BlockchainSnapshot.Balances.TransferBalance(
-                    frame.CurrentAddress, address, value);
+                var result = snapshot.Balances.TransferBalance(frame.CurrentAddress, address, value);
                 if (!result)
                     throw new InsufficientFundsException();
             }
@@ -152,17 +134,10 @@ namespace Lachain.Core.Blockchain.VM
             var gasLimit = gasBuffer.AsReadOnlySpan().ToUInt64();
             if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
                 gasLimit = frame.GasLimit - frame.GasUsed;
-            var status = DoInternalCall(frame.CurrentAddress, address, inputBuffer, out var newFrame, gasLimit);
-            if (status != ExecutionStatus.Ok)
-                throw new RuntimeException("Cannot invoke call: " + status);
-            if (newFrame is null) throw new InvalidOperationException();
-            status = newFrame.Execute();
-            if (status != ExecutionStatus.Ok)
-                throw new RuntimeException("Cannot invoke call: " + status);
-            newFrame = VirtualMachine.ExecutionFrames.Pop() as WasmExecutionFrame ??
-                       throw new RuntimeException("Cannot invoke call: frame stack corruption");
-            var returned = newFrame.ReturnValue;
-            if (!SafeCopyToMemory(frame.Memory, returned, returnValueOffset))
+            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit);
+            if (callResult.Status != ExecutionStatus.Ok)
+                throw new RuntimeException("Cannot invoke call: " + callResult.Status);
+            if (!SafeCopyToMemory(frame.Memory, callResult.ReturnValue ?? Array.Empty<byte>(), returnValueOffset))
                 throw new RuntimeException("Cannot invoke call: cannot pass return value");
             return 0;
         }
@@ -173,11 +148,10 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call LOADSTORAGE outside wasm frame");
             frame.UseGas(GasMetering.LoadStorageGasCost);
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
-            if (key is null || VirtualMachine.BlockchainSnapshot is null)
-                throw new RuntimeException("Bad call to LOADSTORAGE");
+            if (key is null) throw new RuntimeException("Bad call to LOADSTORAGE");
             if (key.Length < 32)
                 key = _AlignTo32(key);
-            var value = VirtualMachine.BlockchainSnapshot.Storage.GetValue(frame.CurrentAddress, key.ToUInt256());
+            var value = frame.InvocationContext.Snapshot.Storage.GetValue(frame.CurrentAddress, key.ToUInt256());
             if (!SafeCopyToMemory(frame.Memory, value.ToBytes(), valueOffset))
                 throw new RuntimeException("Cannot copy storageload result to memory");
         }
@@ -193,10 +167,10 @@ namespace Lachain.Core.Blockchain.VM
             if (key.Length < 32)
                 key = _AlignTo32(key);
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32);
-            if (value is null || VirtualMachine.BlockchainSnapshot is null)
-                throw new RuntimeException("Bad call to SAVESTORAGE");
-            VirtualMachine.BlockchainSnapshot.Storage.SetValue(frame.CurrentAddress, key.ToUInt256(),
-                value.ToUInt256());
+            if (value is null) throw new RuntimeException("Bad call to SAVESTORAGE");
+            frame.InvocationContext.Snapshot.Storage.SetValue(
+                frame.CurrentAddress, key.ToUInt256(), value.ToUInt256()
+            );
         }
 
         private static byte[] _AlignTo32(byte[] buffer)
@@ -318,7 +292,6 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handle_Env_WriteEvent(int signatureOffset, int valueOffset, int valueLength)
         {
-            if (VirtualMachine.BlockchainSnapshot is null) throw new InvalidOperationException();
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call WRITEEVENT outside wasm frame");
             frame.UseGas(GasMetering.WriteEventPerByteGas * (uint) (valueLength + 32));
@@ -334,7 +307,7 @@ namespace Lachain.Core.Blockchain.VM
                 Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
                 SignatureHash = signature.ToUInt256()
             };
-            VirtualMachine.BlockchainSnapshot.Events.AddEvent(ev);
+            frame.InvocationContext.Snapshot.Events.AddEvent(ev);
         }
 
         private static FunctionImport CreateImport(string methodName)

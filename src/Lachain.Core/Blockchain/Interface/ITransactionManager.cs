@@ -1,6 +1,7 @@
 ﻿using System;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 using Lachain.Storage.State;
 
@@ -11,7 +12,7 @@ namespace Lachain.Core.Blockchain.Interface
         event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         event EventHandler<TransactionReceipt>? OnTransactionFailed;
         event EventHandler<TransactionReceipt>? OnTransactionExecuted;
-        event EventHandler<ContractContext>? OnSystemContractInvoked;
+        event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
         TransactionReceipt? GetByHash(UInt256 transactionHash);
 

@@ -32,9 +32,9 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly IConfigManager _configManager;
-        private ContractContext? _contractTxJustExecuted = null;
+        private InvocationContext? _contractTxJustExecuted;
 
-        public event EventHandler<ContractContext>? OnSystemContractInvoked;
+        public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
         public BlockManager(
             ITransactionManager transactionManager,
@@ -56,7 +56,7 @@ namespace Lachain.Core.Blockchain.Operations
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
         }
 
-        private void TransactionManagerOnSystemContractInvoked(object sender, ContractContext e)
+        private void TransactionManagerOnSystemContractInvoked(object sender, InvocationContext e)
         {
             _contractTxJustExecuted = e;
         }

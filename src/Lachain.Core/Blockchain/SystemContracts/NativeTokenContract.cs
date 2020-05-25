@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -13,11 +12,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class NativeTokenContract : ISystemContract
     {
-        private readonly ContractContext _contractContext;
+        private readonly InvocationContext _context;
 
-        public NativeTokenContract(ContractContext contractContext)
+        public NativeTokenContract(InvocationContext context)
         {
-            _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public ContractStandard ContractStandard => ContractStandard.Lrc20;
@@ -57,7 +56,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus BalanceOf(UInt160 address, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
-            var balance = _contractContext.Snapshot?.Balances.GetBalance(address);
+            var balance = _context.Snapshot?.Balances.GetBalance(address);
             if (balance is null) return ExecutionStatus.ExecutionHalted;
             frame.ReturnValue = balance.ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
@@ -67,9 +66,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Transfer(UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
-            if (_contractContext.Snapshot is null) return ExecutionStatus.ExecutionHalted;
-            var result = _contractContext.Snapshot.Balances.TransferBalance(
-                _contractContext.Sender ?? throw new InvalidOperationException(),
+            if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
+            var result = _context.Snapshot.Balances.TransferBalance(
+                _context.Sender ?? throw new InvalidOperationException(),
                 recipient, value.ToMoney()
             );
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();

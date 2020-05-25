@@ -5,7 +5,6 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
@@ -16,8 +15,6 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
 {
     public class ContractRegisterer : IContractRegisterer
     {
-        private readonly IVirtualMachine _virtualMachine;
-
         private readonly ConcurrentDictionary<UInt160, Type> _contracts
             = new ConcurrentDictionary<UInt160, Type>();
 
@@ -28,9 +25,8 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
         public static readonly UInt160 LatokenContract = new BigInteger(1).ToUInt160();
         public static readonly UInt160 GovernanceContract = new BigInteger(2).ToUInt160();
 
-        public ContractRegisterer(IVirtualMachine virtualMachine)
+        public ContractRegisterer()
         {
-            _virtualMachine = virtualMachine;
             /* address <<0x0>> references contract to deploy other contracts */
             RegisterContract<DeployContract>(DeployContract);
             /* address <<0x1>> references LaToken contract */
@@ -61,7 +57,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             return _contracts.TryGetValue(address, out var result) ? result : null;
         }
 
-        public SystemContractCall? DecodeContract(ContractContext context, UInt160 address, byte[] input)
+        public SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input)
         {
             if (input.Length < 4)
                 throw new ArgumentOutOfRangeException(nameof(input));
@@ -74,10 +70,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
                 return null;
             var (methodName, methodInfo) = tuple;
             var decoder = new ContractDecoder(input);
-            // Special case for deploy contract: it needs VM to validate contracts
-            var instance = address.Equals(DeployContract)
-                ? Activator.CreateInstance(contract, context, _virtualMachine)
-                : Activator.CreateInstance(contract, context);
+            var instance = Activator.CreateInstance(contract, context);
             return new SystemContractCall(instance, methodInfo, decoder.Decode(methodName), address);
         }
     }

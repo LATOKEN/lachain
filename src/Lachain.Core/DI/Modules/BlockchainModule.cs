@@ -41,6 +41,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IRpcManager, RpcManager>();
             /* VM */
             containerBuilder.RegisterSingleton<IVirtualMachine, VirtualMachine>();
+            containerBuilder.RegisterSingleton<IContractInvoker, ContractInvoker>();
         }
     }
 }

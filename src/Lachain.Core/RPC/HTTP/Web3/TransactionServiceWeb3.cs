@@ -21,18 +21,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class TransactionServiceWeb3 : JsonRpcService
     {
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
 
         public TransactionServiceWeb3(
-            IVirtualMachine virtualMachine,
             IStateManager stateManager,
             ITransactionManager transactionManager,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool
+        )
         {
-            _virtualMachine = virtualMachine;
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
@@ -92,7 +90,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
-        private JObject GetTransactionByHash(string txHash)
+        private JObject? GetTransactionByHash(string txHash)
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -151,9 +149,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
             var result = _stateManager.SafeContext(() =>
             {
-                _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(
+                    contractByHash,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill these fields
+                        Block = snapshot.Blocks.GetTotalBlockHeight(),
+                    }),
+                    input.HexToBytes(),
+                    gasLimit
+                );
                 _stateManager.Rollback();
                 return invocationResult;
             });

@@ -49,7 +49,7 @@ namespace Lachain.Core.Vault
             blockManager.OnSystemContractInvoked += BlockManagerOnSystemContractInvoked;
         }
 
-        private void BlockManagerOnSystemContractInvoked(object _, ContractContext context)
+        private void BlockManagerOnSystemContractInvoked(object _, InvocationContext context)
         {
             if (context.Receipt is null) return;
             var tx = context.Receipt.Transaction;

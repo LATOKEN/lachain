@@ -11,7 +11,6 @@ using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
-using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
@@ -21,31 +20,33 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class GovernanceContract : ISystemContract
     {
-        private readonly ContractContext _contractContext;
+        private readonly InvocationContext _context;
 
         private static readonly ILogger<GovernanceContract> Logger =
             LoggerFactory.GetLoggerForClass<GovernanceContract>();
+
+        private static readonly ICrypto CryptoInstance = CryptoProvider.GetCrypto();
 
         private readonly StorageVariable _consensusGeneration;
         private readonly StorageVariable _pendingValidators;
         private readonly StorageMapping _confirmations;
 
-        public GovernanceContract(ContractContext contractContext)
+        public GovernanceContract(InvocationContext context)
         {
-            _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _consensusGeneration = new StorageVariable(
                 ContractRegisterer.GovernanceContract,
-                contractContext.Snapshot.Storage,
+                context.Snapshot.Storage,
                 BigInteger.Zero.ToUInt256()
             );
             _pendingValidators = new StorageVariable(
                 ContractRegisterer.GovernanceContract,
-                contractContext.Snapshot.Storage,
+                context.Snapshot.Storage,
                 BigInteger.One.ToUInt256()
             );
             _confirmations = new StorageMapping(
                 ContractRegisterer.GovernanceContract,
-                contractContext.Snapshot.Storage,
+                context.Snapshot.Storage,
                 new BigInteger(2).ToUInt256()
             );
         }
@@ -57,6 +58,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.ChangeValidatorsCost);
+            foreach (var publicKey in newValidators)
+            {
+                if (publicKey.Length != CryptoUtils.PublicKeyLength) return ExecutionStatus.ExecutionHalted;
+                if (!CryptoInstance.TryDecodePublicKey(publicKey, false, out _))
+                    return ExecutionStatus.ExecutionHalted;
+            }
+
             _pendingValidators.Set(newValidators
                 .Select(x => x.ToPublicKey().EncodeCompressed())
                 .Flatten()
@@ -93,7 +101,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
-            var tsKeys = new PublicKeySet(thresholdSignaturePublicKeys.Select(x => PublicKey.FromBytes(x)), faulty);
+            var tsKeys = new Crypto.ThresholdSignature.PublicKeySet(
+                thresholdSignaturePublicKeys.Select(x => Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
+                faulty
+            );
             var tpkeKey = Crypto.TPKE.PublicKey.FromBytes(tpkePublicKey);
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 
@@ -108,13 +119,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
 
-            _contractContext.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-            _contractContext.Snapshot.Events.AddEvent(new Event
+            _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
+            _context.Snapshot.Events.AddEvent(new Event
             {
                 Contract = ContractRegisterer.GovernanceContract,
                 Data = ByteString.Empty,
                 Index = 0,
-                TransactionHash = _contractContext.Receipt?.Hash
+                TransactionHash = _context.Receipt?.Hash
             });
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
             Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");

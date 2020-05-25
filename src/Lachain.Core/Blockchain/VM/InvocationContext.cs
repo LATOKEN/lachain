@@ -1,7 +1,6 @@
-﻿using System;
-using Lachain.Crypto;
+﻿using Lachain.Crypto;
 using Lachain.Proto;
-using Lachain.Utility.Utils;
+using Lachain.Storage.State;
 
 namespace Lachain.Core.Blockchain.VM
 {
@@ -9,21 +8,24 @@ namespace Lachain.Core.Blockchain.VM
     {
         public UInt160 Sender { get; }
 
-        public UInt256 Value => _transaction?.Transaction.Value ?? UInt256Utils.Zero;
+        public UInt256 Value => Receipt.Transaction.Value;
 
-        public UInt256 TransactionHash => _transaction?.FullHash() ?? throw new InvalidOperationException();
-        
-        private readonly TransactionReceipt? _transaction;
+        public UInt256 TransactionHash => Receipt.FullHash();
 
-        public InvocationContext(UInt160 sender, TransactionReceipt? transaction = null)
+        public readonly TransactionReceipt Receipt;
+
+        public IBlockchainSnapshot Snapshot { get; }
+
+        public InvocationContext(UInt160 sender, IBlockchainSnapshot snapshot, TransactionReceipt receipt)
         {
             Sender = sender;
-            _transaction = transaction;
+            Snapshot = snapshot;
+            Receipt = receipt;
         }
-        
+
         public InvocationContext NextContext(UInt160 caller)
         {
-            return new InvocationContext(caller, _transaction);
+            return new InvocationContext(caller, Snapshot, Receipt);
         }
     }
 }

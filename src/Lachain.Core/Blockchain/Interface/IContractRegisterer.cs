@@ -1,6 +1,6 @@
 ﻿using System;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.Interface
@@ -9,6 +9,6 @@ namespace Lachain.Core.Blockchain.Interface
     {
         Type? GetContractByAddress(UInt160 address);
 
-        SystemContractCall? DecodeContract(ContractContext context, UInt160 address, byte[] input);
+        SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input);
     }
 }
