@@ -252,7 +252,8 @@ namespace Lachain.Core.Blockchain.Operations
 
                 /* try to execute transaction */
                 var result = _transactionManager.Execute(block, receipt, snapshot);
-                if (result != OperatingError.Ok)
+                var txFailed = result != OperatingError.Ok;
+                if (txFailed)
                 {
                     _stateManager.Rollback();
                     if (result == OperatingError.InvalidNonce)
@@ -261,16 +262,11 @@ namespace Lachain.Core.Blockchain.Operations
                         _logger.LogWarning(
                             $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): invalid nonce"
                         );
+                        continue;
                     }
-                    else
-                    {
-                        snapshot = _stateManager.NewSnapshot();
-                        snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
-                        _logger.LogError($"Transaction {txHash.ToHex()} failed because of error: {result}");
-                        _stateManager.Approve();
-                    }
-
-                    continue;
+                    snapshot = _stateManager.NewSnapshot();
+                    snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
+                    _logger.LogError($"Transaction {txHash.ToHex()} failed because of error: {result}");
                 }
 
                 /* check block gas limit after execution */
@@ -301,11 +297,15 @@ namespace Lachain.Core.Blockchain.Operations
 
                 totalFee += fee;
 
-                /* mark transaction as executed */
-                _logger.LogDebug(
-                    $"Successfully executed transaction {txHash.ToHex()} from={transaction.From.ToHex()} with nonce ({receipt.Transaction.Nonce})");
-                snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
+                if (!txFailed)
+                {
+                    /* mark transaction as executed */
+                    _logger.LogDebug(
+                        $"Successfully executed transaction {txHash.ToHex()} from={transaction.From.ToHex()} with nonce ({receipt.Transaction.Nonce})");
+                    snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
+                }
                 _stateManager.Approve();
+                
 
                 if (_contractTxJustExecuted != null && !isEmulation)
                 {

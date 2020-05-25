@@ -137,6 +137,7 @@ namespace Lachain.Core.Blockchain.VM
             var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit);
             if (callResult.Status != ExecutionStatus.Ok)
                 throw new RuntimeException("Cannot invoke call: " + callResult.Status);
+            frame.UseGas(callResult.GasUsed);
             if (!SafeCopyToMemory(frame.Memory, callResult.ReturnValue ?? Array.Empty<byte>(), returnValueOffset))
                 throw new RuntimeException("Cannot invoke call: cannot pass return value");
             return 0;
