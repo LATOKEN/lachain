@@ -10,6 +10,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
@@ -211,7 +212,7 @@ namespace Lachain.Consensus.RootProtocol
             var res = new byte[8];
             for (var i = 0; i < result.RawBytes.Length; ++i)
                 res[i % 8] ^= result.RawBytes[i];
-            return BitConverter.ToUInt64(res, 0);
+            return res.AsReadOnlySpan().ToUInt64();
         }
 
         private static IEnumerable<byte[]> SplitShare(IReadOnlyCollection<byte> share)

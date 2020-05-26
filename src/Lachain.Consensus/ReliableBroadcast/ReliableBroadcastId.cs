@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-
 namespace Lachain.Consensus.ReliableBroadcast
 {
-    public class ReliableBroadcastId: IProtocolIdentifier
+    public class ReliableBroadcastId : IProtocolIdentifier
     {
         protected bool Equals(ReliableBroadcastId other)
         {
@@ -32,17 +29,13 @@ namespace Lachain.Consensus.ReliableBroadcast
         }
 
         public int AssociatedValidatorId { get; }
-        
+
         public long Era { get; }
 
         public ReliableBroadcastId(int validator, int era)
         {
             AssociatedValidatorId = validator;
             Era = (long) era;
-        }
-        public IEnumerable<byte> ToByteArray()
-        {
-            throw new NotImplementedException();
         }
 
         public override string ToString()

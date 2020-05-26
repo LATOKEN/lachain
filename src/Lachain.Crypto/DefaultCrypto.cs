@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using Lachain.Crypto.TPKE;
-using Lachain.Proto;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Math;
 using Secp256k1Net;
 
 namespace Lachain.Crypto
@@ -123,6 +119,23 @@ namespace Lachain.Crypto
             )
                 throw new ArgumentException(nameof(publicKey));
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryDecodePublicKey(byte[] publicKey, bool compress, out byte[] normalizedKey)
+        {
+            var pubKeyParsed = new byte[64];
+            if (!Secp256K1.PublicKeyParse(pubKeyParsed, publicKey))
+            {
+                normalizedKey = Array.Empty<byte>();
+                return false;
+            }
+
+            normalizedKey = compress ? new byte[33] : new byte[65];
+            if (Secp256K1.PublicKeySerialize(normalizedKey, pubKeyParsed,
+                compress ? Flags.SECP256K1_EC_COMPRESSED : Flags.SECP256K1_EC_UNCOMPRESSED)) return true;
+            normalizedKey = Array.Empty<byte>();
+            return false;
         }
 
         public byte[] GenerateRandomBytes(int length)

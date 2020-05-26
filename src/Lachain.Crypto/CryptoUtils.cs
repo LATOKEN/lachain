@@ -2,7 +2,6 @@
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
-using Org.BouncyCastle.Bcpg.Sig;
 
 namespace Lachain.Crypto
 {
@@ -15,6 +14,11 @@ namespace Lachain.Crypto
         public static ECDSAPublicKey ToPublicKey(this byte[] buffer)
         {
             return new ECDSAPublicKey {Buffer = ByteString.CopyFrom(Crypto.DecodePublicKey(buffer, true))};
+        }
+
+        public static ECDSAPublicKey ToPublicKey(this ReadOnlyMemory<byte> bytes)
+        {
+            return bytes.ToArray().ToPublicKey();
         }
 
         public static ECDSAPublicKey GetPublicKey(this ECDSAPrivateKey key)
@@ -48,7 +52,8 @@ namespace Lachain.Crypto
 
         public static ECDSAPublicKey RecoverPublicKey(this TransactionReceipt receipt)
         {
-            return Crypto.RecoverSignatureHashed(receipt.Hash.ToBytes(), receipt.Signature.Encode())
+            return Crypto
+                .RecoverSignatureHashed(receipt.Transaction.RawHash().ToBytes(), receipt.Signature.Encode())
                 .ToPublicKey();
         }
     }

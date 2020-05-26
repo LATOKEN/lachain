@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.MCL.BLS12_381
 {
     [StructLayout(LayoutKind.Explicit, Size = 144)]
-    public struct G1 : IEquatable<G1>
+    public struct G1 : IEquatable<G1>, IFixedWidth
     {
         public const int ByteSize = 48;
 
@@ -26,28 +26,6 @@ namespace Lachain.Crypto.MCL.BLS12_381
             return res;
         }
 
-        public static byte[] ToBytes(G1 g)
-        {
-            var buf = new byte[ByteSize];
-            var len = MclImports.mclBnG1_serialize(buf, ByteSize, ref g);
-            if (len != ByteSize) throw new Exception("Failed to serialize G1");
-            return buf.Take((int) len).ToArray();
-        }
-        
-        public static byte[] ToBytesDelimited(G1 g1)
-        {
-            var buffer = ToBytes(g1);
-            return BitConverter.GetBytes(buffer.Length).Concat(buffer).ToArray();
-        }
-        
-        public static G1 FromBytes(byte[] buf)
-        {
-            var g = new G1();
-            if (MclImports.mclBnG1_deserialize(ref g, buf, buf.Length) == 0)
-                throw new Exception("Failed to deserialize G1");
-            return g;
-        }
-
         public static G1 Generator = GetGenerator();
         public static G1 Zero = GetZero();
 
@@ -64,11 +42,6 @@ namespace Lachain.Crypto.MCL.BLS12_381
         public bool IsValid()
         {
             return MclImports.mclBnG1_isValid(ref this) == 1;
-        }
-
-        public bool Equals(G1 rhs)
-        {
-            return MclImports.mclBnG1_isEqual(ref this, ref rhs) == 1;
         }
 
         public bool IsZero()
@@ -132,6 +105,62 @@ namespace Lachain.Crypto.MCL.BLS12_381
             var z = new G1();
             z.Mul(x, y);
             return z;
+        }
+
+        public static int Width()
+        {
+            return ByteSize;
+        }
+
+        public readonly void Serialize(Memory<byte> bytes)
+        {
+            long len;
+            unsafe
+            {
+                using var handle = bytes.Pin();
+                fixed (G1* thisPtr = &this)
+                {
+                    len = MclImports.mclBnG1_serialize((byte*) handle.Pointer, ByteSize, thisPtr);
+                }
+            }
+
+
+            if (len != ByteSize) throw new Exception("Failed to serialize G1");
+        }
+
+        public static G1 FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var g = new G1();
+            long ret;
+            unsafe
+            {
+                using var handle = bytes.Pin();
+                ret = MclImports.mclBnG1_deserialize(ref g, (byte*) handle.Pointer, bytes.Length);
+            }
+
+            if (ret == 0) throw new Exception("Failed to deserialize G1");
+            return g;
+        }
+
+        public bool Equals(G1 other)
+        {
+            return MclImports.mclBnG1_isEqual(ref this, ref other) == 1;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is G1 other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unsafe
+            {
+                fixed (G1* ptr = &this)
+                {
+                    return ((int*) ptr)[0];
+                }
+            }
         }
     }
 }

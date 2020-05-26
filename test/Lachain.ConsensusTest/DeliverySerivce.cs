@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Proto;
+using Lachain.Utility.Containers;
 
 namespace Lachain.ConsensusTest
 {

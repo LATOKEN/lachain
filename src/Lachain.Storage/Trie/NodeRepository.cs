@@ -19,7 +19,7 @@
         public void WriteNode(ulong id, IHashTrieNode node)
         {
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            _rocksDbContext.Save(prefix, NodeSerializer.ToByteArray(node));
+            _rocksDbContext.Save(prefix, NodeSerializer.ToBytes(node));
         }
     }
 }

@@ -1,19 +1,18 @@
 using System;
-using System.Linq;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.TPKE
 {
-    public class PrivateKey
+    public class PrivateKey : IFixedWidth
     {
-        // todo add degree to fields?
-        public Fr X;
-        private int Id { get; }
+        private readonly Fr _x;
+        private readonly int _id;
 
         public PrivateKey(Fr x, int id)
         {
-            X = x;
-            Id = id;
+            _x = x;
+            _id = id;
         }
 
         public PartiallyDecryptedShare Decrypt(EncryptedShare share)
@@ -25,20 +24,24 @@ namespace Lachain.Crypto.TPKE
                 throw new Exception("Invalid share!");
             }
 
-            var ui = share.U * X;
-            return new PartiallyDecryptedShare(ui, Id, share.Id);
+            var ui = share.U * _x;
+            return new PartiallyDecryptedShare(ui, _id, share.Id);
         }
 
-        public byte[] ToByteArray()
+        public static PrivateKey FromBytes(ReadOnlyMemory<byte> bytes)
         {
-            return BitConverter.GetBytes(Id).Concat(Fr.ToBytes(X)).ToArray();
+            var res = FixedWithSerializer.Deserialize(bytes, out _, typeof(int), typeof(Fr));
+            return new PrivateKey((Fr) res[1], (int) res[0]);
         }
 
-        public static PrivateKey FromBytes(byte[] buffer)
+        public void Serialize(Memory<byte> bytes)
         {
-            var decId = BitConverter.ToInt32(buffer, 0);
-            var decX = Fr.FromBytes(buffer.Skip(4).ToArray());
-            return new PrivateKey(decX, decId);
+            FixedWithSerializer.SerializeToMemory(bytes, new dynamic[] {_id, _x});
+        }
+
+        public static int Width()
+        {
+            return sizeof(int) + Fr.Width();
         }
     }
 }

@@ -1,8 +1,8 @@
 using System.Numerics;
 using Google.Protobuf;
-using Lachain.Core.Blockchain.ContractManager;
-using Lachain.Core.Blockchain.OperationManager;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
@@ -21,7 +21,6 @@ namespace Lachain.CoreTest
             var abi = ContractEncoder.Encode("hello()");
             var tx = new Transaction
             {
-                Type = TransactionType.Transfer,
                 To = ContractRegisterer.LatokenContract,
                 Invocation = ByteString.CopyFrom(abi),
                 From = keyPair.PublicKey.GetAddress(),
@@ -32,7 +31,7 @@ namespace Lachain.CoreTest
                 Value = new BigInteger(0).ToUInt256()
             };
             var receipt = signer.Sign(tx, keyPair);
-            Assert.AreEqual(receipt.Hash.ToHex(), HashUtils.ToHash256(tx).ToHex());
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash().ToHex());
             
             var publicKey = receipt.RecoverPublicKey();
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
@@ -18,11 +17,6 @@ namespace Lachain.ConsensusTest
 
         public long Id { get; }
         public long Era => 0;
-
-        public IEnumerable<byte> ToByteArray()
-        {
-            return BitConverter.GetBytes(Id);
-        }
 
         public bool Equals(IProtocolIdentifier other)
         {

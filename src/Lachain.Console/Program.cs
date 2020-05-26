@@ -10,6 +10,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Networking;
 using Lachain.Storage;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Console
@@ -27,8 +28,8 @@ namespace Lachain.Console
     {
         static void TrustedKeyGen()
         {
-            // const int n = 22, f = 7;
-            const int n = 4, f = 1;
+            const int n = 22, f = 7;
+            // const int n = 4, f = 1;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
             
@@ -36,7 +37,7 @@ namespace Lachain.Console
             var privShares = sigKeyGen.GetPrivateShares().ToArray();
             var pubShares = sigKeyGen.GetPrivateShares()
                 .Select(s => s.GetPublicKeyShare())
-                .Select(s => s.ToBytes().ToHex())
+                .Select(s => s.ToHex())
                 .ToArray();
 
             // var ips = new[]
@@ -57,11 +58,13 @@ namespace Lachain.Console
 
             var ecdsaPrivateKeys = new string[n];
             var ecdsaPublicKeys = new string[n];
+            var addresses = new string[n];
             var crypto = CryptoProvider.GetCrypto();
             for (var i = 0; i < n; ++i)
             {
                 ecdsaPrivateKeys[i] = crypto.GenerateRandomBytes(32).ToHex(false);
                 ecdsaPublicKeys[i] = crypto.ComputePublicKey(ecdsaPrivateKeys[i].HexToBytes(), true).ToHex(false);
+                addresses[i] = ecdsaPrivateKeys[i].HexToBytes().ToPrivateKey().GetPublicKey().GetAddress().ToHex();
             }
 
             var peers = ips.Zip(ecdsaPublicKeys)
@@ -94,8 +97,12 @@ namespace Lachain.Console
                         EcdsaPublicKey = ecdsaPublicKeys[j],
                         ThresholdSignaturePublicKey = pubShares[j]
                     }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToBytes().ToHex()
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex()
                 };
+                for (var j = 0; j < n; ++j)
+                {
+                    genesis.Balances[addresses[j]] = "1000000";
+                }
                 var rpc = new RpcConfig
                 {
                     Hosts = new[] {"+"},
@@ -126,8 +133,8 @@ namespace Lachain.Console
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
-                    tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
-                    privShares[i].ToBytes().ToHex()
+                    tpkeKeyGen.GetPrivKey(i).ToHex(),
+                    privShares[i].ToHex()
                 );
             }
         }

@@ -9,6 +9,7 @@ namespace Lachain.Utility.Utils
     public static class UInt160Utils
     {
         public static readonly UInt160 Zero = new byte[20].ToUInt160();
+        public static readonly UInt160 Empty = new UInt160 {Buffer = ByteString.Empty};
 
         public static bool IsZero(this UInt160 value)
         {

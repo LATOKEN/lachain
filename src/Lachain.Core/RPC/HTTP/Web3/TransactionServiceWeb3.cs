@@ -1,20 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Nethereum.Signer;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain;
-using Lachain.Core.Blockchain.OperationManager;
+using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Transaction = Lachain.Proto.Transaction;
 
@@ -22,46 +21,57 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class TransactionServiceWeb3 : JsonRpcService
     {
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
 
         public TransactionServiceWeb3(
-            IVirtualMachine virtualMachine,
             IStateManager stateManager,
             ITransactionManager transactionManager,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool
+        )
         {
-            _virtualMachine = virtualMachine;
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
         }
 
         [JsonRpcMethod("eth_verifyRawTransaction")]
-        private JObject VerifyRawTransaction(string rawTransaction, string signature)
+        private string VerifyRawTransaction(string rawTx)
         {
-            var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
-            if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
-                throw new Exception("Failed to validate serialized and deserialized transactions");
-            var json = new JObject
+            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature();
+            try
             {
-                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
-            };
-            var accepted = new TransactionReceipt
+                var transaction = new Transaction
+                {
+                    // this is special case where empty uint160 is allowed
+                    To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
+                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
+                    Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
+                    GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
+                    GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                };
+
+                var txHash = transaction.FullHash(signature);
+                var result = _transactionManager.Verify(new TransactionReceipt
+                {
+                    Hash = txHash,
+                    Signature = signature,
+                    Status = TransactionStatus.Pool,
+                    Transaction = transaction
+                });
+
+                if (result != OperatingError.Ok) return $"Transaction is invalid: {result}";
+                return txHash.ToHex();
+            }
+            catch (Exception e)
             {
-                Transaction = transaction,
-                Hash = HashUtils.ToHash256(transaction),
-                Signature = signature.HexToBytes().ToSignature()
-            };
-            var result = _transactionManager.Verify(accepted);
-            json["result"] = result.ToString();
-            if (result != OperatingError.Ok)
-                json["status"] = false;
-            else
-                json["status"] = true;
-            return json;
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return e.Message;
+            }
         }
 
         [JsonRpcMethod("eth_getTransactionReceipt")]
@@ -80,7 +90,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
-        private JObject GetTransactionByHash(string txHash)
+        private JObject? GetTransactionByHash(string txHash)
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -100,19 +110,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var transaction = new Transaction
                 {
-                    Type = TransactionType.Transfer,
-                    To = ethTx.ReceiveAddress.ToUInt160(),
+                    // this is special case where empty uint160 is allowed
+                    To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
                     Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
                     From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
                     GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                    Invocation = ethTx.Data is null ? ByteString.Empty : ByteString.CopyFrom(ethTx.Data),
                 };
+                if (!ethTx.ChainId.SequenceEqual(new byte[] {TransactionUtils.ChainId}))
+                {
+                    return "Can not add to transaction pool: BadChainId";
+                }
 
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
-                if (result != OperatingError.Ok)
-                    return "Can not add to transaction pool";
-                return HashUtils.ToHash256(transaction).ToHex();
+                if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
+                return transaction.FullHash(signature.ToSignature()).ToHex();
             }
             catch (Exception e)
             {
@@ -135,9 +149,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
             var result = _stateManager.SafeContext(() =>
             {
-                _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(
+                    contractByHash,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill these fields
+                        Block = snapshot.Blocks.GetTotalBlockHeight(),
+                    }),
+                    input.HexToBytes(),
+                    gasLimit
+                );
                 _stateManager.Rollback();
                 return invocationResult;
             });
@@ -168,9 +190,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["transactionHash"] = receipt.Hash.ToHex(),
                 ["transactionIndex"] = receipt.IndexInBlock,
                 ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
-                ["blockHash"] = blockHash ?? block.Hash.ToHex(),
-                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().ToHex(true), // TODO: plus previous
-                ["gasUsed"] = receipt.GasUsed.ToBytes().ToHex(true),
+                ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
+                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().ToHex(), // TODO: plus previous
+                ["gasUsed"] = receipt.GasUsed.ToBytes().ToHex(),
                 ["contractAddress"] = null,
                 ["logs"] = new JArray(),
                 ["logsBloom"] =

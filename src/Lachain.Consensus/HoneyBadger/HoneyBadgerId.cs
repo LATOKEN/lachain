@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Lachain.Consensus.HoneyBadger
+﻿namespace Lachain.Consensus.HoneyBadger
 
 {
     public class HoneyBadgerId : IProtocolIdentifier
@@ -36,9 +32,5 @@ namespace Lachain.Consensus.HoneyBadger
         }
 
         public long Era { get; }
-        public IEnumerable<byte> ToByteArray()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

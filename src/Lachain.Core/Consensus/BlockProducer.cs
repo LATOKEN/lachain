@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Principal;
-using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Consensus;
-using Lachain.Core.Blockchain;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.Utils;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Network;
-using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -23,7 +18,6 @@ namespace Lachain.Core.Consensus
         private readonly ILogger<BlockProducer> _logger = LoggerFactory.GetLoggerForClass<BlockProducer>();
         private readonly ITransactionPool _transactionPool;
         private readonly IValidatorManager _validatorManager;
-        private readonly IBlockchainContext _blockchainContext;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
         private const int BatchSize = 1000; // TODO: calculate batch size
@@ -31,14 +25,12 @@ namespace Lachain.Core.Consensus
         public BlockProducer(
             ITransactionPool transactionPool,
             IValidatorManager validatorManager,
-            IBlockchainContext blockchainContext,
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager
         )
         {
             _transactionPool = transactionPool;
             _validatorManager = validatorManager;
-            _blockchainContext = blockchainContext;
             _blockSynchronizer = blockSynchronizer;
             _blockManager = blockManager;
         }
@@ -69,15 +61,14 @@ namespace Lachain.Core.Consensus
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
-            if (_blockchainContext.CurrentBlock is null) throw new InvalidOperationException("No previous block");
-            if (_blockchainContext.CurrentBlock.Header.Index + 1 != index)
+            if (_blockManager.LatestBlock().Header.Index + 1 != index)
             {
                 throw new InvalidOperationException(
-                    $"Latest block is {_blockchainContext.CurrentBlock}, but we are trying to create block {index}");
+                    $"Latest block is {_blockManager.LatestBlock()}, but we are trying to create block {index}");
             }
 
             var blockWithTransactions =
-                new BlockBuilder(_blockchainContext.CurrentBlock.Header)
+                new BlockBuilder(_blockManager.LatestBlock().Header)
                     .WithTransactions(receipts)
                     .Build(nonce);
 
@@ -88,7 +79,7 @@ namespace Lachain.Core.Consensus
                 removedTxs.Select(receipt => receipt.Hash).Concat(returnedTxs.Select(receipt => receipt.Hash))
             );
 
-            blockWithTransactions = new BlockBuilder(_blockchainContext.CurrentBlock.Header)
+            blockWithTransactions = new BlockBuilder(_blockManager.LatestBlock().Header)
                 .WithTransactions(receipts.FindAll(receipt => !badHashes.Contains(receipt.Hash)).ToArray())
                 .Build(nonce);
 
@@ -113,20 +104,16 @@ namespace Lachain.Core.Consensus
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
-            var blockWithTransactions =
-                new BlockBuilder(
-                        _blockchainContext.CurrentBlock?.Header ?? throw new InvalidOperationException(),
-                        header.StateHash
-                    )
-                    .WithTransactions(receipts)
-                    .WithMultisig(multiSig)
-                    .Build(header.Nonce);
+            var blockWithTransactions = new BlockBuilder(_blockManager.LatestBlock().Header, header.StateHash)
+                .WithTransactions(receipts)
+                .WithMultisig(multiSig)
+                .Build(header.Nonce);
 
             _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash.ToHex()}");
-            if (_blockchainContext.CurrentBlockHeight + 1 != header.Index)
+            if (_blockManager.GetHeight() + 1 != header.Index)
             {
                 throw new InvalidOperationException(
-                    $"Current height is {_blockchainContext.CurrentBlockHeight}, but we are trying to produce block {header.Index}"
+                    $"Current height is {_blockManager.GetHeight()}, but we are trying to produce block {header.Index}"
                 );
             }
 

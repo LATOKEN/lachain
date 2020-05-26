@@ -1,8 +1,5 @@
 ﻿using System.Linq;
 using AustinHarris.JsonRpc;
-using Lachain.Core.Blockchain.OperationManager;
-using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.VM;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 
@@ -10,21 +7,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class AccountServiceWeb3 : JsonRpcService
     {
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IStateManager _stateManager;
-        private readonly ITransactionManager _transactionManager;
-        private readonly ITransactionPool _transactionPool;
 
-        public AccountServiceWeb3(
-            IVirtualMachine virtualMachine,
-            IStateManager stateManager,
-            ITransactionManager transactionManager,
-            ITransactionPool transactionPool)
+        public AccountServiceWeb3(IStateManager stateManager)
         {
-            _virtualMachine = virtualMachine;
             _stateManager = stateManager;
-            _transactionManager = transactionManager;
-            _transactionPool = transactionPool;
         }
 
         [JsonRpcMethod("eth_getBalance")]
@@ -45,19 +32,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 from.HexToBytes().ToUInt160());
             return nonce;
         }
+
         private ulong GetTransactionCount(string from)
         {
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
                 from.HexToBytes().ToUInt160());
             return nonce;
         }
-        
+
         [JsonRpcMethod("eth_getCode")]
         private string GetCode(string contract, string blockId)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 contract.HexToUInt160());
-            
+
             // return contractByHash is null ? "0x" : "0x1";
             return "0x1";
         }

@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.CLI
@@ -26,7 +27,6 @@ namespace Lachain.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly EcdsaKeyPair _keyPair;
-        private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
             ITransactionBuilder transactionBuilder,
@@ -35,7 +35,6 @@ namespace Lachain.Core.CLI
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IStateManager stateManager,
-            IVirtualMachine virtualMachine,
             EcdsaKeyPair keyPair
         )
         {
@@ -46,7 +45,6 @@ namespace Lachain.Core.CLI
             _transactionSigner = transactionSigner;
             _stateManager = stateManager;
             _keyPair = keyPair;
-            _virtualMachine = virtualMachine;
         }
 
         private static bool IsValidHexString(IEnumerable<char> hexString)
@@ -135,9 +133,9 @@ namespace Lachain.Core.CLI
         {
             var from = _keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var hash = from.ToBytes().Concat(BitConverter.GetBytes(nonce)).Keccak();
+            var hash = from.ToBytes().Concat(nonce.ToBytes()).Keccak();
             var byteCode = arguments[1].HexToBytes();
-            if (!_virtualMachine.VerifyContract(byteCode))
+            if (!VirtualMachine.VerifyContract(byteCode))
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
@@ -148,23 +146,24 @@ namespace Lachain.Core.CLI
 
         public string CallContract(string[] arguments)
         {
-            var from = _keyPair.PublicKey.GetAddress();
-            var contractHash = arguments[1].HexToUInt160();
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            if (contract is null)
-                return $"Unable to find contract by hash {contractHash.ToHex()}";
-            Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
-            var result = _stateManager.SafeContext(() =>
-            {
-                _stateManager.NewSnapshot();
-                var invocationResult =
-                    _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[] { }, 200_000);
-                _stateManager.Rollback();
-                return invocationResult;
-            });
-            return result.Status == ExecutionStatus.Ok
-                ? "Contract has been successfully executed"
-                : "Contract execution failed";
+            return "";
+            // var from = _keyPair.PublicKey.GetAddress();
+            // var contractHash = arguments[1].HexToUInt160();
+            // var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            // if (contract is null)
+            //     return $"Unable to find contract by hash {contractHash.ToHex()}";
+            // Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
+            // var result = _stateManager.SafeContext(() =>
+            // {
+            //     _stateManager.NewSnapshot();
+            //     var invocationResult =
+            //         _virtualMachine.InvokeWasmContract(contract, new InvocationContext(from), new byte[] { }, 200_000);
+            //     _stateManager.Rollback();
+            //     return invocationResult;
+            // });
+            // return result.Status == ExecutionStatus.Ok
+            //     ? "Contract has been successfully executed"
+            //     : "Contract execution failed";
         }
 
         public string Help(string[] arguments)
@@ -220,7 +219,7 @@ namespace Lachain.Core.CLI
             var sig = arguments[2].HexToBytes().ToSignature();
             var result = _transactionPool.Add(tx, sig);
             Console.WriteLine($"Status: {result}");
-            Console.WriteLine($"Hash: {HashUtils.ToHash256(tx).ToHex()}");
+            Console.WriteLine($"Hash: {tx.FullHash(sig).ToHex()}");
             return "";
         }
 
@@ -260,11 +259,11 @@ namespace Lachain.Core.CLI
             var tx = Transaction.Parser.ParseFrom(
                 arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
-            Console.WriteLine($"Tx Hash: {HashUtils.ToHash256(tx).ToHex()}");
+            Console.WriteLine($"Tx Hash: {tx.FullHash(sig)}");
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,
-                Hash = HashUtils.ToHash256(tx),
+                Hash = tx.FullHash(sig),
                 Signature = sig
             };
             Console.WriteLine("Transaction validity: " + _transactionManager.Verify(accepted));

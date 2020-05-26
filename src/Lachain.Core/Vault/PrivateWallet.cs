@@ -9,6 +9,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json;
 
@@ -76,14 +77,14 @@ namespace Lachain.Core.Vault
                 ThresholdSignatureKeys = new Dictionary<ulong, string>(
                     _tsKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
-                            p.Key, p.Value.ToBytes().ToHex()
+                            p.Key, p.Value.ToHex()
                         )
                     )
                 ),
                 TpkePrivateKeys = new Dictionary<ulong, string>(
                     _tpkeKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
-                            p.Key, p.Value.ToByteArray().ToHex()
+                            p.Key, p.Value.ToHex()
                         )
                     )
                 )

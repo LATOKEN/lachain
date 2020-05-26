@@ -1,24 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
-using Lachain.Core.Blockchain.ContractManager;
-using Lachain.Core.Blockchain.ContractManager.Standards;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.OperationManager;
-using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
-using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
-using Lachain.Storage.State;
-using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus
@@ -29,12 +21,9 @@ namespace Lachain.Core.Consensus
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IBlockProducer _blockProducer;
-        private readonly IBlockchainContext _blockchainContext;
+        private readonly IBlockManager _blockManager;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
-        private readonly ITransactionPool _transactionPool;
-        private readonly ITransactionBuilder _transactionBuilder;
-        private readonly ITransactionSigner _transactionSigner;
 
         private readonly IDictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>> _postponedMessages
             = new Dictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>>();
@@ -42,30 +31,24 @@ namespace Lachain.Core.Consensus
         private long CurrentEra { get; set; } = -1;
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
+        private readonly object _blockPersistedLock = new object();
 
         public ConsensusManager(
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
-            IBlockchainContext blockchainContext,
-            IPrivateWallet privateWallet,
-            ITransactionPool transactionPool,
-            ITransactionBuilder transactionBuilder,
-            ITransactionSigner transactionSigner
+            IPrivateWallet privateWallet
         )
         {
             _messageDeliverer = messageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
-            _blockchainContext = blockchainContext;
+            _blockManager = blockManager;
             _privateWallet = privateWallet;
-            _transactionPool = transactionPool;
-            _transactionBuilder = transactionBuilder;
-            _transactionSigner = transactionSigner;
             _terminated = false;
 
-            blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
+            _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
         }
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
@@ -74,6 +57,11 @@ namespace Lachain.Core.Consensus
             if ((long) e.Header.Index >= CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
+            }
+
+            lock (_blockPersistedLock)
+            {
+                Monitor.PulseAll(_blockPersistedLock);
             }
         }
 
@@ -110,7 +98,7 @@ namespace Lachain.Core.Consensus
             if (CurrentEra == -1)
                 Logger.LogWarning($"Consensus has not been started yet, skipping message with era {era}");
             else if (era < CurrentEra)
-                Logger.LogDebug($"Skipped message for era {era} since we already advanced to {CurrentEra}");
+                Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
             else if (era > CurrentEra)
                 _postponedMessages
                     .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
@@ -122,7 +110,7 @@ namespace Lachain.Core.Consensus
                     Logger.LogWarning($"Skipped message for era {era} since we are not validator for this era");
                     return;
                 }
-                    
+
                 var fromIndex = _validatorManager.GetValidatorIndex(from, era - 1);
                 EnsureEra(era)?.Dispatch(message, fromIndex);
             }
@@ -140,74 +128,47 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                // const ulong minBlockInterval = 5_000;
-                const ulong minBlockInterval = 1_000;
+                const ulong minBlockInterval = 5_000;
                 for (;; CurrentEra += 1)
                 {
-                    if (CurrentEra == 10 && _privateWallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
-                    {
-                        Logger.LogError("!!!!! CHANGE VALIDATORS !!!!!");
-                        var txPool = _transactionPool;
-                        var signer = _transactionSigner;
-                        var builder = _transactionBuilder;
-                        var newValidators = new[]
-                        {
-                            "023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746".HexToBytes(),
-                            "02867b79666bac79f845ed33f4b2b0a964f9ac5b9be676b82bd9a01edcdad42415".HexToBytes(),
-                            "02a3ec3502ef652a969613696ec98a7bfd2c7b87d20efed47b3af726285d197d3c".HexToBytes(),
-                            "0272f1805337a1d2a0ad98c1e823b8103113a1824c1d8899187eaae748dd78229d".HexToBytes()
-                        }; 
-                        var tx = builder.InvokeTransaction(
-                            _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-                            ContractRegisterer.GovernanceContract,
-                            Money.Zero,
-                            GovernanceInterface.MethodChangeValidators,
-                            (object) newValidators
-                        );
-                        txPool.Add(signer.Sign(tx, _privateWallet.EcdsaKeyPair));                
-                    }
-                    
                     var now = TimeUtils.CurrentTimeMillis();
                     if (lastBlock + minBlockInterval > now)
                     {
                         Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + minBlockInterval - now));
                     }
 
-                    if ((long) _blockchainContext.CurrentBlockHeight >= CurrentEra)
+                    if ((long) _blockManager.GetHeight() >= CurrentEra)
                     {
-                        AdvanceEra((long) _blockchainContext.CurrentBlockHeight);
+                        AdvanceEra((long) _blockManager.GetHeight());
                         continue;
                     }
+                    
+                    while ((long) _blockManager.GetHeight() != CurrentEra - 1)
+                    {
+                        lock (_blockPersistedLock)
+                        {
+                            Monitor.Wait(_blockPersistedLock);
+                        }
+                    }
 
-                    var weAreValidator = true;
-                    try
-                    {
-                        if (!_validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet
-                            .Contains(_privateWallet.EcdsaKeyPair.PublicKey))
-                            weAreValidator = false;
-                    }
-                    catch (ConsensusStateNotPresentException e)
-                    {
-                        Logger.LogError("Consensus state is not present (why?)");
-                    }
+                    var weAreValidator = _validatorManager
+                        .GetValidators(CurrentEra - 1)
+                        .EcdsaPublicKeySet
+                        .Contains(_privateWallet.EcdsaKeyPair.PublicKey);
+
                     if (!weAreValidator)
                     {
-                        Logger.LogError($"We are not validator for era {CurrentEra}, waiting");
-                        while ((long) _blockchainContext.CurrentBlockHeight != CurrentEra)
+                        Logger.LogWarning($"We are not validator for era {CurrentEra}, waiting");
+                        while ((long) _blockManager.GetHeight() < CurrentEra)
                         {
-                            Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+                            lock (_blockPersistedLock)
+                            {
+                                Monitor.Wait(_blockPersistedLock);
+                            }
                         }
                     }
                     else
                     {
-                        var publicKeySet = _validatorManager.GetValidators(CurrentEra - 1);
-                        Logger.LogError($"!!!!!!!!!!!!! ERA: {CurrentEra}");
-                        Logger.LogError($"!!!!!!!!!!!!! MY INDEX: {_validatorManager.GetValidatorIndex(_privateWallet.EcdsaKeyPair.PublicKey, CurrentEra - 1)}");
-                        Logger.LogError($"!!!!!!!!!!!!! TS PUBLIC KEYS:");
-                        foreach (var (key, i) in _validatorManager.GetValidators(CurrentEra - 1).ThresholdSignaturePublicKeySet.Keys.WithIndex())
-                            Logger.LogError($"!!!!!!!!!!!!!     {i}: {key.ToBytes().ToHex()}");
-                        Logger.LogError($"!!!!!!!!!!!!! My ts privkey: {_privateWallet.GetThresholdSignatureKeyForBlock((ulong) CurrentEra - 1).ToBytes().ToHex()}");
-                        Logger.LogError($"!!!!!!!!!!!!! My ts pubkey: {_privateWallet.GetThresholdSignatureKeyForBlock((ulong) CurrentEra - 1).GetPublicKeyShare().ToBytes().ToHex()}");
                         var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(CurrentEra);
                         broadcaster.InternalRequest(
@@ -216,7 +177,8 @@ namespace Lachain.Core.Consensus
 
                         if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
                         {
-                            Logger.LogDebug($"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
+                            Logger.LogDebug(
+                                $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
                             foreach (var (message, from) in savedMessages)
                             {
                                 var fromIndex = _validatorManager.GetValidatorIndex(from, CurrentEra - 1);

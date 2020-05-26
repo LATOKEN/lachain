@@ -2,7 +2,7 @@
 {
     public interface IThresholdSigner
     {
-        SignatureShare Sign();
-        bool AddShare(PublicKey pubKey, SignatureShare sigShare, out Signature? signature);
+        Signature Sign();
+        bool AddShare(int idx, Signature sigShare, out Signature? signature);
     }
 }

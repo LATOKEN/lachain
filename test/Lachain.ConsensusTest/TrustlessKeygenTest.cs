@@ -8,6 +8,8 @@ using Lachain.Crypto.ECDSA;
 using NUnit.Framework;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
+using Lachain.Utility.Containers;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 
@@ -30,7 +32,19 @@ namespace Lachain.ConsensusTest
             return Mcl.GetValue(t, Fr.FromInt(y));
         }
 
-        private static ThresholdKeyring[] SimulateKeygen(int n, int f)
+        private class QueueItem
+        {
+            public int sender;
+            public object payload;
+
+            public QueueItem(int sender, object payload)
+            {
+                this.payload = payload;
+                this.sender = sender;
+            }
+        }
+
+        private static ThresholdKeyring[] SimulateKeygen(int n, int f, DeliveryServiceMode mode)
         {
             var ecdsaKeys = Enumerable.Range(0, n)
                 .Select(_ => Crypto.GeneratePrivateKey())
@@ -42,21 +56,31 @@ namespace Lachain.ConsensusTest
                 .Select(i => new TrustlessKeygen(ecdsaKeys[i], ecdsaKeys.Select(x => x.PublicKey), f))
                 .ToArray();
 
-            var messageLedger = new Queue<(int sender, object payload)>();
-            messageLedger.Enqueue((-1, null));
 
+            var messageLedger = new RandomSamplingQueue<QueueItem>();
+            messageLedger.Enqueue(new QueueItem(-1, null));
+
+            var curKeys = keyGens.Select(_ => (ThresholdKeyring?) null).ToArray();
             while (messageLedger.Count > 0)
             {
-                var msg = messageLedger.Dequeue();
+                QueueItem msg;
+                var success = mode switch
+                {
+                    DeliveryServiceMode.TAKE_FIRST => messageLedger.TryDequeue(out msg),
+                    DeliveryServiceMode.TAKE_LAST => messageLedger.TryTakeLast(out msg),
+                    DeliveryServiceMode.TAKE_RANDOM => messageLedger.TrySample(out msg),
+                    _ => throw new NotImplementedException($"Unknown mode {mode}")
+                };
+                Assert.IsTrue(success);
                 switch (msg.payload)
                 {
                     case null:
                         for (var i = 0; i < n; ++i)
-                            messageLedger.Enqueue((i, keyGens[i].StartKeygen()));
+                            messageLedger.Enqueue(new QueueItem(i, keyGens[i].StartKeygen()));
                         break;
                     case CommitMessage commitMessage:
                         for (var i = 0; i < n; ++i)
-                            messageLedger.Enqueue((i, keyGens[i].HandleCommit(msg.sender, commitMessage)));
+                            messageLedger.Enqueue(new QueueItem(i, keyGens[i].HandleCommit(msg.sender, commitMessage)));
                         break;
                     case ValueMessage valueMessage:
                         for (var i = 0; i < n; ++i)
@@ -66,9 +90,38 @@ namespace Lachain.ConsensusTest
                         Assert.Fail($"Message of type {msg.GetType()} occurred");
                         break;
                 }
+
+                for (var i = 0; i < n; ++i)
+                {
+                    var curKey = keyGens[i].TryGetKeys();
+                    if (curKey is null)
+                    {
+                        Assert.AreEqual(null, curKeys[i]);
+                        continue;
+                    }
+
+                    if (!curKeys[i].HasValue)
+                    {
+                        curKeys[i] = curKey;
+                        continue;
+                    }
+
+                    Assert.IsTrue(curKey.Value.TpkePrivateKey.ToBytes()
+                        .SequenceEqual(curKeys[i].Value.TpkePrivateKey.ToBytes()));
+                    Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i].Value.PublicPartHash());
+                }
+
+                for (var i = 0; i < n; ++i)
+                {
+                    keyGens[i] = TestSerializationRoundTrip(keyGens[i], ecdsaKeys[i]);
+                }
             }
 
-            for (var i = 0; i < n; ++i) Assert.IsTrue(keyGens[i].Finished());
+            for (var i = 0; i < n; ++i)
+            {
+                Assert.IsTrue(keyGens[i].Finished());
+                Assert.AreNotEqual(curKeys[i], null);
+            }
 
             var keys = keyGens
                 .Select(x => x.TryGetKeys() ?? throw new Exception())
@@ -81,6 +134,14 @@ namespace Lachain.ConsensusTest
             }
 
             return keys;
+        }
+
+        private static TrustlessKeygen TestSerializationRoundTrip(TrustlessKeygen keyGen, EcdsaKeyPair keyPair)
+        {
+            var bytes = keyGen.ToBytes();
+            var restored = TrustlessKeygen.FromBytes(bytes, keyPair);
+            Assert.AreEqual(restored, keyGen);
+            return restored;
         }
 
         private void CheckKeys(IList<ThresholdKeyring> keys)
@@ -104,7 +165,7 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet[i].ValidateSignature(share, payload));
 
             var sig = keys[0].ThresholdSignaturePublicKeySet
-                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share)));
+                .AssembleSignature(sigShares.Select((share, i) => new KeyValuePair<int, Signature>(i, share)));
             foreach (var keyring in keys)
                 Assert.IsTrue(keyring.ThresholdSignaturePublicKeySet.SharedPublicKey.ValidateSignature(sig, payload));
         }
@@ -129,28 +190,98 @@ namespace Lachain.ConsensusTest
         [Test]
         public void RunAllHonest_4_1()
         {
-            var keys = SimulateKeygen(4, 1);
+            var keys = SimulateKeygen(4, 1, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_4_1_RandomOrder()
+        {
+            var keys = SimulateKeygen(4, 1, DeliveryServiceMode.TAKE_RANDOM);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_4_1_ReverseOrder()
+        {
+            var keys = SimulateKeygen(4, 1, DeliveryServiceMode.TAKE_LAST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_7_2()
+        {
+            var keys = SimulateKeygen(7, 2, DeliveryServiceMode.TAKE_FIRST);
             CheckKeys(keys);
         }
 
         [Test]
-        public void RunAllHonest_7_2()
+        public void RunAllHonest_7_2_RandomOrder()
         {
-            var keys = SimulateKeygen(7, 2);
+            var keys = SimulateKeygen(7, 2, DeliveryServiceMode.TAKE_RANDOM);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_7_2_ReverseOrder()
+        {
+            var keys = SimulateKeygen(7, 2, DeliveryServiceMode.TAKE_LAST);
             CheckKeys(keys);
         }
 
         [Test]
         public void RunAllHonest_22_7()
         {
-            var keys = SimulateKeygen(22, 7);
+            var keys = SimulateKeygen(22, 7, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_22_7_RandomOrder()
+        {
+            var keys = SimulateKeygen(22, 7, DeliveryServiceMode.TAKE_RANDOM);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_22_7_ReverseOrder()
+        {
+            var keys = SimulateKeygen(22, 7, DeliveryServiceMode.TAKE_LAST);
             CheckKeys(keys);
         }
 
         [Test]
         public void RunOneGuy()
         {
-            var keys = SimulateKeygen(1, 0);
+            var keys = SimulateKeygen(1, 0, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunOneGuy_RandomOrder()
+        {
+            var keys = SimulateKeygen(1, 0, DeliveryServiceMode.TAKE_RANDOM);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunOneGuy_ReverseOrder()
+        {
+            var keys = SimulateKeygen(1, 0, DeliveryServiceMode.TAKE_LAST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_2_0()
+        {
+            var keys = SimulateKeygen(2, 0, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
+        public void RunAllHonest_3_0()
+        {
+            var keys = SimulateKeygen(3, 0, DeliveryServiceMode.TAKE_FIRST);
             CheckKeys(keys);
         }
     }

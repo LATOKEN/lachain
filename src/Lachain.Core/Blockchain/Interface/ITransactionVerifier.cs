@@ -10,8 +10,8 @@ namespace Lachain.Core.Blockchain.Interface
         void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey);
         void VerifyTransaction(TransactionReceipt acceptedTransaction);
 
-        bool VerifyTransactionImmediately(TransactionReceipt transaction, ECDSAPublicKey publicKey);
-        bool VerifyTransactionImmediately(TransactionReceipt transaction, bool cacheEnabled = true);
+        bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey);
+        bool VerifyTransactionImmediately(TransactionReceipt receipt, bool cacheEnabled = true);
         
         void Start();
         void Stop();

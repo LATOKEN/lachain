@@ -7,12 +7,13 @@ namespace Lachain.Utility
 {
     public static class AttributeScanner
     {
-        public static IEnumerable<Tuple<MethodInfo, TA>> FindAttributes<TA>(this Type classType)
+        public static IEnumerable<(MethodInfo method, TA attribute)> FindAttributes<TA>(this Type classType)
             where TA : Attribute
         {
             var attributeUsage = typeof(TA).GetCustomAttribute<AttributeUsageAttribute>();
             if (attributeUsage is null)
-                throw new ArgumentException("Unable to find attribute usage attribute in class (" + classType + ")", nameof(classType));
+                throw new ArgumentException("Unable to find attribute usage attribute in class (" + classType + ")",
+                    nameof(classType));
             switch (attributeUsage.ValidOn)
             {
                 case AttributeTargets.Method:
@@ -32,16 +33,21 @@ namespace Lachain.Utility
                 case AttributeTargets.Property:
                 case AttributeTargets.ReturnValue:
                 case AttributeTargets.Struct:
-                    throw new ArgumentOutOfRangeException(nameof(classType), "Attribute scanner supports only method attributes");
+                    throw new ArgumentOutOfRangeException(nameof(classType),
+                        "Attribute scanner supports only method attributes");
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(classType), "Attribute scanner supports only method attributes");
+                    throw new ArgumentOutOfRangeException(nameof(classType),
+                        "Attribute scanner supports only method attributes");
             }
         }
 
-        public static IEnumerable<Tuple<MethodInfo, TA>> FindMethodAttributes<TA>(this Type classType)
+        private static IEnumerable<(MethodInfo method, TA attribute)> FindMethodAttributes<TA>(this Type classType)
             where TA : Attribute
         {
-            return classType.GetMethods().Select(method => Tuple.Create(method, method.GetCustomAttribute<TA>())).Where(tuple => !(tuple.Item2 is null)).ToList();
+            return classType.GetMethods()
+                .Select(method => (method, method.GetCustomAttribute<TA>()))
+                .Where(tuple => !(tuple.Item2 is null))
+                .ToList();
         }
     }
 }

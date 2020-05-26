@@ -1,5 +1,4 @@
 using Lachain.Consensus;
-using Lachain.Proto;
 
 namespace Lachain.ConsensusTest
 {

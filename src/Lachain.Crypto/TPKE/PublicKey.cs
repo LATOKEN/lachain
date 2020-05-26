@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Google.Protobuf;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.TPKE
 {
-    public class PublicKey : IEquatable<PublicKey>
+    public class PublicKey : IEquatable<PublicKey>, IFixedWidth
     {
-        public G1 Y;
+        private readonly G1 _y;
         private readonly int _t;
 
         public PublicKey(G1 y, int t)
         {
-            Y = y;
+            _y = y;
             _t = t;
         }
 
@@ -23,7 +23,7 @@ namespace Lachain.Crypto.TPKE
             var r = Fr.GetRandom();
             var u = G1.Generator * r;
             var shareBytes = rawShare.ToBytes();
-            var t = Y * r;
+            var t = _y * r;
             var v = Utils.XorWithHash(t, shareBytes);
             var w = Utils.HashToG2(u, v) * r;
             return new EncryptedShare(u, v, w, rawShare.Id);
@@ -39,7 +39,7 @@ namespace Lachain.Crypto.TPKE
         {
             return new TPKEPartiallyDecryptedShareMessage
             {
-                Share = ByteString.CopyFrom(G1.ToBytes(share.Ui)),
+                Share = ByteString.CopyFrom(share.Ui.ToBytes()),
                 DecryptorId = share.DecryptorId,
                 ShareId = share.ShareId
             };
@@ -74,24 +74,28 @@ namespace Lachain.Crypto.TPKE
             var u = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
             return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
         }
-
-        public byte[] ToBytes()
+        
+        public static PublicKey FromBytes(ReadOnlyMemory<byte> buffer)
         {
-            return BitConverter.GetBytes(_t).Concat(G1.ToBytes(Y)).ToArray();
+            var res = FixedWithSerializer.Deserialize(buffer, out _, typeof(int), typeof(G1));
+            return new PublicKey((G1) res[1], (int) res[0]);
         }
 
-        public static PublicKey FromBytes(byte[] buffer)
+        public void Serialize(Memory<byte> bytes)
         {
-            var decT = BitConverter.ToInt32(buffer, 0);
-            var decY = G1.FromBytes(buffer.Skip(4).ToArray());
-            return new PublicKey(decY, decT);
+            FixedWithSerializer.SerializeToMemory(bytes, new dynamic[] {_t, _y});
+        }
+
+        public static int Width()
+        {
+            return sizeof(int) + G1.Width();
         }
 
         public bool Equals(PublicKey? other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Y.Equals(other.Y) && _t == other._t;
+            return _y.Equals(other._y) && _t == other._t;
         }
 
         public override bool Equals(object? obj)
@@ -104,7 +108,7 @@ namespace Lachain.Crypto.TPKE
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Y, _t);
+            return HashCode.Combine(_y, _t);
         }
     }
 }

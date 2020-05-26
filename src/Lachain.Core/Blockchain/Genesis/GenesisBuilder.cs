@@ -37,7 +37,6 @@ namespace Lachain.Core.Blockchain.Genesis
                 {
                     From = fromAddress,
                     Nonce = (ulong) i,
-                    Type = TransactionType.Transfer,
                     Value = Money.Parse(t.Value).ToUInt256(),
                     To = t.Key.HexToUInt160(),
                     GasPrice = 0,
@@ -45,7 +44,7 @@ namespace Lachain.Core.Blockchain.Genesis
                 .Select(tx => new TransactionReceipt
                 {
                     Transaction = tx,
-                    Hash = HashUtils.ToHash256(tx),
+                    Hash = tx.FullHash(SignatureUtils.Zero),
                     Signature = SignatureUtils.Zero,
                 })
                 .ToList();

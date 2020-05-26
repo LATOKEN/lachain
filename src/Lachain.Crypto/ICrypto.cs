@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Lachain.Crypto
 {
@@ -60,6 +59,15 @@ namespace Lachain.Crypto
         /// <param name="compress">Compress public key?</param>
         /// <returns>Bytearray Public Key</returns>
         byte[] DecodePublicKey(byte[] publicKey, bool compress);
+        
+        /// <summary>
+        /// Parse public key and serialize it again to 33/65 bytes compressed/uncompressed format
+        /// </summary>
+        /// <param name="publicKey">Public Key</param>
+        /// <param name="compress">Compress public key?</param>
+        /// <param name="normalizedKey">Result</param>
+        /// <returns>true if decoding succeeded</returns>
+        bool TryDecodePublicKey(byte[] publicKey, bool compress, out byte[] normalizedKey);
 
         /// <summary>
         /// Generates random bytes

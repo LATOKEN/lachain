@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Threading;
-using Lachain.Core.Blockchain.ContractManager;
-using Lachain.Core.Blockchain.ContractManager.Standards;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
@@ -41,8 +41,7 @@ namespace Lachain.Console
 
         public void Start(string[] args)
         {
-            var blockchainManager = _container.Resolve<IBlockchainManager>();
-            var blockchainContext = _container.Resolve<IBlockchainContext>();
+            var blockManager = _container.Resolve<IBlockManager>();
             var configManager = _container.Resolve<IConfigManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
@@ -55,7 +54,7 @@ namespace Lachain.Console
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
 
-            if (blockchainManager.TryBuildGenesisBlock())
+            if (blockManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
 
             var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
@@ -69,7 +68,7 @@ namespace Lachain.Console
             System.Console.WriteLine($" + hash: {genesisBlock.Hash.ToHex()}");
 
             System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Current block height: " + blockchainContext.CurrentBlockHeight);
+            System.Console.WriteLine("Current block height: " + blockManager.GetHeight());
             System.Console.WriteLine($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
             System.Console.WriteLine($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
             System.Console.WriteLine("-------------------------------");
@@ -83,18 +82,18 @@ namespace Lachain.Console
             blockSynchronizer.Start();
             System.Console.WriteLine("Waiting for consensus peers to handshake...");
             networkManager.WaitForHandshake(validatorManager
-                .GetValidatorsPublicKeys((long) blockchainContext.CurrentBlockHeight)
+                .GetValidatorsPublicKeys((long) blockManager.GetHeight())
                 .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             System.Console.WriteLine("Handshake successful, synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
-                validatorManager.GetValidatorsPublicKeys((long) blockchainContext.CurrentBlockHeight)
+                validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
-            consensusManager.Start((long) blockchainContext.CurrentBlockHeight + 1);
+            consensusManager.Start((long) blockManager.GetHeight() + 1);
 
-            if (blockchainContext.CurrentBlockHeight == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
+            if (blockManager.GetHeight() == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
             {
                 var txPool = _container.Resolve<ITransactionPool>();
                 var signer = _container.Resolve<ITransactionSigner>();

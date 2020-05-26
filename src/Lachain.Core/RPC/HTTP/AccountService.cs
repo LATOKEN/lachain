@@ -2,10 +2,11 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Interface;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.VM;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -15,18 +16,16 @@ namespace Lachain.Core.RPC.HTTP
 {
     public class AccountService : JsonRpcService
     {
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
 
         public AccountService(
-            IVirtualMachine virtualMachine,
             IStateManager stateManager,
             ITransactionManager transactionManager,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool
+        )
         {
-            _virtualMachine = virtualMachine;
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
@@ -47,15 +46,14 @@ namespace Lachain.Core.RPC.HTTP
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
                 throw new Exception("Failed to validate seiralized and deserialized transactions");
-            var json = new JObject
-            {
-                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
-            };
+            var s = signature.HexToBytes().ToSignature();
+            var txHash = transaction.FullHash(s);
+            var json = new JObject {["hash"] = txHash.ToHex()};
             var accepted = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = HashUtils.ToHash256(transaction),
-                Signature = signature.HexToBytes().ToSignature()
+                Hash = txHash,
+                Signature = s
             };
             var result = _transactionManager.Verify(accepted);
             json["result"] = result.ToString();
@@ -70,10 +68,8 @@ namespace Lachain.Core.RPC.HTTP
         private JObject SendRawTransaction(string rawTransaction, string signature)
         {
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
-            var json = new JObject
-            {
-                ["hash"] = HashUtils.ToHash256(transaction).ToHex()
-            };
+            var s = signature.HexToBytes().ToSignature();
+            var json = new JObject {["hash"] = transaction.FullHash(s).ToHex()};
             var result = _transactionPool.Add(
                 transaction, signature.HexToBytes().ToSignature());
             if (result != OperatingError.Ok)
@@ -105,9 +101,15 @@ namespace Lachain.Core.RPC.HTTP
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
             var result = _stateManager.SafeContext(() =>
             {
-                _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(contractByHash,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill in these fields
+                    }),
+                    input.HexToBytes(),
+                    gasLimit
+                );
                 _stateManager.Rollback();
                 return invocationResult;
             });

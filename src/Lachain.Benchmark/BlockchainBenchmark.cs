@@ -1,21 +1,20 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.OperationManager;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
-using Lachain.Core.Consensus;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
-using Lachain.Core.VM;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
-using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Benchmark
@@ -43,8 +42,6 @@ namespace Lachain.Benchmark
 
         public void Start(string[] args)
         {
-            var blockchainManager = _container.Resolve<IBlockchainManager>();
-            var blockchainContext = _container.Resolve<IBlockchainContext>();
             var configManager = _container.Resolve<IConfigManager>();
             var crypto = _container.Resolve<ICrypto>();
             var transactionBuilder = _container.Resolve<ITransactionBuilder>();
@@ -61,7 +58,7 @@ namespace Lachain.Benchmark
             Console.WriteLine("Address: " + crypto.ComputeAddress(keyPair.PublicKey.EncodeCompressed()).ToHex());
             Console.WriteLine("-------------------------------");
 
-            if (blockchainManager.TryBuildGenesisBlock())
+            if (blockManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
             var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
@@ -78,14 +75,13 @@ namespace Lachain.Benchmark
             var address2 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
 
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
+            // Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address1));
             Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
 
-            _BenchTxProcessing(transactionBuilder, blockchainContext, transactionSigner, blockManager,
-                blockchainManager, keyPair);
+            _BenchTxProcessing(transactionBuilder, transactionSigner, keyPair);
         }
 
         private static void _Benchmark(string text, Func<int, int> action, uint tries)
@@ -112,10 +108,7 @@ namespace Lachain.Benchmark
 
         private void _BenchTxProcessing(
             ITransactionBuilder transactionBuilder,
-            IBlockchainContext blockchainContext,
             ITransactionSigner transactionSigner,
-            IBlockManager blockManager,
-            IBlockchainManager blockchainManager,
             EcdsaKeyPair keyPair)
         {
             var address1 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
@@ -136,8 +129,7 @@ namespace Lachain.Benchmark
             var deployError = transactionPool.Add(transactionSigner.Sign(deployTx, keyPair));
             if (deployError != OperatingError.Ok)
                 throw new Exception("Unable to add deploy tx (" + deployError + ")");
-            var contract = deployTx.From.ToBytes().Concat(BitConverter.GetBytes((uint) deployTx.Nonce))
-                .Ripemd();
+            var contract = deployTx.From.ToBytes().Concat(deployTx.Nonce.ToBytes()).Ripemd();
 
             _Benchmark("Building TX pool... ", i =>
             {
@@ -155,27 +147,27 @@ namespace Lachain.Benchmark
             _Benchmark("Generating blocks... ", i =>
             {
                 var txs = transactionPool.Peek(txPerBlock, txPerBlock);
-                var latestBlock = blockchainContext.CurrentBlock;
-                if (i > 0)
-                    latestBlock = blocks[i - 1].Block;
-                var blockWithTxs = new BlockBuilder(latestBlock.Header)
-                    .WithTransactions(txs)
-                    .Build(123456);
-                var block = blockWithTxs.Block;
-                block.Multisig = new MultiSig
-                {
-                    Quorum = 1,
-                    Signatures =
-                    {
-                        new MultiSig.Types.SignatureByValidator
-                        {
-                            Key = keyPair.PublicKey,
-                            Value = blockManager.Sign(block.Header, keyPair)
-                        }
-                    },
-                    Validators = {keyPair.PublicKey}
-                };
-                blocks[i] = blockWithTxs;
+                // var latestBlock = blockchainContext.CurrentBlock;
+                // if (i > 0)
+                //     latestBlock = blocks[i - 1].Block;
+                // var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                //     .WithTransactions(txs)
+                //     .Build(123456);
+                // var block = blockWithTxs.Block;
+                // block.Multisig = new MultiSig
+                // {
+                //     Quorum = 1,
+                //     Signatures =
+                //     {
+                //         new MultiSig.Types.SignatureByValidator
+                //         {
+                //             Key = keyPair.PublicKey,
+                //             Value = blockManager.Sign(block.Header, keyPair)
+                //         }
+                //     },
+                //     Validators = {keyPair.PublicKey}
+                // };
+                // blocks[i] = blockWithTxs;
                 return i;
             }, transactionPool.Size() / txPerBlock);
 
@@ -184,7 +176,7 @@ namespace Lachain.Benchmark
             _Benchmark("Processing blocks... ", i =>
             {
                 var blockWithTxs = blocks[i];
-                blockchainManager.PersistBlockManually(blockWithTxs.Block, blockWithTxs.Transactions);
+                // blockchainManager.PersistBlockManually(blockWithTxs.Block, blockWithTxs.Transactions);
                 return i;
             }, (uint) blocks.Length);
 
@@ -194,11 +186,9 @@ namespace Lachain.Benchmark
 
         private static void _BenchOneTxInBlock(
             ITransactionBuilder transactionBuilder,
-            IBlockchainContext blockchainContext,
             ITransactionSigner transactionSigner,
-            IBlockManager blockManager,
-            IBlockchainManager blockchainManager,
-            EcdsaKeyPair keyPair)
+            EcdsaKeyPair keyPair
+        )
         {
             var address1 = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160();
             var address2 = "0xe3c7a20ee19c0107b9121087bcba18eb4dcb8576".HexToUInt160();
@@ -215,28 +205,27 @@ namespace Lachain.Benchmark
                 var transferTx =
                     transactionBuilder.TransferTransaction(address1, address2, Money.FromDecimal(1.2m));
                 var signed = transactionSigner.Sign(transferTx, keyPair);
-                var latestBlock = blockchainContext.CurrentBlock;
-                var blockWithTxs = new BlockBuilder(latestBlock.Header)
-                    .WithTransactions(new[] {signed})
-                    .Build(123456);
-                var stateHash = blockchainManager.CalcStateHash(blockWithTxs.Block, blockWithTxs.Transactions);
-                var block = blockWithTxs.Block;
-                block.Header.StateHash = stateHash;
-                block.Hash = block.Header.Keccak();
-                block.Multisig = new MultiSig
-                {
-                    Quorum = 1,
-                    Signatures =
-                    {
-                        new MultiSig.Types.SignatureByValidator
-                        {
-                            Key = keyPair.PublicKey,
-                            Value = blockManager.Sign(block.Header, keyPair)
-                        }
-                    },
-                    Validators = {keyPair.PublicKey}
-                };
-                blockchainManager.PersistBlockManually(block, blockWithTxs.Transactions);
+                // var blockWithTxs = new BlockBuilder(latestBlock.Header)
+                //     .WithTransactions(new[] {signed})
+                //     .Build(123456);
+                // // var stateHash = blockchainManager.CalcStateHash(blockWithTxs.Block, blockWithTxs.Transactions);
+                // var block = blockWithTxs.Block;
+                // // block.Header.StateHash = stateHash;
+                // block.Hash = block.Header.Keccak();
+                // block.Multisig = new MultiSig
+                // {
+                //     Quorum = 1,
+                //     Signatures =
+                //     {
+                //         new MultiSig.Types.SignatureByValidator
+                //         {
+                //             Key = keyPair.PublicKey,
+                //             Value = blockManager.Sign(block.Header, keyPair)
+                //         }
+                //     },
+                //     Validators = {keyPair.PublicKey}
+                // };
+                // // blockchainManager.PersistBlockManually(block, blockWithTxs.Transactions);
             }
 
             var deltaTime = TimeUtils.CurrentTimeMillis() - lastTime;

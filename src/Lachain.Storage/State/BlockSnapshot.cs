@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.State
 {
@@ -28,7 +28,7 @@ namespace Lachain.Storage.State
         public ulong GetTotalBlockHeight()
         {
             var raw = _state.Get(EntryPrefix.BlockHeight.BuildPrefix());
-            return raw != null ? BitConverter.ToUInt64(raw, 0) : 0UL;
+            return raw?.AsReadOnlySpan().ToUInt64() ?? 0u;
         }
 
         public Block? GetBlockByHeight(ulong blockHeight)
@@ -54,7 +54,7 @@ namespace Lachain.Storage.State
                     $"Invalid block height, expected {currentHeight + 1}, but got {block.Header.Index}");
             _state.Add(EntryPrefix.BlockByHash.BuildPrefix(block.Hash), block.ToByteArray());
             _state.Add(EntryPrefix.BlockHashByHeight.BuildPrefix(block.Header.Index), block.Hash.ToByteArray());
-            _state.AddOrUpdate(EntryPrefix.BlockHeight.BuildPrefix(), BitConverter.GetBytes(block.Header.Index));
+            _state.AddOrUpdate(EntryPrefix.BlockHeight.BuildPrefix(), block.Header.Index.ToBytes().ToArray());
         }
 
         public IEnumerable<Block> GetBlocksByHeightRange(ulong height, ulong count)

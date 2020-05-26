@@ -13,10 +13,6 @@ namespace Lachain.Storage.State
 
         IEnumerable<ECDSAPublicKey> GetValidatorsPublicKeys();
 
-        void NewValidators(IEnumerable<ECDSAPublicKey> publicKeys);
-
-        int ConfirmCredentials(PublicKeySet tsKeys, PublicKey tpkePublicKey);
-
-        void UpdateValidators(PublicKeySet tsKeys, PublicKey tpkePublicKey);
+        void UpdateValidators(IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey);
     }
 }

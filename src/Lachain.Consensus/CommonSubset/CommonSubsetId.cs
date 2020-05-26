@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Lachain.Consensus.HoneyBadger;
+﻿using Lachain.Consensus.HoneyBadger;
 
 namespace Lachain.Consensus.CommonSubset
 {
@@ -19,10 +15,6 @@ namespace Lachain.Consensus.CommonSubset
         }
 
         public long Era { get; }
-        public IEnumerable<byte> ToByteArray()
-        {
-            return Encoding.ASCII.GetBytes(Era.ToString());
-        }
 
         public override string ToString()
         {
@@ -51,6 +43,5 @@ namespace Lachain.Consensus.CommonSubset
         {
             return Era.GetHashCode();
         }
-
     }
 }

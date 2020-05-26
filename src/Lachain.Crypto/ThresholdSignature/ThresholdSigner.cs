@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Grpc.Core.Logging;
 using Lachain.Logger;
-using Org.BouncyCastle.Asn1.Pkcs;
-using Lachain.Utility.Utils;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
@@ -14,7 +12,7 @@ namespace Lachain.Crypto.ThresholdSignature
         private readonly byte[] _dataToSign;
         private readonly PrivateKeyShare _privateKeyShare;
         private readonly PublicKeySet _publicKeySet;
-        private readonly SignatureShare[] _collectedShares;
+        private readonly Signature[] _collectedShares;
         private Signature? _signature;
         private int _collectedSharesNumber;
 
@@ -28,26 +26,26 @@ namespace Lachain.Crypto.ThresholdSignature
             _dataToSign = dataToSign.ToArray();
             _privateKeyShare = privateKeyShare;
             _publicKeySet = publicKeySet;
-            _collectedShares = new SignatureShare[publicKeySet.Count];
+            _collectedShares = new Signature[publicKeySet.Count];
             _collectedSharesNumber = 0;
             _signature = null;
         }
 
-        public SignatureShare Sign()
+        public Signature Sign()
         {
             return _privateKeyShare.HashAndSign(_dataToSign);
         }
 
-        public bool AddShare(PublicKey pubKey, SignatureShare sigShare, out Signature? result)
+        public bool AddShare(int idx, Signature sigShare, out Signature? result)
         {
             result = null;
-            var idx = _publicKeySet.GetIndex(pubKey);
             if (idx < 0 || idx >= _publicKeySet.Count)
             {
-                _logger.LogWarning($"Public key {pubKey} is not recognized (index {idx})");
+                _logger.LogWarning($"Public key (?) is not recognized (index {idx})");
                 return false;
             }
 
+            var pubKey = _publicKeySet[idx];
             if (_collectedShares[idx] != null)
             {
                 _logger.LogWarning($"Signature share {idx} input twice");
@@ -56,7 +54,7 @@ namespace Lachain.Crypto.ThresholdSignature
 
             if (!IsShareValid(pubKey, sigShare))
             {
-                _logger.LogWarning($"Signature share {idx} is not valid: {sigShare.ToBytes().ToHex()}");
+                _logger.LogWarning($"Signature share {idx} is not valid: {sigShare.ToHex()}");
                 return false;
             }
 
@@ -71,7 +69,7 @@ namespace Lachain.Crypto.ThresholdSignature
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;
             var signature = _publicKeySet.AssembleSignature(
-                _collectedShares.Select((share, i) => new KeyValuePair<int, SignatureShare>(i, share))
+                _collectedShares.Select((share, i) => new KeyValuePair<int, Signature>(i, share))
                     .Where(pair => pair.Value != null).ToArray()
             );
             if (!_publicKeySet.SharedPublicKey.ValidateSignature(signature, _dataToSign))
@@ -81,7 +79,7 @@ namespace Lachain.Crypto.ThresholdSignature
             return true;
         }
 
-        private bool IsShareValid(PublicKey pubKey, SignatureShare sigShare)
+        private bool IsShareValid(PublicKey pubKey, Signature sigShare)
         {
             return pubKey.ValidateSignature(sigShare, _dataToSign);
         }

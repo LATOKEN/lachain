@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,6 +11,12 @@ namespace Lachain.Utility.Utils
             using var enumerator = source.GetEnumerator();
             while (enumerator.MoveNext())
                 yield return YieldBatchElements(enumerator, batchSize - 1);
+        }
+        
+        public static IEnumerable<ReadOnlyMemory<T>> Batch<T>(this ReadOnlyMemory<T> source, int batchSize)
+        {
+            for (var i = 0; i < source.Length; i += batchSize)
+                yield return source.Slice(i, batchSize);
         }
 
         private static IEnumerable<T> YieldBatchElements<T>(IEnumerator<T> source, int batchSize)
