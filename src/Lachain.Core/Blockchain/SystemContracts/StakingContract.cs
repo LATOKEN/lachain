@@ -394,7 +394,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             
             var isCheckedInAttendanceDetection = !isCheckedInAttendanceDetectionExecutionResult.ReturnValue.ToUInt256().IsZero();
-            if (!isCheckedInAttendanceDetection)
+            if (isCheckedInAttendanceDetection)
                 return ExecutionStatus.ExecutionHalted;
 
             _attendancetDetectorCheckIns.Set(_attendancetDetectorCheckIns.Get().Concat(senderPublicKey).ToArray());
@@ -402,7 +402,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             for (var i = 0; i < faultPersons.Length; i++)
             {
                 var isPreviousValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
-                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsAbleToBeAValidator, faultPersons[i]);
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsPreviousValidator, faultPersons[i]);
 
                 if (isPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
                     return ExecutionStatus.ExecutionHalted;
@@ -657,7 +657,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 var validator = validators.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (!validator.SequenceEqual(publicKey)) continue;
-                result = false;
+                result = true;
                 break;
             }
 

@@ -67,7 +67,7 @@ namespace Lachain.Core.Blockchain.Operations
             /* invoke required function or fallback */
             return _InvokeContract(
                 receipt.Transaction.To, receipt.Transaction.Invocation.ToArray(),
-                receipt, snapshot, systemContract is null
+                receipt, snapshot, systemContract != null
             );
         }
 

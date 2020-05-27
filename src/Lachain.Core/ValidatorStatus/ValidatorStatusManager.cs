@@ -375,7 +375,6 @@ namespace Lachain.Core.ValidatorStatus
                 stakerPublicKey);
             
             return !isPreviousValidator.ToUInt256().IsZero();
-
         }
 
         private byte[][] GetPreviousValidators()
@@ -397,7 +396,6 @@ namespace Lachain.Core.ValidatorStatus
             var isCheckedIn = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection,
                 stakerPublicKey);
             return !isCheckedIn.ToUInt256().IsZero();
-
         }
 
         private bool IsVrfSubmissionPhase()

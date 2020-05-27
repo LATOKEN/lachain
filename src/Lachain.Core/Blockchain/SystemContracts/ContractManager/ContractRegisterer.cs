@@ -25,8 +25,6 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
         public static readonly UInt160 LatokenContract = new BigInteger(1).ToUInt160();
         public static readonly UInt160 GovernanceContract = new BigInteger(2).ToUInt160();
         public static readonly UInt160 StakingContract = new BigInteger(3).ToUInt160();
-        public static readonly UInt160 PassiveStakingTokenContract = new BigInteger(4).ToUInt160();
-        public static readonly UInt160 PassiveStakingContract = new BigInteger(5).ToUInt160();
 
         public ContractRegisterer()
         {

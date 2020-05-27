@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Lachain.Core.Blockchain.Genesis;
 using Google.Protobuf;
-using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
@@ -18,6 +18,7 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -170,11 +171,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
-            var tsKeys = new Crypto.ThresholdSignature.PublicKeySet(
+            var tsKeys = new PublicKeySet(
                 thresholdSignaturePublicKeys.Select(x => Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
                 faulty
             );
-            var tpkeKey = Crypto.TPKE.PublicKey.FromBytes(tpkePublicKey);
+            var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 
             var gen = GetConsensusGeneration();
@@ -206,7 +207,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
 
             var ecdsaPublicKeys = _nextValidators.Get()
-                .Batch(Crypto.CryptoUtils.PublicKeyLength)
+                .Batch(CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
 
@@ -219,10 +220,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 TransactionHash = _context.Receipt?.Hash
             });
             
+            var balanceOfExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract, Lrc20Interface.MethodBalanceOf,
+                ContractRegisterer.GovernanceContract);
             
-            var laToken = new NativeTokenContract(_context);
-            var txFeesAmountBytes = laToken.BalanceOf(ContractRegisterer.GovernanceContract, frame);
-            var txFeesAmount = frame.ReturnValue.ToUInt256().ToMoney(true);
+            if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var txFeesAmount = balanceOfExecutionResult.ReturnValue.ToUInt256().ToMoney(true);
+            
             SetColelctedFees(txFeesAmount);
             
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
@@ -284,15 +290,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return fees.ToUInt256().ToMoney(true);
         }
 
-        private void SetTPKEKey(Crypto.TPKE.PublicKey tpkeKey)
+        private void SetTPKEKey(PublicKey tpkeKey)
         {
             _tpkeKey.Set(tpkeKey.ToBytes().ToArray());
         }
         
-        private Crypto.TPKE.PublicKey GetTPKEKey()
+        private PublicKey GetTPKEKey()
         {
             var tpkeKey = _tpkeKey.Get();
-            return Crypto.TPKE.PublicKey.FromBytes(tpkeKey);
+            return PublicKey.FromBytes(tpkeKey);
         }
 
         private int GetConfirmations(IEnumerable<byte> key, ulong gen)
