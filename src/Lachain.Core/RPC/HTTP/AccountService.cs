@@ -16,18 +16,16 @@ namespace Lachain.Core.RPC.HTTP
 {
     public class AccountService : JsonRpcService
     {
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
 
         public AccountService(
-            IVirtualMachine virtualMachine,
             IStateManager stateManager,
             ITransactionManager transactionManager,
-            ITransactionPool transactionPool)
+            ITransactionPool transactionPool
+        )
         {
-            _virtualMachine = virtualMachine;
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
@@ -103,9 +101,15 @@ namespace Lachain.Core.RPC.HTTP
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
             var result = _stateManager.SafeContext(() =>
             {
-                _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(contractByHash,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill in these fields
+                    }),
+                    input.HexToBytes(),
+                    gasLimit
+                );
                 _stateManager.Rollback();
                 return invocationResult;
             });

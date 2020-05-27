@@ -2,6 +2,7 @@ version: '2.4'
 services:
   node0:
     build:
+      network: host
       context: ./
       args:
         CONFIG: src/Lachain.Console/config0.json
@@ -15,6 +16,7 @@ services:
 
   node1:
     build:
+      network: host
       context: ./
       args:
         CONFIG: src/Lachain.Console/config1.json
@@ -29,6 +31,7 @@ services:
   node2:
     build:
       context: ./
+      network: host
       args:
         CONFIG: src/Lachain.Console/config2.json
         WALLET: src/Lachain.Console/wallet2.json
@@ -42,6 +45,7 @@ services:
   node3:
     build:
       context: ./
+      network: host
       args:
         CONFIG: src/Lachain.Console/config3.json
         WALLET: src/Lachain.Console/wallet3.json

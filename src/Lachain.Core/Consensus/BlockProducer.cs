@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
@@ -13,6 +14,7 @@ using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Network;
+using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;

@@ -26,20 +26,18 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private readonly ITransactionManager _transactionManager;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-        private readonly IValidatorManager _validatorManager;
         private readonly IGenesisBuilder _genesisBuilder;
         private readonly IMultisigVerifier _multisigVerifier;
         private readonly ILogger<BlockManager> _logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly IConfigManager _configManager;
-        private ContractContext? _contractTxJustExecuted = null;
+        private InvocationContext? _contractTxJustExecuted;
 
-        public event EventHandler<ContractContext>? OnSystemContractInvoked;
+        public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
         public BlockManager(
             ITransactionManager transactionManager,
-            IValidatorManager validatorManager,
             IGenesisBuilder genesisBuilder,
             IMultisigVerifier multisigVerifier,
             IStateManager stateManager,
@@ -48,7 +46,6 @@ namespace Lachain.Core.Blockchain.Operations
         )
         {
             _transactionManager = transactionManager;
-            _validatorManager = validatorManager;
             _genesisBuilder = genesisBuilder;
             _multisigVerifier = multisigVerifier;
             _stateManager = stateManager;
@@ -57,7 +54,7 @@ namespace Lachain.Core.Blockchain.Operations
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
         }
 
-        private void TransactionManagerOnSystemContractInvoked(object sender, ContractContext e)
+        private void TransactionManagerOnSystemContractInvoked(object sender, InvocationContext e)
         {
             _contractTxJustExecuted = e;
         }

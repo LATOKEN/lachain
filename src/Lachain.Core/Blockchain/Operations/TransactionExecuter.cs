@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -16,15 +14,11 @@ namespace Lachain.Core.Blockchain.Operations
     public class TransactionExecuter
     {
         private readonly IContractRegisterer _contractRegisterer;
-        private readonly IVirtualMachine _virtualMachine;
-        public event EventHandler<ContractContext>? OnSystemContractInvoked;
+        public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
-        public TransactionExecuter(
-            IContractRegisterer contractRegisterer,
-            IVirtualMachine virtualMachine)
+        public TransactionExecuter(IContractRegisterer contractRegisterer)
         {
             _contractRegisterer = contractRegisterer;
-            _virtualMachine = virtualMachine;
         }
 
         public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
@@ -49,7 +43,7 @@ namespace Lachain.Core.Blockchain.Operations
             if (receipt.Transaction.To.Buffer.IsEmpty) // this is deploy transaction
             {
                 var invocation = ContractEncoder.Encode("deploy(bytes)", transaction.Invocation.ToArray());
-                return _InvokeSystemContract(ContractRegisterer.DeployContract, invocation, receipt, snapshot);
+                return _InvokeContract(ContractRegisterer.DeployContract, invocation, receipt, snapshot, true);
             }
 
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
@@ -63,7 +57,7 @@ namespace Lachain.Core.Blockchain.Operations
                 if (snapshot.Balances.GetBalance(transaction.From) < new Money(transaction.Value))
                     return OperatingError.InsufficientBalance;
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
-                return _InvokeSystemContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot);
+                return _InvokeContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot, true);
             }
             
             /* try to transfer funds from sender to recipient */
@@ -71,31 +65,31 @@ namespace Lachain.Core.Blockchain.Operations
                 if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
                     return OperatingError.InsufficientBalance;
             /* invoke required function or fallback */
-            return _InvokeContract(receipt, snapshot);
+            return _InvokeContract(
+                receipt.Transaction.To, receipt.Transaction.Invocation.ToArray(),
+                receipt, snapshot, systemContract is null
+            );
         }
 
-        private OperatingError _InvokeContract(TransactionReceipt receipt, IBlockchainSnapshot snapshot)
+        private OperatingError _InvokeContract(
+            UInt160 addressTo, byte[] input, TransactionReceipt receipt,
+            IBlockchainSnapshot snapshot, bool isSystemContract
+        )
         {
             var transaction = receipt.Transaction;
-            var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
-            if (systemContract != null)
-                return _InvokeSystemContract(transaction.To, transaction.Invocation.ToArray(), receipt, snapshot);
-            var contract = snapshot.Contracts.GetContractByHash(transaction.To);
-            if (contract is null) return OperatingError.ContractFailed; // this should not happen
-            var input = transaction.Invocation.ToByteArray();
-            if (_IsConstructorCall(input))
-                return OperatingError.InvalidInput;
-            var context = new InvocationContext(transaction.From, receipt);
+            var context = new InvocationContext(receipt.Transaction.From, snapshot, receipt);
             try
             {
                 if (receipt.GasUsed > transaction.GasLimit)
                     return OperatingError.OutOfGas;
-                var result =
-                    _virtualMachine.InvokeContract(contract, context, input, transaction.GasLimit - receipt.GasUsed);
+                var result = ContractInvoker.Invoke(addressTo, context, input, transaction.GasLimit - receipt.GasUsed);
                 if (result.Status != ExecutionStatus.Ok)
                     return OperatingError.ContractFailed;
                 receipt.GasUsed += result.GasUsed;
-                return receipt.GasUsed > transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
+
+                if (receipt.GasUsed > transaction.GasLimit) return OperatingError.OutOfGas;
+                if (isSystemContract) OnSystemContractInvoked?.Invoke(this, context);
+                return OperatingError.Ok;
             }
             catch (OutOfGasException e)
             {
@@ -112,53 +106,6 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.Ok;
             receipt.GasUsed += (ulong) receipt.Transaction.Invocation.Length * inputDataGas;
             return receipt.GasUsed > receipt.Transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
-        }
-
-        private bool _IsConstructorCall(IReadOnlyList<byte> buffer)
-        {
-            if (buffer.Count < 4)
-                return false;
-            return buffer[0] == 0 &&
-                   buffer[1] == 0 &&
-                   buffer[2] == 0 &&
-                   buffer[3] == 0;
-        }
-
-        private OperatingError _InvokeSystemContract(
-            UInt160 address, byte[] invocation, TransactionReceipt receipt, IBlockchainSnapshot snapshot
-        )
-        {
-            try
-            {
-                var result = _contractRegisterer.DecodeContract(address, invocation);
-                if (result is null)
-                    return OperatingError.ContractFailed;
-                var (contract, method, args) = result;
-                
-                var context = new ContractContext
-                {
-                    Snapshot = snapshot,
-                    Sender = receipt.Transaction.From,
-                    Receipt = receipt
-                };
-                // Special case for deploy contract: it needs VM to validate contracts
-                var instance = address.Equals(ContractRegisterer.DeployContract)
-                    ? Activator.CreateInstance(contract, context, _virtualMachine)
-                    : Activator.CreateInstance(contract, context);
-                method.Invoke(instance, args);
-                OnSystemContractInvoked?.Invoke(this, context);
-            }
-            catch (Exception e) when (
-                e is NotSupportedException ||
-                e is InvalidOperationException || // TODO: InvalidOperation is too generic, what does it really mean?
-                e is TargetInvocationException ||
-                e is ContractAbiException
-            )
-            {
-                return OperatingError.ContractFailed;
-            }
-
-            return OperatingError.Ok;
         }
 
         public OperatingError Verify(Transaction transaction)

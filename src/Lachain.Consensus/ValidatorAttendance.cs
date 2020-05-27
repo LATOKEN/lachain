@@ -17,6 +17,7 @@ namespace Lachain.Core.ValidatorStatus
 
         public ValidatorAttendance(ulong cycle)
         {
+            Logger.LogInformation("Creating validator attendance repository with cycle " + cycle);
             Cycle = cycle;
             _attendance = new Dictionary<string, ulong>();
             _nextAttendance = new Dictionary<string, ulong>();

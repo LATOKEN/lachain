@@ -27,7 +27,6 @@ namespace Lachain.Core.CLI
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly EcdsaKeyPair _keyPair;
-        private readonly IVirtualMachine _virtualMachine;
 
         public ConsoleCommands(
             ITransactionBuilder transactionBuilder,
@@ -36,7 +35,6 @@ namespace Lachain.Core.CLI
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IStateManager stateManager,
-            IVirtualMachine virtualMachine,
             EcdsaKeyPair keyPair
         )
         {
@@ -47,7 +45,6 @@ namespace Lachain.Core.CLI
             _transactionSigner = transactionSigner;
             _stateManager = stateManager;
             _keyPair = keyPair;
-            _virtualMachine = virtualMachine;
         }
 
         private static bool IsValidHexString(IEnumerable<char> hexString)
@@ -138,7 +135,7 @@ namespace Lachain.Core.CLI
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var hash = from.ToBytes().Concat(nonce.ToBytes()).Keccak();
             var byteCode = arguments[1].HexToBytes();
-            if (!_virtualMachine.VerifyContract(byteCode))
+            if (!VirtualMachine.VerifyContract(byteCode))
                 return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
@@ -149,23 +146,24 @@ namespace Lachain.Core.CLI
 
         public string CallContract(string[] arguments)
         {
-            var from = _keyPair.PublicKey.GetAddress();
-            var contractHash = arguments[1].HexToUInt160();
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            if (contract is null)
-                return $"Unable to find contract by hash {contractHash.ToHex()}";
-            Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
-            var result = _stateManager.SafeContext(() =>
-            {
-                _stateManager.NewSnapshot();
-                var invocationResult =
-                    _virtualMachine.InvokeContract(contract, new InvocationContext(from), new byte[] { }, 200_000);
-                _stateManager.Rollback();
-                return invocationResult;
-            });
-            return result.Status == ExecutionStatus.Ok
-                ? "Contract has been successfully executed"
-                : "Contract execution failed";
+            return "";
+            // var from = _keyPair.PublicKey.GetAddress();
+            // var contractHash = arguments[1].HexToUInt160();
+            // var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            // if (contract is null)
+            //     return $"Unable to find contract by hash {contractHash.ToHex()}";
+            // Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
+            // var result = _stateManager.SafeContext(() =>
+            // {
+            //     _stateManager.NewSnapshot();
+            //     var invocationResult =
+            //         _virtualMachine.InvokeWasmContract(contract, new InvocationContext(from), new byte[] { }, 200_000);
+            //     _stateManager.Rollback();
+            //     return invocationResult;
+            // });
+            // return result.Status == ExecutionStatus.Ok
+            //     ? "Contract has been successfully executed"
+            //     : "Contract execution failed";
         }
 
         public string Help(string[] arguments)

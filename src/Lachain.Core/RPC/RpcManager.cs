@@ -50,11 +50,11 @@ namespace Lachain.Core.RPC
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
                 new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager),
-                new AccountService(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new AccountService(_stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager),
-                new AccountServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool),
+                new AccountServiceWeb3(_stateManager),
                 new ValidatorServiceWeb3(_validatorStatusManager), 
-                new TransactionServiceWeb3(_virtualMachine, _stateManager, _transactionManager, _transactionPool, _contractRegisterer),
+                new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
                 new NodeService()
             };
 

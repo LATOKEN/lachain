@@ -121,6 +121,23 @@ namespace Lachain.Crypto
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryDecodePublicKey(byte[] publicKey, bool compress, out byte[] normalizedKey)
+        {
+            var pubKeyParsed = new byte[64];
+            if (!Secp256K1.PublicKeyParse(pubKeyParsed, publicKey))
+            {
+                normalizedKey = Array.Empty<byte>();
+                return false;
+            }
+
+            normalizedKey = compress ? new byte[33] : new byte[65];
+            if (Secp256K1.PublicKeySerialize(normalizedKey, pubKeyParsed,
+                compress ? Flags.SECP256K1_EC_COMPRESSED : Flags.SECP256K1_EC_UNCOMPRESSED)) return true;
+            normalizedKey = Array.Empty<byte>();
+            return false;
+        }
+
         public byte[] GenerateRandomBytes(int length)
         {
             if (length < 1)

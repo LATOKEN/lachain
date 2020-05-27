@@ -23,20 +23,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class TransactionServiceWeb3 : JsonRpcService
     {
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
 
         public TransactionServiceWeb3(
-            IVirtualMachine virtualMachine,
             IStateManager stateManager,
             ITransactionManager transactionManager,
             ITransactionPool transactionPool,
             IContractRegisterer contractRegisterer)
         {
-            _virtualMachine = virtualMachine;
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
@@ -165,9 +162,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("Invalid sender specified", nameof(sender));
             var result = _stateManager.SafeContext(() =>
             {
-                _stateManager.NewSnapshot();
-                var invocationResult = _virtualMachine.InvokeContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160()), input.HexToBytes(), gasLimit);
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(
+                    contractByHash,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill these fields
+                        Block = snapshot.Blocks.GetTotalBlockHeight(),
+                    }),
+                    input.HexToBytes(),
+                    gasLimit
+                );
                 _stateManager.Rollback();
                 return invocationResult;
             });
@@ -202,9 +207,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 InvocationResult result = _stateManager.SafeContext(() =>
                 {
-                    _stateManager.NewSnapshot();
-                    var invocationResult = _virtualMachine.InvokeContract(contract,
-                        new InvocationContext(from.HexToUInt160()), data.HexToBytes(), 100000000);
+                    var snapshot = _stateManager.NewSnapshot();
+                    var invocationResult = VirtualMachine.InvokeWasmContract(
+                        contract,
+                        new InvocationContext(from.HexToUInt160(), snapshot, new TransactionReceipt
+                        {
+                            // TODO: correctly fill these fields
+                            Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        }),
+                        data.HexToBytes(),
+                        100_000_000
+                    );
                     _stateManager.Rollback();
                     return invocationResult;
                 });
@@ -298,18 +311,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             object invResult;
             try
             {
-                var result = _contractRegisterer.DecodeContract(address, invocation);
-                if (result is null)
-                    return (OperatingError.ContractFailed, null);
-                var (contract, method, args) = result;
-                
-                var context = new ContractContext
+                var context = new InvocationContext(from, snapshot, new TransactionReceipt
                 {
-                    Snapshot = snapshot,
-                    Sender = from,
-                };
-                var instance =  Activator.CreateInstance(contract, context);
-                invResult = method.Invoke(instance, args);
+                    // TODO: correctly fill these fields
+                    Block = snapshot.Blocks.GetTotalBlockHeight(),
+                });
+                var call = _contractRegisterer.DecodeContract(context, address, invocation);
+                if (call is null) return (OperatingError.ContractFailed, null);
+                
+                var result = VirtualMachine.InvokeSystemContract(call, context, invocation, 100_000_000);
+                
+                invResult = result.ReturnValue;
             }
             catch (Exception e) when (
                 e is NotSupportedException ||

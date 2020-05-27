@@ -29,8 +29,16 @@ namespace Lachain.Core.Blockchain.VM
         public static byte[] Encode(string methodSignature, params dynamic[] values)
         {
             var encoder = new ContractEncoder(methodSignature, values);
-            encoder = values.Aggregate(encoder,
-                (current, value) => current.Write(value));
+            if (values.GetType() == typeof (byte[][]))
+            {
+                encoder = encoder.Write((byte[][]) values);
+            }
+            else
+            {
+                encoder = values.Aggregate(encoder,
+                    (current, value) => { return current.Write(value); });
+            }
+
             return encoder.ToByteArray();
         }
 

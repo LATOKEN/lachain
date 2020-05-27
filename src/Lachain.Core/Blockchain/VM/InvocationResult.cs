@@ -2,7 +2,7 @@
 {
     public class InvocationResult
     {
-        public static InvocationResult FactoryDefault(ExecutionStatus status)
+        public static InvocationResult WithStatus(ExecutionStatus status)
         {
             return new InvocationResult
             {

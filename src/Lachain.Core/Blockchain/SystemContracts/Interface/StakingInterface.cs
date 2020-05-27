@@ -1,4 +1,5 @@
-﻿using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+﻿using System.Collections.Generic;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 
 namespace Lachain.Core.Blockchain.SystemContracts.Interface
 {
@@ -10,14 +11,17 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodSubmitVrf = "submitVrf(bytes,bytes)";
         public const string MethodSubmitAttendanceDetection = "submitAttendanceDetection(bytes[],uint[])";
         public const string MethodFinishVrfLottery = "finishVrfLottery()";
-        public const string MethodTotalActiveStake = "totalActiveStake()";
+        public const string MethodGetTotalActiveStake = "totalActiveStake()";
         public const string MethodGetStake = "getStake(address)";
+        public const string MethodGetWithdrawRequestCycle = "getWithdrawRequestCycle(address)";
+        public const string MethodGetStartCycle = "getStartCycle(address)";
         public const string MethodIsAbleToBeAValidator = "isAbleToBeAValidator(address)";
-        public const string MethodGetCurrentCycle = "getCurrentCycle()";
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
         public const string MethodGetVrfSeed = "getVrfSeed()";
         public const string MethodGetNextVrfSeed = "getNextVrfSeed()";
         public const string MethodGetPreviousValidators = "getPreviousValidators()";
+        public const string MethodIsPreviousValidator = "isPreviousValidator(bytes)";
+        public const string MethodIsCheckedInAttendanceDetection = "isCheckedInAttendanceDetection(bytes)";
         
         public string[] Methods { get; } =
         {
@@ -26,14 +30,15 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodWithdrawStake,
             MethodSubmitVrf,
             MethodFinishVrfLottery,
-            MethodTotalActiveStake,
+            MethodGetTotalActiveStake,
             MethodGetStake,
+            MethodGetWithdrawRequestCycle,
             MethodIsAbleToBeAValidator,
-            MethodGetCurrentCycle,
             MethodIsNextValidator,
             MethodGetVrfSeed,
             MethodSubmitAttendanceDetection,
             MethodGetPreviousValidators,
+            MethodIsPreviousValidator,
         };
 
         public string[] Properties { get; } =

@@ -8,6 +8,9 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
+using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -15,6 +18,7 @@ using Lachain.Utility.Utils;
 using Lachain.Crypto.VRF;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
+using NetMQ;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -22,7 +26,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
     {
         
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private readonly ContractContext _contractContext;
+        private readonly InvocationContext _context;
         public static readonly ulong CycleDuration = 1000; // in blocks
         public static readonly ulong SubmissionPhaseDuration = 500; // in blocks
         public static readonly ulong AttendanceDetectionDuration = 100; // in blocks
@@ -45,9 +49,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private static readonly ILogger<StakingContract> Logger =
             LoggerFactory.GetLoggerForClass<StakingContract>();
 
-        public StakingContract(ContractContext contractContext)
+        public StakingContract(InvocationContext contractContext)
         {
-            _contractContext = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
+            _context = contractContext ?? throw new ArgumentNullException(nameof(contractContext));
             _nextVrfSeed = new StorageVariable(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
@@ -114,157 +118,307 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ContractStandard ContractStandard => ContractStandard.StakingContract;
 
         [ContractMethod(StakingInterface.MethodBecomeStaker)]
-        public void BecomeStaker(byte[] publicKey, UInt256 amount)
+        public ExecutionStatus BecomeStaker(byte[] publicKey, UInt256 amount, SystemContractExecutionFrame frame)
         {
-            EnsurePublicKeyOwner(publicKey, MsgSender());
+            
+            frame.UseGas(GasMetering.StakingBecomeStakerCost);
+            
+            var ok = IsPublicKeyOwner(publicKey, MsgSender());
+            if (!ok)
+                return ExecutionStatus.ExecutionHalted;
             
             if (amount.ToBigInteger(true) < TokenUnitsInRoll)
-                throw new Exception("Amount is less than 1 roll");
+                return ExecutionStatus.ExecutionHalted;
 
-            // TODO: allow adding to existing stake
-            var stake = GetStake(MsgSender());
+            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
+                MsgSender());
+            
+            if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
             if (!stake.IsZero())
-            {
-                throw new Exception("Already staker");
-            }
-
-            var laToken = new NativeTokenContract(_contractContext);
+                return ExecutionStatus.ExecutionHalted;
             
-            var balance = laToken.BalanceOf(MsgSender()) ?? UInt256Utils.Zero;
+            var balanceOfExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodBalanceOf,
+                MsgSender());
+            
+            if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var balance = balanceOfExecutionResult.ReturnValue.ToUInt256();
+            
             if (balance.ToMoney(true).CompareTo(amount.ToMoney(true)) == -1)
-            {
-                throw new Exception("Insufficient balance");
-            }
+                return ExecutionStatus.ExecutionHalted;
             
-            var ok = laToken.Transfer(ContractRegisterer.StakingContract, amount.ToBytes().ToUInt256());
-            if (!ok)
-            {
-                throw new Exception("Transfer failure");
-            }
+            var transferExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.LatokenContract, MsgSender(), Lrc20Interface.MethodTransfer,
+                ContractRegisterer.StakingContract, amount.ToBytes().Reverse().ToArray().ToUInt256());
+            
+            if (transferExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+
+            var fail = transferExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (fail)
+                return ExecutionStatus.ExecutionHalted;
 
             var startingCycle = GetCurrentCycle() + 1;
             
-            // Special case for initial cycle
+            // Special case for initial validator
             if (startingCycle == 1)
             {
                 startingCycle--;
             }
 
             SetStake(MsgSender(), amount);
+            
             SetStakerPublicKey(MsgSender(), publicKey);
+            
             SetStartCycle(MsgSender(), startingCycle);
+            
             var id = AddStaker(publicKey);
             SetStakerId(MsgSender(), id);
+            
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(StakingInterface.MethodRequestStakeWithdrawal)]
-        public void RequestStakeWithdrawal(byte[] publicKey)
+        public ExecutionStatus RequestStakeWithdrawal(byte[] publicKey, SystemContractExecutionFrame frame)
         {
-            EnsurePublicKeyOwner(publicKey, MsgSender());
-            if (IsNextValidator(publicKey))
-            {
-                throw new Exception("Stake reserved for the next cycle");
-            }
+            frame.UseGas(GasMetering.StakingRequestStakeWithdrawalCost);
+            
+            var ok = IsPublicKeyOwner(publicKey, MsgSender());
+            if (!ok) return ExecutionStatus.ExecutionHalted;
 
-            var stake = GetStake(MsgSender());
-            EnsurePositive(stake);
+            var isNextvalidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsNextValidator, publicKey);
 
-            if (GetWithdrawRequestCycle(MsgSender()) != 0)
-            {
-                throw new Exception("Already requested");
-            }
+            if (isNextvalidatorExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var isNextValidator = !isNextvalidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (isNextValidator)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
+
+            if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+
+            if (stake.IsZero())
+                return ExecutionStatus.ExecutionHalted;
+            
+            var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, MsgSender());
+
+            if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
+
+            if (withdrawRequestCycleBytes.Length != 0)
+                return ExecutionStatus.ExecutionHalted;
             
             SetWithdrawRequestCycle(MsgSender(), GetCurrentCycle());
+            
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(StakingInterface.MethodWithdrawStake)]
-        public void WithdrawStake(byte[] publicKey)
+        public ExecutionStatus WithdrawStake(byte[] publicKey, SystemContractExecutionFrame frame)
         {
-            EnsurePublicKeyOwner(publicKey, MsgSender());
-            EnsureWithdrawalPhase();
+            frame.UseGas(GasMetering.StakingWithdrawStakeCost);
             
-            if (GetWithdrawRequestCycle(MsgSender()) == 0)
-            {
-                throw new Exception("Request not found");
-            }
+            var ok = IsPublicKeyOwner(publicKey, MsgSender());
+            if (!ok) return ExecutionStatus.ExecutionHalted;
             
-            if (GetWithdrawRequestCycle(MsgSender()) == GetCurrentCycle())
-            {
-                throw new Exception("Wait for the next cycle");
-            }
+            var blockNumber = _context.Receipt.Block;
+            var blockInCycle = blockNumber % CycleDuration;
+            if (blockInCycle < AttendanceDetectionDuration)
+                return ExecutionStatus.ExecutionHalted;
 
-            var stake = GetStake(MsgSender());
-            EnsurePositive(stake);
+            var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, MsgSender());
 
-            // save the real sender
-            var user = MsgSender();
-            // change the sender of the transaction to perform money transfer from this contract 
-            _contractContext.Sender = ContractRegisterer.StakingContract;
-            var latoken = new NativeTokenContract(_contractContext);
+            if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
             
-            var ok = latoken.Transfer(user, stake.ToBytes().ToUInt256());
-            if (!ok) throw new Exception("Transfer failure");
+            var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
+            
+            if (withdrawRequestCycleBytes.Length != 0)
+                return ExecutionStatus.ExecutionHalted;
 
-            DeleteStaker(user);
+            var withdrawRequestCycle = BitConverter.ToInt32(withdrawRequestCycleBytes);
+            
+            if (withdrawRequestCycle == GetCurrentCycle())
+                return ExecutionStatus.ExecutionHalted;
+
+            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
+
+            if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+            
+            if (stake.IsZero())
+                return ExecutionStatus.ExecutionHalted;
+
+            var transferExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodTransfer,
+                MsgSender(), stake.ToBytes().Reverse().ToArray().ToUInt256());
+            
+            if (transferExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+
+            var fail = transferExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (fail)
+                return ExecutionStatus.ExecutionHalted;
+
+            DeleteStaker(MsgSender());
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(StakingInterface.MethodSubmitVrf)]
-        public void SubmitVrf(byte[] publicKey, byte[] proof)
+        public ExecutionStatus SubmitVrf(byte[] publicKey, byte[] proof, SystemContractExecutionFrame frame)
         {
-            EnsureSubmissionPhase();
-            EnsurePublicKeyOwner(publicKey, MsgSender());
-            if (IsNextValidator(publicKey))
-            {
-                throw new Exception("Already submitted");
-            }
+            frame.UseGas(GasMetering.StakingSubmitVrfCost);
+            
+            var blockNumber = _context.Receipt.Block;
+            var blockInCycle = blockNumber % CycleDuration;
+            if (blockInCycle >= SubmissionPhaseDuration)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var ok = IsPublicKeyOwner(publicKey, MsgSender());
+            if (!ok) return ExecutionStatus.ExecutionHalted;
 
-            if (!IsAbleToBeAValidator(MsgSender()))
-            {
-                throw new Exception("Cannot be a validator");
-            }
+            var isNextValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsNextValidator, publicKey);
 
-            var totalRolls = GetTotalActiveStake().ToBigInteger(true) / TokenUnitsInRoll;
-            var ok = Vrf.IsWinner(
+            if (isNextValidatorExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var isNextValidator = !isNextValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (isNextValidator)
+                return ExecutionStatus.ExecutionHalted;
+
+            var isAbleToBeAValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, MsgSender(), StakingInterface.MethodIsAbleToBeAValidator, MsgSender());
+
+            if (isAbleToBeAValidatorExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var isAbleToBeAValidator = !isAbleToBeAValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (!isAbleToBeAValidator)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var getTotalStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetTotalActiveStake);
+
+            if (getTotalStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var totalStake = getTotalStakeExecutionResult.ReturnValue.ToUInt256();
+            var totalRolls = totalStake.ToBigInteger(true) / TokenUnitsInRoll;
+            
+            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
+
+            if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+            
+            var getVrfSeedExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
+
+            if (getVrfSeedExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var vrfSeed = getVrfSeedExecutionResult.ReturnValue;
+            var isWinner = Vrf.IsWinner(
                 publicKey,
                 proof,
-                GetVrfSeed(),
+                vrfSeed,
                 Role,
                 ExpectedValidatorsCount,
-                GetStake(MsgSender()).ToBigInteger(true) / TokenUnitsInRoll,
+                stake.ToBigInteger(true) / TokenUnitsInRoll,
                 totalRolls
             );
 
-            if (!ok)
-            {
-                throw new Exception("Invalid vrf proof");
-            }
+            if (!isWinner)
+                return ExecutionStatus.ExecutionHalted;
+            
             SetNextValidator(publicKey);
             TrySetNextVrfSeed(Vrf.ProofToHash(proof));
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(StakingInterface.MethodSubmitAttendanceDetection)]
-        public void SubmitAttendanceDetection(byte[][] faultPersons, UInt256[] faultBlocksCounts)
+        public ExecutionStatus SubmitAttendanceDetection(byte[][] faultPersons, UInt256[] faultBlocksCounts, SystemContractExecutionFrame frame)
         {
-            EnsureDetectorPhase();
-            var senderPublicKey = GetStakerPublicKey(MsgSender());
-            EnsurePreviousValidator(senderPublicKey);
-
+            frame.UseGas(GasMetering.StakingSubmitAttendanceDetectionCost);
+            
+            var blockNumber = _context.Receipt.Block;
+            var blockInCycle = blockNumber % CycleDuration;
+            if (blockInCycle >= AttendanceDetectionDuration)
+                return ExecutionStatus.ExecutionHalted;
+            
             if (faultPersons.Length != faultBlocksCounts.Length)
-            {
-                throw new Exception("Arguments length mismatch");
-            }
-            AttendanceDetectorCheckIn(senderPublicKey);
+                return ExecutionStatus.ExecutionHalted;
+            
+            
+            var senderPublicKey = _userToPubKey.GetValue(MsgSender().ToBytes());
+            if (senderPublicKey.Length == 0)
+                return ExecutionStatus.ExecutionHalted;
+
+            var isSenderPreviousValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsPreviousValidator, senderPublicKey);
+
+            if (isSenderPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var isSenderPreviousValidator = !isSenderPreviousValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (!isSenderPreviousValidator)
+                return ExecutionStatus.ExecutionHalted;
+                
+            var isCheckedInAttendanceDetectionExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection, senderPublicKey);
+
+            if (isCheckedInAttendanceDetectionExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var isCheckedInAttendanceDetection = !isCheckedInAttendanceDetectionExecutionResult.ReturnValue.ToUInt256().IsZero();
+            if (!isCheckedInAttendanceDetection)
+                return ExecutionStatus.ExecutionHalted;
+
+            _attendancetDetectorCheckIns.Set(_attendancetDetectorCheckIns.Get().Concat(senderPublicKey).ToArray());
 
             for (var i = 0; i < faultPersons.Length; i++)
             {
-                EnsurePreviousValidator(faultPersons[i]);
+                var isPreviousValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsAbleToBeAValidator, faultPersons[i]);
+
+                if (isPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+            
+                var isPreviousValidator = !isPreviousValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+                if (!isPreviousValidator)
+                    return ExecutionStatus.ExecutionHalted;
+                
                 var detectedBlocks = faultBlocksCounts[i].ToBigInteger(true);
+                
                 if (detectedBlocks > CycleDuration)
-                {
-                    throw new Exception("Argument out of range");
-                }
+                    return ExecutionStatus.ExecutionHalted;
+                
                 VoteForAttendance(faultPersons[i], (int) detectedBlocks);
             }
+            return ExecutionStatus.Ok;
         }
 
         private void VoteForAttendance(byte[] faultPerson, int faultBlocksCount)
@@ -290,54 +444,78 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return votes;
         }
 
-        private void AttendanceDetectorCheckIn(byte[] publicKey)
-        {
-            if (IsCheckedInFaultDetector(publicKey))
-                throw new Exception("Already checked in");
-            
-            _attendancetDetectorCheckIns.Set(_attendancetDetectorCheckIns.Get().Concat(publicKey).ToArray());
-        }
-
         private void ClearAttendanceDetectorCheckIns()
         {
            _attendancetDetectorCheckIns.Set(new byte[]{});
         }
 
-        public bool IsCheckedInFaultDetector(byte[] publicKey)
+        [ContractMethod(StakingInterface.MethodIsCheckedInAttendanceDetection)]
+        public ExecutionStatus IsCheckedInAttendanceDetection(byte[] publicKey, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.StakingIsCheckedInAttendanceDetectionCost);
+            
+            var result = false;
             var seenValidatorsBytes = _attendancetDetectorCheckIns.Get();
             for (var startByte = 0; startByte < seenValidatorsBytes.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var validator = seenValidatorsBytes.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (validator.SequenceEqual(publicKey))
-                    return true;
+                {
+                    result = true;
+                    break;
+                }
             }
 
-            return false;
+            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            
+            return ExecutionStatus.Ok;
         }
 
-        public void DistributeRewardsAndPenalties(Money totalReward)
+        public ExecutionStatus DistributeRewardsAndPenalties(UInt256 totalReward, SystemContractExecutionFrame frame)
         {
-
             if (!MsgSender().Equals(ContractRegisterer.GovernanceContract))
-            {
-                throw new Exception("Auth failure");
-            }
-            
-            if (_contractContext.Receipt.Block % CycleDuration != AttendanceDetectionDuration)
-            {
-                throw new Exception("Wrong submission");
-            }
+                return ExecutionStatus.ExecutionHalted;
+
+            if (_context.Receipt.Block % CycleDuration != AttendanceDetectionDuration)
+                return ExecutionStatus.ExecutionHalted;
             
             var validatorsData = _previousValidators.Get();
             var validatorsCount = validatorsData.Length / CryptoUtils.PublicKeyLength;
-            var maxValidatorReward = totalReward / validatorsCount; 
+            var maxValidatorReward = totalReward.ToMoney(true) / validatorsCount; 
             for (var i = 0; i < validatorsCount; i ++)
             {
                 var validator = validatorsData.Skip(i * CryptoUtils.PublicKeyLength).Take(CryptoUtils.PublicKeyLength).ToArray();
-                if (!IsCheckedInFaultDetector(validator))
+                
+                var isCheckedInAttendanceDetectionExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection, validator);
+
+                if (isCheckedInAttendanceDetectionExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+            
+                var notCheckedIn = isCheckedInAttendanceDetectionExecutionResult.ReturnValue.ToUInt256().IsZero();
+                if (notCheckedIn)
                 {
-                    SlashStake(validator, (int) CycleDuration);
+                    /* Penalty for the cycle */
+                    
+                    var validatorAddress = SystemContractUtils.PublicKeyToAddress(validator);
+                    var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                        ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, validatorAddress);
+
+                    if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                        return ExecutionStatus.ExecutionHalted;
+            
+                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToMoney(true);
+            
+                    // TODO: determine correct number
+                    var penalty = stake / 2;
+                    if (penalty > Money.Zero)
+                    {
+
+                        SetStake(validatorAddress, (stake - penalty).ToUInt256(true));
+                        _context.Snapshot.Balances.SubBalance(
+                            ContractRegisterer.StakingContract, penalty
+                        );
+                    }
                 }
                 else
                 {
@@ -345,8 +523,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     var validatorReward = maxValidatorReward * activeBlocks / (int) CycleDuration;
                     if (validatorReward > Money.Zero)
                     {
-                        _contractContext.Snapshot.Balances.AddBalance(
-                            PublicKeyToAddress(validator), validatorReward
+                        _context.Snapshot.Balances.AddBalance(
+                            SystemContractUtils.PublicKeyToAddress(validator), validatorReward
                         );
                     }
                 }
@@ -354,6 +532,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             ClearAttendanceDetectorCheckIns();
+            return ExecutionStatus.Ok;
         }
 
         private int GetActiveBlocksCount(byte[] validator)
@@ -372,68 +551,57 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return QuickSelect(votes, middleIndex);
         }
 
-        private void SlashStake(byte[] validator, int faultBlocksCount)
-        {
-            var validatorAddress = PublicKeyToAddress(validator);
-            var stake = GetStake(validatorAddress).ToMoney(true);
-            
-            // TODO: determine correct number
-            var penalty = stake * faultBlocksCount / (int) CycleDuration / 2;
-            if (penalty <= Money.Zero) return;
-            
-            SetStake(validatorAddress, (stake - penalty).ToUInt256(true));
-            _contractContext.Snapshot.Balances.SubBalance(
-                ContractRegisterer.StakingContract, penalty
-            );
-        }
-
 
         [ContractMethod(StakingInterface.MethodFinishVrfLottery)]
-        public void FinishVrfLottery()
+        public ExecutionStatus FinishVrfLottery(SystemContractExecutionFrame frame)
         {
+            if (!MsgSender().IsZero())
+                return ExecutionStatus.ExecutionHalted;
+
+            var blockNumber = _context.Receipt.Block;
+            var blockInCycle = blockNumber % CycleDuration;
+            if (blockInCycle != CycleDuration / 2)
+                return ExecutionStatus.ExecutionHalted;
+            
             var nextValidators = _nextValidators.Get();
             
             if (nextValidators.Length == 0)
-                throw new Exception("Empty validator set");
-            
-            EnsureFinishBlock();
-            
-            if (!MsgSender().IsZero()) 
-                throw new Exception("Auth failure");
-            
+                return ExecutionStatus.ExecutionHalted; 
+
             _vrfSeed.Set(GetNextVrfSeed());
             _nextVrfSeed.Set(new byte[]{});
             _nextValidators.Set(new byte[]{});
-            ApplyNextAndStorePreviousValidatorSet(nextValidators);
-        }
-
-        private void ApplyNextAndStorePreviousValidatorSet(byte[] validatorSet)
-        {
+            
             byte[][] validators = {};
-            for (var startByte = 0; startByte < validatorSet.Length; startByte += CryptoUtils.PublicKeyLength)
+            for (var startByte = 0; startByte < nextValidators.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                var validatorPublicKey = validatorSet.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
+                var validatorPublicKey = nextValidators.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 validators = validators.Concat(new[] {validatorPublicKey}).ToArray();
             }
 
-            var previousValidators = _contractContext.Snapshot.Validators.GetValidatorsPublicKeys().Select(pk => pk.Buffer.ToByteArray());
+            var previousValidators = _context.Snapshot.Validators.GetValidatorsPublicKeys().Select(pk => pk.Buffer.ToByteArray());
             SetPreviousValidators(previousValidators.ToArray());
 
-            _contractContext.Sender = ContractRegisterer.StakingContract;
-            var governance = new GovernanceContract(_contractContext);   
-            governance.ChangeValidators(validators);
+            var changeValidatorsExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.GovernanceContract, ContractRegisterer.StakingContract, GovernanceInterface.MethodChangeValidators, validators);
+
+            if (changeValidatorsExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            return ExecutionStatus.Ok;
         }
 
-        [ContractMethod(StakingInterface.MethodGetCurrentCycle)]
         public int GetCurrentCycle()
         {
-            return (int)(_contractContext.Snapshot.Blocks.GetTotalBlockHeight() / CycleDuration);
+            return (int)(_context.Snapshot.Blocks.GetTotalBlockHeight() / CycleDuration);
         }
 
         [ContractMethod(StakingInterface.MethodGetVrfSeed)]
-        public byte[] GetVrfSeed()
+        public ExecutionStatus GetVrfSeed(SystemContractExecutionFrame frame)
         {
-            return _vrfSeed.Get();
+            frame.UseGas(GasMetering.StakingGetVrfSeedCost);
+            frame.ReturnValue = _vrfSeed.Get();
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(StakingInterface.MethodGetNextVrfSeed)]
@@ -443,24 +611,29 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(StakingInterface.MethodIsNextValidator)]
-        public bool IsNextValidator(byte[] publicKey)
+        public ExecutionStatus IsNextValidator(byte[] publicKey, SystemContractExecutionFrame frame)
         {
+            var result = false;
             var validators = _nextValidators.Get();
             for (var startByte = 0; startByte < validators.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var validator = validators.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 if (validator.SequenceEqual(publicKey))
                 {
-                    return true;
+                    result = true;
+                    break;
                 }
             }
 
-            return false;
+            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(StakingInterface.MethodGetPreviousValidators)]
-        public byte[][] GetPreviousValidators()
+        public ExecutionStatus GetPreviousValidators(SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.StakingGetPreviousValidators);
             var validatorsData = _previousValidators.Get();
             byte[][] validators = {};
             for (var startByte = 0; startByte < validatorsData.Length; startByte += CryptoUtils.PublicKeyLength)
@@ -469,28 +642,27 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 validators = validators.Concat(new[] {validator}).ToArray();
             }
 
-            return validators;
+            frame.ReturnValue = validatorsData;
+            return ExecutionStatus.Ok;
         }
 
-        public void EnsurePreviousValidator(byte[] publicKey)
+        [ContractMethod(StakingInterface.MethodIsPreviousValidator)]
+        public ExecutionStatus IsPreviousValidator(byte[] publicKey, SystemContractExecutionFrame frame)
         {
-            if (!IsPreviousValidator(publicKey)) 
-                throw new Exception("Not a previous validator");
-        }
-
-        public bool IsPreviousValidator(byte[] publicKey)
-        {
+            frame.UseGas(GasMetering.StakingIsPreviousValidatorCost);
+            
+            var result = false;
             var validators = _previousValidators.Get();
             for (var startByte = 0; startByte < validators.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var validator = validators.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
-                if (validator.SequenceEqual(publicKey))
-                {
-                    return true;
-                }
+                if (!validator.SequenceEqual(publicKey)) continue;
+                result = false;
+                break;
             }
 
-            return false;
+            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         private void SetNextValidator(byte[] publicKey)
@@ -512,37 +684,102 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
         }
 
-        [ContractMethod(StakingInterface.MethodTotalActiveStake)]
-        public UInt256 GetTotalActiveStake()
+        [ContractMethod(StakingInterface.MethodGetTotalActiveStake)]
+        public ExecutionStatus GetTotalActiveStake(SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.StakingGetTotalActiveStakeCost);
+            
             Money stakeSum = UInt256Utils.Zero.ToMoney();
             var stakers = _stakers.Get();
             for (var startByte = CryptoUtils.PublicKeyLength; startByte < stakers.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var stakerPublicKey = stakers.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
-                var stakerAddress = PublicKeyToAddress(stakerPublicKey);
-                if (GetCurrentCycle() >= GetStartCycle(stakerAddress)
-                    && (GetWithdrawRequestCycle(stakerAddress) == 0
-                        || GetWithdrawRequestCycle(stakerAddress) == GetCurrentCycle()))
+                var stakerAddress = SystemContractUtils.PublicKeyToAddress(stakerPublicKey);
+                
+                var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, stakerAddress);
+
+                if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
+                
+                var withdrawRequestCycle = withdrawRequestCycleBytes.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes) : 0;
+                
+                var getStartCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, stakerAddress);
+
+                if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var startCycleBytes = getStartCycleExecutionResult.ReturnValue;
+                
+                var startCycle = startCycleBytes.Length > 0 ? BitConverter.ToInt32(startCycleBytes) : 0;
+                
+                if (GetCurrentCycle() >= startCycle
+                    && (withdrawRequestCycle == 0
+                        || withdrawRequestCycle == GetCurrentCycle()))
                 {
-                    stakeSum += GetStake(stakerAddress).ToMoney(true);
+                    var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                        ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, stakerAddress);
+
+                    if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                        return ExecutionStatus.ExecutionHalted;
+            
+                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+                    stakeSum += stake.ToMoney(true);
                 }
             }
 
-            return stakeSum.ToUInt256(true);
+            frame.ReturnValue = stakeSum.ToUInt256(true).ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         
         [ContractMethod(StakingInterface.MethodIsAbleToBeAValidator)]
-        public bool IsAbleToBeAValidator(UInt160 staker)
+        public ExecutionStatus IsAbleToBeAValidator(UInt160 staker, SystemContractExecutionFrame frame)
         {
-            var stake = GetStake(staker);
-            if (stake.ToBigInteger(true) < TokenUnitsInRoll)
-            {
-                return false;
-            }
+            frame.UseGas(GasMetering.StakingIsAbleToBeAValidatorCost);
+
+            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
             
-            return GetCurrentCycle() >= GetStartCycle(staker) && GetWithdrawRequestCycle(staker) == 0;
+            if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+            
+            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+
+            var notAStaker = stake.IsZero();
+            if (notAStaker) 
+                frame.ReturnValue = 0.ToUInt256().ToBytes();
+            else
+            {
+                var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, staker);
+
+                if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
+                
+                var withdrawRequestCycle = withdrawRequestCycleBytes.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes) : 0;
+                
+                var getStartCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, staker);
+
+                if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var startCycleBytes = getStartCycleExecutionResult.ReturnValue;
+                
+                var startCycle = startCycleBytes.Length > 0 ? BitConverter.ToInt32(startCycleBytes) : 0;
+                
+                frame.ReturnValue =
+                    (GetCurrentCycle() >= startCycle && withdrawRequestCycle == 0 ? 1 : 0)
+                    .ToUInt256().ToBytes();
+            }
+
+            return ExecutionStatus.Ok;
         }
         
         private void SetStake(UInt160 staker, UInt256 amount)
@@ -550,7 +787,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var key = staker.ToBytes();
             if (amount.IsZero())
             {
-                _userToStake.Delete(key);
                 return;
             }
             var value = amount.ToBytes();
@@ -558,25 +794,33 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(StakingInterface.MethodGetStake)]
-        public UInt256 GetStake(UInt160 staker)
+        public ExecutionStatus GetStake(UInt160 staker, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.StakingGetStakeCost);
             var stakeValue = _userToStake.GetValue(staker.ToBytes());
-            if (stakeValue.Length == 0) return UInt256Utils.Zero;
-            return stakeValue.ToUInt256();
+            if (stakeValue.Length == 0) 
+                frame.ReturnValue = UInt256Utils.Zero.ToBytes();
+            else 
+                frame.ReturnValue = stakeValue;
+            return ExecutionStatus.Ok;
         }
 
-        public int GetStartCycle(UInt160 staker)
+        [ContractMethod(StakingInterface.MethodGetStartCycle)]
+        public ExecutionStatus GetStartCycle(UInt160 staker, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.StakingGetStartCycleCost);
             var startCycleBytes = _userToStartCycle.GetValue(staker.ToBytes());
-            if (startCycleBytes.Length == 0) throw new Exception("Start cycle not found");
-            return BitConverter.ToInt32(startCycleBytes);
+            frame.ReturnValue = startCycleBytes;
+            return ExecutionStatus.Ok;
         }
 
-        public int GetWithdrawRequestCycle(UInt160 staker)
+        [ContractMethod(StakingInterface.MethodGetWithdrawRequestCycle)]
+        public ExecutionStatus GetWithdrawRequestCycle(UInt160 staker, SystemContractExecutionFrame frame)
         {
+            frame.UseGas(GasMetering.StakingGetWithdrawRequestCycleCost);
             var withdrawRequestCycleBytes = _userToWithdrawRequestCycle.GetValue(staker.ToBytes());
-            if (withdrawRequestCycleBytes.Length == 0) return 0;
-            return BitConverter.ToInt32(withdrawRequestCycleBytes);
+            frame.ReturnValue = withdrawRequestCycleBytes;
+            return ExecutionStatus.Ok;
         }
          
         private void SetStakerPublicKey(UInt160 staker, byte[] publicKey)
@@ -634,13 +878,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _userToStartCycle.Delete(key);
         }
 
-        private void EnsurePublicKeyOwner(byte[] publicKey, UInt160 expectedOwner)
+        private bool IsPublicKeyOwner(byte[] publicKey, UInt160 expectedOwner)
         {
-            var address = PublicKeyToAddress(publicKey);
-            if (!expectedOwner.Equals(address))
-            {
-                throw new Exception("Incorrect public key");
-            }
+            var address = SystemContractUtils.PublicKeyToAddress(publicKey);
+            return expectedOwner.Equals(address);
         }
 
         private void DeleteStaker(UInt160 staker)
@@ -671,70 +912,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 _vrfSeed.Set(Encoding.ASCII.GetBytes("test")); // initial seed
             }
         }
-        
-        private byte[] GetStakerPublicKey(UInt160 staker)
-        {
-            var pubKey = _userToPubKey.GetValue(staker.ToBytes());
-            if (pubKey.Length == 0)
-            {
-                throw new Exception("Not a staker");
-            }
-
-            return pubKey;
-        }
-
-        private UInt160 PublicKeyToAddress(byte[] publicKey)
-        {
-            return Crypto.ComputeAddress(publicKey).ToUInt160();
-        }
-
-        private static void EnsurePositive(UInt256 amount)
-        {
-            if (amount.ToMoney(true).CompareTo(UInt256Utils.ToUInt256(0).ToMoney()) != 1)
-            {
-                throw new Exception("Should be positive");
-            }
-        }
-
-        private void EnsureSubmissionPhase()
-        {
-            var blockNumber = _contractContext.Receipt.Block;
-            var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle >= SubmissionPhaseDuration)
-            {
-                throw new Exception("Not a submission phase");
-            }
-        }
-
-        private void EnsureFinishBlock()
-        {
-            var blockNumber = _contractContext.Receipt.Block;
-            var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle != CycleDuration / 2)
-            {
-                throw new Exception("Not a finish phase");
-            }
-        }
-
-        private void EnsureWithdrawalPhase()
-        {
-            var blockNumber = _contractContext.Receipt.Block;
-            var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle < AttendanceDetectionDuration)
-            {
-                throw new Exception("Not a finish phase");
-            }
-        }
-
-        private void EnsureDetectorPhase()
-        {
-            var blockNumber = _contractContext.Receipt.Block;
-            var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle >= AttendanceDetectionDuration)
-            {
-                throw new Exception("Not a finish phase");
-            }
-        }
 
         private BigInteger GetNextVrfSeedNum()
         {
@@ -745,7 +922,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private UInt160 MsgSender()
         {
-            return _contractContext.Sender ?? throw new InvalidOperationException();
+            return _context.Sender ?? throw new InvalidOperationException();
         }
         
         /**

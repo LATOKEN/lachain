@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
@@ -9,6 +11,7 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.VRF;
@@ -24,11 +27,11 @@ namespace Lachain.Core.ValidatorStatus
     {
         private static readonly ILogger<ValidatorStatusManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorStatusManager>();
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
-        private readonly IBlockchainContext _blockchainContext;
         private readonly IStateManager _stateManager;
         private bool _withdrawTriggered;
         private readonly IPrivateWallet _privateWallet;
         private bool _started;
+        private readonly IContractRegisterer _contractRegisterer;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
@@ -38,18 +41,18 @@ namespace Lachain.Core.ValidatorStatus
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
             ITransactionBuilder transactionBuilder,
-            IBlockchainContext blockchainContext,
             IPrivateWallet privateWallet,
             IStateManager stateManager,
+            IContractRegisterer contractRegisterer,
             IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _transactionPool = transactionPool;
             _transactionSigner = transactionSigner;
             _transactionBuilder = transactionBuilder;
-            _blockchainContext = blockchainContext;
             _privateWallet = privateWallet;
             _stateManager = stateManager;
+            _contractRegisterer = contractRegisterer;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _withdrawTriggered = false;
         }
@@ -79,13 +82,13 @@ namespace Lachain.Core.ValidatorStatus
 
                 while (!_withdrawTriggered)
                 {
-                    if (lastCheckedBlockHeight == _blockchainContext.CurrentBlockHeight || GetCurrentCycle() == passingCycle)
+                    if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() || GetCurrentCycle() == passingCycle)
                     {
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                         continue;
                     }
                     
-                    lastCheckedBlockHeight = _blockchainContext.CurrentBlockHeight;
+                    lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
                     
                     if (_sendingTxHash != null)
                     {
@@ -140,7 +143,7 @@ namespace Lachain.Core.ValidatorStatus
                     var isNextValidator = IsNextValidator();
                     if (isNextValidator)
                     {
-                        Logger.LogInformation($"The node is chosen as next validator. Nothing to do.");
+                        Logger.LogInformation($"The node chosen as next validator. Nothing to do.");
                         passingCycle = GetCurrentCycle();
                         continue;
                     }
@@ -155,7 +158,7 @@ namespace Lachain.Core.ValidatorStatus
                     var (isWinner, proof) = GetVrfProof(stake);
                     if (isWinner)
                     {
-                        Logger.LogInformation($"The node won the VRF lottery. Submitting transaction to become next cycle' validator");
+                        Logger.LogInformation($"The node won the VRF lottery. Submitting transaction to become the next cycle validator");
                         SubmitVrf(proof);
                         continue;
                     }
@@ -168,14 +171,14 @@ namespace Lachain.Core.ValidatorStatus
                 // Try to withdraw stake
                 while (!GetStake().IsZero())
                 {
-                    if (lastCheckedBlockHeight == _blockchainContext.CurrentBlockHeight || GetCurrentCycle() == passingCycle)
+                    if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() || GetCurrentCycle() == passingCycle)
                     {
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                         continue;
                     }
                     Logger.LogWarning($"Trying to withdraw stake");
                     
-                    lastCheckedBlockHeight = _blockchainContext.CurrentBlockHeight;
+                    lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
 
                     if (IsDetectionPhase() && IsPreviousValidator() && !IsCheckedIn())
                     {
@@ -317,39 +320,23 @@ namespace Lachain.Core.ValidatorStatus
 
         private UInt256 GetStake()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
+            var stakerAddress = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress();
+            
+            var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
+                stakerAddress);
 
-            var stakingProtocol = new StakingContract(context);
-            return stakingProtocol.GetStake(context.Sender);
+            return invResult.ToUInt256();
         }
 
         private UInt256 GetTotalStake()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-
-            var stakingProtocol = new StakingContract(context);
-            return stakingProtocol.GetTotalActiveStake();
+            var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetTotalActiveStake);
+            return invResult.ToUInt256();
         }
 
         private (bool, byte[]) GetVrfProof(BigInteger stake)
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-
-            var stakingProtocol = new StakingContract(context);
-            var seed = stakingProtocol.GetVrfSeed();
-            
+            var seed = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
             var rolls = stake / StakingContract.TokenUnitsInRoll;
             var totalRolls = GetTotalStake().ToBigInteger(true) / StakingContract.TokenUnitsInRoll;
             var (proof, value, j) = Vrf.Evaluate(_privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,
@@ -359,116 +346,95 @@ namespace Lachain.Core.ValidatorStatus
 
         private int GetWithdrawRequestCycle()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-
-            var stakingProtocol = new StakingContract(context);
-            return stakingProtocol.GetWithdrawRequestCycle(context.Sender);
+            var stakerAddress = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress();
+            var withdrawRequestCycleBytes = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle,
+                            stakerAddress);
+            return withdrawRequestCycleBytes.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes): 0;
         }
 
         private bool IsNextValidator()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-
+            var stakerPublicKey = _privateWallet.EcdsaKeyPair.PublicKey.Buffer.ToByteArray();
             if (IsVrfSubmissionPhase())
             {
-                var stakingProtocol = new StakingContract(context);
-                return stakingProtocol.IsNextValidator(_privateWallet.EcdsaKeyPair.PublicKey.Buffer.ToByteArray());
+                var isNextValidatorStaking = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsNextValidator,
+                    stakerPublicKey);
+                return !isNextValidatorStaking.ToUInt256().IsZero();
             }
-
-            var governanceProtocol = new GovernanceContract(context);
-            return governanceProtocol.IsNextValidator(_privateWallet.EcdsaKeyPair.PublicKey.Buffer
-                .ToByteArray());
+            var isNextValidatorGovernance = ReadSystemContractData(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodIsNextValidator,
+                stakerPublicKey);
+            
+            return !isNextValidatorGovernance.ToUInt256().IsZero();
 
         }
 
         private bool IsPreviousValidator()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-            var staking = new StakingContract(context);
-            return staking.IsPreviousValidator(_privateWallet.EcdsaKeyPair.PublicKey.Buffer
-                .ToByteArray());
+            var stakerPublicKey = _privateWallet.EcdsaKeyPair.PublicKey.Buffer.ToByteArray();
+            var isPreviousValidator = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsPreviousValidator,
+                stakerPublicKey);
+            
+            return !isPreviousValidator.ToUInt256().IsZero();
 
         }
 
         private byte[][] GetPreviousValidators()
         {
-            var context = new ContractContext
+            var previousValidatorsData = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetPreviousValidators);
+            
+            byte[][] validators = {};
+            for (var startByte = 0; startByte < previousValidatorsData.Length; startByte += CryptoUtils.PublicKeyLength)
             {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-            var staking = new StakingContract(context);
-            return staking.GetPreviousValidators();
+                var validator = previousValidatorsData.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
+                validators = validators.Concat(new[] {validator}).ToArray();
+            }
+            return validators;
         }
 
         private bool IsCheckedIn()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-            var staking = new StakingContract(context);
-            return staking.IsCheckedInFaultDetector(_privateWallet.EcdsaKeyPair.PublicKey.Buffer
-                .ToByteArray());
+            var stakerPublicKey = _privateWallet.EcdsaKeyPair.PublicKey.Buffer.ToByteArray();
+            var isCheckedIn = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection,
+                stakerPublicKey);
+            return !isCheckedIn.ToUInt256().IsZero();
 
         }
 
         private bool IsVrfSubmissionPhase()
         {
-            var blockNumber = _blockchainContext.CurrentBlockHeight;
+            var blockNumber = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var blockInCycle = blockNumber % StakingContract.CycleDuration;
             return blockInCycle < StakingContract.SubmissionPhaseDuration;
         }
 
         private bool IsDetectionPhase()
         {
-            var blockNumber = _blockchainContext.CurrentBlockHeight;
+            var blockNumber = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var blockInCycle = blockNumber % StakingContract.CycleDuration;
             return blockInCycle < StakingContract.AttendanceDetectionDuration;
         }
 
         private bool IsWithdrawalPhase()
         {
-            var blockNumber = _blockchainContext.CurrentBlockHeight;
+            var blockNumber = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var blockInCycle = blockNumber % StakingContract.CycleDuration;
             return blockInCycle >= StakingContract.AttendanceDetectionDuration;
         }
 
         private int GetCurrentCycle()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
-
-            var stakingProtocol = new StakingContract(context);
-            return stakingProtocol.GetCurrentCycle();
+            var blockNumber = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+            var currentCycle = blockNumber / StakingContract.CycleDuration;
+            return (int) currentCycle;
         }
 
         private bool IsAbleToBeAValidator()
         {
-            var context = new ContractContext
-            {
-                Snapshot = _stateManager.LastApprovedSnapshot,
-                Sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-            };
+            var stakerAddress = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress();
+            var isAble = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsAbleToBeAValidator,
+                stakerAddress);
 
-            var stakingProtocol = new StakingContract(context);
-            return stakingProtocol.IsAbleToBeAValidator(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress());
+            return !isAble.ToUInt256().IsZero();
         }
 
         private UInt160 NodeAddress()
@@ -490,7 +456,28 @@ namespace Lachain.Core.ValidatorStatus
         {
             var bytes = _validatorAttendanceRepository.LoadState();
             if (bytes is null || bytes.Length == 0) return null;
-            return ValidatorAttendance.FromBytes(bytes, _blockchainContext.CurrentBlockHeight / StakingContract.CycleDuration);
+            return ValidatorAttendance.FromBytes(bytes, _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() / StakingContract.CycleDuration);
+        }
+
+        private byte[] ReadSystemContractData(UInt160 contractAddress, string method, params dynamic[] values)
+        {
+            var snapshot = _stateManager.LastApprovedSnapshot;
+            var sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress();
+            
+            var context = new InvocationContext(sender, snapshot, new TransactionReceipt
+            {
+                Block = snapshot.Blocks.GetTotalBlockHeight(),
+            });
+            var input = ContractEncoder.Encode(method, values);
+            var call = _contractRegisterer.DecodeContract(context, contractAddress, input);
+            if (call is null) throw new Exception("System contract invocation failed");
+            
+            var result = VirtualMachine.InvokeSystemContract(call, context, input, 100_000_000);
+            
+            if (result.Status != ExecutionStatus.Ok) 
+                throw new Exception("System contract failed");
+            
+            return result.ReturnValue;
         }
     }
 }

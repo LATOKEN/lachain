@@ -4,37 +4,34 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Proto;
-using Lachain.Storage.State;
 using WebAssembly.Runtime;
 
 namespace Lachain.Core.Blockchain.VM
 {
     public class VirtualMachine : IVirtualMachine
     {
-        internal static Stack<ExecutionFrame> ExecutionFrames { get; } = new Stack<ExecutionFrame>();
+        internal static Stack<IExecutionFrame> ExecutionFrames { get; } = new Stack<IExecutionFrame>();
 
-        internal static IBlockchainSnapshot? BlockchainSnapshot => StateManager?.CurrentSnapshot;
         internal static IBlockchainInterface BlockchainInterface { get; } = new BlockchainInterface();
-
-        private static IStateManager StateManager { get; set; }
-
+        
         internal static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
-        public VirtualMachine(IStateManager stateManager)
+        public VirtualMachine()
         {
-            StateManager = stateManager;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool VerifyContract(byte[] contractCode)
+        public static bool VerifyContract(byte[] contractCode)
         {
             try
             {
                 var config = new CompilerConfiguration();
-                using (var stream = new MemoryStream(contractCode))
-                    Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
+                using var stream = new MemoryStream(contractCode);
+                Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
             }
             catch (Exception)
@@ -43,32 +40,49 @@ namespace Lachain.Core.Blockchain.VM
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public InvocationResult InvokeContract(Contract contract, InvocationContext context, byte[] input,
-            ulong gasLimit)
+        public static InvocationResult InvokeSystemContract(
+            SystemContractCall systemContractCall, InvocationContext context, byte[] input, ulong gasLimit
+        )
         {
-            var executionStatus = ExecutionStatus.Ok;
+            var status = FrameFactory.FromSystemContractCall(
+                systemContractCall,
+                context,
+                input,
+                out var rootFrame,
+                gasLimit
+            );
+            return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public static InvocationResult InvokeWasmContract(
+            Contract contract, InvocationContext context, byte[] input, ulong gasLimit
+        )
+        {
+            var status = FrameFactory.FromInvocation(
+                contract.ByteCode.ToByteArray(),
+                context,
+                contract.ContractAddress,
+                input,
+                BlockchainInterface,
+                out var rootFrame,
+                gasLimit
+            );
+            return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
+        }
+
+        private static InvocationResult ExecuteFrame(IExecutionFrame frame)
+        {
+            ExecutionStatus executionStatus;
             var returnValue = new byte[] { };
             var gasUsed = 0UL;
             try
             {
-                if (ExecutionFrames.Count != 0)
-                    return InvocationResult.FactoryDefault(ExecutionStatus.VmStackCorruption);
-                var status = ExecutionFrame.FromInvocation(
-                    contract.ByteCode.ToByteArray(),
-                    context,
-                    contract.ContractAddress,
-                    input,
-                    BlockchainInterface,
-                    out var rootFrame,
-                    gasLimit);
-                if (status != ExecutionStatus.Ok)
-                    return InvocationResult.FactoryDefault(status);
-                ExecutionFrames.Push(rootFrame);
-                var result = rootFrame.Execute();
-                if (result == ExecutionStatus.Ok)
-                    returnValue = rootFrame.ReturnValue;
-                gasUsed = rootFrame.GasUsed;
+                ExecutionFrames.Push(frame);
+                executionStatus = frame.Execute();
+                if (executionStatus == ExecutionStatus.Ok)
+                    returnValue = frame.ReturnValue;
+                gasUsed = frame.GasUsed;
                 ExecutionFrames.Pop();
             }
             catch (OutOfGasException e)

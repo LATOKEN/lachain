@@ -18,7 +18,6 @@ namespace Lachain.Core.CLI
         private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
-        private readonly IVirtualMachine _virtualMachine;
         private readonly ILogger<ConsoleManager> _logger = LoggerFactory.GetLoggerForClass<ConsoleManager>();
         private IConsoleCommands? _consoleCommands;
 
@@ -29,7 +28,6 @@ namespace Lachain.Core.CLI
             ITransactionPool transactionPool,
             ITransactionManager transactionManager,
             ITransactionSigner transactionSigner,
-            IVirtualMachine virtualMachine,
             IBlockManager blockManager,
             IStateManager stateManager
         )
@@ -40,14 +38,13 @@ namespace Lachain.Core.CLI
             _transactionManager = transactionManager;
             _transactionSigner = transactionSigner;
             _stateManager = stateManager;
-            _virtualMachine = virtualMachine;
         }
 
         private void _Worker(EcdsaKeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(
                 _transactionBuilder, _transactionPool, _transactionManager, _transactionSigner,
-                _blockManager, _stateManager, _virtualMachine, keyPair
+                _blockManager, _stateManager, keyPair
             );
             try
             {
