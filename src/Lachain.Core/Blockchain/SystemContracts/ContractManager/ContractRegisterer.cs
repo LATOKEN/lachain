@@ -62,8 +62,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
 
         public SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input)
         {
-            if (input.Length < 4)
-                throw new ArgumentOutOfRangeException(nameof(input));
+            if (input.Length < 4) return null;
             if (!_contracts.TryGetValue(address, out var contract) ||
                 !_signatures.TryGetValue(address, out var signatures)
             )
@@ -74,7 +73,14 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             var (methodName, methodInfo) = tuple;
             var decoder = new ContractDecoder(input);
             var instance = Activator.CreateInstance(contract, context);
-            return new SystemContractCall(instance, methodInfo, decoder.Decode(methodName), address);
+            try
+            {
+                return new SystemContractCall(instance, methodInfo, decoder.Decode(methodName), address);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }

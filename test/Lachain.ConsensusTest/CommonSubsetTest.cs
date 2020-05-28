@@ -22,7 +22,7 @@ namespace Lachain.ConsensusTest
         private BroadcastSimulator[] _broadcasters;
         private ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>[] _resultInterceptors;
         private int N = 7;
-        private readonly int F = 2;
+        private int F = 2; // 2
         private IPrivateConsensusKeySet[] _privateKeys;
         private IPublicConsensusKeySet _publicKeys;
         private IValidatorAttendanceRepository _validatorAttendanceRepository;
@@ -48,7 +48,7 @@ namespace Lachain.ConsensusTest
 
             for (uint i = 0; i < N; ++i)
             {
-                _acs[i] = new CommonSubset(new CommonSubsetId(10), _publicKeys, _broadcasters[i]);
+                _acs[i] = new CommonSubset(new CommonSubsetId(0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_acs[i], _resultInterceptors[i]});
             }
         }
@@ -124,9 +124,10 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        public void TestAllCommonSubset(int n, DeliveryServiceMode mode = DeliveryServiceMode.TAKE_FIRST)
+        private void TestAllCommonSubset(int n, int f, DeliveryServiceMode mode = DeliveryServiceMode.TAKE_FIRST)
         {
             N = n;
+            F = f;
             SetUpAllHonest();
             _deliveryService.Mode = mode;
 
@@ -134,13 +135,21 @@ namespace Lachain.ConsensusTest
                 "------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
 
             var inputs = new List<EncryptedShare>();
+            
+            var _rnd = new Random();
+            var rnd = new byte[32];
+            _rnd.NextBytes(rnd);
+            
+            
             for (var i = 0; i < N; ++i)
             {
 //                var share = (i == 0) ? new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i) : null;
+
+                var _testShare = new EncryptedShare(G1.Generator, rnd, G2.Generator, i);
                 var share = new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i);
-                inputs.Add(share);
+                inputs.Add(_testShare);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(
-                    _resultInterceptors[i].Id, _acs[i].Id as CommonSubsetId, share
+                    _resultInterceptors[i].Id, _acs[i].Id as CommonSubsetId, _testShare
                 ));
             }
 
@@ -191,17 +200,41 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        [Repeat(10)]
-        public void TestRandom7()
+        //[Repeat(10)]
+        public void TestRandomN7F1()
         {
-            TestAllCommonSubset(7, DeliveryServiceMode.TAKE_RANDOM);
+            TestAllCommonSubset(7, 1, DeliveryServiceMode.TAKE_RANDOM);
+        }
+        [Test]
+        //[Repeat(10)]
+        public void TestRandomN7F3()
+        {
+            TestAllCommonSubset(7, 2, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]
-        [Repeat(10)]
-        public void TestSimple7()
+        //[Repeat(10)]
+        public void TestSimpleN7F1()
         {
-            TestAllCommonSubset(7);
+            TestAllCommonSubset(7, 1);
+        }
+        [Test]
+        //[Repeat(10)]
+        public void TestSimpleN7F3()
+        {
+            TestAllCommonSubset(7, 2);
+        }
+        [Test]
+        //[Repeat(10)]
+        public void TestSimpleN22F1()
+        {
+            TestAllCommonSubset(22, 1);
+        }
+        [Test]
+        //[Repeat(10)]
+        public void TestSimpleN22F7()
+        {
+            TestAllCommonSubset(22, 7);
         }
     }
 }

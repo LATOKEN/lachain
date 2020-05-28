@@ -50,8 +50,9 @@ namespace Lachain.ConsensusTest
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
-        private const int N = 7;
-        private const int F = 2;
+        private const int N = 22;
+        private const int F = 7;
+        private const int Era = 0;
         private IPublicConsensusKeySet _publicKeys;
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
@@ -63,7 +64,7 @@ namespace Lachain.ConsensusTest
             for (uint i = 0; i < N; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(10), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -74,7 +75,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < N; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(10), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
                 foreach (var j in s) (_broadcasters[i] as BroadcastSimulator)?.Silent(j);

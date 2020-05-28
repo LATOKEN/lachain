@@ -11,6 +11,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3D21573C-BE35-4729-AE79-3C74D3FC2991}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{3F1B8F03-E36E-41DA-A0C1-BEA52B76DE0B}"
+ProjectSection(SolutionItems) = preProject
+	test\ToolsTest.cs = test\ToolsTest.cs
+EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lachain.CoreTest", "test\Lachain.CoreTest\Lachain.CoreTest.csproj", "{DA140831-7B94-4281-AE14-5FECD4CCD8E7}"
 EndProject

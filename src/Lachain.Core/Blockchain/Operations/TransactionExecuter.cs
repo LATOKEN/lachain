@@ -83,10 +83,10 @@ namespace Lachain.Core.Blockchain.Operations
                 if (receipt.GasUsed > transaction.GasLimit)
                     return OperatingError.OutOfGas;
                 var result = ContractInvoker.Invoke(addressTo, context, input, transaction.GasLimit - receipt.GasUsed);
+                receipt.GasUsed += result.GasUsed;
                 if (result.Status != ExecutionStatus.Ok)
                     return OperatingError.ContractFailed;
-                receipt.GasUsed += result.GasUsed;
-
+                
                 if (receipt.GasUsed > transaction.GasLimit) return OperatingError.OutOfGas;
                 if (isSystemContract) OnSystemContractInvoked?.Invoke(this, context);
                 return OperatingError.Ok;
@@ -101,10 +101,9 @@ namespace Lachain.Core.Blockchain.Operations
 
         private OperatingError _CheckGasLimit(TransactionReceipt receipt)
         {
-            const ulong inputDataGas = 10;
             if (receipt.Transaction.Invocation.IsEmpty)
                 return OperatingError.Ok;
-            receipt.GasUsed += (ulong) receipt.Transaction.Invocation.Length * inputDataGas;
+            receipt.GasUsed += (ulong) receipt.Transaction.Invocation.Length * GasMetering.InputDataGasPerByte;
             return receipt.GasUsed > receipt.Transaction.GasLimit ? OperatingError.OutOfGas : OperatingError.Ok;
         }
 

@@ -38,7 +38,8 @@ namespace Lachain.Consensus.BinaryAgreement
 
         private void CheckResult()
         {
-            if (_result == null) return;
+            if (_result == null) 
+                return;
             if (_requested == ResultStatus.Requested)
             {
                 Broadcaster.InternalResponse(

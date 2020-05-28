@@ -55,7 +55,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         public byte[] Input { get; }
 
         public ulong GasLimit { get; }
-        public ulong GasUsed { get; private set; }
+        public ulong GasUsed => GasLimit - (ulong) Exports.GetField("💩 GasLimit").GetValue(null);
 
         public void UseGas(ulong gas)
         {
@@ -82,18 +82,13 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
             }
             catch (OverflowException)
             {
-                GasUsed = GasLimit - (ulong) gasLimitField.GetValue(null);
                 throw new OutOfGasException(GasUsed);
             }
             catch (InvalidProgramException e)
             {
                 Console.Error.WriteLine(e);
-                GasUsed = GasLimit - (ulong) gasLimitField.GetValue(null);
                 return ExecutionStatus.JitCorruption;
             }
-
-            var gasSpent = GasLimit - (ulong) gasLimitField.GetValue(null);
-            GasUsed = gasSpent;
             return ExecutionStatus.Ok;
         }
 

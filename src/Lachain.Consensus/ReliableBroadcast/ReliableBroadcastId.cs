@@ -1,3 +1,5 @@
+using System;
+
 namespace Lachain.Consensus.ReliableBroadcast
 {
     public class ReliableBroadcastId : IProtocolIdentifier
@@ -22,10 +24,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                return (AssociatedValidatorId.GetHashCode() * 397) ^ Era.GetHashCode();
-            }
+            return HashCode.Combine(AssociatedValidatorId, Era);
         }
 
         public int AssociatedValidatorId { get; }

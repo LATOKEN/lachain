@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using WebAssembly.Runtime;
 
@@ -17,12 +18,10 @@ namespace Lachain.Core.Blockchain.VM
         internal static Stack<IExecutionFrame> ExecutionFrames { get; } = new Stack<IExecutionFrame>();
 
         internal static IBlockchainInterface BlockchainInterface { get; } = new BlockchainInterface();
-        
+
         internal static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
-        public VirtualMachine()
-        {
-        }
+        private static readonly ILogger<VirtualMachine> Logger = LoggerFactory.GetLoggerForClass<VirtualMachine>();
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static bool VerifyContract(byte[] contractCode)
@@ -73,46 +72,35 @@ namespace Lachain.Core.Blockchain.VM
 
         private static InvocationResult ExecuteFrame(IExecutionFrame frame)
         {
-            ExecutionStatus executionStatus;
-            var returnValue = new byte[] { };
-            var gasUsed = 0UL;
+            var result = new InvocationResult();
+            ExecutionFrames.Push(frame);
             try
             {
-                ExecutionFrames.Push(frame);
-                executionStatus = frame.Execute();
-                if (executionStatus == ExecutionStatus.Ok)
-                    returnValue = frame.ReturnValue;
-                gasUsed = frame.GasUsed;
-                ExecutionFrames.Pop();
+                result.Status = frame.Execute();
+                if (result.Status == ExecutionStatus.Ok)
+                    result.ReturnValue = frame.ReturnValue;
+                result.GasUsed = frame.GasUsed;
             }
             catch (OutOfGasException e)
             {
-                ExecutionFrames.Clear();
-                gasUsed = e.GasUsed;
-                executionStatus = ExecutionStatus.GasOverflow;
+                result.GasUsed = e.GasUsed;
+                result.Status = ExecutionStatus.GasOverflow;
             }
             catch (HaltException e)
             {
-                ExecutionFrames.Clear();
-                returnValue = new[]
-                {
-                    (byte) e.HaltCode
-                };
-                executionStatus = ExecutionStatus.ExecutionHalted;
+                result.Status = ExecutionStatus.ExecutionHalted;
+                result.ReturnValue = new[] {(byte) e.HaltCode};
+                result.GasUsed = frame.GasUsed;
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
-                ExecutionFrames.Clear();
-                executionStatus = ExecutionStatus.UnknownError;
+                Logger.LogError("Unknown exception in VM", e);
+                result.Status = ExecutionStatus.UnknownError;
+                result.GasUsed = frame.GasUsed;
             }
 
-            return new InvocationResult
-            {
-                GasUsed = gasUsed,
-                Status = executionStatus,
-                ReturnValue = returnValue
-            };
+            ExecutionFrames.Pop();
+            return result;
         }
     }
 }
