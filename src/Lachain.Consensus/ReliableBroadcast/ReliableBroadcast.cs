@@ -63,6 +63,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             _countCorrectEchoMsg = 0;
             _countReadyMsg = 0;
+            _requested = ResultStatus.NotRequested;
         }
 
 
@@ -110,10 +111,10 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
         {
+            _requested = ResultStatus.Requested;
             if (N == 1)
             {
                 _result = broadcastRequested.Input;
-                _requested = ResultStatus.Requested;
                 CheckResult();
                 return;
             }
@@ -294,7 +295,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                     _result = null;
                 }
 
-                _requested = ResultStatus.Requested;
                 CheckResult();
             }
         }
