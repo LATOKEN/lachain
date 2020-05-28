@@ -102,8 +102,14 @@ namespace Lachain.Core.Consensus
                 throw new ArgumentException("Validator index must be positive", nameof(index));
             }
 
+            if (index == GetMyId())
+            {
+                Dispatch(message, index);
+                return;
+            }
+
             var payload = _messageFactory.ConsensusMessage(message);
-            _messageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era), payload);
+            _messageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era - 1), payload);
         }
 
         public void Dispatch(ConsensusMessage message, int from)
@@ -138,35 +144,28 @@ namespace Lachain.Core.Consensus
                     break;
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
-                    EnsureProtocol(idCoin).ReceiveMessage(new MessageEnvelope(message, from));
+                    EnsureProtocol(idCoin)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
-                    EnsureProtocol(hbbftId).ReceiveMessage(new MessageEnvelope(message, from));
+                    EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(from, (int) message.Validator.Era);
+                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
                     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(from, (int) message.Validator.Era);
+                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId(from, (int) message.Validator.Era);
+                    var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var rootId = new RootProtocolId(message.Validator.Era);
                     EnsureProtocol(rootId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
-
-                // // TODO: this is only for mock RBC
-                // case ConsensusMessage.PayloadOneofCase.EncryptedShare:
-                //     var idEncryptedShare =
-                //         new ReliableBroadcastId(message.EncryptedShare.Id, (int) message.Validator.Era);
-                //     EnsureProtocol(idEncryptedShare)?.ReceiveMessage(new MessageEnvelope(message, from));
-                //     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");
             }
@@ -269,8 +268,12 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
-                    var coin = new CommonCoin(coinId, publicKeySet,
-                        _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1), this);
+                    var coin = new CommonCoin(
+                        coinId, publicKeySet,
+                        _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1) ??
+                        throw new InvalidOperationException($"No TS keys present for era {_era}"),
+                        this
+                    );
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
@@ -286,8 +289,12 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
-                    var hb = new HoneyBadger(hbId, publicKeySet, _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1),
-                        this);
+                    var hb = new HoneyBadger(
+                        hbId, publicKeySet,
+                        _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1)
+                        ?? throw new InvalidOperationException($"No TPKE keys present for era {_era}"),
+                        this
+                    );
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:

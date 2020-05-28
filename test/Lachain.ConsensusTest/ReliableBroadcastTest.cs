@@ -9,7 +9,6 @@ using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
-using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.ConsensusTest
 {
@@ -34,7 +33,7 @@ namespace Lachain.ConsensusTest
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
             
-            _testShare = new EncryptedShare(G1.Generator, RBTools.GetPermanentInput(32), G2.Generator, sender);
+            _testShare = new EncryptedShare(G1.Generator, RbTools.GetPermanentInput(32), G2.Generator, sender);
         }
 
         

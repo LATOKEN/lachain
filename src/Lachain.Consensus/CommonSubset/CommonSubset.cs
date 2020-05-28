@@ -13,6 +13,8 @@ namespace Lachain.Consensus.CommonSubset
 {
     public class CommonSubset : AbstractProtocol
     {
+        private static readonly ILogger<CommonSubset> Logger = LoggerFactory.GetLoggerForClass<CommonSubset>();
+
         private readonly CommonSubsetId _commonSubsetId;
         private ResultStatus _requested;
         private ISet<EncryptedShare>? _result;
@@ -23,7 +25,6 @@ namespace Lachain.Consensus.CommonSubset
         private int _cntBinaryAgreementsCompleted;
 
         private readonly EncryptedShare?[] _reliableBroadcastResult;
-        private readonly ILogger<CommonSubset> _logger = LoggerFactory.GetLoggerForClass<CommonSubset>();
 
         public CommonSubset(
             CommonSubsetId commonSubsetId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster
@@ -32,9 +33,6 @@ namespace Lachain.Consensus.CommonSubset
             _commonSubsetId = commonSubsetId;
             _binaryAgreementInput = new bool?[N];
             _binaryAgreementResult = new bool?[N];
-            
-            // var resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
-            // broadcaster.RegisterProtocols(new[] {_broadcasts[i], resultInterceptors});
             _reliableBroadcastResult = new EncryptedShare[N];
             _result = null;
         }
@@ -60,8 +58,10 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     case ProtocolRequest<CommonSubsetId, EncryptedShare> commonSubsetRequested:
                         HandleInputMessage(commonSubsetRequested);
-                        Console.Error.WriteLine(
-                            "Thread {0} ID_ACS {1} HandleInputMessage() into ACS", Thread.CurrentThread.ManagedThreadId, GetMyId());
+                        Logger.LogDebug(
+                            "Thread {0} ID_ACS {1} HandleInputMessage() into ACS",
+                            Thread.CurrentThread.ManagedThreadId, GetMyId()
+                        );
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> _:
                         Terminated = true;
@@ -84,8 +84,10 @@ namespace Lachain.Consensus.CommonSubset
             _requested = ResultStatus.Requested;
             Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                 (Id, new ReliableBroadcastId(GetMyId(), (int) _commonSubsetId.Era), request.Input));
-            Console.Error.WriteLine(
-                "Thread {0} ID_ACS {1} create RBC from HandleInputMessage", Thread.CurrentThread.ManagedThreadId, GetMyId());
+            Logger.LogDebug(
+                "Thread {0} ID_ACS {1} create RBC from HandleInputMessage", Thread.CurrentThread.ManagedThreadId,
+                GetMyId()
+            );
 
             for (var j = 0; j < N; ++j)
             {
@@ -93,10 +95,13 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(Id,
                         new ReliableBroadcastId(j, (int) _commonSubsetId.Era), null));
-                    Console.Error.WriteLine(
-                        "Thread {0} ID_ACS {1} create RBC from HandleInputMessage", Thread.CurrentThread.ManagedThreadId, GetMyId());
+                    Logger.LogDebug(
+                        "Thread {0} ID_ACS {1} create RBC from HandleInputMessage",
+                        Thread.CurrentThread.ManagedThreadId, GetMyId()
+                    );
                 }
             }
+
             CheckResult();
         }
 
@@ -106,18 +111,18 @@ namespace Lachain.Consensus.CommonSubset
                 throw new NoNullAllowedException();
 
             var id = new BinaryAgreementId(_commonSubsetId.Era, j);
-            _logger.LogDebug($"Sending input {_binaryAgreementInput[j]} to {id}");
+            Logger.LogDebug($"Sending input {_binaryAgreementInput[j]} to {id}");
             Broadcaster.InternalRequest(
                 new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
         }
 
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
         {
-            if(result.Result == null) 
+            if (result.Result == null)
                 return;
-            
+
             var j = result.Id.AssociatedValidatorId;
-            _logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: {j}-th RBC completed.");
+            Logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: {j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)
@@ -131,16 +136,16 @@ namespace Lachain.Consensus.CommonSubset
 
         private void HandleBinaryAgreementResult(ProtocolResult<BinaryAgreementId, bool> result)
         {
-            _logger.LogDebug($"Received {result.From} result: {result.Result}");
+            Logger.LogDebug($"Received {result.From} result: {result.Result}");
             // todo check for double send of result
             ++_cntBinaryAgreementsCompleted;
             _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
-            _logger.LogDebug(
+            Logger.LogDebug(
                 $"Player {GetMyId()} at {_commonSubsetId}: {result.Id.AssociatedValidatorId}-th BA completed.");
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= N - F)
             {
-                _logger.LogDebug($"Sending 0 to all remaining BA");
+                Logger.LogDebug($"Sending 0 to all remaining BA");
                 _filledBinaryAgreements = true;
                 for (var i = 0; i < N; ++i)
                 {
@@ -171,20 +176,20 @@ namespace Lachain.Consensus.CommonSubset
                 .Where(x => x.b == true)
                 .Select(x => x.share ?? throw new Exception())
                 .ToHashSet();
-            
-            
+
+
             CheckResult();
         }
 
         private void CheckResult()
         {
-            if (_result == null) 
+            if (_result == null)
                 return;
-            if (_requested != ResultStatus.Requested) 
+            if (_requested != ResultStatus.Requested)
                 return;
             _requested = ResultStatus.Sent;
             SetResult();
-            _logger.LogDebug($"{GetMyId()} ACS terminated.");
+            Logger.LogDebug($"{GetMyId()} ACS terminated.");
             Broadcaster.InternalResponse(
                 new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>(_commonSubsetId, _result));
         }

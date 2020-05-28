@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;

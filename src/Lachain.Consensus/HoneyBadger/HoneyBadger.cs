@@ -8,7 +8,6 @@ using Lachain.Crypto;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
-using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.Consensus.HoneyBadger
 {

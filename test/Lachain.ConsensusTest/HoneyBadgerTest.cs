@@ -9,7 +9,6 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
-using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.ConsensusTest
 {

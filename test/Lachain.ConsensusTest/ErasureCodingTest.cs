@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Lachain.Consensus.ReliableBroadcast;
-using Phorkus.Consensus.ReliableBroadcast;
 
 namespace Lachain.ConsensusTest
 {
@@ -21,7 +20,7 @@ namespace Lachain.ConsensusTest
             var plainText = GetInput(players * msgSize, additionalInts);
             // --------------------------------------
 
-            _erasureCoding = new ErasureCoding(additionalInts);
+            _erasureCoding = new ErasureCoding();
             _countErrors = 2;
             _countErasures = 3;
             _plainText = plainText;
@@ -291,9 +290,9 @@ namespace Lachain.ConsensusTest
             var additionalPositions = tips.Length;          
             var plainText = GetInput(lenBigInput, additionalPositions);
 
-            var pt1 = RBTools.GetCorrectInput(plainText, N).ToArray();
+            var pt1 = RbTools.GetCorrectInput(plainText, N).ToArray();
             
-            var ecBigInput = new ErasureCoding(additionalPositions);
+            var ecBigInput = new ErasureCoding();
             
             var Gs = new List<Array>();
             for (var i = 0; i < pt1.Length / lPeice; i++)
@@ -364,7 +363,7 @@ namespace Lachain.ConsensusTest
                         Array.Copy(batches[j][i], 0, toDecode, j * segment,segment);
                     }
                 }
-                var ecBigInput1 = new ErasureCoding(additionalPositions);
+                var ecBigInput1 = new ErasureCoding();
                 ecBigInput1.Decode(toDecode, additionalPositions, tips);
                 
                 var correctData = toDecode.Length / (coeffAdditionalPositions + 1);
@@ -397,9 +396,9 @@ namespace Lachain.ConsensusTest
             var additionalPositions = tips.Length;          
             var pt = GetInput(lenBigInput, additionalPositions);
 
-            var pt1 = RBTools.GetCorrectInput(pt, N);
+            var pt1 = RbTools.GetCorrectInput(pt, N);
             
-            var ecBigInput = new ErasureCoding(additionalPositions);
+            var ecBigInput = new ErasureCoding();
             
             var Gs = new List<Array>();
             for (var i = 0; i < pt.Length / lPeice; i++)
@@ -470,7 +469,7 @@ namespace Lachain.ConsensusTest
                         Array.Copy(batches[j][i], 0, toDecode, j * segment,segment);
                     }
                 }
-                var ecBigInput1 = new ErasureCoding(additionalPositions);
+                var ecBigInput1 = new ErasureCoding();
                 ecBigInput1.Decode(toDecode, additionalPositions, tips);
                 
                 var correctData = toDecode.Length / (coeffAdditionalPositions + 1);
