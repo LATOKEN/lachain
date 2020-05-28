@@ -132,7 +132,7 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                const ulong minBlockInterval = 000;
+                const ulong minBlockInterval = 1_000;
                 for (;; CurrentEra += 1)
                 {
                     var now = TimeUtils.CurrentTimeMillis();

@@ -96,25 +96,25 @@ namespace Lachain.Console
             consensusManager.Start((long) blockManager.GetHeight() + 1);
             validatorStatusManager.Start(false);
 
-            if (blockManager.GetHeight() == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
-            {
-                var txPool = _container.Resolve<ITransactionPool>();
-                var signer = _container.Resolve<ITransactionSigner>();
-                var builder = _container.Resolve<ITransactionBuilder>();
-                var newValidators = new[]
-                {
-                    // CryptoProvider.GetCrypto().GeneratePrivateKey().ToPrivateKey().GetPublicKey().EncodeCompressed()
-                    wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
-                }; 
-                var tx = builder.InvokeTransaction(
-                    wallet.EcdsaKeyPair.PublicKey.GetAddress(),
-                    ContractRegisterer.GovernanceContract,
-                    Money.Zero,
-                    GovernanceInterface.MethodChangeValidators,
-                    (object) newValidators
-                );
-                txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
-            }
+            // if (blockManager.GetHeight() == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
+            // {
+            //     var txPool = _container.Resolve<ITransactionPool>();
+            //     var signer = _container.Resolve<ITransactionSigner>();
+            //     var builder = _container.Resolve<ITransactionBuilder>();
+            //     var newValidators = new[]
+            //     {
+            //         // CryptoProvider.GetCrypto().GeneratePrivateKey().ToPrivateKey().GetPublicKey().EncodeCompressed()
+            //         wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
+            //     }; 
+            //     var tx = builder.InvokeTransaction(
+            //         wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+            //         ContractRegisterer.GovernanceContract,
+            //         Money.Zero,
+            //         GovernanceInterface.MethodChangeValidators,
+            //         (object) newValidators
+            //     );
+            //     txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
+            // }
 
             System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
 

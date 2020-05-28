@@ -92,7 +92,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
         public ExecutionStatus ChangeValidators(byte[][] newValidators, SystemContractExecutionFrame frame)
         {
-            if (!MsgSender().Equals(ContractRegisterer.StakingContract))
+            if (!MsgSender().Equals(ContractRegisterer.StakingContract) && !MsgSender().IsZero())
                 throw new Exception("Auth failure");
             
             frame.ReturnValue = new byte[] { };
@@ -182,8 +182,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
-            if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            Console.WriteLine($"Msg sender {MsgSender().ToHex()}");
+            Console.WriteLine($"players count {players}");
+            Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
+            Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
+            Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
+            Console.WriteLine($"gen {gen}");
+            Console.WriteLine($"votes {votes}");
 
+            if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
             SetTPKEKey(tpkeKey);
@@ -197,6 +205,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var faulty = (players - 1) / 3;
             var tsKeys = GetTSKeys();
             var tpkeKey = GetTPKEKey();
+            
+            Console.WriteLine($"players count {players}");
+            Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
+            Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
             
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 

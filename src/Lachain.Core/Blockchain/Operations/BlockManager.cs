@@ -229,6 +229,7 @@ namespace Lachain.Core.Blockchain.Operations
             /* execute transactions */
             foreach (var (txHash, i) in block.TransactionHashes.Select((tx, i) => (tx, i)))
             {
+                _logger.LogError($"Trying to execute tx : {txHash.ToHex()}");
                 /* try to find transaction by hash */
                 var receipt = currentTransactions[txHash];
                 receipt.Block = block.Header.Index;

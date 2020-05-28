@@ -87,8 +87,8 @@ namespace Lachain.Consensus.RootProtocol
                             }
                         )
                     );
-                    var validatorAttendance = GetOrCreateValidatorAttendance(_header.Index);
-                    validatorAttendance.IncrementAttendance(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(), _header.Index);
+                    var validatorAttendance = GetOrCreateValidatorAttendance(message.SignedHeaderMessage.Header.Index);
+                    validatorAttendance.IncrementAttendance(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(), message.SignedHeaderMessage.Header.Index);
                     _validatorAttendanceRepository.SaveState(validatorAttendance.ToBytes());
                 }
 
@@ -247,7 +247,7 @@ namespace Lachain.Consensus.RootProtocol
         {
             var bytes = _validatorAttendanceRepository.LoadState();
             if (bytes is null || bytes.Length == 0) return new ValidatorAttendance(headerIndex / 1000);
-            return ValidatorAttendance.FromBytes(bytes, _header.Index / 1000);
+            return ValidatorAttendance.FromBytes(bytes, headerIndex / 1000);
         }
     }
 }

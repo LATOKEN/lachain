@@ -141,11 +141,11 @@ namespace Lachain.Core.Consensus
                     break;
                 case ConsensusMessage.PayloadOneofCase.Coin:
                     var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
-                    EnsureProtocol(idCoin).ReceiveMessage(new MessageEnvelope(message, from));
+                    EnsureProtocol(idCoin)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
-                    EnsureProtocol(hbbftId).ReceiveMessage(new MessageEnvelope(message, from));
+                    EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
                     var reliableBroadcastId = new ReliableBroadcastId(from, (int) message.Validator.Era);
@@ -166,7 +166,7 @@ namespace Lachain.Core.Consensus
                     EnsureProtocol(idEncryptedShare)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 default:
-                    throw new InvalidOperationException($"Unknown message type {message.PayloadCase}");
+                    throw new InvalidOperationException($"Unknown message type {message}");
             }
         }
 
@@ -195,7 +195,9 @@ namespace Lachain.Core.Consensus
 
             _logger.LogDebug($"Protocol {request.From} requested result from protocol {request.To}");
             EnsureProtocol(request.To);
-            _registry[request.To]?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
+            
+            if (_registry.TryGetValue(request.To, out var protocol))
+                protocol?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
@@ -221,7 +223,8 @@ namespace Lachain.Core.Consensus
 
             _logger.LogDebug($"Result from protocol {result.From} delivered to itself");
             // message is also delivered to self
-            _registry[result.From]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
+            if (_registry.TryGetValue(result.From, out var protocol))
+                protocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
         }
 
         public int GetMyId()
