@@ -72,7 +72,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
             var balance = _context.Snapshot?.Balances.GetBalance(address);
             if (balance is null) return ExecutionStatus.ExecutionHalted;
-            frame.ReturnValue = balance.ToUInt256(true).ToBytes();
+            frame.ReturnValue = balance.ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
 
@@ -83,50 +83,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferBalance(
                 _context.Sender ?? throw new InvalidOperationException(),
-                recipient, value.ToMoney(true)
+                recipient, value.ToMoney()
             );
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
-        }
-
-        public ExecutionStatus MintBlockRewards(Money rewardAmount, Money feesAmount, SystemContractExecutionFrame frame)
-        {
-            if (!_context.Sender.Equals(ContractRegisterer.GovernanceContract))
-                throw new Exception("Auth failure");
-            
-            var getPreviousValidatorsExecutionResult = SystemContractUtils.CallSystemContract(frame,
-                ContractRegisterer.StakingContract, ContractRegisterer.LatokenContract, StakingInterface.MethodGetPreviousValidators);
-
-            if (getPreviousValidatorsExecutionResult.Status != ExecutionStatus.Ok)
-                return ExecutionStatus.ExecutionHalted;
-            
-            var previousValidatorsData = getPreviousValidatorsExecutionResult.ReturnValue;
-            
-            UInt160[] validators = {};
-            for (var startByte = 0; startByte < previousValidatorsData.Length; startByte += CryptoUtils.PublicKeyLength)
-            {
-                var validator = ToAddress(previousValidatorsData.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray()).ToUInt160();
-                validators = validators.Concat(new[] {validator}).ToArray();
-            }
-            
-            if (validators.Length == 0) throw new Exception("Cannot mint block rewards: empty validator set");
-
-            if (feesAmount > Money.Zero)
-            {
-                _context.Snapshot.Balances.SubBalance(
-                    ContractRegisterer.GovernanceContract, feesAmount
-                );
-            }
-            
-            var reward = (rewardAmount + feesAmount) / validators.Length;
-            foreach (var recipient in validators)
-            {
-                _context.Snapshot.Balances.AddBalance(
-                    recipient, reward
-                );
-            }
-
-            return ExecutionStatus.ExecutionHalted;
         }
 
         [ContractMethod(Lrc20Interface.MethodTransferFrom)]
@@ -134,7 +94,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTransferFromCost);
             SubAllowance(from, MsgSender(), value, frame);
-            var result = _context.Snapshot.Balances.TransferBalance(from,recipient, value.ToMoney(true));
+            var result = _context.Snapshot.Balances.TransferBalance(from,recipient, value.ToMoney());
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
@@ -171,8 +131,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public void SubAllowance(UInt160 owner, UInt160 spender, UInt256 value, SystemContractExecutionFrame frame)
         {
             Allowance(owner, spender, frame);
-            var allowance = frame.ReturnValue.ToUInt256().ToMoney(true);
-            allowance -= value.ToMoney(true);
+            var allowance = frame.ReturnValue.ToUInt256().ToMoney();
+            allowance -= value.ToMoney();
             SetAllowance(owner, spender, allowance.ToUInt256());
         }
     }

@@ -102,7 +102,7 @@ namespace Lachain.Core.ValidatorStatus
                         _sendingTxHash = null;
                     }
 
-                    var stake = GetStake().ToBigInteger(true);
+                    var stake = GetStake().ToBigInteger();
                     var isStaker = !stake.IsZero;
 
                     if (!isStaker)
@@ -338,7 +338,7 @@ namespace Lachain.Core.ValidatorStatus
         {
             var seed = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
             var rolls = stake / StakingContract.TokenUnitsInRoll;
-            var totalRolls = GetTotalStake().ToBigInteger(true) / StakingContract.TokenUnitsInRoll;
+            var totalRolls = GetTotalStake().ToBigInteger() / StakingContract.TokenUnitsInRoll;
             var (proof, value, j) = Vrf.Evaluate(_privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,
                 StakingContract.Role, StakingContract.ExpectedValidatorsCount, rolls, totalRolls);
             return (j > 0, proof);

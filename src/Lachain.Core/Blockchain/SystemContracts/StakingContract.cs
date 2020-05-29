@@ -127,7 +127,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (!ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            if (amount.ToBigInteger(true) < TokenUnitsInRoll)
+            if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
             var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
@@ -148,14 +148,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var balance = balanceOfExecutionResult.ReturnValue.ToUInt256();
+            var balance = balanceOfExecutionResult.ReturnValue.ToUInt256().ToMoney();
             
-            if (balance.ToMoney(true).CompareTo(amount.ToMoney(true)) == -1)
+            if (balance.CompareTo(amount.ToMoney()) == -1)
                 return ExecutionStatus.ExecutionHalted;
             
             var transferExecutionResult = SystemContractUtils.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, MsgSender(), Lrc20Interface.MethodTransfer,
-                ContractRegisterer.StakingContract, amount.ToBytes().Reverse().ToArray().ToUInt256());
+                ContractRegisterer.StakingContract, amount);
             
             if (transferExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -271,7 +271,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var transferExecutionResult = SystemContractUtils.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodTransfer,
-                MsgSender(), stake.ToBytes().Reverse().ToArray().ToUInt256());
+                MsgSender(), stake);
             
             if (transferExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -323,8 +323,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (getTotalStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var totalStake = getTotalStakeExecutionResult.ReturnValue.ToUInt256();
-            var totalRolls = totalStake.ToBigInteger(true) / TokenUnitsInRoll;
+            var totalStake = getTotalStakeExecutionResult.ReturnValue.ToUInt256().ToBigInteger();
+            var totalRolls = totalStake / TokenUnitsInRoll;
             
             var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
@@ -332,7 +332,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+            var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToBigInteger();
             
             var getVrfSeedExecutionResult = SystemContractUtils.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
@@ -347,7 +347,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 vrfSeed,
                 Role,
                 ExpectedValidatorsCount,
-                stake.ToBigInteger(true) / TokenUnitsInRoll,
+                stake / TokenUnitsInRoll,
                 totalRolls
             );
 
@@ -411,7 +411,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 if (!isPreviousValidator)
                     return ExecutionStatus.ExecutionHalted;
                 
-                var detectedBlocks = faultBlocksCounts[i].ToBigInteger(true);
+                var detectedBlocks = faultBlocksCounts[i].ToBigInteger();
                 
                 if (detectedBlocks > CycleDuration)
                     return ExecutionStatus.ExecutionHalted;
@@ -481,7 +481,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             var validatorsData = _previousValidators.Get();
             var validatorsCount = validatorsData.Length / CryptoUtils.PublicKeyLength;
-            var maxValidatorReward = totalReward.ToMoney(true) / validatorsCount; 
+            var maxValidatorReward = totalReward.ToMoney() / validatorsCount; 
             for (var i = 0; i < validatorsCount; i ++)
             {
                 var validator = validatorsData.Skip(i * CryptoUtils.PublicKeyLength).Take(CryptoUtils.PublicKeyLength).ToArray();
@@ -504,14 +504,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                         return ExecutionStatus.ExecutionHalted;
             
-                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToMoney(true);
+                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToMoney();
             
                     // TODO: determine correct number
                     var penalty = stake / 2;
                     if (penalty > Money.Zero)
                     {
 
-                        SetStake(validatorAddress, (stake - penalty).ToUInt256(true));
+                        SetStake(validatorAddress, (stake - penalty).ToUInt256());
                         _context.Snapshot.Balances.SubBalance(
                             ContractRegisterer.StakingContract, penalty
                         );
@@ -678,7 +678,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void TrySetNextVrfSeed(byte[] vrfSeed)
         {
             var currentVrfSeedNum = GetNextVrfSeedNum();
-            if (currentVrfSeedNum == 0 || vrfSeed.ToUInt256().ToBigInteger(true) < currentVrfSeedNum)
+            if (currentVrfSeedNum == 0 || vrfSeed.ToUInt256().ToBigInteger() < currentVrfSeedNum)
             {
                 _nextVrfSeed.Set(vrfSeed);
             }
@@ -726,12 +726,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                         return ExecutionStatus.ExecutionHalted;
             
-                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
-                    stakeSum += stake.ToMoney(true);
+                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToMoney();
+                    stakeSum += stake;
                 }
             }
 
-            frame.ReturnValue = stakeSum.ToUInt256(true).ToBytes();
+            frame.ReturnValue = stakeSum.ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
 
@@ -917,7 +917,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var nextVrfSeed = GetNextVrfSeed();
             if (nextVrfSeed.Length == 0) return 0;
-            return nextVrfSeed.ToUInt256().ToBigInteger(true);
+            return nextVrfSeed.ToUInt256().ToBigInteger();
         }
 
         private UInt160 MsgSender()

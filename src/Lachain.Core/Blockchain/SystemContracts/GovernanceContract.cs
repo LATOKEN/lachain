@@ -127,11 +127,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 );
             }
             
-            var totalReward = GetBlockReward().ToMoney(true) * (int) StakingContract.CycleDuration + txFeesAmount;
+            var totalReward = GetBlockReward().ToMoney() * (int) StakingContract.CycleDuration + txFeesAmount;
             
             _context.Sender = ContractRegisterer.GovernanceContract;
             var staking = new StakingContract(_context);
-            staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(true), frame);
+            staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
             return ExecutionStatus.Ok;
         }
 
@@ -139,7 +139,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (_blockReward.Get().Length == 0)
             {
-                _blockReward.Set(BigInteger.Parse(GenesisConfig.BlockReward).ToUInt256(true).ToBytes());
+                _blockReward.Set(BigInteger.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes());
             }
         }
 
@@ -239,7 +239,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var txFeesAmount = balanceOfExecutionResult.ReturnValue.ToUInt256().ToMoney(true);
+            var txFeesAmount = balanceOfExecutionResult.ReturnValue.ToUInt256().ToMoney();
             
             SetColelctedFees(txFeesAmount);
             
@@ -293,13 +293,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void SetColelctedFees(Money fees)
         {
-            _collectedFees.Set(fees.ToUInt256(true).ToBytes());
+            _collectedFees.Set(fees.ToUInt256().ToBytes());
         }
         
         private Money GetCollectedFees()
         {
             var fees = _collectedFees.Get();
-            return fees.ToUInt256().ToMoney(true);
+            return fees.ToUInt256().ToMoney();
         }
 
         private void SetTPKEKey(PublicKey tpkeKey)

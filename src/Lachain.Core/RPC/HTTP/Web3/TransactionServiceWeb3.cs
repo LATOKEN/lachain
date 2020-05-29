@@ -234,7 +234,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             switch (invocationResult)
             {
                 case UInt256 result:
-                    return result.ToHex();
+                    return result.ToBytes().Reverse().ToHex();
                 case int result:
                     var res = result.ToHex();
                     while (res.Length < 64)

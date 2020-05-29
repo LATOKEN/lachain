@@ -58,11 +58,11 @@ namespace Lachain.Core.Blockchain.VM
 
         private byte[] DecodeBytes(bool readFromDynamic = false)
         {
-            var offset = DecodeUInt256(readFromDynamic).ToBigInteger(true);
+            var offset = DecodeUInt256(readFromDynamic).ToBigInteger();
             if (offset > int.MaxValue)
                 throw new ContractAbiException("Offset is too big");
             var lenUint = DecodeUInt256(true);
-            var len = (int) lenUint.ToBigInteger(true);
+            var len = (int) lenUint.ToBigInteger();
             var words = len % 32 == 0 ? len / 32 : len / 32 + 1;
             var res = _binaryReaderDynamic.ReadBytes(words * 32).Take(len).ToArray();
             return res;
@@ -71,8 +71,8 @@ namespace Lachain.Core.Blockchain.VM
         private UInt256 DecodeUInt256(bool readFromDynamic = false)
         {
             return readFromDynamic
-                ? _binaryReaderDynamic.ReadBytes(32).ToUInt256()
-                : _binaryReaderStatic.ReadBytes(32).ToUInt256();
+                ? _binaryReaderDynamic.ReadBytes(32).Reverse().ToArray().ToUInt256()
+                : _binaryReaderStatic.ReadBytes(32).Reverse().ToArray().ToUInt256();
         }
 
         private UInt160 DecodeUInt160(bool readFromDynamic = false)
@@ -85,12 +85,12 @@ namespace Lachain.Core.Blockchain.VM
 
         private byte[][] DecodeBytesList()
         {
-            var offset = DecodeUInt256().ToBigInteger(true);
+            var offset = DecodeUInt256().ToBigInteger();
             if (offset > int.MaxValue)
                 throw new ContractAbiException("Offset is too large");
-            var lenOfArray = (int) DecodeUInt256(true).ToBigInteger(true);
+            var lenOfArray = (int) DecodeUInt256(true).ToBigInteger();
             var offsets = Enumerable.Range(1, lenOfArray)
-                .Select(_ => DecodeUInt256(true).ToBigInteger(true));
+                .Select(_ => DecodeUInt256(true).ToBigInteger());
             
             return Enumerable.Range(1, lenOfArray)
                 .Select(_ => DecodeBytes(true))
@@ -99,10 +99,10 @@ namespace Lachain.Core.Blockchain.VM
 
         private UInt256[] DecodeUInt256List()
         {
-            var offset = DecodeUInt256().ToBigInteger(true);
+            var offset = DecodeUInt256().ToBigInteger();
             if (offset > int.MaxValue)
                 throw new ContractAbiException("Offset is too big");
-            var lenOfArray = (int) DecodeUInt256(true).ToBigInteger(true);
+            var lenOfArray = (int) DecodeUInt256(true).ToBigInteger();
             
             return Enumerable.Range(1, lenOfArray)
                 .Select(_ => DecodeUInt256(true))
