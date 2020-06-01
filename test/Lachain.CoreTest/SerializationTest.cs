@@ -62,7 +62,7 @@ namespace Lachain.CoreTest
         {
             var publicKey = new PublicKey(G1.Generator, 134);
             Console.WriteLine(publicKey.ToHex());
-            Console.WriteLine(PublicKey.FromBytes(publicKey.ToByxtes()).ToHex());
+            Console.WriteLine(PublicKey.FromBytes(publicKey.ToBytes()).ToHex());
             Assert.AreEqual(
                 publicKey,
                 PublicKey.FromBytes(publicKey.ToBytes())
