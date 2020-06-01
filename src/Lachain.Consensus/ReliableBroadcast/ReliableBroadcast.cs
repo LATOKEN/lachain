@@ -131,7 +131,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                 );
             }
 
-            Logger.LogError($"{Id} finished sending VAL messages");
+            Logger.LogDebug($"{Id} finished sending VAL messages");
         }
 
         private UInt256 RecalculateMerkleRoot(IEnumerable<int> goodBlocks)
@@ -145,12 +145,12 @@ namespace Lachain.Consensus.ReliableBroadcast
         private void HandleValMessage(ValMessage val)
         {
             Broadcaster.Broadcast(CreateEchoMessage(val));
-            Logger.LogError($"{Id}, player {GetMyId()} broadcast ECHO");
+            Logger.LogDebug($"{Id}, player {GetMyId()} broadcast ECHO");
         }
 
         private void HandleEchoMessage(ECHOMessage echo, int validator)
         {
-            Logger.LogError($"{Id} got ECHO from {validator}");
+            Logger.LogDebug($"{Id} got ECHO from {validator}");
             if (_receivedCorrectEchoFrom[validator])
             {
                 Logger.LogWarning($"{Id} already received correct echo from {validator}");
@@ -263,7 +263,7 @@ namespace Lachain.Consensus.ReliableBroadcast
                 {
                     _receivedCorrectReadyFrom[validator] = true;
                     _countReadyMsg++;
-                    Logger.LogError($"{Id} countReadyMsg = {_countReadyMsg}");
+                    Logger.LogDebug($"{Id} countReadyMsg = {_countReadyMsg}");
                 }
 
                 if (_countReadyMsg == F + 1)

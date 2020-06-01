@@ -5,7 +5,6 @@ using Lachain.Consensus.ThresholdKeygen;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -95,9 +94,17 @@ namespace Lachain.Core.Vault
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
                 var keygen = GetCurrentKeyGen();
-                if (keygen is null) return;
+                if (keygen is null)
+                {
+                    Logger.LogWarning("Skipping call since there is no keygen running");
+                    return;
+                }
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
-                if (sender < 0) return;
+                if (sender < 0)
+                {
+                    Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                    return;
+                }
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
                 var commitment = Commitment.FromBytes(args[0] as byte[] ?? throw new Exception());
