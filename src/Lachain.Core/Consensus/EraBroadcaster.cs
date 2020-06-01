@@ -96,7 +96,7 @@ namespace Lachain.Core.Consensus
             message.Validator = new Validator {Era = _era};
             if (_terminated)
             {
-                _logger.LogDebug($"Era {_era} is already finished, skipping SendToValidator");
+                // _logger.LogDebug($"Era {_era} is already finished, skipping SendToValidator");
                 return;
             }
 
@@ -153,17 +153,21 @@ namespace Lachain.Core.Consensus
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
                     EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
-                case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                // case ConsensusMessage.PayloadOneofCase.ValMessage:
+                //     var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                //     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
+                // case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                //     var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                //     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
+                // case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                //     var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                //     EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
+                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
+                    var reliableBroadcastId = new ReliableBroadcastId(from, (int) message.Validator.Era);
                     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
-                    EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
-                    EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var rootId = new RootProtocolId(message.Validator.Era);
@@ -180,7 +184,7 @@ namespace Lachain.Core.Consensus
         {
             if (_terminated)
             {
-                _logger.LogDebug($"Era {_era} is already finished, skipping InternalRequest");
+                // _logger.LogDebug($"Era {_era} is already finished, skipping InternalRequest");
                 return;
             }
 
@@ -197,7 +201,7 @@ namespace Lachain.Core.Consensus
                 _callback[request.To] = request.From;
             }
 
-            _logger.LogDebug($"Protocol {request.From} requested result from protocol {request.To}");
+            // _logger.LogDebug($"Protocol {request.From} requested result from protocol {request.To}");
             EnsureProtocol(request.To);
             
             if (_registry.TryGetValue(request.To, out var protocol))
@@ -207,7 +211,7 @@ namespace Lachain.Core.Consensus
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
-            _logger.LogDebug($"Protocol {result.From} returned result");
+            // _logger.LogDebug($"Protocol {result.From} returned result");
             if (_terminated)
             {
                 _logger.LogDebug($"Era {_era} is already finished, skipping InternalResponse");
@@ -222,10 +226,10 @@ namespace Lachain.Core.Consensus
                 }
 
                 _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-                _logger.LogDebug($"Result from protocol {result.From} delivered to {senderId}");
+                // _logger.LogDebug($"Result from protocol {result.From} delivered to {senderId}");
             }
 
-            _logger.LogDebug($"Result from protocol {result.From} delivered to itself");
+            // _logger.LogDebug($"Result from protocol {result.From} delivered to itself");
             // message is also delivered to self
             if (_registry.TryGetValue(result.From, out var protocol))
                 protocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
@@ -259,10 +263,10 @@ namespace Lachain.Core.Consensus
         {
             ValidateId(id);
             if (_registry.TryGetValue(id, out var existingProtocol)) return existingProtocol;
-            _logger.LogDebug($"Creating protocol {id} on demand");
+            // _logger.LogDebug($"Creating protocol {id} on demand");
             if (_terminated)
             {
-                _logger.LogWarning($"Protocol {id} not created since broadcaster is terminated");
+                // _logger.LogWarning($"Protocol {id} not created since broadcaster is terminated");
                 return null;
             }
 
@@ -283,7 +287,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    var rbc = new ReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
+                    var rbc = new MockReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:

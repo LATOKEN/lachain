@@ -83,15 +83,15 @@ namespace Lachain.Consensus.BinaryAgreement
                                 _resultEpoch = _currentEpoch;
                                 _result = _estimate;
                                 CheckResult();
-                                _logger.LogDebug($"{_agreementId}: result = {_result} achieved at Ep={_currentEpoch}");
+                                // _logger.LogDebug($"{_agreementId}: result = {_result} achieved at Ep={_currentEpoch}");
                             }
                         }
                         else if (_result == s)
                         {
                             if (_currentEpoch > _resultEpoch)
                             {
-                                _logger.LogDebug(
-                                    $"Value repeated at Ep={_currentEpoch}, result is already obtained: {_result}. Terminating protocol");
+                                // _logger.LogDebug(
+                                    // $"Value repeated at Ep={_currentEpoch}, result is already obtained: {_result}. Terminating protocol");
                                 _wasRepeat = true;
                                 Terminate();
                                 // CheckResult();
@@ -157,15 +157,15 @@ namespace Lachain.Consensus.BinaryAgreement
 
                     _requested = ResultStatus.Requested;
                     _estimate = agreementRequested.Input;
-                    _logger.LogDebug($"Started BA loop in epoch {_currentEpoch} with initial estimate {_estimate}");
+                    // _logger.LogDebug($"Started BA loop in epoch {_currentEpoch} with initial estimate {_estimate}");
                     TryProgressEpoch();
                     break;
                 case ProtocolResult<BinaryAgreementId, bool> _:
                     break;
                 case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
                 {
-                    _logger.LogDebug(
-                        $"Broadcast {broadcastCompleted.Id.Epoch} completed at era {Id.Era} with result {broadcastCompleted.Result}");
+                    // _logger.LogDebug(
+                        // $"Broadcast {broadcastCompleted.Id.Epoch} completed at era {Id.Era} with result {broadcastCompleted.Result}");
                     _binaryBroadcastsResults[broadcastCompleted.Id.Epoch] = broadcastCompleted.Result;
                     TryProgressEpoch();
                     return;

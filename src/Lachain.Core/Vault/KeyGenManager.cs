@@ -5,7 +5,6 @@ using Lachain.Consensus.ThresholdKeygen;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -100,9 +99,17 @@ namespace Lachain.Core.Vault
             {
                 Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
                 var keygen = GetCurrentKeyGen();
-                if (keygen is null) return;
+                if (keygen is null)
+                {
+                    Logger.LogWarning("Skipping call since there is no keygen running");
+                    return;
+                }
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
-                if (sender < 0) return;
+                if (sender < 0)
+                {
+                    Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                    return;
+                }
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
                 var commitment = Commitment.FromBytes(args[0] as byte[] ?? throw new Exception());
@@ -119,7 +126,7 @@ namespace Lachain.Core.Vault
                 {
                     Logger.LogInformation(
                         $"Send value transaction {sendValueTx.Hash.ToHex()} successfully sent: " +
-                        $"tx={sendValueTx.Hash.ToHex()} from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}"
+                        $"from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}"
                     );
                 }
 
@@ -150,7 +157,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogInformation(
                             $"Confirm transaction {confirmTx.Hash.ToHex()} for hash {keys.PublicPartHash().ToHex()} successfully sent: " +
-                            $"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}"
+                            $"from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}"
                         );
                     }
                 }

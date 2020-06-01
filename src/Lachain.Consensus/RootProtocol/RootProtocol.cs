@@ -123,19 +123,19 @@ namespace Lachain.Consensus.RootProtocol
                         break;
                     case ProtocolResult<CoinId, CoinResult> coinResult:
                         _nonce = GetNonceFromCoin(coinResult.Result);
-                        _logger.LogDebug($"Received coin for block nonce: {_nonce}");
+                        // _logger.LogDebug($"Received coin for block nonce: {_nonce}");
                         TrySignHeader();
                         CheckSignatures();
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
-                        _logger.LogDebug($"Received shares {result.Result.Count} from HoneyBadger");
+                        // _logger.LogDebug($"Received shares {result.Result.Count} from HoneyBadger");
 
                         _hashes = result.Result.ToArray()
                             .SelectMany(share => SplitShare(share.ToBytes()))
                             .Select(hash => hash.ToUInt256())
                             .Distinct()
                             .ToArray();
-                        _logger.LogDebug($"Collected {_hashes.Length} transactions in total");
+                        // _logger.LogDebug($"Collected {_hashes.Length} transactions in total");
                         TrySignHeader();
                         CheckSignatures();
                         break;
@@ -152,13 +152,13 @@ namespace Lachain.Consensus.RootProtocol
         {
             if (_hashes is null || _nonce is null || _blockProducer is null)
             {
-                _logger.LogError($"Is null: hashes {_hashes is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
+                // _logger.LogError($"Is null: hashes {_hashes is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
                 return;
             }
 
             if (!(_header is null))
             {
-                _logger.LogError($"header not null {_header.StateHash}");
+                // _logger.LogError($"header not null {_header.StateHash}");
                 return;
             }
             try
@@ -167,7 +167,7 @@ namespace Lachain.Consensus.RootProtocol
             }
             catch (Exception e)
             {
-                _logger.LogError($"Cannot sign header because of {e}");
+                // _logger.LogError($"Cannot sign header because of {e}");
                 Terminate();
                 Environment.Exit(1);
                 return;
@@ -177,8 +177,8 @@ namespace Lachain.Consensus.RootProtocol
                 _header.KeccakBytes(),
                 _keyPair.PrivateKey.Encode()
             ).ToSignature();
-            _logger.LogDebug(
-                $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}");
+            // _logger.LogDebug(
+                // $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}");
             Broadcaster.Broadcast(CreateSignedHeaderMessage(_header, signature));
         }
 

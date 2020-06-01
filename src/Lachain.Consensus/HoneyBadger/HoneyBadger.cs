@@ -68,7 +68,7 @@ namespace Lachain.Consensus.HoneyBadger
             {
                 var message = envelope.InternalMessage;
                 if (message is null) throw new ArgumentNullException();
-                _logger.LogError($"Message received: {message.GetType()}");
+                // _logger.LogError($"Message received: {message.GetType()}");
                 switch (message)
                 {
                     case ProtocolRequest<HoneyBadgerId, IRawShare> honeyBadgerRequested:
@@ -119,7 +119,7 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
-            _logger.LogInformation($"Full result decrypted!");
+            // _logger.LogInformation($"Full result decrypted!");
             _requested = ResultStatus.Sent;
             Broadcaster.InternalResponse(
                 new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
@@ -127,7 +127,7 @@ namespace Lachain.Consensus.HoneyBadger
 
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
-            _logger.LogDebug($"Common subset finished {result.From}");
+            // _logger.LogDebug($"Common subset finished {result.From}");
             foreach (var share in result.Result)
             {
                 var dec = _privateKey.Decrypt(share);
@@ -169,33 +169,33 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (!_takenSet)
             {
-                _logger.LogDebug("CheckDecryptedShares(): !_takenSet");
+                // _logger.LogDebug("CheckDecryptedShares(): !_takenSet");
                 return;
             }
             if (!_taken[id]) {
-                _logger.LogDebug("CheckDecryptedShares(): !_taken[id]");
+                // _logger.LogDebug("CheckDecryptedShares(): !_taken[id]");
                 return;
             }
 
             if (_decryptedShares[id].Count < F + 1)
             {
-                _logger.LogDebug("CheckDecryptedShares(): _decryptedShares[id].Count < F + 1");
+                // _logger.LogDebug("CheckDecryptedShares(): _decryptedShares[id].Count < F + 1");
                 return;
             }
 
             if (_shares[id] != null)
             {
-                _logger.LogDebug("CheckDecryptedShares(): _shares[id] != null");
+                // _logger.LogDebug("CheckDecryptedShares(): _shares[id] != null");
                 return;
             }
 
             if (_receivedShares[id] is null)
             {
-                _logger.LogDebug("CheckDecryptedShares(): _receivedShares[id] is null");
+                // _logger.LogDebug("CheckDecryptedShares(): _receivedShares[id] is null");
                 return;
             }
 
-            _logger.LogInformation($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
+            // _logger.LogInformation($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
             _shares[id] = Wallet.TpkePublicKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
 
             CheckAllSharesDecrypted();
@@ -205,13 +205,13 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (!_takenSet)
             {
-                _logger.LogDebug("CheckAllSharesDecrypted(): !_takenSet");
+                // _logger.LogDebug("CheckAllSharesDecrypted(): !_takenSet");
                 return;
             }
 
             if (_result != null)
             {
-                _logger.LogDebug("CheckAllSharesDecrypted(): _result != null");
+                // _logger.LogDebug("CheckAllSharesDecrypted(): _result != null");
                 return;
             }
             if (_taken.Zip(_shares, (b, share) => b && share is null).Any(x => x)) return;
