@@ -150,8 +150,17 @@ namespace Lachain.Consensus.RootProtocol
 
         private void TrySignHeader()
         {
-            if (_hashes is null || _nonce is null || _blockProducer is null) return;
-            if (!(_header is null)) return;
+            if (_hashes is null || _nonce is null || _blockProducer is null)
+            {
+                _logger.LogError($"Is null: hashes {_hashes is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
+                return;
+            }
+
+            if (!(_header is null))
+            {
+                _logger.LogError($"header not null {_header.StateHash}");
+                return;
+            }
             try
             {
                 _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);

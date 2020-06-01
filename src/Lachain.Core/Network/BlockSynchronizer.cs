@@ -124,7 +124,7 @@ namespace Lachain.Core.Network
             {
                 if (_blockManager.GetHeight() + 1 != block.Header.Index)
                 {
-                    _logger.LogWarning($"Black was already persisted while we were waiting for txs");
+                    _logger.LogWarning($"Block was already persisted while we were waiting for txs");
                     return OperatingError.BlockAlreadyExists;
                 }
 

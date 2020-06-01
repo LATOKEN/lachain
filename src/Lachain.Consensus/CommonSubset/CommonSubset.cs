@@ -162,14 +162,26 @@ namespace Lachain.Consensus.CommonSubset
 
         private void CheckCompletion()
         {
-            if (_result != null) return;
+            if (_result != null)
+            {
+                Logger.LogDebug("CheckCompletion(): result is null");
+                return;
+            }
 
-            if (_cntBinaryAgreementsCompleted < N) return;
+            if (_cntBinaryAgreementsCompleted < N)
+            {
+                Logger.LogDebug($"CheckCompletion(): _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}");
+                return;
+            }
 
             if (_binaryAgreementResult
                 .Zip(_reliableBroadcastResult, (b, share) => b == true && share is null)
                 .Any(x => x)
-            ) return;
+            )
+            {
+                Logger.LogDebug($"CheckCompletion(): _binaryAgreementResult check failed");
+                return;
+            }
 
             _result = _binaryAgreementResult
                 .Zip(_reliableBroadcastResult, (b, share) => (b, share))
@@ -184,9 +196,17 @@ namespace Lachain.Consensus.CommonSubset
         private void CheckResult()
         {
             if (_result == null)
+            {
+                Console.WriteLine("CheckResult(): result is null");
                 return;
+            }
+
             if (_requested != ResultStatus.Requested)
+            {
+                Console.WriteLine($"CheckResult(): _requested is {_requested}");
                 return;
+            }
+
             _requested = ResultStatus.Sent;
             SetResult();
             Logger.LogDebug($"{GetMyId()} ACS terminated.");
