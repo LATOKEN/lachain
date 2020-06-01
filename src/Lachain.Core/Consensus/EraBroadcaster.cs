@@ -150,17 +150,21 @@ namespace Lachain.Core.Consensus
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
                     EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
-                case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                // case ConsensusMessage.PayloadOneofCase.ValMessage:
+                //     var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                //     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
+                // case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                //     var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                //     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
+                // case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                //     var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                //     EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                //     break;
+                case ConsensusMessage.PayloadOneofCase.EncryptedShare:
+                    var reliableBroadcastId = new ReliableBroadcastId(from, (int) message.Validator.Era);
                     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
-                    EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break;
-                case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
-                    EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     var rootId = new RootProtocolId(message.Validator.Era);
@@ -277,7 +281,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    var rbc = new ReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
+                    var rbc = new MockReliableBroadcast(rbcId, publicKeySet, this); // TODO: unmock RBC
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:
