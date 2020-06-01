@@ -190,37 +190,37 @@ namespace Lachain.Utility.Serialization
         public static void Serialize(this long x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
-            if (BitConverter.IsLittleEndian) bytes.Span.Reverse();
+            if (!BitConverter.IsLittleEndian) bytes.Span.Reverse();
         }
 
         public static void Serialize(this ulong x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
-            if (BitConverter.IsLittleEndian) bytes.Span.Reverse();
+            if (!BitConverter.IsLittleEndian) bytes.Span.Reverse();
         }
 
         public static void Serialize(this int x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
-            if (BitConverter.IsLittleEndian) bytes.Span.Reverse();
+            if (!BitConverter.IsLittleEndian) bytes.Span.Reverse();
         }
 
         public static void Serialize(this uint x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
-            if (BitConverter.IsLittleEndian) bytes.Span.Reverse();
+            if (!BitConverter.IsLittleEndian) bytes.Span.Reverse();
         }
 
         public static void Serialize(this short x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
-            if (BitConverter.IsLittleEndian) bytes.Span.Reverse();
+            if (!BitConverter.IsLittleEndian) bytes.Span.Reverse();
         }
 
         public static void Serialize(this ushort x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
-            if (BitConverter.IsLittleEndian) bytes.Span.Reverse();
+            if (!BitConverter.IsLittleEndian) bytes.Span.Reverse();
         }
 
         public static long ToInt64(this ReadOnlySpan<byte> bytes)
