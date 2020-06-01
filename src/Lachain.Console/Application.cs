@@ -1,9 +1,6 @@
 ﻿using System.Linq;
 using System.Threading;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
@@ -18,7 +15,6 @@ using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Storage.State;
-using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Console
