@@ -19,6 +19,9 @@ namespace Lachain.Networking
 {
     public class NetworkManager : INetworkManager, INetworkBroadcaster, INetworkContext, IMessageDeliverer
     {
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private static readonly ILogger<NetworkManager> Logger = LoggerFactory.GetLoggerForClass<NetworkManager>();
+
         public event ClientConnectedDelegate? OnClientConnected;
         public event ClientClosedDelegate? OnClientClosed;
         public event ClientHandshakeDelegate? OnClientHandshake;
@@ -42,9 +45,6 @@ namespace Lachain.Networking
 
         private readonly ConcurrentDictionary<ECDSAPublicKey, bool> _authorizedKeys =
             new ConcurrentDictionary<ECDSAPublicKey, bool>();
-
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-        private readonly ILogger<NetworkManager> _logger = LoggerFactory.GetLoggerForClass<NetworkManager>();
 
         private MessageFactory? _messageFactory;
         private ServerWorker? _serverWorker;
@@ -167,7 +167,7 @@ namespace Lachain.Networking
                 throw new ArgumentNullException(nameof(signature));
             var bytes = message.ToByteArray();
             /* TODO: "we can cache public key to avoid recovers" */
-            var rawPublicKey = _crypto.RecoverSignature(bytes, signature.Encode());
+            var rawPublicKey = Crypto.RecoverSignature(bytes, signature.Encode());
             if (rawPublicKey == null)
                 throw new Exception("Unable to recover public key from signature");
             var publicKey = rawPublicKey.ToPublicKey();
@@ -190,7 +190,7 @@ namespace Lachain.Networking
                 throw new ArgumentNullException();
             if (request.Node.PublicKey is null)
                 throw new Exception("Public key can't be null");
-            if (!_crypto.VerifySignature(
+            if (!Crypto.VerifySignature(
                 request.ToByteArray(), signature.Encode(), request.Node.PublicKey.EncodeCompressed()
             ))
                 throw new Exception("Unable to verify message using public key specified");
@@ -206,7 +206,7 @@ namespace Lachain.Networking
         {
             if (signature is null)
                 throw new ArgumentNullException(nameof(signature));
-            var isValid = _crypto.VerifySignature(
+            var isValid = Crypto.VerifySignature(
                 reply.ToByteArray(), signature.Encode(), reply.Node.PublicKey.EncodeCompressed()
             );
             if (!isValid)
@@ -293,13 +293,13 @@ namespace Lachain.Networking
             }
             catch (Exception e)
             {
-                _logger.LogError($"Unable to parse protocol message: {e}");
-                _logger.LogError($"Original message bytes: {buffer.ToHex()}");
+                Logger.LogError($"Unable to parse protocol message: {e}");
+                Logger.LogError($"Original message bytes: {buffer.ToHex()}");
             }
 
             if (message is null)
             {
-                _logger.LogError($"Unable to parse protocol message from {buffer.ToHex()}");
+                Logger.LogError($"Unable to parse protocol message from {buffer.ToHex()}");
                 return;
             }
 
@@ -309,7 +309,7 @@ namespace Lachain.Networking
             }
             catch (Exception e)
             {
-                _logger.LogError($"Unexpected error occurred: {e}");
+                Logger.LogError($"Unexpected error occurred: {e}");
             }
         }
 
@@ -357,7 +357,7 @@ namespace Lachain.Networking
 
         private void SendQueuedMessages(Node node)
         {
-            _logger.LogDebug(
+            Logger.LogDebug(
                 $"Handshake with node {node.Address} with public key {node.PublicKey.ToHex()} is done, sending queued messages");
             var publicKey = node.PublicKey;
             var peer = GetPeerByPublicKey(publicKey) ??
@@ -368,7 +368,7 @@ namespace Lachain.Networking
                 peer.Send(message);
             }
 
-            _logger.LogDebug($"Sent {messages.Count} queued messages to node {node.Address}");
+            Logger.LogDebug($"Sent {messages.Count} queued messages to node {node.Address}");
         }
 
         private void _ConnectWorker()
@@ -408,7 +408,7 @@ namespace Lachain.Networking
             lock (_handshakeLock)
             {
                 _handshakeSuccessful.Add(node.PublicKey);
-                Monitor.PulseAll(_handshakeLock);
+                Monitor.Pulse(_handshakeLock);
             }
         }
 
@@ -418,9 +418,9 @@ namespace Lachain.Networking
             if (keys.Count == 0) return;
             lock (_handshakeLock)
             {
-                while (keys.Count(key => _handshakeSuccessful.Contains(key)) <= 2 * keys.Count / 3)
+                while (keys.Count(key => _handshakeSuccessful.Contains(key)) < 2 * keys.Count / 3)
                 {
-                    Monitor.Wait(_handshakeLock);
+                    Monitor.Wait(_handshakeLock, TimeSpan.FromSeconds(1));
                 }
             }
         }
