@@ -76,7 +76,7 @@ namespace Lachain.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            networkManager.Start(networkConfig, wallet.EcdsaKeyPair, messageHandler);
+            networkManager.Start(networkConfig!, wallet.EcdsaKeyPair, messageHandler);
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
             rpcManager.Start();
@@ -94,18 +94,26 @@ namespace Lachain.Console
             );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockManager.GetHeight() + 1);
+            
             validatorStatusManager.Start(false);
-
-            // if (blockManager.GetHeight() == 0 && wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
+            
+            // while (blockManager.GetHeight() < 10)
+            // {
+            //     Thread.Sleep(1_000);
+            // }
+            // if (wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
             // {
             //     var txPool = _container.Resolve<ITransactionPool>();
             //     var signer = _container.Resolve<ITransactionSigner>();
             //     var builder = _container.Resolve<ITransactionBuilder>();
-            //     var newValidators = new[]
-            //     {
-            //         // CryptoProvider.GetCrypto().GeneratePrivateKey().ToPrivateKey().GetPublicKey().EncodeCompressed()
-            //         wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
-            //     }; 
+            //     var newValidators = validatorManager
+            //         .GetValidatorsPublicKeys(0)
+            //         .Select(key => key.EncodeCompressed())
+            //         .ToArray();
+            //     // var newValidators = new[]
+            //     // {
+            //     //     wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
+            //     // }; 
             //     var tx = builder.InvokeTransaction(
             //         wallet.EcdsaKeyPair.PublicKey.GetAddress(),
             //         ContractRegisterer.GovernanceContract,

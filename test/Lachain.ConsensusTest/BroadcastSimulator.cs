@@ -230,7 +230,7 @@ namespace Lachain.ConsensusTest
                 case RootProtocolId rootId:
                     RegisterProtocols(new[]
                     {
-                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository)
+                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, 1000)
                     });
                     break;
                 default:

@@ -109,7 +109,10 @@ namespace Lachain.Networking
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
                     return worker;
-                if (_IsSelfConnect(IPAddress.Parse(address.Host)) && _networkConfig.Port == address.Port)
+                if (
+                    // _IsSelfConnect(IPAddress.Parse(address.Host)) && 
+                    _networkConfig.Port == address.Port
+                    )
                     return null;
                 worker = new ClientWorker(address, null);
                 _clientWorkers.Add(address, worker);
@@ -161,7 +164,7 @@ namespace Lachain.Networking
         {
         }
 
-        private MessageEnvelope _BuildEnvelope(IMessage message, Signature signature)
+        private MessageEnvelope _BuildEnvelope(IMessage message, Signature signature, bool responseRequired = false)
         {
             if (signature is null)
                 throw new ArgumentNullException(nameof(signature));
@@ -171,8 +174,10 @@ namespace Lachain.Networking
             if (rawPublicKey == null)
                 throw new Exception("Unable to recover public key from signature");
             var publicKey = rawPublicKey.ToPublicKey();
+
             if (!_authorizedKeys.Keys.Contains(publicKey))
-                throw new Exception("This node hasn't been authorized (" + rawPublicKey.ToHex() + ")");
+                    throw new Exception("This node hasn't been authorized (" + rawPublicKey.ToHex() + ")");
+            
             var envelope = new MessageEnvelope
             {
                 MessageFactory = _messageFactory,
@@ -224,6 +229,8 @@ namespace Lachain.Networking
 
         private void _HandleMessageUnsafe(NetworkMessage message)
         {
+            var shouldWaitForHandshake = _authorizedKeys.Keys.Count < 3;
+            // _logger.LogDebug($"Message received. auth keys count: {_authorizedKeys.Keys.Count}");
             switch (message.MessageCase)
             {
                 case NetworkMessage.MessageOneofCase.HandshakeRequest:
@@ -233,46 +240,55 @@ namespace Lachain.Networking
                     _HandshakeReply(message.Signature, message.HandshakeReply);
                     break;
                 case NetworkMessage.MessageOneofCase.PingRequest:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.PingRequest(
                         _BuildEnvelope(message.PingRequest, message.Signature),
                         message.PingRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.PingReply:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.PingReply(
                         _BuildEnvelope(message.PingReply, message.Signature),
                         message.PingReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesRequest:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.GetBlocksByHashesRequest(
                         _BuildEnvelope(message.GetBlocksByHashesRequest, message.Signature),
                         message.GetBlocksByHashesRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesReply:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.GetBlocksByHashesReply(
                         _BuildEnvelope(message.GetBlocksByHashesReply, message.Signature),
                         message.GetBlocksByHashesReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeRequest:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.GetBlocksByHeightRangeRequest(
                         _BuildEnvelope(message.GetBlocksByHeightRangeRequest, message.Signature),
                         message.GetBlocksByHeightRangeRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeReply:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.GetBlocksByHeightRangeReply(
                         _BuildEnvelope(message.GetBlocksByHeightRangeReply, message.Signature),
                         message.GetBlocksByHeightRangeReply);
                     break;
                 case NetworkMessage.MessageOneofCase.GetTransactionsByHashesRequest:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.GetTransactionsByHashesRequest(
                         _BuildEnvelope(message.GetTransactionsByHashesRequest, message.Signature),
                         message.GetTransactionsByHashesRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.GetTransactionsByHashesReply:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.GetTransactionsByHashesReply(
                         _BuildEnvelope(message.GetTransactionsByHashesReply, message.Signature),
                         message.GetTransactionsByHashesReply);
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
+                    if (shouldWaitForHandshake) return;
                     _messageHandler?.ConsensusMessage(
                         _BuildEnvelope(message.ConsensusMessage, message.Signature),
                         message.ConsensusMessage
@@ -408,7 +424,8 @@ namespace Lachain.Networking
             lock (_handshakeLock)
             {
                 _handshakeSuccessful.Add(node.PublicKey);
-                Monitor.PulseAll(_handshakeLock);
+                // _logger.LogDebug($"adding to _handshakeSuccessful now: {_handshakeSuccessful.Count}");
+                Monitor.Pulse(_handshakeLock);
             }
         }
 
@@ -418,9 +435,11 @@ namespace Lachain.Networking
             if (keys.Count == 0) return;
             lock (_handshakeLock)
             {
-                while (keys.Count(key => _handshakeSuccessful.Contains(key)) <= 2 * keys.Count / 3)
+                // _logger.LogDebug($"Need {2 * keys.Count / 3} keys");
+                while (keys.Count(key => _handshakeSuccessful.Contains(key) && _authorizedKeys.Keys.Contains(key)) < 2 * keys.Count / 3)
                 {
-                    Monitor.Wait(_handshakeLock);
+                    // _logger.LogDebug($"keys.Count {keys.Count(key => _handshakeSuccessful.Contains(key))}");
+                    Monitor.Wait(_handshakeLock, TimeSpan.FromSeconds(1));
                 }
             }
         }

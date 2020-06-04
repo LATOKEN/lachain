@@ -78,12 +78,13 @@ namespace Lachain.Core.Network
             var persisted = 0u;
             foreach (var tx in transactions)
             {
-                var error = _transactionManager.Verify(tx);
-                if (error != OperatingError.Ok)
-                {
-                    _logger.LogWarning($"Unable to verify transaction ({error})");
-                    continue;
-                }
+                // _logger.LogDebug($"HandleTransactionsFromPeer(): {tx.Hash.ToHex()} from: {tx.Transaction.From.ToHex()}");
+                // var error = _transactionManager.Verify(tx);
+                // if (error != OperatingError.Ok)
+                // {
+                //     _logger.LogWarning($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
+                //     continue;
+                // }
 
                 if (_transactionPool.Add(tx) == OperatingError.Ok)
                     persisted++;
@@ -124,7 +125,9 @@ namespace Lachain.Core.Network
             {
                 if (_blockManager.GetHeight() + 1 != block.Header.Index)
                 {
-                    _logger.LogWarning($"Block was already persisted while we were waiting for txs");
+                    // _logger.LogWarning($"We have Blockchain with heigh {_blockManager.GetHeight()}");
+                    // _logger.LogWarning($"But received {block.Header.Index}");
+                    _logger.LogWarning($"Received block {block.Header.Index}");
                     return OperatingError.BlockAlreadyExists;
                 }
 
@@ -160,7 +163,7 @@ namespace Lachain.Core.Network
             var myHeight = _blockManager.GetHeight();
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
-            var setOfPeers = new HashSet<ECDSAPublicKey>(peers);
+            var setOfPeers = peers.ToHashSet();
             if (setOfPeers.Count == 0) return false;
 
             _lastActiveTime = TimeUtils.CurrentTimeMillis();
@@ -169,9 +172,10 @@ namespace Lachain.Core.Network
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             var validatorPeers = _peerHeights
-                .Where(entry => setOfPeers.Contains(entry.Key.Node?.PublicKey))
+                .Where(entry => entry.Key.Node != null)
+                .Where(entry => setOfPeers.Contains(entry.Key.Node?.PublicKey!))
                 .ToArray();
-            if (validatorPeers.Length <= setOfPeers.Count * 2 / 3)
+            if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
             var maxHeight = validatorPeers.Max(v => v.Value);
             return myHeight < maxHeight;

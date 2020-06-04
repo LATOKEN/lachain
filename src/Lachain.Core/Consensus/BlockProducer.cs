@@ -77,17 +77,26 @@ namespace Lachain.Core.Consensus
 
             var cycle = index / StakingContract.CycleDuration;
             var indexInCycle = index % StakingContract.CycleDuration;
-            if (cycle > 0 && indexInCycle == 100)
+            if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration)
             {
-                receipts = receipts.Concat(new[] {DistributeCycleRewardsAndPenaltiesTxReceipt()}).ToList();
+                var txToAdd = DistributeCycleRewardsAndPenaltiesTxReceipt();
+                if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
+                    _logger.LogDebug("DistributeCycleRewardsAndPenaltiesTxReceipt is already in txPool");
+                else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             } 
-            else if (indexInCycle == 500)
+            else if (indexInCycle == StakingContract.SubmissionPhaseDuration)
             {
-                receipts = receipts.Concat(new[] {FinishVrfLotteryTxReceipt()}).ToList();   
+                var txToAdd = FinishVrfLotteryTxReceipt();
+                if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
+                    _logger.LogDebug("FinishVrfLotteryTxReceipt is already in txPool");
+                else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
             else if (cycle > 0 && indexInCycle == 0)
             {
-                receipts = receipts.Concat(new[] {FinishCycleTxReceipt()}).ToList();   
+                var txToAdd = FinishCycleTxReceipt();
+                if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
+                    _logger.LogDebug("FinishCycleTxReceipt is already in txPool");
+                else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
 
             if (_blockManager.LatestBlock().Header.Index + 1 != index)
@@ -130,14 +139,14 @@ namespace Lachain.Core.Consensus
         {
             var hashes = txHashes as UInt256[] ?? txHashes.ToArray();
             var txCount = hashes.Count();
-            var indexInCycle = header.Index % 1000;
-            var cycle = header.Index / 1000;
+            var indexInCycle = header.Index % StakingContract.CycleDuration;
+            var cycle = header.Index / StakingContract.CycleDuration;
             var receipts = hashes
                 .Select((hash, i) =>
                 {
-                    if (cycle > 0 && indexInCycle == 100 && i == txCount - 1)
+                    if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration && i == txCount - 1)
                         return DistributeCycleRewardsAndPenaltiesTxReceipt();
-                    if (indexInCycle == 500 && i == txCount - 1)
+                    if (indexInCycle == StakingContract.SubmissionPhaseDuration && i == txCount - 1)
                         return FinishVrfLotteryTxReceipt();
                     if (cycle > 0 && indexInCycle == 0 && i == txCount - 1)
                         return FinishCycleTxReceipt();
@@ -152,7 +161,7 @@ namespace Lachain.Core.Consensus
                 .WithMultisig(multiSig)
                 .Build(header.Nonce);
 
-            _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash.ToHex()}");
+            // _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash.ToHex()}");
             if (_blockManager.GetHeight() + 1 != header.Index)
             {
                 throw new InvalidOperationException(
@@ -165,33 +174,33 @@ namespace Lachain.Core.Consensus
                 checkStateHash: true);
 
             if (result == OperatingError.Ok)
-                _logger.LogInformation($"Block persist completed: {blockWithTransactions.Block.Hash.ToHex()}");
+                _logger.LogInformation($"Block mined: {blockWithTransactions.Block.Header.Index}. Total txs: {blockWithTransactions.Transactions.Count}");
             else
                 _logger.LogError(
                     $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}");
         }
 
-        private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt(int nonceInc = 0)
+        private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt()
         {
             return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties, nonceInc);
+                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties);
         }
 
-        private TransactionReceipt FinishVrfLotteryTxReceipt(int nonceInc = 0)
+        private TransactionReceipt FinishVrfLotteryTxReceipt()
         {
             return BuildSystemContractTxReceipt(ContractRegisterer.StakingContract,
-                StakingInterface.MethodFinishVrfLottery, nonceInc);
+                StakingInterface.MethodFinishVrfLottery);
         }
 
-        private TransactionReceipt FinishCycleTxReceipt(int nonceInc = 0)
+        private TransactionReceipt FinishCycleTxReceipt()
         {
             return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                GovernanceInterface.MethodFinishCycle, nonceInc);
+                GovernanceInterface.MethodFinishCycle);
         }
 
-        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature, int nonceInc)
+        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
         {
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero) + (ulong) nonceInc;
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var abi = ContractEncoder.Encode(mehodSignature);
             var transaction = new Transaction
             {

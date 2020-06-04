@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -15,6 +16,8 @@ namespace Lachain.Core.Blockchain.Pool
 {
     public class TransactionPool : ITransactionPool
     {
+        private static readonly ILogger<TransactionPool> Logger = LoggerFactory.GetLoggerForClass<TransactionPool>();
+
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
@@ -23,6 +26,9 @@ namespace Lachain.Core.Blockchain.Pool
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
+
+        private readonly ConcurrentDictionary<UInt160, ulong> _lastNonceForAddress =
+            new ConcurrentDictionary<UInt160, ulong>();
 
         private ISet<TransactionReceipt> _transactionsQueue;
         private ISet<TransactionReceipt> _relayQueue;
@@ -91,27 +97,48 @@ namespace Lachain.Core.Blockchain.Pool
             return Add(acceptedTx);
         }
 
+        private void UpdateNonceForAddress(UInt160 address, ulong nonce)
+        {
+            if (!_lastNonceForAddress.TryGetValue(address, out var lastNonce) || nonce > lastNonce)
+            {
+                _lastNonceForAddress[address] = nonce;
+            }
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt receipt)
         {
             if (receipt is null)
                 throw new ArgumentNullException(nameof(receipt));
+
             /* don't add to transaction pool transactions with the same hashes */
             if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
             /* verify transaction before adding */
+            if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                return OperatingError.InvalidNonce;
+
+            /* special case for system transactions */
+            if (receipt.Transaction.From.IsZero())
+            {
+                if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
+                    _poolRepository.AddTransaction(receipt);
+                return OperatingError.Ok;
+            }
+
             var result = _transactionManager.Verify(receipt);
             if (result != OperatingError.Ok)
                 return result;
             _transactionVerifier.VerifyTransaction(receipt);
-            if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
-                return OperatingError.InvalidNonce;
             /* put transaction to pool queue */
             _transactions[receipt.Hash] = receipt;
             _transactionsQueue.Add(receipt);
+
             /* write transaction to persistence storage */
             if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                 _poolRepository.AddTransaction(receipt);
+
+            UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
             if (!_networkManager.IsReady)
                 return OperatingError.Ok;
             var message = _networkManager.MessageFactory?.GetTransactionsByHashesReply(
@@ -232,22 +259,20 @@ namespace Lachain.Core.Blockchain.Pool
             _transactionsQueue.Clear();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address)
         {
-            var txs = _transactions.Values
-                .Select(receipt => receipt.Transaction)
-                .Where(tx => tx.From.Equals(address))
-                .ToArray();
-            if (txs.Length == 0) return null;
-            return txs.Max(tx => tx.Nonce);
+            if (!_lastNonceForAddress.TryGetValue(address, out var lastNonce)) return null;
+            return lastNonce;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetNextNonceForAddress(UInt160 address)
         {
             var poolNonce = GetMaxNonceForAddress(address);
-            Console.WriteLine($"poolNonce addr: {address.ToHex()} nonce: {poolNonce}");
+            // Console.WriteLine($"poolNonce addr: {address.ToHex()} nonce: {poolNonce}");
             var stateNonce = _transactionManager.CalcNextTxNonce(address);
-            Console.WriteLine($"stateNonce addr: {address.ToHex()} nonce: {stateNonce}");
+            // Console.WriteLine($"stateNonce addr: {address.ToHex()} nonce: {stateNonce}");
             return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
         }
     }

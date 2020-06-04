@@ -51,9 +51,8 @@ namespace Lachain.Core.ValidatorStatus
             _nextAttendance = new Dictionary<string, ulong>();
         }
 
-        public void IncrementAttendance(byte[] publicKey, ulong blockIndex)
+        public void IncrementAttendance(byte[] publicKey, ulong cycle)
         {
-            var cycle = blockIndex / 1000;
             if (cycle == Cycle)
                 _attendance[publicKey.ToHex()] = GetAttendance(publicKey) + 1;
             else

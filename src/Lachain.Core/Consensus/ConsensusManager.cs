@@ -195,7 +195,7 @@ namespace Lachain.Core.Consensus
                         broadcaster.WaitFinish();
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
-                        Logger.LogDebug("Root protocol finished, waiting for new era...");
+                        // Logger.LogDebug("Root protocol finished, waiting for new era...");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
                 }

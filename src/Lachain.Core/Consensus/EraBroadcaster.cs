@@ -11,6 +11,7 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
@@ -73,7 +74,7 @@ namespace Lachain.Core.Consensus
             message.Validator = new Validator {Era = _era};
             if (_terminated)
             {
-                _logger.LogDebug($"Era {_era} is already finished, skipping Broadcast");
+                // _logger.LogDebug($"Era {_era} is already finished, skipping Broadcast");
                 return;
             }
 
@@ -119,7 +120,7 @@ namespace Lachain.Core.Consensus
         {
             if (_terminated)
             {
-                _logger.LogDebug($"Era {_era} is already finished, skipping Dispatch");
+                // _logger.LogDebug($"Era {_era} is already finished, skipping Dispatch");
                 return;
             }
 
@@ -214,7 +215,7 @@ namespace Lachain.Core.Consensus
             // _logger.LogDebug($"Protocol {result.From} returned result");
             if (_terminated)
             {
-                _logger.LogDebug($"Era {_era} is already finished, skipping InternalResponse");
+                // _logger.LogDebug($"Era {_era} is already finished, skipping InternalResponse");
                 return;
             }
 
@@ -308,7 +309,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository);
+                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, StakingContract.CycleDuration);
                     RegisterProtocols(new[] {root});
                     return root;
                 default:

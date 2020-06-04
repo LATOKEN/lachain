@@ -13,6 +13,7 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
@@ -27,6 +28,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
+        private readonly ILogger<TransactionServiceWeb3> _logger = LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
 
         public TransactionServiceWeb3(
             IStateManager stateManager,

@@ -30,20 +30,23 @@ namespace Lachain.Consensus.RootProtocol
         private UInt256[]? _hashes;
         private BlockHeader? _header;
         private MultiSig? _multiSig;
+        private ulong _cycleDuration;
 
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
 
         public RootProtocol(RootProtocolId id, IPublicConsensusKeySet wallet, ECDSAPrivateKey privateKey,
-            IConsensusBroadcaster broadcaster, IValidatorAttendanceRepository validatorAttendanceRepository) : base(wallet, id, broadcaster)
+            IConsensusBroadcaster broadcaster, IValidatorAttendanceRepository validatorAttendanceRepository, ulong cycleDuration) : base(wallet, id, broadcaster)
         {
             _keyPair = new EcdsaKeyPair(privateKey);
             _rootId = id;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+            _cycleDuration = cycleDuration;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
         {
+            // _logger.LogDebug("Here is message");
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage ?? throw new Exception("impossible");
@@ -56,11 +59,11 @@ namespace Lachain.Consensus.RootProtocol
 
                 var signedHeaderMessage = message.SignedHeaderMessage;
                 var idx = envelope.ValidatorIndex;
-                _logger.LogDebug(
-                    $"Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
-                    $"from validator {idx}: " +
-                    $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
-                );
+                // _logger.LogDebug(
+                //     $"Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
+                //     $"from validator {idx}: " +
+                //     $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
+                // );
                 if (!(_header is null) && !_header.Equals(signedHeaderMessage.Header))
                 {
                     _logger.LogWarning($"Received incorrect block header from validator {idx}");
@@ -88,7 +91,7 @@ namespace Lachain.Consensus.RootProtocol
                         )
                     );
                     var validatorAttendance = GetOrCreateValidatorAttendance(message.SignedHeaderMessage.Header.Index);
-                    validatorAttendance.IncrementAttendance(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(), message.SignedHeaderMessage.Header.Index);
+                    validatorAttendance!.IncrementAttendance(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(), message.SignedHeaderMessage.Header.Index / _cycleDuration);
                     _validatorAttendanceRepository.SaveState(validatorAttendance.ToBytes());
                 }
 
@@ -193,7 +196,7 @@ namespace Lachain.Consensus.RootProtocol
                 .Select(p => new KeyValuePair<BlockHeader, int>(p.Key, p.Count()))
                 .Aggregate((x, y) => x.Value > y.Value ? x : y);
             if (bestHeader.Value < Wallet.N - Wallet.F) return;
-            _logger.LogDebug($"Received {bestHeader.Value} signatures for block header");
+            // _logger.LogDebug($"Received {bestHeader.Value} signatures for block header");
             _multiSig = new MultiSig {Quorum = (uint) (Wallet.N - Wallet.F)};
             _multiSig.Validators.AddRange(Wallet.EcdsaPublicKeySet);
             foreach (var (header, signature) in _signatures)
@@ -255,8 +258,8 @@ namespace Lachain.Consensus.RootProtocol
         private ValidatorAttendance? GetOrCreateValidatorAttendance(ulong headerIndex)
         {
             var bytes = _validatorAttendanceRepository.LoadState();
-            if (bytes is null || bytes.Length == 0) return new ValidatorAttendance(headerIndex / 1000);
-            return ValidatorAttendance.FromBytes(bytes, headerIndex / 1000);
+            if (bytes is null || bytes.Length == 0) return new ValidatorAttendance(headerIndex / _cycleDuration);
+            return ValidatorAttendance.FromBytes(bytes, headerIndex / _cycleDuration);
         }
     }
 }

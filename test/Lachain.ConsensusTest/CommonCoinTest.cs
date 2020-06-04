@@ -16,10 +16,15 @@ namespace Lachain.ConsensusTest
         private IConsensusBroadcaster[] _broadcasters;
         private IConsensusProtocol[] _coins;
         private DeliveryService _deliveryService;
-        private IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private IPublicConsensusKeySet _publicKeys;
         private ProtocolInvoker<CoinId, CoinResult>[] _resultInterceptors;
         private IPrivateConsensusKeySet[] _wallets;
+
+        public CommonCoinTest(IValidatorAttendanceRepository validatorAttendanceRepository)
+        {
+            _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
 
         public void SetUp()
         {

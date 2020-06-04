@@ -25,7 +25,12 @@ namespace Lachain.ConsensusTest
         private int F = 2; // 2
         private IPrivateConsensusKeySet[] _privateKeys;
         private IPublicConsensusKeySet _publicKeys;
-        private IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+
+        public CommonSubsetTest(IValidatorAttendanceRepository validatorAttendanceRepository)
+        {
+            _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
 
         private void SetUpAllHonest()
         {

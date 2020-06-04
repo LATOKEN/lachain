@@ -56,8 +56,13 @@ namespace Lachain.ConsensusTest
         private IPublicConsensusKeySet _publicKeys;
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
-        private IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
+
+        public HoneyBadgerTest(IValidatorAttendanceRepository validatorAttendanceRepository)
+        {
+            _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
 
         private void SetUpAllHonest()
         {
