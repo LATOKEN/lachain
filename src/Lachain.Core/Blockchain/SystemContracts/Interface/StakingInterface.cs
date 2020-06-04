@@ -13,6 +13,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodFinishVrfLottery = "finishVrfLottery()";
         public const string MethodGetTotalActiveStake = "totalActiveStake()";
         public const string MethodGetStake = "getStake(address)";
+        public const string MethodGetPenalty = "getPenalty(address)";
         public const string MethodGetWithdrawRequestCycle = "getWithdrawRequestCycle(address)";
         public const string MethodGetStartCycle = "getStartCycle(address)";
         public const string MethodIsAbleToBeAValidator = "isAbleToBeAValidator(address)";
@@ -32,6 +33,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodFinishVrfLottery,
             MethodGetTotalActiveStake,
             MethodGetStake,
+            MethodGetPenalty,
             MethodGetWithdrawRequestCycle,
             MethodIsAbleToBeAValidator,
             MethodIsNextValidator,

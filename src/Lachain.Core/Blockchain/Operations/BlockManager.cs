@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
 using Lachain.Crypto;
@@ -98,7 +99,7 @@ namespace Lachain.Core.Blockchain.Operations
             var (operatingError, removeTransactions, stateHash, relayTransactions) = _stateManager.SafeContext(() =>
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
-                Logger.LogDebug("Executing transactions in no-check no-commit mode");
+                // Logger.LogDebug("Executing transactions in no-check no-commit mode");
                 var error = _Execute(
                     block,
                     transactions,
@@ -110,14 +111,14 @@ namespace Lachain.Core.Blockchain.Operations
                 if (error != OperatingError.Ok)
                     throw new InvalidOperationException($"Cannot assemble block, {error}");
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
-                Logger.LogDebug(
-                    $"Execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
-                    $" stateHash={currentStateHash.ToHex()}, gasUsed={gasUsed}"
-                );
+                // Logger.LogDebug(
+                //     $"Execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
+                //     $" stateHash={currentStateHash.ToHex()}, gasUsed={gasUsed}"
+                // );
                 _stateManager.RollbackTo(snapshotBefore);
-                Logger.LogDebug(
-                    $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
-                );
+                // Logger.LogDebug(
+                    // $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
+                // );
                 return Tuple.Create(error, removedTransactions, currentStateHash, relayedTransactions);
             });
             return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);
@@ -161,11 +162,11 @@ namespace Lachain.Core.Blockchain.Operations
                     return OperatingError.Ok;
                 _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index,
                     _stateManager.LastApprovedSnapshot); // TODO: this is hack
-                Logger.LogInformation(
-                    $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
-                    $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, " +
-                    $"gas used {gasUsed}, fee {totalFee}"
-                );
+                // Logger.LogInformation(
+                //     $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
+                //     $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, " +
+                //     $"gas used {gasUsed}, fee {totalFee}"
+                // );
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;
@@ -229,7 +230,7 @@ namespace Lachain.Core.Blockchain.Operations
             /* execute transactions */
             foreach (var (txHash, i) in block.TransactionHashes.Select((tx, i) => (tx, i)))
             {
-                Logger.LogError($"Trying to execute tx : {txHash.ToHex()}");
+                // Logger.LogError($"Trying to execute tx : {txHash.ToHex()}");
                 /* try to find transaction by hash */
                 var receipt = currentTransactions[txHash];
                 receipt.Block = block.Header.Index;
@@ -300,8 +301,8 @@ namespace Lachain.Core.Blockchain.Operations
                 if (!txFailed)
                 {
                     /* mark transaction as executed */
-                    Logger.LogDebug(
-                        $"Successfully executed transaction {txHash.ToHex()} from={transaction.From.ToHex()} with nonce ({receipt.Transaction.Nonce})");
+                    // Logger.LogDebug(
+                    //     $"Transaction executed {txHash.ToHex()}");
                     snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
                 }
 
@@ -338,17 +339,17 @@ namespace Lachain.Core.Blockchain.Operations
             long block, TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
+            
             /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
-            
+
             var senderBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
             if (senderBalance < fee)
             {
                 return OperatingError.InsufficientBalance;
             }
-            //
             return !snapshot.Balances.TransferBalance(transaction.Transaction.From,
                 ContractRegisterer.GovernanceContract, fee)
                 ? OperatingError.InsufficientBalance

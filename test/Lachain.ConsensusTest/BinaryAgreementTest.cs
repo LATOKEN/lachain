@@ -24,7 +24,12 @@ namespace Lachain.ConsensusTest
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
         private IPublicConsensusKeySet _publicKeys;
-        private IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+
+        public BinaryAgreementTest(IValidatorAttendanceRepository validatorAttendanceRepository)
+        {
+            _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
 
         //        [SetUp]
         public void SetUp()

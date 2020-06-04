@@ -120,7 +120,7 @@ namespace Lachain.Consensus.BinaryAgreement
             if (_receivedValues[sender].Contains(b))
             {
                 // todo write fault evidence management = logging
-                _logger.LogDebug($"{_broadcastId}: double receive message {bval} from {sender}");
+                // _logger.LogDebug($"{_broadcastId}: double receive message {bval} from {sender}");
                 return; // potential fault evidence
             }
 
@@ -156,7 +156,7 @@ namespace Lachain.Consensus.BinaryAgreement
             var b = aux.Value ? 1 : 0;
             if (_playerSentAux[sender])
             {
-                _logger.LogDebug($"{_broadcastId}: double receive message {aux} from {sender}");
+                // _logger.LogDebug($"{_broadcastId}: double receive message {aux} from {sender}");
                 return; // potential fault evidence
             }
 
@@ -173,7 +173,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             if (_validatorSentConf[sender])
             {
-                _logger.LogDebug($"{_broadcastId}: double receive message {conf} from {sender}");
+                // _logger.LogDebug($"{_broadcastId}: double receive message {conf} from {sender}");
                 return; // potential fault evidence
             }
 

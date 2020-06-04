@@ -27,9 +27,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly InvocationContext _context;
-        public static readonly ulong CycleDuration = 1000; // in blocks
-        public static readonly ulong SubmissionPhaseDuration = 500; // in blocks
-        public static readonly ulong AttendanceDetectionDuration = 100; // in blocks
+        public static readonly ulong CycleDuration = 100; // in blocks
+        public static readonly ulong SubmissionPhaseDuration = CycleDuration / 2; // in blocks
+        public static readonly ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
         private readonly StorageVariable _nextValidators; // array of public keys
         private readonly StorageVariable _previousValidators; // array of public keys
@@ -42,6 +42,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageMapping _userToStakerId;
         private readonly StorageMapping _userToPubKey;
         private readonly StorageMapping _userToStake;
+        private readonly StorageMapping _userToPenalty;
         private readonly StorageMapping _userToStartCycle;
         private readonly StorageMapping _userToWithdrawRequestCycle;
         private readonly StorageMapping _attendanceVotes;
@@ -111,6 +112,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 new BigInteger(11).ToUInt256()
+            );
+            _userToPenalty = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                contractContext.Snapshot.Storage,
+                new BigInteger(12).ToUInt256()
             );
             TryInitStoarge();
         }
@@ -233,7 +239,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus WithdrawStake(byte[] publicKey, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.StakingWithdrawStakeCost);
-            
+            Logger.LogInformation($"Withdrawing stake");
             var ok = IsPublicKeyOwner(publicKey, MsgSender());
             if (!ok) return ExecutionStatus.ExecutionHalted;
             
@@ -250,7 +256,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
             
-            if (withdrawRequestCycleBytes.Length != 0)
+            if (withdrawRequestCycleBytes!.Length == 0)
                 return ExecutionStatus.ExecutionHalted;
 
             var withdrawRequestCycle = BitConverter.ToInt32(withdrawRequestCycleBytes);
@@ -264,7 +270,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+            var stake = getStakeExecutionResult.ReturnValue!.ToUInt256();
             
             if (stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
@@ -276,11 +282,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (transferExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
 
-            var fail = transferExecutionResult.ReturnValue.ToUInt256().IsZero();
+            var fail = transferExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (fail)
                 return ExecutionStatus.ExecutionHalted;
 
             DeleteStaker(MsgSender());
+            Logger.LogInformation($"Staker removed");
             return ExecutionStatus.Ok;
         }
 
@@ -492,41 +499,36 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 if (isCheckedInAttendanceDetectionExecutionResult.Status != ExecutionStatus.Ok)
                     return ExecutionStatus.ExecutionHalted;
             
-                var notCheckedIn = isCheckedInAttendanceDetectionExecutionResult.ReturnValue.ToUInt256().IsZero();
+                var notCheckedIn = isCheckedInAttendanceDetectionExecutionResult.ReturnValue!.ToUInt256().IsZero();
+                var validatorAddress = SystemContractUtils.PublicKeyToAddress(validator);
+
                 if (notCheckedIn)
                 {
                     /* Penalty for the cycle */
-                    
-                    var validatorAddress = SystemContractUtils.PublicKeyToAddress(validator);
-                    var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
-                        ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, validatorAddress);
-
-                    if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
-                        return ExecutionStatus.ExecutionHalted;
-            
-                    var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToMoney();
             
                     // TODO: determine correct number
-                    var penalty = stake / 2;
+                    var penalty = maxValidatorReward;
                     if (penalty > Money.Zero)
                     {
-
-                        SetStake(validatorAddress, (stake - penalty).ToUInt256());
-                        _context.Snapshot.Balances.SubBalance(
-                            ContractRegisterer.StakingContract, penalty
-                        );
+                        Logger.LogDebug($"Penalty: {penalty} LA for {validatorAddress.ToHex()}");
+                        AddPenalty(validatorAddress,  penalty);
                     }
                 }
-                else
+                /* Reward for the cycle */
+                
+                var activeBlocks = GetActiveBlocksCount(validator);
+                // Logger.LogDebug($"Attendance: {activeBlocks} address: {validatorAddress.ToHex()}");
+                var validatorReward = maxValidatorReward * activeBlocks / (int) CycleDuration;
+                // Logger.LogDebug($"Total reward: {validatorReward} LA for {validatorAddress.ToHex()}");
+                
+                var rewardToMint = SubPenalty(validatorAddress, validatorReward);
+                if (rewardToMint > Money.Zero)
                 {
-                    var activeBlocks = GetActiveBlocksCount(validator);
-                    var validatorReward = maxValidatorReward * activeBlocks / (int) CycleDuration;
-                    if (validatorReward > Money.Zero)
-                    {
-                        _context.Snapshot.Balances.AddBalance(
-                            SystemContractUtils.PublicKeyToAddress(validator), validatorReward
-                        );
-                    }
+                    var newBalance = _context.Snapshot.Balances.AddBalance(
+                        validatorAddress, rewardToMint
+                    );
+                    Logger.LogDebug($"Minted reward: {rewardToMint} LA for {validatorAddress.ToHex()}");
+                    // Logger.LogDebug($"New balance: {newBalance} LA of {validatorAddress.ToHex()}");
                 }
                 ClearAttendanceVotes(validator);
             }
@@ -762,7 +764,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
                 var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
                 
-                var withdrawRequestCycle = withdrawRequestCycleBytes.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes) : 0;
+                var withdrawRequestCycle = withdrawRequestCycleBytes!.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes) : 0;
                 
                 var getStartCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, staker);
@@ -772,7 +774,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
                 var startCycleBytes = getStartCycleExecutionResult.ReturnValue;
                 
-                var startCycle = startCycleBytes.Length > 0 ? BitConverter.ToInt32(startCycleBytes) : 0;
+                var startCycle = startCycleBytes!.Length > 0 ? BitConverter.ToInt32(startCycleBytes) : 0;
                 
                 frame.ReturnValue =
                     (GetCurrentCycle() >= startCycle && withdrawRequestCycle == 0 ? 1 : 0)
@@ -787,10 +789,44 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var key = staker.ToBytes();
             if (amount.IsZero())
             {
+                _userToStake.Delete(key);
                 return;
             }
             var value = amount.ToBytes();
             _userToStake.SetValue(key, value);
+        }
+        
+        private void AddPenalty(UInt160 staker, Money amount)
+        {
+            var key = staker.ToBytes();
+            var penaltyValue = _userToPenalty.GetValue(staker.ToBytes());
+            var previousPenalty = penaltyValue.Length == 0 ? Money.Zero : penaltyValue.ToUInt256().ToMoney();
+            var newPenalty = previousPenalty + amount;
+            var value = newPenalty.ToUInt256().ToBytes();
+            _userToPenalty.SetValue(key, value);
+        }
+        
+        private Money SubPenalty(UInt160 staker, Money amount)
+        {
+            var key = staker.ToBytes();
+            var penaltyValue = _userToPenalty.GetValue(staker.ToBytes());
+            var previousPenalty = penaltyValue.Length == 0 ? Money.Zero : penaltyValue.ToUInt256().ToMoney();
+            
+            // Logger.LogDebug($"Previous penalty: {previousPenalty} LA of {staker.ToHex()}");
+            
+            if (amount == Money.Zero || previousPenalty == Money.Zero)
+                return amount;
+            
+            var newPenalty = previousPenalty - amount;
+            if (newPenalty <= Money.Zero)
+            {
+                _userToPenalty.Delete(key);
+                return amount - previousPenalty;
+            }
+            
+            var value = newPenalty.ToUInt256().ToBytes();
+            _userToPenalty.SetValue(key, value);
+            return Money.Zero;
         }
 
         [ContractMethod(StakingInterface.MethodGetStake)]
@@ -798,10 +834,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingGetStakeCost);
             var stakeValue = _userToStake.GetValue(staker.ToBytes());
-            if (stakeValue.Length == 0) 
-                frame.ReturnValue = UInt256Utils.Zero.ToBytes();
-            else 
-                frame.ReturnValue = stakeValue;
+            frame.ReturnValue = stakeValue.Length == 0 ? UInt256Utils.Zero.ToBytes() : stakeValue;
+            return ExecutionStatus.Ok;
+        }
+
+        [ContractMethod(StakingInterface.MethodGetPenalty)]
+        public ExecutionStatus GetPenalty(UInt160 staker, SystemContractExecutionFrame frame)
+        {
+            frame.UseGas(GasMetering.StakingGetPenaltyCost);
+            var penaltyValue = _userToPenalty.GetValue(staker.ToBytes());
+            frame.ReturnValue = penaltyValue.Length == 0 ? UInt256Utils.Zero.ToBytes() : penaltyValue;
             return ExecutionStatus.Ok;
         }
 

@@ -24,7 +24,7 @@ namespace Lachain.Consensus.CommonCoin
             IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
-            Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToHex()}");
+            // Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToHex()}");
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
                 _coinId.ToBytes(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet

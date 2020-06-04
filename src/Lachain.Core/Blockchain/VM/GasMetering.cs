@@ -53,6 +53,7 @@
         public const ulong StakingSubmitVrfCost = 6_000_000;
         public const ulong StakingSubmitAttendanceDetectionCost = 12_000_000;
         public const ulong StakingGetStakeCost = 500_000;
+        public const ulong StakingGetPenaltyCost = 500_000;
         public const ulong StakingGetPreviousValidators = 500_000;
         public const ulong StakingGetWithdrawRequestCycleCost = 500_000;
         public const ulong StakingGetStartCycleCost = 500_000;

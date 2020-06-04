@@ -187,10 +187,10 @@ namespace Lachain.ConsensusTest
         {
             if (Registry.ContainsKey(id)) 
                 return;
-            Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
+            // Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
             if (Terminated)
             {
-                Console.Error.WriteLine($"{_sender}: but already terminated.");
+                // Console.Error.WriteLine($"{_sender}: but already terminated.");
                 return;
             }
 
@@ -230,14 +230,14 @@ namespace Lachain.ConsensusTest
                 case RootProtocolId rootId:
                     RegisterProtocols(new[]
                     {
-                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository)
+                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, 1000)
                     });
                     break;
                 default:
                     throw new Exception($"Unknown protocol type {id}");
             }
 
-            Console.Error.WriteLine($"{_sender}: created protocol {id}.");
+            // Console.Error.WriteLine($"{_sender}: created protocol {id}.");
         }
     }
 }

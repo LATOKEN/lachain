@@ -10,9 +10,12 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5051:5051"
+#    ports:
+#    - "5050:5050"
+#    - "7071:7070"
     network_mode: "host"
+    restart: always
+      
 
   node1:
     build:
@@ -24,9 +27,11 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5052:5052"
+#    ports:
+#    - "5051:5051"
+#    - "7072:7070"
     network_mode: "host"
+    restart: always
 
   node2:
     build:
@@ -38,9 +43,11 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5053:5053"
+#    ports:
+#    - "5052:5052"
+#    - "7073:7070"
     network_mode: "host"
+    restart: always
 
   node3:
     build:
@@ -52,6 +59,8 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5054:5054"
+#    ports:
+#    - "5053:5053"
+#    - "7074:7070"
     network_mode: "host"
+    restart: always

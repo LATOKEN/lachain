@@ -57,7 +57,7 @@ namespace Lachain.Core.Consensus
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
-            Logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
+            // Logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
             if ((long) e.Header.Index >= CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
@@ -132,7 +132,7 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                const ulong minBlockInterval = 000;
+                const ulong minBlockInterval = 500;
                 for (;; CurrentEra += 1)
                 {
                     var now = TimeUtils.CurrentTimeMillis();
@@ -195,7 +195,7 @@ namespace Lachain.Core.Consensus
                         broadcaster.WaitFinish();
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
-                        Logger.LogDebug("Root protocol finished, waiting for new era...");
+                        // Logger.LogDebug("Root protocol finished, waiting for new era...");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
                 }
@@ -221,14 +221,14 @@ namespace Lachain.Core.Consensus
         {
             if (era <= 0) return null;
             if (_eras.ContainsKey(era)) return _eras[era];
-            Logger.LogDebug($"Creating broadcaster for era {era}");
+            // Logger.LogDebug($"Creating broadcaster for era {era}");
             if (_terminated)
             {
                 Logger.LogWarning($"Broadcaster for era {era} not created since consensus is terminated");
                 return null;
             }
 
-            Logger.LogDebug($"Created broadcaster for era {era}");
+            // Logger.LogDebug($"Created broadcaster for era {era}");
             return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet, _validatorAttendanceRepository);
         }
     }

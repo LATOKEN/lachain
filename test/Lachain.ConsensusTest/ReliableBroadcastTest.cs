@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -54,7 +55,12 @@ namespace Lachain.ConsensusTest
         private IPublicConsensusKeySet _publicKeys;
         private EncryptedShare _testShare;
         private Random _rnd;
-        private IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+
+        public ReliableBroadcastTest(IValidatorAttendanceRepository validatorAttendanceRepository)
+        {
+            _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
 
         private void SetUpAllHonest()
         {

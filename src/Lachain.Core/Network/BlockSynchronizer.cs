@@ -78,12 +78,13 @@ namespace Lachain.Core.Network
             var persisted = 0u;
             foreach (var tx in transactions)
             {
-                var error = _transactionManager.Verify(tx);
-                if (error != OperatingError.Ok)
-                {
-                    _logger.LogWarning($"Unable to verify transaction ({error})");
-                    continue;
-                }
+                // _logger.LogDebug($"HandleTransactionsFromPeer(): {tx.Hash.ToHex()} from: {tx.Transaction.From.ToHex()}");
+                // var error = _transactionManager.Verify(tx);
+                // if (error != OperatingError.Ok)
+                // {
+                //     _logger.LogWarning($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
+                //     continue;
+                // }
 
                 if (_transactionPool.Add(tx) == OperatingError.Ok)
                     persisted++;
@@ -124,7 +125,9 @@ namespace Lachain.Core.Network
             {
                 if (_blockManager.GetHeight() + 1 != block.Header.Index)
                 {
-                    _logger.LogWarning($"Black was already persisted while we were waiting for txs");
+                    // _logger.LogWarning($"We have Blockchain with heigh {_blockManager.GetHeight()}");
+                    // _logger.LogWarning($"But received {block.Header.Index}");
+                    _logger.LogWarning($"Received block {block.Header.Index}");
                     return OperatingError.BlockAlreadyExists;
                 }
 

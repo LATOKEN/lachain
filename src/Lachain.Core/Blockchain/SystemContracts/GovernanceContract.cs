@@ -182,19 +182,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
-            Console.WriteLine($"Msg sender {MsgSender().ToHex()}");
-            Console.WriteLine($"players count {players}");
-            Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
-            Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
-            Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
-            Console.WriteLine($"gen {gen}");
-            Console.WriteLine($"votes {votes}");
+            // Console.WriteLine($"Msg sender {MsgSender().ToHex()}");
+            // Console.WriteLine($"players count {players}");
+            // Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
+            // Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
+            // Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
+            // Console.WriteLine($"gen {gen}");
+            // Console.WriteLine($"votes {votes}");
 
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
             
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
-            SetTPKEKey(tpkeKey);
+            SetTPKEKey(tpkePublicKey);
             return ExecutionStatus.Ok;
         }
 
@@ -206,24 +206,32 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var tsKeys = GetTSKeys();
             var tpkeKey = GetTPKEKey();
             
-            Console.WriteLine($"players count {players}");
-            Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
-            Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
+            // Console.WriteLine($"players count {players}");
+            // Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
+            // Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
             
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 
+            // Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
+            
             var gen = GetConsensusGeneration();
+            // Console.WriteLine($"gen {gen}");
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
-
+            // Console.WriteLine($"votes {votes}");
+            
             if (votes + 1 < players - faulty)
-                return ExecutionStatus.ExecutionHalted;
+                throw new Exception("not enogh votes");
+            // return ExecutionStatus.ExecutionHalted;
 
             var ecdsaPublicKeys = _nextValidators.Get()
                 .Batch(CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
+            
+            // Console.WriteLine($"ecdsaPublicKeys len {ecdsaPublicKeys.Length}");
 
             _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
+            // Console.WriteLine($"UpdateValidators success");
             _context.Snapshot.Events.AddEvent(new Event
             {
                 Contract = ContractRegisterer.GovernanceContract,
@@ -231,6 +239,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 Index = 0,
                 TransactionHash = _context.Receipt?.Hash
             });
+            // Console.WriteLine($"AddEvent success");
             
             var balanceOfExecutionResult = SystemContractUtils.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract, Lrc20Interface.MethodBalanceOf,
@@ -239,16 +248,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var txFeesAmount = balanceOfExecutionResult.ReturnValue.ToUInt256().ToMoney();
+            // Console.WriteLine($"balanceOfExecutionResult success");
+            
+            var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
+            // Console.WriteLine($"txFeesAmount {txFeesAmount}");
             
             SetColelctedFees(txFeesAmount);
             
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
-            Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
-            Logger.LogWarning(
-                $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
-            Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
-            Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToHex()}");
+            // Console.WriteLine($"SetConsensusGeneration success");
+            // Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
+            // Logger.LogWarning(
+            //     $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
+            // Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
+            // Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToHex()}");
             return ExecutionStatus.Ok;
         }
 
@@ -302,15 +315,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return fees.ToUInt256().ToMoney();
         }
 
-        private void SetTPKEKey(PublicKey tpkeKey)
+        private void SetTPKEKey(byte[] tpkePublicKey)
         {
-            _tpkeKey.Set(tpkeKey.ToBytes().ToArray());
+            _tpkeKey.Set(tpkePublicKey);
         }
         
         private PublicKey GetTPKEKey()
         {
-            var tpkeKey = _tpkeKey.Get();
-            return PublicKey.FromBytes(tpkeKey);
+            var tpkePublicKey = _tpkeKey.Get();
+            return PublicKey.FromBytes(tpkePublicKey);
         }
 
         private int GetConfirmations(IEnumerable<byte> key, ulong gen)

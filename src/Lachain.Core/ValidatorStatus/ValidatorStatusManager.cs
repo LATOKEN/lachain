@@ -109,13 +109,13 @@ namespace Lachain.Core.ValidatorStatus
                     {
                     
                         var coverFeesAmount = new BigInteger(10) * BigInteger.Pow(10, 18);
-                        Logger.LogInformation($"Trying to become staker");
+                        // Logger.LogInformation($"Trying to become staker");
                         var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(NodeAddress());
                         var isEnoughBalance = balance.ToWei() > StakingContract.TokenUnitsInRoll + coverFeesAmount;
                         if (isEnoughBalance)
                         {
                             var rolls = (balance.ToWei() - coverFeesAmount) / StakingContract.TokenUnitsInRoll;
-                            Logger.LogInformation($"Sending transaction to become staker");
+                            Logger.LogDebug($"Sending transaction to become staker");
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
                             continue;
                         }
@@ -135,7 +135,7 @@ namespace Lachain.Core.ValidatorStatus
                     if (IsDetectionPhase() && IsPreviousValidator() && !IsCheckedIn())
                     {
 
-                        Logger.LogInformation($"The is previous validator. Trying to submit attendance detection.");
+                        Logger.LogInformation($"The node is previous validator. Trying to submit attendance detection.");
                         SubmitAttendanceDetection();
                         continue;
                     }
@@ -143,7 +143,7 @@ namespace Lachain.Core.ValidatorStatus
                     var isNextValidator = IsNextValidator();
                     if (isNextValidator)
                     {
-                        Logger.LogInformation($"The node chosen as next validator. Nothing to do.");
+                        Logger.LogDebug($"The node chosen as next validator. Nothing to do.");
                         passingCycle = GetCurrentCycle();
                         continue;
                     }
@@ -158,7 +158,7 @@ namespace Lachain.Core.ValidatorStatus
                     var (isWinner, proof) = GetVrfProof(stake);
                     if (isWinner)
                     {
-                        Logger.LogInformation($"The node won the VRF lottery. Submitting transaction to become the next cycle validator");
+                        Logger.LogDebug($"The node won the VRF lottery. Submitting transaction to become the next cycle validator");
                         SubmitVrf(proof);
                         continue;
                     }
@@ -166,11 +166,25 @@ namespace Lachain.Core.ValidatorStatus
                 }
                 
                 lastCheckedBlockHeight = 0;
-                passingCycle = 0;
+                passingCycle = -1;
                 
                 // Try to withdraw stake
                 while (!GetStake().IsZero())
                 {
+                    
+                    if (_sendingTxHash != null)
+                    {
+                        if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) == null)
+                        {
+                            Logger.LogInformation($"Transaction submitted, waiting for including in block");
+                            Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
+                            continue;
+                        }
+
+                        _sendingTxHash = null;
+                    }
+                    
+                    // Logger.LogDebug($"Stake: {GetStake().ToMoney()}");
                     if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() || GetCurrentCycle() == passingCycle)
                     {
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
@@ -182,7 +196,7 @@ namespace Lachain.Core.ValidatorStatus
 
                     if (IsDetectionPhase() && IsPreviousValidator() && !IsCheckedIn())
                     {
-                        Logger.LogInformation($"The is previous validator. Trying to submit attendance detection.");
+                        Logger.LogInformation($"The node is previous validator. Trying to submit attendance detection.");
                         SubmitAttendanceDetection();
                         continue;
                     }
@@ -205,8 +219,9 @@ namespace Lachain.Core.ValidatorStatus
                     if (GetCurrentCycle() > requestCycle && IsWithdrawalPhase())
                     {
                         WithdrawStakeTx();
-                        Logger.LogWarning($"Submitted stake withdrawal transaction. Waiting for the next block to ensure withdrawal succeeded.");
+                        Logger.LogWarning($"Stake withdrawal transaction submitted. Waiting for the next block to ensure withdrawal succeeded.");
                     }
+                    Logger.LogWarning($"Waiting for withdrawal phase.");
                 }
 
                 _started = false;
@@ -287,7 +302,11 @@ namespace Lachain.Core.ValidatorStatus
         {
             var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
             _sendingTxHash = tx.FullHash(receipt.Signature);
-            _transactionPool.Add(receipt);
+            var result = _transactionPool.Add(receipt);
+            // if (result == OperatingError.Ok)
+                // Logger.LogDebug($"Transaction successfully submitted: {receipt.Hash.ToHex()}");
+            // else Logger.LogDebug($"Cannot add tx to pool: {result}");
+            
         }
 
         private void RequestStakeWithdrawal()
@@ -442,6 +461,7 @@ namespace Lachain.Core.ValidatorStatus
 
         public void WithdrawStakeAndStop()
         {
+            Logger.LogDebug("Withdrawing stake and stopping validation");
             _withdrawTriggered = true;
         }
         

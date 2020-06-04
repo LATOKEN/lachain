@@ -63,8 +63,8 @@ namespace Lachain.Core.Vault
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
             if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
             {
-                Logger.LogInformation(
-                    $"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
+                // Logger.LogInformation(
+                //     $"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
                 // var data = decoder.Decode(GovernanceInterface.MethodChangeValidators);
                 var data = new GovernanceContract(context).GetNextValidators();
                 var publicKeys =
@@ -87,17 +87,14 @@ namespace Lachain.Core.Vault
                     Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
                 else
                 {
-                    Logger.LogInformation(
-                        $"Commit transaction {commitTx.Hash.ToHex()} successfully sent: " +
-                        $"tx={commitTx.Hash.ToHex()} from={commitTx.Transaction.From.ToHex()} nonce={commitTx.Transaction.Nonce}"
-                    );
+                    Logger.LogInformation($"KeyGen Commit transaction sent");
                 }
 
                 _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
             {
-                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
+                // Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null)
                 {
@@ -124,18 +121,15 @@ namespace Lachain.Core.Vault
                     Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash.ToHex()}): {error}");
                 else
                 {
-                    Logger.LogInformation(
-                        $"Send value transaction {sendValueTx.Hash.ToHex()} successfully sent: " +
-                        $"tx={sendValueTx.Hash.ToHex()} from={sendValueTx.Transaction.From.ToHex()} nonce={sendValueTx.Transaction.Nonce}"
-                    );
+                    Logger.LogDebug($"KeyGen Send value transaction sent");
                 }
 
                 _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenSendValue))
             {
-                Logger.LogInformation(
-                    $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
+                // Logger.LogInformation(
+                    // $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
@@ -155,9 +149,8 @@ namespace Lachain.Core.Vault
                         Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
                     else
                     {
-                        Logger.LogInformation(
-                            $"Confirm transaction {confirmTx.Hash.ToHex()} for hash {keys.PublicPartHash().ToHex()} successfully sent: " +
-                            $"tx={confirmTx.Hash.ToHex()} from={confirmTx.Transaction.From.ToHex()} nonce={confirmTx.Transaction.Nonce}"
+                        Logger.LogDebug(
+                            $"KeyGen Confirm transaction sent"
                         );
                     }
                 }
@@ -166,7 +159,7 @@ namespace Lachain.Core.Vault
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))
             {
-                Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
+                // Logger.LogInformation($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
@@ -184,21 +177,21 @@ namespace Lachain.Core.Vault
                 if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
-                    Logger.LogWarning($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
-                    Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
-                    Logger.LogWarning(
-                        "  - TS public key: " + keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()
-                    );
-                    Logger.LogWarning(
-                        "  - TS public key set: " +
-                        string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))
-                    );
-                    var lastBlockInCurrentCycle = (context.Receipt.Block / 1000 + 1) * 1000;
+                    // Logger.LogWarning($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
+                    // Logger.LogWarning($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
+                    // Logger.LogWarning(
+                        // "  - TS public key: " + keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()
+                    // );
+                    // Logger.LogWarning(
+                    //     "  - TS public key set: " +
+                    //     string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))
+                    // );
+                    var lastBlockInCurrentCycle = (context.Receipt.Block / StakingContract.CycleDuration + 1) * StakingContract.CycleDuration;
                     _privateWallet.AddThresholdSignatureKeyAfterBlock(
                         lastBlockInCurrentCycle, keys.ThresholdSignaturePrivateKey
                     );
                     _privateWallet.AddTpkePrivateKeyAfterBlock(lastBlockInCurrentCycle, keys.TpkePrivateKey);
-                    Logger.LogInformation("Keyring saved to wallet");
+                    Logger.LogDebug("Keyring saved to wallet");
                     _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
                 }
                 else
