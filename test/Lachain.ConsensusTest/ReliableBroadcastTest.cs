@@ -33,8 +33,12 @@ namespace Lachain.ConsensusTest
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false, _validatorAttendanceRepository);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
-            
-            _testShare = new EncryptedShare(G1.Generator, RbTools.GetPermanentInput(32), G2.Generator, sender);
+
+
+            var bytes = Enumerable.Range(0, 32)
+                .Select(x => (byte) (x * x * 0))
+                .ToArray();
+            _testShare = new EncryptedShare(G1.Generator, bytes, G2.Generator, sender);
         }
 
         

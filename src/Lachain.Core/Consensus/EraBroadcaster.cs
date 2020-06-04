@@ -154,15 +154,15 @@ namespace Lachain.Core.Consensus
                     EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.AssociatedValidatorId, (int) message.Validator.Era);
+                    var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:

@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Google.Protobuf;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
-using Lachain.Crypto.Misc;
 using Lachain.Crypto.TPKE;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.ReliableBroadcast
 {
@@ -19,53 +22,27 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private readonly ReliableBroadcastId _broadcastId;
 
-        private readonly Dictionary<int, List<int>> _receivedBatchesOfBlocks;
-        private readonly Dictionary<int, bool> _receivedCorrectEchoFrom;
-        private readonly Dictionary<int, bool> _receivedCorrectReadyFrom;
-        private readonly List<int> _fromWhomReceived;
-
-        private readonly List<int> _store;
-        private EncryptedShare? _result;
-        private List<UInt256> _receivedRoots;
         private ResultStatus _requested;
-        private readonly ErasureCoding _erasureCoding;
 
-        private readonly bool[] _sentReadyMsg;
-        private int _countCorrectEchoMsg;
-        private int _countReadyMsg;
+        private readonly ECHOMessage?[] _echoMessages;
+        private readonly ReadyMessage?[] _readyMessages;
+        private readonly bool[] _sentValMessage;
+        private readonly int _merkleTreeSize;
+        private bool _readySent;
 
         public ReliableBroadcast(
             ReliableBroadcastId broadcastId, IPublicConsensusKeySet wallet, IConsensusBroadcaster broadcaster) :
             base(wallet, broadcastId, broadcaster)
         {
             _broadcastId = broadcastId;
-
-            _receivedBatchesOfBlocks = new Dictionary<int, List<int>>();
-            _receivedCorrectEchoFrom = new Dictionary<int, bool>();
-            _receivedCorrectReadyFrom = new Dictionary<int, bool>();
-            for (var i = 0; i < N; i++)
-            {
-                _receivedBatchesOfBlocks[i] = new List<int>();
-                _receivedCorrectEchoFrom[i] = false;
-                _receivedCorrectReadyFrom[i] = false;
-            }
-
-            // It's store for tips
-            _fromWhomReceived = new List<int>();
-
-            _store = new List<int>();
-
-            _erasureCoding = new ErasureCoding();
-
-            _receivedRoots = new List<UInt256>();
-            _sentReadyMsg = new bool[N];
-            _result = null;
-
-            _countCorrectEchoMsg = 0;
-            _countReadyMsg = 0;
+            _echoMessages = new ECHOMessage?[N];
+            _readyMessages = new ReadyMessage?[N];
+            _sentValMessage = new bool[N];
             _requested = ResultStatus.NotRequested;
+            _merkleTreeSize = N;
+            while ((_merkleTreeSize & (_merkleTreeSize - 1)) != 0)
+                _merkleTreeSize++; // increment while not power of two
         }
-
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -73,11 +50,13 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage ?? throw new InvalidOperationException();
+                // Logger.LogError(
+                //     $"{Id} processing message:x {message.PayloadCase}, thread = {Thread.CurrentThread.ManagedThreadId}");
 
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
-                        HandleValMessage(message.ValMessage);
+                        HandleValMessage(message.ValMessage, envelope.ValidatorIndex);
                         break;
                     case ConsensusMessage.PayloadOneofCase.EchoMessage:
                         HandleEchoMessage(message.EchoMessage, envelope.ValidatorIndex);
@@ -94,6 +73,8 @@ namespace Lachain.Consensus.ReliableBroadcast
             else
             {
                 var message = envelope.InternalMessage ?? throw new InvalidOperationException();
+                // Logger.LogError(
+                //     $"{Id} processing message: {message.GetType()}, thread = {Thread.CurrentThread.ManagedThreadId}");
                 switch (message)
                 {
                     case ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested:
@@ -111,709 +92,310 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
         {
+            Logger.LogInformation($"{Id}: got request with input, empty={broadcastRequested.Input == null}");
             _requested = ResultStatus.Requested;
             if (N == 1)
             {
-                _result = broadcastRequested.Input;
-                CheckResult();
+                if (broadcastRequested.Input is null) throw new InvalidOperationException();
+                Broadcaster.InternalResponse(
+                    new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, broadcastRequested.Input)
+                );
                 return;
             }
 
             if (broadcastRequested.Input == null)
-                return;
-
-            var realInput = broadcastRequested.Input.ToBytes().ToArray();
-            for (var indexAddressee = 0; indexAddressee < N; indexAddressee++)
             {
-                Broadcaster.SendToValidator(
-                    CreateValMessage(RbTools.ByteToInt(realInput), indexAddressee),
-                    indexAddressee
-                );
+                CheckResult();
+                return;
             }
 
-            Logger.LogDebug($"{Id} finished sending VAL messages");
+            var input = broadcastRequested.Input.ToBytes().ToList();
+            AugmentInput(input);
+            foreach (var (valMessage, i) in ConstructValMessages(input).WithIndex())
+                Broadcaster.SendToValidator(new ConsensusMessage {ValMessage = valMessage}, i);
+
+            Logger.LogInformation($"{Id} finished sending VAL messages");
+            CheckResult();
         }
 
-        private UInt256 RecalculateMerkleRoot(IEnumerable<int> goodBlocks)
+        private void HandleValMessage(ValMessage val, int validator)
         {
-            var newHashes = goodBlocks
-                .Select(block => BitConverter.GetBytes(block).Keccak())
-                .ToList();
-            return MerkleTree.ComputeRoot(newHashes) ?? throw new InvalidOperationException();
-        }
+            if (_sentValMessage[validator])
+            {
+                Logger.LogWarning($"{Id}: validator {validator} tried to send VAL message twice");
+                return;
+            }
 
-        private void HandleValMessage(ValMessage val)
-        {
+            _sentValMessage[validator] = true;
             Broadcaster.Broadcast(CreateEchoMessage(val));
-            Logger.LogDebug($"{Id}, player {GetMyId()} broadcast ECHO");
+            Logger.LogInformation($"{Id}, player {GetMyId()} broadcast ECHO");
         }
 
         private void HandleEchoMessage(ECHOMessage echo, int validator)
         {
-            Logger.LogDebug($"{Id} got ECHO from {validator}");
-            if (_receivedCorrectEchoFrom[validator])
+            Logger.LogInformation($"{Id} got ECHO from {validator}");
+            if (_echoMessages[validator] != null)
             {
                 Logger.LogWarning($"{Id} already received correct echo from {validator}");
                 return;
             }
 
-
-            var (flag, goodBatchOfBlocks, receivedRoots) = CheckEchoMsgNew(echo);
-
-            if (flag)
+            if (!CheckEchoMessage(echo, validator))
             {
-                _receivedBatchesOfBlocks[echo.IndexAddressee] = goodBatchOfBlocks;
-                _receivedRoots = receivedRoots;
-                if (!_receivedCorrectEchoFrom[validator])
-                {
-                    _receivedCorrectEchoFrom[validator] = true;
-                    _countCorrectEchoMsg++;
-                }
-
-                Logger.LogDebug($"{Id} _countCorrectECHOMsg = {_countCorrectEchoMsg}, last echo from {validator}");
-            }
-            else
-            {
-                Logger.LogWarning($"{Id} received BadBlock");
+                Logger.LogWarning($"{Id}: validator {validator} sent incorrect ECHO");
+                return;
             }
 
-            if (_countCorrectEchoMsg == N - F)
-            {
-                var recalculatedRootsToSend = new List<UInt256>();
-                var segmentSize = echo.Settings.LengthSegment;
-                var countStripes = echo.Settings.CountStripes;
-
-                foreach (var batch in _receivedBatchesOfBlocks.Where(x => x.Value.Count == 0))
-                {
-                    for (var i = 0; i < segmentSize; i++)
-                    {
-                        _fromWhomReceived.Add(batch.Key * segmentSize + i);
-                    }
-                }
-
-                for (var numberStripes = 0; numberStripes < countStripes; numberStripes++)
-                {
-                    var accumulateCurrentStripe = new List<int>();
-                    foreach (var batch in _receivedBatchesOfBlocks)
-                    {
-                        for (var j = 0; j < segmentSize; j++)
-                        {
-                            if (batch.Value.Count == 0)
-                            {
-                                accumulateCurrentStripe.Add(-11);
-                            }
-                            else
-                            {
-                                var indSelectBlock = numberStripes * segmentSize + j;
-                                accumulateCurrentStripe.Add(batch.Value[indSelectBlock]);
-                            }
-                        }
-                    }
-
-                    var accumulateCurrentStripeArray = accumulateCurrentStripe.ToArray();
-                    // RbTools.Print(accumulateCurrentStripeArray);
-
-                    var currentDecodeStripe =
-                        DecodeNew(accumulateCurrentStripeArray.ToList(), _fromWhomReceived.ToArray());
-                    var againEncodeCurrentStripe =
-                        Encode(currentDecodeStripe.Take(currentDecodeStripe.Count - F).ToList());
-                    var currentNewHashes = RecalculateMerkleRoot(againEncodeCurrentStripe);
-
-                    if (receivedRoots[numberStripes].Equals(currentNewHashes))
-                    {
-                        recalculatedRootsToSend.Add(currentNewHashes);
-                    }
-                    else
-                    {
-                        Logger.LogError($"{Id} received root != recalculated hash");
-                        Abort();
-                    }
-
-                    foreach (var item in currentDecodeStripe.Take(N - F))
-                    {
-                        _store.Add(item);
-                    }
-                }
-
-                if (receivedRoots.SequenceEqual(recalculatedRootsToSend)) // may be this check unneccesary
-                {
-                    if (!_sentReadyMsg[GetMyId()])
-                    {
-                        Broadcaster.Broadcast(CreateReadyMessage(recalculatedRootsToSend));
-                        _sentReadyMsg[GetMyId()] = true;
-                        Logger.LogDebug($"{Id} broadcast ReadyMessageType from HandleEchoMessage()");
-                    }
-                }
-                else
-                {
-                    Abort();
-                }
-            }
+            _echoMessages[validator] = echo;
+            TrySendReadyMessageFromEchos();
+            CheckResult();
         }
 
         private void HandleReadyMessage(ReadyMessage readyMessage, int validator)
         {
-            if (_receivedCorrectReadyFrom[validator])
-                return;
-
-            var rootsToCheck = readyMessage.RootMerkleTree.ToList();
-            if (CheckReadyMsg(rootsToCheck))
+            if (_readyMessages[validator] != null)
             {
-                if (!_receivedCorrectReadyFrom[validator])
-                {
-                    _receivedCorrectReadyFrom[validator] = true;
-                    _countReadyMsg++;
-                    Logger.LogDebug($"{Id} countReadyMsg = {_countReadyMsg}");
-                }
-
-                if (_countReadyMsg == F + 1)
-                {
-                    if (!_sentReadyMsg[GetMyId()])
-                    {
-                        Broadcaster.Broadcast(CreateReadyMessage(rootsToCheck));
-                        _sentReadyMsg[GetMyId()] = true;
-                        Logger.LogDebug($"{Id} broadcast ReadyMessageType HandleReadyMessage()");
-                    }
-                }
-                // else if (_countReadyMsg == 2 * F + 1)
-                // {
-                //     if (_countCorrectECHOMsg == N - 2 * F)
-                //     {
-                //         // todo: может влияет на silent case
-                //         //Here should be decode if operations of interpolation
-                //         //from blocks and decode could be make in different place
-                //     }
-                // }
-
-                if (_store.Count != 0)
-                {
-                    var originalInput = RbTools.GetOriginalInput(_store.ToArray());
-                    _result = EncryptedShare.FromBytes(RbTools.IntToByte(originalInput));
-                }
-                else
-                {
-                    _result = null;
-                }
-
-                CheckResult();
+                Logger.LogWarning($"{Id} received duplicate ready from validator {validator}");
+                return;
             }
+
+            _readyMessages[validator] = readyMessage;
+            TrySendReadyMessageFromReady();
+            CheckResult();
+            Logger.LogInformation($"{Id}: got ready message from {validator}");
+        }
+
+        private void TrySendReadyMessageFromEchos()
+        {
+            if (_readySent) return;
+            var (bestRootCnt, bestRoot) = _echoMessages
+                .Where(x => x != null)
+                .GroupBy(x => x!.MerkleTreeRoot)
+                .Select(m => (cnt: m.Count(), key: m.Key))
+                .OrderByDescending(x => x.cnt)
+                .First();
+            if (bestRootCnt != N - F) return;
+            Logger.LogInformation($"{Id} got {N - F} ECHO messages, interpolating result to send READY");
+            var interpolationData = _echoMessages
+                .WithIndex()
+                .Where(x => bestRoot.Equals(x.item?.MerkleTreeRoot))
+                .Select(t => (echo: t.item!, t.index))
+                .Take(N - 2 * F)
+                .ToArray();
+            var restoredData = DecodeFromEchos(interpolationData);
+            var restoredMerkleTree = ConstructMerkleTree(
+                restoredData
+                    .Batch(interpolationData.First().echo.Data.Length)
+                    .Select(x => x.ToArray())
+                    .ToArray()
+            );
+            if (!restoredMerkleTree[1].Equals(bestRoot))
+            {
+                Logger.LogError($"{Id}: Interpolated result merkle root does not match!");
+                Abort();
+                return;
+            }
+
+            Broadcaster.Broadcast(CreateReadyMessage(bestRoot));
+            _readySent = true;
+            Logger.LogInformation($"{Id} broadcast ReadyMessage from HandleEchoMessage()");
+        }
+
+        private void TrySendReadyMessageFromReady()
+        {
+            var (bestRootCnt, bestRoot) = _readyMessages
+                .Where(x => x != null)
+                .GroupBy(x => x!.MerkleTreeRoot)
+                .Select(m => (cnt: m.Count(), key: m.Key))
+                .OrderByDescending(x => x.cnt)
+                .First();
+            if (bestRootCnt != F + 1) return;
+            if (_readySent) return;
+            Broadcaster.Broadcast(CreateReadyMessage(bestRoot));
+            _readySent = true;
+            Logger.LogInformation($"{Id} broadcast ReadyMessage from HandleReadyMessage()");
         }
 
         private void CheckResult()
         {
-            if (_result == null)
-                return;
-            if (_requested != ResultStatus.Requested)
-                return;
+            if (_requested != ResultStatus.Requested) return;
+            var (bestRootCnt, bestRoot) = _readyMessages
+                .Where(x => x != null)
+                .GroupBy(x => x!.MerkleTreeRoot)
+                .Select(m => (cnt: m.Count(), key: m.Key))
+                .OrderByDescending(x => x.cnt)
+                .FirstOrDefault();
+            Logger.LogInformation($"{Id}: checking READY messages, best root has {bestRootCnt} votes");
+            if (bestRootCnt < 2 * F + 1) return;
+            Logger.LogInformation($"{Id}: got {2 * F + 1} READY, trying to get {N - 2 * F} ECHOs and finish");
+            var matchingEchos = _echoMessages
+                .WithIndex()
+                .Where(t => bestRoot.Equals(t.item?.MerkleTreeRoot))
+                .Select(t => (echo: t.item!, t.index))
+                .Take(N - 2 * F)
+                .ToArray();
+            if (matchingEchos.Length < N - 2 * F) return;
+            Logger.LogInformation($"{Id}: got {N - 2 * F} ECHOs, returning result");
+
+            var restored = DecodeFromEchos(matchingEchos);
+            var len = restored.AsReadOnlySpan().Slice(0, 4).ToInt32();
+            var result = EncryptedShare.FromBytes(restored.AsMemory().Slice(4, len));
+
+            Logger.LogInformation($"{Id} returned result");
             _requested = ResultStatus.Sent;
-            Broadcaster.InternalResponse(
-                new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, _result));
+            Broadcaster.InternalResponse(new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, result));
         }
 
-
-        private List<int> DecodeNew(List<int> toDecode, int[] tips)
+        public byte[] DecodeFromEchos(IReadOnlyCollection<(ECHOMessage echo, int from)> echos)
         {
-            var tmp = toDecode.ToArray();
-            if (tips.Length == F)
+            var erasureCoding = new ErasureCoding();
+            Debug.Assert(echos.Count == N - 2 * F);
+            Debug.Assert(echos.Select(t => t.echo.Data.Length).Distinct().Count() == 1);
+            var shardLength = echos.First().echo.Data.Length;
+            var result = new byte[shardLength * N];
+            foreach (var (echo, i) in echos)
+                Buffer.BlockCopy(echo.Data.ToArray(), 0, result, i * shardLength, shardLength);
+            for (var i = 0; i < shardLength; ++i)
             {
-                _erasureCoding.Decode(tmp, F, tips);
-            }
-            else
-            {
-                Logger.LogWarning($"{Id} need to reduce count of tips");
-                var reducedTips = tips.Take(F).ToArray();
-                _erasureCoding.Decode(tmp, F, reducedTips);
+                var codeword = new int[N];
+                for (var j = 0; j < N; ++j) codeword[j] = result[i + j * shardLength];
+                var erasurePlaces = Enumerable.Range(0, N)
+                    .Where(z => !echos.Select(t => t.from).Contains(z))
+                    .ToArray();
+                Debug.Assert(erasurePlaces.Length == 2 * F);
+                erasureCoding.Decode(codeword, 2 * F, erasurePlaces);
+                for (var j = 0; j < N; ++j) result[i + j * shardLength] = checked((byte) codeword[j]);
             }
 
-            return tmp.Take(toDecode.Count).ToList();
-        }
-
-        private List<int> Encode(List<int> toEncode)
-        {
-            return _erasureCoding.Encoder(toEncode.ToArray(), F).ToList();
+            return result;
         }
 
         private void Abort()
         {
-            Logger.LogError(
-                "Thread {0} ID {1} call abort()",
-                Thread.CurrentThread.ManagedThreadId, GetMyId()
-            );
-            _result = null;
-            CheckResult();
+            Logger.LogError($"{Id} was aborted!");
+            Terminate();
         }
 
-        private Tuple<bool, List<int>, List<UInt256>> CheckEchoMsgNew(ECHOMessage msg)
+        private bool CheckEchoMessage(ECHOMessage msg, int from)
         {
-            var goodBlocks = new List<int>();
-            var roots = new List<UInt256>();
-            var segmentSize = msg.Settings.LengthSegment;
-            var numberRegion = 0;
-            foreach (var currentRegion in msg.Batch)
+            UInt256 value = msg.Data.Keccak();
+            for (int i = from + _merkleTreeSize, j = 0; i > 1; i /= 2, ++j)
             {
-                var destinationRoot = new UInt256();
-
-                foreach (var currentFingerPrint in currentRegion.FingerPrints.ToArray())
-                {
-                    var branch = currentFingerPrint.Branch.BranchOfHashes.ToArray();
-                    destinationRoot = currentFingerPrint.DestinationRoot;
-                    var sourceBlock = currentFingerPrint.SourceBlock;
-                    var reCalcRootNew = BitConverter.GetBytes(sourceBlock).Keccak();
-                    foreach (var sibling in branch)
-                    {
-                        if (sibling.Side == 0)
-                        {
-                            reCalcRootNew = MerkleTree.ComputeRoot(new[] {sibling.Node, reCalcRootNew});
-                        }
-                        else
-                        {
-                            reCalcRootNew = MerkleTree.ComputeRoot(new[] {reCalcRootNew, sibling.Node});
-                        }
-                    }
-
-                    if (reCalcRootNew.Equals(destinationRoot))
-                    {
-                        goodBlocks.Add(sourceBlock);
-                    }
-                    else
-                    {
-                        Logger.LogDebug(
-                            "Thread {0} ID {1} Into checkECHOMsgNew() received messages with index addressee {2} : FALSE",
-                            Thread.CurrentThread.ManagedThreadId, GetMyId(), msg.IndexAddressee
-                        );
-                        return new Tuple<bool, List<int>, List<UInt256>>(false, new List<int>(), new List<UInt256>());
-                    }
-
-                    numberRegion++;
-                }
-
-                if (numberRegion % segmentSize == 0)
-                {
-                    roots.Add(destinationRoot);
-                }
+                value = (i & 1) == 0
+                    ? value.ToBytes().Concat(msg.MerkleProof[j].ToBytes()).Keccak() // we are left sibling
+                    : msg.MerkleProof[j].ToBytes().Concat(value.ToBytes()).Keccak(); // we are right sibling
             }
 
-            return new Tuple<bool, List<int>, List<UInt256>>(true, goodBlocks, roots);
+            return msg.MerkleTreeRoot.Equals(value);
         }
 
-
-        private bool CheckReadyMsg(List<UInt256> toCheck)
+        private void AugmentInput(List<byte> input)
         {
-            return _receivedRoots.SequenceEqual(toCheck);
+            var sz = input.Count;
+            input.InsertRange(0, sz.ToBytes());
+            var dataShards = N - 2 * F;
+            var shardSize = (input.Count + dataShards - 1) / dataShards;
+            input.AddRange(Enumerable.Repeat<byte>(0, dataShards * shardSize - input.Count));
+            Debug.Assert(input.Count == dataShards * shardSize);
         }
 
-        private bool TestConsistenceOf(List<FingerPrint> fingerPrints)
+        private ValMessage[] ConstructValMessages(IReadOnlyList<byte> input)
         {
-            foreach (var currentFingerPrint in fingerPrints.ToArray())
+            var shards = ErasureCodingShards(input, N, 2 * F);
+            var merkleTree = ConstructMerkleTree(shards);
+            var result = new ValMessage[N];
+            for (var i = 0; i < N; ++i)
             {
-                var branch = currentFingerPrint.Branch.BranchOfHashes.ToArray();
-                var destinationRoot = currentFingerPrint.DestinationRoot;
-                var sourceBlock = currentFingerPrint.SourceBlock;
-
-                var reCalcRootNew = BitConverter.GetBytes(sourceBlock).Keccak();
-                foreach (var sibling in branch)
+                result[i] = new ValMessage
                 {
-                    if (sibling.Side == 0)
-                    {
-                        reCalcRootNew = MerkleTree.ComputeRoot(new[] {sibling.Node, reCalcRootNew});
-                    }
-                    else
-                    {
-                        reCalcRootNew = MerkleTree.ComputeRoot(new[] {reCalcRootNew, sibling.Node});
-                    }
-                }
-
-                if (!reCalcRootNew.Equals(destinationRoot))
-                {
-                    return false;
-                }
+                    SenderId = _broadcastId.SenderId,
+                    MerkleTreeRoot = merkleTree[1],
+                    MerkleProof = {MerkleTreeBranch(merkleTree, i)},
+                    Data = ByteString.CopyFrom(shards[i]),
+                };
             }
 
-            return true;
-        }
-
-        private bool checkConsistencyOfSiblings(List<Sibling> branch, UInt256 destinationRoot, int sourceBlock)
-        {
-            var reCalcRootNew = BitConverter.GetBytes(sourceBlock).Keccak();
-            foreach (var sibling in branch)
-            {
-                if (sibling.Side == 0)
-                {
-                    reCalcRootNew = MerkleTree.ComputeRoot(new[] {sibling.Node, reCalcRootNew});
-                }
-                else
-                {
-                    reCalcRootNew = MerkleTree.ComputeRoot(new[] {reCalcRootNew, sibling.Node});
-                }
-            }
-
-            return reCalcRootNew.Equals(destinationRoot);
-        }
-
-        private (List<Region>, List<UInt256>, int, int) GetBatch(int[] input, int indexAddressee)
-        {
-            var (correctInputForDebug, Gs) = f1(input);
-
-            var batch = new List<Region>();
-            var roots = new List<UInt256>();
-            var indexStripe = 0;
-            var sizeSegment = 0;
-            var countStripes = Gs.Count;
-
-            foreach (var G in Gs)
-            {
-                var hashes = new List<UInt256>();
-
-                foreach (var currentInt in G)
-                {
-                    hashes.Add(BitConverter.GetBytes(currentInt).Keccak());
-                }
-
-                var destinationRoot = MerkleTree.ComputeRoot(hashes);
-
-                var currentRegion = new Region();
-                sizeSegment = G.Length / N;
-
-                for (var positionIntoSegment = 0; positionIntoSegment < sizeSegment; positionIntoSegment++)
-                {
-                    var currentFingerPrint = new FingerPrint();
-                    var indexSelectedBlock = indexAddressee * sizeSegment + positionIntoSegment;
-                    var destinationBlock = G[indexSelectedBlock];
-                    var destinationHash = hashes[indexSelectedBlock];
-
-                    var testingBranch = CreateBranch(hashes, destinationHash);
-                    if (checkConsistencyOfSiblings(testingBranch, destinationRoot, destinationBlock))
-                    {
-                        currentFingerPrint.Branch = new Branch
-                        {
-                            BranchOfHashes = {testingBranch}
-                        };
-                        currentFingerPrint.DestinationRoot = destinationRoot;
-                        currentFingerPrint.IndexAddressee = indexAddressee;
-                        currentFingerPrint.IndexSegment = positionIntoSegment;
-                        currentFingerPrint.IndexStripe = indexStripe;
-                        currentFingerPrint.SourceBlock = destinationBlock;
-                    }
-                    else
-                    {
-                        Logger.LogError(
-                            "NOT CONSIST: Block {0} Root {1} Branch {2}",
-                            destinationBlock, destinationRoot, testingBranch
-                        );
-                    }
-
-                    currentRegion = new Region
-                    {
-                        FingerPrints = {currentFingerPrint}
-                    };
-                    batch.Add(currentRegion);
-                }
-
-                roots.Add(destinationRoot);
-                indexStripe++;
-            }
-
-            return (batch, roots, sizeSegment, countStripes);
-        }
-
-        private ConsensusMessage CreateValMessage(int[] input, int indexAddressee)
-        {
-            var (batch, roots, segment, countStripes) = GetBatch(input, indexAddressee);
-
-            var message = new ConsensusMessage
-            {
-                ValMessage = new ValMessage
-                {
-                    RootMerkleTree = {roots},
-                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId,
-                    IndexAddressee = indexAddressee,
-                    Batch = {batch},
-                    Settings = new Settings
-                    {
-                        LengthSegment = segment,
-                        CountStripes = countStripes,
-                    }
-                }
-            };
-            return message;
+            return result;
         }
 
         private ConsensusMessage CreateEchoMessage(ValMessage valMessage)
         {
-            var message = new ConsensusMessage
+            return new ConsensusMessage
             {
                 EchoMessage = new ECHOMessage
                 {
-                    RootMerkleTree = {valMessage.RootMerkleTree},
-                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId,
-                    IndexAddressee = valMessage.IndexAddressee,
-                    Batch = {valMessage.Batch},
-                    Plaintext = {valMessage.Plaintext},
-                    Settings = new Settings
-                    {
-                        CountStripes = valMessage.Settings.CountStripes,
-                        LengthSegment = valMessage.Settings.LengthSegment,
-                        ExtraNumbers = valMessage.Settings.ExtraNumbers
-                    }
+                    SenderId = _broadcastId.SenderId,
+                    MerkleTreeRoot = valMessage.MerkleTreeRoot,
+                    Data = valMessage.Data,
+                    MerkleProof = {valMessage.MerkleProof}
                 }
             };
-            return message;
         }
 
-        private ConsensusMessage CreateReadyMessage(List<UInt256> roots)
+        private ConsensusMessage CreateReadyMessage(UInt256 merkleRoot)
         {
-            var message = new ConsensusMessage
+            return new ConsensusMessage
             {
                 ReadyMessage = new ReadyMessage
                 {
-                    RootMerkleTree = {roots},
-                    AssociatedValidatorId = _broadcastId.AssociatedValidatorId
+                    SenderId = _broadcastId.SenderId,
+                    MerkleTreeRoot = merkleRoot,
                 }
             };
-            return message;
         }
 
-        // blocks - list of block on which create MT
-        // playerIndex - it is the player index for which create branch (i.e. path)
-        private static List<Sibling> CreateBranch(List<UInt256> hashes, UInt256 destinationHash)
+        private static List<UInt256> MerkleTreeBranch(IReadOnlyList<UInt256> tree, int i)
         {
-            var mt = MerkleTree.ComputeTree(hashes.ToArray());
+            var n = tree.Count / 2;
+            var result = new List<UInt256>();
+            for (i += n; i > 1; i /= 2) // go up in Merkle tree, div 2 means go to parent
+                result.Add(tree[i ^ 1]); // xor 1 means take sibling
+            return result;
+        }
 
-            var branch = new List<Sibling>();
+        private UInt256[] ConstructMerkleTree(IReadOnlyCollection<IReadOnlyCollection<byte>> shards)
+        {
+            Debug.Assert(shards.Count == N);
+            var result = new UInt256[_merkleTreeSize * 2];
+            foreach (var (shard, i) in shards.WithIndex())
+                result[_merkleTreeSize + i] = shard.Keccak();
+            for (var i = shards.Count; i < _merkleTreeSize; ++i)
+                result[_merkleTreeSize + i] = UInt256Utils.Zero;
+            for (var i = _merkleTreeSize - 1; i >= 1; --i)
+                result[i] = result[2 * i].ToBytes().Concat(result[2 * i + 1].ToBytes()).Keccak();
+            return result;
+        }
 
-            var currentNode = mt.Search(destinationHash);
-            while (!currentNode.IsRoot)
+        /**
+         * Split arbitrary array into specified number of shards adding some parity shards
+         * After this operation whole array can be recovered if specified number of shards is lost
+         * Array length is assumed to be divisible by (shards - erasures)
+         */
+        public static byte[][] ErasureCodingShards(IReadOnlyList<byte> input, int shards, int erasures)
+        {
+            var erasureCoding = new ErasureCoding();
+            var dataShards = shards - erasures;
+            if (input.Count % dataShards != 0) throw new InvalidOperationException();
+            var shardSize = input.Count / dataShards;
+            var result = new byte[shards][];
+            foreach (var (shard, i) in input
+                .Batch(shardSize)
+                .WithIndex()
+            ) result[i] = shard.ToArray();
+
+            for (var i = dataShards; i < shards; ++i) result[i] = new byte[shardSize];
+
+            for (var i = 0; i < shardSize; ++i)
             {
-                var parent = currentNode.Parent;
-                var left = parent.LeftChild;
-                var right = parent.RightChild;
-                var tmpSibling = new Sibling()
-                {
-                    Side = currentNode.Hash.Equals(left.Hash) ? 1 : 0,
-                    Node = currentNode.Hash.Equals(left.Hash) ? right.Hash : left.Hash
-                };
-                branch.Add(tmpSibling);
-                currentNode = currentNode.Parent;
+                var codeword = new int[shards];
+                for (var j = 0; j < dataShards; j++)
+                    codeword[j] = input[i + j * shardSize];
+                erasureCoding.Encode(codeword, erasures);
+                for (var j = dataShards; j < shards; ++j)
+                    result[j][i] = checked((byte) codeword[j]);
             }
 
-            //branch.Add(currentNode.Hash); // uncomment: if need to add root value  as like last notice in the branch
-            /*
-             * todo: можно оптимизировать по объему пересылки, так как изменяются только ближайшие к листьям значения хешей
-             */
-            return branch;
+            return result;
         }
-
-        public static int[] GetInput(int length)
-        {
-            var rnd = new Random();
-            var input = new int[length];
-            for (var i = 0; i != length; i++)
-            {
-                //input[i] = (i + 10 + i*i) % 255; // for create permanent values
-                input[i] = rnd.Next() % 255;
-            }
-
-            for (var i = length; i != length; i++)
-                input[i] = 0;
-            return input;
-        }
-
-        private Tuple<int[], List<int[]>> f1(int[] input)
-        {
-            // изменяем input так что бы его длина делилась на k N - F
-            // размер store (объем хранения) записываем в начало
-            var K = 1; // это значение в дальнейшем равноценно segmentLength
-            var fillValue = 13; // any value
-            var stripeLength = K * N - F;
-            var supplementedInput = RbTools.GetCorrectInput(input, stripeLength, false, fillValue);
-
-
-            var countStripes = supplementedInput.Count / stripeLength;
-            var Gs = new List<int[]>();
-            for (var i = 0; i < countStripes; i++)
-            {
-                var currentStripe = supplementedInput.Skip(i * stripeLength).Take(stripeLength).ToArray();
-                var GV2 = _erasureCoding.Encoder(currentStripe, F);
-                Gs.Add(GV2);
-            }
-
-            // отправляю сам себe свою шару ставлю флаг, что она отправлена // todo: share problem. 
-            // if (!_receivedCorrectEchoFrom[GetMyId()])
-            // {
-            //     var selfShare = GsV2.Select(G => G[GetMyId()]).ToList();
-            //     _receivedBatchesOfBlocks[GetMyId()] = selfShare;
-            //     _receivedCorrectEchoFrom[GetMyId()] = true;
-            //     Console.Error.WriteLine(                                // <----  debug
-            //         "Thread {0} ID {1} wrote selfshare", 
-            //         Thread.CurrentThread.ManagedThreadId, GetMyId());
-            // }
-
-            var res = new Tuple<int[], List<int[]>>(supplementedInput.ToArray(), Gs);
-            return res;
-        }
-
-        // private List<UInt256> recalculateHashes()
-        // {
-        //     var numberStripes = _receivedBatchesOfBlocks[0].Capacity;
-        //     var recalculatedRoots = new List<UInt256>();
-        //     for (var i = 0; i < numberStripes; i++)
-        //     {
-        //         var hashes = new List<UInt256>();
-        //         for (var j = 0; j < N; j++)
-        //         {
-        //             hashes.Add(BitConverter.GetBytes(_receivedBatchesOfBlocks[j][i]).Keccak());
-        //         }
-        //
-        //         recalculatedRoots.Add(MerkleTree.ComputeRoot(hashes));
-        //     }
-        //
-        //     return recalculatedRoots;
-        // }
-
-
-        // private void GeneralDivide(int[] source, List<int[]> result, int parts, int fillSymbol=0)
-        // {
-        //     var bufferLength = source.Length;
-        //     var partLength = bufferLength / parts;
-        //     var partsCount = bufferLength / partLength;
-        //     var tmp = new int[partLength];
-        //     if (bufferLength % partLength != 0)
-        //     {
-        //         throw new ArgumentException("The length of source parameter should be divided by the length of part ", nameof(source));
-        //     }
-        //     for (int i = 0; i < partsCount; i++)
-        //     {
-        //         tmp = source.Skip(partLength * i).Take(partLength).ToArray();
-        //         result.Add(tmp);
-        //     }
-        // }
-
-        // private List<List<int>> f2(List<int[]> Gs)
-        // {
-        //     var batches = new List<List<int>>();
-        //     var segment = Gs[0].Length / N;
-        //     for (var i = 0; i < N; i++)
-        //     {
-        //         //batches.Add(new int[segment * Gs.Count]);
-        //         batches.Add(new List<int>());
-        //     }
-        //
-        //     foreach (var G in Gs)
-        //     {
-        //         var j = 0;
-        //         foreach (var batch in batches)
-        //         {
-        //             for (int i = 0; i < segment; i++)
-        //             {
-        //                 batch.Add(G[j]);
-        //                 j++;    
-        //             }
-        //         }
-        //     }
-        //     return batches;
-        // }
-
-
-        // private List<List<int[]>> CreateBlocksNew(int[] input)
-        // {
-        //     var coeffAdditionalPositions = 1;
-        //     var additionalPositions = N * coeffAdditionalPositions;
-        //     var ecBigInput = new ErasureCoding(additionalPositions);
-        //     
-        //     var Gs = new List<int[]>();
-        //     var cntLines = input.Length / N;
-        //     for (var i = 0; i < cntLines; i++)
-        //     {
-        //         var peice = input.Skip(i * N).Take(N).ToArray();
-        //         var G = ecBigInput.Encoder(peice, additionalPositions);
-        //         Gs.Add(G);
-        //     }
-        //     // =================================================================================
-        //     // prepare batches for players
-        //     var batches = new List<List<int[]>>();
-        //     /*
-        //      * {G11,G21,...,GR1} , {G12,G22,...,GR2}, {G13,G23,...,GR3}, ... , {G1N-1,G21N-1,...,GR1N-1}, {G1N,G2N,...,GRN}
-        //      */
-        //     for (int i = 0; i < N; i++)
-        //     {
-        //         batches.Add(new List<int[]>());
-        //     }
-        //     
-        //     //var segment = Gs[0].Count / N; 
-        //     foreach (var arr in Gs)
-        //     {
-        //         for (var i = 0; i < N; i++)
-        //         {
-        //             //var tmp = new byte[segment];
-        //             //Array.Copy(arr.ToArray(), i * segment, tmp, 0, segment);
-        //             batches[i].Add(arr);
-        //         }
-        //     }
-        //     return batches;
-        // }
-        //
-        // private List<UInt256> CreateBlocks(byte[] input)
-        // {
-        //     var additionalBits = 16;
-        //     
-        //     var initDataBuffer = ByteToInt(input);
-        //
-        //     var field = new GenericGF(285, byte.MaxValue, 0);
-        //     var rse = new ReedSolomonEncoder(field);
-        //
-        //     var encodeArray = new List<int[]>();
-        //     if (initDataBuffer.Length >= byte.MaxValue)
-        //     {
-        //         GeneralDivide(initDataBuffer, encodeArray, N);
-        //     }
-        //     foreach (var t in encodeArray)
-        //     {
-        //         rse.Encode(t, additionalBits);
-        //     }
-        //     
-        //     return BuildShares(initDataBuffer, N);
-        // }
-        //
-        //
-        // private static UInt256 CalculateRoot(List<UInt256> blocks)
-        // {   
-        //     return MerkleTree.ComputeRoot(blocks);
-        // }
-        //
-        // private List<UInt256> BuildShares(Int32[] v, int playersCount)
-        // {
-        //     if (!v.Any())
-        //     {
-        //         return new List<UInt256>();
-        //     }
-        //     var shareSize = v.Length / playersCount + 1;
-        //     
-        //     var a = new List<UInt256>();
-        //     
-        //     for (var i = 0; i < playersCount; i++)
-        //     {
-        //         var buffer = new byte[shareSize];
-        //         for (var j = 0; j < shareSize; j++)
-        //         {
-        //             buffer[j] = BitConverter.GetBytes(v[i * playersCount + j])[0];
-        //         }
-        //         a.Add(buffer.ToUInt256());
-        //         a.Add(buffer.Keccak256().ToUInt256());
-        //     }
-        //     return a;
-        // }
-        //
-        // private byte[] GetTestVector(int lenData, int additionalPlaces)
-        // {
-        //     var a = lenData;
-        //     var additionalBits = additionalPlaces;
-        //     var dataSz = a - additionalBits;
-        //     var vector = new byte[additionalBits + dataSz];
-        //     var rnd = new Random();
-        //     rnd.NextBytes(vector);
-        //     for (var i = 0; i < a / 2; i++)
-        //         vector[i + dataSz] = 0;
-        //     return vector;
-        // }
     }
 }

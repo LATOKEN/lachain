@@ -121,7 +121,7 @@ namespace Lachain.Consensus.CommonSubset
             if (result.Result == null)
                 return;
 
-            var j = result.Id.AssociatedValidatorId;
+            var j = result.Id.SenderId;
             Logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: {j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;

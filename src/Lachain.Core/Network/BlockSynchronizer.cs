@@ -160,7 +160,7 @@ namespace Lachain.Core.Network
             var myHeight = _blockManager.GetHeight();
             if (myHeight > _networkContext.LocalNode.BlockHeight)
                 _networkContext.LocalNode.BlockHeight = myHeight;
-            var setOfPeers = new HashSet<ECDSAPublicKey>(peers);
+            var setOfPeers = peers.ToHashSet();
             if (setOfPeers.Count == 0) return false;
 
             _lastActiveTime = TimeUtils.CurrentTimeMillis();
@@ -169,9 +169,10 @@ namespace Lachain.Core.Network
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             var validatorPeers = _peerHeights
-                .Where(entry => setOfPeers.Contains(entry.Key.Node?.PublicKey))
+                .Where(entry => entry.Key.Node != null)
+                .Where(entry => setOfPeers.Contains(entry.Key.Node?.PublicKey!))
                 .ToArray();
-            if (validatorPeers.Length <= setOfPeers.Count * 2 / 3)
+            if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
             var maxHeight = validatorPeers.Max(v => v.Value);
             return myHeight < maxHeight;
