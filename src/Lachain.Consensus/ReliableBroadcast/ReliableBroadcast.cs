@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Google.Protobuf;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
@@ -92,17 +91,8 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
         {
-            Logger.LogInformation($"{Id}: got request with input, empty={broadcastRequested.Input == null}");
+            // Logger.LogDebug($"{Id}: got request with input, empty={broadcastRequested.Input == null}");
             _requested = ResultStatus.Requested;
-            if (N == 1)
-            {
-                if (broadcastRequested.Input is null) throw new InvalidOperationException();
-                Broadcaster.InternalResponse(
-                    new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, broadcastRequested.Input)
-                );
-                return;
-            }
-
             if (broadcastRequested.Input == null)
             {
                 CheckResult();
@@ -246,30 +236,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             Broadcaster.InternalResponse(new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, result));
         }
 
-        public byte[] DecodeFromEchos(IReadOnlyCollection<(ECHOMessage echo, int from)> echos)
-        {
-            var erasureCoding = new ErasureCoding();
-            Debug.Assert(echos.Count == N - 2 * F);
-            Debug.Assert(echos.Select(t => t.echo.Data.Length).Distinct().Count() == 1);
-            var shardLength = echos.First().echo.Data.Length;
-            var result = new byte[shardLength * N];
-            foreach (var (echo, i) in echos)
-                Buffer.BlockCopy(echo.Data.ToArray(), 0, result, i * shardLength, shardLength);
-            for (var i = 0; i < shardLength; ++i)
-            {
-                var codeword = new int[N];
-                for (var j = 0; j < N; ++j) codeword[j] = result[i + j * shardLength];
-                var erasurePlaces = Enumerable.Range(0, N)
-                    .Where(z => !echos.Select(t => t.from).Contains(z))
-                    .ToArray();
-                Debug.Assert(erasurePlaces.Length == 2 * F);
-                erasureCoding.Decode(codeword, 2 * F, erasurePlaces);
-                for (var j = 0; j < N; ++j) result[i + j * shardLength] = checked((byte) codeword[j]);
-            }
-
-            return result;
-        }
-
         private void Abort()
         {
             Logger.LogError($"{Id} was aborted!");
@@ -373,11 +339,12 @@ namespace Lachain.Consensus.ReliableBroadcast
          */
         public static byte[][] ErasureCodingShards(IReadOnlyList<byte> input, int shards, int erasures)
         {
-            var erasureCoding = new ErasureCoding();
             var dataShards = shards - erasures;
             if (input.Count % dataShards != 0) throw new InvalidOperationException();
             var shardSize = input.Count / dataShards;
+            if (erasures == 0) return input.Batch(shardSize).Select(x => x.ToArray()).ToArray();
             var result = new byte[shards][];
+            var erasureCoding = new ErasureCoding();
             foreach (var (shard, i) in input
                 .Batch(shardSize)
                 .WithIndex()
@@ -393,6 +360,31 @@ namespace Lachain.Consensus.ReliableBroadcast
                 erasureCoding.Encode(codeword, erasures);
                 for (var j = dataShards; j < shards; ++j)
                     result[j][i] = checked((byte) codeword[j]);
+            }
+
+            return result;
+        }
+        
+        public byte[] DecodeFromEchos(IReadOnlyCollection<(ECHOMessage echo, int from)> echos)
+        {
+            Debug.Assert(echos.Count == N - 2 * F);
+            Debug.Assert(echos.Select(t => t.echo.Data.Length).Distinct().Count() == 1);
+            var shardLength = echos.First().echo.Data.Length;
+            var result = new byte[shardLength * N];
+            foreach (var (echo, i) in echos)
+                Buffer.BlockCopy(echo.Data.ToArray(), 0, result, i * shardLength, shardLength);
+            if (F == 0) return result;
+            var erasureCoding = new ErasureCoding();
+            for (var i = 0; i < shardLength; ++i)
+            {
+                var codeword = new int[N];
+                for (var j = 0; j < N; ++j) codeword[j] = result[i + j * shardLength];
+                var erasurePlaces = Enumerable.Range(0, N)
+                    .Where(z => !echos.Select(t => t.from).Contains(z))
+                    .ToArray();
+                Debug.Assert(erasurePlaces.Length == 2 * F);
+                erasureCoding.Decode(codeword, 2 * F, erasurePlaces);
+                for (var j = 0; j < N; ++j) result[i + j * shardLength] = checked((byte) codeword[j]);
             }
 
             return result;
