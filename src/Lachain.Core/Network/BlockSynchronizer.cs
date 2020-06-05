@@ -190,6 +190,23 @@ namespace Lachain.Core.Network
             }
         }
 
+        public PeerAddress[] GetConnectedPeers()
+        {
+            var connectedPeerAddresses = _peerHeights.Where(peer => peer.Key.IsConnected)
+                .Select(peer => peer.Key.Address).ToArray();
+            return connectedPeerAddresses;
+        }
+
+        public ulong? GetHighestBlock()
+        {
+            var validatorPeers = _peerHeights
+                .Where(entry => entry.Key.Node != null)
+                .ToArray();
+            if (validatorPeers.Length == 0) return null;
+            
+            return validatorPeers.Max(v => v.Value);
+        }
+
         private ulong _lastActiveTime = TimeUtils.CurrentTimeMillis();
 
         private void _Worker()

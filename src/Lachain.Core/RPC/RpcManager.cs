@@ -2,7 +2,9 @@
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Config;
+using Lachain.Core.Network;
 using Lachain.Core.RPC.HTTP;
+using Lachain.Core.RPC.HTTP.FrontEnd;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Storage.State;
@@ -19,6 +21,8 @@ namespace Lachain.Core.RPC
         private readonly IVirtualMachine _virtualMachine;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IValidatorStatusManager _validatorStatusManager;
+        private readonly ISystemContractReader _systemContractReader;
+        private readonly IBlockSynchronizer _blockSynchronizer;
         
 
         public RpcManager(
@@ -29,8 +33,10 @@ namespace Lachain.Core.RPC
             ITransactionPool transactionPool,
             IVirtualMachine virtualMachine,
             IContractRegisterer contractRegisterer,
-            IValidatorStatusManager validatorStatusManager
-            )
+            IValidatorStatusManager validatorStatusManager,
+            ISystemContractReader systemContractReader, 
+            IBlockSynchronizer blockSynchronizer
+        )
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -40,6 +46,8 @@ namespace Lachain.Core.RPC
             _virtualMachine = virtualMachine;
             _contractRegisterer = contractRegisterer;
             _validatorStatusManager = validatorStatusManager;
+            _systemContractReader = systemContractReader;
+            _blockSynchronizer = blockSynchronizer;
         }
 
         private HttpService? _httpService;
@@ -49,13 +57,14 @@ namespace Lachain.Core.RPC
             // ReSharper disable once UnusedVariable
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
-                new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager),
+                new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager, _blockSynchronizer, _systemContractReader),
                 new AccountService(_stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager),
                 new AccountServiceWeb3(_stateManager),
                 new ValidatorServiceWeb3(_validatorStatusManager), 
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
-                new NodeService()
+                new FrontEndService(_stateManager, _transactionManager, _transactionPool, _contractRegisterer, _systemContractReader), 
+                new NodeService(_blockSynchronizer)
             };
 
             var rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;

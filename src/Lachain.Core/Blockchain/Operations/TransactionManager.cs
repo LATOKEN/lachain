@@ -61,7 +61,7 @@ namespace Lachain.Core.Blockchain.Operations
             var canTransactionMissVerification = block.Header.Index == 0
                                                  || cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration && (int) receipt.IndexInBlock ==
                                                  lastTxInBlockIndex
-                                                 || indexInCycle == StakingContract.SubmissionPhaseDuration && (int) receipt.IndexInBlock ==
+                                                 || indexInCycle == StakingContract.VrfSubmissionPhaseDuration && (int) receipt.IndexInBlock ==
                                                  lastTxInBlockIndex
                                                  || cycle > 0 && indexInCycle == 0 && (int) receipt.IndexInBlock ==
                                                  lastTxInBlockIndex;

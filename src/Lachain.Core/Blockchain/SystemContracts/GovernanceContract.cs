@@ -241,7 +241,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             });
             // Console.WriteLine($"AddEvent success");
             
-            var balanceOfExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract, Lrc20Interface.MethodBalanceOf,
                 ContractRegisterer.GovernanceContract);
             

@@ -84,7 +84,7 @@ namespace Lachain.Core.Consensus
                     _logger.LogDebug("DistributeCycleRewardsAndPenaltiesTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             } 
-            else if (indexInCycle == StakingContract.SubmissionPhaseDuration)
+            else if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration)
             {
                 var txToAdd = FinishVrfLotteryTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
@@ -146,7 +146,7 @@ namespace Lachain.Core.Consensus
                 {
                     if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration && i == txCount - 1)
                         return DistributeCycleRewardsAndPenaltiesTxReceipt();
-                    if (indexInCycle == StakingContract.SubmissionPhaseDuration && i == txCount - 1)
+                    if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration && i == txCount - 1)
                         return FinishVrfLotteryTxReceipt();
                     if (cycle > 0 && indexInCycle == 0 && i == txCount - 1)
                         return FinishCycleTxReceipt();

@@ -116,12 +116,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
-        [JsonRpcMethod("net_version")]
-        private string NetVersion()
-        {
-            return "1";
-        }
-
         [JsonRpcMethod("eth_blockNumber")]
         private string GetBlockNumber()
         {

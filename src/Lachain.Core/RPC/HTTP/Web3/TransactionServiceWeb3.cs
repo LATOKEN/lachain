@@ -303,8 +303,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["from"] = receipt.Transaction.From.ToHex(),
             };
         }
-        
-        
 
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot
@@ -323,7 +321,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 
                 var result = VirtualMachine.InvokeSystemContract(call, context, invocation, 100_000_000);
                 
-                invResult = result.ReturnValue;
+                invResult = result.ReturnValue!;
             }
             catch (Exception e) when (
                 e is NotSupportedException ||

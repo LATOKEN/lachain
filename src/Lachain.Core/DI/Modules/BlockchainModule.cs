@@ -4,6 +4,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
@@ -36,6 +37,7 @@ namespace Lachain.Core.DI.Modules
             /* operation manager */
             containerBuilder.RegisterSingleton<ITransactionManager, TransactionManager>();
             containerBuilder.RegisterSingleton<ITransactionSigner, TransactionSigner>();
+            containerBuilder.RegisterSingleton<ISystemContractReader, SystemContractReader>();
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
             containerBuilder.RegisterSingleton<IContractRegisterer, ContractRegisterer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();

@@ -3,6 +3,8 @@ using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.Network;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
@@ -15,17 +17,24 @@ namespace Lachain.Core.RPC.HTTP
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly ITransactionPool _transactionPool;
+        private readonly IBlockSynchronizer _blockSynchronizer;
+        private readonly ISystemContractReader _systemContractReader;
 
         public BlockchainService(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             ITransactionPool transactionPool,
-            IStateManager stateManager)
+            IStateManager stateManager, 
+            IBlockSynchronizer blockSynchronizer, 
+            ISystemContractReader systemContractReader
+        )
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _stateManager = stateManager;
+            _blockSynchronizer = blockSynchronizer;
+            _systemContractReader = systemContractReader;
         }
 
         [JsonRpcMethod("getBlockByHeight")]
@@ -106,6 +115,38 @@ namespace Lachain.Core.RPC.HTTP
         {
             var transaction = _transactionPool.GetByHash(HexUtils.HexToUInt256(txHash));
             return transaction?.ToJson();
+        }
+
+        [JsonRpcMethod("bcn_syncing")]
+        private JObject? GetSyncStatus()
+        {
+            var current = _blockManager.GetHeight();
+            var max = _blockSynchronizer.GetHighestBlock();
+            var isSyncing = !max.HasValue || max > current; 
+            return new JObject
+            {
+                ["syncing"] = false,
+                ["currentBlock"] = _blockManager.GetHeight(),
+                ["highestBlock"] = current,
+                // TODO: check time correctness
+                ["wrongTime"] = false,
+            };
+        }
+
+        [JsonRpcMethod("bcn_cycle")]
+        private JObject GetCurrentCycle()
+        {
+            var attendanceDetectionPhase = _systemContractReader.IsAttendanceDetectionPhase();
+            var vrfSubmissionPhase = _systemContractReader.IsVrfSubmissionPhase();
+            var keyGenPhase = _systemContractReader.IsKeyGenPhase();
+            var phase = attendanceDetectionPhase ? "AttendanceSubmissionPhase" :
+                vrfSubmissionPhase ? "VrfSubmissionPhase" :
+                keyGenPhase ? "KeyGenPhase" : "None";
+            return new JObject
+            {
+                ["currentPeriod"] = phase,
+                ["cycle"] = _blockManager.GetHeight() / StakingContract.CycleDuration,
+            };
         }
     }
 }
