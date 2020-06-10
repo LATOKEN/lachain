@@ -51,14 +51,17 @@ namespace Lachain.Core.RPC.HTTP
             // TODO: remove mock
             if (peers.Length == 0)
             {
-                var peerJObject = new JObject
+                for (var i = 0; i < 10; i++)
                 {
-                    ["publicKey"] = "1", 
-                    ["host"] = "1", 
-                    ["port"] = "1", 
-                    ["protocol"] = "1", 
-                };
-                result.Add(peerJObject);
+                    var peerJObject = new JObject
+                    {
+                        ["publicKey"] = "1",
+                        ["host"] = "1",
+                        ["port"] = "1",
+                        ["protocol"] = "1",
+                    };
+                    result.Add(peerJObject);
+                }
             }
 
             return result;
@@ -67,7 +70,7 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("net_version")]
         private string GetNodeVersion()
         {
-            return "0.20.1";
+            return "0.100.0";
         }
     }
 }

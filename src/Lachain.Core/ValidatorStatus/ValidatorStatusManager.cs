@@ -151,7 +151,7 @@ namespace Lachain.Core.ValidatorStatus
                         continue;
                     }
 
-                    if (!_systemContractReader.IsAbleToBeAValidator() || !_systemContractReader.IsVrfSubmissionPhase())
+                    if (!_systemContractReader.IsAbleToBeValidator() || !_systemContractReader.IsVrfSubmissionPhase())
                     {
                         Logger.LogInformation($"Current submission phase missed. Waiting for the next one.");
                         passingCycle = GetCurrentCycle();
@@ -220,12 +220,21 @@ namespace Lachain.Core.ValidatorStatus
                         continue;
                     }
 
-                    if (GetCurrentCycle() > requestCycle && IsWithdrawalPhase())
+                    if (!(GetCurrentCycle() > requestCycle))
                     {
-                        WithdrawStakeTx();
-                        Logger.LogWarning($"Stake withdrawal transaction submitted. Waiting for the next block to ensure withdrawal succeeded.");
+                        Logger.LogInformation($"Waiting for the next cycle to withdraw stake...");
+                        passingCycle = GetCurrentCycle();
+                        continue;
                     }
-                    Logger.LogWarning($"Waiting for withdrawal phase.");
+
+                    if (!IsWithdrawalPhase())
+                    {
+                        Logger.LogWarning($"Waiting for withdrawal phase...");
+                        continue;
+                    }
+
+                    WithdrawStakeTx();
+                    Logger.LogWarning($"Stake withdrawal transaction submitted. Waiting for the next block to ensure withdrawal succeeded.");
                 }
 
                 _started = false;
@@ -307,10 +316,9 @@ namespace Lachain.Core.ValidatorStatus
             var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
             _sendingTxHash = tx.FullHash(receipt.Signature);
             var result = _transactionPool.Add(receipt);
-            if (result == OperatingError.Ok)
-                Logger.LogDebug($"Transaction successfully submitted: {receipt.Hash.ToHex()}");
-            else Logger.LogDebug($"Cannot add tx to pool: {result}");
-            
+            Logger.LogDebug(result == OperatingError.Ok
+                ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"
+                : $"Cannot add tx to pool: {result}");
         }
 
         private void RequestStakeWithdrawal()
@@ -381,6 +389,11 @@ namespace Lachain.Core.ValidatorStatus
         public bool IsStarted()
         {
             return _started;
+        }
+        
+        public bool IsWithdrawTriggered()
+        {
+            return _withdrawTriggered;
         }
 
         private ValidatorAttendance? GetValidatorAttendance()

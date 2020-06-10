@@ -7,6 +7,8 @@ using Lachain.Core.RPC.HTTP;
 using Lachain.Core.RPC.HTTP.FrontEnd;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.ValidatorStatus;
+using Lachain.Core.Vault;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 
 namespace Lachain.Core.RPC
@@ -19,10 +21,14 @@ namespace Lachain.Core.RPC
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
         private readonly IVirtualMachine _virtualMachine;
+        private readonly IPrivateWallet _privateWallet;
+        private readonly ITransactionSigner _transactionSigner;
+        private readonly ITransactionBuilder _transactionBuilder;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ISystemContractReader _systemContractReader;
         private readonly IBlockSynchronizer _blockSynchronizer;
+        private readonly ILocalTransactionRepository _localTransactionRepository;
         
 
         public RpcManager(
@@ -35,8 +41,9 @@ namespace Lachain.Core.RPC
             IContractRegisterer contractRegisterer,
             IValidatorStatusManager validatorStatusManager,
             ISystemContractReader systemContractReader, 
-            IBlockSynchronizer blockSynchronizer
-        )
+            IBlockSynchronizer blockSynchronizer, 
+            ILocalTransactionRepository localTransactionRepository, 
+            ITransactionSigner transactionSigner, IPrivateWallet privateWallet, ITransactionBuilder transactionBuilder)
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -48,6 +55,10 @@ namespace Lachain.Core.RPC
             _validatorStatusManager = validatorStatusManager;
             _systemContractReader = systemContractReader;
             _blockSynchronizer = blockSynchronizer;
+            _localTransactionRepository = localTransactionRepository;
+            _transactionSigner = transactionSigner;
+            _privateWallet = privateWallet;
+            _transactionBuilder = transactionBuilder;
         }
 
         private HttpService? _httpService;
@@ -63,7 +74,7 @@ namespace Lachain.Core.RPC
                 new AccountServiceWeb3(_stateManager),
                 new ValidatorServiceWeb3(_validatorStatusManager), 
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
-                new FrontEndService(_stateManager, _transactionManager, _transactionPool, _contractRegisterer, _systemContractReader), 
+                new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet, _transactionBuilder), 
                 new NodeService(_blockSynchronizer)
             };
 

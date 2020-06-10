@@ -119,7 +119,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
         {
             var blockNumber = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var blockInCycle = blockNumber % StakingContract.CycleDuration;
-            return blockInCycle > StakingContract.VrfSubmissionPhaseDuration;
+            return blockInCycle >= StakingContract.VrfSubmissionPhaseDuration;
         }
         
         public bool IsCheckedIn(byte[] stakerPublicKey = null)
@@ -152,10 +152,10 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return validators;
         }
         
-        public bool IsAbleToBeAValidator(UInt160 stakerAddress = null)
+        public bool IsAbleToBeValidator(UInt160 stakerAddress = null)
         {
             stakerAddress ??= _nodeAddress;
-            var isAble = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsAbleToBeAValidator,
+            var isAble = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsAbleToBeValidator,
                 stakerAddress);
 
             return !isAble.ToUInt256().IsZero();

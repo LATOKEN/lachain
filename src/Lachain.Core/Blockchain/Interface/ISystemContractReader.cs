@@ -29,7 +29,7 @@ namespace Lachain.Core.Blockchain.Interface
 
         byte[][] GetPreviousValidators();
 
-        bool IsAbleToBeAValidator(UInt160 stakerAddress = null);
+        bool IsAbleToBeValidator(UInt160 stakerAddress = null);
 
         UInt160 NodeAddress();
 

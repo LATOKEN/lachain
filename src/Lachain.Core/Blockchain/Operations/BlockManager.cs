@@ -33,6 +33,7 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly IConfigManager _configManager;
+        private readonly ILocalTransactionRepository _localTransactionRepository;
         private InvocationContext? _contractTxJustExecuted;
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
@@ -43,8 +44,7 @@ namespace Lachain.Core.Blockchain.Operations
             IMultisigVerifier multisigVerifier,
             IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexRepository,
-            IConfigManager configManager
-        )
+            IConfigManager configManager, ILocalTransactionRepository localTransactionRepository)
         {
             _transactionManager = transactionManager;
             _genesisBuilder = genesisBuilder;
@@ -52,6 +52,7 @@ namespace Lachain.Core.Blockchain.Operations
             _stateManager = stateManager;
             _snapshotIndexRepository = snapshotIndexRepository;
             _configManager = configManager;
+            _localTransactionRepository = localTransactionRepository;
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
         }
 
@@ -311,6 +312,7 @@ namespace Lachain.Core.Blockchain.Operations
                 {
                     OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
                     _contractTxJustExecuted = null;
+                    _localTransactionRepository.TryAddTransaction(receipt);
                 }
             }
 

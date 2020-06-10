@@ -50,8 +50,7 @@ namespace Lachain.Core.ValidatorStatus
                 _previousAttendance[publicKey.ToHex()] = GetAttendanceForCycle(publicKey, cycle) + 1;
             if (cycle == NextCycleNum)
                 _nextAttendance[publicKey.ToHex()] = GetAttendanceForCycle(publicKey, cycle) + 1;
-            
-            Logger.LogDebug($"Attendance incremented: {GetAttendanceForCycle(publicKey, cycle)} cycle {cycle}");
+            // Logger.LogDebug($"Attendance incremented: {GetAttendanceForCycle(publicKey, cycle)} cycle {cycle}");
         }
 
         public byte[] ToBytes()

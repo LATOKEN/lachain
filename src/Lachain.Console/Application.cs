@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -17,6 +18,7 @@ using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -27,9 +29,9 @@ namespace Lachain.Console
     {
         private readonly IContainer _container;
 
-        public Application()
+        public Application(string configPath)
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json"));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -55,6 +57,9 @@ namespace Lachain.Console
             var rpcManager = _container.Resolve<IRpcManager>();
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
+            var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
+            
+            localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
             if (blockManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
@@ -124,7 +129,11 @@ namespace Lachain.Console
             //     txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
             // }
 
-            System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
+            System.Console.CancelKeyPress += (sender, e) =>
+            {
+                System.Console.WriteLine("Interrupt received. Exiting...");
+                _interrupt = true;
+            };
 
             while (!_interrupt)
                 Thread.Sleep(1000);
