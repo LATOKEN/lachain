@@ -187,7 +187,31 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             };
         }
 
-        private JObject FormatTx(TransactionReceipt receipt, Block block)
+        [JsonRpcMethod("fe_pendingTransactions")]
+        private JObject GetPendingTransactions(JObject opts)
+        {
+            var address = opts["address"].ToString().HexToBytes().ToUInt160();
+            var limit = ulong.Parse(opts["count"].ToString());
+            
+            var results = new JArray();
+            var poolTxs = _transactionPool.Transactions.Values;
+            foreach (var tx in poolTxs)
+            {
+                if (tx.Transaction.From.Equals(address))
+                {
+                    results.Add(FormatTx(tx));
+                    if (results.Count == (int) limit)
+                        break;
+                }               
+            }
+
+            return new JObject
+            {
+                ["transactions"] = results,
+            };
+        }
+
+        private static JObject FormatTx(TransactionReceipt receipt, Block block = null)
         {
             return new JObject
             {
@@ -196,12 +220,13 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["from"] = receipt.Transaction.From.ToHex(),
                 ["to"] = receipt.Transaction.To.ToHex(),
                 ["amount"] = receipt.Transaction.Value.ToMoney().ToString(),
-                ["usedFee"] = new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),
+                ["usedFee"] = block is null ? "0" : new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),
+                ["maxFee"] = new Money(new BigInteger(receipt.Transaction.GasLimit) * receipt.Transaction.GasPrice).ToString(),
                 ["nonce"] = receipt.Transaction.Nonce,
                 ["cycle"] = receipt.Block / StakingContract.CycleDuration,
-                ["blockHash"] = block.Hash.ToHex(),
+                ["blockHash"] = block is null ? "0x0000000000000000000000000000000000000000000000000000000000000000" : block.Hash.ToHex(),
                 ["payLoad"] = receipt.Transaction.Invocation.ToHex(),
-                ["timestamp"] = block.Timestamp / 1000,
+                ["timestamp"] = block?.Timestamp / 1000 ?? 0,
             };
         }
         
