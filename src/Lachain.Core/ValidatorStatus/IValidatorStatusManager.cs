@@ -7,6 +7,8 @@ namespace Lachain.Core.ValidatorStatus
         void Start(bool isWithdrawTriggered);
     
         bool IsStarted();
+    
+        bool IsWithdrawTriggered();
         
         void WithdrawStakeAndStop();
     }

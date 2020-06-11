@@ -15,7 +15,7 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts.Utils
 {
-    public static class SystemContractUtils
+    public static class Hepler
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
      

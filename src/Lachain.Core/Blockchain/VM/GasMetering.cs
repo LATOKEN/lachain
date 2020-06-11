@@ -60,7 +60,7 @@
         public const ulong StakingIsPreviousValidatorCost = 500_000;
         public const ulong StakingIsCheckedInAttendanceDetectionCost = 500_000;
         public const ulong StakingGetVrfSeedCost = 500_000;
-        public const ulong StakingIsAbleToBeAValidatorCost = 500_000;
+        public const ulong StakingIsAbleToBeValidatorCost = 500_000;
         public const ulong StakingGetTotalActiveStakeCost = 500_000;
         
         // Math

@@ -13,7 +13,7 @@ namespace Lachain.Storage.Repositories
         private static readonly ILogger<SnapshotIndexRepository> Logger =
             LoggerFactory.GetLoggerForClass<SnapshotIndexRepository>();
 
-        public SnapshotIndexRepository(IRocksDbContext dbContext, IStorageManager storageManager)
+        public SnapshotIndexRepository(IRocksDbContext dbContext, IStorageManager storageManager, ILocalTransactionRepository localTransactionRepository)
         {
             _dbContext = dbContext;
             _storageManager = storageManager;

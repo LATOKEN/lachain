@@ -16,7 +16,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodGetPenalty = "getPenalty(address)";
         public const string MethodGetWithdrawRequestCycle = "getWithdrawRequestCycle(address)";
         public const string MethodGetStartCycle = "getStartCycle(address)";
-        public const string MethodIsAbleToBeAValidator = "isAbleToBeAValidator(address)";
+        public const string MethodIsAbleToBeValidator = "isAbleToBeValidator(address)";
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
         public const string MethodGetVrfSeed = "getVrfSeed()";
         public const string MethodGetNextVrfSeed = "getNextVrfSeed()";
@@ -35,7 +35,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodGetStake,
             MethodGetPenalty,
             MethodGetWithdrawRequestCycle,
-            MethodIsAbleToBeAValidator,
+            MethodIsAbleToBeValidator,
             MethodIsNextValidator,
             MethodGetVrfSeed,
             MethodSubmitAttendanceDetection,

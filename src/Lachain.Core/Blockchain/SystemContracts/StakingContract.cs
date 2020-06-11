@@ -18,6 +18,7 @@ using Lachain.Utility.Utils;
 using Lachain.Crypto.VRF;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
+using Nethereum.Util;
 using NetMQ;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -27,9 +28,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly InvocationContext _context;
-        public static readonly ulong CycleDuration = 100; // in blocks
-        public static readonly ulong SubmissionPhaseDuration = CycleDuration / 2; // in blocks
-        public static readonly ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
+        public const ulong CycleDuration = 100; // in blocks
+        public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
+        public const ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
         private readonly StorageVariable _nextValidators; // array of public keys
         private readonly StorageVariable _previousValidators; // array of public keys
@@ -39,7 +40,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _nextVrfSeed;
         public static readonly byte[] Role = Encoding.ASCII.GetBytes("staker");
         public static readonly BigInteger ExpectedValidatorsCount = 22;
-        private readonly StorageMapping _userToStakerId;
         private readonly StorageMapping _userToPubKey;
         private readonly StorageMapping _userToStake;
         private readonly StorageMapping _userToPenalty;
@@ -58,7 +58,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 BigInteger.Zero.ToUInt256()
             );
-            _userToStakerId = new StorageMapping(
+            _userToPenalty = new StorageMapping(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 new BigInteger(1).ToUInt256()
@@ -113,11 +113,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(11).ToUInt256()
             );
-            _userToPenalty = new StorageMapping(
-                ContractRegisterer.StakingContract,
-                contractContext.Snapshot.Storage,
-                new BigInteger(12).ToUInt256()
-            );
             TryInitStoarge();
         }
 
@@ -136,37 +131,37 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
-            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
                 MsgSender());
             
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+            var stake = getStakeExecutionResult.ReturnValue!.ToUInt256();
             if (!stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
             
-            var balanceOfExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodBalanceOf,
                 MsgSender());
             
             if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var balance = balanceOfExecutionResult.ReturnValue.ToUInt256().ToMoney();
+            var balance = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
             
             if (balance.CompareTo(amount.ToMoney()) == -1)
                 return ExecutionStatus.ExecutionHalted;
             
-            var transferExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var transferExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, MsgSender(), Lrc20Interface.MethodTransfer,
                 ContractRegisterer.StakingContract, amount);
             
             if (transferExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
 
-            var fail = transferExecutionResult.ReturnValue.ToUInt256().IsZero();
+            var fail = transferExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (fail)
                 return ExecutionStatus.ExecutionHalted;
 
@@ -184,9 +179,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             SetStartCycle(MsgSender(), startingCycle);
             
-            var id = AddStaker(publicKey);
-            SetStakerId(MsgSender(), id);
-            
             return ExecutionStatus.Ok;
         }
 
@@ -198,28 +190,28 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var ok = IsPublicKeyOwner(publicKey, MsgSender());
             if (!ok) return ExecutionStatus.ExecutionHalted;
 
-            var isNextvalidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsNextValidator, publicKey);
 
-            if (isNextvalidatorExecutionResult.Status != ExecutionStatus.Ok)
+            if (isNextValidatorExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var isNextValidator = !isNextvalidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            var isNextValidator = !isNextValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (isNextValidator)
                 return ExecutionStatus.ExecutionHalted;
             
-            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
 
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var stake = getStakeExecutionResult.ReturnValue.ToUInt256();
+            var stake = getStakeExecutionResult.ReturnValue!.ToUInt256();
 
             if (stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
             
-            var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, MsgSender());
 
             if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
@@ -227,7 +219,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
 
-            if (withdrawRequestCycleBytes.Length != 0)
+            if (withdrawRequestCycleBytes!.Length != 0)
                 return ExecutionStatus.ExecutionHalted;
             
             SetWithdrawRequestCycle(MsgSender(), GetCurrentCycle());
@@ -248,7 +240,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (blockInCycle < AttendanceDetectionDuration)
                 return ExecutionStatus.ExecutionHalted;
 
-            var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, MsgSender());
 
             if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
@@ -264,7 +256,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (withdrawRequestCycle == GetCurrentCycle())
                 return ExecutionStatus.ExecutionHalted;
 
-            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
 
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
@@ -275,7 +267,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
-            var transferExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var transferExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodTransfer,
                 MsgSender(), stake);
             
@@ -298,56 +290,56 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             var blockNumber = _context.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
-            if (blockInCycle >= SubmissionPhaseDuration)
+            if (blockInCycle >= VrfSubmissionPhaseDuration)
                 return ExecutionStatus.ExecutionHalted;
             
             var ok = IsPublicKeyOwner(publicKey, MsgSender());
             if (!ok) return ExecutionStatus.ExecutionHalted;
 
-            var isNextValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsNextValidator, publicKey);
 
             if (isNextValidatorExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var isNextValidator = !isNextValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            var isNextValidator = !isNextValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (isNextValidator)
                 return ExecutionStatus.ExecutionHalted;
 
-            var isAbleToBeAValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
-                ContractRegisterer.StakingContract, MsgSender(), StakingInterface.MethodIsAbleToBeAValidator, MsgSender());
+            var isAbleToBeValidatorExecutionResult = Hepler.CallSystemContract(frame,
+                ContractRegisterer.StakingContract, MsgSender(), StakingInterface.MethodIsAbleToBeValidator, MsgSender());
 
-            if (isAbleToBeAValidatorExecutionResult.Status != ExecutionStatus.Ok)
+            if (isAbleToBeValidatorExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var isAbleToBeAValidator = !isAbleToBeAValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
-            if (!isAbleToBeAValidator)
+            var isAbleToBeValidator = !isAbleToBeValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
+            if (!isAbleToBeValidator)
                 return ExecutionStatus.ExecutionHalted;
             
-            var getTotalStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getTotalStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetTotalActiveStake);
 
             if (getTotalStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var totalStake = getTotalStakeExecutionResult.ReturnValue.ToUInt256().ToBigInteger();
+            var totalStake = getTotalStakeExecutionResult.ReturnValue!.ToUInt256().ToBigInteger();
             var totalRolls = totalStake / TokenUnitsInRoll;
             
-            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
 
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var stake = getStakeExecutionResult.ReturnValue.ToUInt256().ToBigInteger();
+            var stake = getStakeExecutionResult.ReturnValue!.ToUInt256().ToBigInteger();
             
-            var getVrfSeedExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getVrfSeedExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
 
             if (getVrfSeedExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var vrfSeed = getVrfSeedExecutionResult.ReturnValue;
+            var vrfSeed = getVrfSeedExecutionResult.ReturnValue!;
             var isWinner = Vrf.IsWinner(
                 publicKey,
                 proof,
@@ -384,23 +376,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (senderPublicKey.Length == 0)
                 return ExecutionStatus.ExecutionHalted;
 
-            var isSenderPreviousValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var isSenderPreviousValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsPreviousValidator, senderPublicKey);
 
             if (isSenderPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var isSenderPreviousValidator = !isSenderPreviousValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+            var isSenderPreviousValidator = !isSenderPreviousValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (!isSenderPreviousValidator)
                 return ExecutionStatus.ExecutionHalted;
                 
-            var isCheckedInAttendanceDetectionExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var isCheckedInAttendanceDetectionExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection, senderPublicKey);
 
             if (isCheckedInAttendanceDetectionExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
             
-            var isCheckedInAttendanceDetection = !isCheckedInAttendanceDetectionExecutionResult.ReturnValue.ToUInt256().IsZero();
+            var isCheckedInAttendanceDetection = !isCheckedInAttendanceDetectionExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (isCheckedInAttendanceDetection)
                 return ExecutionStatus.ExecutionHalted;
 
@@ -408,13 +400,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             for (var i = 0; i < faultPersons.Length; i++)
             {
-                var isPreviousValidatorExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                var isPreviousValidatorExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsPreviousValidator, faultPersons[i]);
 
                 if (isPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
                     return ExecutionStatus.ExecutionHalted;
             
-                var isPreviousValidator = !isPreviousValidatorExecutionResult.ReturnValue.ToUInt256().IsZero();
+                var isPreviousValidator = !isPreviousValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
                 if (!isPreviousValidator)
                     return ExecutionStatus.ExecutionHalted;
                 
@@ -493,14 +485,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 var validator = validatorsData.Skip(i * CryptoUtils.PublicKeyLength).Take(CryptoUtils.PublicKeyLength).ToArray();
                 
-                var isCheckedInAttendanceDetectionExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                var isCheckedInAttendanceDetectionExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection, validator);
 
                 if (isCheckedInAttendanceDetectionExecutionResult.Status != ExecutionStatus.Ok)
                     return ExecutionStatus.ExecutionHalted;
             
                 var notCheckedIn = isCheckedInAttendanceDetectionExecutionResult.ReturnValue!.ToUInt256().IsZero();
-                var validatorAddress = SystemContractUtils.PublicKeyToAddress(validator);
+                var validatorAddress = Hepler.PublicKeyToAddress(validator);
 
                 if (notCheckedIn)
                 {
@@ -584,7 +576,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var previousValidators = _context.Snapshot.Validators.GetValidatorsPublicKeys().Select(pk => pk.Buffer.ToByteArray());
             SetPreviousValidators(previousValidators.ToArray());
 
-            var changeValidatorsExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var changeValidatorsExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.GovernanceContract, ContractRegisterer.StakingContract, GovernanceInterface.MethodChangeValidators, validators);
 
             if (changeValidatorsExecutionResult.Status != ExecutionStatus.Ok)
@@ -696,9 +688,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             for (var startByte = CryptoUtils.PublicKeyLength; startByte < stakers.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var stakerPublicKey = stakers.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
-                var stakerAddress = SystemContractUtils.PublicKeyToAddress(stakerPublicKey);
+                var stakerAddress = Hepler.PublicKeyToAddress(stakerPublicKey);
                 
-                var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, stakerAddress);
 
                 if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
@@ -708,7 +700,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 
                 var withdrawRequestCycle = withdrawRequestCycleBytes.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes) : 0;
                 
-                var getStartCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                var getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, stakerAddress);
 
                 if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
@@ -722,7 +714,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     && (withdrawRequestCycle == 0
                         || withdrawRequestCycle == GetCurrentCycle()))
                 {
-                    var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                    var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                         ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, stakerAddress);
 
                     if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
@@ -738,12 +730,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         
-        [ContractMethod(StakingInterface.MethodIsAbleToBeAValidator)]
-        public ExecutionStatus IsAbleToBeAValidator(UInt160 staker, SystemContractExecutionFrame frame)
+        [ContractMethod(StakingInterface.MethodIsAbleToBeValidator)]
+        public ExecutionStatus IsAbleToBeValidator(UInt160 staker, SystemContractExecutionFrame frame)
         {
-            frame.UseGas(GasMetering.StakingIsAbleToBeAValidatorCost);
+            frame.UseGas(GasMetering.StakingIsAbleToBeValidatorCost);
 
-            var getStakeExecutionResult = SystemContractUtils.CallSystemContract(frame,
+            var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake, MsgSender());
             
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
@@ -756,7 +748,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 frame.ReturnValue = 0.ToUInt256().ToBytes();
             else
             {
-                var getWithdrawRequestCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, staker);
 
                 if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
@@ -766,7 +758,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 
                 var withdrawRequestCycle = withdrawRequestCycleBytes!.Length > 0 ? BitConverter.ToInt32(withdrawRequestCycleBytes) : 0;
                 
-                var getStartCycleExecutionResult = SystemContractUtils.CallSystemContract(frame,
+                var getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle, staker);
 
                 if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
@@ -868,12 +860,25 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetStakerPublicKey(UInt160 staker, byte[] publicKey)
         {
             var key = staker.ToBytes();
-            if (publicKey.Length == 0)
-            {
-                _userToPubKey.Delete(key);
-                return;
-            }
+            
+            AddStaker(publicKey);
             _userToPubKey.SetValue(key, publicKey);
+        }
+         
+        private void DeleteStakerPublicKey(UInt160 staker)
+        {
+            var key = staker.ToBytes();
+            var publicKey = _userToPubKey.GetValue(key);
+            var stakers = _stakers.Get();
+            for (var i = 0; i < stakers.Length; i += CryptoUtils.PublicKeyLength)
+            {
+                var curr = stakers.Slice(i, i + CryptoUtils.PublicKeyLength);
+                if (curr.SequenceEqual(publicKey))
+                    stakers = stakers.Take(i).Concat(stakers.Skip(i + CryptoUtils.PublicKeyLength))
+                        .ToArray();
+            }
+            _stakers.Set(stakers);
+            _userToPubKey.Delete(key);
         }
         
         private void SetWithdrawRequestCycle(UInt160 staker, int cycle)
@@ -886,25 +891,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
             var value = BitConverter.GetBytes(cycle);
             _userToWithdrawRequestCycle.SetValue(key, value);
-        }
-        
-        private void SetStakerId(UInt160 staker, int id)
-        {
-            var key = staker.ToBytes();
-            if (id == 0)
-            {
-                _userToStakerId.Delete(key);
-                return;
-            }
-            var value = BitConverter.GetBytes(id);
-            _userToStakerId.SetValue(key, value);
-        }
-
-        public int GetStakerId(UInt160 staker)
-        {
-            var stakerIdBytes = _userToStakerId.GetValue(staker.ToBytes());
-            if (stakerIdBytes.Length == 0) return 0;
-            return BitConverter.ToInt32(stakerIdBytes);
         }
         
         private void SetStartCycle(UInt160 staker, int cycle)
@@ -922,7 +908,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private bool IsPublicKeyOwner(byte[] publicKey, UInt160 expectedOwner)
         {
-            var address = SystemContractUtils.PublicKeyToAddress(publicKey);
+            var address = Hepler.PublicKeyToAddress(publicKey);
             return expectedOwner.Equals(address);
         }
 
@@ -930,9 +916,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             SetWithdrawRequestCycle(staker, 0);
             SetStake(staker, UInt256Utils.Zero);
-            SetStakerPublicKey(staker, new byte[]{});
+            DeleteStakerPublicKey(staker);
             DeleteStartCycle(staker);
-            SetStakerId(staker, 0);
         }
         
         private int AddStaker(byte[] publicKey)
@@ -947,7 +932,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (_stakers.Get().Length == 0)
             {
-                AddStaker(new String('f', CryptoUtils.PublicKeyLength * 2).HexToBytes());
+                AddStaker(new string('f', CryptoUtils.PublicKeyLength * 2).HexToBytes());
             }
             if (_vrfSeed.Get().Length == 0)
             {
