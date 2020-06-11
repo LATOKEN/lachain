@@ -139,7 +139,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (_blockReward.Get().Length == 0)
             {
-                _blockReward.Set(BigInteger.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes());
+                // TODO: this should be in blockchain state
+                _blockReward.Set(BigInteger.Parse("0").ToUInt256().ToBytes());
             }
         }
 

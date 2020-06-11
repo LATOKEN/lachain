@@ -97,8 +97,9 @@ namespace Lachain.Console
                         EcdsaPublicKey = ecdsaPublicKeys[j],
                         ThresholdSignaturePublicKey = pubShares[j]
                     }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex()
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex(),
                 };
+                GenesisConfig.BlockReward = "5000000000000000000";
                 for (var j = 0; j < n; ++j)
                 {
                     genesis.Balances[addresses[j]] = "1000000";
