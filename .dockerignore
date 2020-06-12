@@ -1,4 +1,7 @@
 **/bin
 **/obj
 **/logs
+.git
+.idea
+TestResults
 src/Phorkus.Console/config.json

@@ -264,3 +264,4 @@ src/Lachain.Benchmark/wallet.json
 
 src/Lachain.Proto/*.cs
 *.AppImage
+*.tar.gz

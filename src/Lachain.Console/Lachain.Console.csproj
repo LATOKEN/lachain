@@ -5,6 +5,12 @@
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Lachain.Console</RootNamespace>
+    <Company>LATOKEN</Company>
+    <Title>Lachain node</Title>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
+    <TargetName>Lachain.Console</TargetName>
+    <Description>Lachain validator node</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Core\Lachain.Core.csproj" />
