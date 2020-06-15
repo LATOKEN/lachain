@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
@@ -461,8 +462,19 @@ namespace Lachain.Core.Blockchain.Operations
                 ThresholdSignaturePublicKey = ByteString.CopyFrom(v.ThresholdSignaturePublicKey.HexToBytes()),
             }));
             snapshot.Validators.SetConsensusState(initialConsensusState);
+            
+            // init system contracts storage 
+            var dummyStakerPub = new string('f', CryptoUtils.PublicKeyLength * 2).HexToBytes();
+            snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, new BigInteger(6).ToUInt256().Buffer, dummyStakerPub);
+            
+            var initialVrfSeed = Encoding.ASCII.GetBytes("test");
+            snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, new BigInteger(7).ToUInt256().Buffer, initialVrfSeed);
+            
+            var initalBlockReward = Money.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes();
+            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(3).ToUInt256().Buffer, initalBlockReward);
+            
             _stateManager.Approve();
-            var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: false, checkStateHash: false);
+            var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: false);
             if (error != OperatingError.Ok) throw new InvalidBlockException(error);
             _stateManager.Commit();
             BlockPersisted(genesisBlock.Block);

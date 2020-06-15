@@ -86,6 +86,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var isStaker = !_systemContractReader.GetStake().IsZero();
             var isAbleToBeStaker = balance.ToWei() > StakingContract.TokenUnitsInRoll;
             
+            var isWalletLocked = _privateWallet.IsLocked();
+            
             var withdrawTriggered = _validatorStatusManager.IsWithdrawTriggered();
             var isValidatorStatusManagerActive = _validatorStatusManager.IsStarted();
             var withdrawRequestCycle = _systemContractReader.GetWithdrawRequestCycle();
@@ -122,6 +124,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["penalty"] = penalty.ToString(),
                 ["state"] = state,
                 ["online"] = isStaker,
+                ["isWalletLocked"] = isWalletLocked,
             };
         }
 
@@ -138,6 +141,18 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["VrfSubmissionPhase"] = vrfSubmissionPhase,
                 ["KeyGenPhase"] = keyGenPhase,
             };
+        }
+
+        [JsonRpcMethod("fe_unlock")]
+        private string UnlockWallet(string password, long s)
+        {
+            return _privateWallet.Unlock(password, s) ? "0x1" : "0x0";
+        }
+
+        [JsonRpcMethod("fe_isLocked")]
+        private string IsWalletLocked()
+        {
+            return _privateWallet.IsLocked() ? "0x1" : "0x0";
         }
 
         [JsonRpcMethod("fe_sendTransaction")]
@@ -232,7 +247,9 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         
         private string AddTxToPool(Transaction tx)
         {
-            var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
+            var wallet = _privateWallet.GetWalletInstance();
+            if (wallet is null) return "0x0";
+            var receipt = _transactionSigner.Sign(tx, wallet.EcdsaKeyPair);
             var result = _transactionPool.Add(receipt);
             _logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"

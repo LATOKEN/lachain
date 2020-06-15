@@ -59,14 +59,16 @@ namespace Lachain.Consensus.RootProtocol
 
                 var signedHeaderMessage = message.SignedHeaderMessage;
                 var idx = envelope.ValidatorIndex;
-                // _logger.LogDebug(
-                //     $"Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
-                //     $"from validator {idx}: " +
-                //     $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
-                // );
+                _logger.LogDebug(
+                    $"Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
+                    $"from validator {idx}: " +
+                    $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
+                );
                 if (!(_header is null) && !_header.Equals(signedHeaderMessage.Header))
                 {
                     _logger.LogWarning($"Received incorrect block header from validator {idx}");
+                    _logger.LogWarning($"Header we have {_header}");
+                    _logger.LogWarning($"Header we received {signedHeaderMessage.Header}");
                 }
 
                 if (!_crypto.VerifySignature(
