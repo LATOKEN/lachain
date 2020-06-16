@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
+using Lachain.Core.Blockchain.Genesis;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -25,6 +28,14 @@ namespace Lachain.Core.RPC.HTTP
         }
 
         private HttpListener? _httpListener;
+        private string? _apiKey;
+        
+        private readonly List<string> _privateMethods = new List<string>
+        {
+            "validator_start",
+            "validator_stop",
+            "fe_sendTransaction",
+        };
 
         public void Stop()
         {
@@ -39,6 +50,7 @@ namespace Lachain.Core.RPC.HTTP
             foreach (var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
                 _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
+            _apiKey = rpcConfig.ApiKey ?? throw new InvalidOperationException();
             _httpListener.Start();
             while (_httpListener.IsListening)
             {
@@ -88,7 +100,39 @@ namespace Lachain.Core.RPC.HTTP
             {
                 JsonRpc = body
             };
+
+            if (!_CheckAuth(JObject.Parse(body)))
+            {
+                var id = ulong.Parse(JObject.Parse(body)["id"]!.ToString());
+                var error = new JObject
+                {
+                    ["code"] = -32600,
+                    ["message"] = "Invalid API key",
+                };
+                var res = new JObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["error"] = error,
+                    ["id"] = id
+                };
+                var output = Encoding.UTF8.GetBytes(res.ToString());
+                response.OutputStream.Write(output, 0, output.Length);
+                response.OutputStream.Flush();
+                response.Close();
+                return false;
+            }
+
             JsonRpcProcessor.Process(async);
+            return true;
+        }
+
+        private bool _CheckAuth(JObject body)
+        {
+            if (_privateMethods.Contains(body["method"]!.ToString()))
+            {
+                return !(body["key"] is null) && Equals(body["key"]!.ToString(), _apiKey);
+            }
+
             return true;
         }
     }
