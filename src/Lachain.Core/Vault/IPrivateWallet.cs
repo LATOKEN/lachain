@@ -13,5 +13,11 @@ namespace Lachain.Core.Vault
         Crypto.ThresholdSignature.PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block);
         
         void AddThresholdSignatureKeyAfterBlock(ulong block, Crypto.ThresholdSignature.PrivateKeyShare key);
+
+        IPrivateWallet? GetWalletInstance();
+
+        bool Unlock(string password, long ms);
+        
+        bool IsLocked();
     }
 }

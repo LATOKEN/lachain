@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
-using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -84,7 +83,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 context.Snapshot.Storage,
                 new BigInteger(7).ToUInt256()
             );
-            TryInitStorage();
         }
 
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
@@ -133,15 +131,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var staking = new StakingContract(_context);
             staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
             return ExecutionStatus.Ok;
-        }
-
-        private void TryInitStorage()
-        {
-            if (_blockReward.Get().Length == 0)
-            {
-                // TODO: this should be in blockchain state
-                _blockReward.Set(BigInteger.Parse("0").ToUInt256().ToBytes());
-            }
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenCommit)]

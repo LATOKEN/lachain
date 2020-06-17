@@ -113,7 +113,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(11).ToUInt256()
             );
-            TryInitStoarge();
         }
 
         public ContractStandard ContractStandard => ContractStandard.StakingContract;
@@ -474,6 +473,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (!MsgSender().Equals(ContractRegisterer.GovernanceContract))
                 return ExecutionStatus.ExecutionHalted;
+            
+            
+            Logger.LogDebug($"This cycle reward {totalReward.ToMoney()}");
 
             if (_context.Receipt.Block % CycleDuration != AttendanceDetectionDuration)
                 return ExecutionStatus.ExecutionHalted;
@@ -920,24 +922,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             DeleteStartCycle(staker);
         }
         
-        private int AddStaker(byte[] publicKey)
+        private void AddStaker(byte[] publicKey)
         {
             var stakers = _stakers.Get();
-            var id = stakers.Length  / CryptoUtils.PublicKeyLength;
             _stakers.Set(stakers.Concat(publicKey).ToArray());
-            return id;
-        }
-
-        private void TryInitStoarge()
-        {
-            if (_stakers.Get().Length == 0)
-            {
-                AddStaker(new string('f', CryptoUtils.PublicKeyLength * 2).HexToBytes());
-            }
-            if (_vrfSeed.Get().Length == 0)
-            {
-                _vrfSeed.Set(Encoding.ASCII.GetBytes("test")); // initial seed
-            }
         }
 
         private BigInteger GetNextVrfSeedNum()

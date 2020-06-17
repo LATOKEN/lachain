@@ -44,7 +44,7 @@
         "resolvableName": "localhost:5053"
       }
     ],
-    "blockReward": "5000000000000000000"
+    "blockReward": "5.000000000000000000"
   },
   "rpc": {
     "hosts": [

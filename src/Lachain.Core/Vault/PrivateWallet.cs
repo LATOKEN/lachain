@@ -26,6 +26,7 @@ namespace Lachain.Core.Vault
 
         private readonly string _walletPath;
         private readonly string _walletPassword;
+        private long _unlockEndTime;
 
         public PrivateWallet(IConfigManager configManager)
         {
@@ -35,6 +36,7 @@ namespace Lachain.Core.Vault
             
             _walletPath = config.Path;
             _walletPassword = config.Password;
+            _unlockEndTime = 0;
             RestoreWallet(_walletPath, _walletPassword, out var keyPair);
             EcdsaKeyPair = keyPair;
         }
@@ -113,6 +115,29 @@ namespace Lachain.Core.Vault
                 .Select(p =>
                     new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
                         PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
+        }
+
+        public bool Unlock(string password, long s)
+        {
+            if (password == _walletPassword)
+            {
+                var now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                _unlockEndTime = now + s;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsLocked()
+        {
+                return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() > _unlockEndTime;
+        }
+
+        public IPrivateWallet? GetWalletInstance()
+        {
+            var now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            return now < _unlockEndTime ? this : null;
         }
     }
 }
