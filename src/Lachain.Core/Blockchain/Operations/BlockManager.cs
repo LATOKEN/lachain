@@ -236,7 +236,7 @@ namespace Lachain.Core.Blockchain.Operations
                 /* try to find transaction by hash */
                 var receipt = currentTransactions[txHash];
                 receipt.Block = block.Header.Index;
-                receipt.GasUsed = GasMetering.DefaultTxTransferGasCost;
+                receipt.GasUsed = GasMetering.DefaultTxCost;
                 receipt.IndexInBlock = (ulong) i;
                 var transaction = receipt.Transaction;
                 var snapshot = _stateManager.NewSnapshot();
@@ -288,7 +288,7 @@ namespace Lachain.Core.Blockchain.Operations
                 }
 
                 /* try to take fee from sender */
-                result = _TakeTransactionFee((long) block.Header.Index, receipt, snapshot, out var fee);
+                result = _TakeTransactionFee(receipt, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
                     removeTransactions.Add(receipt);
@@ -339,7 +339,7 @@ namespace Lachain.Core.Blockchain.Operations
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _TakeTransactionFee(
-            long block, TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
+           TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
             

@@ -109,7 +109,7 @@ namespace Lachain.Core.Blockchain.Operations
                 return result;
             var transaction = acceptedTransaction.Transaction;
             if (transaction.GasLimit > GasMetering.DefaultBlockGasLimit ||
-                transaction.GasLimit < GasMetering.DefaultTxTransferGasCost)
+                transaction.GasLimit < GasMetering.DefaultTxCost)
                 return OperatingError.InvalidGasLimit;
             /* verify transaction via persister */
             return _transactionExecuter.Verify(transaction);
