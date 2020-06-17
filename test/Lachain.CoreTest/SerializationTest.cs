@@ -1,4 +1,6 @@
+using System;
 using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Crypto.TPKE;
 using Lachain.Utility.Serialization;
 using NUnit.Framework;
 
@@ -52,6 +54,18 @@ namespace Lachain.CoreTest
             Assert.AreEqual(
                 "0x9acfd419fbb6d59189d7cff91b0a76749572f468f4f4941084e09868fb35ded7a73a6f3cb0cefa12c85e9a31da8f460aca5d3947ff02817cf0af281b563845c2d3cae1442dee819dea1a048b6253b338930792237d2d10b225e07a79abfce38f",
                 (G2.Generator * Fr.FromInt(2)).ToHex()
+            );
+        }
+
+        [Test]
+        public void Test_Tpke_Serialization()
+        {
+            var publicKey = new PublicKey(G1.Generator, 134);
+            Console.WriteLine(publicKey.ToHex());
+            Console.WriteLine(PublicKey.FromBytes(publicKey.ToBytes()).ToHex());
+            Assert.AreEqual(
+                publicKey,
+                PublicKey.FromBytes(publicKey.ToBytes())
             );
         }
     }
