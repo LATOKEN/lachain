@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Crypto.MCL.BLS12_381;
-using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {
@@ -24,8 +23,8 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
         public G1 Evaluate(int x, int y)
         {
             var result = G1.Zero;
-            var powX = Mcl.Powers(Fr.FromInt(x), Degree + 1);
-            var powY = Mcl.Powers(Fr.FromInt(y), Degree + 1);
+            var powX = MclBls12381.Powers(Fr.FromInt(x), Degree + 1);
+            var powY = MclBls12381.Powers(Fr.FromInt(y), Degree + 1);
             for (var i = 0; i <= Degree; ++i)
             {
                 for (var j = 0; j <= Degree; ++j)

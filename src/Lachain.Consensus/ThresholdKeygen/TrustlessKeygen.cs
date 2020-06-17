@@ -5,13 +5,13 @@ using System.Linq;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Consensus.ThresholdKeygen
@@ -100,7 +100,7 @@ namespace Lachain.Consensus.ThresholdKeygen
                 Proposer = sender,
                 EncryptedValues = Enumerable.Range(0, Players).Select(i => Crypto.Secp256K1Encrypt(
                     _publicKeys[i].EncodeCompressed(),
-                    Mcl.GetValue(myRow, Fr.FromInt(i + 1)).ToBytes()
+                    MclBls12381.EvaluatePolynomial(myRow, Fr.FromInt(i + 1)).ToBytes()
                 )).ToArray()
             };
         }
@@ -162,7 +162,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             }
 
             var pubKeys = Enumerable.Range(0, Players + 1)
-                .Select(i => Mcl.GetValue(pubKeyPoly, Fr.FromInt(i)))
+                .Select(i => MclBls12381.EvaluatePolynomial(pubKeyPoly, Fr.FromInt(i)))
                 .ToArray();
 
             return new ThresholdKeyring

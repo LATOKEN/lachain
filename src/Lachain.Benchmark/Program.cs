@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Lachain.Core.DI;
-using Lachain.Crypto.MCL.BLS12_381;
 
 namespace Lachain.Benchmark
 {
@@ -9,7 +8,6 @@ namespace Lachain.Benchmark
     {
         internal static void Main(string[] args)
         {
-            Mcl.Init();
             if (args.Length == 0)
             {
                 args = new[] { "blockchain" };

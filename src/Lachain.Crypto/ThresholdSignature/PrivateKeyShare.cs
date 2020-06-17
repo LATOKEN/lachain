@@ -1,6 +1,6 @@
 ﻿using System;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
@@ -22,23 +22,23 @@ namespace Lachain.Crypto.ThresholdSignature
         {
             var mappedMessage = new G2();
             mappedMessage.SetHashOf(message);
-            mappedMessage.Mul(mappedMessage, _privateKey);
+            mappedMessage *= _privateKey;
             return new Signature(mappedMessage);
         }
 
         public static PrivateKeyShare FromBytes(ReadOnlyMemory<byte> buffer)
         {
-            return new PrivateKeyShare(Fr.FromBytes(buffer));
+            return new PrivateKeyShare(Fr.FromBytes(buffer.ToArray()));
         }
 
         public static int Width()
         {
-            return Fr.Width();
+            return Fr.ByteSize;
         }
 
         public void Serialize(Memory<byte> bytes)
         {
-            _privateKey.Serialize(bytes);
+            _privateKey.ToBytes().CopyTo(bytes);
         }
     }
 }

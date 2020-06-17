@@ -5,9 +5,7 @@ using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.Messages;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Proto;
-using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 
 namespace Lachain.ConsensusTest
@@ -18,24 +16,21 @@ namespace Lachain.ConsensusTest
         [SetUp]
         public void SetUp()
         {
-            Mcl.Init();
             _deliveryService = new DeliveryService();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
             _privateKeys = new IPrivateConsensusKeySet[N];
-            _validatorAttendanceRepository = new ValidatorAttendanceRepository(null);
             _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
                 _privateKeys[i] = TestUtils.EmptyWallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false, _validatorAttendanceRepository);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
             }
         }
 
         private DeliveryService _deliveryService;
-        private IValidatorAttendanceRepository _validatorAttendanceRepository;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
@@ -186,100 +181,5 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(firstReceived.SequenceEqual(received[i]), "all correct nodes should output same values");
             }
         }
-
-//        private class CorruptedBroadcastSimulator : IConsensusBroadcaster
-//        {
-//            private readonly uint _sender;
-//            private readonly BinaryBroadcastTest _test;
-//            private readonly Random _random;
-//
-//            public CorruptedBroadcastSimulator(uint sender, BinaryBroadcastTest test, Random random)
-//            {
-//                _sender = sender;
-//                _test = test;
-//                _random = random;
-//            }
-//
-//            public void Broadcast(ConsensusMessage message)
-//            {
-//                switch (message.PayloadCase)
-//                {
-//                    case ConsensusMessage.PayloadOneofCase.Bval:
-//                        message.Bval.Value = _random.Next() % 2 == 1;
-//                        break;
-//                    case ConsensusMessage.PayloadOneofCase.Aux:
-//                        message.Aux.Value = _random.Next() % 2 == 1;
-//                        break;
-//                    default:
-//                        throw new ArgumentException(nameof(message) + " is carrying type " + message.PayloadCase);
-//                }
-//
-//                message.Validator.ValidatorIndex = _sender;
-//                for (var i = 0; i < N; ++i)
-//                {
-//                    _test._broadcasts[i]?.ReceiveMessage(message);
-//                }
-//            }
-//
-//            public void MessageSelf(InternalMessage message)
-//            {
-//                _test._broadcasts[_sender].HandleInternalMessage(message);
-//            }
-//
-//            public uint GetMyId()
-//            {
-//                return _sender;
-//            }
-//        }
-//
-//        [Test]
-//        [Repeat(100)]
-//        public void TestRandomBroadcastCorruptions()
-//        {
-//            var random = new Random();
-//            var cnt = 0;
-//            var corrupted = new bool[N];
-//            while (cnt < F)
-//            {
-//                var x = random.Next() % N;
-//                if (corrupted[x]) continue;
-//                var broadcastSimulator = new CorruptedBroadcastSimulator((uint) x, this, random);
-//                _broadcasts[x] = new BinaryBroadcast(N, F, new BinaryBroadcastId(0, 0, 0), broadcastSimulator);
-//                corrupted[x] = true;
-//                ++cnt;
-//            }
-//
-//            var inputs = new int[N];
-//            int[] inputsCount = {0, 0};
-//            for (var i = 0; i < N; ++i)
-//            {
-//                if (corrupted[i]) continue;
-//                inputs[i] = random.Next() % 2;
-//                inputsCount[inputs[i]]++;
-//            }
-//
-//            for (var i = 0; i < N; ++i)
-//            {
-//                _broadcasts[i]?.Input(inputs[i] == 1);
-//            }
-//
-//            var received = new ISet<int>[N];
-//            for (var i = 0; i < N; ++i)
-//            {
-//                if (corrupted[i]) continue;
-//                received[i] = new SortedSet<int>();
-//                Assert.IsTrue(_broadcasts[i].Terminated(out var values), "Protocol must be terminated");
-//                foreach (var b in values.Values())
-//                    received[i].Add(b ? 1 : 0);
-//            }
-//
-//            ISet<int> firstReceived = null;
-//            for (var i = 0; i < N; ++i)
-//            {
-//                if (corrupted[i]) continue;
-//                if (firstReceived == null) firstReceived = received[i];
-//                Assert.Greater(received[i].Count, 0, "all correct nodes should output something");
-//            }
-//        }
     }
 }

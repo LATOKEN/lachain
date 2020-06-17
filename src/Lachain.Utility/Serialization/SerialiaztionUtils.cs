@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Utility.Serialization
 {
@@ -20,6 +21,9 @@ namespace Lachain.Utility.Serialization
 
         internal static int GetTypeWidth(Type type)
         {
+            if (type == typeof(Fr)) return Fr.ByteSize;
+            if (type == typeof(G1)) return G1.ByteSize;
+            if (type == typeof(G2)) return G2.ByteSize;
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Boolean:
@@ -53,6 +57,24 @@ namespace Lachain.Utility.Serialization
 
         internal static void SerializeType(Memory<byte> bytes, dynamic value)
         {
+            if (value is Fr fr)
+            {
+                fr.ToBytes().CopyTo(bytes);
+                return;
+            }
+
+            if (value is G1 g1)
+            {
+                g1.ToBytes().CopyTo(bytes);
+                return;
+            }
+
+            if (value is G2 g2)
+            {
+                g2.ToBytes().CopyTo(bytes);
+                return;
+            }
+
             switch (Type.GetTypeCode(value.GetType()))
             {
                 case TypeCode.Boolean:
@@ -101,6 +123,9 @@ namespace Lachain.Utility.Serialization
 
         internal static dynamic DeserializeType(ReadOnlyMemory<byte> bytes, Type type)
         {
+            if (type == typeof(Fr)) return Fr.FromBytes(bytes.ToArray());
+            if (type == typeof(G1)) return G1.FromBytes(bytes.ToArray());
+            if (type == typeof(G2)) return G2.FromBytes(bytes.ToArray());
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Boolean:

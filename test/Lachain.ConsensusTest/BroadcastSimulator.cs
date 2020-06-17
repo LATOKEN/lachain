@@ -26,11 +26,10 @@ namespace Lachain.ConsensusTest
         private readonly ISet<int> _silenced;
 
         private readonly IPublicConsensusKeySet _wallet;
-        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
 
         public BroadcastSimulator(
             int sender, IPublicConsensusKeySet wallet, IPrivateConsensusKeySet privateKeys,
-            DeliveryService deliveryService, bool mixMessages, IValidatorAttendanceRepository validatorAttendanceRepository
+            DeliveryService deliveryService, bool mixMessages
         )
         {
             _sender = sender;
@@ -40,7 +39,6 @@ namespace Lachain.ConsensusTest
             _privateKeys = privateKeys;
             _silenced = new HashSet<int>();
             MixMessages = mixMessages;
-            _validatorAttendanceRepository = validatorAttendanceRepository;
         }
 
         public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
@@ -227,12 +225,8 @@ namespace Lachain.ConsensusTest
                         new CommonSubset(acsId, _wallet, this)
                     });
                     break;
-                case RootProtocolId rootId:
-                    RegisterProtocols(new[]
-                    {
-                        new RootProtocol(rootId, _wallet, _privateKeys.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, 1000)
-                    });
-                    break;
+                case RootProtocolId _:
+                    throw new Exception("cannot instantiate root protocol in BroadcastSimulator");
                 default:
                     throw new Exception($"Unknown protocol type {id}");
             }

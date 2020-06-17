@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.TPKE
 {
@@ -71,7 +71,7 @@ namespace Lachain.Crypto.TPKE
                 ys.Add(part.Ui);
             }
 
-            var u = Mcl.LagrangeInterpolateG1(xs.ToArray(), ys.ToArray());
+            var u = MclBls12381.LagrangeInterpolate(xs.ToArray(), ys.ToArray());
             return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
         }
         
@@ -88,7 +88,7 @@ namespace Lachain.Crypto.TPKE
 
         public static int Width()
         {
-            return sizeof(int) + G1.Width();
+            return sizeof(int) + G1.ByteSize;
         }
 
         public bool Equals(PublicKey? other)

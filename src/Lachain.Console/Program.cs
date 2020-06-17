@@ -8,7 +8,6 @@ using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.RPC;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Networking;
 using Lachain.Storage;
 using Lachain.Utility.Serialization;
@@ -164,7 +163,6 @@ namespace Lachain.Console
 
         internal static void Main(string[] args)
         {
-            Mcl.Init();
             // GenWallet(
             //     "wallet.json", 
             //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 

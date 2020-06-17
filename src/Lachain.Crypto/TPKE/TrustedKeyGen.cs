@@ -1,5 +1,5 @@
 using System;
-using Lachain.Crypto.MCL.BLS12_381;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.TPKE
 {
@@ -20,23 +20,12 @@ namespace Lachain.Crypto.TPKE
 
         public PublicKey GetPubKey()
         {
-            return new PublicKey(G1.Generator * Mcl.GetValue(_coeffs, Fr.FromInt(0)), _degree);
+            return new PublicKey(G1.Generator * MclBls12381.EvaluatePolynomial(_coeffs, Fr.FromInt(0)), _degree);
         }
 
         public PrivateKey GetPrivKey(int i)
         {
-            return new PrivateKey(Mcl.GetValue(_coeffs, Fr.FromInt(i + 1)), i);
+            return new PrivateKey(MclBls12381.EvaluatePolynomial(_coeffs, Fr.FromInt(i + 1)), i);
         }
-
-        // public VerificationKey GetVerificationKey()
-        // {
-        //     var zs = new List<G2>();
-        //     for (var i = 0; i < _parties; ++i)
-        //     {
-        //         zs.Add(G2.Generator * Mcl.GetValue(_coeffs, Fr.FromInt(i + 1)));
-        //     }
-        //
-        //     return new VerificationKey(G1.Generator * Mcl.GetValue(_coeffs, Fr.FromInt(0)), _degree, zs.ToArray());
-        // }
     }
 }

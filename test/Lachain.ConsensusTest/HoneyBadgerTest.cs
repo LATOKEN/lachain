@@ -7,7 +7,6 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Storage.Repositories;
 
@@ -20,7 +19,6 @@ namespace Lachain.ConsensusTest
         public void SetUp()
         {
             _rnd = new Random();
-            Mcl.Init();
             _deliveryService = new DeliveryService();
             _broadcasts = new IConsensusProtocol[N];
             _broadcasters = new IConsensusBroadcaster[N];
@@ -42,7 +40,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
                 _privateKeys[i] = new PrivateConsensusKeySet(ecdsaKeys[i], tpkeKeygen.GetPrivKey(i), shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true, _validatorAttendanceRepository);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
             }
         }
 
@@ -56,13 +54,7 @@ namespace Lachain.ConsensusTest
         private IPublicConsensusKeySet _publicKeys;
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
-        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-
-        public HoneyBadgerTest(IValidatorAttendanceRepository validatorAttendanceRepository)
-        {
-            _validatorAttendanceRepository = validatorAttendanceRepository;
-        }
 
         private void SetUpAllHonest()
         {

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Crypto.MCL.BLS12_381;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
@@ -26,7 +26,7 @@ namespace Lachain.Crypto.ThresholdSignature
         {
             var shares = new Fr[_parties];
             for (var i = 0; i < _parties; ++i)
-                shares[i] = Mcl.GetValue(_coeffs, Fr.FromInt(i + 1));
+                shares[i] = MclBls12381.EvaluatePolynomial(_coeffs, Fr.FromInt(i + 1));
             return shares.Select(share => new PrivateKeyShare(share));
         }
     }

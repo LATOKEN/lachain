@@ -5,10 +5,9 @@ using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
-using Lachain.Storage.Repositories;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.ConsensusTest
 {
@@ -25,12 +24,10 @@ namespace Lachain.ConsensusTest
             _wallets = new IPrivateConsensusKeySet[N];
 
             _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
-            Mcl.Init();
             for (var i = 0; i < N; ++i)
             {
                 _wallets[i] = TestUtils.EmptyWallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false,
-                    _validatorAttendanceRepository);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
 
@@ -53,22 +50,6 @@ namespace Lachain.ConsensusTest
         private IPublicConsensusKeySet _publicKeys;
         private EncryptedShare _testShare;
         private Random _rnd;
-
-        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository =
-            new ValidatorAttendanceRepositoryMock();
-
-        class ValidatorAttendanceRepositoryMock : IValidatorAttendanceRepository
-        {
-            public void SaveState(byte[] state)
-            {
-                throw new NotImplementedException();
-            }
-
-            public byte[] LoadState()
-            {
-                throw new NotImplementedException();
-            }
-        }
 
         private void SetUpAllHonest()
         {

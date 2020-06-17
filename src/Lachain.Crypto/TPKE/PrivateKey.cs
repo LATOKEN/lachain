@@ -1,6 +1,6 @@
 using System;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.TPKE
 {
@@ -18,7 +18,7 @@ namespace Lachain.Crypto.TPKE
         public PartiallyDecryptedShare Decrypt(EncryptedShare share)
         {
             var h = Utils.HashToG2(share.U, share.V);
-            if (!Mcl.Pairing(G1.Generator, share.W).Equals(Mcl.Pairing(share.U, h)))
+            if (!GT.Pairing(G1.Generator, share.W).Equals(GT.Pairing(share.U, h)))
             {
                 // todo add appropriate catch
                 throw new Exception("Invalid share!");
@@ -41,7 +41,7 @@ namespace Lachain.Crypto.TPKE
 
         public static int Width()
         {
-            return sizeof(int) + Fr.Width();
+            return sizeof(int) + Fr.ByteSize;
         }
     }
 }

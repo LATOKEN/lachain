@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
@@ -28,7 +28,7 @@ namespace Lachain.Crypto.ThresholdSignature
         {
             var xs = Enumerable.Range(1, n).Select(Fr.FromInt).ToArray();
             var ys = shares.ToArray();
-            return Mcl.LagrangeInterpolateG1(xs, ys);
+            return MclBls12381.LagrangeInterpolate(xs, ys);
         }
 
         public Signature AssembleSignature(IEnumerable<KeyValuePair<int, Signature>> shares)
@@ -38,7 +38,7 @@ namespace Lachain.Crypto.ThresholdSignature
             var ys = keyValuePairs.Take(Threshold + 1).Select(pair => pair.Value.RawSignature).ToArray();
             if (xs.Length <= Threshold || ys.Length <= Threshold)
                 throw new ArgumentException("not enough shares for signature");
-            return new Signature(Mcl.LagrangeInterpolateG2(xs, ys));
+            return new Signature(MclBls12381.LagrangeInterpolate(xs, ys));
         }
 
         public bool Equals(PublicKeySet? other)

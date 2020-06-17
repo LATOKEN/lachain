@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Lachain.Crypto;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.TPKE;
 
 namespace Lachain.CryptoTest
@@ -17,7 +16,6 @@ namespace Lachain.CryptoTest
         [SetUp]
         public void SetUp()
         {
-            Mcl.Init();
             _rnd = new Random();
         }
 

@@ -1,4 +1,4 @@
-﻿using Lachain.Crypto.MCL.BLS12_381;
+﻿using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.TPKE
 {
@@ -17,5 +17,4 @@ namespace Lachain.Crypto.TPKE
             ShareId = shareId;
         }
     }
-    
 }

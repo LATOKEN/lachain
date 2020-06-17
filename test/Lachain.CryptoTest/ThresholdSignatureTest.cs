@@ -1,6 +1,5 @@
 using System.Linq;
 using NUnit.Framework;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Serialization;
 
@@ -11,7 +10,6 @@ namespace Lachain.CryptoTest
         [Test]
         public void ThresholdKeyGen()
         {
-            Mcl.Init();
             const int n = 7, f = 2;
             var keygen = new TrustedKeyGen(n, f);
             var shares = keygen.GetPrivateShares().ToArray();

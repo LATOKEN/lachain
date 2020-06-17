@@ -6,11 +6,11 @@ using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using NUnit.Framework;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Containers;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 using Nethereum.Hex.HexConvertors.Extensions;
 
 namespace Lachain.ConsensusTest
@@ -23,13 +23,12 @@ namespace Lachain.ConsensusTest
         [SetUp]
         public void SetUp()
         {
-            Mcl.Init();
         }
 
         private static Fr Eval(BiVarSymmetricPolynomial p, int x, int y)
         {
             var t = p.Evaluate(x).ToArray();
-            return Mcl.GetValue(t, Fr.FromInt(y));
+            return MclBls12381.EvaluatePolynomial(t, Fr.FromInt(y));
         }
 
         private class QueueItem

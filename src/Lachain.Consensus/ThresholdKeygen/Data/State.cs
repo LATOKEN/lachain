@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {
@@ -40,7 +40,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
                 .ToArray();
             if (xs.Length != Commitment.Degree + 1 || ys.Length != Commitment.Degree + 1)
                 throw new Exception("Cannot interpolate values");
-            return Mcl.LagrangeInterpolateFr(xs, ys);
+            return MclBls12381.LagrangeInterpolate(xs, ys);
         }
 
         public byte[] ToBytes()

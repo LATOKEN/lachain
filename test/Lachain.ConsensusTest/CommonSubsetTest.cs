@@ -5,11 +5,11 @@ using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.Messages;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
+using MCL.BLS12_381.Net;
 using TrustedKeyGen = Lachain.Crypto.ThresholdSignature.TrustedKeyGen;
 
 namespace Lachain.ConsensusTest
@@ -25,16 +25,9 @@ namespace Lachain.ConsensusTest
         private int F = 2; // 2
         private IPrivateConsensusKeySet[] _privateKeys;
         private IPublicConsensusKeySet _publicKeys;
-        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
-
-        public CommonSubsetTest(IValidatorAttendanceRepository validatorAttendanceRepository)
-        {
-            _validatorAttendanceRepository = validatorAttendanceRepository;
-        }
 
         private void SetUpAllHonest()
         {
-            Mcl.Init();
             _deliveryService = new DeliveryService();
             _acs = new IConsensusProtocol[N];
             _broadcasters = new BroadcastSimulator[N];
@@ -48,7 +41,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
                 _privateKeys[i] = new PrivateConsensusKeySet(null, null, shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false, _validatorAttendanceRepository);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
             }
 
             for (uint i = 0; i < N; ++i)
@@ -140,21 +133,17 @@ namespace Lachain.ConsensusTest
                 "------------------------------------------------------------------- NEW ITERATION ------------------------------------------------------------------------------------------------------------------------------------------------------");
 
             var inputs = new List<EncryptedShare>();
-            
-            var _rnd = new Random();
+
             var rnd = new byte[32];
-            _rnd.NextBytes(rnd);
-            
-            
+            new Random().NextBytes(rnd);
+
+
             for (var i = 0; i < N; ++i)
             {
-//                var share = (i == 0) ? new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i) : null;
-
-                var _testShare = new EncryptedShare(G1.Generator, rnd, G2.Generator, i);
-                var share = new EncryptedShare(G1.Zero, new byte[0], G2.Zero, i);
-                inputs.Add(_testShare);
+                var testShare = new EncryptedShare(G1.Generator, rnd, G2.Generator, i);
+                inputs.Add(testShare);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<CommonSubsetId, EncryptedShare>(
-                    _resultInterceptors[i].Id, _acs[i].Id as CommonSubsetId, _testShare
+                    _resultInterceptors[i].Id, _acs[i].Id as CommonSubsetId, testShare
                 ));
             }
 
@@ -210,6 +199,7 @@ namespace Lachain.ConsensusTest
         {
             TestAllCommonSubset(7, 1, DeliveryServiceMode.TAKE_RANDOM);
         }
+
         [Test]
         //[Repeat(10)]
         public void TestRandomN7F3()
@@ -223,18 +213,21 @@ namespace Lachain.ConsensusTest
         {
             TestAllCommonSubset(7, 1);
         }
+
         [Test]
         //[Repeat(10)]
         public void TestSimpleN7F3()
         {
             TestAllCommonSubset(7, 2);
         }
+
         [Test]
         //[Repeat(10)]
         public void TestSimpleN22F1()
         {
             TestAllCommonSubset(22, 1);
         }
+
         [Test]
         //[Repeat(10)]
         public void TestSimpleN22F7()

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Lachain.Crypto.MCL.BLS12_381;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {

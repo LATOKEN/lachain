@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
@@ -25,17 +25,17 @@ namespace Lachain.Crypto.ThresholdSignature
 
         public static int Width()
         {
-            return G2.Width();
+            return G2.ByteSize;
         }
 
         public void Serialize(Memory<byte> bytes)
         {
-            _signature.Serialize(bytes);
+            _signature.ToBytes().CopyTo(bytes);
         }
 
         public static Signature FromBytes(ReadOnlyMemory<byte> bytes)
         {
-            return new Signature(G2.FromBytes(bytes));
+            return new Signature(G2.FromBytes(bytes.ToArray()));
         }
     }
 }

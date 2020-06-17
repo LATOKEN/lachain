@@ -1,7 +1,8 @@
 using System;
-using Lachain.Crypto.MCL.BLS12_381;
+using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Utility.Serialization;
+using MCL.BLS12_381.Net;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest
@@ -11,7 +12,6 @@ namespace Lachain.CoreTest
         [SetUp]
         public void SetUp()
         {
-            Mcl.Init();
         }
 
         [Test]
@@ -48,11 +48,11 @@ namespace Lachain.CoreTest
                 G2.Zero.ToHex()
             );
             Assert.AreEqual(
-                "0x770d1d7e912474168480b3ac0b0c80bca01cdf9ce7ac1a301945074a8ccf4f1934e5f32eea6ae2c97198fc7555722903c06e4ce90382080c13e2a8c78dd07e4e2b6d00dff70f899c6c3e3752e64a563e03fbe67b93589e6eb0a140e7d8706398",
+                "0xf1437606f337b000f00d69507434dbbd3b2abfa8a291d88551d92309fe3c222e0790fc847e849eb984bb807cba59170a0a63480e9457a375705ea2aba224a711e717ecddb224feeb738630945581bda24389f8fecf7865724361aec550e44919",
                 G2.Generator.ToHex()
             );
             Assert.AreEqual(
-                "0x9acfd419fbb6d59189d7cff91b0a76749572f468f4f4941084e09868fb35ded7a73a6f3cb0cefa12c85e9a31da8f460aca5d3947ff02817cf0af281b563845c2d3cae1442dee819dea1a048b6253b338930792237d2d10b225e07a79abfce38f",
+                "0xd63f18cd560a715faef9b96c31e08eead86809ffd81642f6cdb55ed88ea2eca32cb2a28d818b7887cb35f1a7d4ab8a04eacc640851cb34b8a615729cd6d8cc4317125959b2012444b435508679e0a2f07d691d91aef2a18400a6696c6a3ae18d",
                 (G2.Generator * Fr.FromInt(2)).ToHex()
             );
         }

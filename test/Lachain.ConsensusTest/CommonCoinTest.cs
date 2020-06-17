@@ -3,32 +3,23 @@ using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.Messages;
-using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
-using Lachain.Storage.Repositories;
 
 namespace Lachain.ConsensusTest
 {
     public class CommonCoinTest
     {
-        private const int N = 7, F = 2;
+        private const int N = 4, F = 1;
         private IConsensusBroadcaster[] _broadcasters;
         private IConsensusProtocol[] _coins;
         private DeliveryService _deliveryService;
-        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private IPublicConsensusKeySet _publicKeys;
         private ProtocolInvoker<CoinId, CoinResult>[] _resultInterceptors;
         private IPrivateConsensusKeySet[] _wallets;
 
-        public CommonCoinTest(IValidatorAttendanceRepository validatorAttendanceRepository)
-        {
-            _validatorAttendanceRepository = validatorAttendanceRepository;
-        }
-
         public void SetUp()
         {
-            Mcl.Init();
             var keygen = new TrustedKeyGen(N, F);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
@@ -42,7 +33,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();
                 _wallets[i] = new PrivateConsensusKeySet(null, null, shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false, _validatorAttendanceRepository);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _coins[i] = new CommonCoin(
                     new CoinId(0, 0, 0), _publicKeys, shares[i], _broadcasters[i]
                 );
