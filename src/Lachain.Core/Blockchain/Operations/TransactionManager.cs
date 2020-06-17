@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -53,7 +54,19 @@ namespace Lachain.Core.Blockchain.Operations
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
-            var verifyError = Verify(receipt, block.Header.Index == 0);
+            var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
+            var cycle = block.Header.Index / StakingContract.CycleDuration;
+
+            var lastTxInBlockIndex = block.TransactionHashes.Count - 1;
+            var canTransactionMissVerification = block.Header.Index == 0
+                                                 || cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration && (int) receipt.IndexInBlock ==
+                                                 lastTxInBlockIndex
+                                                 || indexInCycle == StakingContract.VrfSubmissionPhaseDuration && (int) receipt.IndexInBlock ==
+                                                 lastTxInBlockIndex
+                                                 || cycle > 0 && indexInCycle == 0 && (int) receipt.IndexInBlock ==
+                                                 lastTxInBlockIndex;
+            
+            var verifyError = VerifyInternal(receipt, canTransactionMissVerification);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
@@ -79,15 +92,16 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Verify(TransactionReceipt transaction)
         {
-            return Verify(transaction, false);
+            return VerifyInternal(transaction, false);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private OperatingError Verify(TransactionReceipt acceptedTransaction, bool isGenesis)
+        private OperatingError VerifyInternal(TransactionReceipt acceptedTransaction, bool canTransactionMissVerification)
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-            if (isGenesis)
+            
+            if (canTransactionMissVerification)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
 
             var result = VerifySignature(acceptedTransaction);

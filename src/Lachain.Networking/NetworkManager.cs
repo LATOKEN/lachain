@@ -161,7 +161,7 @@ namespace Lachain.Networking
         {
         }
 
-        private MessageEnvelope _BuildEnvelope(IMessage message, Signature signature)
+        private MessageEnvelope _BuildEnvelope(IMessage message, Signature signature, bool responseRequired = false)
         {
             if (signature is null)
                 throw new ArgumentNullException(nameof(signature));
@@ -224,6 +224,12 @@ namespace Lachain.Networking
 
         private void _HandleMessageUnsafe(NetworkMessage message)
         {
+            var shouldWaitForHandshake = _authorizedKeys.Keys.Count < 3;
+            // _logger.LogDebug($"Message received. auth keys count: {_authorizedKeys.Keys.Count}");
+            if (message.MessageCase != NetworkMessage.MessageOneofCase.HandshakeRequest &&
+                message.MessageCase != NetworkMessage.MessageOneofCase.HandshakeReply &&
+                shouldWaitForHandshake
+            ) return;
             switch (message.MessageCase)
             {
                 case NetworkMessage.MessageOneofCase.HandshakeRequest:

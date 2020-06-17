@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -13,9 +14,11 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Network;
 using Lachain.Core.RPC;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -26,9 +29,9 @@ namespace Lachain.Console
     {
         private readonly IContainer _container;
 
-        public Application()
+        public Application(string configPath)
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json"));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -44,6 +47,7 @@ namespace Lachain.Console
             var blockManager = _container.Resolve<IBlockManager>();
             var configManager = _container.Resolve<IConfigManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
+            var validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
             var validatorManager = _container.Resolve<IValidatorManager>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
@@ -53,6 +57,9 @@ namespace Lachain.Console
             var rpcManager = _container.Resolve<IRpcManager>();
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
+            var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
+            
+            localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
             if (blockManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
@@ -74,7 +81,7 @@ namespace Lachain.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
-            networkManager.Start(networkConfig, wallet.EcdsaKeyPair, messageHandler);
+            networkManager.Start(networkConfig!, wallet.EcdsaKeyPair, messageHandler);
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
             rpcManager.Start();
@@ -93,34 +100,40 @@ namespace Lachain.Console
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockManager.GetHeight() + 1);
             
-            while (blockManager.GetHeight() < 10)
-            {
-                Thread.Sleep(1_000);
-            }
-            if (wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
-            {
-                var txPool = _container.Resolve<ITransactionPool>();
-                var signer = _container.Resolve<ITransactionSigner>();
-                var builder = _container.Resolve<ITransactionBuilder>();
-                var newValidators = validatorManager
-                    .GetValidatorsPublicKeys(0)
-                    .Select(key => key.EncodeCompressed())
-                    .ToArray();
-                // var newValidators = new[]
-                // {
-                //     wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
-                // }; 
-                var tx = builder.InvokeTransaction(
-                    wallet.EcdsaKeyPair.PublicKey.GetAddress(),
-                    ContractRegisterer.GovernanceContract,
-                    Money.Zero,
-                    GovernanceInterface.MethodChangeValidators,
-                    (object) newValidators
-                );
-                txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
-            }
+            validatorStatusManager.Start(false);
+            
+            // while (blockManager.GetHeight() < 10)
+            // {
+            //     Thread.Sleep(1_000);
+            // }
+            // if (wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex() == "0x023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746")
+            // {
+            //     var txPool = _container.Resolve<ITransactionPool>();
+            //     var signer = _container.Resolve<ITransactionSigner>();
+            //     var builder = _container.Resolve<ITransactionBuilder>();
+            //     var newValidators = validatorManager
+            //         .GetValidatorsPublicKeys(0)
+            //         .Select(key => key.EncodeCompressed())
+            //         .ToArray();
+            //     // var newValidators = new[]
+            //     // {
+            //     //     wallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
+            //     // }; 
+            //     var tx = builder.InvokeTransaction(
+            //         wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+            //         ContractRegisterer.GovernanceContract,
+            //         Money.Zero,
+            //         GovernanceInterface.MethodChangeValidators,
+            //         (object) newValidators
+            //     );
+            //     txPool.Add(signer.Sign(tx, wallet.EcdsaKeyPair));                
+            // }
 
-            System.Console.CancelKeyPress += (sender, e) => _interrupt = true;
+            System.Console.CancelKeyPress += (sender, e) =>
+            {
+                System.Console.WriteLine("Interrupt received. Exiting...");
+                _interrupt = true;
+            };
 
             while (!_interrupt)
                 Thread.Sleep(1000);

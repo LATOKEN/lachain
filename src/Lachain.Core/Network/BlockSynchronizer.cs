@@ -78,12 +78,13 @@ namespace Lachain.Core.Network
             var persisted = 0u;
             foreach (var tx in transactions)
             {
-                var error = _transactionManager.Verify(tx);
-                if (error != OperatingError.Ok)
-                {
-                    _logger.LogWarning($"Unable to verify transaction ({error})");
-                    continue;
-                }
+                // _logger.LogDebug($"HandleTransactionsFromPeer(): {tx.Hash.ToHex()} from: {tx.Transaction.From.ToHex()}");
+                // var error = _transactionManager.Verify(tx);
+                // if (error != OperatingError.Ok)
+                // {
+                //     _logger.LogWarning($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
+                //     continue;
+                // }
 
                 if (_transactionPool.Add(tx) == OperatingError.Ok)
                     persisted++;
@@ -124,7 +125,9 @@ namespace Lachain.Core.Network
             {
                 if (_blockManager.GetHeight() + 1 != block.Header.Index)
                 {
-                    _logger.LogWarning($"Black was already persisted while we were waiting for txs");
+                    // _logger.LogWarning($"We have Blockchain with heigh {_blockManager.GetHeight()}");
+                    // _logger.LogWarning($"But received {block.Header.Index}");
+                    _logger.LogWarning($"Received block {block.Header.Index}");
                     return OperatingError.BlockAlreadyExists;
                 }
 
@@ -185,6 +188,23 @@ namespace Lachain.Core.Network
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             }
+        }
+
+        public PeerAddress[] GetConnectedPeers()
+        {
+            var connectedPeerAddresses = _peerHeights.Where(peer => peer.Key.IsConnected)
+                .Select(peer => peer.Key.Address).ToArray();
+            return connectedPeerAddresses;
+        }
+
+        public ulong? GetHighestBlock()
+        {
+            var validatorPeers = _peerHeights
+                .Where(entry => entry.Key.Node != null)
+                .ToArray();
+            if (validatorPeers.Length == 0) return null;
+            
+            return validatorPeers.Max(v => v.Value);
         }
 
         private ulong _lastActiveTime = TimeUtils.CurrentTimeMillis();

@@ -59,7 +59,7 @@ namespace Lachain.Core.Blockchain.Operations
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
                 return _InvokeContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot, true);
             }
-            
+
             /* try to transfer funds from sender to recipient */
             if (new Money(transaction.Value) > Money.Zero)
                 if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
@@ -72,21 +72,21 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         private OperatingError _InvokeContract(
-            UInt160 address, byte[] input, TransactionReceipt receipt,
+            UInt160 addressTo, byte[] input, TransactionReceipt receipt,
             IBlockchainSnapshot snapshot, bool isSystemContract
         )
         {
             var transaction = receipt.Transaction;
-            var context = new InvocationContext(address, snapshot, receipt);
+            var context = new InvocationContext(receipt.Transaction.From, snapshot, receipt);
             try
             {
                 if (receipt.GasUsed > transaction.GasLimit)
                     return OperatingError.OutOfGas;
-                var result = ContractInvoker.Invoke(address, context, input, transaction.GasLimit - receipt.GasUsed);
+                var result = ContractInvoker.Invoke(addressTo, context, input, transaction.GasLimit - receipt.GasUsed);
                 receipt.GasUsed += result.GasUsed;
                 if (result.Status != ExecutionStatus.Ok)
                     return OperatingError.ContractFailed;
-                
+
                 if (receipt.GasUsed > transaction.GasLimit) return OperatingError.OutOfGas;
                 if (isSystemContract) OnSystemContractInvoked?.Invoke(this, context);
                 return OperatingError.Ok;

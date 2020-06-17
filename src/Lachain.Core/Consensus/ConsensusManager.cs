@@ -11,6 +11,7 @@ using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus
@@ -20,6 +21,7 @@ namespace Lachain.Core.Consensus
         private static readonly ILogger<ConsensusManager> Logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();
         private readonly IMessageDeliverer _messageDeliverer;
         private readonly IValidatorManager _validatorManager;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockManager _blockManager;
         private bool _terminated;
@@ -38,7 +40,8 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
-            IPrivateWallet privateWallet
+            IPrivateWallet privateWallet,
+            IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -46,6 +49,7 @@ namespace Lachain.Core.Consensus
             _blockProducer = blockProducer;
             _blockManager = blockManager;
             _privateWallet = privateWallet;
+            _validatorAttendanceRepository = validatorAttendanceRepository;
             _terminated = false;
 
             _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
@@ -53,7 +57,7 @@ namespace Lachain.Core.Consensus
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
-            Logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
+            // Logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
             if ((long) e.Header.Index >= CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
@@ -128,7 +132,7 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                const ulong minBlockInterval = 5_000;
+                const ulong minBlockInterval = 5000;
                 for (;; CurrentEra += 1)
                 {
                     var now = TimeUtils.CurrentTimeMillis();
@@ -191,7 +195,7 @@ namespace Lachain.Core.Consensus
                         broadcaster.WaitFinish();
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
-                        Logger.LogDebug("Root protocol finished, waiting for new era...");
+                        // Logger.LogDebug("Root protocol finished, waiting for new era...");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
                 }
@@ -217,15 +221,15 @@ namespace Lachain.Core.Consensus
         {
             if (era <= 0) return null;
             if (_eras.ContainsKey(era)) return _eras[era];
-            Logger.LogDebug($"Creating broadcaster for era {era}");
+            // Logger.LogDebug($"Creating broadcaster for era {era}");
             if (_terminated)
             {
                 Logger.LogWarning($"Broadcaster for era {era} not created since consensus is terminated");
                 return null;
             }
 
-            Logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet);
+            // Logger.LogDebug($"Created broadcaster for era {era}");
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet, _validatorAttendanceRepository);
         }
     }
 }

@@ -2,20 +2,12 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using Org.BouncyCastle.Asn1.Sec;
-using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Crypto.Parameters;
 using Secp256k1Net;
 
 namespace Lachain.Crypto
 {
     public class DefaultCrypto : ICrypto
     {
-        private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
-
-        private static readonly ECDomainParameters Domain
-            = new ECDomainParameters(Curve.Curve, Curve.G, Curve.N, Curve.H, Curve.GetSeed());
-
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
 
         [MethodImpl(MethodImplOptions.Synchronized)]

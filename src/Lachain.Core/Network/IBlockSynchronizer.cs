@@ -19,6 +19,10 @@ namespace Lachain.Core.Network
 
         bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers);
 
+        PeerAddress[] GetConnectedPeers();
+
+        ulong? GetHighestBlock();
+
         void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers);
         
         void Start();

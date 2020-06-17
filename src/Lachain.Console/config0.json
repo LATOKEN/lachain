@@ -43,7 +43,8 @@
         "thresholdSignaturePublicKey": "0x2214faec98bbf6f1f2f536a6f59c5d231f872e6afb1b121ade52f774490cb13a54ee66f1ec1873973d555f5ac48ab518",
         "resolvableName": "localhost:5053"
       }
-    ]
+    ],
+    "blockReward": "5000000000000000000"
   },
   "rpc": {
     "hosts": [

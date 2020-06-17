@@ -6,8 +6,8 @@
     <RootNamespace>Lachain.Networking</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NetMQ" Version="4.0.0.197-pre" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="NetMQ" Version="4.0.1.2-pre" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />

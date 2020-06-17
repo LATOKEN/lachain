@@ -7,6 +7,7 @@ using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 
 namespace Lachain.ConsensusTest
@@ -23,16 +24,18 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[N];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
             _privateKeys = new IPrivateConsensusKeySet[N];
+            _validatorAttendanceRepository = new ValidatorAttendanceRepository(null);
             _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < N; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
                 _privateKeys[i] = TestUtils.EmptyWallet(N, F);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false, _validatorAttendanceRepository);
             }
         }
 
         private DeliveryService _deliveryService;
+        private IValidatorAttendanceRepository _validatorAttendanceRepository;
         private IConsensusProtocol[] _broadcasts;
         private IConsensusBroadcaster[] _broadcasters;
         private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;

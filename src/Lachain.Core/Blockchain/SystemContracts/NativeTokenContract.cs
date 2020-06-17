@@ -1,11 +1,17 @@
 ﻿using System;
+using System.Linq;
+using System.Numerics;
 using System.Text;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
+using Lachain.Crypto;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -13,10 +19,18 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class NativeTokenContract : ISystemContract
     {
         private readonly InvocationContext _context;
+        private static readonly Func<byte[], byte[]> ToAddress = CryptoProvider.GetCrypto().ComputeAddress;
+        
+        private readonly StorageMapping _allowance;
 
         public NativeTokenContract(InvocationContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _allowance = new StorageMapping(
+                ContractRegisterer.LatokenContract,
+                context.Snapshot.Storage,
+                BigInteger.Zero.ToUInt256()
+            );
         }
 
         public ContractStandard ContractStandard => ContractStandard.Lrc20;
@@ -79,21 +93,47 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus TransferFrom(UInt160 from, UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenTransferFromCost);
-            throw new NotImplementedException();
+            SubAllowance(from, MsgSender(), value, frame);
+            var result = _context.Snapshot.Balances.TransferBalance(from,recipient, value.ToMoney());
+            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodApprove)]
-        public ExecutionStatus Approve(UInt160 spender, UInt256 value, SystemContractExecutionFrame frame)
+        public ExecutionStatus Approve(UInt160 spender, UInt256 amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            throw new NotImplementedException();
+            if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
+            SetAllowance(MsgSender(), spender, amount);
+            frame.ReturnValue = 1.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodAllowance)]
         public ExecutionStatus Allowance(UInt160 owner, UInt160 spender, SystemContractExecutionFrame frame)
         {
-            frame.UseGas(GasMetering.NativeTokenAllowanceCost);
-            throw new NotImplementedException();
+            var amountBytes = _allowance.GetValue(owner.ToBytes().Concat(spender.ToBytes()));
+            if (amountBytes.Length == 0) frame.ReturnValue = UInt256Utils.Zero.ToBytes();
+            frame.ReturnValue = amountBytes.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
+        }
+        
+        private void SetAllowance(UInt160 owner, UInt160 spender, UInt256 amount)
+        {
+            _allowance.SetValue(owner.ToBytes().Concat(spender.ToBytes()), amount.ToBytes());
+        }
+
+        private UInt160 MsgSender()
+        {
+            return _context.Sender ?? throw new InvalidOperationException();
+        }
+
+        public void SubAllowance(UInt160 owner, UInt160 spender, UInt256 value, SystemContractExecutionFrame frame)
+        {
+            Allowance(owner, spender, frame);
+            var allowance = frame.ReturnValue.ToUInt256().ToMoney();
+            allowance -= value.ToMoney();
+            SetAllowance(owner, spender, allowance.ToUInt256());
         }
     }
 }

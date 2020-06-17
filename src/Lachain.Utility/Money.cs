@@ -41,9 +41,9 @@ namespace Lachain.Utility
             return _value;
         }
         
-        public UInt256 ToUInt256()
+        public UInt256 ToUInt256(bool reversed = false)
         {
-            return _value.ToUInt256();
+            return _value.ToUInt256(reversed);
         }
 
         public override string ToString()

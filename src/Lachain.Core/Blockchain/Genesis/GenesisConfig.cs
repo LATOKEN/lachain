@@ -26,6 +26,9 @@ namespace Lachain.Core.Blockchain.Genesis
 
         [JsonProperty("TPKEPublicKey")]
         public string? ThresholdEncryptionPublicKey;
+
+        [JsonProperty("blockReward")]
+        public static string BlockReward;
         
         public void ValidateOrThrow()
         {
@@ -34,6 +37,8 @@ namespace Lachain.Core.Blockchain.Genesis
                 throw new ArgumentException("Incorrect validator information in config");
             if (ThresholdEncryptionPublicKey is null)
                 throw new ArgumentException("Initial threshold encryption keyring is incomplete");
+            if (BlockReward is null)
+                throw new ArgumentException("Initial block reward must be specified in genesis config");
         }
     }
 }

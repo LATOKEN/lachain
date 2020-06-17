@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using Nethereum.Hex.HexTypes;
 using Lachain.Proto;
@@ -80,6 +81,12 @@ namespace Lachain.Utility.Utils
         public static string ToHex(this int num)
         {
             return num.ToHexBigInteger().HexValue;
+        }
+
+        public static byte[] TrimLeadingZeros(this byte[] array)
+        {
+            int firstIndex = Array.FindIndex(array, b => b != 0);
+            return array.Skip(firstIndex).ToArray();
         }
     }
 }

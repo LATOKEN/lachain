@@ -13,15 +13,15 @@ namespace Lachain.Crypto
 
         public static IEnumerable<byte> Rlp(this Transaction t)
         {
-            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray();
+            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray().TrimLeadingZeros();
             var ethTx = new Nethereum.Signer.TransactionChainId(
                 nonce,
-                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
-                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
+                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
+                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 t.To.ToBytes(), // this may be empty, same as passing null
-                t.Value.ToBytes(true).Reverse().ToArray(),
-                t.Invocation.ToArray(),
-                new BigInteger(ChainId).ToByteArray().Reverse().ToArray(),
+                t.Value.ToBytes(true).Reverse().ToArray().TrimLeadingZeros(),
+                t.Invocation.ToArray().TrimLeadingZeros(),
+                new BigInteger(ChainId).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 Array.Empty<byte>(),
                 Array.Empty<byte>(),
                 Array.Empty<byte>()
@@ -31,19 +31,19 @@ namespace Lachain.Crypto
 
         public static IEnumerable<byte> RlpWithSignature(this Transaction t, Signature s)
         {
-            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray();
+            var nonce = t.Nonce == 0 ? Array.Empty<byte>() : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray().TrimLeadingZeros();
             var sig = s.Encode().AsSpan();
             var ethTx = new Nethereum.Signer.TransactionChainId(
                 nonce,
-                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray(),
-                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray(),
+                new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
+                new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 t.To.ToBytes(), // this may be empty, same as passing null
-                t.Value.ToBytes(true).Reverse().ToArray(),
-                t.Invocation.ToArray(),
-                new BigInteger(ChainId).ToByteArray().Reverse().ToArray(),
-                sig.Slice(0, 32).ToArray(),
-                sig.Slice(32, 32).ToArray(),
-                sig.Slice(64, 1).ToArray()
+                t.Value.ToBytes(true).Reverse().ToArray().TrimLeadingZeros(),
+                t.Invocation.ToArray().TrimLeadingZeros(),
+                new BigInteger(ChainId).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
+                sig.Slice(0, 32).ToArray().TrimLeadingZeros(),
+                sig.Slice(32, 32).ToArray().TrimLeadingZeros(),
+                sig.Slice(64, 1).ToArray().TrimLeadingZeros()
             );
             return ethTx.GetRLPEncoded();
         }

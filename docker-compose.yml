@@ -2,6 +2,7 @@ version: '2.4'
 services:
   node0:
     build:
+      network: host
       context: ./
       args:
         CONFIG: src/Lachain.Console/config0.json
@@ -9,12 +10,16 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5051:5051"
+#    ports:
+#    - "5050:5050"
+#    - "7071:7070"
     network_mode: "host"
+    restart: always
+      
 
   node1:
     build:
+      network: host
       context: ./
       args:
         CONFIG: src/Lachain.Console/config1.json
@@ -22,32 +27,40 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5052:5052"
+#    ports:
+#    - "5051:5051"
+#    - "7072:7070"
     network_mode: "host"
+    restart: always
 
   node2:
     build:
       context: ./
+      network: host
       args:
         CONFIG: src/Lachain.Console/config2.json
         WALLET: src/Lachain.Console/wallet2.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5053:5053"
+#    ports:
+#    - "5052:5052"
+#    - "7073:7070"
     network_mode: "host"
+    restart: always
 
   node3:
     build:
       context: ./
+      network: host
       args:
         CONFIG: src/Lachain.Console/config3.json
         WALLET: src/Lachain.Console/wallet3.json
       dockerfile: Dockerfile
     stdin_open: true
     tty: true
-    ports:
-    - "5054:5054"
+#    ports:
+#    - "5053:5053"
+#    - "7074:7070"
     network_mode: "host"
+    restart: always

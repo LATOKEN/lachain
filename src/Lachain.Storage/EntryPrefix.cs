@@ -35,5 +35,11 @@
         /* consensus */
         ConsensusState = 0x0b01,
         KeyGenState = 0x0b02,
+
+        /* validator attendance */
+        ValidatorAttendanceState = 0x0c01,
+
+        /* local transactions */
+        LocalTransactionsState = 0x0d01,
     }
 }

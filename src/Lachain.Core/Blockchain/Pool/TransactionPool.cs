@@ -110,22 +110,34 @@ namespace Lachain.Core.Blockchain.Pool
         {
             if (receipt is null)
                 throw new ArgumentNullException(nameof(receipt));
+
             /* don't add to transaction pool transactions with the same hashes */
             if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
             /* verify transaction before adding */
+            if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                return OperatingError.InvalidNonce;
+
+            /* special case for system transactions */
+            if (receipt.Transaction.From.IsZero())
+            {
+                if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
+                    _poolRepository.AddTransaction(receipt);
+                return OperatingError.Ok;
+            }
+
             var result = _transactionManager.Verify(receipt);
             if (result != OperatingError.Ok)
                 return result;
             _transactionVerifier.VerifyTransaction(receipt);
-            if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
-                return OperatingError.InvalidNonce;
             /* put transaction to pool queue */
             _transactions[receipt.Hash] = receipt;
             _transactionsQueue.Add(receipt);
+
             /* write transaction to persistence storage */
             if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                 _poolRepository.AddTransaction(receipt);
+
             UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
             if (!_networkManager.IsReady)
                 return OperatingError.Ok;
@@ -258,7 +270,9 @@ namespace Lachain.Core.Blockchain.Pool
         public ulong GetNextNonceForAddress(UInt160 address)
         {
             var poolNonce = GetMaxNonceForAddress(address);
+            // Console.WriteLine($"poolNonce addr: {address.ToHex()} nonce: {poolNonce}");
             var stateNonce = _transactionManager.CalcNextTxNonce(address);
+            // Console.WriteLine($"stateNonce addr: {address.ToHex()} nonce: {stateNonce}");
             return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
         }
     }

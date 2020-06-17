@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -97,8 +98,9 @@ namespace Lachain.Console
                         EcdsaPublicKey = ecdsaPublicKeys[j],
                         ThresholdSignaturePublicKey = pubShares[j]
                     }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex()
+                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex(),
                 };
+                GenesisConfig.BlockReward = "5000000000000000000";
                 for (var j = 0; j < n; ++j)
                 {
                     genesis.Balances[addresses[j]] = "1000000";
@@ -108,9 +110,10 @@ namespace Lachain.Console
                     Hosts = new[] {"+"},
                     Port = 7070,
                 };
+                var walletPath = GetCommandLineArgument("wallet");
                 var vault = new VaultConfig
                 {
-                    Path = "wallet.json",
+                    Path = walletPath,
                     Password = "12345"
                     // EcdsaPrivateKey = ecdsaPrivateKeys[i],
                     // TpkePrivateKey = tpkeKeyGen.GetPrivKey(i).ToByteArray().ToHex(),
@@ -192,8 +195,27 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
-            var app = new Application();
+            
+            var configPath = GetCommandLineArgument("config");
+            var app = new Application(configPath);
             app.Start(args);
+        }
+
+        public static string GetCommandLineArgument(string name, string defaultValue = null)
+        {
+            defaultValue ??= name + ".json";
+            var value = defaultValue;
+            string[] arguments = Environment.GetCommandLineArgs();
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                if (arguments[i] == "--" + name && arguments.Length > i + 1)
+                {
+                    value = arguments[i + 1];
+                    System.Console.WriteLine($"{name} found {value}");
+                }
+            }
+
+            return value;
         }
     }
 }

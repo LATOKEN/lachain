@@ -6,7 +6,7 @@ namespace Lachain.Consensus.ReliableBroadcast
     {
         protected bool Equals(ReliableBroadcastId other)
         {
-            return AssociatedValidatorId == other.AssociatedValidatorId && Era == other.Era;
+            return SenderId == other.SenderId && Era == other.Era;
         }
 
         public bool Equals(IProtocolIdentifier other)
@@ -24,22 +24,22 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(AssociatedValidatorId, Era);
+            return HashCode.Combine(SenderId, Era);
         }
 
-        public int AssociatedValidatorId { get; }
+        public int SenderId { get; }
 
         public long Era { get; }
 
         public ReliableBroadcastId(int validator, int era)
         {
-            AssociatedValidatorId = validator;
+            SenderId = validator;
             Era = (long) era;
         }
 
         public override string ToString()
         {
-            return $"RBC (E={Era}, A={AssociatedValidatorId})";
+            return $"RBC (E={Era}, A={SenderId})";
         }
     }
 }

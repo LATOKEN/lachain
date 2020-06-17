@@ -1,6 +1,5 @@
 ﻿using System;
 using Lachain.Core.Blockchain.Error;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 using Lachain.Storage.State;

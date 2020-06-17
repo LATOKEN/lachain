@@ -9,6 +9,7 @@ using Lachain.Crypto.MCL.BLS12_381;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using TrustedKeyGen = Lachain.Crypto.ThresholdSignature.TrustedKeyGen;
 
 namespace Lachain.ConsensusTest
@@ -24,6 +25,12 @@ namespace Lachain.ConsensusTest
         private int F = 2; // 2
         private IPrivateConsensusKeySet[] _privateKeys;
         private IPublicConsensusKeySet _publicKeys;
+        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+
+        public CommonSubsetTest(IValidatorAttendanceRepository validatorAttendanceRepository)
+        {
+            _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
 
         private void SetUpAllHonest()
         {
@@ -41,7 +48,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
                 _privateKeys[i] = new PrivateConsensusKeySet(null, null, shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false, _validatorAttendanceRepository);
             }
 
             for (uint i = 0; i < N; ++i)

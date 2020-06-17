@@ -32,6 +32,7 @@ namespace Lachain.Core.Vault
             var config = configManager.GetConfig<VaultConfig>("vault");
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
+            
             _walletPath = config.Path;
             _walletPassword = config.Password;
             RestoreWallet(_walletPath, _walletPassword, out var keyPair);

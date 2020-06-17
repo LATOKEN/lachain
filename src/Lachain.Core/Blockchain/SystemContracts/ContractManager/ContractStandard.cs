@@ -5,5 +5,7 @@
         DeployContract,
         GovernanceContract,
         Lrc20,
+        StakingContract,
+        ReserveFundContract,
     }
 }
