@@ -1,32 +1,30 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
-using Lachain.Core.Blockchain.SystemContracts.Utils;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
-using Lachain.Crypto.VRF;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using LibVRF.Net;
 
 namespace Lachain.Core.ValidatorStatus
 {
     public class ValidatorStatusManager : IValidatorStatusManager
     {
-        private static readonly ILogger<ValidatorStatusManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorStatusManager>();
+        private static readonly ILogger<ValidatorStatusManager> Logger =
+            LoggerFactory.GetLoggerForClass<ValidatorStatusManager>();
+
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IStateManager _stateManager;
         private bool _withdrawTriggered;
@@ -38,7 +36,7 @@ namespace Lachain.Core.ValidatorStatus
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ISystemContractReader _systemContractReader;
         private UInt256? _sendingTxHash;
-        
+
         public ValidatorStatusManager(
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
@@ -64,11 +62,12 @@ namespace Lachain.Core.ValidatorStatus
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Start(bool isWithdrawTriggered)
         {
-            if (_started) {
+            if (_started)
+            {
                 Logger.LogWarning("Service already started");
                 return;
             }
-            
+
             _started = true;
             _withdrawTriggered = isWithdrawTriggered;
             new Thread(Run).Start();
@@ -86,17 +85,19 @@ namespace Lachain.Core.ValidatorStatus
 
                 while (!_withdrawTriggered)
                 {
-                    if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() || GetCurrentCycle() == passingCycle)
+                    if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
+                        GetCurrentCycle() == passingCycle)
                     {
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                         continue;
                     }
-                    
+
                     lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-                    
+
                     if (_sendingTxHash != null)
                     {
-                        if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) == null)
+                        if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) ==
+                            null)
                         {
                             Logger.LogInformation($"Transaction submitted, waiting for including in block");
                             Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
@@ -111,10 +112,10 @@ namespace Lachain.Core.ValidatorStatus
 
                     if (!isStaker)
                     {
-                    
                         var coverFeesAmount = new BigInteger(10) * BigInteger.Pow(10, 18);
                         // Logger.LogInformation($"Trying to become staker");
-                        var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
+                        var balance =
+                            _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
                         var isEnoughBalance = balance.ToWei() > StakingContract.TokenUnitsInRoll + coverFeesAmount;
                         if (isEnoughBalance)
                         {
@@ -123,11 +124,11 @@ namespace Lachain.Core.ValidatorStatus
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
                             continue;
                         }
-                        
+
                         Logger.LogInformation($"Not enough balance to become staker");
                         continue;
                     }
-                    
+
                     var requestCycle = _systemContractReader.GetWithdrawRequestCycle();
                     if (requestCycle != 0)
                     {
@@ -136,10 +137,11 @@ namespace Lachain.Core.ValidatorStatus
                         continue;
                     }
 
-                    if (_systemContractReader.IsAttendanceDetectionPhase() && _systemContractReader.IsPreviousValidator() && !_systemContractReader.IsCheckedIn())
+                    if (_systemContractReader.IsAttendanceDetectionPhase() &&
+                        _systemContractReader.IsPreviousValidator() && !_systemContractReader.IsCheckedIn())
                     {
-
-                        Logger.LogInformation($"The node is previous validator. Trying to submit attendance detection.");
+                        Logger.LogInformation(
+                            $"The node is previous validator. Trying to submit attendance detection.");
                         SubmitAttendanceDetection();
                         continue;
                     }
@@ -161,24 +163,26 @@ namespace Lachain.Core.ValidatorStatus
                     var (isWinner, proof) = GetVrfProof(stake);
                     if (isWinner)
                     {
-                        Logger.LogDebug($"The node won the VRF lottery. Submitting transaction to become the next cycle validator");
+                        Logger.LogDebug(
+                            $"The node won the VRF lottery. Submitting transaction to become the next cycle validator");
                         SubmitVrf(proof);
                         continue;
                     }
+
                     Logger.LogInformation($"The node didn't win the VRF lottery. Waiting for the next cycle.");
                     passingCycle = GetCurrentCycle();
                 }
-                
+
                 lastCheckedBlockHeight = 0;
                 passingCycle = -1;
-                
+
                 // Try to withdraw stake
                 while (!_systemContractReader.GetStake().IsZero())
                 {
-                    
                     if (_sendingTxHash != null)
                     {
-                        if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) == null)
+                        if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) ==
+                            null)
                         {
                             Logger.LogInformation($"Transaction submitted, waiting for including in block");
                             Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
@@ -187,20 +191,24 @@ namespace Lachain.Core.ValidatorStatus
 
                         _sendingTxHash = null;
                     }
-                    
+
                     // Logger.LogDebug($"Stake: {GetStake().ToMoney()}");
-                    if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() || GetCurrentCycle() == passingCycle)
+                    if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
+                        GetCurrentCycle() == passingCycle)
                     {
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                         continue;
                     }
+
                     Logger.LogWarning($"Trying to withdraw stake");
-                    
+
                     lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
 
-                    if (_systemContractReader.IsAttendanceDetectionPhase() && _systemContractReader.IsPreviousValidator() && !_systemContractReader.IsCheckedIn())
+                    if (_systemContractReader.IsAttendanceDetectionPhase() &&
+                        _systemContractReader.IsPreviousValidator() && !_systemContractReader.IsCheckedIn())
                     {
-                        Logger.LogInformation($"The node is previous validator. Trying to submit attendance detection.");
+                        Logger.LogInformation(
+                            $"The node is previous validator. Trying to submit attendance detection.");
                         SubmitAttendanceDetection();
                         continue;
                     }
@@ -214,6 +222,7 @@ namespace Lachain.Core.ValidatorStatus
                             passingCycle = GetCurrentCycle();
                             continue;
                         }
+
                         RequestStakeWithdrawal();
                         passingCycle = GetCurrentCycle();
                         Logger.LogWarning($"Submitted withdrawal stake request. Waiting for the next cycle.");
@@ -234,7 +243,8 @@ namespace Lachain.Core.ValidatorStatus
                     }
 
                     WithdrawStakeTx();
-                    Logger.LogWarning($"Stake withdrawal transaction submitted. Waiting for the next block to ensure withdrawal succeeded.");
+                    Logger.LogWarning(
+                        $"Stake withdrawal transaction submitted. Waiting for the next block to ensure withdrawal succeeded.");
                 }
 
                 _started = false;
@@ -249,42 +259,42 @@ namespace Lachain.Core.ValidatorStatus
 
         private void BecomeStaker(BigInteger stakeAmount)
         {
-                var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                    _systemContractReader.NodeAddress(),
-                    ContractRegisterer.StakingContract,
-                    Money.Zero,
-                    StakingInterface.MethodBecomeStaker,
-                    100,
-                    _systemContractReader.NodePublicKey(),
-                    (object) stakeAmount.ToUInt256()
-                );
-                
-                AddTxToPool(tx);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _systemContractReader.NodeAddress(),
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodBecomeStaker,
+                100,
+                _systemContractReader.NodePublicKey(),
+                (object) stakeAmount.ToUInt256()
+            );
+
+            AddTxToPool(tx);
         }
 
         private void SubmitVrf(byte[] proof)
         {
-                var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                    _systemContractReader.NodeAddress(),
-                    ContractRegisterer.StakingContract,
-                    Money.Zero,
-                    StakingInterface.MethodSubmitVrf,
-                    100,
-                    _systemContractReader.NodePublicKey(),
-                    (object) proof
-                );
-                
-                AddTxToPool(tx);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _systemContractReader.NodeAddress(),
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodSubmitVrf,
+                100,
+                _systemContractReader.NodePublicKey(),
+                (object) proof
+            );
+
+            AddTxToPool(tx);
         }
 
         private void SubmitAttendanceDetection()
         {
             var previousValidators = _systemContractReader.GetPreviousValidators();
-            
-            var publicKeys = new byte[previousValidators.Length][]; 
-            var attendances = new UInt256[previousValidators.Length]; 
+
+            var publicKeys = new byte[previousValidators.Length][];
+            var attendances = new UInt256[previousValidators.Length];
             var attendanceData = GetValidatorAttendance();
-            
+
             if (attendanceData == null)
             {
                 Logger.LogWarning("Attendance detection data didn't collected");
@@ -294,10 +304,13 @@ namespace Lachain.Core.ValidatorStatus
             for (var i = 0; i < previousValidators.Length; i++)
             {
                 var publicKey = previousValidators[i];
-                var previousCycle = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() / StakingContract.CycleDuration - 1;
-                attendances[i] = new BigInteger(attendanceData.GetAttendanceForCycle(publicKey, previousCycle)).ToUInt256();
+                var previousCycle = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() /
+                    StakingContract.CycleDuration - 1;
+                attendances[i] = new BigInteger(attendanceData.GetAttendanceForCycle(publicKey, previousCycle))
+                    .ToUInt256();
                 publicKeys[i] = publicKey;
             }
+
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
@@ -323,30 +336,30 @@ namespace Lachain.Core.ValidatorStatus
 
         private void RequestStakeWithdrawal()
         {
-                var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                    _systemContractReader.NodeAddress(),
-                    ContractRegisterer.StakingContract,
-                    Money.Zero,
-                    StakingInterface.MethodRequestStakeWithdrawal,
-                    100,
-                    _systemContractReader.NodePublicKey()
-                );
-                
-                AddTxToPool(tx);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _systemContractReader.NodeAddress(),
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodRequestStakeWithdrawal,
+                100,
+                _systemContractReader.NodePublicKey()
+            );
+
+            AddTxToPool(tx);
         }
 
         private void WithdrawStakeTx()
         {
-                var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                    _systemContractReader.NodeAddress(),
-                    ContractRegisterer.StakingContract,
-                    Money.Zero,
-                    StakingInterface.MethodWithdrawStake,
-                    100,
-                    _systemContractReader.NodePublicKey()
-                );
-                
-                AddTxToPool(tx);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _systemContractReader.NodeAddress(),
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodWithdrawStake,
+                100,
+                _systemContractReader.NodePublicKey()
+            );
+
+            AddTxToPool(tx);
         }
 
         private (bool, byte[]) GetVrfProof(BigInteger stake)
@@ -363,7 +376,6 @@ namespace Lachain.Core.ValidatorStatus
         {
             var stakerPublicKey = _systemContractReader.NodePublicKey();
             return _systemContractReader.IsNextValidator(stakerPublicKey);
-
         }
 
         private bool IsWithdrawalPhase()
@@ -385,12 +397,12 @@ namespace Lachain.Core.ValidatorStatus
             Logger.LogDebug("Withdrawing stake and stopping validation");
             _withdrawTriggered = true;
         }
-        
+
         public bool IsStarted()
         {
             return _started;
         }
-        
+
         public bool IsWithdrawTriggered()
         {
             return _withdrawTriggered;
@@ -403,7 +415,8 @@ namespace Lachain.Core.ValidatorStatus
             var cycle = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() / StakingContract.CycleDuration;
             var indexInCycle = _stateManager.CurrentSnapshot.Blocks.GetTotalBlockHeight() %
                                StakingContract.CycleDuration;
-            return ValidatorAttendance.FromBytes(bytes, cycle, indexInCycle >= StakingContract.AttendanceDetectionDuration);
+            return ValidatorAttendance.FromBytes(bytes, cycle,
+                indexInCycle >= StakingContract.AttendanceDetectionDuration);
         }
     }
 }

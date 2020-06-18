@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -15,11 +13,10 @@ using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
-using Lachain.Crypto.VRF;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
+using LibVRF.Net;
 using Nethereum.Util;
-using NetMQ;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
