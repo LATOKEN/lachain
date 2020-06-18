@@ -29,6 +29,9 @@ namespace Lachain.Core.Blockchain.Genesis
 
         [JsonProperty("blockReward")]
         public static string BlockReward;
+
+        [JsonProperty("basicGasPrice")]
+        public static string BasicGasPrice;
         
         public void ValidateOrThrow()
         {
@@ -38,7 +41,9 @@ namespace Lachain.Core.Blockchain.Genesis
             if (ThresholdEncryptionPublicKey is null)
                 throw new ArgumentException("Initial threshold encryption keyring is incomplete");
             if (BlockReward is null)
-                throw new ArgumentException("Initial block reward must be specified in genesis config");
+                throw new ArgumentException("Initial block reward must be specified in config");
+            if (BasicGasPrice is null)
+                throw new ArgumentException("Initial basic gas price must be specified in config");
         }
     }
 }

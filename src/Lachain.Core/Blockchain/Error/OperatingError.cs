@@ -25,5 +25,6 @@
         InsufficientBalance,
         InvalidInput,
         BlockGasOverflow,
+        Underpriced,
     }
 }

@@ -241,6 +241,17 @@ namespace Lachain.Core.Blockchain.Operations
                 var transaction = receipt.Transaction;
                 var snapshot = _stateManager.NewSnapshot();
 
+                var gasPriceCheck = _CheckTransactionGasPrice(transaction, snapshot);
+                if (gasPriceCheck != OperatingError.Ok)
+                {
+                    removeTransactions.Add(receipt);
+                    _stateManager.Rollback();
+                    Logger.LogWarning(
+                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): underpriced"
+                    );
+                    continue;
+                }
+
                 var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
                 if (gasLimitCheck != OperatingError.Ok)
                 {
@@ -338,16 +349,21 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        private OperatingError _CheckTransactionGasPrice(Transaction transaction, IBlockchainSnapshot snapshot)
+        {
+            return transaction.GasPrice >= snapshot.NetworkGasPrice || transaction.From.IsZero() ? OperatingError.Ok : OperatingError.Underpriced;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _TakeTransactionFee(
            TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
-            
-            /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
 
+            /* check available LA balance */
             var senderBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
             if (senderBalance < fee)
             {
@@ -463,7 +479,7 @@ namespace Lachain.Core.Blockchain.Operations
             }));
             snapshot.Validators.SetConsensusState(initialConsensusState);
             
-            // init system contracts storage 
+            // init system contracts storage
             var dummyStakerPub = new string('f', CryptoUtils.PublicKeyLength * 2).HexToBytes();
             snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, new BigInteger(6).ToUInt256().Buffer, dummyStakerPub);
             
@@ -472,6 +488,9 @@ namespace Lachain.Core.Blockchain.Operations
             
             var initalBlockReward = Money.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes();
             snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(3).ToUInt256().Buffer, initalBlockReward);
+            
+            var initalBasicGasPrice = Money.Parse(GenesisConfig.BasicGasPrice).ToUInt256().ToBytes();
+            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(8).ToUInt256().Buffer, initalBasicGasPrice);
             
             _stateManager.Approve();
             var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: false);

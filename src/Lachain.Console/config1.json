@@ -45,13 +45,15 @@
         "resolvableName": "localhost:5053"
       }
     ],
-    "blockReward": "5.000000000000000000"
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000"
   },
   "rpc": {
     "hosts": [
       "+"
     ],
-    "port": 7071
+    "port": 7071,
+    "apiKey": "slok9x8ybh"
   },
   "vault": {
     "path": "wallet.json",

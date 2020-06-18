@@ -161,13 +161,12 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var from = opts["from"].ToString().HexToBytes().ToUInt160();
             var to = opts["to"].ToString().HexToBytes().ToUInt160();
             var value = Money.Parse(opts["amount"].ToString());
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
-                from);
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
             var tx = new Transaction
             {
                 To = to,
                 From = from,
-                GasPrice = 100,
+                GasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 10000000,
                 Nonce = nonce,

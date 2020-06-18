@@ -9,13 +9,13 @@ using Google.Protobuf;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Transaction = Lachain.Proto.Transaction;
@@ -324,6 +324,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             gasUsed += result.GasUsed;
             
             return result.Status == ExecutionStatus.Ok ? gasUsed.ToHex() : "0x";
+        }
+
+        [JsonRpcMethod("eth_gasPrice")]
+        private string GetNetworkGasPrice()
+        {
+            
+            return _stateManager.CurrentSnapshot.NetworkGasPrice.ToHex(false);
         }
 
         public static JObject ToEthTxFormat(TransactionReceipt receipt, string? blockHash = null,
