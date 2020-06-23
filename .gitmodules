@@ -1,9 +1,6 @@
-[submodule "src/Lachain.Proto/proto"]
-	path = src/Lachain.Proto/proto
-	url = git@gitlab.nekotal.tech:lachain/lachainproto.git
 [submodule "wasm"]
 	path = wasm
-	url = git@gitlab.nekotal.tech:lachain/lachain-wasm-compiler.git
+	url = git@github.com:LAToken/dotnet-webassembly.git
 [submodule "src/Lachain.Proto/proto"]
 	path = src/Lachain.Proto/proto
-	url = git@gitlab.nekotal.tech:lachain/lachainproto.git
+	url = git@github.com:LAToken/lachainproto.git
