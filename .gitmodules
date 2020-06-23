@@ -1,6 +1,6 @@
 [submodule "wasm"]
 	path = wasm
-	url = git@github.com:LAToken/dotnet-webassembly.git
+	url = https://github.com/LAToken/dotnet-webassembly.git
 [submodule "src/Lachain.Proto/proto"]
 	path = src/Lachain.Proto/proto
-	url = git@github.com:LAToken/lachainproto.git
+	url = https://github.com/LAToken/lachainproto.git
