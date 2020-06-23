@@ -6,7 +6,6 @@ using Lachain.Logger;
 using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;

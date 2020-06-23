@@ -19,7 +19,7 @@
     <PackageReference Include="Nethereum.RLP" Version="3.7.1" />
     <PackageReference Include="Nethereum.Web3" Version="3.7.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="SimpleInjector" Version="5.0.0-beta2" />
+    <PackageReference Include="SimpleInjector" Version="5.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\wasm\WebAssembly\WebAssembly.csproj" />

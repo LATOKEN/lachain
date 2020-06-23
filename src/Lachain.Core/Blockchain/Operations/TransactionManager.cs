@@ -101,8 +101,8 @@ namespace Lachain.Core.Blockchain.Operations
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
             
-            if (canTransactionMissVerification)
-                return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
+            if (canTransactionMissVerification && acceptedTransaction.Signature.IsZero())
+                return OperatingError.Ok;
 
             var result = VerifySignature(acceptedTransaction);
             if (result != OperatingError.Ok)

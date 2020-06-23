@@ -30,7 +30,7 @@ namespace Lachain.Core.Blockchain.Genesis
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
 
             var fromAddress = UInt160Utils.Zero; // mint initial tokens from zero address
-            var balances = genesisConfig.Balances
+            var balances = genesisConfig!.Balances
                 .OrderBy(x => x.Key)
                 .ToArray();
             var genesisTransactions = balances.Select((t, i) => new Transaction

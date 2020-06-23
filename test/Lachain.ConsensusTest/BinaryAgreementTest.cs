@@ -24,12 +24,6 @@ namespace Lachain.ConsensusTest
         private IPrivateConsensusKeySet[] _privateKeys;
         private Random _rnd;
         private IPublicConsensusKeySet _publicKeys;
-        private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
-
-        public BinaryAgreementTest(IValidatorAttendanceRepository validatorAttendanceRepository)
-        {
-            _validatorAttendanceRepository = validatorAttendanceRepository;
-        }
 
         //        [SetUp]
         public void SetUp()
@@ -50,7 +44,7 @@ namespace Lachain.ConsensusTest
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
                 _privateKeys[i] = new PrivateConsensusKeySet(null, null, shares[i]);
-                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true, _validatorAttendanceRepository);
+                _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true, null);
             }
         }
 

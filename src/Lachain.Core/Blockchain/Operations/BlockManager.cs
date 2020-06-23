@@ -45,7 +45,9 @@ namespace Lachain.Core.Blockchain.Operations
             IMultisigVerifier multisigVerifier,
             IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexRepository,
-            IConfigManager configManager, ILocalTransactionRepository localTransactionRepository)
+            IConfigManager configManager, 
+            ILocalTransactionRepository localTransactionRepository
+        )
         {
             _transactionManager = transactionManager;
             _genesisBuilder = genesisBuilder;
@@ -110,8 +112,8 @@ namespace Lachain.Core.Blockchain.Operations
                     true,
                     out var gasUsed,
                     out _);
-                if (error != OperatingError.Ok)
-                    throw new InvalidOperationException($"Cannot assemble block, {error}");
+                // if (error != OperatingError.Ok)
+                //     throw new InvalidOperationException($"Cannot assemble block, {error}");
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 // Logger.LogDebug(
                 //     $"Execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
