@@ -1,0 +1,8 @@
+language: csharp
+mono: none
+solution: Lachain.sln
+dotnet: 3.1.103
+script:
+  - dotnet restore
+  #- dotnet test
+  - dotnet publish -p:Configuration=Release
