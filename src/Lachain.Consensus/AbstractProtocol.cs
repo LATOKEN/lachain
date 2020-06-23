@@ -8,6 +8,8 @@ namespace Lachain.Consensus
 {
     public abstract class AbstractProtocol : IConsensusProtocol
     {
+        private static readonly ILogger<AbstractProtocol> Logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+
         private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
         private readonly object _queueLock = new object();
         private readonly object _resultLock = new object();
@@ -19,9 +21,12 @@ namespace Lachain.Consensus
         protected readonly IPublicConsensusKeySet Wallet;
         protected int N => Wallet.N;
         protected int F => Wallet.F;
-        private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
 
-        protected AbstractProtocol(IPublicConsensusKeySet wallet, IProtocolIdentifier id, IConsensusBroadcaster broadcaster)
+        protected AbstractProtocol(
+            IPublicConsensusKeySet wallet,
+            IProtocolIdentifier id,
+            IConsensusBroadcaster broadcaster
+        )
         {
             _thread = new Thread(Start) {IsBackground = true};
             _thread.Start();
@@ -67,7 +72,7 @@ namespace Lachain.Consensus
             lock (_queueLock)
             {
                 if (Terminated) return;
-                // _logger.LogDebug($"Protocol {Id} is terminated");
+                Logger.LogTrace($"{Id}: protocol is terminated");
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
             }
@@ -97,7 +102,7 @@ namespace Lachain.Consensus
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"Exception occured while processing protocol message: {e}");
+                    Logger.LogError($"{Id}: exception occured while processing message: {e}");
                     Terminated = true;
                     break;
                 }

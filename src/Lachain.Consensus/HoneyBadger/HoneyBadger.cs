@@ -12,20 +12,18 @@ namespace Lachain.Consensus.HoneyBadger
 {
     public class HoneyBadger : AbstractProtocol
     {
+        private static readonly ILogger<HoneyBadger> Logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
+
         private readonly HoneyBadgerId _honeyBadgerId;
-        private ResultStatus _requested;
-        private readonly ILogger<HoneyBadger> _logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
-
         private readonly PrivateKey _privateKey;
-
         private readonly EncryptedShare?[] _receivedShares;
-        private IRawShare? _rawShare;
-        private EncryptedShare? _encryptedShare;
         private readonly IRawShare?[] _shares;
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
-        private ISet<IRawShare>? _result;
-
         private readonly bool[] _taken;
+        private ResultStatus _requested;
+        private IRawShare? _rawShare;
+        private EncryptedShare? _encryptedShare;
+        private ISet<IRawShare>? _result;
         private bool _takenSet;
 
         public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet,
@@ -67,7 +65,6 @@ namespace Lachain.Consensus.HoneyBadger
             {
                 var message = envelope.InternalMessage;
                 if (message is null) throw new ArgumentNullException();
-                // _logger.LogError($"Message received: {message.GetType()}");
                 switch (message)
                 {
                     case ProtocolRequest<HoneyBadgerId, IRawShare> honeyBadgerRequested:
@@ -97,17 +94,8 @@ namespace Lachain.Consensus.HoneyBadger
 
         private void CheckEncryption()
         {
-            if (_rawShare == null)
-            {
-                _logger.LogDebug("rawShare is null");
-                return;
-            }
-
-            if (_encryptedShare != null)
-            {
-                _logger.LogDebug("_encryptedShare is not null");
-                return;
-            }
+            if (_rawShare == null) return;
+            if (_encryptedShare != null) return;
             _encryptedShare = Wallet.TpkePublicKey.Encrypt(_rawShare);
             Broadcaster.InternalRequest(
                 new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId),
@@ -118,7 +106,7 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
-            // _logger.LogInformation($"Full result decrypted!");
+            Logger.LogTrace($"Full result decrypted!");
             _requested = ResultStatus.Sent;
             Broadcaster.InternalResponse(
                 new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
@@ -126,7 +114,7 @@ namespace Lachain.Consensus.HoneyBadger
 
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
-            // _logger.LogDebug($"Common subset finished {result.From}");
+            Logger.LogTrace($"Common subset finished {result.From}");
             foreach (var share in result.Result)
             {
                 var dec = _privateKey.Decrypt(share);
@@ -134,7 +122,6 @@ namespace Lachain.Consensus.HoneyBadger
                 _receivedShares[share.Id] = share;
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
-
                 Broadcaster.Broadcast(CreateDecryptedMessage(dec));
             }
 
@@ -166,53 +153,21 @@ namespace Lachain.Consensus.HoneyBadger
 
         private void CheckDecryptedShares(int id)
         {
-            if (!_takenSet)
-            {
-                // _logger.LogDebug("CheckDecryptedShares(): !_takenSet");
-                return;
-            }
-            if (!_taken[id]) {
-                // _logger.LogDebug("CheckDecryptedShares(): !_taken[id]");
-                return;
-            }
-
-            if (_decryptedShares[id].Count < F + 1)
-            {
-                // _logger.LogDebug("CheckDecryptedShares(): _decryptedShares[id].Count < F + 1");
-                return;
-            }
-
-            if (_shares[id] != null)
-            {
-                // _logger.LogDebug("CheckDecryptedShares(): _shares[id] != null");
-                return;
-            }
-
-            if (_receivedShares[id] is null)
-            {
-                // _logger.LogDebug("CheckDecryptedShares(): _receivedShares[id] is null");
-                return;
-            }
-
-            // _logger.LogInformation($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
-            _shares[id] = Wallet.TpkePublicKey.FullDecrypt(_receivedShares[id], _decryptedShares[id].ToList());
-
+            if (!_takenSet) return;
+            if (!_taken[id]) return;
+            if (_decryptedShares[id].Count < F + 1) return;
+            if (_shares[id] != null) return;
+            if (_receivedShares[id] is null) return;
+            Logger.LogTrace($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
+            _shares[id] = Wallet.TpkePublicKey.FullDecrypt(_receivedShares[id]!, _decryptedShares[id].ToList());
             CheckAllSharesDecrypted();
         }
 
         private void CheckAllSharesDecrypted()
         {
-            if (!_takenSet)
-            {
-                // _logger.LogDebug("CheckAllSharesDecrypted(): !_takenSet");
-                return;
-            }
+            if (!_takenSet) return;
+            if (_result != null) return;
 
-            if (_result != null)
-            {
-                // _logger.LogDebug("CheckAllSharesDecrypted(): _result != null");
-                return;
-            }
             if (_taken.Zip(_shares, (b, share) => b && share is null).Any(x => x)) return;
 
             _result = _taken.Zip(_shares, (b, share) => (b, share))

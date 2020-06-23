@@ -7,19 +7,62 @@ using Lachain.Crypto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Prng;
 using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.CryptoTest
 {
     public class CryptographyTest
     {
+        private static readonly byte[] TestString =
+            Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
+
         [Test]
         public void Test_KeccakTestVector()
         {
-            var message = Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
             Assert.AreEqual(
                 "0x45d3b367a6904e6e8d502ee04999a7c27647f91fa845d456525fd352ae3d7371",
-                message.KeccakBytes().ToHex()
+                TestString.KeccakBytes().ToHex()
+            );
+        }
+
+        [Test]
+        public void Test_RipemdTestVector()
+        {
+            Assert.AreEqual(
+                "0x9c1185a5c5e9fc54612808977ee8f548b2258d31",
+                Encoding.ASCII.GetBytes("").RipemdBytes().ToHex()
+            );
+            Assert.AreEqual(
+                "0x12a053384a9c0c88e405a06c27dcf49ada62eb2b",
+                TestString.RipemdBytes().ToHex()
+            );
+        }
+        
+        [Test]
+        public void Test_Sha256TestVector()
+        {
+            Assert.AreEqual(
+                "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                Encoding.ASCII.GetBytes("").Sha256Bytes().ToHex()
+            );
+            Assert.AreEqual(
+                "0x248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+                TestString.Sha256Bytes().ToHex()
+            );
+        }
+
+        [Test]
+        public void Test_KeccakPrngIsDeterministic()
+        {
+            var prng = new DigestRandomGenerator(new Sha3Digest());
+            prng.AddSeedMaterial(new byte[] {0xde, 0xad, 0xbe, 0xef});
+            var pseudoRandomBytes = new byte[32];
+            prng.NextBytes(pseudoRandomBytes);
+            Assert.AreEqual(
+                "0x4439ed265e4aa7290429a9823b320ccd69dd39128b6fd9a04532d8782f26d70b",
+                pseudoRandomBytes.ToHex()
             );
         }
 

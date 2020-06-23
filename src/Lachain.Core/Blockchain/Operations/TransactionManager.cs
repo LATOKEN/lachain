@@ -22,7 +22,6 @@ namespace Lachain.Core.Blockchain.Operations
             = new ConcurrentDictionary<UInt256, UInt256>();
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
-        public event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         public event EventHandler<TransactionReceipt>? OnTransactionFailed;
         public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
 
@@ -58,14 +57,14 @@ namespace Lachain.Core.Blockchain.Operations
             var cycle = block.Header.Index / StakingContract.CycleDuration;
 
             var lastTxInBlockIndex = block.TransactionHashes.Count - 1;
-            var canTransactionMissVerification = block.Header.Index == 0
-                                                 || cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration && (int) receipt.IndexInBlock ==
-                                                 lastTxInBlockIndex
-                                                 || indexInCycle == StakingContract.VrfSubmissionPhaseDuration && (int) receipt.IndexInBlock ==
-                                                 lastTxInBlockIndex
-                                                 || cycle > 0 && indexInCycle == 0 && (int) receipt.IndexInBlock ==
-                                                 lastTxInBlockIndex;
-            
+            var canTransactionMissVerification =
+                block.Header.Index == 0 ||
+                cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration &&
+                (int) receipt.IndexInBlock == lastTxInBlockIndex ||
+                indexInCycle == StakingContract.VrfSubmissionPhaseDuration &&
+                (int) receipt.IndexInBlock == lastTxInBlockIndex ||
+                cycle > 0 && indexInCycle == 0 && (int) receipt.IndexInBlock == lastTxInBlockIndex;
+
             var verifyError = VerifyInternal(receipt, canTransactionMissVerification);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
@@ -96,11 +95,12 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private OperatingError VerifyInternal(TransactionReceipt acceptedTransaction, bool canTransactionMissVerification)
+        private OperatingError VerifyInternal(TransactionReceipt acceptedTransaction,
+            bool canTransactionMissVerification)
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-            
+
             if (canTransactionMissVerification)
                 return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
 

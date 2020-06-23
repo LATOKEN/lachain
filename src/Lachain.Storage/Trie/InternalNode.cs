@@ -124,7 +124,7 @@ namespace Lachain.Storage.Trie
             newNode.ChildrenMask = node.ChildrenMask;
             newNode._children[pos] = value;
             newHashes = childrenHashes.ToList();
-            newHashes[pos] = valueHash;
+            newHashes[pos] = valueHash ?? throw new ArgumentNullException(nameof(valueHash));
             newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
             return newNode;
         }

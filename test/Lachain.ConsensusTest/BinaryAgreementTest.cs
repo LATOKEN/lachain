@@ -68,7 +68,7 @@ namespace Lachain.ConsensusTest
             SetUpAllHonest();
             _deliveryService.RepeatProbability = repeatProbability; // вероятность повтора индивидуального сообщения
             _deliveryService.Mode = mode; // порядок доставки сообщения
-            while (_deliveryService._mutedPlayers.Count < muteCnt) _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
+            while (_deliveryService.MutedPlayers.Count < muteCnt) _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
 
             var used = new BoolSet();
             for (var i = 0; i < N; ++i)
@@ -82,7 +82,7 @@ namespace Lachain.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                if (_deliveryService._mutedPlayers.Contains(i)) continue;
+                if (_deliveryService.MutedPlayers.Contains(i)) continue;
                 _broadcasts[i].WaitResult();
             }
 
@@ -92,7 +92,7 @@ namespace Lachain.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                if (_deliveryService._mutedPlayers.Contains(i)) continue;
+                if (_deliveryService.MutedPlayers.Contains(i)) continue;
 
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
@@ -102,7 +102,7 @@ namespace Lachain.ConsensusTest
             bool? res = null;
             for (var i = 0; i < N; ++i)
             {
-                if (_deliveryService._mutedPlayers.Contains(i)) continue;
+                if (_deliveryService.MutedPlayers.Contains(i)) continue;
                 var ans = _resultInterceptors[i].Result;
                 if (res == null)
                     res = ans;

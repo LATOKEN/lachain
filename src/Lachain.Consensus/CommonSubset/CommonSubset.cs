@@ -57,10 +57,6 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     case ProtocolRequest<CommonSubsetId, EncryptedShare> commonSubsetRequested:
                         HandleInputMessage(commonSubsetRequested);
-                        // Logger.LogDebug(
-                        //     "Thread {0} ID_ACS {1} HandleInputMessage() into ACS",
-                        //     Thread.CurrentThread.ManagedThreadId, GetMyId()
-                        // );
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> _:
                         Terminated = true;
@@ -83,10 +79,6 @@ namespace Lachain.Consensus.CommonSubset
             _requested = ResultStatus.Requested;
             Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                 (Id, new ReliableBroadcastId(GetMyId(), (int) _commonSubsetId.Era), request.Input));
-            // Logger.LogDebug(
-            //     "Thread {0} ID_ACS {1} create RBC from HandleInputMessage", Thread.CurrentThread.ManagedThreadId,
-            //     GetMyId()
-            // );
 
             for (var j = 0; j < N; ++j)
             {
@@ -94,10 +86,6 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     Broadcaster.InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(Id,
                         new ReliableBroadcastId(j, (int) _commonSubsetId.Era), null));
-                    // Logger.LogDebug(
-                    //     "Thread {0} ID_ACS {1} create RBC from HandleInputMessage",
-                    //     Thread.CurrentThread.ManagedThreadId, GetMyId()
-                    // );
                 }
             }
 
@@ -110,9 +98,9 @@ namespace Lachain.Consensus.CommonSubset
                 throw new NoNullAllowedException();
 
             var id = new BinaryAgreementId(_commonSubsetId.Era, j);
-            // Logger.LogDebug($"Sending input {_binaryAgreementInput[j]} to {id}");
             Broadcaster.InternalRequest(
-                new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j].Value));
+                new ProtocolRequest<BinaryAgreementId, bool>(Id, id, _binaryAgreementInput[j]!.Value)
+            );
         }
 
         private void HandleReliableBroadcast(ProtocolResult<ReliableBroadcastId, EncryptedShare> result)
@@ -121,7 +109,6 @@ namespace Lachain.Consensus.CommonSubset
                 return;
 
             var j = result.Id.SenderId;
-            // Logger.LogDebug($"Player {GetMyId()} at {_commonSubsetId}: {j}-th RBC completed.");
 
             _reliableBroadcastResult[j] = result.Result;
             if (_binaryAgreementInput[j] == null)
@@ -135,12 +122,9 @@ namespace Lachain.Consensus.CommonSubset
 
         private void HandleBinaryAgreementResult(ProtocolResult<BinaryAgreementId, bool> result)
         {
-            // Logger.LogDebug($"Received {result.From} result: {result.Result}");
             // todo check for double send of result
             ++_cntBinaryAgreementsCompleted;
             _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
-            // Logger.LogDebug(
-            // $"Player {GetMyId()} at {_commonSubsetId}: {result.Id.AssociatedValidatorId}-th BA completed.");
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= N - F)
             {

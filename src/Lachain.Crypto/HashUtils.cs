@@ -1,29 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Google.Protobuf;
 using Lachain.Crypto.Misc;
-using Org.BouncyCastle.Crypto.Digests;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Org.BouncyCastle.Crypto.Digests;
 
 namespace Lachain.Crypto
 {
     public static class HashUtils
     {
-        public static byte[] RipemdBytes(this IEnumerable<byte> message, int offset, int count)
+        public static byte[] RipemdBytes(this IEnumerable<byte> message)
         {
             var hash = new RipeMD160Digest();
-            hash.BlockUpdate(message.ToArray(), offset, count);
+            var messageArray = message as byte[] ?? message.ToArray();
+            hash.BlockUpdate(messageArray, 0, messageArray.Length);
             var result = new byte[20];
             hash.DoFinal(result, 0);
             return result;
-        }
-
-        public static byte[] RipemdBytes(this IEnumerable<byte> message)
-        {
-            var messageArray = message.ToArray();
-            return RipemdBytes(messageArray, 0, messageArray.Length);
         }
 
         public static UInt160 Ripemd(this IEnumerable<byte> buffer)

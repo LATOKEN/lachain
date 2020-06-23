@@ -23,7 +23,7 @@ namespace Lachain.ConsensusTest
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
             _wallets = new IPrivateConsensusKeySet[N];
 
-            _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
+            _publicKeys = new PublicConsensusKeySet(N, F, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < N; ++i)
             {
                 _wallets[i] = TestUtils.EmptyWallet(N, F);
@@ -49,7 +49,6 @@ namespace Lachain.ConsensusTest
         private IPrivateConsensusKeySet[] _wallets;
         private IPublicConsensusKeySet _publicKeys;
         private EncryptedShare _testShare;
-        private Random _rnd;
 
         private void SetUpAllHonest()
         {
@@ -101,7 +100,7 @@ namespace Lachain.ConsensusTest
             _deliveryService.Mode = mode;
             var rnd = new Random();
             var mutePlayers = new List<int>();
-            while (_deliveryService._mutedPlayers.Count < muteCnt)
+            while (_deliveryService.MutedPlayers.Count < muteCnt)
             {
                 var tmp = rnd.Next(0, N - 1);
                 _deliveryService.MutePlayer(tmp);
@@ -152,7 +151,7 @@ namespace Lachain.ConsensusTest
             _deliveryService.Mode = mode;
             var rnd = new Random();
             var mutePlayers = new List<int>();
-            while (_deliveryService._mutedPlayers.Count < muteCnt)
+            while (_deliveryService.MutedPlayers.Count < muteCnt)
             {
                 var tmp = rnd.Next(0, N - 1);
                 _deliveryService.MutePlayer(tmp);

@@ -47,7 +47,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return result.ReturnValue!;
         }
 
-        public UInt256 GetStake(UInt160 stakerAddress = null)
+        public UInt256 GetStake(UInt160? stakerAddress = null)
         {
             stakerAddress ??= _nodeAddress;
             var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
@@ -56,7 +56,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return invResult.ToUInt256();
         }
 
-        public UInt256 GetPenalty(UInt160 stakerAddress = null)
+        public UInt256 GetPenalty(UInt160? stakerAddress = null)
         {
             stakerAddress ??= _nodeAddress;
             var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetPenalty,
@@ -71,12 +71,12 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return invResult.ToUInt256();
         }
 
-        public byte[] GetVRFSeed()
+        public byte[] GetVrfSeed()
         {
             return ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
         }
 
-        public int GetWithdrawRequestCycle(UInt160 stakerAddress = null)
+        public int GetWithdrawRequestCycle(UInt160? stakerAddress = null)
         {
             stakerAddress ??= _nodeAddress;
             var res = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle,
@@ -86,7 +86,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
 
 
 
-        public bool IsNextValidator(byte[] stakerPublicKey = null)
+        public bool IsNextValidator(byte[]? stakerPublicKey = null)
         {
             stakerPublicKey ??= _nodePublicKey;
             if (IsVrfSubmissionPhase())
@@ -122,7 +122,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return blockInCycle >= StakingContract.VrfSubmissionPhaseDuration;
         }
         
-        public bool IsCheckedIn(byte[] stakerPublicKey = null)
+        public bool IsCheckedIn(byte[]? stakerPublicKey = null)
         {
             stakerPublicKey ??= _nodePublicKey;
             var isCheckedIn = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsCheckedInAttendanceDetection,
@@ -130,7 +130,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return !isCheckedIn.ToUInt256().IsZero();
         }
         
-        public bool IsPreviousValidator(byte[] stakerPublicKey = null)
+        public bool IsPreviousValidator(byte[]? stakerPublicKey = null)
         {
             stakerPublicKey ??= _nodePublicKey;
             var isPreviousValidator = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsPreviousValidator,
@@ -152,7 +152,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return validators;
         }
         
-        public bool IsAbleToBeValidator(UInt160 stakerAddress = null)
+        public bool IsAbleToBeValidator(UInt160? stakerAddress = null)
         {
             stakerAddress ??= _nodeAddress;
             var isAble = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsAbleToBeValidator,

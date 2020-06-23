@@ -24,7 +24,6 @@ namespace Lachain.Consensus.CommonCoin
             IConsensusBroadcaster broadcaster
         ) : base(wallet, coinId, broadcaster)
         {
-            // Logger.LogDebug($"Initializing ({coinId}) with private key share = {privateKeyShare.ToHex()}");
             _coinId = coinId ?? throw new ArgumentNullException(nameof(coinId));
             _thresholdSigner = new ThresholdSigner(
                 _coinId.ToBytes(), privateKeyShare, wallet.ThresholdSignaturePublicKeySet
@@ -37,7 +36,7 @@ namespace Lachain.Consensus.CommonCoin
             if (_result == null) return;
             if (_requested != ResultStatus.Requested) return;
             Broadcaster.InternalResponse(new ProtocolResult<CoinId, CoinResult>(_coinId, _result));
-            // _logger.LogDebug($"Player {GetMyId()}: made coin by {_coinId} and sent.");
+            Logger.LogTrace($"Player {GetMyId()}: made coin by {_coinId} and sent.");
             _requested = ResultStatus.Sent;
         }
 
@@ -57,7 +56,7 @@ namespace Lachain.Consensus.CommonCoin
                     message.Coin.Epoch != _coinId.Epoch)
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
 
-                // _logger.LogDebug($"Received share from {envelope.ValidatorIndex}");
+                Logger.LogTrace($"Received share from {envelope.ValidatorIndex}");
                 var signatureShare = Signature.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
                 {

@@ -17,6 +17,7 @@ namespace Lachain.Core.Blockchain.VM
         public ContractDecoder(byte[] input)
         {
             _binaryReaderStatic = new BinaryReader(new MemoryStream(input));
+            _binaryReaderDynamic = new BinaryReader(Stream.Null);
             _inputData = input;
         }
 
@@ -41,7 +42,7 @@ namespace Lachain.Core.Blockchain.VM
             result.AddRange(types.Select(type => type switch
             {
                 "uint256" => (object) DecodeUInt256(),
-                "uint256[]" => (object) DecodeUInt256List(),
+                "uint256[]" => DecodeUInt256List(),
                 "uint" => DecodeUInt256(),
                 "uint[]" => DecodeUInt256List(),
                 "address" => DecodeUInt160(),

@@ -18,17 +18,17 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using NLog.Fluent;
 
 namespace Lachain.Core.Consensus
 {
     public class BlockProducer : IBlockProducer
     {
-        private readonly ILogger<BlockProducer> _logger = LoggerFactory.GetLoggerForClass<BlockProducer>();
+        private static readonly ILogger<BlockProducer> Logger = LoggerFactory.GetLoggerForClass<BlockProducer>();
         private readonly ITransactionPool _transactionPool;
         private readonly IValidatorManager _validatorManager;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
-        private readonly ITransactionBuilder _transactionBuilder;
         private readonly IStateManager _stateManager;
         private const int BatchSize = 1000; // TODO: calculate batch size
 
@@ -37,8 +37,7 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager,
-            IStateManager stateManager,
-            ITransactionBuilder transactionBuilder
+            IStateManager stateManager
         )
         {
             _transactionPool = transactionPool;
@@ -46,7 +45,6 @@ namespace Lachain.Core.Consensus
             _blockSynchronizer = blockSynchronizer;
             _blockManager = blockManager;
             _stateManager = stateManager;
-            _transactionBuilder = transactionBuilder;
         }
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
@@ -64,7 +62,7 @@ namespace Lachain.Core.Consensus
             var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromDays(1)); // TODO: timeout?
             if (txsGot != txHashes.Count)
             {
-                _logger.LogError(
+                Logger.LogError(
                     $"Cannot retrieve all transactions in time, got only {txsGot} of {txHashes.Count}, aborting");
                 throw new InvalidOperationException(
                     $"Cannot retrieve all transactions in time, got only {txsGot} of {txHashes.Count}, aborting");
@@ -81,21 +79,21 @@ namespace Lachain.Core.Consensus
             {
                 var txToAdd = DistributeCycleRewardsAndPenaltiesTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
-                    _logger.LogDebug("DistributeCycleRewardsAndPenaltiesTxReceipt is already in txPool");
+                    Logger.LogDebug("DistributeCycleRewardsAndPenaltiesTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
-            } 
+            }
             else if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration)
             {
                 var txToAdd = FinishVrfLotteryTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
-                    _logger.LogDebug("FinishVrfLotteryTxReceipt is already in txPool");
+                    Logger.LogDebug("FinishVrfLotteryTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
             else if (cycle > 0 && indexInCycle == 0)
             {
                 var txToAdd = FinishCycleTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
-                    _logger.LogDebug("FinishCycleTxReceipt is already in txPool");
+                    Logger.LogDebug("FinishCycleTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
 
@@ -151,7 +149,6 @@ namespace Lachain.Core.Consensus
                     if (cycle > 0 && indexInCycle == 0 && i == txCount - 1)
                         return FinishCycleTxReceipt();
                     return _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException();
-                    
                 })
                 .OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
@@ -161,7 +158,7 @@ namespace Lachain.Core.Consensus
                 .WithMultisig(multiSig)
                 .Build(header.Nonce);
 
-            // _logger.LogInformation($"Block approved by consensus: {blockWithTransactions.Block.Hash.ToHex()}");
+            Logger.LogDebug($"Block approved by consensus: {blockWithTransactions.Block.Hash.ToHex()}");
             if (_blockManager.GetHeight() + 1 != header.Index)
             {
                 throw new InvalidOperationException(
@@ -173,11 +170,10 @@ namespace Lachain.Core.Consensus
                 blockWithTransactions.Block, blockWithTransactions.Transactions, commit: true,
                 checkStateHash: true);
 
-            if (result == OperatingError.Ok)
-                _logger.LogInformation($"Block mined: {blockWithTransactions.Block.Header.Index}. Total txs: {blockWithTransactions.Transactions.Count}");
-            else
-                _logger.LogError(
-                    $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}");
+            if (result != OperatingError.Ok)
+                Logger.LogError(
+                    $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}"
+                );
         }
 
         private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt()

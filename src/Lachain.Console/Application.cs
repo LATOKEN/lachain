@@ -58,13 +58,14 @@ namespace Lachain.Console
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
-            
+
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
             if (blockManager.TryBuildGenesisBlock())
                 System.Console.WriteLine("Generated genesis block");
 
-            var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
+            var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0)
+                               ?? throw new Exception("Genesis block was not persisted");
             System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.ToHex());
             System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
             System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
@@ -99,9 +100,9 @@ namespace Lachain.Console
             );
             System.Console.WriteLine("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockManager.GetHeight() + 1);
-            
+
             validatorStatusManager.Start(false);
-            
+
             // while (blockManager.GetHeight() < 10)
             // {
             //     Thread.Sleep(1_000);

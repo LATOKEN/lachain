@@ -364,7 +364,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private (bool, byte[]) GetVrfProof(BigInteger stake)
         {
-            var seed = _systemContractReader.GetVRFSeed();
+            var seed = _systemContractReader.GetVrfSeed();
             var rolls = stake / StakingContract.TokenUnitsInRoll;
             var totalRolls = _systemContractReader.GetTotalStake().ToBigInteger() / StakingContract.TokenUnitsInRoll;
             var (proof, value, j) = Vrf.Evaluate(_privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,

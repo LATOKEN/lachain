@@ -53,28 +53,26 @@ namespace Lachain.ConsensusTest
 
         public int ResultSet;
         public IProtocolIdentifier Id { get; } = new InvokerId();
-        
+
         private readonly object _queueLock = new object();
         private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
         public bool Terminated { get; private set; }
-        
+
         public void Terminate()
         {
             lock (_queueLock)
             {
                 if (Terminated) return;
-                // _logger.LogDebug($"Protocol {Id} is terminated");
+                _logger.LogTrace($"{Id}: Protocol is terminated");
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
             }
         }
 
-        //public bool Terminated => false;
-
         public void ReceiveMessage(MessageEnvelope message)
         {
             if (message.External || !(message.InternalMessage is ProtocolResult<TId, TResult> result)) return;
-            //Console.Error.WriteLine($"{Id}: got result from {result.From}");
+            _logger.LogTrace($"{Id}: got result from {result.From}");
             ResultSet++;
             Result = result.Result;
         }

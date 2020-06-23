@@ -17,9 +17,11 @@ namespace Lachain.Core.Network
 {
     public class BlockSynchronizer : IBlockSynchronizer
     {
+        private static readonly ILogger<BlockSynchronizer>
+            Logger = LoggerFactory.GetLoggerForClass<BlockSynchronizer>();
+
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly ILogger<BlockSynchronizer> _logger = LoggerFactory.GetLoggerForClass<BlockSynchronizer>();
         private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
@@ -78,13 +80,12 @@ namespace Lachain.Core.Network
             var persisted = 0u;
             foreach (var tx in transactions)
             {
-                // _logger.LogDebug($"HandleTransactionsFromPeer(): {tx.Hash.ToHex()} from: {tx.Transaction.From.ToHex()}");
-                // var error = _transactionManager.Verify(tx);
-                // if (error != OperatingError.Ok)
-                // {
-                //     _logger.LogWarning($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
-                //     continue;
-                // }
+                var error = _transactionManager.Verify(tx);
+                if (error != OperatingError.Ok)
+                {
+                    Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
+                    continue;
+                }
 
                 if (_transactionPool.Add(tx) == OperatingError.Ok)
                     persisted++;
@@ -119,15 +120,15 @@ namespace Lachain.Core.Network
             var txs = block.TransactionHashes
                 .Select(txHash => _transactionPool.GetByHash(txHash))
                 .Where(tx => !(tx is null))
+                .Select(tx => tx!)
                 .ToList();
 
             var error = _stateManager.SafeContext(() =>
             {
                 if (_blockManager.GetHeight() + 1 != block.Header.Index)
                 {
-                    // _logger.LogWarning($"We have Blockchain with heigh {_blockManager.GetHeight()}");
-                    // _logger.LogWarning($"But received {block.Header.Index}");
-                    _logger.LogWarning($"Received block {block.Header.Index}");
+                    Logger.LogTrace(
+                        $"We have Blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
                     return OperatingError.BlockAlreadyExists;
                 }
 
@@ -137,7 +138,7 @@ namespace Lachain.Core.Network
                 return;
             if (error != OperatingError.Ok)
             {
-                _logger.LogWarning(
+                Logger.LogWarning(
                     $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
                 return;
             }
@@ -203,7 +204,7 @@ namespace Lachain.Core.Network
                 .Where(entry => entry.Key.Node != null)
                 .ToArray();
             if (validatorPeers.Length == 0) return null;
-            
+
             return validatorPeers.Max(v => v.Value);
         }
 
@@ -256,7 +257,7 @@ namespace Lachain.Core.Network
                 catch (Exception e)
                 {
                     Console.Error.WriteLine(e);
-                    _logger.LogError(e.Message);
+                    Logger.LogError(e.Message);
                 }
             }, TaskCreationOptions.LongRunning);
         }

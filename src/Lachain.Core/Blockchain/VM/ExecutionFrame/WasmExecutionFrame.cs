@@ -89,6 +89,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
                 Console.Error.WriteLine(e);
                 return ExecutionStatus.JitCorruption;
             }
+
             return ExecutionStatus.Ok;
         }
 
@@ -101,9 +102,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         private static readonly ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>> ByteCodeCache
             = new ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>>();
 
-        internal static Instance<JitEntryPoint> CompileWasm(
-            UInt160 contract, byte[] buffer, ImportDictionary imports = null
-        )
+        internal static Instance<JitEntryPoint> CompileWasm(UInt160 contract, byte[] buffer, ImportDictionary imports)
         {
             if (ByteCodeCache.TryGetValue(contract, out var instance))
                 return instance();

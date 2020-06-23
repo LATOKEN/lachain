@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Numerics;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Error;
@@ -19,24 +20,25 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
 {
     public class FrontEndService : JsonRpcService
     {
+        private static readonly ILogger<FrontEndService> Logger = LoggerFactory.GetLoggerForClass<FrontEndService>();
+
         private readonly IStateManager _stateManager;
-        private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionPool _transactionPool;
         private readonly IPrivateWallet _privateWallet;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ISystemContractReader _systemContractReader;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ILocalTransactionRepository _localTransactionRepository;
-        private readonly ILogger<FrontEndService> _logger = LoggerFactory.GetLoggerForClass<FrontEndService>();
 
         public FrontEndService(
             IStateManager stateManager,
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
-            ISystemContractReader systemContractReader, 
-            ILocalTransactionRepository localTransactionRepository, 
-            IValidatorStatusManager validatorStatusManager, 
-            IPrivateWallet privateWallet, ITransactionBuilder transactionBuilder)
+            ISystemContractReader systemContractReader,
+            ILocalTransactionRepository localTransactionRepository,
+            IValidatorStatusManager validatorStatusManager,
+            IPrivateWallet privateWallet
+        )
         {
             _stateManager = stateManager;
             _transactionPool = transactionPool;
@@ -45,7 +47,6 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             _localTransactionRepository = localTransactionRepository;
             _validatorStatusManager = validatorStatusManager;
             _privateWallet = privateWallet;
-            _transactionBuilder = transactionBuilder;
         }
 
         [JsonRpcMethod("fe_getBalance")]
@@ -69,39 +70,43 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         }
 
         [JsonRpcMethod("fe_account")]
-        private JObject GetAccount(string address = null)
+        private JObject GetAccount(string? address = null)
         {
             address ??= _systemContractReader.NodeAddress().ToHex();
             var addressUint160 = address.HexToBytes().ToUInt160();
             var balance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
 
-            var stake = _systemContractReader.GetStake(addressUint160).ToMoney().ToWei() / StakingContract.TokenUnitsInRoll;
+            var stake = _systemContractReader.GetStake(addressUint160).ToMoney().ToWei() /
+                        StakingContract.TokenUnitsInRoll;
             var penalty = _systemContractReader.GetPenalty(addressUint160).ToMoney();
             var isCurrentValidator = _stateManager.CurrentSnapshot.Validators
-                .GetValidatorsPublicKeys().Any(pk => pk.Buffer.ToByteArray().SequenceEqual(_systemContractReader.NodePublicKey()));
+                .GetValidatorsPublicKeys().Any(pk =>
+                    pk.Buffer.ToByteArray().SequenceEqual(_systemContractReader.NodePublicKey()));
             var isNextValidator = _systemContractReader.IsNextValidator();
             var isPreviousValidator = _systemContractReader.IsPreviousValidator();
             var isAbleToBeValidator = _systemContractReader.IsAbleToBeValidator();
             var isStaker = !_systemContractReader.GetStake().IsZero();
             var isAbleToBeStaker = balance.ToWei() > StakingContract.TokenUnitsInRoll;
-            
+
             var isWalletLocked = _privateWallet.IsLocked();
-            
+
             var withdrawTriggered = _validatorStatusManager.IsWithdrawTriggered();
             var isValidatorStatusManagerActive = _validatorStatusManager.IsStarted();
             var withdrawRequestCycle = _systemContractReader.GetWithdrawRequestCycle();
-            
+
             string state;
             if (isValidatorStatusManagerActive && withdrawTriggered)
             {
                 if (isNextValidator)
                 {
                     state = "StakeReserved";
-                } else if (withdrawRequestCycle == 0)
+                }
+                else if (withdrawRequestCycle == 0)
                 {
                     state = "SubmittingWithdrawRequest";
-                }  else
+                }
+                else
                     state = "WaitingForTheNextCycleToWithdraw";
             }
             else if (isCurrentValidator)
@@ -115,7 +120,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             else if (isAbleToBeStaker)
                 state = "AbleToBeStaker";
             else state = "Newbie";
-            
+
             return new JObject
             {
                 ["address"] = address,
@@ -134,7 +139,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var attendanceDetectionPhase = _systemContractReader.IsAttendanceDetectionPhase();
             var vrfSubmissionPhase = _systemContractReader.IsVrfSubmissionPhase();
             var keyGenPhase = _systemContractReader.IsKeyGenPhase();
-           
+
             return new JObject
             {
                 ["AttendanceSubmissionPhase"] = attendanceDetectionPhase,
@@ -158,11 +163,14 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         [JsonRpcMethod("fe_sendTransaction")]
         private string SendTransaction(JObject opts)
         {
-            var from = opts["from"].ToString().HexToBytes().ToUInt160();
-            var to = opts["to"].ToString().HexToBytes().ToUInt160();
-            var value = Money.Parse(opts["amount"].ToString());
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
-                from);
+            var from = opts["from"]?.ToString().HexToBytes().ToUInt160() ??
+                       throw new Exception($"\"from\" {opts["from"]} is not valid");
+            var to = opts["to"]?.ToString().HexToBytes().ToUInt160() ??
+                     throw new Exception($"\"to\" {opts["from"]} is not valid");
+            var value = Money.Parse(opts["amount"]?.ToString() ??
+                                    throw new Exception($"\"amount\" {opts["amount"]} is not valid")
+            );
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var tx = new Transaction
             {
                 To = to,
@@ -173,16 +181,15 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 Nonce = nonce,
                 Value = value.ToUInt256()
             };
-            
+
             return AddTxToPool(tx);
         }
 
         [JsonRpcMethod("fe_transactions")]
         private JObject GetLocalTransactions(JObject opts)
         {
-            var address = opts["address"].ToString();
-            var limit = ulong.Parse(opts["count"].ToString());
-            
+            var limit = ulong.Parse(opts["count"]?.ToString());
+
             var results = new JArray();
             var txHashes = _localTransactionRepository.GetTransactionHashes(limit);
             foreach (var txHash in txHashes)
@@ -205,9 +212,10 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         [JsonRpcMethod("fe_pendingTransactions")]
         private JObject GetPendingTransactions(JObject opts)
         {
-            var address = opts["address"].ToString().HexToBytes().ToUInt160();
-            var limit = ulong.Parse(opts["count"].ToString());
-            
+            var address = opts["address"]?.ToString().HexToBytes().ToUInt160() ??
+                          throw new Exception($"\"address\" {opts["address"]} is not valid");
+            var limit = ulong.Parse(opts["count"]?.ToString());
+
             var results = new JArray();
             var poolTxs = _transactionPool.Transactions.Values;
             foreach (var tx in poolTxs)
@@ -217,7 +225,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                     results.Add(FormatTx(tx));
                     if (results.Count == (int) limit)
                         break;
-                }               
+                }
             }
 
             return new JObject
@@ -226,7 +234,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             };
         }
 
-        private static JObject FormatTx(TransactionReceipt receipt, Block block = null)
+        private static JObject FormatTx(TransactionReceipt receipt, Block? block = null)
         {
             return new JObject
             {
@@ -235,23 +243,28 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["from"] = receipt.Transaction.From.ToHex(),
                 ["to"] = receipt.Transaction.To.ToHex(),
                 ["amount"] = receipt.Transaction.Value.ToMoney().ToString(),
-                ["usedFee"] = block is null ? "0" : new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),
-                ["maxFee"] = new Money(new BigInteger(receipt.Transaction.GasLimit) * receipt.Transaction.GasPrice).ToString(),
+                ["usedFee"] = block is null
+                    ? "0"
+                    : new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),
+                ["maxFee"] = new Money(new BigInteger(receipt.Transaction.GasLimit) * receipt.Transaction.GasPrice)
+                    .ToString(),
                 ["nonce"] = receipt.Transaction.Nonce,
                 ["cycle"] = receipt.Block / StakingContract.CycleDuration,
-                ["blockHash"] = block is null ? "0x0000000000000000000000000000000000000000000000000000000000000000" : block.Hash.ToHex(),
+                ["blockHash"] = block is null
+                    ? "0x0000000000000000000000000000000000000000000000000000000000000000"
+                    : block.Hash.ToHex(),
                 ["payLoad"] = receipt.Transaction.Invocation.ToHex(),
                 ["timestamp"] = block?.Timestamp / 1000 ?? 0,
             };
         }
-        
+
         private string AddTxToPool(Transaction tx)
         {
             var wallet = _privateWallet.GetWalletInstance();
             if (wallet is null) return "0x0";
             var receipt = _transactionSigner.Sign(tx, wallet.EcdsaKeyPair);
             var result = _transactionPool.Add(receipt);
-            _logger.LogDebug(result == OperatingError.Ok
+            Logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"
                 : $"Cannot add tx to pool: {result}");
             return result == OperatingError.Ok ? receipt.Hash.ToHex() : "0x0";

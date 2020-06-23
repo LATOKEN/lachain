@@ -12,13 +12,14 @@ namespace Lachain.Core.CLI
 {
     public class ConsoleManager : IConsoleManager
     {
+        private static readonly ILogger<ConsoleManager> Logger = LoggerFactory.GetLoggerForClass<ConsoleManager>();
+
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
-        private readonly ILogger<ConsoleManager> _logger = LoggerFactory.GetLoggerForClass<ConsoleManager>();
         private IConsoleCommands? _consoleCommands;
 
         public bool IsWorking { get; set; }
@@ -65,7 +66,7 @@ namespace Lachain.Core.CLI
                     var result = theCommand.Invoke(_consoleCommands, new object[] {arguments.ToArray()});
                     if (result == null)
                     {
-                        _logger.LogError("Wrong arguments!\n");
+                        Logger.LogError("Wrong arguments!\n");
                         Console.Out.Write("null\n");
                         return;
                     }
@@ -75,13 +76,13 @@ namespace Lachain.Core.CLI
                 catch (Exception e)
                 {
                     Console.Error.WriteLine(e);
-                    _logger.LogError("Incorrect cli method call!\n");
+                    Logger.LogError("Incorrect cli method call!\n");
                 }
             }
             catch (Exception e)
             {
                 Console.Error.WriteLine(e);
-                _logger.LogError("Incorrect cli method call!\n");
+                Logger.LogError("Incorrect cli method call!\n");
             }
         }
 
@@ -100,7 +101,7 @@ namespace Lachain.Core.CLI
                 catch (Exception e)
                 {
                     Console.Error.WriteLine(e);
-                    _logger.LogError(e.Message);
+                    Logger.LogError(e.Message);
                 }
             }, TaskCreationOptions.LongRunning);
         }

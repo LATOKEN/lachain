@@ -10,13 +10,13 @@ namespace Lachain.Core.RPC.HTTP
     {
         private readonly ulong _startTs;
         private readonly IBlockSynchronizer _blockSynchronizer;
-        
+
         public NodeService(IBlockSynchronizer blockSynchronizer)
         {
             _blockSynchronizer = blockSynchronizer;
-            _startTs =  TimeUtils.CurrentTimeMillis();
+            _startTs = TimeUtils.CurrentTimeMillis();
         }
-        
+
         [JsonRpcMethod("getNodeStats")]
         private JObject GetNodeStats()
         {
@@ -29,7 +29,7 @@ namespace Lachain.Core.RPC.HTTP
                 ["max_memory"] = process.PeakWorkingSet64,
             };
         }
-        
+
         [JsonRpcMethod("net_peers")]
         private JArray GetConnectedPeers()
         {
@@ -40,33 +40,17 @@ namespace Lachain.Core.RPC.HTTP
             {
                 var peerJObject = new JObject
                 {
-                    ["publicKey"] = peer.PublicKey!.ToHex(), 
-                    ["host"] = peer.Host, 
-                    ["port"] = peer.Port, 
-                    ["protocol"] = peer.Protocol.ToString(), 
+                    ["publicKey"] = peer.PublicKey!.ToHex(),
+                    ["host"] = peer.Host,
+                    ["port"] = peer.Port,
+                    ["protocol"] = peer.Protocol.ToString(),
                 };
                 result.Add(peerJObject);
             }
 
-            // TODO: remove mock
-            if (peers.Length == 0)
-            {
-                for (var i = 0; i < 10; i++)
-                {
-                    var peerJObject = new JObject
-                    {
-                        ["publicKey"] = "1",
-                        ["host"] = "1",
-                        ["port"] = "1",
-                        ["protocol"] = "1",
-                    };
-                    result.Add(peerJObject);
-                }
-            }
-
             return result;
         }
-        
+
         [JsonRpcMethod("net_version")]
         private string GetNodeVersion()
         {

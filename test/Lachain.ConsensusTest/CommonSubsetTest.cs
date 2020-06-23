@@ -149,7 +149,7 @@ namespace Lachain.ConsensusTest
 
             for (var i = 0; i < N; ++i)
             {
-                if (_deliveryService._mutedPlayers.Contains(i)) continue;
+                if (_deliveryService.MutedPlayers.Contains(i)) continue;
                 _acs[i].WaitResult();
             }
 

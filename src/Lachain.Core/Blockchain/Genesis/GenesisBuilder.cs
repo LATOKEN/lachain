@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Config;
 using Lachain.Proto;
@@ -27,7 +28,8 @@ namespace Lachain.Core.Blockchain.Genesis
             if (_genesisBlock != null)
                 return _genesisBlock;
 
-            var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
+            var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis") ??
+                                throw new InvalidOperationException("No genesis config found");
 
             var fromAddress = UInt160Utils.Zero; // mint initial tokens from zero address
             var balances = genesisConfig.Balances

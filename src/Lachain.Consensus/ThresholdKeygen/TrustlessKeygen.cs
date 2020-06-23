@@ -115,7 +115,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             ));
             if (_keyGenStates[message.Proposer].Commitment is null)
                 throw new ArgumentException("Cannot handle value since there was no commitment yet");
-            if (!_keyGenStates[message.Proposer].Commitment.Evaluate(_myIdx + 1, sender + 1)
+            if (!_keyGenStates[message.Proposer].Commitment!.Evaluate(_myIdx + 1, sender + 1)
                 .Equals(G1.Generator * myValue)
             )
                 throw new ArgumentException("Decrypted value does not match commitment");
@@ -155,7 +155,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             {
                 var s = _keyGenStates[dealer];
                 if (s.ValueCount() <= 2 * Faulty) throw new Exception("Impossible"); // just in case
-                var rowZero = s.Commitment.Evaluate(0).ToArray();
+                var rowZero = s.Commitment!.Evaluate(0).ToArray();
                 foreach (var (x, i) in rowZero.WithIndex())
                     pubKeyPoly[i] += x;
                 secretKey += s.InterpolateValues();

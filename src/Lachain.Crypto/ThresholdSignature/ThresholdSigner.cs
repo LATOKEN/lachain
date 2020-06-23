@@ -8,7 +8,7 @@ namespace Lachain.Crypto.ThresholdSignature
 {
     public class ThresholdSigner : IThresholdSigner
     {
-        private readonly ILogger<ThresholdSigner> _logger = LoggerFactory.GetLoggerForClass<ThresholdSigner>();
+        private static readonly ILogger<ThresholdSigner> Logger = LoggerFactory.GetLoggerForClass<ThresholdSigner>();
         private readonly byte[] _dataToSign;
         private readonly PrivateKeyShare _privateKeyShare;
         private readonly PublicKeySet _publicKeySet;
@@ -41,20 +41,20 @@ namespace Lachain.Crypto.ThresholdSignature
             result = null;
             if (idx < 0 || idx >= _publicKeySet.Count)
             {
-                _logger.LogWarning($"Public key (?) is not recognized (index {idx})");
+                Logger.LogWarning($"Public key (?) is not recognized (index {idx})");
                 return false;
             }
 
             var pubKey = _publicKeySet[idx];
             if (_collectedShares[idx] != null)
             {
-                _logger.LogWarning($"Signature share {idx} input twice");
+                Logger.LogWarning($"Signature share {idx} input twice");
                 return false;
             }
 
             if (!IsShareValid(pubKey, sigShare))
             {
-                _logger.LogWarning($"Signature share {idx} is not valid: {sigShare.ToHex()}");
+                Logger.LogWarning($"Signature share {idx} is not valid: {sigShare.ToHex()}");
                 return false;
             }
 
@@ -64,7 +64,7 @@ namespace Lachain.Crypto.ThresholdSignature
                 return true;
             }
 
-            // _logger.LogDebug($"Collected signature share #{idx}: {sigShare.RawSignature.ToHex()}");
+            Logger.LogTrace($"Collected signature share #{idx}: {sigShare.RawSignature.ToHex()}");
             _collectedShares[idx] = sigShare;
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;

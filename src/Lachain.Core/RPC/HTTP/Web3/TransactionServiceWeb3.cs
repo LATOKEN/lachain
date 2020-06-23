@@ -9,7 +9,6 @@ using Google.Protobuf;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
@@ -24,12 +23,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class TransactionServiceWeb3 : JsonRpcService
     {
+        private static readonly ILogger<TransactionServiceWeb3> Logger = LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
+        
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
-        private readonly ILogger<TransactionServiceWeb3> _logger = LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
-
+        
         public TransactionServiceWeb3(
             IStateManager stateManager,
             ITransactionManager transactionManager,
@@ -191,9 +191,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_call")]
         private string Call(JObject opts, string? blockId)
         {
-            string from = (string)opts["from"];
-            string to = (string)opts["to"];
-            string data = (string)opts["data"];
+            var from = opts["from"]?.ToString() ?? throw new InvalidOperationException("\"from\" must be specified");
+            var to = opts["to"]?.ToString() ?? throw new InvalidOperationException("\"to\" must be specified");
+            var data = opts["data"]?.ToString();
             //string from, string to, string gas, string gasPrice, string value, string data
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 to.HexToUInt160());
@@ -276,7 +276,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             string? blockNumber = null,
             Block? block = null)
         {
-            // Console.WriteLine(receipt.ToJson());
             return new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),

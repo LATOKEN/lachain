@@ -33,7 +33,7 @@ namespace Lachain.Core.Vault
             var config = configManager.GetConfig<VaultConfig>("vault");
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
-            
+
             _walletPath = config.Path;
             _walletPassword = config.Password;
             _unlockEndTime = 0;
@@ -75,23 +75,23 @@ namespace Lachain.Core.Vault
         private void SaveWallet(string path, string password)
         {
             var wallet = new JsonWallet
-            {
-                EcdsaPrivateKey = EcdsaKeyPair.PrivateKey.ToHex(),
-                ThresholdSignatureKeys = new Dictionary<ulong, string>(
-                    _tsKeys.Select(p =>
-                        new System.Collections.Generic.KeyValuePair<ulong, string>(
-                            p.Key, p.Value.ToHex()
-                        )
-                    )
-                ),
-                TpkePrivateKeys = new Dictionary<ulong, string>(
+            (
+                EcdsaKeyPair.PrivateKey.ToHex(),
+                new Dictionary<ulong, string>(
                     _tpkeKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
                             p.Key, p.Value.ToHex()
                         )
                     )
+                ),
+                new Dictionary<ulong, string>(
+                    _tsKeys.Select(p =>
+                        new System.Collections.Generic.KeyValuePair<ulong, string>(
+                            p.Key, p.Value.ToHex()
+                        )
+                    )
                 )
-            };
+            );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(wallet));
             var key = Encoding.UTF8.GetBytes(password).KeccakBytes();
             var encryptedContent = Crypto.AesGcmEncrypt(key, json);
@@ -131,7 +131,7 @@ namespace Lachain.Core.Vault
 
         public bool IsLocked()
         {
-                return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() > _unlockEndTime;
+            return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() > _unlockEndTime;
         }
 
         public IPrivateWallet? GetWalletInstance()

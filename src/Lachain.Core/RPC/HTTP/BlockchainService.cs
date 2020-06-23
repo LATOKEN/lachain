@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Interface;
@@ -24,8 +25,8 @@ namespace Lachain.Core.RPC.HTTP
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             ITransactionPool transactionPool,
-            IStateManager stateManager, 
-            IBlockSynchronizer blockSynchronizer, 
+            IStateManager stateManager,
+            IBlockSynchronizer blockSynchronizer,
             ISystemContractReader systemContractReader
         )
         {
@@ -50,11 +51,12 @@ namespace Lachain.Core.RPC.HTTP
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             return block?.ToJson();
         }
-        
+
         [JsonRpcMethod("getTransactionsByBlockHash")]
         private JObject? GetTransactionsByBlockHash(string blockHash)
         {
-            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
+            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256()) ??
+                        throw new Exception($"No block with hash {blockHash}");
             var txs = block.TransactionHashes
                 .Select(hash => _transactionManager.GetByHash(hash)?.ToJson())
                 .ToList();
@@ -89,14 +91,16 @@ namespace Lachain.Core.RPC.HTTP
             var jArray = new JArray();
             for (var i = 0; i < txEvents; i++)
             {
-                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash, (uint) i);
+                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
+                    (uint) i);
                 if (ev is null)
                     continue;
                 jArray.Add(ev.ToJson());
             }
+
             return jArray;
         }
-        
+
         [JsonRpcMethod("getTransactionPool")]
         private JArray GetTransactionPool()
         {
@@ -106,10 +110,11 @@ namespace Lachain.Core.RPC.HTTP
             {
                 jArray.Add(txHash.ToHex());
             }
+
             return jArray;
         }
-        
-        
+
+
         [JsonRpcMethod("getTransactionPoolByHash")]
         private JObject? GetTransactionPoolByHash(string txHash)
         {
@@ -122,7 +127,7 @@ namespace Lachain.Core.RPC.HTTP
         {
             var current = _blockManager.GetHeight();
             var max = _blockSynchronizer.GetHighestBlock();
-            var isSyncing = !max.HasValue || max > current; 
+            var isSyncing = !max.HasValue || max > current;
             return new JObject
             {
                 ["syncing"] = false,

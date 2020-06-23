@@ -8,7 +8,6 @@ namespace Lachain.Core.Blockchain.Interface
 {
     public interface ITransactionManager
     {
-        event EventHandler<TransactionReceipt>? OnTransactionPersisted;
         event EventHandler<TransactionReceipt>? OnTransactionFailed;
         event EventHandler<TransactionReceipt>? OnTransactionExecuted;
         event EventHandler<InvocationContext>? OnSystemContractInvoked;

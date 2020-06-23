@@ -143,7 +143,6 @@ namespace Lachain.Networking
                     _clientWorkers.Remove(address);
                 }
             };
-            remotePeer.OnError += (worker, message) => { Console.Error.WriteLine("Error: " + message); };
             if (!(address.PublicKey is null) && _authorizedKeys.Keys.Contains(address.PublicKey))
                 return;
             remotePeer.Send(_messageFactory.HandshakeRequest(LocalNode));
@@ -225,7 +224,6 @@ namespace Lachain.Networking
         private void _HandleMessageUnsafe(NetworkMessage message)
         {
             var shouldWaitForHandshake = _authorizedKeys.Keys.Count < 3;
-            // _logger.LogDebug($"Message received. auth keys count: {_authorizedKeys.Keys.Count}");
             if (message.MessageCase != NetworkMessage.MessageOneofCase.HandshakeRequest &&
                 message.MessageCase != NetworkMessage.MessageOneofCase.HandshakeReply &&
                 shouldWaitForHandshake
@@ -300,12 +298,13 @@ namespace Lachain.Networking
             catch (Exception e)
             {
                 Logger.LogError($"Unable to parse protocol message: {e}");
-                Logger.LogError($"Original message bytes: {buffer.ToHex()}");
+                Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
             }
 
             if (message is null)
             {
-                Logger.LogError($"Unable to parse protocol message from {buffer.ToHex()}");
+                Logger.LogError("Unable to parse protocol message");
+                Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
                 return;
             }
 
@@ -363,8 +362,9 @@ namespace Lachain.Networking
 
         private void SendQueuedMessages(Node node)
         {
-            Logger.LogDebug(
-                $"Handshake with node {node.Address} with public key {node.PublicKey.ToHex()} is done, sending queued messages");
+            Logger.LogTrace(
+                $"Handshake with node {node.Address} with public key {node.PublicKey.ToHex()} is done, sending queued messages"
+            );
             var publicKey = node.PublicKey;
             var peer = GetPeerByPublicKey(publicKey) ??
                        throw new InvalidOperationException("Peer did handshake but is not longer available");
@@ -374,7 +374,9 @@ namespace Lachain.Networking
                 peer.Send(message);
             }
 
-            Logger.LogDebug($"Sent {messages.Count} queued messages to node {node.Address}");
+            Logger.LogTrace(
+                $"Sent {messages.Count} queued messages to node {node.Address}"
+            );
         }
 
         private void _ConnectWorker()

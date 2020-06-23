@@ -9,8 +9,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
     {
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly IPrivateWallet _privateWallet;
-        private readonly ILogger<TransactionServiceWeb3> _logger = LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
-        
+
+        private static readonly ILogger<TransactionServiceWeb3> Logger =
+            LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
+
         public ValidatorServiceWeb3(
             IValidatorStatusManager validatorStatusManager, IPrivateWallet privateWallet)
         {
@@ -22,8 +24,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string StartValidator()
         {
             if (_privateWallet.GetWalletInstance() is null) return "0x0";
-            
-            _logger.LogDebug("validator start command received");
+
+            Logger.LogDebug("validator start command received");
             if (!_validatorStatusManager.IsStarted())
             {
                 _validatorStatusManager.Start(false);
@@ -35,7 +37,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("validator_status")]
         private string GetValidatorStatus()
         {
-            
             return _validatorStatusManager.IsStarted() ? "0x1" : "0x0";
         }
 
@@ -43,8 +44,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string StopValidator()
         {
             if (_privateWallet.GetWalletInstance() is null) return "0x0";
-            
-            _logger.LogDebug("validator stop command received");
+
+            Logger.LogDebug("validator stop command received");
             _validatorStatusManager.WithdrawStakeAndStop();
             return "0x1";
         }

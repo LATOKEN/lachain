@@ -7,7 +7,6 @@ using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Consensus;
 using Lachain.Crypto;
 using Lachain.Networking;
@@ -19,13 +18,12 @@ namespace Lachain.Core.Network
 {
     public class MessageHandler : IMessageHandler
     {
-        private readonly ILogger<MessageHandler> _logger = LoggerFactory.GetLoggerForClass<MessageHandler>();
+        private static readonly ILogger<MessageHandler> Logger = LoggerFactory.GetLoggerForClass<MessageHandler>();
 
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
-        private readonly IValidatorManager _validatorManager;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         /*
@@ -39,7 +37,6 @@ namespace Lachain.Core.Network
             ITransactionPool transactionPool,
             IStateManager stateManager,
             IConsensusManager consensusManager,
-            IValidatorManager validatorManager,
             IBlockManager blockManager
         )
         {
@@ -47,7 +44,6 @@ namespace Lachain.Core.Network
             _transactionPool = transactionPool;
             _stateManager = stateManager;
             _consensusManager = consensusManager;
-            _validatorManager = validatorManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
         }
 
@@ -114,6 +110,7 @@ namespace Lachain.Core.Network
                 .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
                                   _transactionPool.GetByHash(txHash))
                 .Where(tx => tx != null)
+                .Select(tx => tx!)
                 .ToList();
 
             envelope.RemotePeer?.Send(envelope.MessageFactory?.GetTransactionsByHashesReply(txs) ??
@@ -132,13 +129,13 @@ namespace Lachain.Core.Network
         {
             try
             {
-                if (envelope.Signature is null ||
+                if (envelope.Signature is null || envelope.PublicKey is null ||
                     !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
                         envelope.PublicKey.EncodeCompressed())
                 )
                 {
                     throw new UnauthorizedAccessException(
-                        $"Message signed by validator {envelope.PublicKey.ToHex()}, but signature is not correct");
+                        $"Message signed by validator {envelope.PublicKey?.ToHex()}, but signature is not correct");
                 }
 
                 _consensusManager.Dispatch(message, envelope.PublicKey);
@@ -149,7 +146,7 @@ namespace Lachain.Core.Network
                         x => new List<Tuple<MessageEnvelope, ConsensusMessage>>())
                     .Add(new Tuple<MessageEnvelope, ConsensusMessage>(envelope, message));
 
-                _logger.LogWarning("Skipped message too far in future...");
+                Logger.LogTrace("Skipped message too far in future...");
             }
         }
     }

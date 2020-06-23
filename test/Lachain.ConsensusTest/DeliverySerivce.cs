@@ -12,7 +12,7 @@ namespace Lachain.ConsensusTest
         private readonly IDictionary<int, IConsensusBroadcaster> _broadcasters =
             new Dictionary<int, IConsensusBroadcaster>();
 
-        public readonly ISet<int> _mutedPlayers = new HashSet<int>();
+        public readonly ISet<int> MutedPlayers = new HashSet<int>();
 
         private readonly RandomSamplingQueue<Tuple<int, int, ConsensusMessage>> _queue =
             new RandomSamplingQueue<Tuple<int, int, ConsensusMessage>>();
@@ -20,7 +20,6 @@ namespace Lachain.ConsensusTest
         private readonly object _queueLock = new object();
 
         private readonly Thread _thread;
-        private bool _stopped;
 
         public DeliveryService()
         {
@@ -45,7 +44,7 @@ namespace Lachain.ConsensusTest
 
         public void MutePlayer(int index)
         {
-            _mutedPlayers.Add(index);
+            MutedPlayers.Add(index);
         }
 
         public void WaitFinish()
@@ -86,7 +85,7 @@ namespace Lachain.ConsensusTest
                         var index = tuple.Item2;
                         var message = tuple.Item3;
 
-                        if (_mutedPlayers.Contains(index)) continue;
+                        if (MutedPlayers.Contains(index)) continue;
 
                         try
                         {

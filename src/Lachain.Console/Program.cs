@@ -17,6 +17,16 @@ namespace Lachain.Console
 {
     internal class Config
     {
+        public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
+            StorageConfig storage)
+        {
+            Network = network;
+            Genesis = genesis;
+            Rpc = rpc;
+            Vault = vault;
+            Storage = storage;
+        }
+
         [JsonProperty("network")] public NetworkConfig Network { get; set; }
         [JsonProperty("genesis")] public GenesisConfig Genesis { get; set; }
         [JsonProperty("rpc")] public RpcConfig Rpc { get; set; }
@@ -32,7 +42,7 @@ namespace Lachain.Console
             // const int n = 4, f = 1;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
-            
+
             var sigKeyGen = new Crypto.ThresholdSignature.TrustedKeyGen(n, f);
             var privShares = sigKeyGen.GetPrivateShares().ToArray();
             var pubShares = sigKeyGen.GetPrivateShares()
@@ -83,7 +93,7 @@ namespace Lachain.Console
                     MaxPeers = 100,
                     ForceIPv6 = false
                 };
-                var genesis = new GenesisConfig
+                var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000")
                 {
                     Balances = new Dictionary<string, string>
                     {
@@ -91,19 +101,15 @@ namespace Lachain.Console
                             "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
                         }
                     },
-                    Validators = Enumerable.Range(0, n).Select(j => new GenesisConfig.ValidatorInfo
-                    {
-                        ResolvableName = ips[j],
-                        EcdsaPublicKey = ecdsaPublicKeys[j],
-                        ThresholdSignaturePublicKey = pubShares[j]
-                    }).ToList(),
-                    ThresholdEncryptionPublicKey = tpkePubKey.ToHex(),
+                    Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
+                        ecdsaPublicKeys[j], pubShares[j], ips[j]
+                    )).ToList()
                 };
-                GenesisConfig.BlockReward = "5.000000000000000000";
                 for (var j = 0; j < n; ++j)
                 {
                     genesis.Balances[addresses[j]] = "1000000";
                 }
+
                 var rpc = new RpcConfig
                 {
                     Hosts = new[] {"+"},
@@ -123,14 +129,7 @@ namespace Lachain.Console
                     Path = "ChainLachain",
                     Provider = "RocksDB",
                 };
-                var config = new Config
-                {
-                    Network = net,
-                    Genesis = genesis,
-                    Rpc = rpc,
-                    Vault = vault,
-                    Storage = storage,
-                };
+                var config = new Config(net, genesis, rpc, vault, storage);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
@@ -143,18 +142,11 @@ namespace Lachain.Console
 
         private static void GenWallet(string path, string ecdsaKey, string tpkeKey, string tsKey)
         {
-            var config = new JsonWallet
-            {
-                EcdsaPrivateKey = ecdsaKey,
-                ThresholdSignatureKeys = new Dictionary<ulong, string>
-                {
-                    {0, tsKey}
-                },
-                TpkePrivateKeys = new Dictionary<ulong, string>
-                {
-                    {0, tpkeKey}
-                }
-            };
+            var config = new JsonWallet(
+                ecdsaKey,
+                new Dictionary<ulong, string> {{0, tpkeKey}},
+                new Dictionary<ulong, string> {{0, tsKey}}
+            );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
             var passwordHash = Encoding.UTF8.GetBytes("12345").KeccakBytes();
             var crypto = CryptoProvider.GetCrypto();
@@ -193,13 +185,13 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
-            
+
             var configPath = GetCommandLineArgument("config");
             var app = new Application(configPath);
             app.Start(args);
         }
 
-        public static string GetCommandLineArgument(string name, string defaultValue = null)
+        public static string GetCommandLineArgument(string name, string? defaultValue = null)
         {
             defaultValue ??= name + ".json";
             var value = defaultValue;

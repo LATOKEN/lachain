@@ -12,7 +12,9 @@ namespace Lachain.Core.Blockchain.Operations
 {
     public class TransactionVerifier : ITransactionVerifier
     {
-        private readonly ILogger<TransactionVerifier> _logger = LoggerFactory.GetLoggerForClass<TransactionVerifier>();
+        private static readonly ILogger<TransactionVerifier> Logger =
+            LoggerFactory.GetLoggerForClass<TransactionVerifier>();
+
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         private readonly IDictionary<UInt160, ECDSAPublicKey> _publicKeyCache
@@ -111,7 +113,7 @@ namespace Lachain.Core.Blockchain.Operations
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Transaction verification failed: " + e);
+                    Logger.LogError("Transaction verification failed: " + e);
                 }
             }
         }

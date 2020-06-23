@@ -12,35 +12,35 @@ namespace Lachain.Networking.ZeroMQ
     public class ClientWorker : IRemotePeer
     {
         public delegate void OpenDelegate(ClientWorker clientWorker, string endpoint);
+
         public event OpenDelegate? OnOpen;
 
         public delegate void MessageDelegate(ClientWorker clientWorker, NetworkMessage message);
-        public event MessageDelegate? OnSent;
-        
-        public delegate void CloseDelegate(ClientWorker clientWorker, string endpoint);
-        public event CloseDelegate? OnClose;
 
-        public delegate void ErrorDelegate(ClientWorker clientWorker, string message);
-        public event ErrorDelegate? OnError;
+        public event MessageDelegate? OnSent;
+
+        public delegate void CloseDelegate(ClientWorker clientWorker, string endpoint);
+
+        public event CloseDelegate? OnClose;
 
         public bool IsConnected { get; set; }
         public bool IsKnown { get; set; }
         public PeerAddress Address { get; }
         public Node? Node { get; set; }
         public DateTime Connected { get; } = DateTime.Now;
-        
+
         public ClientWorker(PeerAddress peerAddress, Node? node)
         {
             Address = peerAddress;
             Node = node;
         }
-        
+
         private readonly Queue<NetworkMessage> _messageQueue
             = new Queue<NetworkMessage>();
-        
+
         private readonly object _queueNotEmpty = new object();
-        private readonly object _workerClosed = new object();        
-        
+        private readonly object _workerClosed = new object();
+
         public void Send(NetworkMessage message)
         {
             lock (_queueNotEmpty)
@@ -67,11 +67,13 @@ namespace Lachain.Networking.ZeroMQ
                             Monitor.Wait(_queueNotEmpty);
                         message = _messageQueue.Dequeue();
                     }
+
                     if (message is null)
                         continue;
                     if (socket.TrySendFrame(message.ToByteArray()))
                         OnSent?.Invoke(this, message);
                 }
+
                 socket.Disconnect(endpoint);
                 OnClose?.Invoke(this, endpoint);
                 lock (_workerClosed)
@@ -98,7 +100,7 @@ namespace Lachain.Networking.ZeroMQ
                 }
             }, TaskCreationOptions.LongRunning);
         }
-        
+
         public void Stop()
         {
             lock (_workerClosed)

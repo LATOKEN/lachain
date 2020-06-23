@@ -26,7 +26,8 @@ namespace Lachain.Core.Consensus
      */
     public class EraBroadcaster : IConsensusBroadcaster
     {
-        private readonly ILogger<EraBroadcaster> _logger = LoggerFactory.GetLoggerForClass<EraBroadcaster>();
+        private static readonly ILogger<EraBroadcaster> Logger = LoggerFactory.GetLoggerForClass<EraBroadcaster>();
+        
         private readonly IValidatorManager _validatorManager;
         private readonly long _era;
         private readonly IMessageDeliverer _messageDeliverer;
@@ -74,7 +75,7 @@ namespace Lachain.Core.Consensus
             message.Validator = new Validator {Era = _era};
             if (_terminated)
             {
-                // _logger.LogDebug($"Era {_era} is already finished, skipping Broadcast");
+                Logger.LogTrace($"Era {_era} is already finished, skipping Broadcast");
                 return;
             }
 
@@ -97,7 +98,7 @@ namespace Lachain.Core.Consensus
             message.Validator = new Validator {Era = _era};
             if (_terminated)
             {
-                // _logger.LogDebug($"Era {_era} is already finished, skipping SendToValidator");
+                Logger.LogTrace($"Era {_era} is already finished, skipping SendToValidator");
                 return;
             }
 
@@ -120,7 +121,7 @@ namespace Lachain.Core.Consensus
         {
             if (_terminated)
             {
-                // _logger.LogDebug($"Era {_era} is already finished, skipping Dispatch");
+                Logger.LogTrace($"Era {_era} is already finished, skipping Dispatch");
                 return;
             }
 
@@ -181,7 +182,7 @@ namespace Lachain.Core.Consensus
         {
             if (_terminated)
             {
-                // _logger.LogDebug($"Era {_era} is already finished, skipping InternalRequest");
+                Logger.LogTrace($"Era {_era} is already finished, skipping InternalRequest");
                 return;
             }
 
@@ -198,7 +199,7 @@ namespace Lachain.Core.Consensus
                 _callback[request.To] = request.From;
             }
 
-            // _logger.LogDebug($"Protocol {request.From} requested result from protocol {request.To}");
+            Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
             EnsureProtocol(request.To);
             
             if (_registry.TryGetValue(request.To, out var protocol))
@@ -208,10 +209,10 @@ namespace Lachain.Core.Consensus
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
-            // _logger.LogDebug($"Protocol {result.From} returned result");
+            Logger.LogTrace($"Protocol {result.From} returned result");
             if (_terminated)
             {
-                // _logger.LogDebug($"Era {_era} is already finished, skipping InternalResponse");
+                Logger.LogTrace($"Era {_era} is already finished, skipping InternalResponse");
                 return;
             }
 
@@ -219,15 +220,15 @@ namespace Lachain.Core.Consensus
             {
                 if (_registry[senderId] == null)
                 {
-                    _logger.LogWarning($"There is no protocol registered to get result from {senderId}");
+                    Logger.LogWarning($"There is no protocol registered to get result from {senderId}");
                 }
 
                 _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-                // _logger.LogDebug($"Result from protocol {result.From} delivered to {senderId}");
+                Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
             }
 
-            // _logger.LogDebug($"Result from protocol {result.From} delivered to itself");
             // message is also delivered to self
+            Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
             if (_registry.TryGetValue(result.From, out var protocol))
                 protocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
         }
@@ -260,10 +261,10 @@ namespace Lachain.Core.Consensus
         {
             ValidateId(id);
             if (_registry.TryGetValue(id, out var existingProtocol)) return existingProtocol;
-            // _logger.LogDebug($"Creating protocol {id} on demand");
+            Logger.LogTrace($"Creating protocol {id} on demand");
             if (_terminated)
             {
-                // _logger.LogWarning($"Protocol {id} not created since broadcaster is terminated");
+                Logger.LogTrace($"Protocol {id} not created since broadcaster is terminated");
                 return null;
             }
 

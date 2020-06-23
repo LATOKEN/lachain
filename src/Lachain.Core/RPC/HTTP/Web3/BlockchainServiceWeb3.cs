@@ -3,6 +3,7 @@ using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Logger;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
@@ -12,6 +13,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class BlockchainServiceWeb3 : JsonRpcService
     {
+        private static readonly ILogger<BlockchainServiceWeb3> Logger =
+            LoggerFactory.GetLoggerForClass<BlockchainServiceWeb3>();
+
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
@@ -33,7 +37,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private JObject? GetBlockByNumber(string blockHeight, bool fullTx)
         {
             var height = blockHeight.HexToUlong();
-            var block = _blockManager.GetByHeight(height);
+            var block = _blockManager.GetByHeight(height) ?? throw new InvalidOperationException("Block not found");
             ulong gasUsed = 0;
             JArray txs;
             {
@@ -41,6 +45,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 foreach (var txHash in block.TransactionHashes)
                 {
                     var nativeTx = _transactionManager.GetByHash(txHash);
+                    if (nativeTx is null)
+                    {
+                        Logger.LogWarning($"Block {height} has tx {txHash.ToHex()}, but there is no such tx");
+                        continue;
+                    }
+
                     gasUsed += nativeTx.GasUsed;
                     if (fullTx)
                     {
@@ -90,7 +100,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getTransactionsByBlockHash")]
         private JObject? GetTransactionsByBlockHash(string blockHash)
         {
-            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
+            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256()) ??
+                        throw new Exception($"No block with hash {blockHash}");
             var txs = block.TransactionHashes
                 .Select(hash => _transactionManager.GetByHash(hash)?.ToJson())
                 .ToList();
@@ -101,16 +112,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
-        private string GetBlockTransactionsCountByNumber(string blockHeight)
+        private string? GetBlockTransactionsCountByNumber(string blockHeight)
         {
             var number = blockHeight.HexToUlong();
             try
             {
-                var block = _blockManager.GetByHeight(number);
+                var block = _blockManager.GetByHeight(number) ?? throw new Exception();
                 var count = block.TransactionHashes.Count;
                 return $"0x{count:X}";
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }
