@@ -495,6 +495,13 @@ namespace Lachain.Core.Blockchain.Operations
                 initalBlockReward
             );
 
+            var initalBasicGasPrice = Money.Parse(genesisConfig.BasicGasPrice).ToUInt256().ToBytes();
+            snapshot.Storage.SetRawValue(
+                ContractRegisterer.GovernanceContract,
+                new BigInteger(8).ToUInt256().Buffer,
+                initalBasicGasPrice
+            );
+
             _stateManager.Approve();
             var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: false);
             if (error != OperatingError.Ok) throw new InvalidBlockException(error);
