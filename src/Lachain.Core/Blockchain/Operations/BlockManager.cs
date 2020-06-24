@@ -488,11 +488,11 @@ namespace Lachain.Core.Blockchain.Operations
             var initialVrfSeed = Encoding.ASCII.GetBytes("test");
             snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, new BigInteger(7).ToUInt256().Buffer, initialVrfSeed);
             
-            var initalBlockReward = Money.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes();
-            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(3).ToUInt256().Buffer, initalBlockReward);
+            var initialBlockReward = Money.Parse(GenesisConfig.BlockReward).ToUInt256().ToBytes();
+            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(3).ToUInt256().Buffer, initialBlockReward);
             
-            var initalBasicGasPrice = Money.Parse(GenesisConfig.BasicGasPrice).ToUInt256().ToBytes();
-            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(8).ToUInt256().Buffer, initalBasicGasPrice);
+            var initialBasicGasPrice = Money.Parse(GenesisConfig.BasicGasPrice).ToUInt256().ToBytes();
+            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(8).ToUInt256().Buffer, initialBasicGasPrice);
             
             _stateManager.Approve();
             var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: false);
