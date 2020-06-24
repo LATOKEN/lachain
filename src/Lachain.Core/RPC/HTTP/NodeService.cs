@@ -68,7 +68,7 @@ namespace Lachain.Core.RPC.HTTP
         }
         
         [JsonRpcMethod("net_version")]
-        private string GetNodeVersion()
+        public static string GetNodeVersion()
         {
             return "0.100.0";
         }
