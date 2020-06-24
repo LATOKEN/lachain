@@ -166,7 +166,14 @@ namespace Lachain.Console
 
         internal static void Main(string[] args)
         {
+            if (IsArgumentPassed("version"))
+            {
+                System.Console.WriteLine(NodeService.GetNodeVersion());
+                return;
+            }
+            
             Mcl.Init();
+            
             // GenWallet(
             //     "wallet.json", 
             //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 
@@ -197,12 +204,6 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
-
-            if (IsArgumentPassed("version"))
-            {
-                System.Console.WriteLine(NodeService.GetNodeVersion());
-                return;
-            }
 
             var configPath = GetCommandLineArgument("config");
             var app = new Application(configPath);

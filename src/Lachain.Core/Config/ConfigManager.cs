@@ -7,11 +7,13 @@ namespace Lachain.Core.Config
     public class ConfigManager : IConfigManager
     {
         private readonly IReadOnlyDictionary<string, object> _config;
+        public string ConfigPath { get; }
 
         public ConfigManager(string filePath)
         {
             var configLoader = new LocalConfigLoader(filePath);
             _config = configLoader.LoadConfig();
+            ConfigPath = filePath;
         }
 
         public T? GetConfig<T>(string name)

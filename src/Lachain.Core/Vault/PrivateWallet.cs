@@ -34,7 +34,10 @@ namespace Lachain.Core.Vault
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
             
-            _walletPath = config.Path;
+            _walletPath = Path.IsPathRooted(config.Path) || config.Path.StartsWith("~/") ? 
+                config.Path : 
+                Path.GetDirectoryName(configManager.ConfigPath) + Path.DirectorySeparatorChar + config.Path;
+            
             _walletPassword = config.Password;
             _unlockEndTime = 0;
             RestoreWallet(_walletPath, _walletPassword, out var keyPair);
