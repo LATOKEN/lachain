@@ -6,6 +6,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.RPC;
+using Lachain.Core.RPC.HTTP;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
@@ -93,7 +94,7 @@ namespace Lachain.Console
                     MaxPeers = 100,
                     ForceIPv6 = false
                 };
-                var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000")
+                var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
                     Balances = new Dictionary<string, string>
                     {
@@ -185,6 +186,11 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
+            if (IsArgumentPassed("version"))
+            {
+                System.Console.WriteLine(NodeService.GetNodeVersion());
+                return;
+            }
 
             var configPath = GetCommandLineArgument("config");
             var app = new Application(configPath);
@@ -201,11 +207,16 @@ namespace Lachain.Console
                 if (arguments[i] == "--" + name && arguments.Length > i + 1)
                 {
                     value = arguments[i + 1];
-                    System.Console.WriteLine($"{name} found {value}");
                 }
             }
 
             return value;
+        }
+
+        public static bool IsArgumentPassed(string name)
+        {
+            string[] arguments = Environment.GetCommandLineArgs();
+            return arguments.Any(arg => arg == "--" + name);
         }
     }
 }

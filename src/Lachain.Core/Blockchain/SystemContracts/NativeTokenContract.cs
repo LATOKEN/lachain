@@ -8,10 +8,7 @@ using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
-using Lachain.Core.Blockchain.SystemContracts.Utils;
-using Lachain.Crypto;
 using Lachain.Proto;
-using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -19,8 +16,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class NativeTokenContract : ISystemContract
     {
         private readonly InvocationContext _context;
-        private static readonly Func<byte[], byte[]> ToAddress = CryptoProvider.GetCrypto().ComputeAddress;
-        
+
         private readonly StorageMapping _allowance;
 
         public NativeTokenContract(InvocationContext context)

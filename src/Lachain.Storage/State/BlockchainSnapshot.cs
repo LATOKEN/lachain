@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Numerics;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -33,6 +34,18 @@ namespace Lachain.Storage.State
         public IBlockSnapshot Blocks { get; }
         public IEventSnapshot Events { get; }
         public IValidatorSnapshot Validators { get; }
+
+        public BigInteger NetworkGasPrice
+        {
+            get {
+                var stakers = Storage.GetRawValue(new BigInteger(3).ToUInt160(), new BigInteger(6).ToUInt256().Buffer);
+                var networkSize = stakers.Length / CryptoUtils.PublicKeyLength - 1;
+                if (networkSize == 0) networkSize = 1;
+                
+                var basicGasPrice = Storage.GetRawValue(new BigInteger(2).ToUInt160(), new BigInteger(8).ToUInt256().Buffer).ToUInt256().ToBigInteger();
+                return basicGasPrice / networkSize;
+            }
+        }
 
         public UInt256 StateHash
         {

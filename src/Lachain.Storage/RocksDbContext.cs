@@ -9,11 +9,10 @@ namespace Lachain.Storage
     {
         private readonly RocksDb _rocksDb;
 
-        public RocksDbContext()
+        public RocksDbContext(string path = "ChainLachain")
         {
             var options = new DbOptions().SetCreateIfMissing();
-            /* TODO: "yeah, fix me please" */
-            _rocksDb = RocksDb.Open(options, "ChainLachain");
+            _rocksDb = RocksDb.Open(options, path);
         }
 
         public byte[] Get(byte[] key)

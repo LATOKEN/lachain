@@ -170,12 +170,12 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var value = Money.Parse(opts["amount"]?.ToString() ??
                                     throw new Exception($"\"amount\" {opts["amount"]} is not valid")
             );
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            var nonce = _transactionPool.GetNextNonceForAddress(from);
             var tx = new Transaction
             {
                 To = to,
                 From = from,
-                GasPrice = 100,
+                GasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 10000000,
                 Nonce = nonce,

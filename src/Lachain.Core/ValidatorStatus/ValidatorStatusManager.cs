@@ -259,12 +259,11 @@ namespace Lachain.Core.ValidatorStatus
 
         private void BecomeStaker(BigInteger stakeAmount)
         {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+            var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodBecomeStaker,
-                100,
                 _systemContractReader.NodePublicKey(),
                 (object) stakeAmount.ToUInt256()
             );
@@ -274,12 +273,11 @@ namespace Lachain.Core.ValidatorStatus
 
         private void SubmitVrf(byte[] proof)
         {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+            var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodSubmitVrf,
-                100,
                 _systemContractReader.NodePublicKey(),
                 (object) proof
             );
@@ -311,12 +309,12 @@ namespace Lachain.Core.ValidatorStatus
                 publicKeys[i] = publicKey;
             }
 
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+            var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodSubmitAttendanceDetection,
-                100,
+                (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 publicKeys,
                 attendances
             );
@@ -336,12 +334,11 @@ namespace Lachain.Core.ValidatorStatus
 
         private void RequestStakeWithdrawal()
         {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+            var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodRequestStakeWithdrawal,
-                100,
                 _systemContractReader.NodePublicKey()
             );
 
@@ -350,12 +347,11 @@ namespace Lachain.Core.ValidatorStatus
 
         private void WithdrawStakeTx()
         {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+            var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodWithdrawStake,
-                100,
                 _systemContractReader.NodePublicKey()
             );
 

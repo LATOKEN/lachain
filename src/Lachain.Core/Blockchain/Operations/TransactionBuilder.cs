@@ -34,7 +34,7 @@ namespace Lachain.Core.Blockchain.Operations
                 To = to,
                 Value = value.ToUInt256(),
                 From = from,
-                GasPrice = _CalcEstimatedBlockFee(),
+                GasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 GasLimit = GasMetering.DefaultBlockGasLimit,
                 Nonce = nonce
             };
@@ -88,7 +88,7 @@ namespace Lachain.Core.Blockchain.Operations
                 To = contract,
                 Invocation = ByteString.CopyFrom(abi),
                 From = from,
-                GasPrice = _CalcEstimatedBlockFee(),
+                GasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 100000000,
                 Nonce = nonce,

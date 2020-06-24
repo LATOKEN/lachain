@@ -39,6 +39,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
         private readonly StorageVariable _collectedFees;
+        private readonly StorageVariable _gasPriceBase;
 
         public GovernanceContract(InvocationContext context)
         {
@@ -82,6 +83,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 ContractRegisterer.GovernanceContract,
                 context.Snapshot.Storage,
                 new BigInteger(7).ToUInt256()
+            );
+            _gasPriceBase = new StorageVariable(
+                ContractRegisterer.GovernanceContract,
+                context.Snapshot.Storage,
+                new BigInteger(8).ToUInt256()
             );
         }
 

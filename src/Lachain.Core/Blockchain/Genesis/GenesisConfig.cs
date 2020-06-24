@@ -7,10 +7,11 @@ namespace Lachain.Core.Blockchain.Genesis
 {
     public class GenesisConfig
     {
-        public GenesisConfig(string thresholdEncryptionPublicKey, string blockReward)
+        public GenesisConfig(string thresholdEncryptionPublicKey, string blockReward, string basicGasPrice)
         {
             ThresholdEncryptionPublicKey = thresholdEncryptionPublicKey;
             BlockReward = blockReward;
+            BasicGasPrice = basicGasPrice;
         }
 
         [JsonProperty("balances")]
@@ -22,6 +23,8 @@ namespace Lachain.Core.Blockchain.Genesis
 
         [JsonProperty("blockReward")] public string BlockReward;
 
+        [JsonProperty("basicGasPrice")] public string BasicGasPrice;
+
         public void ValidateOrThrow()
         {
             if (Validators.Count == 0)
@@ -32,7 +35,9 @@ namespace Lachain.Core.Blockchain.Genesis
             if (ThresholdEncryptionPublicKey is null)
                 throw new ArgumentException("Initial threshold encryption keyring is incomplete");
             if (BlockReward is null)
-                throw new ArgumentException("Initial block reward must be specified in genesis config");
+                throw new ArgumentException("Initial block reward must be specified in config");
+            if (BasicGasPrice is null)
+                throw new ArgumentException("Initial basic gas price must be specified in config");
         }
     }
 }

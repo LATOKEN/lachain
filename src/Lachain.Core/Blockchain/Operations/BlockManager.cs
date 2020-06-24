@@ -45,7 +45,9 @@ namespace Lachain.Core.Blockchain.Operations
             IMultisigVerifier multisigVerifier,
             IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexRepository,
-            IConfigManager configManager, ILocalTransactionRepository localTransactionRepository)
+            IConfigManager configManager,
+            ILocalTransactionRepository localTransactionRepository
+        )
         {
             _transactionManager = transactionManager;
             _genesisBuilder = genesisBuilder;
@@ -236,7 +238,7 @@ namespace Lachain.Core.Blockchain.Operations
                 /* try to find transaction by hash */
                 var receipt = currentTransactions[txHash];
                 receipt.Block = block.Header.Index;
-                receipt.GasUsed = GasMetering.DefaultTxTransferGasCost;
+                receipt.GasUsed = GasMetering.DefaultTxCost;
                 receipt.IndexInBlock = (ulong) i;
                 var transaction = receipt.Transaction;
                 var snapshot = _stateManager.NewSnapshot();
@@ -288,7 +290,7 @@ namespace Lachain.Core.Blockchain.Operations
                 }
 
                 /* try to take fee from sender */
-                result = _TakeTransactionFee((long) block.Header.Index, receipt, snapshot, out var fee);
+                result = _TakeTransactionFee(receipt, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
                     removeTransactions.Add(receipt);
@@ -338,15 +340,23 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        private OperatingError _CheckTransactionGasPrice(Transaction transaction, IBlockchainSnapshot snapshot)
+        {
+            return transaction.GasPrice >= snapshot.NetworkGasPrice || transaction.From.IsZero()
+                ? OperatingError.Ok
+                : OperatingError.Underpriced;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _TakeTransactionFee(
-            long block, TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
+            TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
-            /* check available LA balance */
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
 
+            /* check available LA balance */
             var senderBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
             if (senderBalance < fee)
             {
@@ -463,18 +473,27 @@ namespace Lachain.Core.Blockchain.Operations
             }));
             snapshot.Validators.SetConsensusState(initialConsensusState);
 
-            // init system contracts storage 
+            // init system contracts storage
             var dummyStakerPub = new string('f', CryptoUtils.PublicKeyLength * 2).HexToBytes();
-            snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, new BigInteger(6).ToUInt256().Buffer,
-                dummyStakerPub);
+            snapshot.Storage.SetRawValue(
+                ContractRegisterer.StakingContract,
+                new BigInteger(6).ToUInt256().Buffer,
+                dummyStakerPub
+            );
 
             var initialVrfSeed = Encoding.ASCII.GetBytes("test");
-            snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, new BigInteger(7).ToUInt256().Buffer,
-                initialVrfSeed);
+            snapshot.Storage.SetRawValue(
+                ContractRegisterer.StakingContract,
+                new BigInteger(7).ToUInt256().Buffer,
+                initialVrfSeed
+            );
 
             var initalBlockReward = Money.Parse(genesisConfig.BlockReward).ToUInt256().ToBytes();
-            snapshot.Storage.SetRawValue(ContractRegisterer.GovernanceContract, new BigInteger(3).ToUInt256().Buffer,
-                initalBlockReward);
+            snapshot.Storage.SetRawValue(
+                ContractRegisterer.GovernanceContract,
+                new BigInteger(3).ToUInt256().Buffer,
+                initalBlockReward
+            );
 
             _stateManager.Approve();
             var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: false);

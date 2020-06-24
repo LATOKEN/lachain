@@ -1,4 +1,5 @@
-﻿using Lachain.Proto;
+﻿using System.Numerics;
+using Lachain.Proto;
 
 namespace Lachain.Storage.State
 {
@@ -11,6 +12,8 @@ namespace Lachain.Storage.State
         IBlockSnapshot Blocks { get; }
         IEventSnapshot Events { get; }
         IValidatorSnapshot Validators { get; }
+
+        BigInteger NetworkGasPrice { get; }
 
         UInt256 StateHash { get; }
     }

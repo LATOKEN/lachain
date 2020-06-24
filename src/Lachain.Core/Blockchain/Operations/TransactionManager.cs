@@ -95,21 +95,23 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private OperatingError VerifyInternal(TransactionReceipt acceptedTransaction,
-            bool canTransactionMissVerification)
+        private OperatingError VerifyInternal(
+            TransactionReceipt acceptedTransaction,
+            bool canTransactionMissVerification
+        )
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-
-            if (canTransactionMissVerification)
-                return !acceptedTransaction.Signature.IsZero() ? OperatingError.InvalidSignature : OperatingError.Ok;
+            
+            if (canTransactionMissVerification && acceptedTransaction.Signature.IsZero())
+                return OperatingError.Ok;
 
             var result = VerifySignature(acceptedTransaction);
             if (result != OperatingError.Ok)
                 return result;
             var transaction = acceptedTransaction.Transaction;
             if (transaction.GasLimit > GasMetering.DefaultBlockGasLimit ||
-                transaction.GasLimit < GasMetering.DefaultTxTransferGasCost)
+                transaction.GasLimit < GasMetering.DefaultTxCost)
                 return OperatingError.InvalidGasLimit;
             /* verify transaction via persister */
             return _transactionExecuter.Verify(transaction);

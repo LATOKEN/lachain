@@ -32,11 +32,11 @@
     "port": 7070
   },
   "vault": {
-    "path": "wallet.json",
+    "path": "wallet2.json",
     "password": "12345"
   },
   "storage": {
     "provider": "RocksDB",
-    "path": "ChainTest"
+    "path": "ChainTest2"
   }
 }

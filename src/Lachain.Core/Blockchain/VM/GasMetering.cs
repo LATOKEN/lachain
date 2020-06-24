@@ -3,7 +3,7 @@
     public class GasMetering
     {
         public const ulong DefaultBlockGasLimit = 100_000_000_000;
-        public const ulong DefaultTxTransferGasCost = 3_000_000;
+        public const ulong DefaultTxCost = 3_000_000;
         public const ulong InputDataGasPerByte = 10;
         
         public const ulong CopyFromMemoryGasPerByte = 10;
