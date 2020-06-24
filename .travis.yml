@@ -6,6 +6,20 @@ script:
   - dotnet restore
   - dotnet build -c Release
   #- dotnet test
-  #- dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
-  #- dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime win-x64 src/Lachain.Console/Lachain.Console.csproj
-  #- dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime osx-x64 src/Lachain.Console/Lachain.Console.csproj
+  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
+  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime win-x64 src/Lachain.Console/Lachain.Console.csproj
+  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime osx-x64 src/Lachain.Console/Lachain.Console.csproj
+  - mkdir build
+  - cp src/Lachain.Console/bin/Release/netcoreapp3.1/linux-x64/publish/Lachain.Console build/
+  - cp src/Lachain.Console/bin/Release/netcoreapp3.1/osx-x64/publish/Lachain.Console build/
+  - cp src/Lachain.Console/bin/Release/netcoreapp3.1/win-x64/publish/Lachain.Console.exe build/
+
+deploy:
+  provider: releases
+  api_key: "$GITHUB_TOKEN"
+  file_glob: true
+  file: build/*
+  skip_cleanup: true
+  draft: true
+  on:
+    tags: true
