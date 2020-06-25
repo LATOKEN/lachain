@@ -30,7 +30,12 @@ namespace Lachain.Core.Vault
 
         public PrivateWallet(IConfigManager configManager)
         {
+            
             var config = configManager.GetConfig<VaultConfig>("vault");
+            
+            if (!(configManager.GetCliArg("wallet") is null))
+                config!.Path = configManager.GetCliArg("wallet");
+            
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
             

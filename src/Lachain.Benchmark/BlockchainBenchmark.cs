@@ -29,7 +29,7 @@ namespace Lachain.Benchmark
                 Directory.Delete("ChainLachain", true);
 
             var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json"));
+                new ConfigManager("config.json", (s, s1) => null));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();

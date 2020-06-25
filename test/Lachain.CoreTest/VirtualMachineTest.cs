@@ -19,7 +19,7 @@ namespace Lachain.CoreTest
         public VirtualMachineTest()
         {
             var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json"));
+                new ConfigManager("config.json", (s, s1) => null));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();

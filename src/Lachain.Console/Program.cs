@@ -112,7 +112,7 @@ namespace Lachain.Console
                     Hosts = new[] {"+"},
                     Port = 7070,
                 };
-                var walletPath = GetCommandLineArgument("wallet");
+                var walletPath = "wallet.json";
                 var vault = new VaultConfig
                 {
                     Path = walletPath,
@@ -204,29 +204,30 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
-
-            var configPath = GetCommandLineArgument("config");
-            var app = new Application(configPath);
+            var getArg = GetArgParser(args);
+            var configPath = getArg("config", "config.json");
+            var app = new Application(configPath, getArg);
             app.Start(args);
         }
 
-        public static string GetCommandLineArgument(string name, string defaultValue = null)
+        private static Func<string, string?, string?> GetArgParser(string[] args)
         {
-            defaultValue ??= name + ".json";
-            var value = defaultValue;
-            string[] arguments = Environment.GetCommandLineArgs();
-            for (var i = 0; i < arguments.Length; i++)
+            return (name, defaultValue) =>
             {
-                if (arguments[i] == "--" + name && arguments.Length > i + 1)
+                var value = defaultValue;
+                for (var i = 0; i < args.Length; i++)
                 {
-                    value = arguments[i + 1];
+                    if (args[i] == "--" + name && args.Length > i + 1)
+                    {
+                        value = args[i + 1];
+                    }
                 }
-            }
 
-            return value;
+                return value;
+            };
         }
 
-        public static bool IsArgumentPassed(string name)
+        private static bool IsArgumentPassed(string name)
         {
             string[] arguments = Environment.GetCommandLineArgs();
             return arguments.Any(arg => arg == "--" + name);

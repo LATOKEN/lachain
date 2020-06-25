@@ -14,12 +14,15 @@ namespace Lachain.Core.DI.Modules
             /* HMAT */
             containerBuilder.RegisterSingleton<IStorageManager, StorageManager>();
             containerBuilder.RegisterSingleton<IStateManager, StateManager>();
+            
             /* global */
-            var dbPath = configManager.GetConfig<StorageConfig>("storage")!.Path!;
-            dbPath = Path.IsPathRooted(dbPath) || dbPath.StartsWith("~/") ? 
-                dbPath : 
-                Path.GetDirectoryName(configManager.ConfigPath) + Path.DirectorySeparatorChar + dbPath;
-            var dbContext = new RocksDbContext(dbPath);
+            var dataDir = configManager.GetCliArg("datadir");
+            dataDir ??= configManager.GetConfig<StorageConfig>("storage")!.Path!;
+            dataDir = Path.IsPathRooted(dataDir) || dataDir.StartsWith("~/") ? 
+                dataDir : 
+                Path.GetDirectoryName(configManager.ConfigPath) + Path.DirectorySeparatorChar + dataDir;
+            
+            var dbContext = new RocksDbContext(dataDir);
             containerBuilder.Register<IRocksDbContext>(dbContext);
 
             /* repositories */
