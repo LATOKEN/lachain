@@ -7,6 +7,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 using MCL.BLS12_381.Net;
 
 namespace Lachain.ConsensusTest
@@ -14,106 +15,211 @@ namespace Lachain.ConsensusTest
     [TestFixture]
     public class ReliableBroadcastTest
     {
-        [SetUp]
-        public void SetUp()
+        private const int Sender = 0;
+        private readonly Random _rnd = new Random();
+
+        private DeliveryService _deliveryService = null!;
+        private IConsensusProtocol[] _broadcasts = null!;
+        private IConsensusBroadcaster[] _broadcasters = null!;
+        private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors = null!;
+        private IPrivateConsensusKeySet[] _wallets = null!;
+        private IPublicConsensusKeySet _publicKeys = null!;
+        private EncryptedShare _testShare = null!;
+
+        private void SetUp(int n, int f)
         {
             _deliveryService = new DeliveryService();
-            _broadcasts = new IConsensusProtocol[N];
-            _broadcasters = new IConsensusBroadcaster[N];
-            _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[N];
-            _wallets = new IPrivateConsensusKeySet[N];
-
-            _publicKeys = new PublicConsensusKeySet(N, F, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
-            for (var i = 0; i < N; ++i)
+            _broadcasts = new IConsensusProtocol[n];
+            _broadcasters = new IConsensusBroadcaster[n];
+            _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[n];
+            _wallets = new IPrivateConsensusKeySet[n];
+            _publicKeys = new PublicConsensusKeySet(n, f, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
+            for (var i = 0; i < n; ++i)
             {
-                _wallets[i] = TestUtils.EmptyWallet(N, F);
+                _wallets[i] = TestUtils.EmptyWallet(n, f);
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
 
-
             var bytes = Enumerable.Range(0, 32)
                 .Select(x => (byte) (x * x * 0))
                 .ToArray();
-            _testShare = new EncryptedShare(G1.Generator, bytes, G2.Generator, sender);
+            _testShare = new EncryptedShare(G1.Generator, bytes, G2.Generator, Sender);
         }
 
-        private const int N = 22;
-        private const int F = 7;
-        private readonly int sender = 0;
 
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors;
-        private IPrivateConsensusKeySet[] _wallets;
-        private IPublicConsensusKeySet _publicKeys;
-        private EncryptedShare _testShare;
-
-        private void SetUpAllHonest()
+        private void SetUpAllHonest(int n, int f)
         {
-            for (uint i = 0; i < N; ++i)
+            SetUp(n, f);
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i] =
-                    new ReliableBroadcast(new ReliableBroadcastId(sender, 0), _publicKeys, _broadcasters[i]);
+                    new ReliableBroadcast(new ReliableBroadcastId(Sender, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
 
-        private void SetUpAllHonestNSenders()
+        private void SetUpAllHonestNSenders(int n, int f)
         {
-            for (uint i = 0; i < N; ++i)
+            SetUp(n, f);
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i] =
-                    new ReliableBroadcast(new ReliableBroadcastId((int) i, 0), _publicKeys, _broadcasters[i]);
+                    new ReliableBroadcast(new ReliableBroadcastId(i, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
 
-        private void SetupSomeSilent(List<int> silentID)
+        private void SetupSomeSilent(int n, int f, ICollection<int> silentId)
         {
-            var random = new Random();
+            SetUp(n, f);
             var cnt = 0;
-            while (cnt < F)
+            while (cnt < f)
             {
-                var x = random.Next() % N;
+                var x = _rnd.Next(n);
                 if (_broadcasts[x] != null) continue;
                 _broadcasts[x] = new SilentProtocol<ReliableBroadcastId>(new ReliableBroadcastId(0, 0));
-                silentID.Add(x);
+                silentId.Add(x);
                 ++cnt;
             }
 
-            for (uint i = 0; i < N; ++i)
+            for (uint i = 0; i < n; ++i)
             {
-                if (_broadcasts[i] == null)
-                    _broadcasts[i] =
-                        new ReliableBroadcast(new ReliableBroadcastId(sender, 0), _publicKeys, _broadcasters[i]);
+                _broadcasts[i] ??=
+                    new ReliableBroadcast(new ReliableBroadcastId(Sender, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
 
-        public void RunSetUpNSendersSomeDelay(DeliveryServiceMode mode = DeliveryServiceMode.TAKE_RANDOM,
-            int muteCnt = 0, double repeatProbability = .0)
+        private void RunNSenders(
+            int n, int f,
+            DeliveryServiceMode mode = DeliveryServiceMode.TAKE_RANDOM,
+            double repeatProbability = .0
+        )
         {
-            SetUpAllHonestNSenders();
+            SetUpAllHonestNSenders(n, f);
             _deliveryService.RepeatProbability = repeatProbability;
             _deliveryService.Mode = mode;
             var rnd = new Random();
             var mutePlayers = new List<int>();
-            while (_deliveryService.MutedPlayers.Count < muteCnt)
+            while (_deliveryService.MutedPlayers.Count < f)
             {
-                var tmp = rnd.Next(0, N - 1);
+                var tmp = rnd.Next(0, n);
                 _deliveryService.MutePlayer(tmp);
                 mutePlayers.Add(tmp);
             }
 
-
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
                     (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
 
-                for (var j = 0; j < N; ++j)
+                for (var j = 0; j < n; ++j)
+                {
+                    if (j == i) continue;
+                    _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
+                        (_resultInterceptors[i].Id, new ReliableBroadcastId(j, 0), null));
+                }
+            }
+
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (!mutePlayers.Contains(i))
+                    _broadcasts[i].WaitFinish();
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (!mutePlayers.Contains(i))
+                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (!mutePlayers.Contains(i))
+                    Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
+            }
+        }
+
+        public void RunOneSender(
+            int n, int f,
+            DeliveryServiceMode mode = DeliveryServiceMode.TAKE_RANDOM,
+            double repeatProbability = .0
+        )
+        {
+            SetUpAllHonest(n, f);
+            _deliveryService.RepeatProbability = repeatProbability;
+            _deliveryService.Mode = mode;
+            var rnd = new Random();
+            var mutePlayers = new List<int>();
+            while (_deliveryService.MutedPlayers.Count < f)
+            {
+                var tmp = rnd.Next(n);
+                _deliveryService.MutePlayer(tmp);
+                mutePlayers.Add(tmp);
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as ReliableBroadcastId)!,
+                    i == Sender ? _testShare : null
+                ));
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (!mutePlayers.Contains(i))
+                    _broadcasts[i].WaitFinish();
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (!mutePlayers.Contains(i))
+                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (!mutePlayers.Contains(i))
+                    Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+            }
+        }
+
+        [Test]
+        public void TestOneSender_7_0()
+        {
+            const int n = 7;
+            SetUpAllHonest(n, 0);
+            for (var i = 0; i < n; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as ReliableBroadcastId)!,
+                    i == Sender ? _testShare : null
+                ));
+            }
+
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i)
+            {
+                Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+            }
+
+            for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
+        }
+
+        [Test]
+        public void TestNSenders_7_0()
+        {
+            const int n = 7;
+            SetUpAllHonestNSenders(n, 0);
+            for (var i = 0; i < n; ++i)
+            {
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
+                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
+
+                for (var j = 0; j < n; ++j)
                 {
                     if (j != i)
                     {
@@ -123,191 +229,93 @@ namespace Lachain.ConsensusTest
                 }
             }
 
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (!mutePlayers.Contains(i))
-                    _broadcasts[i].WaitFinish();
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (!mutePlayers.Contains(i))
-                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (!mutePlayers.Contains(i))
-                    Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-            }
-        }
-
-        public void RunSetUpSomeDelay(DeliveryServiceMode mode = DeliveryServiceMode.TAKE_RANDOM, int muteCnt = 0,
-            double repeatProbability = .0)
-        {
-            SetUpAllHonest();
-            _deliveryService.RepeatProbability = repeatProbability;
-            _deliveryService.Mode = mode;
-            var rnd = new Random();
-            var mutePlayers = new List<int>();
-            while (_deliveryService.MutedPlayers.Count < muteCnt)
-            {
-                var tmp = rnd.Next(0, N - 1);
-                _deliveryService.MutePlayer(tmp);
-                mutePlayers.Add(tmp);
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? _testShare : null
-                ));
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (!mutePlayers.Contains(i))
-                    _broadcasts[i].WaitFinish();
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (!mutePlayers.Contains(i))
-                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-            }
-
-            for (var i = 0; i < N; ++i)
-            {
-                if (!mutePlayers.Contains(i))
-                    Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-            }
-        }
-
-        [Test]
-        public void RunSetUpHonestOneSender()
-        {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? _testShare : null
-                ));
-            }
-
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i)
             {
                 Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
             }
 
-            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+            for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
 
         [Test]
-        public void RunSetUpHonestNSenders()
+        public void TestSomeSilent_7_2()
         {
-            SetUpAllHonestNSenders();
-            for (var i = 0; i < N; ++i)
+            const int n = 7, f = 2;
+            var silentId = new List<int>();
+            SetupSomeSilent(n, f, silentId);
+            for (var i = 0; i < n; ++i)
             {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
-                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
-
-                for (var j = 0; j < N; ++j)
-                {
-                    if (j != i)
-                    {
-                        _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
-                            (_resultInterceptors[i].Id, new ReliableBroadcastId(j, 0), null));
-                    }
-                }
-            }
-
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
-            for (var i = 0; i < N; ++i)
-            {
-                Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
-            }
-
-            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-        }
-
-        [Test]
-        [Repeat(1)]
-        public void RunSomeSilent()
-        {
-            var SilentID = new List<int>();
-            SetupSomeSilent(SilentID);
-            for (var i = 0; i < N; ++i)
-            {
-                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as ReliableBroadcastId, i == sender ? _testShare : null
+                _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as ReliableBroadcastId)!,
+                    i == Sender ? _testShare : null
                 ));
             }
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
-
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i)
             {
                 // Check true share only for NOT silent players
-                if (!SilentID.Contains(i))
+                if (!silentId.Contains(i))
                     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
             }
 
-            for (var i = 0; i < N; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+            for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
         }
 
 
-        private const int count = 5;
+        [Test]
+        public void TestNSenders_TakeFirst_7_2()
+        {
+            const int n = 7, f = 2;
+            RunNSenders(n, f, DeliveryServiceMode.TAKE_FIRST);
+        }
+
+
+        [Test]
+        public void TestNSenders_TakeLast_7_2()
+        {
+            const int n = 7, f = 2;
+            RunNSenders(n, f, DeliveryServiceMode.TAKE_LAST);
+        }
+
+        [Test]
+        public void TestNSenders_TakeRandom_7_2()
+        {
+            const int n = 7, f = 2;
+            RunNSenders(n, f);
+        }
+
+        [Test]
+        public void TestNSenders_TakeFirst_WithRepeat_7_2()
+        {
+            const int n = 7, f = 2;
+            RunNSenders(n, f, DeliveryServiceMode.TAKE_FIRST, 0.8);
+        }
+
+        [Test]
+        public void TestNSenders_TakeLast_WithRepeat_7_2()
+        {
+            const int n = 7, f = 2;
+            RunNSenders(n, f, DeliveryServiceMode.TAKE_LAST, 0.8);
+        }
+
+        [Test]
+        public void TestNSenders_TakeLast_WithRandom_7_2()
+        {
+            const int n = 7, f = 2;
+            RunNSenders(n, f, DeliveryServiceMode.TAKE_RANDOM, 0.8);
+        }
 
         [Test]
         [Repeat(5)]
-        public void RunSetUpNSendersSomeDelay1()
+        public void TestNSenders_FullRandom()
         {
-            RunSetUpNSendersSomeDelay(DeliveryServiceMode.TAKE_FIRST);
-        }
-
-
-        [Test]
-        [Repeat(count)]
-        public void RunSetUpSomeDelay1()
-        {
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_FIRST);
-        }
-
-        [Test]
-        [Repeat(count)]
-        public void RunSetUpSomeDelay2()
-        {
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_LAST);
-        }
-
-        [Test]
-        [Repeat(count)]
-        public void RunSetUpSomeDelay3()
-        {
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.2);
-        }
-
-        [Test]
-        [Repeat(count)]
-        public void RunSetUpSomeDelay4()
-        {
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.5);
-        }
-
-        [Test]
-        [Repeat(count)]
-        public void RunSetUpSomeDelay5()
-        {
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 0, 0.7);
-        }
-
-        [Test]
-        [Repeat(count)]
-        public void RunSetUpSomeDelayAndMute()
-        {
-            RunSetUpSomeDelay(DeliveryServiceMode.TAKE_RANDOM, 5, 0.5);
+            var n = _rnd.Next(10);
+            var f = _rnd.Next((n - 1) / 3 + 1);
+            var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
+            var prob = _rnd.NextDouble();
+            RunNSenders(n, f, mode, prob);
         }
     }
 }

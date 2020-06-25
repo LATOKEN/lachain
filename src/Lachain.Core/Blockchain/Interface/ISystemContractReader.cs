@@ -1,5 +1,4 @@
-﻿using Lachain.Crypto.ECDSA;
-using Lachain.Proto;
+﻿using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.Interface
 {

@@ -42,5 +42,10 @@ namespace Lachain.Core.DI.SimpleInjector
             _container.AddRegistration(typeof(TEntity), registration);
             return _container.GetInstance<TEntity>();
         }
+
+        public void Dispose()
+        {
+            _container.Dispose();
+        }
     }
 }

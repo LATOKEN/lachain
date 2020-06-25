@@ -1,6 +1,5 @@
 ﻿using System;
 using Google.Protobuf;
-using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
 using Lachain.Core.DI;

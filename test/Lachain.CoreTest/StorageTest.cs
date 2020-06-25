@@ -23,6 +23,24 @@ namespace Lachain.CoreTest
             _container = containerBuilder.Build();
         }
 
+        [OneTimeTearDown]
+        public void DisposeContainer()
+        {
+            _container.Dispose();
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            TestUtils.DeleteTestChainData();
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            TestUtils.DeleteTestChainData();
+        }
+
         [Test]
         public void Test_AddDelete()
         {

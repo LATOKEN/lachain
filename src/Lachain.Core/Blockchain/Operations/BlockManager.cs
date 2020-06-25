@@ -112,8 +112,6 @@ namespace Lachain.Core.Blockchain.Operations
                     true,
                     out var gasUsed,
                     out _);
-                if (error != OperatingError.Ok)
-                    throw new InvalidOperationException($"Cannot assemble block, {error}");
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 Logger.LogDebug(
                     $"Block execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Lachain.Core.Blockchain.Error;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;

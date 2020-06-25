@@ -53,7 +53,6 @@ namespace Lachain.ConsensusTest
             lock (_queueLock)
             {
                 Monitor.Pulse(_queueLock);
-                Console.Error.WriteLine("_queueLock pulsed.");
             }
 
             _thread.Join();
@@ -68,7 +67,7 @@ namespace Lachain.ConsensusTest
 
                     if (!_queue.IsEmpty)
                     {
-                        Tuple<int, int, ConsensusMessage> tuple;
+                        Tuple<int, int, ConsensusMessage>? tuple;
                         var success = Mode switch
                         {
                             DeliveryServiceMode.TAKE_FIRST => _queue.TryDequeue(out tuple),
@@ -77,9 +76,7 @@ namespace Lachain.ConsensusTest
                             _ => throw new NotImplementedException($"Unknown mode {Mode}")
                         };
 
-                        if (!success) throw new Exception("Can't sample from queue!");
-
-                        Console.Error.WriteLine($"remaining in queue: {_queue.Count}");
+                        if (!success || tuple is null) throw new Exception("Can't sample from queue!");
 
                         var from = tuple.Item1;
                         var index = tuple.Item2;

@@ -1,4 +1,3 @@
-using System;
 using Lachain.Core.Config;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
@@ -14,8 +13,9 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IStorageManager, StorageManager>();
             containerBuilder.RegisterSingleton<IStateManager, StateManager>();
             /* global */
-            var dbContext = new RocksDbContext(configManager.GetConfig<StorageConfig>("storage")!.Path!);
-            containerBuilder.Register<IRocksDbContext>(dbContext);
+            containerBuilder.RegisterSingleton<IRocksDbContext>(() =>
+                new RocksDbContext(configManager.GetConfig<StorageConfig>("storage")!.Path!)
+            );
 
             /* repositories */
             containerBuilder.RegisterSingleton<IPoolRepository, PoolRepository>();

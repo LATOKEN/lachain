@@ -1,4 +1,3 @@
-using System;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Proto;
 

@@ -23,7 +23,7 @@ namespace Lachain.Core.Blockchain.Genesis
 
         [JsonProperty("blockReward")] public string BlockReward;
 
-        [JsonProperty("basicGasPrice")] public string BasicGasPrice;
+        [JsonProperty("basicGasPrice")] public string BasicGasPrice; // TODO: this is not for genesis config
 
         public void ValidateOrThrow()
         {

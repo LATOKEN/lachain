@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Lachain.Consensus.ReliableBroadcast.ReedSolomon.ReedSolomon;
 using Lachain.Logger;
 

@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +9,7 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.DI;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
@@ -21,49 +21,52 @@ using NUnit.Framework;
 
 namespace Lachain.CoreTest
 {
+    [TestFixture]
     public class BlocksTest
     {
-        private readonly IBlockManager _blockManager;
-        private readonly ITransactionPool _transactionPool;
-        private readonly IStateManager _stateManager;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-        private readonly ITransactionSigner _signer = new TransactionSigner();
-        private readonly IPrivateWallet _wallet;
-        
+        private IBlockManager _blockManager = null!;
+        private ITransactionPool _transactionPool = null!;
+        private IStateManager _stateManager = null!;
+        private IPrivateWallet _wallet = null!;
+        private IContainer? _container;
+        private ICrypto _crypto = CryptoProvider.GetCrypto();
+        private ITransactionSigner _signer = new TransactionSigner();
+
         [SetUp]
         public void Setup()
         {
+            var containerBuilder = TestUtils.GetContainerBuilder("config.json");
+            _container = containerBuilder.Build();
+            _blockManager = _container.Resolve<IBlockManager>();
+            _stateManager = _container.Resolve<IStateManager>();
+            _wallet = _container.Resolve<IPrivateWallet>();
+            _transactionPool = _container.Resolve<ITransactionPool>();
             TestUtils.DeleteTestChainData();
         }
-        
+
         [TearDown]
         public void Teardown()
         {
             TestUtils.DeleteTestChainData();
-        }
-        
-        public BlocksTest()
-        {
-            var containerBuilder = TestUtils.GetContainerBuilder("config.json");
-            var container = containerBuilder.Build();
-            _blockManager = container.Resolve<IBlockManager>();
-            _stateManager = container.Resolve<IStateManager>();
-            _wallet = container.Resolve<IPrivateWallet>();
-            _transactionPool = container.Resolve<ITransactionPool>();
+            _container?.Dispose();
         }
 
         [Test]
         public void Test_Genesis()
         {
             var localContainerBuilder = TestUtils.GetContainerBuilder("config2.json");
-            var container = localContainerBuilder.Build();
+            using var container = localContainerBuilder.Build();
             var blockManager = container.Resolve<IBlockManager>();
             var stateManager = container.Resolve<IStateManager>();
             blockManager.TryBuildGenesisBlock();
-            var genesis = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+            var genesis =
+                stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
             Assert.AreEqual(0, genesis!.Header.Index);
-            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(), genesis!.Header.PrevBlockHash);
-            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(), genesis!.Header.StateHash);
+            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
+                genesis!.Header.PrevBlockHash);
+            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
+                genesis!.Header.StateHash);
             Assert.AreEqual(0, genesis!.GasPrice);
             Assert.AreEqual(null, genesis!.Multisig);
             Assert.AreEqual(0, genesis!.Timestamp);
@@ -84,13 +87,13 @@ namespace Lachain.CoreTest
         {
             _blockManager.TryBuildGenesisBlock();
             var block = BuildNextBlock();
-            
+
             var result = ExecuteBlock(block);
             Assert.AreEqual(OperatingError.Ok, result);
         }
 
         [Test]
-        [Repeat(25)]
+        [Repeat(5)]
         public void Test_Block_With_Txs_Execution()
         {
             _blockManager.TryBuildGenesisBlock();
@@ -103,7 +106,8 @@ namespace Lachain.CoreTest
             {
                 var tx = TestUtils.GetRandomTransaction();
                 randomReceipts.Add(tx);
-                topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From, (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
+                topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
+                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
             }
 
             var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
@@ -113,7 +117,7 @@ namespace Lachain.CoreTest
             var randomBlock = BuildNextBlock(randomReceipts.ToArray());
             var result = ExecuteBlock(randomBlock, randomReceipts.ToArray());
             Assert.AreEqual(result, OperatingError.Ok);
-            
+
             var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
             Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
         }
@@ -122,27 +126,27 @@ namespace Lachain.CoreTest
         public void Test_Storage_Changing()
         {
             _blockManager.TryBuildGenesisBlock();
-            
+
             var randomTx = TestUtils.GetRandomTransaction();
             var balance = randomTx.Transaction.Value;
             var allowance = balance;
             var receiver = randomTx.Transaction.From;
-            
+
             var tx1 = TopUpBalanceTx(receiver, balance, 0);
             var tx2 = ApproveTx(receiver, allowance, 1);
-            
+
             var owner = tx2.Transaction.From;
-            
+
             var blockTxs = new[] {tx1, tx2};
-            
+
             var topUpBlock = BuildNextBlock(blockTxs);
             ExecuteBlock(topUpBlock, blockTxs);
-            
+
             var storedBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receiver);
             Assert.AreEqual(storedBalance, balance.ToMoney());
-            
+
             var storedAllowance = _stateManager.LastApprovedSnapshot.Storage.GetRawValue(
-                ContractRegisterer.LatokenContract, 
+                ContractRegisterer.LatokenContract,
                 UInt256Utils.Zero.Buffer.Concat(owner.ToBytes().Concat(receiver.ToBytes()))
             ).ToUInt256().ToMoney();
             Assert.AreEqual(allowance.ToMoney(), storedAllowance);
@@ -154,59 +158,63 @@ namespace Lachain.CoreTest
             _blockManager.TryBuildGenesisBlock();
             var block = BuildNextBlock();
             block.Hash = UInt256Utils.Zero;
-            
+
             var result = EmulateBlock(block);
             Assert.AreEqual(OperatingError.HashMismatched, result);
-            
+
             block = BuildNextBlock();
             block.Header.Index = 0;
-            
+
             result = EmulateBlock(block);
             Assert.AreEqual(OperatingError.HashMismatched, result);
-            
+
             block = BuildNextBlock();
             block.Multisig = null;
-            
+
             result = EmulateBlock(block);
             Assert.AreEqual(OperatingError.InvalidMultisig, result);
         }
 
         private Block BuildNextBlock(TransactionReceipt[] receipts = null)
         {
-            receipts ??= new TransactionReceipt[]{};
+            receipts ??= new TransactionReceipt[] { };
 
             var merkleRoot = UInt256Utils.Zero;
-            
+
             if (receipts.Any())
                 merkleRoot = MerkleTree.ComputeRoot(receipts.Select(tx => tx.Hash).ToArray()) ??
                              throw new InvalidOperationException();
-            
-            var predecessor = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
-            var (header, multisig) = BuildHeaderAndMultisig(merkleRoot, predecessor, _stateManager.LastApprovedSnapshot.StateHash);
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) =
+                BuildHeaderAndMultisig(merkleRoot, predecessor, _stateManager.LastApprovedSnapshot.StateHash);
 
             return new Block
             {
                 Header = header,
                 Hash = header.Keccak(),
                 Multisig = multisig,
-                TransactionHashes = {receipts.Select(tx => tx.Hash) },
+                TransactionHashes = {receipts.Select(tx => tx.Hash)},
             };
         }
 
-        private (BlockHeader, MultiSig) BuildHeaderAndMultisig(UInt256 merkleRoot, Block? predecessor, UInt256 stateHash)
+        private (BlockHeader, MultiSig) BuildHeaderAndMultisig(UInt256 merkleRoot, Block? predecessor,
+            UInt256 stateHash)
         {
             var blockIndex = predecessor!.Header.Index + 1;
             var header = new BlockHeader
             {
                 Index = blockIndex,
                 PrevBlockHash = predecessor!.Hash,
-                MerkleRoot = merkleRoot, 
+                MerkleRoot = merkleRoot,
                 StateHash = stateHash,
                 Nonce = blockIndex
             };
 
             var keyPair = _wallet.EcdsaKeyPair;
-            
+
             var headerSignature = _crypto.Sign(
                 header.KeccakBytes(),
                 keyPair.PrivateKey.Encode()
@@ -230,17 +238,19 @@ namespace Lachain.CoreTest
 
         private OperatingError ExecuteBlock(Block block, TransactionReceipt[] receipts = null)
         {
-            receipts ??= new TransactionReceipt[]{};
-            
+            receipts ??= new TransactionReceipt[] { };
+
             var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
-            
-            var predecessor = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
             var (header, multisig) = BuildHeaderAndMultisig(block.Header.MerkleRoot, predecessor, stateHash);
-            
+
             block.Header = header;
             block.Multisig = multisig;
             block.Hash = header.Keccak();
-            
+
             var status = _blockManager.Execute(block, receipts, true, true);
             Console.WriteLine($"Executed block: {block.Header.Index}");
             return status;
@@ -248,7 +258,7 @@ namespace Lachain.CoreTest
 
         private OperatingError EmulateBlock(Block block, TransactionReceipt[] receipts = null)
         {
-            receipts ??= new TransactionReceipt[]{};
+            receipts ??= new TransactionReceipt[] { };
             var (status, _, _, _) = _blockManager.Emulate(block, receipts);
             return status;
         }
@@ -261,7 +271,8 @@ namespace Lachain.CoreTest
                 From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
                 GasLimit = 4_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) + (ulong) nonceInc,
+                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                        (ulong) nonceInc,
                 Value = value
             };
             return _signer.Sign(tx, _wallet.EcdsaKeyPair);
@@ -277,7 +288,8 @@ namespace Lachain.CoreTest
                 From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
                 GasLimit = 10_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) + (ulong) nonceInc,
+                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                        (ulong) nonceInc,
                 Value = UInt256Utils.Zero,
             };
             return _signer.Sign(tx, _wallet.EcdsaKeyPair);

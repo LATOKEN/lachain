@@ -10,7 +10,6 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Proto;
-using Lachain.Storage.Repositories;
 
 namespace Lachain.ConsensusTest
 {
@@ -38,15 +37,12 @@ namespace Lachain.ConsensusTest
             _wallet = wallet;
             _privateKeys = privateKeys;
             _silenced = new HashSet<int>();
-            MixMessages = mixMessages;
         }
 
         public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
             new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         private bool Terminated { set; get; }
-
-        private bool MixMessages { get; }
 
         public IConsensusProtocol GetProtocolById(IProtocolIdentifier id)
         {
@@ -119,17 +115,20 @@ namespace Lachain.ConsensusTest
                     Registry[hbbftId]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId( message.ReadyMessage.SenderId, (int) message.Validator.Era);
+                    var rbIdReadyMsg =
+                        new ReliableBroadcastId(message.ReadyMessage.SenderId, (int) message.Validator.Era);
                     CheckRequest(rbIdReadyMsg);
                     Registry[rbIdReadyMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.SenderId, (int) message.Validator.Era);
+                    var reliableBroadcastId =
+                        new ReliableBroadcastId(message.ValMessage.SenderId, (int) message.Validator.Era);
                     CheckRequest(reliableBroadcastId);
                     Registry[reliableBroadcastId]?.ReceiveMessage(new MessageEnvelope(message, from));
-                    break; 
+                    break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
+                    var rbIdEchoMsg =
+                        new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
                     CheckRequest(rbIdEchoMsg);
                     Registry[rbIdEchoMsg]?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
@@ -155,7 +154,6 @@ namespace Lachain.ConsensusTest
                 _callback[request.To] = request.From;
             }
 
-            Console.Error.WriteLine($"Party {GetMyId()} received internal request from {request.From}");
             CheckRequest(request.To);
             Registry[request.To]?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
         }
@@ -183,55 +181,32 @@ namespace Lachain.ConsensusTest
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void CheckRequest(IProtocolIdentifier id)
         {
-            if (Registry.ContainsKey(id)) 
-                return;
-            // Console.Error.WriteLine($"{_sender}: creating protocol {id} on demand.");
-            if (Terminated)
-            {
-                // Console.Error.WriteLine($"{_sender}: but already terminated.");
-                return;
-            }
-
+            if (Registry.ContainsKey(id)) return;
+            if (Terminated) return;
+            
             switch (id)
             {
                 case BinaryBroadcastId bbId:
-                    RegisterProtocols(new[]
-                    {
-                        new BinaryBroadcast(bbId, _wallet, this)
-                    });
+                    RegisterProtocols(new[] {new BinaryBroadcast(bbId, _wallet, this)});
                     break;
                 case CoinId coinId:
                     RegisterProtocols(new[]
-                    {
-                        new CommonCoin(coinId, _wallet, _privateKeys.ThresholdSignaturePrivateKeyShare, this)
-                    });
+                        {new CommonCoin(coinId, _wallet, _privateKeys.ThresholdSignaturePrivateKeyShare, this)});
                     break;
                 case ReliableBroadcastId rbcId:
-                    RegisterProtocols(new[]
-                    {
-                        //new MockReliableBroadcast(rbcId, _wallet, this),
-                        new ReliableBroadcast(rbcId, _wallet, this)
-                    });
+                    RegisterProtocols(new[] {new ReliableBroadcast(rbcId, _wallet, this)});
                     break;
                 case BinaryAgreementId baId:
-                    RegisterProtocols(new[]
-                    {
-                        new BinaryAgreement(baId, _wallet, this)
-                    });
+                    RegisterProtocols(new[] {new BinaryAgreement(baId, _wallet, this)});
                     break;
                 case CommonSubsetId acsId:
-                    RegisterProtocols(new[]
-                    {
-                        new CommonSubset(acsId, _wallet, this)
-                    });
+                    RegisterProtocols(new[] {new CommonSubset(acsId, _wallet, this)});
                     break;
                 case RootProtocolId _:
                     throw new Exception("cannot instantiate root protocol in BroadcastSimulator");
                 default:
                     throw new Exception($"Unknown protocol type {id}");
             }
-
-            // Console.Error.WriteLine($"{_sender}: created protocol {id}.");
         }
     }
 }

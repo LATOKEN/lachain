@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+﻿using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 
 namespace Lachain.Core.Blockchain.SystemContracts.Interface
 {

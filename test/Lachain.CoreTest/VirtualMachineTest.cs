@@ -1,14 +1,8 @@
-﻿using System;
-using Google.Protobuf;
-using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.VM;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
-using Lachain.Proto;
-using Lachain.Utility.Utils;
 
 namespace Lachain.CoreTest
 {
@@ -28,6 +22,18 @@ namespace Lachain.CoreTest
             containerBuilder.RegisterModule<StorageModule>();
 
             _container = containerBuilder.Build();
+        }
+        
+        [SetUp]
+        public void Setup()
+        {
+            TestUtils.DeleteTestChainData();
+        }
+        
+        [TearDown]
+        public void Teardown()
+        {
+            TestUtils.DeleteTestChainData();
         }
 
         [Test]

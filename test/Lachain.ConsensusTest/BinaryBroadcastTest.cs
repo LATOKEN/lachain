@@ -13,73 +13,72 @@ namespace Lachain.ConsensusTest
     [TestFixture]
     public class BinaryBroadcastTest
     {
-        [SetUp]
-        public void SetUp()
+        private readonly Random _rnd = new Random();
+        private DeliveryService _deliveryService = null!;
+        private IConsensusProtocol[] _broadcasts = null!;
+        private IConsensusBroadcaster[] _broadcasters = null!;
+        private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors = null!;
+        private IPrivateConsensusKeySet[] _privateKeys = null!;
+        private IPublicConsensusKeySet _publicKeys = null!;
+
+        private void SetUp(int n, int f)
         {
             _deliveryService = new DeliveryService();
-            _broadcasts = new IConsensusProtocol[N];
-            _broadcasters = new IConsensusBroadcaster[N];
-            _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[N];
-            _privateKeys = new IPrivateConsensusKeySet[N];
-            _publicKeys = new PublicConsensusKeySet(N, F, null, null, Enumerable.Empty<ECDSAPublicKey>());
-            for (var i = 0; i < N; ++i)
+            _broadcasts = new IConsensusProtocol[n];
+            _broadcasters = new IConsensusBroadcaster[n];
+            _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[n];
+            _privateKeys = new IPrivateConsensusKeySet[n];
+            _publicKeys = new PublicConsensusKeySet(n, f, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
+            for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
-                _privateKeys[i] = TestUtils.EmptyWallet(N, F);
+                _privateKeys[i] = TestUtils.EmptyWallet(n, f);
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, false);
             }
         }
 
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<BinaryBroadcastId, BoolSet>[] _resultInterceptors;
-        private const int N = 7;
-        private const int F = 2;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private IPublicConsensusKeySet _publicKeys;
-
-        private void SetUpAllHonest()
+        private void SetUpAllHonest(int n, int f)
         {
-            for (uint i = 0; i < N; ++i)
+            SetUp(n, f);
+            for (uint i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
 
-        private void SetupSomeSilent()
+        private void SetupSomeSilent(int n, int f)
         {
-            var random = new Random();
+            SetUp(n, f);
             var cnt = 0;
-            while (cnt < F)
+            while (cnt < f)
             {
-                var x = random.Next() % N;
+                var x = _rnd.Next(n);
                 if (_broadcasts[x] != null) continue;
                 _broadcasts[x] = new SilentProtocol<BinaryBroadcastId>(new BinaryBroadcastId(0, 0, 0));
                 ++cnt;
             }
 
-            for (uint i = 0; i < N; ++i)
+            for (uint i = 0; i < n; ++i)
             {
-                if (_broadcasts[i] == null)
-                    _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
+                _broadcasts[i] ??= new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
         }
 
         [Test]
-        public void TestBinaryBroadcastAllOne()
+        public void TestBinaryBroadcastAllOne_7_2()
         {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
+            const int n = 7, f = 2;
+            SetUpAllHonest(n, f);
+            for (var i = 0; i < n; ++i)
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, true
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryBroadcastId)!, true
                 ));
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
@@ -88,17 +87,18 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        public void TestBinaryBroadcastAllZero()
+        public void TestBinaryBroadcastAllZero_7_2()
         {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
+            const int n = 7, f = 2;
+            SetUpAllHonest(n, f);
+            for (var i = 0; i < n; ++i)
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, false
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryBroadcastId)!, false
                 ));
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
@@ -107,53 +107,53 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        public void TestRandomFailures()
+        public void TestRandomFailures_7_2()
         {
-            SetupSomeSilent();
+            const int n = 7, f = 2;
+            SetupSomeSilent(n, f);
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, true
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryBroadcastId)!, true
                 ));
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                if (!(_broadcasts[i] is SilentProtocol<BinaryBroadcastId>))
-                {
-                    Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                    Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
-                }
+                if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
             }
         }
 
         [Test]
-        [Repeat(200)]
+        [Repeat(10)]
         public void TestRandomValues()
         {
-            var random = new Random();
-            SetupSomeSilent();
+            var n = _rnd.Next(1, 10);
+            var f = _rnd.Next((n - 1) / 3 + 1);
+            SetupSomeSilent(n, f);
 
-            var inputs = new int[N];
+            var inputs = new int[n];
             int[] inputsCount = {0, 0};
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
-                inputs[i] = random.Next() % 2;
+                inputs[i] = _rnd.Next(2);
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 inputsCount[inputs[i]]++;
             }
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryBroadcastId, inputs[i] == 1
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryBroadcastId)!, inputs[i] == 1
                 ));
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
 
-            var received = new ISet<int>[N];
-            for (var i = 0; i < N; ++i)
+            var received = new ISet<int>[n];
+            for (var i = 0; i < n; ++i)
             {
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 received[i] = new SortedSet<int>();
@@ -165,14 +165,14 @@ namespace Lachain.ConsensusTest
                     received[i].Add(b ? 1 : 0);
             }
 
-            ISet<int> firstReceived = null;
-            for (var i = 0; i < N; ++i)
+            ISet<int>? firstReceived = null;
+            for (var i = 0; i < n; ++i)
             {
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 if (firstReceived == null) firstReceived = received[i];
                 for (var v = 0; v < 2; ++v)
                 {
-                    if (inputsCount[v] < F + 1) continue;
+                    if (inputsCount[v] < f + 1) continue;
                     Assert.Contains(v, received[i].ToList(),
                         "all correct nodes should output value if at least F + 1 inputed it");
                 }

@@ -4,7 +4,6 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
-using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Proto;

@@ -13,46 +13,34 @@ namespace Lachain.ConsensusTest
     [TestFixture]
     public class BinaryAgreementTest
     {
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors;
-        private int F = 1;
-        private int N = 3 * 1 + 1;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private Random _rnd;
-        private IPublicConsensusKeySet _publicKeys;
+        private readonly Random _rnd = new Random();
+        private DeliveryService _deliveryService = null!;
+        private IConsensusProtocol[] _broadcasts = null!;
+        private IConsensusBroadcaster[] _broadcasters = null!;
+        private ProtocolInvoker<BinaryAgreementId, bool>[] _resultInterceptors = null!;
+        private IPrivateConsensusKeySet[] _privateKeys = null!;
+        private IPublicConsensusKeySet _publicKeys = null!;
 
-        public BinaryAgreementTest()
+        private void SetUpAllHonest(int n, int f)
         {
-        }
-
-        //        [SetUp]
-        public void SetUp()
-        {
-            _rnd = new Random();
             _deliveryService = new DeliveryService();
-            _broadcasts = new IConsensusProtocol[N];
-            _broadcasters = new IConsensusBroadcaster[N];
-            _resultInterceptors = new ProtocolInvoker<BinaryAgreementId, bool>[N];
-            _privateKeys = new IPrivateConsensusKeySet[N];
-            var keygen = new TrustedKeyGen(N, F);
+            _broadcasts = new IConsensusProtocol[n];
+            _broadcasters = new IConsensusBroadcaster[n];
+            _resultInterceptors = new ProtocolInvoker<BinaryAgreementId, bool>[n];
+            _privateKeys = new IPrivateConsensusKeySet[n];
+            var keygen = new TrustedKeyGen(n, f);
             var shares = keygen.GetPrivateShares().ToArray();
-            var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
+            var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
 
-            _publicKeys = new PublicConsensusKeySet(N, F, null, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
-            for (var i = 0; i < N; ++i)
+            _publicKeys = new PublicConsensusKeySet(n, f, null!, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
+            for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryAgreementId, bool>();
-                _privateKeys[i] = new PrivateConsensusKeySet(null, null, shares[i]);
+                _privateKeys[i] = new PrivateConsensusKeySet(null!, null!, shares[i]);
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _privateKeys[i], _deliveryService, true);
             }
-        }
 
-        private void SetUpAllHonest()
-        {
-            SetUp();
-            for (uint i = 0; i < N; ++i)
+            for (uint i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new BinaryAgreement(new BinaryAgreementId(0, 0), _publicKeys, _broadcasters[i]);
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
@@ -60,145 +48,150 @@ namespace Lachain.ConsensusTest
         }
 
 
-        public void RunBinaryAgreementRandom(int n, int f, DeliveryServiceMode mode, int muteCnt = 0,
-            double repeatProbability = .0)
+        public void RunBinaryAgreementRandom(
+            int n, int f, DeliveryServiceMode mode,
+            int muteCnt = 0, double repeatProbability = .0
+        )
         {
-            N = n;
-            F = f;
-            SetUpAllHonest();
-            _deliveryService.RepeatProbability = repeatProbability; // вероятность повтора индивидуального сообщения
-            _deliveryService.Mode = mode; // порядок доставки сообщения
-            while (_deliveryService.MutedPlayers.Count < muteCnt) _deliveryService.MutePlayer(_rnd.Next(0, N - 1));
+            SetUpAllHonest(n, f);
+            _deliveryService.RepeatProbability = repeatProbability;
+            _deliveryService.Mode = mode;
+            while (_deliveryService.MutedPlayers.Count < muteCnt)
+                _deliveryService.MutePlayer(_rnd.Next(0, n));
 
             var used = new BoolSet();
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 var cur = _rnd.Next() % 2 == 1;
                 used = used.Add(cur);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, cur
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryAgreementId)!, cur
                 ));
             }
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (_deliveryService.MutedPlayers.Contains(i)) continue;
                 _broadcasts[i].WaitResult();
             }
 
-            Console.Error.WriteLine("All players produced result");
             _deliveryService.WaitFinish();
-            Console.Error.WriteLine("Delivery service shut down");
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (_deliveryService.MutedPlayers.Contains(i)) continue;
 
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
-                    $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
-//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(
+                    _resultInterceptors[i].ResultSet, 1,
+                    $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}"
+                );
             }
 
             bool? res = null;
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (_deliveryService.MutedPlayers.Contains(i)) continue;
                 var ans = _resultInterceptors[i].Result;
-                if (res == null)
-                    res = ans;
+                res ??= ans;
                 Assert.AreEqual(res, _resultInterceptors[i].Result);
             }
 
-            Assert.True(used.Contains(res.Value));
+            Assert.IsNotNull(res);
+            Assert.True(used.Contains(res!.Value));
 
-            Console.Error.WriteLine("Result validated");
-
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i].Terminate();
-                Console.Error.WriteLine($"boy {i} terminated");
                 _broadcasts[i].WaitFinish();
-                Console.Error.WriteLine($"boy {i} finished");
             }
-
-            Console.Error.WriteLine("Ended protocols!");
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestLast103()
+        [Repeat(3)]
+        public void RandomTestLast_10_3()
         {
             RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestLast41()
+        [Repeat(3)]
+        public void RandomTestLast_4_1()
         {
             RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestLast72()
+        [Repeat(3)]
+        public void RandomTestLast_7_2()
         {
             RunBinaryAgreementRandom(7, 2, DeliveryServiceMode.TAKE_LAST);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestLastWithMuted103()
+        [Repeat(3)]
+        public void RandomTestLastWithMuted_10_3()
         {
             RunBinaryAgreementRandom(10, 3, DeliveryServiceMode.TAKE_LAST, 3);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestLastWithMuted41()
+        [Repeat(3)]
+        public void RandomTestLastWithMuted_4_1()
         {
             RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_LAST, 1);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestLastWithMuted72()
+        [Repeat(3)]
+        public void RandomTestLastWithMuted_7_2()
         {
             RunBinaryAgreementRandom(7, 2, DeliveryServiceMode.TAKE_LAST, 2);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestRandom41()
+        [Repeat(3)]
+        public void RandomTestRandom_4_1()
         {
             RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestRandomWithMuted41()
+        [Repeat(10)]
+        public void FullyRandomTest()
+        {
+            var n = _rnd.Next(1, 10);
+            var f = _rnd.Next((n - 1) / 3 + 1);
+            var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
+            RunBinaryAgreementRandom(n, f, mode);
+        }
+
+        [Test]
+        [Repeat(3)]
+        public void RandomTestRandomWithMuted_4_1()
         {
             RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 1);
         }
 
         [Test]
-        [Repeat(100)]
-        public void RandomTestRandomWithRepeat41()
+        [Repeat(3)]
+        public void RandomTestRandomWithRepeat_4_1()
         {
             RunBinaryAgreementRandom(4, 1, DeliveryServiceMode.TAKE_RANDOM, 0, .2);
         }
 
         [Test]
-        public void TestBinaryAgreementAllOnes()
+        public void TestBinaryAgreementAllOnes_7_2()
         {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
+            const int n = 7, f = 2;
+            SetUpAllHonest(n, f);
+            for (var i = 0; i < n; ++i)
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, true
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryAgreementId)!, true
                 ));
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitResult();
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitResult();
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i].Terminate();
                 _broadcasts[i].WaitFinish();
@@ -206,7 +199,7 @@ namespace Lachain.ConsensusTest
 
             _deliveryService.WaitFinish();
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
@@ -216,29 +209,27 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        public void TestBinaryAgreementAllZero()
+        public void TestBinaryAgreementAllZero_7_2()
         {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
+            const int n = 7, f = 2;
+            SetUpAllHonest(n, f);
+            for (var i = 0; i < n; ++i)
                 _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryAgreementId, bool>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as BinaryAgreementId, false
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryAgreementId)!, false
                 ));
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitResult();
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitResult();
 
             _deliveryService.WaitFinish();
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i].Terminate();
-                Console.Error.WriteLine($"boy {i} terminated");
                 _broadcasts[i].WaitFinish();
-                Console.Error.WriteLine($"boy {i} finished");
             }
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
-//                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(false, _resultInterceptors[i].Result);

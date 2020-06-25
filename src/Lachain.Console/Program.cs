@@ -193,7 +193,7 @@ namespace Lachain.Console
             }
 
             var configPath = GetCommandLineArgument("config");
-            var app = new Application(configPath);
+            using var app = new Application(configPath);
             app.Start(args);
         }
 

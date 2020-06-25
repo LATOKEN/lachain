@@ -2,7 +2,7 @@
 
 namespace Lachain.Core.DI
 {
-    public interface IContainer
+    public interface IContainer : IDisposable
     {
         object Resolve(Type serviceType);
 

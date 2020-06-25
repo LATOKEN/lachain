@@ -208,6 +208,13 @@ namespace Lachain.ConsensusTest
         }
         
         [Test]
+        public void RunAllHonest_7_0()
+        {
+            var keys = SimulateKeygen(7, 0, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+        
+        [Test]
         public void RunAllHonest_7_2()
         {
             var keys = SimulateKeygen(7, 2, DeliveryServiceMode.TAKE_FIRST);
@@ -227,28 +234,7 @@ namespace Lachain.ConsensusTest
             var keys = SimulateKeygen(7, 2, DeliveryServiceMode.TAKE_LAST);
             CheckKeys(keys);
         }
-
-        [Test]
-        public void RunAllHonest_22_7()
-        {
-            var keys = SimulateKeygen(22, 7, DeliveryServiceMode.TAKE_FIRST);
-            CheckKeys(keys);
-        }
         
-        [Test]
-        public void RunAllHonest_22_7_RandomOrder()
-        {
-            var keys = SimulateKeygen(22, 7, DeliveryServiceMode.TAKE_RANDOM);
-            CheckKeys(keys);
-        }
-        
-        [Test]
-        public void RunAllHonest_22_7_ReverseOrder()
-        {
-            var keys = SimulateKeygen(22, 7, DeliveryServiceMode.TAKE_LAST);
-            CheckKeys(keys);
-        }
-
         [Test]
         public void RunOneGuy()
         {

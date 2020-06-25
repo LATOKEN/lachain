@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using Google.Protobuf;
 using Lachain.Crypto.Misc;
 using Lachain.Proto;

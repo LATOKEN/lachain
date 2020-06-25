@@ -5,7 +5,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
-using Lachain.Core.Blockchain.Genesis;
 using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP

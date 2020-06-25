@@ -8,35 +8,45 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
-using Lachain.Storage.Repositories;
+using Lachain.Utility.Utils;
 
 namespace Lachain.ConsensusTest
 {
     [TestFixture]
     public class HoneyBadgerTest
     {
-        [SetUp]
-        public void SetUp()
-        {
-            _rnd = new Random();
-            _deliveryService = new DeliveryService();
-            _broadcasts = new IConsensusProtocol[N];
-            _broadcasters = new IConsensusBroadcaster[N];
-            _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[N];
-            var keygen = new TrustedKeyGen(N, F);
-            var shares = keygen.GetPrivateShares().ToArray();
-            var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), F);
-            var tpkeKeygen = new Crypto.TPKE.TrustedKeyGen(N, F);
+        private const int Era = 0;
 
-            var ecdsaKeys = Enumerable.Range(0, N)
-                .Select(i => _crypto.GenerateRandomBytes(32))
+        private readonly Random _rnd = new Random();
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+
+        private DeliveryService _deliveryService = null!;
+        private IConsensusProtocol[] _broadcasts = null!;
+        private IConsensusBroadcaster[] _broadcasters = null!;
+        private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors = null!;
+        private IPublicConsensusKeySet _publicKeys = null!;
+        private IPrivateConsensusKeySet[] _privateKeys = null!;
+
+        public void SetUp(int n, int f)
+        {
+            _deliveryService = new DeliveryService();
+            _broadcasts = new IConsensusProtocol[n];
+            _broadcasters = new IConsensusBroadcaster[n];
+            _resultInterceptors = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[n];
+            var keygen = new TrustedKeyGen(n, f);
+            var shares = keygen.GetPrivateShares().ToArray();
+            var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
+            var tpkeKeygen = new Crypto.TPKE.TrustedKeyGen(n, f);
+
+            var ecdsaKeys = Enumerable.Range(0, n)
+                .Select(i => Crypto.GenerateRandomBytes(32))
                 .Select(x => x.ToPrivateKey())
                 .Select(k => new EcdsaKeyPair(k))
                 .ToArray();
-            _publicKeys = new PublicConsensusKeySet(N, F, tpkeKeygen.GetPubKey(), pubKeys,
+            _publicKeys = new PublicConsensusKeySet(n, f, tpkeKeygen.GetPubKey(), pubKeys,
                 ecdsaKeys.Select(k => k.PublicKey));
-            _privateKeys = new IPrivateConsensusKeySet[N];
-            for (var i = 0; i < N; ++i)
+            _privateKeys = new IPrivateConsensusKeySet[n];
+            for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>();
                 _privateKeys[i] = new PrivateConsensusKeySet(ecdsaKeys[i], tpkeKeygen.GetPrivKey(i), shares[i]);
@@ -44,21 +54,10 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        private DeliveryService _deliveryService;
-        private IConsensusProtocol[] _broadcasts;
-        private IConsensusBroadcaster[] _broadcasters;
-        private ProtocolInvoker<HoneyBadgerId, ISet<IRawShare>>[] _resultInterceptors;
-        private const int N = 22;
-        private const int F = 7;
-        private const int Era = 0;
-        private IPublicConsensusKeySet _publicKeys;
-        private IPrivateConsensusKeySet[] _privateKeys;
-        private Random _rnd;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
-
-        private void SetUpAllHonest()
+        private void SetUpAllHonest(int n, int f)
         {
-            for (uint i = 0; i < N; ++i)
+            SetUp(n, f);
+            for (uint i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
                     new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
@@ -67,9 +66,10 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        private void SetUpSomeSilent(ISet<int> s)
+        private void SetUpSomeSilent(int n, int f, ISet<int> s)
         {
-            for (var i = 0; i < N; ++i)
+            SetUp(n, f);
+            for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
                     new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
@@ -80,57 +80,95 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        public void TestAllHonest()
+        public void TestAllHonest_7_2()
         {
-            SetUpAllHonest();
-            for (var i = 0; i < N; ++i)
+            const int n = 7, f = 2;
+            SetUpAllHonest(n, f);
+            for (var i = 0; i < n; ++i)
             {
                 var share = new RawShare(new byte[32], i);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as HoneyBadgerId, share
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
                 ));
             }
 
-            for (var i = 0; i < N; ++i) _broadcasts[i].WaitFinish();
-
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(N, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
             }
         }
 
         [Test]
-        public void TestSomeSilent()
+        public void TestSomeSilent_7_2()
         {
+            const int n = 7, f = 2;
             var s = new HashSet<int>();
-            while (s.Count < F) s.Add(_rnd.Next(0, N - 1));
+            while (s.Count < f) s.Add(_rnd.Next(n));
 
-            SetUpSomeSilent(s);
-            for (var i = 0; i < N; ++i)
+            SetUpSomeSilent(n, f, s);
+            for (var i = 0; i < n; ++i)
             {
                 var share = new RawShare(new byte[32], i);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
-                    _resultInterceptors[i].Id, _broadcasts[i].Id as HoneyBadgerId, share
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
                 ));
             }
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (s.Contains(i)) continue;
                 _broadcasts[i].WaitFinish();
             }
 
-            for (var i = 0; i < N; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (s.Contains(i)) continue;
 
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(N - F, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
+            }
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void RandomTest()
+        {
+            var n = _rnd.Next(1, 10);
+            var f = _rnd.Next((n - 1) / 3 + 1);
+            var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
+            var s = new HashSet<int>();
+            while (s.Count < f) s.Add(_rnd.Next(n));
+
+            SetUpSomeSilent(n, f, s);
+            _deliveryService.Mode = mode;
+            for (var i = 0; i < n; ++i)
+            {
+                var share = new RawShare(new byte[32], i);
+                _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
+                ));
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (s.Contains(i)) continue;
+                _broadcasts[i].WaitFinish();
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                if (s.Contains(i)) continue;
+
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
             }
         }
     }
