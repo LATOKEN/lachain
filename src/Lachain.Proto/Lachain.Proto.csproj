@@ -9,9 +9,6 @@
     <PackageReference Include="Google.Protobuf" Version="3.12.3" />
     <PackageReference Include="Grpc" Version="2.30.0-pre1" />
     <PackageReference Include="Grpc.Tools" Version="2.30.0-pre1" />
-    <Protobuf Include="proto/*.proto" ProtoRoot="proto/" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="proto\.git" />
+    <Protobuf Include="*.proto" ProtoRoot="./" />
   </ItemGroup>
 </Project>
