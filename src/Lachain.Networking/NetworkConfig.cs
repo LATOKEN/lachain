@@ -4,9 +4,6 @@ namespace Lachain.Networking
 {
     public class NetworkConfig
     {
-        [JsonProperty("magic")]
-        public uint Magic { get; set; }
-
         [JsonProperty("address")]
         public string Address { get; set; } = "0.0.0.0";
 

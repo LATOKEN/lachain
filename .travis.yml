@@ -18,7 +18,7 @@ install:
 script:
   - dotnet restore
   - dotnet build -c Release
-  #- dotnet test
+  - dotnet test
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime win-x64 src/Lachain.Console/Lachain.Console.csproj
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime osx-x64 src/Lachain.Console/Lachain.Console.csproj

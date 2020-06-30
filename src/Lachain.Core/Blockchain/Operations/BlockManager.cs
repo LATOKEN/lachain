@@ -479,6 +479,7 @@ namespace Lachain.Core.Blockchain.Operations
                 dummyStakerPub
             );
 
+            // TODO: get rid of explicit numbering of fields
             var initialVrfSeed = Encoding.ASCII.GetBytes("test");
             snapshot.Storage.SetRawValue(
                 ContractRegisterer.StakingContract,

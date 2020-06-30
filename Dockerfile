@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as build-env
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1.301-buster as build-env
 WORKDIR /lachain
 COPY src/Lachain.Consensus/Lachain.Consensus.csproj ./Lachain.Consensus/
 COPY src/Lachain.Console/Lachain.Console.csproj ./Lachain.Console/
@@ -18,8 +18,8 @@ COPY wasm/ /wasm/
 WORKDIR /lachain/Lachain.Console
 RUN dotnet publish -c Release -o out
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1
-RUN apt update && apt install -y libc6-dev libsnappy-dev
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1.5-buster-slim
+RUN apt update && apt install -y libc6-dev
 WORKDIR /lachain
 COPY --from=build-env /lachain/Lachain.Console/out .
 ARG CONFIG=src/Lachain.Console/config0.json

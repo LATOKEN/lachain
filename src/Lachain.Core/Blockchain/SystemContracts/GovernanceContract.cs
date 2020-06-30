@@ -39,7 +39,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
         private readonly StorageVariable _collectedFees;
-        private readonly StorageVariable _gasPriceBase;
+        private readonly StorageVariable _gasPriceBase; // TODO: should it be in the governance state?
 
         public GovernanceContract(InvocationContext context)
         {

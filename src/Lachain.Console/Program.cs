@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Lachain.Core.Blockchain;
 using Newtonsoft.Json;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.RPC;
@@ -19,13 +20,14 @@ namespace Lachain.Console
     internal class Config
     {
         public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
-            StorageConfig storage)
+            StorageConfig storage, BlockchainConfig blockchain)
         {
             Network = network;
             Genesis = genesis;
             Rpc = rpc;
             Vault = vault;
             Storage = storage;
+            Blockchain = blockchain;
         }
 
         [JsonProperty("network")] public NetworkConfig Network { get; set; }
@@ -33,6 +35,7 @@ namespace Lachain.Console
         [JsonProperty("rpc")] public RpcConfig Rpc { get; set; }
         [JsonProperty("vault")] public VaultConfig Vault { get; set; }
         [JsonProperty("storage")] public StorageConfig Storage { get; set; }
+        [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
     }
 
     class Program
@@ -86,7 +89,6 @@ namespace Lachain.Console
             {
                 var net = new NetworkConfig
                 {
-                    Magic = 56754,
                     Port = 5050,
                     MyHost = $"tcp://{ips[i]}",
                     Address = "0.0.0.0",
@@ -130,7 +132,8 @@ namespace Lachain.Console
                     Path = "ChainLachain",
                     Provider = "RocksDB",
                 };
-                var config = new Config(net, genesis, rpc, vault, storage);
+                var blockchain = new BlockchainConfig();
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",

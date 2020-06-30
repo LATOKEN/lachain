@@ -6,8 +6,10 @@ using Lachain.Logger;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
+using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Config;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -35,13 +37,17 @@ namespace Lachain.Core.Consensus
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
         private readonly object _blockPersistedLock = new object();
 
+        private readonly ulong _targetBlockInterval;
+
+
         public ConsensusManager(
             IMessageDeliverer messageDeliverer,
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
             IPrivateWallet privateWallet,
-            IValidatorAttendanceRepository validatorAttendanceRepository
+            IValidatorAttendanceRepository validatorAttendanceRepository,
+            IConfigManager configManager
         )
         {
             _messageDeliverer = messageDeliverer;
@@ -53,11 +59,12 @@ namespace Lachain.Core.Consensus
             _terminated = false;
 
             _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
+            _targetBlockInterval = configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetBlockTime ?? 5_000;
         }
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
-            // Logger.LogDebug($"Block {e.Header.Index} is persisted, terminating corresponding era");
+            Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era");
             if ((long) e.Header.Index >= CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
@@ -132,13 +139,12 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
-                const ulong minBlockInterval = 5000;
                 for (;; CurrentEra += 1)
                 {
                     var now = TimeUtils.CurrentTimeMillis();
-                    if (lastBlock + minBlockInterval > now)
+                    if (lastBlock + _targetBlockInterval > now)
                     {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + minBlockInterval - now));
+                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + _targetBlockInterval - now));
                     }
 
                     if ((long) _blockManager.GetHeight() >= CurrentEra)
@@ -146,7 +152,7 @@ namespace Lachain.Core.Consensus
                         AdvanceEra((long) _blockManager.GetHeight());
                         continue;
                     }
-                    
+
                     while ((long) _blockManager.GetHeight() != CurrentEra - 1)
                     {
                         lock (_blockPersistedLock)
@@ -195,7 +201,7 @@ namespace Lachain.Core.Consensus
                         broadcaster.WaitFinish();
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
-                        // Logger.LogDebug("Root protocol finished, waiting for new era...");
+                        Logger.LogTrace("Root protocol finished, waiting for new era...");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
                 }
@@ -221,15 +227,14 @@ namespace Lachain.Core.Consensus
         {
             if (era <= 0) return null;
             if (_eras.ContainsKey(era)) return _eras[era];
-            // Logger.LogDebug($"Creating broadcaster for era {era}");
             if (_terminated)
             {
                 Logger.LogWarning($"Broadcaster for era {era} not created since consensus is terminated");
                 return null;
             }
 
-            // Logger.LogDebug($"Created broadcaster for era {era}");
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet, _validatorAttendanceRepository);
+            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet,
+                _validatorAttendanceRepository);
         }
     }
 }
