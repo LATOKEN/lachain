@@ -487,18 +487,18 @@ namespace Lachain.Core.Blockchain.Operations
                 initialVrfSeed
             );
 
-            var initalBlockReward = Money.Parse(genesisConfig.BlockReward).ToUInt256().ToBytes();
+            var initialBlockReward = Money.Parse(genesisConfig.BlockReward).ToUInt256().ToBytes();
             snapshot.Storage.SetRawValue(
                 ContractRegisterer.GovernanceContract,
                 new BigInteger(3).ToUInt256().Buffer,
-                initalBlockReward
+                initialBlockReward
             );
 
-            var initalBasicGasPrice = Money.Parse(genesisConfig.BasicGasPrice).ToUInt256().ToBytes();
+            var initialBasicGasPrice = Money.Parse(genesisConfig.BasicGasPrice).ToUInt256().ToBytes();
             snapshot.Storage.SetRawValue(
                 ContractRegisterer.GovernanceContract,
                 new BigInteger(8).ToUInt256().Buffer,
-                initalBasicGasPrice
+                initialBasicGasPrice
             );
 
             _stateManager.Approve();

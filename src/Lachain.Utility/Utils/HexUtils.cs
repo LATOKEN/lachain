@@ -73,20 +73,27 @@ namespace Lachain.Utility.Utils
             return ulong.Parse(buffer.Replace("0x", ""), NumberStyles.HexNumber);
         }
 
-        public static string ToHex(this ulong num)
+        public static string ToHex(this ulong num, bool evenBytesCount = true)
         {
-            return num.ToHexBigInteger().HexValue;
+            var res = num.ToHexBigInteger().HexValue;
+            return evenBytesCount ? res.ToEvenBytesCount() : res;
         }
 
-        public static string ToHex(this int num)
+        public static string ToHex(this int num, bool evenBytesCount = true)
         {
-            return num.ToHexBigInteger().HexValue;
+            var res = num.ToHexBigInteger().HexValue;
+            return evenBytesCount ? res.ToEvenBytesCount() : res;
         }
 
         public static byte[] TrimLeadingZeros(this byte[] array)
         {
             int firstIndex = Array.FindIndex(array, b => b != 0);
             return array.Skip(firstIndex).ToArray();
+        }
+
+        private static string ToEvenBytesCount(this string hex)
+        {
+            return hex.Length % 2 == 1 ? "0x0" + hex.Substring(2) : hex;
         }
     }
 }

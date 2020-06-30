@@ -27,9 +27,9 @@ namespace Lachain.Console
     {
         private readonly IContainer _container;
 
-        public Application(string configPath)
+        public Application(string configPath, Func<string, string?, string?> argGetter)
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath, argGetter));
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<MessagingModule>();
@@ -40,8 +40,8 @@ namespace Lachain.Console
 
         public void Start(string[] args)
         {
-            var blockManager = _container.Resolve<IBlockManager>();
             var configManager = _container.Resolve<IConfigManager>();
+            var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
             var validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             var transactionVerifier = _container.Resolve<ITransactionVerifier>();
@@ -78,6 +78,13 @@ namespace Lachain.Console
             System.Console.WriteLine("-------------------------------");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network");
+
+            if (!(configManager.GetCliArg("port") is null))
+                networkConfig!.Port = ushort.Parse(configManager.GetCliArg("port")!);
+
+            if (!(configManager.GetCliArg("host") is null))
+                networkConfig!.MyHost = configManager.GetCliArg("host");
+                
             networkManager.Start(networkConfig!, wallet.EcdsaKeyPair, messageHandler);
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);

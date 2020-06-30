@@ -78,7 +78,21 @@ namespace Lachain.Core.RPC
                 new NodeService(_blockSynchronizer)
             };
 
-            var rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
+            RpcConfig rpcConfig;
+            if (
+                !(_configManager.GetCliArg("rpcaddr") is null) &&
+                !(_configManager.GetCliArg("rpcport") is null) &&
+                !(_configManager.GetCliArg("apikey") is null)
+            )
+                rpcConfig = new RpcConfig
+                {
+                    Hosts = new[] {_configManager.GetCliArg("rpcaddr")!},
+                    Port = short.Parse(_configManager.GetCliArg("rpcport")),
+                    ApiKey = _configManager.GetCliArg("apikey"),
+                };
+            else 
+                rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
+            
 
             _httpService = new HttpService();
             _httpService.Start(rpcConfig);

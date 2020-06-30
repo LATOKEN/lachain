@@ -1,4 +1,5 @@
 using Lachain.Core.Config;
+using System.IO;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -12,10 +13,15 @@ namespace Lachain.Core.DI.Modules
             /* HMAT */
             containerBuilder.RegisterSingleton<IStorageManager, StorageManager>();
             containerBuilder.RegisterSingleton<IStateManager, StateManager>();
+
             /* global */
-            containerBuilder.RegisterSingleton<IRocksDbContext>(() =>
-                new RocksDbContext(configManager.GetConfig<StorageConfig>("storage")!.Path!)
-            );
+            var dataDir = configManager.GetCliArg("datadir");
+            dataDir ??= configManager.GetConfig<StorageConfig>("storage")!.Path!;
+            dataDir = Path.IsPathRooted(dataDir) || dataDir.StartsWith("~/")
+                ? dataDir
+                : Path.GetDirectoryName(configManager.ConfigPath) + Path.DirectorySeparatorChar + dataDir;
+
+            containerBuilder.RegisterSingleton<IRocksDbContext>(() => new RocksDbContext(dataDir));
 
             /* repositories */
             containerBuilder.RegisterSingleton<IPoolRepository, PoolRepository>();

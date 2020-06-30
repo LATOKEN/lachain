@@ -16,7 +16,7 @@ namespace Lachain.CoreTest
         public StorageTest()
         {
             var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json"));
+                new ConfigManager("config.json", (s, s1) => null));
 
             containerBuilder.RegisterModule<StorageModule>();
 

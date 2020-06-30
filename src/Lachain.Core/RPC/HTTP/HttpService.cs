@@ -100,7 +100,7 @@ namespace Lachain.Core.RPC.HTTP
                 JsonRpc = body
             };
 
-            if (!_CheckAuth(JObject.Parse(body)))
+            if (!_CheckAuth(JObject.Parse(body), context))
             {
                 var id = ulong.Parse(JObject.Parse(body)["id"]!.ToString());
                 var error = new JObject
@@ -125,8 +125,9 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private bool _CheckAuth(JObject body)
+        private bool _CheckAuth(JObject body, HttpListenerContext context)
         {
+            if (context.Request.IsLocal) return true;
             if (_privateMethods.Contains(body["method"]!.ToString()))
             {
                 return !(body["key"] is null) && Equals(body["key"]!.ToString(), _apiKey);

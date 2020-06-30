@@ -18,7 +18,7 @@ namespace Lachain.CoreTest
     {
         public static SimpleInjectorContainerBuilder GetContainerBuilder(string configPath)
         {
-            var configManager = new ConfigManager(configPath);
+            var configManager = new ConfigManager(configPath, (s, s1) => null);
             var containerBuilder = new SimpleInjectorContainerBuilder(configManager);
 
             containerBuilder.RegisterModule<StorageModule>();

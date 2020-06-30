@@ -67,6 +67,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             return new JObject
             {
+                ["author"] = "0x0300000000000000000000000000000000000000",
                 ["number"] = block.Header.Index.ToHex(),
                 ["hash"] = block.Hash.ToHex(),
                 ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -77,7 +78,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["transactionsRoot"] = block.Header.MerkleRoot.ToHex(),
                 ["stateRoot"] = block.Header.StateHash.ToHex(),
                 ["receiptsRoot"] = "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
-                ["miner"] = "0x0000000000000000000000000000000000000000",
+                ["miner"] = "0x0300000000000000000000000000000000000000",
                 ["difficulty"] = "0x0",
                 ["totalDifficulty"] = "0x0",
                 ["extraData"] = "0x",

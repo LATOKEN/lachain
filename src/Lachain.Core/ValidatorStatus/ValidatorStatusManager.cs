@@ -314,7 +314,6 @@ namespace Lachain.Core.ValidatorStatus
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodSubmitAttendanceDetection,
-                (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 publicKeys,
                 attendances
             );

@@ -22,12 +22,17 @@ namespace Lachain.Benchmark
                 Console.Error.WriteLine(exception);
             };
 
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json"));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json", ArgGetter));
 
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
 
             _container = containerBuilder.Build();
+        }
+
+        private static string? ArgGetter(string arg1, string? arg2)
+        {
+            throw new NotImplementedException();
         }
 
         private static uint _next = 48821;

@@ -340,7 +340,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),
-                ["transactionIndex"] = receipt.IndexInBlock,
+                ["transactionIndex"] = receipt.IndexInBlock.ToHex(),
                 ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
                 ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
                 ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(), // TODO: plus previous
