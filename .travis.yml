@@ -1,22 +1,15 @@
 language: csharp
 mono: none
 dist: xenial
-addons:
-  snaps:
-    - name: dotnet-sdk
-      confinement: classic
-      channel: 5.0/beta
+dotnet: 3.1
 env:
   global:
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
     - DOTNET_CLI_TELEMETRY_OPTOUT=1
 install:
-  - export PATH="$PATH:/home/travis/.dotnet/tools"
-  - export PATH="$PATH:$HOME/.local/bin"
-  - sudo snap alias dotnet-sdk.dotnet dotnet
+  - dotnet restore
 
 script:
-  - dotnet restore
   - dotnet build -c Release
   - dotnet test
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
