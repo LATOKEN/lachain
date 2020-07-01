@@ -73,7 +73,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek();
             frame.UseGas(GasMetering.GetCallValueGasCost);
             if (offset < 0 || offset >= frame.Input.Length)
-                throw new RuntimeException("Bad getcallvalue call");
+                throw new InvalidContractException("Bad getcallvalue call");
             return frame.Input[offset];
         }
 
@@ -89,9 +89,9 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call COPYCALLVALUE outside wasm frame");
             if (from < 0 || to > frame.Input.Length || from > to)
-                throw new RuntimeException("Copy to contract memory failed: bad range");
+                throw new InvalidContractException("Copy to contract memory failed: bad range");
             if (!SafeCopyToMemory(frame.Memory, frame.Input.Skip(from).Take(to - from).ToArray(), offset))
-                throw new RuntimeException("Copy to contract memory failed");
+                throw new InvalidContractException("Copy to contract memory failed");
         }
 
         public static void Handler_Env_WriteLog(int offset, int length)
@@ -100,7 +100,7 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call WRITELOG outside wasm frame");
             var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
             if (buffer == null)
-                throw new RuntimeException("Bad call to WRITELOG");
+                throw new InvalidContractException("Bad call to WRITELOG");
             Console.WriteLine($"Contract ({frame.CurrentAddress}) logged: {buffer.ToHex()}");
         }
 
@@ -114,11 +114,11 @@ namespace Lachain.Core.Blockchain.VM
             var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
             if (addressBuffer is null || inputBuffer is null)
-                throw new RuntimeException("Bad call to call function");
+                throw new InvalidContractException("Bad call to call function");
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256()?.ToMoney();
             if (value is null)
-                throw new RuntimeException("Bad call to call function");
+                throw new InvalidContractException("Bad call to call function");
             if (value > Money.Zero)
             {
                 frame.UseGas(GasMetering.TransferFundsGasCost);
@@ -129,16 +129,16 @@ namespace Lachain.Core.Blockchain.VM
 
             var gasBuffer = SafeCopyFromMemory(frame.Memory, gasOffset, 8);
             if (gasBuffer is null)
-                throw new RuntimeException("Bad call to call function");
+                throw new InvalidContractException("Bad call to call function");
             var gasLimit = gasBuffer.AsReadOnlySpan().ToUInt64();
             if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
                 gasLimit = frame.GasLimit - frame.GasUsed;
             var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit);
             if (callResult.Status != ExecutionStatus.Ok)
-                throw new RuntimeException("Cannot invoke call: " + callResult.Status);
+                throw new InvalidContractException("Cannot invoke call: " + callResult.Status);
             frame.UseGas(callResult.GasUsed);
             if (!SafeCopyToMemory(frame.Memory, callResult.ReturnValue ?? Array.Empty<byte>(), returnValueOffset))
-                throw new RuntimeException("Cannot invoke call: cannot pass return value");
+                throw new InvalidContractException("Cannot invoke call: cannot pass return value");
             return 0;
         }
 
@@ -148,12 +148,12 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call LOADSTORAGE outside wasm frame");
             frame.UseGas(GasMetering.LoadStorageGasCost);
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
-            if (key is null) throw new RuntimeException("Bad call to LOADSTORAGE");
+            if (key is null) throw new InvalidContractException("Bad call to LOADSTORAGE");
             if (key.Length < 32)
                 key = _AlignTo32(key);
             var value = frame.InvocationContext.Snapshot.Storage.GetValue(frame.CurrentAddress, key.ToUInt256());
             if (!SafeCopyToMemory(frame.Memory, value.ToBytes(), valueOffset))
-                throw new RuntimeException("Cannot copy storageload result to memory");
+                throw new InvalidContractException("Cannot copy storageload result to memory");
         }
 
         public static void Handler_Env_SaveStorage(int keyOffset, int valueOffset)
@@ -163,11 +163,11 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.SaveStorageGasCost);
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
-                throw new RuntimeException("Bad call to SAVESTORAGE");
+                throw new InvalidContractException("Bad call to SAVESTORAGE");
             if (key.Length < 32)
                 key = _AlignTo32(key);
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32);
-            if (value is null) throw new RuntimeException("Bad call to SAVESTORAGE");
+            if (value is null) throw new InvalidContractException("Bad call to SAVESTORAGE");
             frame.InvocationContext.Snapshot.Storage.SetValue(
                 frame.CurrentAddress, key.ToUInt256(), value.ToUInt256()
             );
@@ -188,7 +188,7 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call SETRETURN outside wasm frame");
             var ret = SafeCopyFromMemory(frame.Memory, offset, length);
             if (ret is null)
-                throw new RuntimeException("Bad call to SETRETURN");
+                throw new InvalidContractException("Bad call to SETRETURN");
             frame.ReturnValue = ret;
         }
 
@@ -199,7 +199,7 @@ namespace Lachain.Core.Blockchain.VM
             var data = frame.InvocationContext.Sender.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
-                throw new RuntimeException("Bad call to GETSENDER");
+                throw new InvalidContractException("Bad call to GETSENDER");
         }
 
         public static void Handler_Env_SystemHalt(int haltCode)
@@ -277,7 +277,7 @@ namespace Lachain.Core.Blockchain.VM
             var data = frame.InvocationContext.Value.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
-                throw new RuntimeException("Bad call to (get_transferred_funds)");
+                throw new InvalidContractException("Bad call to (get_transferred_funds)");
         }
 
         public static void Handler_Env_GetTransactionHash(int dataOffset)
@@ -287,7 +287,7 @@ namespace Lachain.Core.Blockchain.VM
             var data = frame.InvocationContext.TransactionHash.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
-                throw new RuntimeException("Bad call to (get_transaction_hash)");
+                throw new InvalidContractException("Bad call to (get_transaction_hash)");
         }
 
         public static void Handle_Env_WriteEvent(int signatureOffset, int valueOffset, int valueLength)

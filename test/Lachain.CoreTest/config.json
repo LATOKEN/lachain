@@ -35,6 +35,9 @@
     "path": "wallet.json",
     "password": "12345"
   },
+  "blockchain": {
+    "targetBlockTime": 5000
+  },
   "storage": {
     "provider": "RocksDB",
     "path": "ChainTest"

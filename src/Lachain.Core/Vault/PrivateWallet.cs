@@ -30,19 +30,18 @@ namespace Lachain.Core.Vault
 
         public PrivateWallet(IConfigManager configManager)
         {
-            
             var config = configManager.GetConfig<VaultConfig>("vault");
-            
+
             if (!(configManager.GetCliArg("wallet") is null))
                 config!.Path = configManager.GetCliArg("wallet");
-            
+
             if (config?.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
 
-            _walletPath = Path.IsPathRooted(config.Path) || config.Path.StartsWith("~/") ? 
-                config.Path : 
-                Path.GetDirectoryName(configManager.ConfigPath) + Path.DirectorySeparatorChar + config.Path;
-            
+            _walletPath = Path.IsPathRooted(config.Path) || config.Path.StartsWith("~/")
+                ? config.Path
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), config.Path);
+
             _walletPassword = config.Password;
             _unlockEndTime = 0;
             RestoreWallet(_walletPath, _walletPassword, out var keyPair);

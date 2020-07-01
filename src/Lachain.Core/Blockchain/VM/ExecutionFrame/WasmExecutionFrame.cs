@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Data;
 using System.IO;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
@@ -21,7 +22,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
             CompiledInstance = compiledInstance;
             Exports = CompiledInstance.Exports.GetType();
             if (Exports is null)
-                throw new RuntimeException("ill-formed contract binary");
+                throw new InvalidConstraintException("ill-formed contract binary");
             InvocationContext = invocationContext;
             CurrentAddress = currentAddress;
             Input = input;

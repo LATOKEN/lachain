@@ -19,7 +19,7 @@ namespace Lachain.Core.DI.Modules
             dataDir ??= configManager.GetConfig<StorageConfig>("storage")!.Path!;
             dataDir = Path.IsPathRooted(dataDir) || dataDir.StartsWith("~/")
                 ? dataDir
-                : Path.GetDirectoryName(configManager.ConfigPath) + Path.DirectorySeparatorChar + dataDir;
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), dataDir);
 
             containerBuilder.RegisterSingleton<IRocksDbContext>(() => new RocksDbContext(dataDir));
 

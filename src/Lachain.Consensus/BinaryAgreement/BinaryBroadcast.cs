@@ -116,7 +116,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             if (_receivedValues[sender].Contains(b))
             {
-                Logger.LogWarning($"{_broadcastId}: double receive message {bval} from {sender}");
+                Logger.LogTrace($"{_broadcastId}: double receive message {bval} from {sender}");
                 return;
             }
 
@@ -150,7 +150,7 @@ namespace Lachain.Consensus.BinaryAgreement
             var b = aux.Value ? 1 : 0;
             if (_playerSentAux[sender])
             {
-                Logger.LogWarning($"{_broadcastId}: double receive message {aux} from {sender}");
+                Logger.LogTrace($"{_broadcastId}: double receive message {aux} from {sender}");
                 return;
             }
 
@@ -167,7 +167,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             if (_validatorSentConf[sender])
             {
-                Logger.LogWarning($"{_broadcastId}: double receive message {conf} from {sender}");
+                Logger.LogTrace($"{_broadcastId}: double receive message {conf} from {sender}");
                 return;
             }
 

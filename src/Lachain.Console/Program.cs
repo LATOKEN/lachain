@@ -193,7 +193,7 @@ namespace Lachain.Console
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
             var getArg = GetArgParser(args);
-            var configPath = getArg("config", "./config.json");
+            var configPath = getArg("config", "./config.json")!;
             using var app = new Application(configPath, getArg);
             app.Start(args);
         }
