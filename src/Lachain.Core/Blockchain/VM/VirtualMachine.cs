@@ -94,7 +94,7 @@ namespace Lachain.Core.Blockchain.VM
             }
             catch (Exception e)
             {
-                Logger.LogError("Unknown exception in VM", e);
+                Logger.LogError($"Unknown exception in VM: {e}");
                 result.Status = ExecutionStatus.UnknownError;
                 result.GasUsed = frame.GasUsed;
             }

@@ -65,7 +65,7 @@ namespace Lachain.Storage.State
 
         public void DeleteRawValue(UInt160 contract, IEnumerable<byte> key)
         {
-            _state.Delete(EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key).ToArray(), out _);
+            _state.TryDelete(EntryPrefix.StorageByHash.BuildPrefix(contract).Concat(key).ToArray(), out _);
         }
     }
 }

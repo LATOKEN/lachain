@@ -19,6 +19,7 @@ using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using NLog;
 using SimpleInjector;
 
 namespace Lachain.Console
@@ -29,6 +30,13 @@ namespace Lachain.Console
 
         public Application(string configPath, Func<string, string?, string?> argGetter)
         {
+            var logLevel = argGetter("log", Environment.GetEnvironmentVariable("LOG_LEVEL"));
+            if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
+            if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
+                logLevel = "Info";
+            LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
+            LogManager.ReconfigExistingLoggers();
+
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath, argGetter));
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -84,7 +92,7 @@ namespace Lachain.Console
 
             if (!(configManager.GetCliArg("host") is null))
                 networkConfig!.MyHost = configManager.GetCliArg("host");
-                
+
             networkManager.Start(networkConfig!, wallet.EcdsaKeyPair, messageHandler);
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
