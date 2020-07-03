@@ -42,8 +42,9 @@ namespace Lachain.Console
     {
         static void TrustedKeyGen()
         {
-            const int n = 22, f = 7;
+            // const int n = 22, f = 7;
             // const int n = 4, f = 1;
+            const int n = 7, f = 2;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
 
@@ -139,6 +140,29 @@ namespace Lachain.Console
                     privShares[i].ToHex()
                 );
             }
+
+            var tpkePrivKeys = string.Join(
+                ", ",
+                Enumerable.Range(0, n)
+                    .Select(idx => tpkeKeyGen.GetPrivKey(idx))
+                    .Select(x => $"\"{x.ToHex()}\""));
+            var tsKeys = string.Join(
+                ", ",
+                sigKeyGen.GetPrivateShares()
+                    .Select(x => $"(\"{x.GetPublicKeyShare().ToHex()}\", \"{x.ToHex()}\")")
+            );
+            System.Console.WriteLine(
+                $"{n}: " + "{" +
+                "  \"tpke\": (" +
+                $"    \"{tpkePubKey.ToHex()}\"," +
+                $"    [{tpkePrivKeys}]" +
+                "  )," +
+                $"  \"ts\": [{tsKeys}]," +
+                "}");
+            System.Console.WriteLine(
+                string.Join(", ", ecdsaPrivateKeys.Zip(ecdsaPublicKeys).Zip(addresses)
+                    .Select(t => $"(\"{t.First.Second}\", \"{t.First.First}\", \"{t.Second}\")"))
+            );
         }
 
         private static void GenWallet(string path, string ecdsaKey, string tpkeKey, string tsKey)
