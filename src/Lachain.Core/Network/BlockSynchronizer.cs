@@ -83,6 +83,8 @@ namespace Lachain.Core.Network
                 if (tx.Signature.IsZero())
                 {
                     Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
+                    if (_transactionPool.Add(tx) == OperatingError.Ok)
+                        persisted++;
                     continue;
                 }
 
