@@ -113,7 +113,7 @@ namespace Lachain.Core.ValidatorStatus
                     if (!isStaker)
                     {
                         var coverFeesAmount = new BigInteger(10) * BigInteger.Pow(10, 18);
-                        // Logger.LogInformation($"Trying to become staker");
+                        Logger.LogInformation($"Trying to become staker");
                         var balance =
                             _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
                         var isEnoughBalance = balance.ToWei() > StakingContract.TokenUnitsInRoll + coverFeesAmount;

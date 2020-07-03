@@ -80,6 +80,12 @@ namespace Lachain.Core.Network
             var persisted = 0u;
             foreach (var tx in transactions)
             {
+                if (tx.Signature.IsZero())
+                {
+                    Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
+                    continue;
+                }
+
                 var error = _transactionManager.Verify(tx);
                 if (error != OperatingError.Ok)
                 {
