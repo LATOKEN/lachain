@@ -50,7 +50,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             */
                 
             // hardcoded to prevent default 21000 gas in Metamask
-            return "0x1";
+            return "0x01";
         }
     }
 }
