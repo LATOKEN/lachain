@@ -6,6 +6,7 @@ using System.Threading;
 using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus
 {
@@ -16,8 +17,8 @@ namespace Lachain.Networking.Consensus
 
         private ClientWorker? _client;
 
-        private readonly IDictionary<ulong, NetworkMessage>
-            _unacked = new ConcurrentDictionary<ulong, NetworkMessage>(); // TODO: resend unacked from time to time
+        private readonly IDictionary<ulong, (NetworkMessage msg, ulong timestamp)>
+            _unacked = new ConcurrentDictionary<ulong, (NetworkMessage, ulong)>(); // TODO: resend unacked from time to time
 
         private readonly IList<NetworkMessage> _unsent = new List<NetworkMessage>();
         private Thread? _unackedWorker;
@@ -50,7 +51,7 @@ namespace Lachain.Networking.Consensus
             {
                 lock (_unacked)
                 {
-                    _unacked[message.MessageId] = message;
+                    _unacked[message.MessageId] = (message, TimeUtils.CurrentTimeMillis());
                 }
             }
 
@@ -83,14 +84,18 @@ namespace Lachain.Networking.Consensus
         {
             while (true)
             {
-                Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+                Thread.Sleep(TimeSpan.FromMilliseconds(5_000));
                 NetworkMessage[] toResend;
                 lock (_unacked)
                 {
                     var cnt = _unacked.Count;
                     if (cnt == 0) continue;
                     Logger.LogTrace($"Got {cnt} unacked messages, resending");
-                    toResend = _unacked.Values.ToArray();
+                    var now = TimeUtils.CurrentTimeMillis();
+                    toResend = _unacked.Values
+                        .Where(x => x.timestamp < now - 5_000)
+                        .Select(x => x.msg)
+                        .ToArray();
                 }
 
                 foreach (var msg in toResend)
