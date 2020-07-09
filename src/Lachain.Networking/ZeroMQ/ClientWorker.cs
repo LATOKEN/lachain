@@ -1,114 +1,99 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
 using Lachain.Proto;
+using Lachain.Logger;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.ZeroMQ
 {
-    public class ClientWorker : IRemotePeer
+    public class ClientWorker : IRemotePeer, IDisposable
     {
-        public delegate void OpenDelegate(ClientWorker clientWorker, string endpoint);
+        private static readonly ILogger<ClientWorker> Logger = LoggerFactory.GetLoggerForClass<ClientWorker>();
 
-        public event OpenDelegate? OnOpen;
-
-        public delegate void MessageDelegate(ClientWorker clientWorker, NetworkMessage message);
-
-        public event MessageDelegate? OnSent;
-
-        public delegate void CloseDelegate(ClientWorker clientWorker, string endpoint);
-
-        public event CloseDelegate? OnClose;
-
-        public bool IsConnected { get; set; }
-        public bool IsKnown { get; set; }
+        public bool IsConnected { get; private set; }
         public PeerAddress Address { get; }
-        public Node? Node { get; set; }
+        public ECDSAPublicKey? PublicKey { get; }
         public DateTime Connected { get; } = DateTime.Now;
 
-        public ClientWorker(PeerAddress peerAddress, Node? node)
+        private readonly PushSocket _socket;
+        private readonly Thread _worker;
+
+        public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? publicKey)
         {
+            PublicKey = publicKey;
             Address = peerAddress;
-            Node = node;
+            _socket = new PushSocket();
+            _worker = new Thread(Worker);
         }
 
-        private readonly Queue<NetworkMessage> _messageQueue
-            = new Queue<NetworkMessage>();
+        public void Start()
+        {
+            _worker.Start();
+        }
 
+        public void Stop()
+        {
+            IsConnected = false;
+            lock (_queueNotEmpty) Monitor.Pulse(_queueNotEmpty);
+            _worker.Join();
+        }
+
+        public static void SendOnce(PeerAddress address, NetworkMessage message)
+        {
+            var endpoint = $"tcp://{address.Host}:{address.Port}";
+            using var socket = new PushSocket();
+            socket.Connect(endpoint);
+            socket.SendFrame(message.ToByteArray());
+            Thread.Sleep(TimeSpan.FromSeconds(1)); // TODO: wtf?
+            socket.Disconnect(endpoint);
+        }
+
+        private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
         private readonly object _queueNotEmpty = new object();
-        private readonly object _workerClosed = new object();
 
         public void Send(NetworkMessage message)
         {
             lock (_queueNotEmpty)
             {
                 _messageQueue.Enqueue(message);
-                Monitor.PulseAll(_queueNotEmpty);
+                Monitor.Pulse(_queueNotEmpty);
             }
         }
 
-        private void _Worker()
+        private void Worker()
         {
-            using (var socket = new PushSocket())
+            var endpoint = $"tcp://{Address.Host}:{Address.Port}";
+            _socket.Connect(endpoint);
+            IsConnected = true;
+            while (IsConnected)
             {
-                var endpoint = $"tcp://{Address.Host}:{Address.Port}";
-                socket.Connect(endpoint);
-                IsConnected = true;
-                OnOpen?.Invoke(this, endpoint);
-                while (IsConnected)
+                NetworkMessage message;
+                lock (_queueNotEmpty)
                 {
-                    NetworkMessage message;
-                    lock (_queueNotEmpty)
+                    while (_messageQueue.Count == 0)
                     {
-                        while (_messageQueue.Count == 0)
-                            Monitor.Wait(_queueNotEmpty);
-                        message = _messageQueue.Dequeue();
+                        Monitor.Wait(_queueNotEmpty);
                     }
 
-                    if (message is null)
-                        continue;
-                    if (socket.TrySendFrame(message.ToByteArray()))
-                        OnSent?.Invoke(this, message);
+                    message = _messageQueue.Dequeue();
                 }
 
-                socket.Disconnect(endpoint);
-                OnClose?.Invoke(this, endpoint);
-                lock (_workerClosed)
-                {
-                    IsConnected = false;
-                    Monitor.PulseAll(_workerClosed);
-                }
+                if (message is null)
+                    continue;
+                _socket.SendFrame(message.ToByteArray());
             }
+
+            _socket.Disconnect(endpoint);
         }
 
-        public void Start()
+        public void Dispose()
         {
-            if (IsConnected)
-                throw new Exception("Client worker has already been started");
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    _Worker();
-                }
-                catch (Exception e)
-                {
-                    Console.Error.WriteLine(e);
-                }
-            }, TaskCreationOptions.LongRunning);
-        }
-
-        public void Stop()
-        {
-            lock (_workerClosed)
-            {
-                IsConnected = false;
-                while (IsConnected)
-                    Monitor.Wait(_workerClosed);
-            }
+            Stop();
+            _socket.Dispose();
         }
     }
 }

@@ -11,7 +11,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Vault;
-using Lachain.Networking;
+using Lachain.Networking.Consensus;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
@@ -21,7 +21,7 @@ namespace Lachain.Core.Consensus
     public class ConsensusManager : IConsensusManager
     {
         private static readonly ILogger<ConsensusManager> Logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();
-        private readonly IMessageDeliverer _messageDeliverer;
+        private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IBlockProducer _blockProducer;
@@ -41,7 +41,7 @@ namespace Lachain.Core.Consensus
 
 
         public ConsensusManager(
-            IMessageDeliverer messageDeliverer,
+            IConsensusMessageDeliverer consensusMessageDeliverer,
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
@@ -50,7 +50,7 @@ namespace Lachain.Core.Consensus
             IConfigManager configManager
         )
         {
-            _messageDeliverer = messageDeliverer;
+            _consensusMessageDeliverer = consensusMessageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
             _blockManager = blockManager;
@@ -233,7 +233,7 @@ namespace Lachain.Core.Consensus
                 return null;
             }
 
-            return _eras[era] = new EraBroadcaster(era, _messageDeliverer, _validatorManager, _privateWallet,
+            return _eras[era] = new EraBroadcaster(era, _consensusMessageDeliverer, _validatorManager, _privateWallet,
                 _validatorAttendanceRepository);
         }
     }

@@ -24,6 +24,7 @@ namespace Lachain.Core.Network
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
+        private readonly INetworkManager _networkManager;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         /*
@@ -37,14 +38,31 @@ namespace Lachain.Core.Network
             ITransactionPool transactionPool,
             IStateManager stateManager,
             IConsensusManager consensusManager,
-            IBlockManager blockManager
+            IBlockManager blockManager,
+            INetworkManager networkManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
             _consensusManager = consensusManager;
+            _networkManager = networkManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
+            transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
+            _networkManager.OnPingRequest += OnPingRequest;
+            _networkManager.OnPingReply += OnPingReply;
+            _networkManager.OnGetBlocksByHashesRequest += OnGetBlocksByHashesRequest;
+            _networkManager.OnGetBlocksByHashesReply += OnGetBlocksByHashesReply;
+            _networkManager.OnGetBlocksByHeightRangeRequest += OnGetBlocksByHeightRangeRequest;
+            _networkManager.OnGetBlocksByHeightRangeReply += OnGetBlocksByHeightRangeReply;
+            _networkManager.OnGetTransactionsByHashesRequest += OnGetTransactionsByHashesRequest;
+            _networkManager.OnGetTransactionsByHashesReply += OnGetTransactionsByHashesReply;
+            _networkManager.OnConsensusMessage += OnConsensusMessage;
+        }
+
+        private void TransactionPoolOnTransactionAdded(object sender, TransactionReceipt e)
+        {
+            _networkManager.BroadcastLocalTransaction(e);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -55,42 +73,50 @@ namespace Lachain.Core.Network
             _queuedMessages.Remove(era);
             foreach (var (envelope, message) in messages)
             {
-                ConsensusMessage(envelope, message);
+                OnConsensusMessage(this, (envelope, message));
             }
         }
 
-        public void PingRequest(MessageEnvelope envelope, PingRequest request)
+        private void OnPingRequest(object sender, (MessageEnvelope envelope, PingRequest request) @event)
         {
+            var (envelope, request) = @event;
             var reply = envelope.MessageFactory?.PingReply(request.Timestamp,
                             _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()) ??
                         throw new InvalidOperationException();
             envelope.RemotePeer?.Send(reply);
         }
 
-        public void PingReply(MessageEnvelope envelope, PingReply reply)
+        private void OnPingReply(object sender, (MessageEnvelope envelope, PingReply reply) @event)
         {
+            var (envelope, reply) = @event;
             _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight,
                 envelope.RemotePeer ?? throw new InvalidOperationException()
             );
         }
 
-        public void GetBlocksByHashesRequest(MessageEnvelope envelope, GetBlocksByHashesRequest request)
+        private void OnGetBlocksByHashesRequest(object sender,
+            (MessageEnvelope envelope, GetBlocksByHashesRequest request) @event)
         {
+            var (envelope, request) = @event;
             var blocks = _stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes);
             envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHashesReply(blocks) ??
                                       throw new InvalidOperationException());
         }
 
-        public void GetBlocksByHashesReply(MessageEnvelope envelope, GetBlocksByHashesReply reply)
+        private void OnGetBlocksByHashesReply(object sender,
+            (MessageEnvelope envelope, GetBlocksByHashesReply reply) @event)
         {
+            var (envelope, reply) = @event;
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
                 _blockSynchronizer.HandleBlockFromPeer(block,
                     envelope.RemotePeer ?? throw new InvalidOperationException(), TimeSpan.FromSeconds(5));
         }
 
-        public void GetBlocksByHeightRangeRequest(MessageEnvelope envelope, GetBlocksByHeightRangeRequest request)
+        private void OnGetBlocksByHeightRangeRequest(object sender,
+            (MessageEnvelope envelope, GetBlocksByHeightRangeRequest request) @event)
         {
+            var (envelope, request) = @event;
             var blockHashes = _stateManager.LastApprovedSnapshot.Blocks
                 .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
@@ -98,14 +124,18 @@ namespace Lachain.Core.Network
                                       throw new InvalidOperationException());
         }
 
-        public void GetBlocksByHeightRangeReply(MessageEnvelope envelope, GetBlocksByHeightRangeReply reply)
+        private void OnGetBlocksByHeightRangeReply(object sender,
+            (MessageEnvelope envelope, GetBlocksByHeightRangeReply reply) @event)
         {
+            var (envelope, reply) = @event;
             envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHashesRequest(reply.BlockHashes) ??
                                       throw new InvalidOperationException());
         }
 
-        public void GetTransactionsByHashesRequest(MessageEnvelope envelope, GetTransactionsByHashesRequest request)
+        private void OnGetTransactionsByHashesRequest(object sender,
+            (MessageEnvelope envelope, GetTransactionsByHashesRequest request) @event)
         {
+            var (envelope, request) = @event;
             var txs = request.TransactionHashes
                 .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
                                   _transactionPool.GetByHash(txHash))
@@ -117,16 +147,19 @@ namespace Lachain.Core.Network
                                       throw new InvalidOperationException());
         }
 
-        public void GetTransactionsByHashesReply(MessageEnvelope envelope, GetTransactionsByHashesReply reply)
+        private void OnGetTransactionsByHashesReply(object sender,
+            (MessageEnvelope envelope, GetTransactionsByHashesReply reply) @event)
         {
+            var (envelope, reply) = @event;
             _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions,
                 envelope.RemotePeer ?? throw new InvalidOperationException()
             );
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void ConsensusMessage(MessageEnvelope envelope, ConsensusMessage message)
+        private void OnConsensusMessage(object sender, (MessageEnvelope envelope, ConsensusMessage message) @event)
         {
+            var (envelope, message) = @event;
             try
             {
                 if (envelope.Signature is null || envelope.PublicKey is null ||

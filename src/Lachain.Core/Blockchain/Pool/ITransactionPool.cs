@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
 
@@ -6,6 +7,8 @@ namespace Lachain.Core.Blockchain.Pool
 {
     public interface ITransactionPool
     {
+        event EventHandler<TransactionReceipt>? TransactionAdded;
+
         IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions { get; }
 
         TransactionReceipt? GetByHash(UInt256 hash);
@@ -13,15 +16,15 @@ namespace Lachain.Core.Blockchain.Pool
         void Restore();
 
         OperatingError Add(Transaction transaction, Signature signature);
-        
+
         OperatingError Add(TransactionReceipt receipt);
-        
+
         IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
 
         void Relay(IEnumerable<TransactionReceipt> receipts);
-        
+
         uint Size();
-        
+
         void Delete(UInt256 transactionHash);
 
         void Clear();

@@ -1,8 +1,8 @@
 using Lachain.Proto;
 
-namespace Lachain.Networking
+namespace Lachain.Networking.Consensus
 {
-    public interface IMessageDeliverer
+    public interface IConsensusMessageDeliverer
     {
         void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage);
     }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Lachain.Core.Config
+﻿namespace Lachain.Core.Config
 {
     public interface IConfigManager
     {

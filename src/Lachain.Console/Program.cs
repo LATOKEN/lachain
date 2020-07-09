@@ -42,9 +42,9 @@ namespace Lachain.Console
     {
         static void TrustedKeyGen()
         {
-            // const int n = 22, f = 7;
+            const int n = 22, f = 7;
             // const int n = 4, f = 1;
-            const int n = 7, f = 2;
+            // const int n = 7, f = 2;
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
 
@@ -118,6 +118,7 @@ namespace Lachain.Console
                 {
                     Hosts = new[] {"+"},
                     Port = 7070,
+                    ApiKey = "asdasdasd",
                 };
                 var walletPath = "wallet.json";
                 var vault = new VaultConfig

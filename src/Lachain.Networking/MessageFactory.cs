@@ -11,10 +11,22 @@ namespace Lachain.Networking
     {
         private readonly EcdsaKeyPair _keyPair;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
+        private readonly Random _random = new Random();
 
         public MessageFactory(EcdsaKeyPair keyPair)
         {
             _keyPair = keyPair;
+        }
+
+        public NetworkMessage Ack(ulong messageId)
+        {
+            var ack = new Ack {MessageId = messageId};
+            var sig = _SignMessage(ack);
+            return new NetworkMessage
+            {
+                Ack = ack,
+                Signature = sig
+            };
         }
 
         public NetworkMessage HandshakeRequest(Node node)
@@ -26,20 +38,23 @@ namespace Lachain.Networking
             var sig = _SignMessage(request);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 HandshakeRequest = request,
                 Signature = sig
             };
         }
 
-        public NetworkMessage HandshakeReply(Node node)
+        public NetworkMessage HandshakeReply(Node node, int port)
         {
             var reply = new HandshakeReply
             {
-                Node = node
+                Node = node,
+                Port = (uint) port
             };
             var sig = _SignMessage(reply);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 HandshakeReply = reply,
                 Signature = sig
             };
@@ -55,6 +70,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(request);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 PingRequest = request,
                 Signature = sig
             };
@@ -70,6 +86,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(reply);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 PingReply = reply,
                 Signature = sig
             };
@@ -79,6 +96,7 @@ namespace Lachain.Networking
         {
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 ConsensusMessage = message,
                 Signature = _SignMessage(message)
             };
@@ -93,6 +111,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(request);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 GetBlocksByHashesRequest = request,
                 Signature = sig
             };
@@ -107,6 +126,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(reply);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 GetBlocksByHashesReply = reply,
                 Signature = sig
             };
@@ -122,6 +142,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(request);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 GetBlocksByHeightRangeRequest = request,
                 Signature = sig
             };
@@ -136,6 +157,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(reply);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 GetBlocksByHeightRangeReply = reply,
                 Signature = sig
             };
@@ -150,6 +172,7 @@ namespace Lachain.Networking
             var sig = _SignMessage(request);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 GetTransactionsByHashesRequest = request,
                 Signature = sig
             };
@@ -164,9 +187,17 @@ namespace Lachain.Networking
             var sig = _SignMessage(reply);
             return new NetworkMessage
             {
+                MessageId = GenerateMessageId(),
                 GetTransactionsByHashesReply = reply,
                 Signature = sig
             };
+        }
+
+        private ulong GenerateMessageId()
+        {
+            var buf = new byte[8];
+            _random.NextBytes(buf);
+            return BitConverter.ToUInt64(buf);
         }
 
         private Signature _SignMessage(IMessage message)

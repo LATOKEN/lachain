@@ -15,12 +15,10 @@ using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
-using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using NLog;
-using SimpleInjector;
 
 namespace Lachain.Console
 {
@@ -56,7 +54,6 @@ namespace Lachain.Console
             var validatorManager = _container.Resolve<IValidatorManager>();
             var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
             var networkManager = _container.Resolve<INetworkManager>();
-            var messageHandler = _container.Resolve<IMessageHandler>();
             var commandManager = _container.Resolve<IConsoleManager>();
             var rpcManager = _container.Resolve<IRpcManager>();
             var stateManager = _container.Resolve<IStateManager>();
@@ -93,18 +90,13 @@ namespace Lachain.Console
             if (!(configManager.GetCliArg("host") is null))
                 networkConfig!.MyHost = configManager.GetCliArg("host");
 
-            networkManager.Start(networkConfig!, wallet.EcdsaKeyPair, messageHandler);
+            networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
             rpcManager.Start();
 
             blockSynchronizer.Start();
-            System.Console.WriteLine("Waiting for consensus peers to handshake...");
-            networkManager.WaitForHandshake(validatorManager
-                .GetValidatorsPublicKeys((long) blockManager.GetHeight())
-                .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
-            );
-            System.Console.WriteLine("Handshake successful, synchronizing blocks...");
+            System.Console.WriteLine("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))

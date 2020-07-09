@@ -7,7 +7,6 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Crypto;
 using Lachain.Logger;
-using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
@@ -21,8 +20,6 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
-        private readonly INetworkManager _networkManager;
-        private readonly INetworkBroadcaster _networkBroadcaster;
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -33,20 +30,19 @@ namespace Lachain.Core.Blockchain.Pool
         private ISet<TransactionReceipt> _transactionsQueue;
         private ISet<TransactionReceipt> _relayQueue;
 
+        public event EventHandler<TransactionReceipt>? TransactionAdded;
+        public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
+
         public TransactionPool(
             ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
-            INetworkManager networkManager,
-            INetworkBroadcaster networkBroadcaster,
             IBlockManager blockManager
         )
         {
             _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
             _poolRepository = poolRepository ?? throw new ArgumentNullException(nameof(poolRepository));
             _transactionManager = transactionManager;
-            _networkBroadcaster = networkBroadcaster;
-            _networkManager = networkManager;
             _transactionsQueue = new HashSet<TransactionReceipt>();
             _relayQueue = new HashSet<TransactionReceipt>();
 
@@ -62,8 +58,6 @@ namespace Lachain.Core.Blockchain.Pool
                 Delete(tx);
             }
         }
-
-        public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public TransactionReceipt? GetByHash(UInt256 hash)
@@ -139,12 +133,7 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddTransaction(receipt);
 
             UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
-            if (!_networkManager.IsReady)
-                return OperatingError.Ok;
-            var message = _networkManager.MessageFactory?.GetTransactionsByHashesReply(
-                new[] {receipt}
-            ) ?? throw new InvalidOperationException();
-            _networkBroadcaster.Broadcast(message);
+            TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
 

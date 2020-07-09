@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Lachain.Core.DI
+﻿namespace Lachain.Core.DI
 {
     public interface IBootstrapper
     {

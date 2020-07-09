@@ -1,85 +1,93 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Lachain.Logger;
+using Lachain.Networking.Consensus;
+using Lachain.Utility.Utils;
 using NetMQ;
 using NetMQ.Sockets;
 
 namespace Lachain.Networking.ZeroMQ
 {
-    public class ServerWorker
+    public class ServerWorker : IDisposable
     {
-        public delegate void OpenDelegate(string endpoint);
-        public event OpenDelegate? OnOpen;
+        private static readonly ILogger<IncomingPeerConnection> Logger =
+            LoggerFactory.GetLoggerForClass<IncomingPeerConnection>();
 
-        public delegate void MessageDelegate(byte[] message);
-        public event MessageDelegate? OnMessage;
-        
-        public delegate void CloseDelegate(string endpoint);
-        public event CloseDelegate? OnClose;
-
-        public delegate void ErrorDelegate(string message);
-        public event ErrorDelegate? OnError;
-        
-        private readonly NetworkConfig _networkConfig;
+        public event EventHandler<byte[]>? OnMessage;
+        public event EventHandler<Exception>? OnError;
 
         public bool IsActive { get; set; }
 
-        public ServerWorker(NetworkConfig networkConfig)
+        public readonly int Port;
+
+        private readonly PullSocket _socket;
+        private readonly Thread _worker;
+
+        public ServerWorker(string bindAddress, int port = 0)
         {
-            _networkConfig = networkConfig ?? throw new ArgumentNullException(nameof(networkConfig));
+            _socket = new PullSocket();
+            if (port == 0)
+            {
+                Port = _socket.BindRandomPort($"tcp://{bindAddress}");
+            }
+            else
+            {
+                Port = port;
+                _socket.Bind($"tcp://{bindAddress}:{port}");
+            }
+            Logger.LogTrace($"Bound endpoint: tcp://{bindAddress}:{Port}");
+
+            IsActive = true;
+            _worker = new Thread(Worker);
         }
 
-        private void _Worker()
+        public void Start()
         {
-            var endpoint = $"tcp://{_networkConfig.Address}:{_networkConfig.Port}";
-            using (var socket = new PullSocket())
+            _worker.Start();
+        }
+
+        public void Stop()
+        {
+            IsActive = false;
+            _worker.Interrupt();
+            _worker.Join();
+        }
+
+        private void Worker()
+        {
+            while (IsActive)
             {
-                socket.Bind(endpoint);
-                IsActive = true;
-                OnOpen?.Invoke(endpoint);
-                while (IsActive)
+                try
                 {
-                    var buffer = socket.ReceiveFrameBytes();
+                    var buffer = _socket.ReceiveFrameBytes();
                     if (buffer == null || buffer.Length <= 0)
                         continue;
                     Task.Factory.StartNew(() =>
                     {
                         try
                         {
-                            OnMessage?.Invoke(buffer);
+                            OnMessage?.Invoke(this, buffer);
                         }
                         catch (Exception e)
                         {
-                            OnError?.Invoke(e.Message);
+                            OnError?.Invoke(this, e);
                         }
                     });
                 }
-                OnClose?.Invoke(endpoint);
-                IsActive = false;
-            }
-        }
-        
-        public void Start()
-        {
-            if (IsActive)
-                throw new Exception("Server has already been started");
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    _Worker();
-                }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine(e);
+                    Logger.LogError($"Unexpected network error: {e}");
+                    IsActive = false;
                 }
-            }, TaskCreationOptions.LongRunning);
+            }
+            Logger.LogDebug($"Server worker for {Port} is terminated");
         }
 
-        public void Stop()
+        public void Dispose()
         {
-            if (IsActive)
-                throw new Exception("Server hasn't been started yet");
-            IsActive = false;
+            Stop();
+            _socket.Dispose();
         }
     }
 }

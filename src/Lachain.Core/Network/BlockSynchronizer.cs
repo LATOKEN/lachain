@@ -104,11 +104,6 @@ namespace Lachain.Core.Network
             return persisted;
         }
 
-        public uint WaitForBlocks(IEnumerable<UInt256> blockHashes, TimeSpan timeout)
-        {
-            throw new NotImplementedException();
-        }
-
         public void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout)
         {
             var myHeight = _blockManager.GetHeight();
@@ -175,14 +170,12 @@ namespace Lachain.Core.Network
             var setOfPeers = peers.ToHashSet();
             if (setOfPeers.Count == 0) return false;
 
-            _lastActiveTime = TimeUtils.CurrentTimeMillis();
             var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             var validatorPeers = _peerHeights
-                .Where(entry => entry.Key.Node != null)
-                .Where(entry => setOfPeers.Contains(entry.Key.Node?.PublicKey!))
+                .Where(entry => setOfPeers.Contains(entry.Key.PublicKey!))
                 .ToArray();
             if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
@@ -208,15 +201,9 @@ namespace Lachain.Core.Network
 
         public ulong? GetHighestBlock()
         {
-            var validatorPeers = _peerHeights
-                .Where(entry => entry.Key.Node != null)
-                .ToArray();
-            if (validatorPeers.Length == 0) return null;
-
-            return validatorPeers.Max(v => v.Value);
+            if (_peerHeights.Count == 0) return null;
+            return _peerHeights.Max(v => v.Value);
         }
-
-        private ulong _lastActiveTime = TimeUtils.CurrentTimeMillis();
 
         private void _Worker()
         {

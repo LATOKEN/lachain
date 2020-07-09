@@ -15,6 +15,7 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
+using Lachain.Networking.Consensus;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
@@ -30,7 +31,7 @@ namespace Lachain.Core.Consensus
         
         private readonly IValidatorManager _validatorManager;
         private readonly long _era;
-        private readonly IMessageDeliverer _messageDeliverer;
+        private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
@@ -49,11 +50,11 @@ namespace Lachain.Core.Consensus
             new ConcurrentDictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         public EraBroadcaster(
-            long era, IMessageDeliverer messageDeliverer, IValidatorManager validatorManager,
+            long era, IConsensusMessageDeliverer consensusMessageDeliverer, IValidatorManager validatorManager,
             IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
-            _messageDeliverer = messageDeliverer;
+            _consensusMessageDeliverer = consensusMessageDeliverer;
             _messageFactory = new MessageFactory(wallet.EcdsaKeyPair);
             _validatorManager = validatorManager;
             _wallet = wallet;
@@ -88,7 +89,7 @@ namespace Lachain.Core.Consensus
                 }
                 else
                 {
-                    _messageDeliverer.SendTo(publicKey, payload);
+                    _consensusMessageDeliverer.SendTo(publicKey, payload);
                 }
             }
         }
@@ -114,7 +115,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _messageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era - 1), payload);
+            _consensusMessageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era - 1), payload);
         }
 
         public void Dispatch(ConsensusMessage message, int from)

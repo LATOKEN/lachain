@@ -5,9 +5,10 @@ namespace Lachain.Networking
 {
     public interface IMessageFactory
     {
+        NetworkMessage Ack(ulong messageId);
         NetworkMessage HandshakeRequest(Node node);
 
-        NetworkMessage HandshakeReply(Node node);
+        NetworkMessage HandshakeReply(Node node, int port);
 
         NetworkMessage PingRequest(ulong timestamp, ulong blockHeight);
 

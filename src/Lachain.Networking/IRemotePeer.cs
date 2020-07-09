@@ -6,15 +6,9 @@ namespace Lachain.Networking
     public interface IRemotePeer
     {
         bool IsConnected { get; }
-
-        bool IsKnown { get; set; }
-
         PeerAddress Address { get; }
-        
-        Node? Node { get; set; }
-        
+        ECDSAPublicKey? PublicKey { get; }
         DateTime Connected { get; }
-
         void Send(NetworkMessage message);
     }
 }
