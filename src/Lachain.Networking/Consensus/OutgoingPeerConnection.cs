@@ -39,6 +39,7 @@ namespace Lachain.Networking.Consensus
                 foreach (var msg in _unsent) Send(msg);
                 _unsent.Clear();
             }
+
             _unackedWorker = new Thread(UnackedChecker);
             _unackedWorker.Start();
         }
@@ -49,10 +50,10 @@ namespace Lachain.Networking.Consensus
             {
                 lock (_unacked)
                 {
-                    _unacked[message.MessageId] = message;                    
+                    _unacked[message.MessageId] = message;
                 }
             }
-                
+
             if (_client is null)
             {
                 lock (_unsent)
@@ -65,7 +66,10 @@ namespace Lachain.Networking.Consensus
 
         public void ReceiveAck(ulong messageId)
         {
-            _unacked.Remove(messageId);
+            lock (_unacked)
+            {
+                _unacked.Remove(messageId);
+            }
         }
 
         public void Dispose()

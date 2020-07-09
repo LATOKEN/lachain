@@ -90,7 +90,6 @@ namespace Lachain.Networking.Consensus
                 return;
             }
 
-            Logger.LogTrace($"Got message of type {message.MessageCase}");
             OnReceive?.Invoke(this, (_publicKey, message.MessageId));
             var envelope = new MessageEnvelope
             {
