@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -35,7 +34,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Name(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenNameCost);
-            frame.ReturnValue = Encoding.ASCII.GetBytes("LaToken");
+            frame.ReturnValue = "LaToken".EncodeString();
             return ExecutionStatus.Ok;
         }
 
@@ -51,7 +50,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Symbol(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenSymbolCost);
-            frame.ReturnValue = Encoding.ASCII.GetBytes("LA");
+            frame.ReturnValue = "LA".EncodeString();
             return ExecutionStatus.Ok;
         }
 
@@ -68,7 +67,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
             var balance = _context.Snapshot?.Balances.GetBalance(address);
             if (balance is null) return ExecutionStatus.ExecutionHalted;
-            frame.ReturnValue = balance.ToUInt256().ToBytes();
+            frame.ReturnValue = balance.ToUInt256(true).ToBytes();
             return ExecutionStatus.Ok;
         }
 

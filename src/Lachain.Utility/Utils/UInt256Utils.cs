@@ -27,7 +27,7 @@ namespace Lachain.Utility.Utils
         public static UInt256 ToUInt256(this int value)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            return ((BigInteger) value).ToUInt256();
+            return ((BigInteger) value).ToUInt256(true);
         }
 
         public static UInt256 ToUInt256(this BigInteger value, bool reversed = false)
