@@ -87,8 +87,29 @@ namespace Lachain.Utility.Utils
 
         public static byte[] TrimLeadingZeros(this byte[] array)
         {
-            int firstIndex = Array.FindIndex(array, b => b != 0);
+            var firstIndex = Array.FindIndex(array, b => b != 0);
             return array.Skip(firstIndex).ToArray();
+        }
+
+        public static byte[] AddLeadingZeros(this byte[] array)
+        {
+            var zerosNeed = 32 - array.Length % 32;
+            return Enumerable.Repeat((byte)0, zerosNeed % 32).Concat(array).ToArray();
+        }
+
+        public static byte[] AddTrailingZeros(this byte[] array)
+        {
+            var zerosNeed = 32 - array.Length % 32;
+            return array.Concat(Enumerable.Repeat((byte)0, zerosNeed % 32)).ToArray();
+        }
+
+        public static byte[] EncodeString(this string str)
+        {
+            var prefix = "0x0000000000000000000000000000000000000000000000000000000000000020".HexToBytes();
+            var hexValue = Encoding.ASCII.GetBytes(str);
+            var len = hexValue.Length;
+
+            return prefix.Concat(len.ToUInt256().ToBytes()).Concat(hexValue.AddTrailingZeros()).ToArray();
         }
 
         private static string ToEvenBytesCount(this string hex)

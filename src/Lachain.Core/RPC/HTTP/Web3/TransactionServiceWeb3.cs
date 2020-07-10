@@ -242,14 +242,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
             switch (invocationResult)
             {
                 case UInt256 result:
-                    return result.ToBytes().Reverse().ToHex();
+                    return result.ToBytes().ToHex();
                 case int result:
                     var res = result.ToHex();
                     while (res.Length < 64)
                         res = "0" + res;
                     return "0x" + res;
                 case uint result:
-                    var uintHex = result.ToBytes().Reverse().ToHex(false);
+                    var uintHex = result.ToBytes().ToHex(false);
                     while (uintHex.Length < 64)
                         uintHex = "0" + uintHex;
                     return "0x" + uintHex;
@@ -260,7 +260,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 case string result:
                     const string start = "0x0000000000000000000000000000000000000000000000000000000000000020";
                     var value= Encoding.ASCII.GetBytes(result).ToHex();
-                    var len = (value.Length / 2).ToBytes().Reverse().ToHex(false);
+                    var len = (value.Length / 2).ToBytes().ToHex(false);
                     while (len.Length < 64)
                         len = '0' + len;
                     while (value.Length < 64)

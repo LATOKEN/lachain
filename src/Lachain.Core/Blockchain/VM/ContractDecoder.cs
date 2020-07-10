@@ -89,7 +89,7 @@ namespace Lachain.Core.Blockchain.VM
             if (offset > int.MaxValue)
                 throw new ContractAbiException("Offset is too large");
             var lenOfArray = (int) DecodeUInt256(true).ToBigInteger();
-            var offsets = Enumerable.Range(1, lenOfArray)
+            Enumerable.Range(1, lenOfArray)
                 .Select(_ => DecodeUInt256(true).ToBigInteger());
             
             return Enumerable.Range(1, lenOfArray)
