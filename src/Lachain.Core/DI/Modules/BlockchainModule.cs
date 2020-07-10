@@ -7,6 +7,7 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.BlockchainFilter;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -42,6 +43,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IContractRegisterer, ContractRegisterer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
             /* RPC */
+            containerBuilder.RegisterSingleton<IBlockchainEventFilter, BlockchainEventFilter>();
             containerBuilder.RegisterSingleton<IRpcManager, RpcManager>();
             /* VM */
             containerBuilder.RegisterSingleton<IVirtualMachine, VirtualMachine>();

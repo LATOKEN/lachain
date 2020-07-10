@@ -4,6 +4,7 @@ using System.Linq;
 using Google.Protobuf;
 using Lachain.Crypto.Misc;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Org.BouncyCastle.Crypto.Digests;
 
@@ -44,6 +45,24 @@ namespace Lachain.Crypto
         public static UInt256 Keccak<T>(this T t) where T : IMessage<T>
         {
             return t.ToByteArray().KeccakBytes().ToUInt256();
+        }
+
+        public static UInt256 Keccak(this BlockHeader header)
+        {
+            
+            var emptyUncleHash = Nethereum.RLP.RLP.EncodeList(new byte[][] { }).KeccakBytes();
+            byte[][] headerBytes =
+            {
+                header.PrevBlockHash.ToBytes(),
+                emptyUncleHash,
+                header.StateHash.ToBytes(), // state root
+                header.MerkleRoot.ToBytes(), // tx root
+                header.MerkleRoot.ToBytes(), // tx root
+                header.Index.ToBytes().ToArray(),
+                header.Nonce.ToBytes().ToArray(),
+            };
+
+            return Nethereum.RLP.RLP.EncodeElementsAndList(headerBytes).Keccak();
         }
 
         public static UInt256 Keccak(this IEnumerable<byte> buffer)

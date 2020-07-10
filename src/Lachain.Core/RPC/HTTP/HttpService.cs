@@ -83,6 +83,9 @@ namespace Lachain.Core.RPC.HTTP
             }
             using var reader = new StreamReader(request.InputStream);
             var body = reader.ReadToEnd();
+            Console.WriteLine($"RPC request: {body}");
+            var isArray = body.StartsWith("[");
+                    
             if (request.Headers["Origin"] != null)
                 response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
@@ -90,7 +93,14 @@ namespace Lachain.Core.RPC.HTTP
             {
                 if (!(result is JsonRpcStateAsync jsonRpcStateAsync))
                     return;
-                var output = Encoding.UTF8.GetBytes(jsonRpcStateAsync.Result);
+                
+                var resultString = jsonRpcStateAsync.Result;
+
+                if (isArray && !jsonRpcStateAsync.Result.StartsWith("["))
+                    resultString = "[" + resultString + "]";
+                    
+                // Console.WriteLine(resultString);
+                var output = Encoding.UTF8.GetBytes(resultString);
                 response.OutputStream.Write(output, 0, output.Length);
                 response.OutputStream.Flush();
                 response.Close();
@@ -100,26 +110,32 @@ namespace Lachain.Core.RPC.HTTP
                 JsonRpc = body
             };
 
-            if (!_CheckAuth(JObject.Parse(body), context))
+            var requests = isArray ? JArray.Parse(body) : new JArray{JObject.Parse(body)};
+
+            foreach (var item in requests)
             {
-                var id = ulong.Parse(JObject.Parse(body)["id"]!.ToString());
-                var error = new JObject
+                var requestObj = (JObject) item;
+                if (!_CheckAuth(requestObj, context))
                 {
-                    ["code"] = -32600,
-                    ["message"] = "Invalid API key",
-                };
-                var res = new JObject
-                {
-                    ["jsonrpc"] = "2.0",
-                    ["error"] = error,
-                    ["id"] = id
-                };
-                var output = Encoding.UTF8.GetBytes(res.ToString());
-                response.OutputStream.Write(output, 0, output.Length);
-                response.OutputStream.Flush();
-                response.Close();
-                return false;
+                    var error = new JObject
+                    {
+                        ["code"] = -32600,
+                        ["message"] = "Invalid API key",
+                    };
+                    var res = new JObject
+                    {
+                        ["jsonrpc"] = "2.0",
+                        ["error"] = error,
+                        ["id"] = ulong.Parse(requestObj["id"]!.ToString()),
+                    };
+                    var output = Encoding.UTF8.GetBytes(res.ToString());
+                    response.OutputStream.Write(output, 0, output.Length);
+                    response.OutputStream.Flush();
+                    response.Close();
+                    return false;
+                }
             }
+            
 
             JsonRpcProcessor.Process(async);
             return true;

@@ -92,7 +92,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             return ToEthTxFormat(receipt,
-                block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block));
+                block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block),
+                isReceipt: true
+            );
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
@@ -293,11 +295,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return gasUsed.ToHex();
             }
             
-            var snapshot = _stateManager.NewSnapshot();
             if (!(contract is null))
             {
                 InvocationResult invRes = _stateManager.SafeContext(() =>
                 {
+                    var snapshot = _stateManager.NewSnapshot();
                     var res = VirtualMachine.InvokeWasmContract(
                         contract,
                         new InvocationContext(addressFrom, snapshot, new TransactionReceipt
@@ -314,16 +316,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return invRes.Status == ExecutionStatus.Ok ? (gasUsed + invRes.GasUsed).ToHex(): "0x";
             }
             
-            var context = new InvocationContext(addressFrom, snapshot, new TransactionReceipt
+            
+            InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
             {
-                // TODO: correctly fill these fields
-                Block = snapshot.Blocks.GetTotalBlockHeight(),
+                var snapshot = _stateManager.NewSnapshot();
+                var systemContractContext = new InvocationContext(addressFrom, snapshot, new TransactionReceipt
+                {
+                    Block = snapshot.Blocks.GetTotalBlockHeight(),
+                });
+                var invocationResult = ContractInvoker.Invoke(addressTo, systemContractContext, invocation, 100_000_000);
+                _stateManager.Rollback();
+                
+                return invocationResult;
             });
-            var result = ContractInvoker.Invoke(addressTo, context, invocation, 100_000_000);
-            
-            gasUsed += result.GasUsed;
-            
-            return result.Status == ExecutionStatus.Ok ? gasUsed.ToHex() : "0x";
+            return systemContractInvRes.Status == ExecutionStatus.Ok ? (gasUsed + systemContractInvRes.GasUsed).ToHex(): "0x";
         }
 
         [JsonRpcMethod("eth_gasPrice")]
@@ -335,9 +341,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         public static JObject ToEthTxFormat(TransactionReceipt receipt, string? blockHash = null,
             string? blockNumber = null,
-            Block? block = null)
+            Block? block = null,
+            bool isReceipt = false
+        )
         {
-            return new JObject
+            var res =  new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),
                 ["transactionIndex"] = receipt.IndexInBlock.ToHex(),
@@ -350,18 +358,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["logsBloom"] =
                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 ["status"] = receipt.Status.CompareTo(TransactionStatus.Executed) == 0 ? "0x1" : "0x0",
-                ["value"] = receipt.Transaction.Value.ToBytes().Reverse().ToHex(),
-                ["nonce"] = receipt.Transaction.Nonce.ToHex(),
                 ["r"] = receipt.Signature.Encode().Take(32).ToHex(),
                 ["s"] = receipt.Signature.Encode().Skip(32).Take(32).ToHex(),
                 ["v"] = receipt.Signature.Encode().Skip(64).ToHex(),
-                ["input"] = receipt.Transaction.Invocation.ToHex(),
-                ["gasPrice"] = receipt.Transaction.GasPrice.ToHex(),
                 ["gas"] = receipt.Transaction.GasLimit.ToHex(),
-                ["hash"] = receipt.Hash.ToHex(),
                 ["to"] = receipt.Transaction.To.ToHex(),
                 ["from"] = receipt.Transaction.From.ToHex(),
             };
+            if (!isReceipt)
+            {
+                res["value"] = receipt.Transaction.Value.ToBytes().Reverse().ToHex();
+                res["nonce"] = receipt.Transaction.Nonce.ToHex();
+                res["input"] = receipt.Transaction.Invocation.ToHex();
+                res["hash"] = receipt.Hash.ToHex();
+                res["gasPrice"] = receipt.Transaction.GasPrice.ToHex();
+            }
+
+            return res;
         }
 
         private (OperatingError, object?) _InvokeSystemContract(

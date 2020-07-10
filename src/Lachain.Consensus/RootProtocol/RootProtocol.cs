@@ -72,7 +72,7 @@ namespace Lachain.Consensus.RootProtocol
                 }
 
                 if (!_crypto.VerifySignature(
-                    signedHeaderMessage.Header.KeccakBytes(),
+                    signedHeaderMessage.Header.Keccak().ToBytes(),
                     signedHeaderMessage.Signature.Encode(),
                     Wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
                 ))
@@ -171,7 +171,7 @@ namespace Lachain.Consensus.RootProtocol
             }
 
             var signature = _crypto.Sign(
-                _header.KeccakBytes(),
+                _header.Keccak().ToBytes(),
                 _keyPair.PrivateKey.Encode()
             ).ToSignature();
             Logger.LogTrace(

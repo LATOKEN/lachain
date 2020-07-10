@@ -131,11 +131,17 @@ namespace Lachain.Core.RPC.HTTP
             return new JObject
             {
                 ["syncing"] = false,
-                ["currentBlock"] = _blockManager.GetHeight(),
-                ["highestBlock"] = current,
+                ["currentBlock"] = _blockManager.GetHeight().ToHex(),
+                ["highestBlock"] = current.ToHex(),
                 // TODO: check time correctness
                 ["wrongTime"] = false,
             };
+        }
+
+        [JsonRpcMethod("eth_syncing")]
+        private bool GetEthSyncStatus()
+        {
+            return false;
         }
 
         [JsonRpcMethod("bcn_cycle")]
