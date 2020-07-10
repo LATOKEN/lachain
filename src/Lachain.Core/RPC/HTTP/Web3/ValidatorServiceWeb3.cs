@@ -37,7 +37,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("validator_status")]
         private string GetValidatorStatus()
         {
-            return _validatorStatusManager.IsStarted() ? "0x1" : "0x0";
+            return _validatorStatusManager.IsStarted() ? "0x01" : "0x00";
+        }
+
+        [JsonRpcMethod("eth_mining")]
+        private bool IsMining()
+        {
+            return _validatorStatusManager.IsStarted();
         }
 
         [JsonRpcMethod("validator_stop")]

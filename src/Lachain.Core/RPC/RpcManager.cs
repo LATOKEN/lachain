@@ -1,6 +1,7 @@
 ﻿using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Config;
 using Lachain.Core.Network;
 using Lachain.Core.RPC.HTTP;
@@ -24,6 +25,7 @@ namespace Lachain.Core.RPC
         private readonly IPrivateWallet _privateWallet;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
+        private readonly IBlockchainEventFilter _blockchainEventFilter;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ISystemContractReader _systemContractReader;
@@ -43,7 +45,9 @@ namespace Lachain.Core.RPC
             ISystemContractReader systemContractReader, 
             IBlockSynchronizer blockSynchronizer, 
             ILocalTransactionRepository localTransactionRepository, 
-            ITransactionSigner transactionSigner, IPrivateWallet privateWallet, ITransactionBuilder transactionBuilder)
+            ITransactionSigner transactionSigner, IPrivateWallet privateWallet, ITransactionBuilder transactionBuilder,
+            IBlockchainEventFilter blockchainEventFilter
+        )
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -59,6 +63,7 @@ namespace Lachain.Core.RPC
             _transactionSigner = transactionSigner;
             _privateWallet = privateWallet;
             _transactionBuilder = transactionBuilder;
+            _blockchainEventFilter = blockchainEventFilter;
         }
 
         private HttpService? _httpService;
@@ -75,7 +80,7 @@ namespace Lachain.Core.RPC
                 new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet), 
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet), 
-                new NodeService(_blockSynchronizer)
+                new NodeService(_blockSynchronizer, _blockchainEventFilter)
             };
 
             RpcConfig rpcConfig;

@@ -13,7 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BouncyCastle.NetCore" Version="1.8.6" />
-    <PackageReference Include="LibVRF.Native" Version="0.0.7" />
+    <PackageReference Include="LibVRF.Native" Version="0.0.8" />
     <PackageReference Include="LibVRF.Net" Version="0.0.1" />
     <PackageReference Include="MCL.BLS12_381.Native" Version="0.0.4" />
     <PackageReference Include="MCL.BLS12_381.Net" Version="0.0.2" />

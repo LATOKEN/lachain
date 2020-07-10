@@ -69,6 +69,12 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             };
         }
 
+        [JsonRpcMethod("eth_coinbase")]
+        private string GetCoinBase()
+        {
+            return _systemContractReader.NodeAddress().ToHex();
+        }
+
         [JsonRpcMethod("fe_account")]
         private JObject GetAccount(string? address = null)
         {

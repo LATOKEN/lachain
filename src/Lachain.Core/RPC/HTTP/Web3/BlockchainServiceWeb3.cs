@@ -36,8 +36,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getBlockByNumber")]
         private JObject? GetBlockByNumber(string blockHeight, bool fullTx)
         {
-            var height = blockHeight.HexToUlong();
+            var height = blockHeight == "latest" 
+                ? _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
+                : blockHeight.HexToUlong();
+            
             var block = _blockManager.GetByHeight(height) ?? throw new InvalidOperationException("Block not found");
+
+            string parentHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+            if (height > 0)
+            {
+                parentHash = _blockManager.GetByHeight(height - 1)!.Hash.ToHex();
+            }
             ulong gasUsed = 0;
             JArray txs;
             {
@@ -70,8 +79,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["author"] = "0x0300000000000000000000000000000000000000",
                 ["number"] = block.Header.Index.ToHex(),
                 ["hash"] = block.Hash.ToHex(),
-                ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
-                ["nonce"] = block.Header.Nonce.ToHex(),
+                ["parentHash"] = parentHash,
+                // ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
+                ["nonce"] = block.Header.Nonce,
                 ["sha3Uncles"] = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
                 ["logsBloom"] =
                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -81,7 +91,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["miner"] = "0x0300000000000000000000000000000000000000",
                 ["difficulty"] = "0x0",
                 ["totalDifficulty"] = "0x0",
-                ["extraData"] = "0x",
+                ["extraData"] = "0x0",
                 ["size"] = block.CalculateSize().ToHex(),
                 ["gasLimit"] = "0x174876e800",
                 ["gasUsed"] = gasUsed.ToHex(),
@@ -115,10 +125,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
         private string? GetBlockTransactionsCountByNumber(string blockHeight)
         {
-            var number = blockHeight.HexToUlong();
+            if (blockHeight == "pending")
+            {
+                var count = _transactionPool.Size();
+                return $"0x{count:X}";
+            }
+            var blockNumber = blockHeight.HexToUlong();
             try
             {
-                var block = _blockManager.GetByHeight(number) ?? throw new Exception();
+                var block = _blockManager.GetByHeight(blockNumber) ?? throw new Exception();
                 var count = block.TransactionHashes.Count;
                 return $"0x{count:X}";
             }
