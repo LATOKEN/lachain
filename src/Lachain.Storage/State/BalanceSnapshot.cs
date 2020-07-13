@@ -30,7 +30,7 @@ namespace Lachain.Storage.State
         public void SetBalance(UInt160 owner, Money value)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
-            _state.AddOrUpdate(key, value.ToUInt256().ToByteArray());
+            _state.AddOrUpdate(key, value.ToUInt256(false).ToByteArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

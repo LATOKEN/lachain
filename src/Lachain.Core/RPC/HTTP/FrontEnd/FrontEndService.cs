@@ -185,7 +185,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 10000000,
                 Nonce = nonce,
-                Value = value.ToUInt256()
+                Value = value.ToUInt256(false)
             };
 
             return AddTxToPool(tx);
@@ -248,7 +248,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["type"] = "send",
                 ["from"] = receipt.Transaction.From.ToHex(),
                 ["to"] = receipt.Transaction.To.ToHex(),
-                ["amount"] = receipt.Transaction.Value.ToMoney().ToString(),
+                ["amount"] = receipt.Transaction.Value.ToMoney(false).ToString(),
                 ["usedFee"] = block is null
                     ? "0"
                     : new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),

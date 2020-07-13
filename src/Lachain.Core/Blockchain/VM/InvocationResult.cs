@@ -1,4 +1,6 @@
-﻿namespace Lachain.Core.Blockchain.VM
+﻿using Lachain.Proto;
+
+namespace Lachain.Core.Blockchain.VM
 {
     public class InvocationResult
     {
@@ -13,6 +15,8 @@
         public ulong GasUsed { get; internal set; }
         
         public ExecutionStatus Status { get; internal set; }
+        
+        public UInt256[] Logs { get; internal set; }
 
         public byte[]? ReturnValue { get; internal set; }
     }

@@ -122,7 +122,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (!ok)
                 return ExecutionStatus.ExecutionHalted;
 
-            if (amount.ToBigInteger() < TokenUnitsInRoll)
+            if (amount.ToBigInteger(true) < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
             var getStakeExecutionResult = Hepler.CallSystemContract(frame,
