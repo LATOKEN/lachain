@@ -39,7 +39,7 @@ namespace Lachain.Core.Blockchain.Genesis
                 {
                     From = fromAddress,
                     Nonce = (ulong) i,
-                    Value = Money.Parse(t.Value).ToUInt256(),
+                    Value = Money.Parse(t.Value).ToUInt256(false),
                     To = t.Key.HexToUInt160(),
                     GasPrice = 0,
                 })

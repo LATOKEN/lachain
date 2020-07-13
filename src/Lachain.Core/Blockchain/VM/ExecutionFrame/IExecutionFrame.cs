@@ -13,6 +13,8 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         void UseGas(ulong gas);
 
         public byte[] ReturnValue { get; set; }
+
+        public UInt256[] Logs { get; set; }
         public byte[] Input { get; }
 
         public InvocationContext InvocationContext { get; }

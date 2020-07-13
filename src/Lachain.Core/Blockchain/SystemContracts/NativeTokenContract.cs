@@ -67,7 +67,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
             var balance = _context.Snapshot?.Balances.GetBalance(address);
             if (balance is null) return ExecutionStatus.ExecutionHalted;
-            frame.ReturnValue = balance.ToUInt256(true).ToBytes();
+            frame.ReturnValue = balance.ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
 

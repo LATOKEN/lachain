@@ -127,13 +127,13 @@ namespace Lachain.Core.Blockchain.VM
 
         public ContractEncoder Write(UInt256 value)
         {
-            _staticBinaryWriter.Write(value.ToBytes().Reverse().ToArray());
+            _staticBinaryWriter.Write(value.ToBytes().ToArray());
             return this;
         }
 
         public ContractEncoder WriteDynamic(UInt256 value)
         {
-            _dynamicBinaryWriter.Write(value.ToBytes().Reverse().ToArray());
+            _dynamicBinaryWriter.Write(value.ToBytes().ToArray());
             return this;
         }
 

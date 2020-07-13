@@ -33,7 +33,7 @@ namespace Lachain.Utility
 
         public Money(UInt256 value)
         {
-            _value = value.ToBigInteger();
+            _value = value.ToBigInteger(false);
         }
 
         public BigInteger ToWei()
@@ -41,9 +41,9 @@ namespace Lachain.Utility
             return _value;
         }
         
-        public UInt256 ToUInt256(bool reversed = false)
+        public UInt256 ToUInt256(bool littleEndian = true)
         {
-            return _value.ToUInt256(reversed);
+            return _value.ToUInt256(littleEndian);
         }
 
         public override string ToString()

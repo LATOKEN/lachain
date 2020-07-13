@@ -32,7 +32,7 @@ namespace Lachain.Core.Blockchain.Operations
             var tx = new Transaction
             {
                 To = to,
-                Value = value.ToUInt256(),
+                Value = value.ToUInt256(false),
                 From = from,
                 GasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
                 GasLimit = GasMetering.DefaultBlockGasLimit,
@@ -92,7 +92,7 @@ namespace Lachain.Core.Blockchain.Operations
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 100000000,
                 Nonce = nonce,
-                Value = value.ToUInt256()
+                Value = value.ToUInt256(false)
             };
             return tx;
         }
@@ -112,7 +112,7 @@ namespace Lachain.Core.Blockchain.Operations
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 100000000,
                 Nonce = nonce,
-                Value = value.ToUInt256()
+                Value = value.ToUInt256(false)
             };
             return tx;
         }
