@@ -23,7 +23,7 @@ namespace Lachain.Utility
             var timestamp = TimeUtils.CurrentTimeMillis();
             if (timestamp >= LastTimeReported + Interval.TotalMilliseconds)
             {
-                if (LastTimeReported != 0) _callback.Invoke((float) Sum / (timestamp - LastTimeReported), Count);
+                if (LastTimeReported != 0) _callback.Invoke((float) Sum * 1000 / (timestamp - LastTimeReported), Count);
                 Count = 0;
                 Sum = 0;
                 LastTimeReported = timestamp;
