@@ -53,6 +53,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         public UInt160 CurrentAddress { get; }
 
         public byte[] ReturnValue { get; set; }
+        public UInt256[] Logs { get; set; }
         public byte[] Input { get; }
 
         public ulong GasLimit { get; }
