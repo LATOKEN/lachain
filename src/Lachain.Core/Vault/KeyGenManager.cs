@@ -132,9 +132,10 @@ namespace Lachain.Core.Vault
                 var proposer = args[0] as UInt256 ?? throw new Exception();
                 var encryptedValues = args[1] as byte[][] ?? throw new Exception();
 
+                Logger.LogDebug($"Send value tx invocation: {tx.Invocation}, proposer = {proposer.ToHex()}");
                 if (keygen.HandleSendValue(
                     sender,
-                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(false), EncryptedValues = encryptedValues}
+                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
                 ))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();

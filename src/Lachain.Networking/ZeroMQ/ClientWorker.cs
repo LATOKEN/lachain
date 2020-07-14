@@ -6,7 +6,6 @@ using NetMQ;
 using NetMQ.Sockets;
 using Lachain.Proto;
 using Lachain.Logger;
-using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.ZeroMQ
 {

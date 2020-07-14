@@ -6,6 +6,7 @@ using System.Threading;
 using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus
@@ -22,9 +23,17 @@ namespace Lachain.Networking.Consensus
 
         private readonly IList<NetworkMessage> _unsent = new List<NetworkMessage>();
         private Thread? _unackedWorker;
+        private ThroughputCalculator _throughputCalculator;
 
         public OutgoingPeerConnection(PeerAddress address, IMessageFactory messageFactory, Node localNode)
         {
+            _throughputCalculator = new ThroughputCalculator(
+                TimeSpan.FromSeconds(1),
+                (speed, cnt) =>
+                    Logger.LogDebug(
+                        $"Outgoing bandwidth to peer {address}: {speed / 1024:0.00} KiB/s, {cnt} messages"
+                    )
+            );
             ClientWorker.SendOnce(address, messageFactory.HandshakeRequest(localNode));
         }
 
@@ -62,7 +71,11 @@ namespace Lachain.Networking.Consensus
                     _unsent.Add(message);
                 }
             }
-            else _client.Send(message);
+            else
+            {
+                _throughputCalculator.RegisterMeasurement(message.CalculateSize());
+                _client.Send(message);
+            }
         }
 
         public void ReceiveAck(ulong messageId)
@@ -98,7 +111,7 @@ namespace Lachain.Networking.Consensus
                         .Select(x => x.msg)
                         .ToArray();
                 }
-                
+
 
                 foreach (var msg in toResend)
                 {

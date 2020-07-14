@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Networking.Consensus;
-using Lachain.Utility.Utils;
 using NetMQ;
 using NetMQ.Sockets;
 
