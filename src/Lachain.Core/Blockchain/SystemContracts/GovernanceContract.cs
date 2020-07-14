@@ -39,7 +39,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
         private readonly StorageVariable _collectedFees;
-        private readonly StorageVariable _gasPriceBase; // TODO: should it be in the governance state?
 
         public GovernanceContract(InvocationContext context)
         {
@@ -83,11 +82,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 ContractRegisterer.GovernanceContract,
                 context.Snapshot.Storage,
                 new BigInteger(7).ToUInt256()
-            );
-            _gasPriceBase = new StorageVariable(
-                ContractRegisterer.GovernanceContract,
-                context.Snapshot.Storage,
-                new BigInteger(8).ToUInt256()
             );
         }
 
@@ -178,14 +172,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
-            // Console.WriteLine($"Msg sender {MsgSender().ToHex()}");
-            // Console.WriteLine($"players count {players}");
-            // Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
-            // Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
-            // Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
-            // Console.WriteLine($"gen {gen}");
-            // Console.WriteLine($"votes {votes}");
-
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
             
             SetPlayersCount(players);
@@ -201,33 +187,21 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var faulty = (players - 1) / 3;
             var tsKeys = GetTSKeys();
             var tpkeKey = GetTPKEKey();
-            
-            // Console.WriteLine($"players count {players}");
-            // Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
-            // Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
-            
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
 
-            // Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
-            
             var gen = GetConsensusGeneration();
-            // Console.WriteLine($"gen {gen}");
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
-            // Console.WriteLine($"votes {votes}");
             
             if (votes + 1 < players - faulty)
-                throw new Exception("not enogh votes");
-            // return ExecutionStatus.ExecutionHalted;
+                throw new Exception("not enough votes");
 
             var ecdsaPublicKeys = _nextValidators.Get()
                 .Batch(CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
             
-            // Console.WriteLine($"ecdsaPublicKeys len {ecdsaPublicKeys.Length}");
-
             _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-            // Console.WriteLine($"UpdateValidators success");
+            
             _context.Snapshot.Events.AddEvent(new Event
             {
                 Contract = ContractRegisterer.GovernanceContract,
@@ -235,7 +209,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 Index = 0,
                 TransactionHash = _context.Receipt?.Hash
             });
-            // Console.WriteLine($"AddEvent success");
             
             var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract, Lrc20Interface.MethodBalanceOf,

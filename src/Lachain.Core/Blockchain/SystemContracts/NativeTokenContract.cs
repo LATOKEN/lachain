@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using System.Text;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -75,12 +78,27 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Transfer(UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
+            var from = _context.Sender ?? throw new InvalidOperationException();
             if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferBalance(
-                _context.Sender ?? throw new InvalidOperationException(),
+                from,
                 recipient, value.ToMoney()
             );
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            
+            var eventData = Encoding.ASCII.GetBytes(Lrc20Interface.EventTransfer).KeccakBytes()
+                .Concat(from.ToBytes().AddLeadingZeros())
+                .Concat(recipient.ToBytes().AddLeadingZeros())
+                .Concat(value.ToBytes())
+                .ToArray();
+            
+            _context.Snapshot.Events.AddEvent(new Event
+            {
+                Contract = ContractRegisterer.LatokenContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            });
+            
             return ExecutionStatus.Ok;
         }
 

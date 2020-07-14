@@ -134,7 +134,7 @@ namespace Lachain.Core.Vault
 
                 if (keygen.HandleSendValue(
                     sender,
-                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(false), EncryptedValues = encryptedValues}
+                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(true), EncryptedValues = encryptedValues}
                 ))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();

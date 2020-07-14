@@ -15,8 +15,6 @@ namespace Lachain.Core.Blockchain.VM
         public ulong GasUsed { get; internal set; }
         
         public ExecutionStatus Status { get; internal set; }
-        
-        public UInt256[] Logs { get; internal set; }
 
         public byte[]? ReturnValue { get; internal set; }
     }
