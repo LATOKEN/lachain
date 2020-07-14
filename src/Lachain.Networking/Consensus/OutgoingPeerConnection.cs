@@ -30,7 +30,7 @@ namespace Lachain.Networking.Consensus
             _throughputCalculator = new ThroughputCalculator(
                 TimeSpan.FromSeconds(1),
                 (speed, cnt) =>
-                    Logger.LogDebug(
+                    Logger.LogTrace(
                         $"Outgoing bandwidth to peer {address}: {speed / 1024:0.00} KiB/s, {cnt} messages"
                     )
             );

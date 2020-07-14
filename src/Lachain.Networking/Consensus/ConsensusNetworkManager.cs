@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus
@@ -23,6 +24,7 @@ namespace Lachain.Networking.Consensus
 
         private readonly IMessageFactory _messageFactory;
         private readonly Node _localNode;
+        private readonly ThroughputCalculator _throughputCalculator;
 
         public event EventHandler<(MessageEnvelope envelope, ConsensusMessage message)>? OnMessage;
 
@@ -34,6 +36,14 @@ namespace Lachain.Networking.Consensus
                 .Select(PeerAddress.Parse)
                 .Where(x => x.PublicKey != null)
                 .ToDictionary(x => x.PublicKey!);
+            
+            _throughputCalculator = new ThroughputCalculator(
+                TimeSpan.FromSeconds(1),
+                (speed, cnt) =>
+                    Logger.LogDebug(
+                        $"Outgoing bandwidth: {speed / 1024:0.00} KiB/s, {cnt} messages"
+                    )
+            );
         }
 
         public int GetReadyForConnect(ECDSAPublicKey publicKey)
@@ -68,11 +78,14 @@ namespace Lachain.Networking.Consensus
         private void SendAck(object sender, (ECDSAPublicKey publicKey, ulong messageId) message)
         {
             var (publicKey, messageId) = message;
-            EnsureConnection(publicKey).Send(_messageFactory.Ack(messageId));
+            var ack = _messageFactory.Ack(messageId);
+            _throughputCalculator.RegisterMeasurement(ack.CalculateSize());
+            EnsureConnection(publicKey).Send(ack);
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
         {
+            _throughputCalculator.RegisterMeasurement(networkMessage.CalculateSize());
             EnsureConnection(publicKey).Send(networkMessage);
         }
 
