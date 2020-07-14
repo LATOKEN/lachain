@@ -11,6 +11,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Vault;
+using Lachain.Networking;
 using Lachain.Networking.Consensus;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -26,6 +27,7 @@ namespace Lachain.Core.Consensus
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockManager _blockManager;
+        private readonly INetworkManager _networkManager;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
 
@@ -47,7 +49,8 @@ namespace Lachain.Core.Consensus
             IBlockManager blockManager,
             IPrivateWallet privateWallet,
             IValidatorAttendanceRepository validatorAttendanceRepository,
-            IConfigManager configManager
+            IConfigManager configManager,
+            INetworkManager networkManager
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
@@ -56,6 +59,7 @@ namespace Lachain.Core.Consensus
             _blockManager = blockManager;
             _privateWallet = privateWallet;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+            _networkManager = networkManager;
             _terminated = false;
 
             _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
@@ -93,6 +97,7 @@ namespace Lachain.Core.Consensus
             }
 
             CurrentEra = newEra;
+            _networkManager.AdvanceEra(CurrentEra);
         }
 
         private bool IsValidatorForEra(long era)
@@ -131,6 +136,7 @@ namespace Lachain.Core.Consensus
         public void Start(long startingEra)
         {
             CurrentEra = startingEra;
+            _networkManager.AdvanceEra(CurrentEra);
             new Thread(Run).Start();
         }
 
@@ -141,6 +147,7 @@ namespace Lachain.Core.Consensus
                 ulong lastBlock = 0;
                 for (;; CurrentEra += 1)
                 {
+                    _networkManager.AdvanceEra(CurrentEra);
                     var now = TimeUtils.CurrentTimeMillis();
                     if (lastBlock + _targetBlockInterval > now)
                     {

@@ -76,6 +76,15 @@ namespace Lachain.Networking.Consensus
             EnsureConnection(publicKey).Send(networkMessage);
         }
 
+        public void AdvanceEra(long era)
+        {
+            Logger.LogTrace($"Cleaning up unacked message for era < {era}");
+            foreach (var connection in _outgoing.Values)
+            {
+                connection.ClearUnackedForEra(era);
+            }
+        }
+
         private OutgoingPeerConnection EnsureConnection(ECDSAPublicKey key)
         {
             if (_outgoing.TryGetValue(key, out var existingConnection)) return existingConnection;

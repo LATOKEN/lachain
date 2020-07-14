@@ -17,8 +17,8 @@ namespace Lachain.Networking.Consensus
 
         private ClientWorker? _client;
 
-        private readonly IDictionary<ulong, (NetworkMessage msg, ulong timestamp)>
-            _unacked = new ConcurrentDictionary<ulong, (NetworkMessage, ulong)>(); // TODO: resend unacked from time to time
+        private IDictionary<ulong, (NetworkMessage msg, ulong timestamp)> _unacked =
+            new ConcurrentDictionary<ulong, (NetworkMessage, ulong)>();
 
         private readonly IList<NetworkMessage> _unsent = new List<NetworkMessage>();
         private Thread? _unackedWorker;
@@ -94,14 +94,27 @@ namespace Lachain.Networking.Consensus
                     var now = TimeUtils.CurrentTimeMillis();
                     toResend = _unacked.Values
                         .Where(x => x.timestamp < now - 5_000)
+                        .Where(x => x.timestamp > now - 30_000)
                         .Select(x => x.msg)
                         .ToArray();
                 }
+                
 
                 foreach (var msg in toResend)
                 {
                     Send(msg);
                 }
+            }
+        }
+
+        public void ClearUnackedForEra(long era)
+        {
+            lock (_unacked)
+            {
+                _unacked = _unacked.Where(x =>
+                        x.Value.msg.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage ||
+                        x.Value.msg.ConsensusMessage.Validator.Era < era)
+                    .ToDictionary(x => x.Key, x => x.Value);
             }
         }
     }

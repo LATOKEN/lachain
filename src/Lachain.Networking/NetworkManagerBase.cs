@@ -333,6 +333,11 @@ namespace Lachain.Networking
             }
         }
 
+        public void AdvanceEra(long era)
+        {
+            ConsensusNetworkManager.AdvanceEra(era);
+        }
+
         public void BroadcastLocalTransaction(TransactionReceipt e)
         {
             var message = MessageFactory?.GetTransactionsByHashesReply(new[] {e}) ??

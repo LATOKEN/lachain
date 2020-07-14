@@ -12,6 +12,7 @@ namespace Lachain.Networking
         bool IsReady { get; }
         void Start();
         void Stop();
+        void AdvanceEra(long era);
         void BroadcastLocalTransaction(TransactionReceipt receipt);
 
         event EventHandler<(MessageEnvelope envelope, PingRequest message)>? OnPingRequest;
