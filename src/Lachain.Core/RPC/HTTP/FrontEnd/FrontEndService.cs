@@ -157,7 +157,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         [JsonRpcMethod("fe_unlock")]
         private string UnlockWallet(string password, long s)
         {
-            return _privateWallet.Unlock(password, s) ? "0x1" : "0x0";
+            return _privateWallet.Unlock(password, s) ? "unlocked" : "incorrect_password";
         }
 
         [JsonRpcMethod("fe_isLocked")]
@@ -185,7 +185,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 10000000,
                 Nonce = nonce,
-                Value = value.ToUInt256(false)
+                Value = value.ToUInt256()
             };
 
             return AddTxToPool(tx);
@@ -248,7 +248,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["type"] = "send",
                 ["from"] = receipt.Transaction.From.ToHex(),
                 ["to"] = receipt.Transaction.To.ToHex(),
-                ["amount"] = receipt.Transaction.Value.ToMoney(false).ToString(),
+                ["amount"] = receipt.Transaction.Value.ToMoney().ToString(),
                 ["usedFee"] = block is null
                     ? "0"
                     : new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),

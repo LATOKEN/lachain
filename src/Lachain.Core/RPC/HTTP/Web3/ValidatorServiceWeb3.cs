@@ -23,7 +23,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("validator_start")]
         private string StartValidator()
         {
-            if (_privateWallet.GetWalletInstance() is null) return "0x0";
+            if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
 
             Logger.LogDebug("validator start command received");
             if (!_validatorStatusManager.IsStarted())
@@ -31,7 +31,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 _validatorStatusManager.Start(false);
             }
 
-            return "0x1";
+            return "validator_started";
         }
 
         [JsonRpcMethod("validator_status")]
@@ -49,11 +49,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("validator_stop")]
         private string StopValidator()
         {
-            if (_privateWallet.GetWalletInstance() is null) return "0x0";
+            if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
 
             Logger.LogDebug("validator stop command received");
             _validatorStatusManager.WithdrawStakeAndStop();
-            return "0x1";
+            return "validator_stopped";
         }
     }
 }

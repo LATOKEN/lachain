@@ -82,7 +82,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferBalance(
                 from,
-                recipient, value.ToMoney()
+                recipient, 
+                value.ToMoney()
             );
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
             

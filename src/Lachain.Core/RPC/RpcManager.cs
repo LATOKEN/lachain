@@ -76,7 +76,7 @@ namespace Lachain.Core.RPC
                 new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager, _blockSynchronizer, _systemContractReader),
                 new AccountService(_stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager),
-                new AccountServiceWeb3(_stateManager),
+                new AccountServiceWeb3(_stateManager, _contractRegisterer),
                 new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet), 
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet), 

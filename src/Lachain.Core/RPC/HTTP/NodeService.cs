@@ -67,14 +67,8 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
         
-        // TODO: wallet expect node version here; fix it
         [JsonRpcMethod("net_version")]
-        public int GetNetVersion()
-        {
-            return 41;
-        }
-        
-        public string GetNodeVersion()
+        public string GetNetVersion()
         {
             return "0.100.0";
         }

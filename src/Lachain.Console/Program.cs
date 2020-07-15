@@ -182,7 +182,7 @@ namespace Lachain.Console
         {
             if (IsArgumentPassed("version"))
             {
-                System.Console.WriteLine(new NodeService(null, null).GetNodeVersion());
+                System.Console.WriteLine(new NodeService(null, null).GetNetVersion());
                 return;
             }
 

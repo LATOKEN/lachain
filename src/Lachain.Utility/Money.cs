@@ -33,7 +33,7 @@ namespace Lachain.Utility
 
         public Money(UInt256 value)
         {
-            _value = value.ToBigInteger(false);
+            _value = value.ToBigInteger();
         }
 
         public BigInteger ToWei()

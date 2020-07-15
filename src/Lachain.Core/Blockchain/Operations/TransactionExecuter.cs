@@ -36,7 +36,7 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 if (!receipt.Transaction.From.Equals(UInt160Utils.Zero)) return OperatingError.InvalidTransaction;
                 if (!receipt.Transaction.Invocation.IsEmpty) return OperatingError.InvalidTransaction;
-                snapshot.Balances.AddBalance(receipt.Transaction.To, transaction.Value.ToMoney(false));
+                snapshot.Balances.AddBalance(receipt.Transaction.To, transaction.Value.ToMoney());
                 return OperatingError.Ok;
             }
 
@@ -54,7 +54,7 @@ namespace Lachain.Core.Blockchain.Operations
                  * Destination address is not smart-contract, just plain address
                  * So we just call transfer method of system contract
                  */
-                if (snapshot.Balances.GetBalance(transaction.From) < new Money(transaction.Value))
+                if (snapshot.Balances.GetBalance(transaction.From) < transaction.Value.ToMoney())
                     return OperatingError.InsufficientBalance;
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
                 return _InvokeContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot, true);
