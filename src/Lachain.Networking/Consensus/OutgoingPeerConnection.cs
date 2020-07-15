@@ -6,7 +6,7 @@ using System.Threading;
 using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
-using Lachain.Utility;
+using Lachain.Utility.Benchmark;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus

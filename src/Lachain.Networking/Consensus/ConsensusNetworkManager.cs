@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Lachain.Logger;
 using Lachain.Proto;
-using Lachain.Utility;
+using Lachain.Utility.Benchmark;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus

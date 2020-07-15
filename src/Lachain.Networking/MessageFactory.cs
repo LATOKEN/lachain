@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking
 {
     public class MessageFactory : IMessageFactory
     {
+        private static readonly ILogger<MessageFactory> Logger = LoggerFactory.GetLoggerForClass<MessageFactory>();
+
         private readonly EcdsaKeyPair _keyPair;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly Random _random = new Random();
@@ -202,9 +206,7 @@ namespace Lachain.Networking
 
         private Signature _SignMessage(IMessage message)
         {
-            var rawSig = _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Encode());
-            if (rawSig.Length != 65) throw new ArgumentOutOfRangeException(nameof(rawSig));
-            return new Signature {Buffer = ByteString.CopyFrom(rawSig)};
+            return _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Encode()).ToSignature();
         }
     }
 }

@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using Lachain.Logger;
+using Lachain.Utility.Benchmark;
 using Secp256k1Net;
 
 namespace Lachain.Crypto
@@ -9,6 +11,22 @@ namespace Lachain.Crypto
     public class DefaultCrypto : ICrypto
     {
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
+
+        private static readonly TimeBenchmark EcVerify = new TimeBenchmark();
+        private static readonly TimeBenchmark EcSign = new TimeBenchmark();
+        private static readonly TimeBenchmark EcRecover = new TimeBenchmark();
+        private static readonly ILogger<DefaultCrypto> Logger = LoggerFactory.GetLoggerForClass<DefaultCrypto>();
+
+        public static void ResetBenchmark()
+        {
+            Logger.LogDebug("Ec operations benchmark:");
+            Logger.LogDebug($"  - ec_recover: {EcRecover.Count} times, total = {EcRecover.TotalTime} ms");
+            Logger.LogDebug($"  - ec_verify: {EcVerify.Count} times, total = {EcVerify.TotalTime} ms");
+            Logger.LogDebug($"  - ec_sign: {EcSign.Count} times, total = {EcSign.TotalTime} ms");
+            EcRecover.Reset();
+            EcSign.Reset();
+            EcVerify.Reset();
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
@@ -20,20 +38,23 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey)
         {
-            var pk = new byte[64];
-            if (!Secp256K1.PublicKeyParse(pk, publicKey))
-                throw new ArgumentException();
+            return EcVerify.Benchmark(() =>
+            {
+                var pk = new byte[64];
+                if (!Secp256K1.PublicKeyParse(pk, publicKey))
+                    throw new ArgumentException();
 
-            var publicKeySerialized = new byte[33];
-            if (!Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED))
-                throw new ArgumentException();
+                var publicKeySerialized = new byte[33];
+                if (!Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED))
+                    throw new ArgumentException();
 
-            var parsedSig = new byte[65];
-            var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
-            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
-                throw new ArgumentException();
+                var parsedSig = new byte[65];
+                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
+                if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
+                    throw new ArgumentException();
 
-            return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
+                return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
+            });
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -46,14 +67,17 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] SignHashed(byte[] messageHash, byte[] privateKey)
         {
-            var sig = new byte[65];
-            if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
-                throw new ArgumentException();
-            var serialized = new byte[64];
-            if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
-                throw new ArgumentException();
-            recId = TransactionUtils.ChainId * 2 + 35 + recId;
-            return serialized.Concat(new[] {(byte) recId}).ToArray();
+            return EcSign.Benchmark(() =>
+            {
+                var sig = new byte[65];
+                if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
+                    throw new ArgumentException();
+                var serialized = new byte[64];
+                if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
+                    throw new ArgumentException();
+                recId = TransactionUtils.ChainId * 2 + 35 + recId;
+                return serialized.Concat(new[] {(byte) recId}).ToArray();
+            });
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -66,21 +90,24 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature)
         {
-            var parsedSig = new byte[65];
-            var pk = new byte[64];
-            var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
-            if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
-                throw new ArgumentException();
-            if (!Secp256K1.Recover(pk, parsedSig, messageHash))
-                throw new ArgumentException("Bad signature");
-
-            var result = new byte[33];
-            if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+            return EcRecover.Benchmark(() =>
             {
-                throw new ArgumentException("Bad signature");
-            }
+                var parsedSig = new byte[65];
+                var pk = new byte[64];
+                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
+                if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
+                    throw new ArgumentException();
+                if (!Secp256K1.Recover(pk, parsedSig, messageHash))
+                    throw new ArgumentException("Bad signature");
 
-            return result;
+                var result = new byte[33];
+                if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+                {
+                    throw new ArgumentException("Bad signature");
+                }
+
+                return result;
+            });
         }
 
         public byte[] ComputeAddress(byte[] publicKey)

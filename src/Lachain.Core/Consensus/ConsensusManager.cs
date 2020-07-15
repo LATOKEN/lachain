@@ -11,6 +11,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Vault;
+using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Networking.Consensus;
 using Lachain.Proto;
@@ -211,6 +212,7 @@ namespace Lachain.Core.Consensus
                         Logger.LogTrace("Root protocol finished, waiting for new era...");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
+                    DefaultCrypto.ResetBenchmark();
                 }
             }
             catch (Exception e)

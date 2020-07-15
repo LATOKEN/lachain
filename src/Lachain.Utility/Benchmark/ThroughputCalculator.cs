@@ -1,7 +1,7 @@
 using System;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Utility
+namespace Lachain.Utility.Benchmark
 {
     public class ThroughputCalculator
     {
