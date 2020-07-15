@@ -2,12 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Logger;
+using Lachain.Utility.Benchmark;
 using Lachain.Utility.Serialization;
 
 namespace Lachain.Crypto.ThresholdSignature
 {
     public class ThresholdSigner : IThresholdSigner
     {
+        public static readonly TimeBenchmark SignBenchmark = new TimeBenchmark();
+        public static readonly TimeBenchmark VerifyBenchmark = new TimeBenchmark();
+        public static readonly TimeBenchmark CombineBenchmark = new TimeBenchmark();
+
         private static readonly ILogger<ThresholdSigner> Logger = LoggerFactory.GetLoggerForClass<ThresholdSigner>();
         private readonly byte[] _dataToSign;
         private readonly PrivateKeyShare _privateKeyShare;
@@ -33,7 +38,7 @@ namespace Lachain.Crypto.ThresholdSignature
 
         public Signature Sign()
         {
-            return _privateKeyShare.HashAndSign(_dataToSign);
+            return SignBenchmark.Benchmark(() => _privateKeyShare.HashAndSign(_dataToSign));
         }
 
         public bool AddShare(int idx, Signature sigShare, out Signature? result)
@@ -68,10 +73,10 @@ namespace Lachain.Crypto.ThresholdSignature
             _collectedShares[idx] = sigShare;
             _collectedSharesNumber += 1;
             if (_collectedSharesNumber <= _publicKeySet.Threshold) return true;
-            var signature = _publicKeySet.AssembleSignature(
+            var signature = CombineBenchmark.Benchmark(() => _publicKeySet.AssembleSignature(
                 _collectedShares.Select((share, i) => new KeyValuePair<int, Signature>(i, share))
                     .Where(pair => pair.Value != null).ToArray()
-            );
+            ));
             if (!_publicKeySet.SharedPublicKey.ValidateSignature(signature, _dataToSign))
                 throw new Exception("Fatal error: all shares are valid but combined signature is not");
             _signature = signature;
@@ -81,7 +86,7 @@ namespace Lachain.Crypto.ThresholdSignature
 
         private bool IsShareValid(PublicKey pubKey, Signature sigShare)
         {
-            return pubKey.ValidateSignature(sigShare, _dataToSign);
+            return VerifyBenchmark.Benchmark(() => pubKey.ValidateSignature(sigShare, _dataToSign));
         }
     }
 }

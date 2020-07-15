@@ -1,4 +1,5 @@
 using System;
+using Lachain.Utility.Benchmark;
 using Lachain.Utility.Serialization;
 using MCL.BLS12_381.Net;
 
@@ -6,6 +7,8 @@ namespace Lachain.Crypto.TPKE
 {
     public class PrivateKey : IFixedWidth
     {
+        public static readonly TimeBenchmark DecryptBenchmark = new TimeBenchmark();
+
         private readonly Fr _x;
         private readonly int _id;
 
@@ -17,15 +20,14 @@ namespace Lachain.Crypto.TPKE
 
         public PartiallyDecryptedShare Decrypt(EncryptedShare share)
         {
-            var h = Utils.HashToG2(share.U, share.V);
-            if (!GT.Pairing(G1.Generator, share.W).Equals(GT.Pairing(share.U, h)))
+            return DecryptBenchmark.Benchmark(() =>
             {
-                // todo add appropriate catch
-                throw new Exception("Invalid share!");
-            }
-
-            var ui = share.U * _x;
-            return new PartiallyDecryptedShare(ui, _id, share.Id);
+                var h = Utils.HashToG2(share.U, share.V);
+                if (!GT.Pairing(G1.Generator, share.W).Equals(GT.Pairing(share.U, h)))
+                    throw new Exception("Invalid share!");
+                var ui = share.U * _x;
+                return new PartiallyDecryptedShare(ui, _id, share.Id);
+            });
         }
 
         public static PrivateKey FromBytes(ReadOnlyMemory<byte> bytes)

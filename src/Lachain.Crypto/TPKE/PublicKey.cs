@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Proto;
+using Lachain.Utility.Benchmark;
 using Lachain.Utility.Serialization;
 using MCL.BLS12_381.Net;
 
@@ -9,6 +10,9 @@ namespace Lachain.Crypto.TPKE
 {
     public class PublicKey : IEquatable<PublicKey>, IFixedWidth
     {
+        public static readonly TimeBenchmark EncryptBenchmark = new TimeBenchmark();
+        public static readonly TimeBenchmark FullDecryptBenchmark = new TimeBenchmark();
+
         private readonly G1 _y;
         private readonly int _t;
 
@@ -20,13 +24,16 @@ namespace Lachain.Crypto.TPKE
 
         public EncryptedShare Encrypt(IRawShare rawShare)
         {
-            var r = Fr.GetRandom();
-            var u = G1.Generator * r;
-            var shareBytes = rawShare.ToBytes();
-            var t = _y * r;
-            var v = Utils.XorWithHash(t, shareBytes);
-            var w = Utils.HashToG2(u, v) * r;
-            return new EncryptedShare(u, v, w, rawShare.Id);
+            return EncryptBenchmark.Benchmark(() =>
+            {
+                var r = Fr.GetRandom();
+                var u = G1.Generator * r;
+                var shareBytes = rawShare.ToBytes();
+                var t = _y * r;
+                var v = Utils.XorWithHash(t, shareBytes);
+                var w = Utils.HashToG2(u, v) * r;
+                return new EncryptedShare(u, v, w, rawShare.Id);
+            });
         }
 
         public PartiallyDecryptedShare Decode(TPKEPartiallyDecryptedShareMessage message)
@@ -47,34 +54,37 @@ namespace Lachain.Crypto.TPKE
 
         public RawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
         {
-            if (us.Count < _t)
+            return FullDecryptBenchmark.Benchmark(() =>
             {
-                throw new Exception("Insufficient number of shares!");
-            }
+                if (us.Count < _t)
+                {
+                    throw new Exception("Insufficient number of shares!");
+                }
 
-            var ids = new HashSet<int>();
-            foreach (var part in us)
-            {
-                if (ids.Contains(part.DecryptorId))
-                    throw new Exception($"Id {part.DecryptorId} was provided more than once!");
-                if (part.ShareId != share.Id)
-                    throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
-                ids.Add(part.DecryptorId);
-            }
+                var ids = new HashSet<int>();
+                foreach (var part in us)
+                {
+                    if (ids.Contains(part.DecryptorId))
+                        throw new Exception($"Id {part.DecryptorId} was provided more than once!");
+                    if (part.ShareId != share.Id)
+                        throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
+                    ids.Add(part.DecryptorId);
+                }
 
-            var ys = new List<G1>();
-            var xs = new List<Fr>();
+                var ys = new List<G1>();
+                var xs = new List<Fr>();
 
-            foreach (var part in us)
-            {
-                xs.Add(Fr.FromInt(part.DecryptorId + 1));
-                ys.Add(part.Ui);
-            }
+                foreach (var part in us)
+                {
+                    xs.Add(Fr.FromInt(part.DecryptorId + 1));
+                    ys.Add(part.Ui);
+                }
 
-            var u = MclBls12381.LagrangeInterpolate(xs.ToArray(), ys.ToArray());
-            return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
+                var u = MclBls12381.LagrangeInterpolate(xs.ToArray(), ys.ToArray());
+                return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
+            });
         }
-        
+
         public static PublicKey FromBytes(ReadOnlyMemory<byte> buffer)
         {
             var res = FixedWithSerializer.Deserialize(buffer, out _, typeof(int), typeof(G1));
