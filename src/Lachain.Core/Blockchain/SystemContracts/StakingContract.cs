@@ -577,7 +577,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 if (rewardToMint > Money.Zero)
                 {
                     var newBalance = _context.Snapshot.Balances.AddBalance(
-                        validatorAddress, rewardToMint
+                        validatorAddress, rewardToMint, true
                     );
                     Logger.LogDebug($"Minted reward: {rewardToMint} LA for {validatorAddress.ToHex()}");
                     Logger.LogDebug($"New balance: {newBalance} LA of {validatorAddress.ToHex()}");

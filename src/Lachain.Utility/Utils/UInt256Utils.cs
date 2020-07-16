@@ -46,22 +46,36 @@ namespace Lachain.Utility.Utils
             return new Money(value.ToBigInteger(littleEndian));
         }
 
-        public static byte[] ToBytes(this UInt256 value, bool stripTrailingZeros = false)
+        public static byte[] ToBytes(this UInt256 value, bool stripTrailingZeros = false, bool stripLeadingZeros = false)
         {
-            if (!stripTrailingZeros) return value.Buffer.ToByteArray();
-            var idx = value.Buffer.Length - 1;
-            while (idx >= 0 && value.Buffer[idx] == 0) --idx;
-            return value.Buffer.Take(idx + 1).ToArray();
+            if (!stripTrailingZeros && !stripLeadingZeros) return value.Buffer.ToByteArray();
+            if (stripLeadingZeros)
+            {
+                var idx = 0;
+                while (idx < value.Buffer.Length && value.Buffer[idx] == 0) ++idx;
+                return value.Buffer.Skip(idx).ToArray();
+            }
+            else
+            {
+                var idx = value.Buffer.Length - 1;
+                while (idx >= 0 && value.Buffer[idx] == 0) --idx;
+                return value.Buffer.Take(idx + 1).ToArray();
+            }
         }
 
-        public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false)
+        public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false, bool addLeadingZeros = false)
         {
-            if (!addTrailingZeros && buffer.Length != 32 || buffer.Length > 32)
+            if (!addTrailingZeros && !addLeadingZeros && buffer.Length != 32 || buffer.Length > 32)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
 
+            if (!addLeadingZeros)
+                return new UInt256
+                {
+                    Buffer = ByteString.CopyFrom(buffer.Concat(Enumerable.Repeat((byte) 0, 32 - buffer.Length)).ToArray())
+                };
             return new UInt256
             {
-                Buffer = ByteString.CopyFrom(buffer.Concat(Enumerable.Repeat((byte) 0, 32 - buffer.Length)).ToArray())
+                Buffer = ByteString.CopyFrom(Enumerable.Repeat((byte) 0, 32 - buffer.Length).Concat(buffer).ToArray())
             };
         }
     }

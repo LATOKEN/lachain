@@ -19,7 +19,7 @@ namespace Lachain.Crypto
                 new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 t.To.ToBytes(), // this may be empty, same as passing null
-                t.Value.ToBytes(true).Reverse().ToArray().TrimLeadingZeros(),
+                t.Value.ToBytes(false, true).ToArray().TrimLeadingZeros(),
                 t.Invocation.ToArray().TrimLeadingZeros(),
                 new BigInteger(ChainId).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 Array.Empty<byte>(),

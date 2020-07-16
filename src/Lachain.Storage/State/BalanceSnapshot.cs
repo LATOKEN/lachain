@@ -27,6 +27,15 @@ namespace Lachain.Storage.State
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public Money GetSupply()
+        {
+            var key = EntryPrefix.TotalSupply.BuildPrefix();
+            var value = _state.Get(key);
+            var supply = value != null ? UInt256.Parser.ParseFrom(value): UInt256Utils.Zero;
+            return new Money(supply);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetBalance(UInt160 owner, Money value)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
@@ -34,11 +43,24 @@ namespace Lachain.Storage.State
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Money AddBalance(UInt160 owner, Money value)
+        public void SetSupply(Money value)
+        {
+            var key = EntryPrefix.TotalSupply.BuildPrefix();
+            _state.AddOrUpdate(key, value.ToUInt256().ToByteArray());
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public Money AddBalance(UInt160 owner, Money value, bool inceaseSupply = false)
         {
             var balance = GetBalance(owner);
             balance += value;
             SetBalance(owner, balance);
+            if (inceaseSupply)
+            {
+                var supply = GetSupply();
+                supply += value;
+                SetSupply(supply);
+            }
             return balance;
         }
 

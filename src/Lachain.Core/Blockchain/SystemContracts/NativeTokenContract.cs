@@ -61,7 +61,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus TotalSupply(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenTotalSupplyCost);
-            throw new NotImplementedException();
+            var supply = _context.Snapshot?.Balances.GetSupply();
+            if (supply is null) return ExecutionStatus.ExecutionHalted;
+            frame.ReturnValue = supply.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodBalanceOf)]

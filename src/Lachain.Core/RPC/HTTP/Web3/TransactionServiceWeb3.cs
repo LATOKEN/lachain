@@ -54,7 +54,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     // this is special case where empty uint160 is allowed
                     To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
-                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    Value = ethTx.Value.ToArray().ToUInt256(false, true),
                     From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
@@ -135,7 +135,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     // this is special case where empty uint160 is allowed
                     To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
-                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    Value = ethTx.Value.ToArray().ToUInt256(false, true),
                     From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
@@ -290,7 +290,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var addressFrom = from is null ? UInt160Utils.Zero : from.HexToUInt160();
             gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
             
-            if (to is null || data is null) return null;
+            if (to is null && data is null) return null;
             
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 to.HexToUInt160());
@@ -396,7 +396,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
             if (!isReceipt)
             {
-                res["value"] = receipt.Transaction.Value.ToBytes().Reverse().ToHex();
+                res["value"] = receipt.Transaction.Value.ToHex();
                 res["nonce"] = receipt.Transaction.Nonce.ToHex();
                 res["input"] = receipt.Transaction.Invocation.ToHex();
                 res["hash"] = receipt.Hash.ToHex();
