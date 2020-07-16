@@ -59,7 +59,8 @@ namespace Lachain.Consensus.BinaryAgreement
                     // epoch mod 2 = 0 -> we have not yet initiated BB
                     if (_currentEpoch != 0 && !_coins.ContainsKey(_currentEpoch - 1))
                     {
-                        Logger.LogTrace($"{_agreementId}: can't progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present");
+                        Logger.LogTrace(
+                            $"{_agreementId}: can't progress epoch, blocked, coin (Ep={_currentEpoch - 1}) not present");
                         return; // we cannot progress since coin is not tossed and estimate is not correct
                     }
 
@@ -127,7 +128,15 @@ namespace Lachain.Consensus.BinaryAgreement
 
                     _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
-                    Broadcaster.InternalRequest(new ProtocolRequest<CoinId, object?>(Id, coinId, null));
+                    if ((_currentEpoch / 2) % 3 == 2)
+                    {
+                        Broadcaster.InternalRequest(new ProtocolRequest<CoinId, object?>(Id, coinId, null));
+                    }
+                    else
+                    {
+                        _coins[_currentEpoch] = ((_currentEpoch / 2) % 3) != 0;
+                    }
+
                     _currentEpoch += 1;
                 }
             }
