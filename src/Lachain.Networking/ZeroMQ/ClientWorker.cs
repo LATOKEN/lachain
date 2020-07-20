@@ -56,7 +56,7 @@ namespace Lachain.Networking.ZeroMQ
             using var socket = new PushSocket();
             socket.Connect(endpoint);
             socket.SendFrame(message.ToByteArray());
-            Thread.Sleep(TimeSpan.FromMilliseconds(500)); // TODO: wtf?
+            Thread.Sleep(TimeSpan.FromMilliseconds(10)); // TODO: wtf?
         }
 
         private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
