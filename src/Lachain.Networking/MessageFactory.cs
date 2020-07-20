@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
@@ -114,9 +115,9 @@ namespace Lachain.Networking
             var batch = new MessageBatch
             {
                 MessageId = GenerateMessageId(),
-                Content = new MessageBatchContent {Messages = {messages}},
+                Content = ByteString.CopyFrom(new MessageBatchContent {Messages = {messages}}.ToByteArray()),
             };
-            batch.Signature = Crypto.Sign(batch.Content.ToByteArray(), _keyPair.PrivateKey.Encode()).ToSignature();
+            batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode()).ToSignature();
             return batch;
         }
 

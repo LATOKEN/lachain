@@ -79,6 +79,6 @@ message MessageBatchContent {
 message MessageBatch {
     uint32 magic = 1;
     uint64 message_id = 2;
-    MessageBatchContent content = 3;
+    bytes content = 3;
     Signature signature = 4;
 }

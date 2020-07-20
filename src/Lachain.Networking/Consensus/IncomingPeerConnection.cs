@@ -36,10 +36,10 @@ namespace Lachain.Networking.Consensus
         private void ProcessMessage(object sender, byte[] buffer)
         {
             // TODO: can we also check origin of message?
-            MessageBatch? messages = null;
+            MessageBatch? batch = null;
             try
             {
-                messages = MessageBatch.Parser.ParseFrom(buffer);
+                batch = MessageBatch.Parser.ParseFrom(buffer);
             }
             catch (Exception e)
             {
@@ -49,7 +49,7 @@ namespace Lachain.Networking.Consensus
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
             }
 
-            if (messages is null)
+            if (batch is null)
             {
                 Logger.LogWarning($"Unable to parse protocol message from peer with public key {_publicKey.ToHex()}");
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
@@ -57,8 +57,8 @@ namespace Lachain.Networking.Consensus
             }
 
             if (!Crypto.VerifySignature(
-                messages.Content.ToByteArray(),
-                messages.Signature.Encode(),
+                batch.Content.ToByteArray(),
+                batch.Signature.Encode(),
                 _publicKey.EncodeCompressed())
             )
             {
@@ -68,9 +68,10 @@ namespace Lachain.Networking.Consensus
                 return;
             }
 
-            OnReceive?.Invoke(this, (_publicKey, messages.MessageId));
+            OnReceive?.Invoke(this, (_publicKey, batch.MessageId));
 
-            foreach (var message in messages.Content.Messages)
+            var messages = MessageBatchContent.Parser.ParseFrom(batch.Content);
+            foreach (var message in messages.Messages)
             {
                 if (message.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage &&
                     message.MessageCase != NetworkMessage.MessageOneofCase.Ack)

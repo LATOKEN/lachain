@@ -212,7 +212,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            var publicKey = Crypto.RecoverSignature(batch.Content.ToByteArray(), batch.Signature.Encode())
+            var publicKey = Crypto.RecoverSignature(batch.Content.ToArray(), batch.Signature.Encode())
                 .ToPublicKey();
             var envelope = new MessageEnvelope
             {
@@ -230,7 +230,8 @@ namespace Lachain.Networking
 
             Logger.LogTrace($"Envelope: pub={publicKey.ToHex()} peer={envelope.RemotePeer?.Address}");
 
-            foreach (var message in batch.Content.Messages)
+            var messages = MessageBatchContent.Parser.ParseFrom(batch.Content);
+            foreach (var message in messages.Messages)
             {
                 try
                 {
@@ -247,7 +248,7 @@ namespace Lachain.Networking
         {
             return x =>
             {
-                Logger.LogDebug($"Sending {x.GetType()} to {peer?.Address}");
+                Logger.LogTrace($"Sending {x.GetType()} to {peer?.Address}");
                 NetworkMessage msg = x switch
                 {
                     PingReply pingReply => new NetworkMessage {PingReply = pingReply},
@@ -276,7 +277,6 @@ namespace Lachain.Networking
         private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
         {
             if (envelope.PublicKey is null) throw new InvalidOperationException();
-            Logger.LogDebug($"Handling {message.MessageCase}");
             switch (message.MessageCase)
             {
                 case NetworkMessage.MessageOneofCase.HandshakeRequest:

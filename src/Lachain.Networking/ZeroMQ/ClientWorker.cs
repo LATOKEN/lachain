@@ -64,9 +64,13 @@ namespace Lachain.Networking.ZeroMQ
 
         public void Send(NetworkMessage message)
         {
-            lock (_queueNotEmpty)
+            lock (_messageQueue)
             {
                 _messageQueue.Enqueue(message);
+            }
+
+            lock (_queueNotEmpty)
+            {
                 Monitor.Pulse(_queueNotEmpty);
             }
         }

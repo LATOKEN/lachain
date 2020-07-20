@@ -153,7 +153,7 @@ namespace Lachain.Core.Network
 
         public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
         {
-            Logger.LogDebug($"Peer {publicKey.ToHex()} has height {blockHeight}");
+            Logger.LogTrace($"Peer {publicKey.ToHex()} has height {blockHeight}");
             lock (_peerHasBlocks)
             {
                 if (_peerHeights.TryGetValue(publicKey, out var peerHeight) && blockHeight <= peerHeight)
