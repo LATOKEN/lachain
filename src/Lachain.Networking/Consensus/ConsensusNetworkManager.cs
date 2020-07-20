@@ -26,7 +26,7 @@ namespace Lachain.Networking.Consensus
         private readonly Node _localNode;
         private readonly ThroughputCalculator _throughputCalculator;
 
-        public event EventHandler<(MessageEnvelope envelope, ConsensusMessage message)>? OnMessage;
+        public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnMessage;
 
         public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode)
         {
@@ -59,7 +59,7 @@ namespace Lachain.Networking.Consensus
             return connection.Port;
         }
 
-        private void HandleConsensusMessage(object sender, (MessageEnvelope envelope, ConsensusMessage message) e)
+        private void HandleConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) e)
         {
             OnMessage?.Invoke(sender, e);
         }
@@ -91,11 +91,7 @@ namespace Lachain.Networking.Consensus
 
         public void AdvanceEra(long era)
         {
-            Logger.LogTrace($"Cleaning up unacked message for era < {era}");
-            foreach (var connection in _outgoing.Values)
-            {
-                connection.ClearUnackedForEra(era);
-            }
+            // Logger.LogTrace($"Cleaning up unacked message for era < {era}");
         }
 
         private OutgoingPeerConnection EnsureConnection(ECDSAPublicKey key)

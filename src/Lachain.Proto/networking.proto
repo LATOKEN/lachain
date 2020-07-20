@@ -56,8 +56,6 @@ message GetTransactionsByHashesReply {
 }
 
 message NetworkMessage {
-    uint32 magic = 1;
-    uint64 message_id = 2;
     oneof message {
         HandshakeRequest handshake_request = 10;
         HandshakeReply handshake_reply = 11;
@@ -72,5 +70,15 @@ message NetworkMessage {
         ConsensusMessage consensus_message = 21;
         Ack ack = 22;
     }
-    Signature signature = 100;
+}
+
+message MessageBatchContent {
+    repeated NetworkMessage messages = 1;
+}
+
+message MessageBatch {
+    uint32 magic = 1;
+    uint64 message_id = 2;
+    MessageBatchContent content = 3;
+    Signature signature = 4;
 }

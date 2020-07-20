@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.BlockchainFilter;
-using Lachain.Core.Network;
+using Lachain.Networking;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Utils;
 
@@ -10,13 +11,16 @@ namespace Lachain.Core.RPC.HTTP
     public class NodeService : JsonRpcService
     {
         private readonly ulong _startTs;
-        private readonly IBlockSynchronizer _blockSynchronizer;
+        private readonly INetworkManager _networkManager;
         private readonly IBlockchainEventFilter _blockchainEventFilter;
 
-        public NodeService(IBlockSynchronizer blockSynchronizer, IBlockchainEventFilter blockchainEventFilter)
+        public NodeService(
+            IBlockchainEventFilter blockchainEventFilter,
+            INetworkManager networkManager
+        )
         {
-            _blockSynchronizer = blockSynchronizer;
             _blockchainEventFilter = blockchainEventFilter;
+            _networkManager = networkManager;
             _startTs = TimeUtils.CurrentTimeMillis();
         }
 
@@ -36,7 +40,7 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("net_peers")]
         private JArray GetConnectedPeers()
         {
-            var peers = _blockSynchronizer.GetConnectedPeers();
+            var peers = _networkManager.GetConnectedPeers();
             var result = new JArray();
 
             foreach (var peer in peers)
@@ -57,7 +61,7 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("net_peerCount")]
         private string GetPeerCount()
         {
-            var peers = _blockSynchronizer.GetConnectedPeers();
+            var peers = _networkManager.GetConnectedPeers().ToArray();
             return peers.Length.ToHex();
         }
 
@@ -66,14 +70,14 @@ namespace Lachain.Core.RPC.HTTP
         {
             return true;
         }
-        
+
         // TODO: wallet expect node version here; fix it
         [JsonRpcMethod("net_version")]
         public int GetNetVersion()
         {
             return 41;
         }
-        
+
         public string GetNodeVersion()
         {
             return "0.100.0";

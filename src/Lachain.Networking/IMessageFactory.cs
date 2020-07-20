@@ -27,5 +27,7 @@ namespace Lachain.Networking
         NetworkMessage GetTransactionsByHashesRequest(IEnumerable<UInt256> transactionHashes);
 
         NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions);
+        
+        MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
     }
 }

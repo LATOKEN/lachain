@@ -28,11 +28,11 @@ namespace Lachain.Core.Network
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
 
-        private readonly IDictionary<IRemotePeer, ulong> _peerHeights
-            = new ConcurrentDictionary<IRemotePeer, ulong>();
-
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
+
+        private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
+            = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -41,7 +41,8 @@ namespace Lachain.Core.Network
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
             ITransactionPool transactionPool,
-            IStateManager stateManager)
+            IStateManager stateManager
+        )
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -75,7 +76,7 @@ namespace Lachain.Core.Network
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
 
-        public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, IRemotePeer remotePeer)
+        public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
         {
             var persisted = 0u;
             foreach (var tx in transactions)
@@ -104,7 +105,7 @@ namespace Lachain.Core.Network
             return persisted;
         }
 
-        public void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout)
+        public void HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
         {
             var myHeight = _blockManager.GetHeight();
             if (block.Header.Index != myHeight + 1)
@@ -113,8 +114,8 @@ namespace Lachain.Core.Network
             var haveNotTxs = _GetMissingTransactions(block);
             if (haveNotTxs.Count > 0)
             {
-                var totalFound = WaitForTransactions(block.TransactionHashes, timeout);
-                /* if peer can't provide all hashes from block than he might be a lier */
+                var totalFound = WaitForTransactions(block.TransactionHashes, TimeSpan.FromSeconds(5));
+                /* if peer can't provide all hashes from block than he might be a liar */
                 if (totalFound != haveNotTxs.Count)
                     return;
             }
@@ -150,13 +151,14 @@ namespace Lachain.Core.Network
                 Monitor.PulseAll(_peerHasBlocks);
         }
 
-        public void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer)
+        public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
         {
+            Logger.LogDebug($"Peer {publicKey.ToHex()} has height {blockHeight}");
             lock (_peerHasBlocks)
             {
-                if (_peerHeights.TryGetValue(remotePeer, out var peerHeight) && blockHeight <= peerHeight)
+                if (_peerHeights.TryGetValue(publicKey, out var peerHeight) && blockHeight <= peerHeight)
                     return;
-                _peerHeights[remotePeer] = blockHeight;
+                _peerHeights[publicKey] = blockHeight;
                 Monitor.PulseAll(_peerHasBlocks);
             }
         }
@@ -175,7 +177,7 @@ namespace Lachain.Core.Network
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             var validatorPeers = _peerHeights
-                .Where(entry => setOfPeers.Contains(entry.Key.PublicKey!))
+                .Where(entry => setOfPeers.Contains(entry.Key))
                 .ToArray();
             if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
@@ -190,13 +192,6 @@ namespace Lachain.Core.Network
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             }
-        }
-
-        public PeerAddress[] GetConnectedPeers()
-        {
-            var connectedPeerAddresses = _peerHeights.Where(peer => peer.Key.IsConnected)
-                .Select(peer => peer.Key.Address).ToArray();
-            return connectedPeerAddresses;
         }
 
         public ulong? GetHighestBlock()
@@ -229,7 +224,12 @@ namespace Lachain.Core.Network
             var peers = _peerHeights.Where(entry => entry.Value == maxHeight).Select(entry => entry.Key);
 
             foreach (var peer in peers)
-                peer.Send(messageFactory.GetBlocksByHeightRangeRequest(myHeight + 1, maxHeight));
+            {
+                _networkManager.SendToPeerByPublicKey(
+                    peer,
+                    messageFactory.GetBlocksByHeightRangeRequest(myHeight + 1, maxHeight)
+                );
+            }
 
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));

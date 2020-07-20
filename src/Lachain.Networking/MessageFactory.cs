@@ -12,9 +12,9 @@ namespace Lachain.Networking
     public class MessageFactory : IMessageFactory
     {
         private static readonly ILogger<MessageFactory> Logger = LoggerFactory.GetLoggerForClass<MessageFactory>();
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private readonly EcdsaKeyPair _keyPair;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private readonly Random _random = new Random();
 
         public MessageFactory(EcdsaKeyPair keyPair)
@@ -25,27 +25,13 @@ namespace Lachain.Networking
         public NetworkMessage Ack(ulong messageId)
         {
             var ack = new Ack {MessageId = messageId};
-            var sig = _SignMessage(ack);
-            return new NetworkMessage
-            {
-                Ack = ack,
-                Signature = sig
-            };
+            return new NetworkMessage {Ack = ack};
         }
 
         public NetworkMessage HandshakeRequest(Node node)
         {
-            var request = new HandshakeRequest
-            {
-                Node = node
-            };
-            var sig = _SignMessage(request);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                HandshakeRequest = request,
-                Signature = sig
-            };
+            var request = new HandshakeRequest {Node = node};
+            return new NetworkMessage {HandshakeRequest = request};
         }
 
         public NetworkMessage HandshakeReply(Node node, int port)
@@ -55,13 +41,7 @@ namespace Lachain.Networking
                 Node = node,
                 Port = (uint) port
             };
-            var sig = _SignMessage(reply);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                HandshakeReply = reply,
-                Signature = sig
-            };
+            return new NetworkMessage {HandshakeReply = reply};
         }
 
         public NetworkMessage PingRequest(ulong timestamp, ulong blockHeight)
@@ -71,13 +51,7 @@ namespace Lachain.Networking
                 Timestamp = timestamp,
                 BlockHeight = blockHeight
             };
-            var sig = _SignMessage(request);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                PingRequest = request,
-                Signature = sig
-            };
+            return new NetworkMessage {PingRequest = request};
         }
 
         public NetworkMessage PingReply(ulong timestamp, ulong blockHeight)
@@ -87,53 +61,24 @@ namespace Lachain.Networking
                 Timestamp = timestamp,
                 BlockHeight = blockHeight
             };
-            var sig = _SignMessage(reply);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                PingReply = reply,
-                Signature = sig
-            };
+            return new NetworkMessage {PingReply = reply};
         }
 
         public NetworkMessage ConsensusMessage(ConsensusMessage message)
         {
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                ConsensusMessage = message,
-                Signature = _SignMessage(message)
-            };
+            return new NetworkMessage {ConsensusMessage = message};
         }
 
         public NetworkMessage GetBlocksByHashesRequest(IEnumerable<UInt256> blockHashes)
         {
-            var request = new GetBlocksByHashesRequest
-            {
-                BlockHashes = {blockHashes}
-            };
-            var sig = _SignMessage(request);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                GetBlocksByHashesRequest = request,
-                Signature = sig
-            };
+            var request = new GetBlocksByHashesRequest {BlockHashes = {blockHashes}};
+            return new NetworkMessage {GetBlocksByHashesRequest = request};
         }
 
         public NetworkMessage GetBlocksByHashesReply(IEnumerable<Block> blocks)
         {
-            var reply = new GetBlocksByHashesReply
-            {
-                Blocks = {blocks}
-            };
-            var sig = _SignMessage(reply);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                GetBlocksByHashesReply = reply,
-                Signature = sig
-            };
+            var reply = new GetBlocksByHashesReply {Blocks = {blocks}};
+            return new NetworkMessage {GetBlocksByHashesReply = reply};
         }
 
         public NetworkMessage GetBlocksByHeightRangeRequest(ulong fromHeight, ulong toHeight)
@@ -143,58 +88,36 @@ namespace Lachain.Networking
                 FromHeight = fromHeight,
                 ToHeight = toHeight
             };
-            var sig = _SignMessage(request);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                GetBlocksByHeightRangeRequest = request,
-                Signature = sig
-            };
+            return new NetworkMessage {GetBlocksByHeightRangeRequest = request};
         }
 
         public NetworkMessage GetBlocksByHeightRangeReply(IEnumerable<UInt256> blockHashes)
         {
-            var reply = new GetBlocksByHeightRangeReply
-            {
-                BlockHashes = {blockHashes}
-            };
-            var sig = _SignMessage(reply);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                GetBlocksByHeightRangeReply = reply,
-                Signature = sig
-            };
+            var reply = new GetBlocksByHeightRangeReply {BlockHashes = {blockHashes}};
+            return new NetworkMessage {GetBlocksByHeightRangeReply = reply};
         }
 
         public NetworkMessage GetTransactionsByHashesRequest(IEnumerable<UInt256> transactionHashes)
         {
-            var request = new GetTransactionsByHashesRequest
-            {
-                TransactionHashes = {transactionHashes}
-            };
-            var sig = _SignMessage(request);
-            return new NetworkMessage
-            {
-                MessageId = GenerateMessageId(),
-                GetTransactionsByHashesRequest = request,
-                Signature = sig
-            };
+            var request = new GetTransactionsByHashesRequest {TransactionHashes = {transactionHashes}};
+            return new NetworkMessage {GetTransactionsByHashesRequest = request};
         }
 
         public NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions)
         {
-            var reply = new GetTransactionsByHashesReply
-            {
-                Transactions = {transactions}
-            };
-            var sig = _SignMessage(reply);
-            return new NetworkMessage
+            var reply = new GetTransactionsByHashesReply {Transactions = {transactions}};
+            return new NetworkMessage {GetTransactionsByHashesReply = reply};
+        }
+
+        public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)
+        {
+            var batch = new MessageBatch
             {
                 MessageId = GenerateMessageId(),
-                GetTransactionsByHashesReply = reply,
-                Signature = sig
+                Content = new MessageBatchContent {Messages = {messages}},
             };
+            batch.Signature = Crypto.Sign(batch.Content.ToByteArray(), _keyPair.PrivateKey.Encode()).ToSignature();
+            return batch;
         }
 
         private ulong GenerateMessageId()
@@ -202,11 +125,6 @@ namespace Lachain.Networking
             var buf = new byte[8];
             _random.NextBytes(buf);
             return BitConverter.ToUInt64(buf);
-        }
-
-        private Signature _SignMessage(IMessage message)
-        {
-            return _crypto.Sign(message.ToByteArray(), _keyPair.PrivateKey.Encode()).ToSignature();
         }
     }
 }

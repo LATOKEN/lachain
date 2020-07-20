@@ -9,6 +9,7 @@ using Lachain.Core.RPC.HTTP.FrontEnd;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
+using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 
@@ -26,12 +27,13 @@ namespace Lachain.Core.RPC
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly IBlockchainEventFilter _blockchainEventFilter;
+        private readonly INetworkManager _networkManager;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ISystemContractReader _systemContractReader;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly ILocalTransactionRepository _localTransactionRepository;
-        
+
 
         public RpcManager(
             ITransactionManager transactionManager,
@@ -42,11 +44,14 @@ namespace Lachain.Core.RPC
             IVirtualMachine virtualMachine,
             IContractRegisterer contractRegisterer,
             IValidatorStatusManager validatorStatusManager,
-            ISystemContractReader systemContractReader, 
-            IBlockSynchronizer blockSynchronizer, 
-            ILocalTransactionRepository localTransactionRepository, 
-            ITransactionSigner transactionSigner, IPrivateWallet privateWallet, ITransactionBuilder transactionBuilder,
-            IBlockchainEventFilter blockchainEventFilter
+            ISystemContractReader systemContractReader,
+            IBlockSynchronizer blockSynchronizer,
+            ILocalTransactionRepository localTransactionRepository,
+            ITransactionSigner transactionSigner,
+            IPrivateWallet privateWallet,
+            ITransactionBuilder transactionBuilder,
+            IBlockchainEventFilter blockchainEventFilter,
+            INetworkManager networkManager
         )
         {
             _transactionManager = transactionManager;
@@ -64,6 +69,7 @@ namespace Lachain.Core.RPC
             _privateWallet = privateWallet;
             _transactionBuilder = transactionBuilder;
             _blockchainEventFilter = blockchainEventFilter;
+            _networkManager = networkManager;
         }
 
         private HttpService? _httpService;
@@ -73,14 +79,16 @@ namespace Lachain.Core.RPC
             // ReSharper disable once UnusedVariable
             var implicitlyDeclaredAndBoundedServices = new JsonRpcService[]
             {
-                new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager, _blockSynchronizer, _systemContractReader),
+                new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager,
+                    _blockSynchronizer, _systemContractReader),
                 new AccountService(_stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager),
                 new AccountServiceWeb3(_stateManager),
-                new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet), 
+                new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet),
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
-                new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet), 
-                new NodeService(_blockSynchronizer, _blockchainEventFilter)
+                new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader,
+                    _localTransactionRepository, _validatorStatusManager, _privateWallet),
+                new NodeService(_blockchainEventFilter, _networkManager)
             };
 
             RpcConfig rpcConfig;
@@ -95,9 +103,9 @@ namespace Lachain.Core.RPC
                     Port = short.Parse(_configManager.GetCliArg("rpcport")),
                     ApiKey = _configManager.GetCliArg("apikey"),
                 };
-            else 
+            else
                 rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
-            
+
 
             _httpService = new HttpService();
             _httpService.Start(rpcConfig);

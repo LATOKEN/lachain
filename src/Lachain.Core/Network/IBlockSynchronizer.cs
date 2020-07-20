@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Lachain.Networking;
 using Lachain.Proto;
 
 namespace Lachain.Core.Network
@@ -9,15 +8,13 @@ namespace Lachain.Core.Network
     {
         uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
 
-        uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, IRemotePeer remotePeer);
-        
-        void HandleBlockFromPeer(Block block, IRemotePeer remotePeer, TimeSpan timeout);
+        uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey);
 
-        void HandlePeerHasBlocks(ulong blockHeight, IRemotePeer remotePeer);
+        void HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey);
+
+        void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey);
 
         bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers);
-
-        PeerAddress[] GetConnectedPeers();
 
         ulong? GetHighestBlock();
 

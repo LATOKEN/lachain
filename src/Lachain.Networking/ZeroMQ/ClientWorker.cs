@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
 using Lachain.Proto;
 using Lachain.Logger;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.ZeroMQ
 {
@@ -18,11 +21,17 @@ namespace Lachain.Networking.ZeroMQ
         public ECDSAPublicKey? PublicKey { get; }
         public DateTime Connected { get; } = DateTime.Now;
 
+        private readonly IMessageFactory _messageFactory;
         private readonly PushSocket _socket;
         private readonly Thread _worker;
+        private ulong _batchTs;
 
-        public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? publicKey)
+        private readonly IDictionary<ulong, (MessageBatch msg, ulong timestamp)> _unacked =
+            new ConcurrentDictionary<ulong, (MessageBatch, ulong)>();
+
+        public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? publicKey, IMessageFactory messageFactory)
         {
+            _messageFactory = messageFactory;
             PublicKey = publicKey;
             Address = peerAddress;
             _socket = new PushSocket();
@@ -41,14 +50,13 @@ namespace Lachain.Networking.ZeroMQ
             _worker.Join();
         }
 
-        public static void SendOnce(PeerAddress address, NetworkMessage message)
+        public static void SendOnce(PeerAddress address, MessageBatch message)
         {
             var endpoint = $"tcp://{address.Host}:{address.Port}";
             using var socket = new PushSocket();
             socket.Connect(endpoint);
             socket.SendFrame(message.ToByteArray());
-            Thread.Sleep(TimeSpan.FromSeconds(1)); // TODO: wtf?
-            socket.Disconnect(endpoint);
+            Thread.Sleep(TimeSpan.FromMilliseconds(500)); // TODO: wtf?
         }
 
         private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
@@ -70,23 +78,50 @@ namespace Lachain.Networking.ZeroMQ
             IsConnected = true;
             while (IsConnected)
             {
-                NetworkMessage message;
-                lock (_queueNotEmpty)
+                var now = TimeUtils.CurrentTimeMillis();
+                List<MessageBatch> toSend = new List<MessageBatch>();
+                lock (_messageQueue)
                 {
-                    while (_messageQueue.Count == 0)
+                    if (now - _batchTs > 1_000 && _messageQueue.Count != 0)
                     {
-                        Monitor.Wait(_queueNotEmpty);
+                        var batch = _messageFactory.MessagesBatch(_messageQueue.ToArray());
+                        _unacked[batch.MessageId] = (batch, now);
+                        toSend.Add(batch);
+                        _messageQueue.Clear();
+                        _batchTs = now;
                     }
-
-                    message = _messageQueue.Dequeue();
                 }
 
-                if (message is null)
-                    continue;
-                _socket.SendFrame(message.ToByteArray());
+                lock (_unacked)
+                {
+                    var cnt = _unacked.Count;
+                    if (cnt == 0) continue;
+                    Logger.LogTrace($"Got {cnt} unacked messages, resending");
+                    foreach (var msg in _unacked.Values
+                        .Where(x => x.timestamp < now - 5_000)
+                        .Where(x => x.timestamp > now - 30_000)
+                        .Select(t => t.msg))
+                    {
+                        _unacked[msg.MessageId] = (msg, now);
+                        toSend.Add(msg);
+                    }
+                }
+
+                foreach (var msg in toSend)
+                {
+                    _socket.SendFrame(msg.ToByteArray());
+                }
             }
 
             _socket.Disconnect(endpoint);
+        }
+
+        public void ReceiveAck(ulong messageId)
+        {
+            lock (_unacked)
+            {
+                _unacked.Remove(messageId);
+            }
         }
 
         public void Dispose()

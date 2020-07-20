@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -8,30 +10,34 @@ namespace Lachain.Networking
         IMessageFactory? MessageFactory { get; }
         bool IsConnected(PeerAddress address);
         IRemotePeer? Connect(PeerAddress address);
-        IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey);
+        void SendToPeerByPublicKey(ECDSAPublicKey publicKey, NetworkMessage message);
         bool IsReady { get; }
         void Start();
         void Stop();
         void AdvanceEra(long era);
         void BroadcastLocalTransaction(TransactionReceipt receipt);
 
-        event EventHandler<(MessageEnvelope envelope, PingRequest message)>? OnPingRequest;
-        event EventHandler<(MessageEnvelope envelope, PingReply message)>? OnPingReply;
-        event EventHandler<(MessageEnvelope envelope, GetBlocksByHashesRequest message)>? OnGetBlocksByHashesRequest;
-        event EventHandler<(MessageEnvelope envelope, GetBlocksByHashesReply message)>? OnGetBlocksByHashesReply;
+        event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
+        event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
 
-        event EventHandler<(MessageEnvelope envelope, GetBlocksByHeightRangeRequest message)>?
+        event EventHandler<(GetBlocksByHashesRequest message, Action<GetBlocksByHashesReply> callback)>?
+            OnGetBlocksByHashesRequest;
+
+        event EventHandler<(GetBlocksByHashesReply message, ECDSAPublicKey address)>? OnGetBlocksByHashesReply;
+
+        event EventHandler<(GetBlocksByHeightRangeRequest message, Action<GetBlocksByHeightRangeReply> callback)>?
             OnGetBlocksByHeightRangeRequest;
 
-        event EventHandler<(MessageEnvelope envelope, GetBlocksByHeightRangeReply message)>?
+        event EventHandler<(GetBlocksByHeightRangeReply message, Action<GetBlocksByHashesRequest> callback)>?
             OnGetBlocksByHeightRangeReply;
 
-        event EventHandler<(MessageEnvelope envelope, GetTransactionsByHashesRequest message)>?
+        event EventHandler<(GetTransactionsByHashesRequest message, Action<GetTransactionsByHashesReply> callback)>?
             OnGetTransactionsByHashesRequest;
 
-        event EventHandler<(MessageEnvelope envelope, GetTransactionsByHashesReply message)>?
+        event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
             OnGetTransactionsByHashesReply;
 
-        event EventHandler<(MessageEnvelope envelope, ConsensusMessage message)>? OnConsensusMessage;
+        event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        IEnumerable<PeerAddress> GetConnectedPeers();
     }
 }

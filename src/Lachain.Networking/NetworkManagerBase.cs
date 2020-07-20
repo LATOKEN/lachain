@@ -52,27 +52,35 @@ namespace Lachain.Networking
 
         private readonly NetworkConfig _networkConfig;
         public ConsensusNetworkManager ConsensusNetworkManager { get; }
-        public event EventHandler<(MessageEnvelope envelope, PingRequest message)>? OnPingRequest;
-        public event EventHandler<(MessageEnvelope envelope, PingReply message)>? OnPingReply;
 
-        public event EventHandler<(MessageEnvelope envelope, GetBlocksByHashesRequest message)>?
+        public event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
+        public event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
+
+        public event EventHandler<(GetBlocksByHashesRequest message, Action<GetBlocksByHashesReply> callback)>?
             OnGetBlocksByHashesRequest;
 
-        public event EventHandler<(MessageEnvelope envelope, GetBlocksByHashesReply message)>? OnGetBlocksByHashesReply;
+        public event EventHandler<(GetBlocksByHashesReply message, ECDSAPublicKey address)>? OnGetBlocksByHashesReply;
 
-        public event EventHandler<(MessageEnvelope envelope, GetBlocksByHeightRangeRequest message)>?
+        public event EventHandler<(GetBlocksByHeightRangeRequest message, Action<GetBlocksByHeightRangeReply> callback)>
+            ?
             OnGetBlocksByHeightRangeRequest;
 
-        public event EventHandler<(MessageEnvelope envelope, GetBlocksByHeightRangeReply message)>?
+        public event EventHandler<(GetBlocksByHeightRangeReply message, Action<GetBlocksByHashesRequest> callback)>?
             OnGetBlocksByHeightRangeReply;
 
-        public event EventHandler<(MessageEnvelope envelope, GetTransactionsByHashesRequest message)>?
+        public event EventHandler<(GetTransactionsByHashesRequest message, Action<GetTransactionsByHashesReply> callback
+                )>?
             OnGetTransactionsByHashesRequest;
 
-        public event EventHandler<(MessageEnvelope envelope, GetTransactionsByHashesReply message)>?
+        public event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
             OnGetTransactionsByHashesReply;
 
-        public event EventHandler<(MessageEnvelope envelope, ConsensusMessage message)>? OnConsensusMessage;
+        public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+
+        public IEnumerable<PeerAddress> GetConnectedPeers()
+        {
+            return _clientWorkers.Keys;
+        }
 
         public NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair)
         {
@@ -92,8 +100,13 @@ namespace Lachain.Networking
             ConsensusNetworkManager = new ConsensusNetworkManager(_messageFactory, networkConfig, LocalNode);
             _serverWorker = new ServerWorker(networkConfig.Address, networkConfig.Port);
             _serverWorker.OnMessage += _HandleMessage;
-            _serverWorker.OnError += HandleError;
+            _serverWorker.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
             ConsensusNetworkManager.OnMessage += (sender, e) => OnConsensusMessage?.Invoke(sender, e);
+        }
+
+        public void SendToPeerByPublicKey(ECDSAPublicKey publicKey, NetworkMessage message)
+        {
+            GetPeerByPublicKey(publicKey)?.Send(message);
         }
 
         public bool IsReady => _serverWorker != null && _serverWorker.IsActive;
@@ -150,7 +163,7 @@ namespace Lachain.Networking
                     return null;
                 if (address.PublicKey is null)
                     throw new InvalidOperationException($"Cannot connect to peer {address}: no public key");
-                worker = new ClientWorker(address, address.PublicKey!);
+                worker = new ClientWorker(address, address.PublicKey!, _messageFactory);
                 _clientWorkers.Add(address, worker);
                 worker.Start();
                 Monitor.PulseAll(_hasPeersToConnect);
@@ -159,31 +172,10 @@ namespace Lachain.Networking
             }
         }
 
-        private MessageEnvelope _BuildEnvelope(IMessage message, Signature signature)
-        {
-            var bytes = message.ToByteArray();
-            var rawPublicKey = Crypto.RecoverSignature(bytes, signature.Encode());
-            var publicKey = rawPublicKey.ToPublicKey();
-            var envelope = new MessageEnvelope
-            {
-                MessageFactory = _messageFactory,
-                PublicKey = publicKey,
-                RemotePeer = GetPeerByPublicKey(publicKey),
-                Signature = signature
-            };
-            return envelope;
-        }
-
-        private void _HandshakeRequest(Signature signature, HandshakeRequest request)
+        private void _HandshakeRequest(HandshakeRequest request)
         {
             if (request.Node.PublicKey is null)
                 throw new Exception("Public key can't be null");
-            var isValid = Crypto.VerifySignature(
-                request.ToByteArray(),
-                signature.Encode(),
-                request.Node.PublicKey.EncodeCompressed()
-            );
-            if (!isValid) throw new Exception("Unable to verify message using public key specified");
             var address = PeerAddress.FromNode(request.Node);
             var peer = _clientWorkers.TryGetValue(address, out var clientWorker)
                 ? clientWorker
@@ -192,12 +184,8 @@ namespace Lachain.Networking
             peer?.Send(_messageFactory.HandshakeReply(LocalNode, port));
         }
 
-        private void _HandshakeReply(Signature signature, HandshakeReply reply)
+        private void _HandshakeReply(HandshakeReply reply)
         {
-            var isValid = Crypto.VerifySignature(
-                reply.ToByteArray(), signature.Encode(), reply.Node.PublicKey.EncodeCompressed()
-            );
-            if (!isValid) throw new Exception("Unable to verify message using public key specified");
             var address = PeerAddress.FromNode(reply.Node);
             address.Port = (int) reply.Port;
             ConsensusNetworkManager.InitOutgoingConnection(reply.Node.PublicKey, address);
@@ -205,101 +193,130 @@ namespace Lachain.Networking
 
         private void _HandleMessage(object sender, byte[] buffer)
         {
-            NetworkMessage? message = null;
+            MessageBatch? batch;
             try
             {
-                message = NetworkMessage.Parser.ParseFrom(buffer);
+                batch = MessageBatch.Parser.ParseFrom(buffer);
             }
             catch (Exception e)
             {
                 Logger.LogError($"Unable to parse protocol message: {e}");
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
+                return;
             }
 
-            if (message is null)
+            if (batch is null)
             {
                 Logger.LogError("Unable to parse protocol message");
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
                 return;
             }
 
-            try
+            var publicKey = Crypto.RecoverSignature(batch.Content.ToByteArray(), batch.Signature.Encode())
+                .ToPublicKey();
+            var envelope = new MessageEnvelope
             {
-                HandleMessageUnsafe(message);
+                MessageFactory = _messageFactory,
+                PublicKey = publicKey,
+                RemotePeer = GetPeerByPublicKey(publicKey)
+            };
+            if (envelope.RemotePeer is null)
+            {
+                Logger.LogWarning(
+                    $"Message from unrecognized peer {publicKey.ToHex()} or invalid signature, skipping");
+                //: {string.Join(", ", batch.Content.Messages.Select(x => x.MessageCase.ToString()))}
+                return;
             }
-            catch (Exception e)
+
+            Logger.LogTrace($"Envelope: pub={publicKey.ToHex()} peer={envelope.RemotePeer?.Address}");
+
+            foreach (var message in batch.Content.Messages)
             {
-                Logger.LogError($"Unexpected error occurred: {e}");
+                try
+                {
+                    HandleMessageUnsafe(message, envelope);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Unexpected error occurred: {e}");
+                }
             }
         }
 
-        private static void HandleError(object sender, Exception error)
+        private Action<IMessage> SendTo(IRemotePeer? peer)
         {
-            Logger.LogError($"Server error: {error}");
+            return x =>
+            {
+                Logger.LogDebug($"Sending {x.GetType()} to {peer?.Address}");
+                NetworkMessage msg = x switch
+                {
+                    PingReply pingReply => new NetworkMessage {PingReply = pingReply},
+                    GetBlocksByHashesReply getBlocksByHashesReply => new NetworkMessage
+                    {
+                        GetBlocksByHashesReply = getBlocksByHashesReply
+                    },
+                    GetBlocksByHeightRangeReply getBlocksByHeightRangeReply => new NetworkMessage
+                    {
+                        GetBlocksByHeightRangeReply = getBlocksByHeightRangeReply
+                    },
+                    GetBlocksByHashesRequest getBlocksByHashesRequest => new NetworkMessage
+                    {
+                        GetBlocksByHashesRequest = getBlocksByHashesRequest
+                    },
+                    GetTransactionsByHashesReply getTransactionsByHashesReply => new NetworkMessage
+                    {
+                        GetTransactionsByHashesReply = getTransactionsByHashesReply
+                    },
+                    _ => throw new InvalidOperationException()
+                };
+                peer?.Send(msg);
+            };
         }
 
-        private void HandleMessageUnsafe(NetworkMessage message)
+        private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
         {
+            if (envelope.PublicKey is null) throw new InvalidOperationException();
+            Logger.LogDebug($"Handling {message.MessageCase}");
             switch (message.MessageCase)
             {
                 case NetworkMessage.MessageOneofCase.HandshakeRequest:
-                    _HandshakeRequest(message.Signature, message.HandshakeRequest);
+                    _HandshakeRequest(message.HandshakeRequest);
                     break;
                 case NetworkMessage.MessageOneofCase.HandshakeReply:
-                    _HandshakeReply(message.Signature, message.HandshakeReply);
+                    _HandshakeReply(message.HandshakeReply);
                     break;
                 case NetworkMessage.MessageOneofCase.PingRequest:
-                    OnPingRequest?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.PingRequest, message.Signature), message.PingRequest)
-                    );
+                    OnPingRequest?.Invoke(this, (message.PingRequest, SendTo(envelope.RemotePeer)));
                     break;
                 case NetworkMessage.MessageOneofCase.PingReply:
-                    OnPingReply?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.PingReply, message.Signature), message.PingReply)
-                    );
+                    OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesRequest:
-                    OnGetBlocksByHashesRequest?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.GetBlocksByHashesRequest, message.Signature),
-                            message.GetBlocksByHashesRequest)
+                    OnGetBlocksByHashesRequest?.Invoke(this,
+                        (message.GetBlocksByHashesRequest, SendTo(envelope.RemotePeer))
                     );
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHashesReply:
-                    OnGetBlocksByHashesReply?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.GetBlocksByHashesReply, message.Signature),
-                            message.GetBlocksByHashesReply)
-                    );
+                    OnGetBlocksByHashesReply?.Invoke(this, (message.GetBlocksByHashesReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeRequest:
-                    OnGetBlocksByHeightRangeRequest?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.GetBlocksByHeightRangeRequest, message.Signature),
-                            message.GetBlocksByHeightRangeRequest)
+                    OnGetBlocksByHeightRangeRequest?.Invoke(this,
+                        (message.GetBlocksByHeightRangeRequest, SendTo(envelope.RemotePeer))
                     );
                     break;
                 case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeReply:
-                    OnGetBlocksByHeightRangeReply?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.GetBlocksByHeightRangeReply, message.Signature),
-                            message.GetBlocksByHeightRangeReply)
+                    OnGetBlocksByHeightRangeReply?.Invoke(this,
+                        (message.GetBlocksByHeightRangeReply, SendTo(envelope.RemotePeer))
                     );
                     break;
                 case NetworkMessage.MessageOneofCase.GetTransactionsByHashesRequest:
-                    OnGetTransactionsByHashesRequest?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.GetTransactionsByHashesRequest, message.Signature),
-                            message.GetTransactionsByHashesRequest)
+                    OnGetTransactionsByHashesRequest?.Invoke(this,
+                        (message.GetTransactionsByHashesRequest, SendTo(envelope.RemotePeer))
                     );
                     break;
                 case NetworkMessage.MessageOneofCase.GetTransactionsByHashesReply:
-                    OnGetTransactionsByHashesReply?.Invoke(
-                        this,
-                        (_BuildEnvelope(message.GetTransactionsByHashesReply, message.Signature),
-                            message.GetTransactionsByHashesReply)
+                    OnGetTransactionsByHashesReply?.Invoke(this,
+                        (message.GetTransactionsByHashesReply, envelope.PublicKey)
                     );
                     break;
                 default:
@@ -322,7 +339,10 @@ namespace Lachain.Networking
                     {
                         try
                         {
-                            ClientWorker.SendOnce(address, _messageFactory.HandshakeRequest(LocalNode));
+                            ClientWorker.SendOnce(
+                                address,
+                                _messageFactory.MessagesBatch(new[] {_messageFactory.HandshakeRequest(LocalNode)})
+                            );
                         }
                         catch (Exception e)
                         {

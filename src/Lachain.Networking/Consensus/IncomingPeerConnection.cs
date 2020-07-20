@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Logger;
@@ -24,7 +21,7 @@ namespace Lachain.Networking.Consensus
 
         public event EventHandler<(ECDSAPublicKey publicKey, ulong messageId)>? OnReceive;
         public event EventHandler<(ECDSAPublicKey publicKey, ulong messageId)>? OnAck;
-        public event EventHandler<(MessageEnvelope envelope, ConsensusMessage message)>? OnMessage;
+        public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnMessage;
 
         public IncomingPeerConnection(string bindAddress, ECDSAPublicKey publicKey)
         {
@@ -39,10 +36,10 @@ namespace Lachain.Networking.Consensus
         private void ProcessMessage(object sender, byte[] buffer)
         {
             // TODO: can we also check origin of message?
-            NetworkMessage? message = null;
+            MessageBatch? messages = null;
             try
             {
-                message = NetworkMessage.Parser.ParseFrom(buffer);
+                messages = MessageBatch.Parser.ParseFrom(buffer);
             }
             catch (Exception e)
             {
@@ -52,63 +49,51 @@ namespace Lachain.Networking.Consensus
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
             }
 
-            if (message is null)
+            if (messages is null)
             {
                 Logger.LogWarning($"Unable to parse protocol message from peer with public key {_publicKey.ToHex()}");
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
                 return;
             }
 
-            if (message.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage &&
-                message.MessageCase != NetworkMessage.MessageOneofCase.Ack)
-            {
-                Logger.LogWarning(
-                    $"Message of type {message.MessageCase} arrived from peer with public key {_publicKey.ToHex()}, skipping"
-                );
-                return;
-            }
-
-            var signedData = message.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage
-                ? message.ConsensusMessage.ToByteArray()
-                : message.Ack.ToByteArray();
             if (!Crypto.VerifySignature(
-                    signedData,
-                    message.Signature.Encode(),
-                    _publicKey.EncodeCompressed()
-                )
+                messages.Content.ToByteArray(),
+                messages.Signature.Encode(),
+                _publicKey.EncodeCompressed())
             )
             {
                 Logger.LogWarning(
-                    $"Message with invalid signature arrived from peer with public key {_publicKey.ToHex()}, skipping"
+                    $"Messages with invalid signature arrived from peer with public key {_publicKey.ToHex()}, skipping"
                 );
                 return;
             }
 
-            if (message.MessageCase == NetworkMessage.MessageOneofCase.Ack)
-            {
-                OnAck?.Invoke(this, (_publicKey, message.Ack.MessageId));
-                return;
-            }
+            OnReceive?.Invoke(this, (_publicKey, messages.MessageId));
 
-            OnReceive?.Invoke(this, (_publicKey, message.MessageId));
-            var envelope = new MessageEnvelope
+            foreach (var message in messages.Content.Messages)
             {
-                PublicKey = _publicKey,
-                Signature = message.Signature
-            };
-            OnMessage?.Invoke(this, (envelope, message.ConsensusMessage));
+                if (message.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage &&
+                    message.MessageCase != NetworkMessage.MessageOneofCase.Ack)
+                {
+                    Logger.LogWarning(
+                        $"Message of type {message.MessageCase} arrived from peer with public key {_publicKey.ToHex()}, skipping"
+                    );
+                    continue;
+                }
+
+                if (message.MessageCase == NetworkMessage.MessageOneofCase.Ack)
+                {
+                    OnAck?.Invoke(this, (_publicKey, message.Ack.MessageId));
+                    continue;
+                }
+
+                OnMessage?.Invoke(this, (message.ConsensusMessage, _publicKey));
+            }
         }
 
         private void ProcessError(object sender, Exception error)
         {
             Logger.LogError($"Error handling message from peer with public key {_publicKey.ToHex()}: {error}");
-        }
-
-        private static byte[] SignatureData(IReadOnlyCollection<byte> message)
-        {
-            return Encoding.ASCII.GetBytes($"\x20LACHAIN Signed Network Message:\n{message.Count}")
-                .Concat(message)
-                .ToArray();
         }
 
         public void Dispose()

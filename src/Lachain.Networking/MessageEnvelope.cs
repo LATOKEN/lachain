@@ -9,7 +9,5 @@ namespace Lachain.Networking
         public ECDSAPublicKey? PublicKey { get; set; }
         
         public IRemotePeer? RemotePeer { get; set; }
-
-        public Signature? Signature { get; set; }
     }
 }

@@ -3,12 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
-using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -25,13 +23,12 @@ namespace Lachain.Core.Network
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
         private readonly INetworkManager _networkManager;
-        private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
 
         /*
          * TODO: message queue is a hack. We should design additional layer for storing/persisting consensus messages
          */
-        private readonly IDictionary<long, List<Tuple<MessageEnvelope, ConsensusMessage>>> _queuedMessages =
-            new ConcurrentDictionary<long, List<Tuple<MessageEnvelope, ConsensusMessage>>>();
+        private readonly IDictionary<long, List<Tuple<ConsensusMessage, ECDSAPublicKey>>> _queuedMessages =
+            new ConcurrentDictionary<long, List<Tuple<ConsensusMessage, ECDSAPublicKey>>>();
 
         public MessageHandler(
             IBlockSynchronizer blockSynchronizer,
@@ -71,115 +68,103 @@ namespace Lachain.Core.Network
             var era = (long) e.Header.Index + 1;
             if (!_queuedMessages.TryGetValue(era, out var messages)) return;
             _queuedMessages.Remove(era);
-            foreach (var (envelope, message) in messages)
+            foreach (var (message, key) in messages)
             {
-                OnConsensusMessage(this, (envelope, message));
+                OnConsensusMessage(this, (message, key));
             }
         }
 
-        private void OnPingRequest(object sender, (MessageEnvelope envelope, PingRequest request) @event)
+        private void OnPingRequest(object sender, (PingRequest request, Action<PingReply> callback) @event)
         {
-            var (envelope, request) = @event;
-            var reply = envelope.MessageFactory?.PingReply(request.Timestamp,
-                            _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()) ??
-                        throw new InvalidOperationException();
-            envelope.RemotePeer?.Send(reply);
+            var (_, callback) = @event;
+            var reply = new PingReply
+            {
+                Timestamp = TimeUtils.CurrentTimeMillis(),
+                BlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
+            };
+            callback(reply);
         }
 
-        private void OnPingReply(object sender, (MessageEnvelope envelope, PingReply reply) @event)
+        private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
         {
-            var (envelope, reply) = @event;
-            _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight,
-                envelope.RemotePeer ?? throw new InvalidOperationException()
-            );
+            var (reply, publicKey) = @event;
+            _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, publicKey);
         }
 
         private void OnGetBlocksByHashesRequest(object sender,
-            (MessageEnvelope envelope, GetBlocksByHashesRequest request) @event)
+            (GetBlocksByHashesRequest request, Action<GetBlocksByHashesReply> callback) @event)
         {
-            var (envelope, request) = @event;
-            var blocks = _stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes);
-            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHashesReply(blocks) ??
-                                      throw new InvalidOperationException());
+            var (request, callback) = @event;
+            var reply = new GetBlocksByHashesReply
+            {
+                Blocks = {_stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes)}
+            };
+            callback(reply);
         }
 
         private void OnGetBlocksByHashesReply(object sender,
-            (MessageEnvelope envelope, GetBlocksByHashesReply reply) @event)
+            (GetBlocksByHashesReply reply, ECDSAPublicKey publicKey) @event)
         {
-            var (envelope, reply) = @event;
+            var (reply, publicKey) = @event;
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
-                _blockSynchronizer.HandleBlockFromPeer(block,
-                    envelope.RemotePeer ?? throw new InvalidOperationException(), TimeSpan.FromSeconds(5));
+                _blockSynchronizer.HandleBlockFromPeer(block, publicKey);
         }
 
         private void OnGetBlocksByHeightRangeRequest(object sender,
-            (MessageEnvelope envelope, GetBlocksByHeightRangeRequest request) @event)
+            (GetBlocksByHeightRangeRequest request, Action<GetBlocksByHeightRangeReply> callback) @event)
         {
-            var (envelope, request) = @event;
+            var (request, callback) = @event;
             var blockHashes = _stateManager.LastApprovedSnapshot.Blocks
                 .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
-            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHeightRangeReply(blockHashes) ??
-                                      throw new InvalidOperationException());
+            callback(new GetBlocksByHeightRangeReply {BlockHashes = {blockHashes}});
         }
 
         private void OnGetBlocksByHeightRangeReply(object sender,
-            (MessageEnvelope envelope, GetBlocksByHeightRangeReply reply) @event)
+            (GetBlocksByHeightRangeReply reply, Action<GetBlocksByHashesRequest> callback) @event)
         {
-            var (envelope, reply) = @event;
-            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetBlocksByHashesRequest(reply.BlockHashes) ??
-                                      throw new InvalidOperationException());
+            var (reply, callback) = @event;
+            var request = new GetBlocksByHashesRequest {BlockHashes = {reply.BlockHashes}};
+            callback(request);
         }
 
         private void OnGetTransactionsByHashesRequest(object sender,
-            (MessageEnvelope envelope, GetTransactionsByHashesRequest request) @event)
+            (GetTransactionsByHashesRequest request, Action<GetTransactionsByHashesReply> callback) @event)
         {
-            var (envelope, request) = @event;
+            var (request, callback) = @event;
             var txs = request.TransactionHashes
                 .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
                                   _transactionPool.GetByHash(txHash))
                 .Where(tx => tx != null)
                 .Select(tx => tx!)
                 .ToList();
-
-            envelope.RemotePeer?.Send(envelope.MessageFactory?.GetTransactionsByHashesReply(txs) ??
-                                      throw new InvalidOperationException());
+            callback(new GetTransactionsByHashesReply {Transactions = {txs}});
         }
 
         private void OnGetTransactionsByHashesReply(object sender,
-            (MessageEnvelope envelope, GetTransactionsByHashesReply reply) @event)
+            (GetTransactionsByHashesReply reply, ECDSAPublicKey publicKey) @event)
         {
-            var (envelope, reply) = @event;
-            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions,
-                envelope.RemotePeer ?? throw new InvalidOperationException()
-            );
+            _blockSynchronizer.HandleTransactionsFromPeer(@event.reply.Transactions, @event.publicKey);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void OnConsensusMessage(object sender, (MessageEnvelope envelope, ConsensusMessage message) @event)
+        private void OnConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) @event)
         {
-            var (envelope, message) = @event;
+            var (message, publicKey) = @event;
             try
             {
-                if (envelope.Signature is null || envelope.PublicKey is null ||
-                    !_crypto.VerifySignature(message.ToByteArray(), envelope.Signature.Encode(),
-                        envelope.PublicKey.EncodeCompressed())
-                )
-                {
-                    throw new UnauthorizedAccessException(
-                        $"Message signed by validator {envelope.PublicKey?.ToHex()}, but signature is not correct");
-                }
-
-                _consensusManager.Dispatch(message, envelope.PublicKey);
+                _consensusManager.Dispatch(message, publicKey);
             }
             catch (ConsensusStateNotPresentException)
             {
-                _queuedMessages.ComputeIfAbsent(message.Validator.Era,
-                        x => new List<Tuple<MessageEnvelope, ConsensusMessage>>())
-                    .Add(new Tuple<MessageEnvelope, ConsensusMessage>(envelope, message));
+                _queuedMessages.ComputeIfAbsent(
+                        message.Validator.Era,
+                        x => new List<Tuple<ConsensusMessage, ECDSAPublicKey>>()
+                    )
+                    .Add(new Tuple<ConsensusMessage, ECDSAPublicKey>(message, publicKey));
 
-                Logger.LogTrace("Skipped message too far in future...");
+                Logger.LogTrace("Queued message too far in future...");
             }
         }
     }
