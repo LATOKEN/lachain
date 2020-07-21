@@ -229,6 +229,7 @@ namespace Lachain.Networking
             }
 
             Logger.LogTrace($"Envelope: pub={publicKey.ToHex()} peer={envelope.RemotePeer?.Address}");
+            GetPeerByPublicKey(envelope.PublicKey)?.Send(_messageFactory.Ack(batch.MessageId));
 
             var messages = MessageBatchContent.Parser.ParseFrom(batch.Content);
             foreach (var message in messages.Messages)
@@ -318,6 +319,9 @@ namespace Lachain.Networking
                     OnGetTransactionsByHashesReply?.Invoke(this,
                         (message.GetTransactionsByHashesReply, envelope.PublicKey)
                     );
+                    break;
+                case NetworkMessage.MessageOneofCase.Ack:
+                    GetPeerByPublicKey(envelope.PublicKey)?.ReceiveAck(message.Ack.MessageId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),

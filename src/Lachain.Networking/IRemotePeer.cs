@@ -10,5 +10,6 @@ namespace Lachain.Networking
         ECDSAPublicKey? PublicKey { get; }
         DateTime Connected { get; }
         void Send(NetworkMessage message);
+        void ReceiveAck(ulong ackMessageId);
     }
 }
