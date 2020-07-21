@@ -116,7 +116,9 @@ namespace Lachain.Networking.ZeroMQ
                     _socket.SendFrame(msg.ToByteArray());
                 }
 
-                var toSleep = Math.Max(1, 300u - (TimeUtils.CurrentTimeMillis() - now));
+                var toSleep = 500 - (long) (TimeUtils.CurrentTimeMillis() - now);
+                if (toSleep <= 0) toSleep = 1;
+                if (toSleep > 1000) toSleep = 1000;
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
 
