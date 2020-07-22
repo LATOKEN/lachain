@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Logger;
@@ -53,7 +54,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     // this is special case where empty uint160 is allowed
                     To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
-                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    Value = ethTx.Value.ToArray().ToUInt256(false, true),
                     From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
@@ -91,7 +92,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return null;
             }
 
-            return ToEthTxFormat(receipt,
+            return ToEthTxFormat(
+                _stateManager,
+                receipt,
                 block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block),
                 isReceipt: true
             );
@@ -105,8 +108,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             return receipt is null
                 ? null
-                : ToEthTxFormat(receipt,
-                    block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block));
+                : ToEthTxFormat(
+                    _stateManager,
+                    receipt,
+                    block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block)
+                );
         }
 
         [JsonRpcMethod("eth_sendRawTransaction")]
@@ -129,7 +135,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     // this is special case where empty uint160 is allowed
                     To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
-                    Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                    Value = ethTx.Value.ToArray().ToUInt256(false, true),
                     From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                     Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                     GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
@@ -284,7 +290,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var addressFrom = from is null ? UInt160Utils.Zero : from.HexToUInt160();
             gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
             
-            if (to is null || data is null) return null;
+            if (to is null && data is null) return null;
             
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 to.HexToUInt160());
@@ -339,12 +345,35 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return _stateManager.CurrentSnapshot.NetworkGasPrice.ToHex(false);
         }
 
-        public static JObject ToEthTxFormat(TransactionReceipt receipt, string? blockHash = null,
+        public static JObject ToEthTxFormat(
+            IStateManager stateManager, 
+            TransactionReceipt receipt, 
+            string? blockHash = null,
             string? blockNumber = null,
             Block? block = null,
             bool isReceipt = false
         )
         {
+            var logs = new JArray();
+            var eventCount = stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(receipt.Hash);
+            for (var i = (uint) 0; i < eventCount; i++)
+            {
+                var eventLog = stateManager.LastApprovedSnapshot.Events
+                    .GetEventByTransactionHashAndIndex(receipt.Hash, i)!;
+                ExtractDataAndTopics(eventLog.Data.ToByteArray(), out var topics, out var data);
+                var log = new JObject
+                {
+                    ["address"] = eventLog.Contract.ToHex(),
+                    ["topics"] = topics,
+                    ["data"] = data.ToHex(true),
+                    ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
+                    ["transactionHash"] = receipt.Hash.ToHex(),
+                    ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
+                    ["logIndex"] = 0,
+                    ["removed"] = false,
+                };
+                logs.Add(log);
+            }
             var res =  new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),
@@ -354,7 +383,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(), // TODO: plus previous
                 ["gasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(),
                 ["contractAddress"] = null,
-                ["logs"] = new JArray(),
+                ["logs"] = logs,
                 ["logsBloom"] =
                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 ["status"] = receipt.Status.CompareTo(TransactionStatus.Executed) == 0 ? "0x1" : "0x0",
@@ -367,7 +396,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
             if (!isReceipt)
             {
-                res["value"] = receipt.Transaction.Value.ToBytes().Reverse().ToHex();
+                res["value"] = receipt.Transaction.Value.ToHex();
                 res["nonce"] = receipt.Transaction.Nonce.ToHex();
                 res["input"] = receipt.Transaction.Invocation.ToHex();
                 res["hash"] = receipt.Hash.ToHex();
@@ -375,6 +404,33 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             return res;
+        }
+
+        public static void ExtractDataAndTopics(byte[] eventData, out JArray topics, out byte[] data)
+        {
+            topics = new JArray();
+            
+            if (eventData.Length < 32)
+            {
+                data = eventData;
+                return;
+            }
+
+            var eventId = eventData.Take(32).ToArray().ToUInt256();
+
+            if (eventData.Length / 32 == 4 &&
+                eventId.Equals(Encoding.ASCII.GetBytes(Lrc20Interface.EventTransfer).Keccak()))
+            {
+                for (var i = 0; i < 3; i++)
+                {
+                    topics.Add(eventData.Skip(i * 32).Take(32).ToArray().ToHex(true));
+                }
+
+                data = eventData.Skip(3 * 32).ToArray();
+                return;
+            }
+
+            data = eventData;
         }
 
         private (OperatingError, object?) _InvokeSystemContract(

@@ -64,7 +64,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     if (fullTx)
                     {
                         txs.Add(TransactionServiceWeb3.ToEthTxFormat(
-                            nativeTx, block.Hash.ToHex(), block.Header.Index.ToHex())
+                            _stateManager,
+                            nativeTx, 
+                            block.Hash.ToHex(), 
+                            block.Header.Index.ToHex()
+                            )
                         );
                     }
                 }

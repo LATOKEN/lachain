@@ -2,6 +2,7 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.BlockchainFilter;
+using Lachain.Core.Network;
 using Lachain.Networking;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Utils;
@@ -15,12 +16,14 @@ namespace Lachain.Core.RPC.HTTP
         private readonly IBlockchainEventFilter _blockchainEventFilter;
 
         public NodeService(
+            IBlockSynchronizer blockSynchronizer,
             IBlockchainEventFilter blockchainEventFilter,
             INetworkManager networkManager
         )
         {
             _blockchainEventFilter = blockchainEventFilter;
             _networkManager = networkManager;
+            _blockchainEventFilter = blockchainEventFilter;
             _startTs = TimeUtils.CurrentTimeMillis();
         }
 
@@ -71,14 +74,7 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        // TODO: wallet expect node version here; fix it
-        [JsonRpcMethod("net_version")]
-        public int GetNetVersion()
-        {
-            return 41;
-        }
-
-        public string GetNodeVersion()
+        public string GetNetVersion()
         {
             return "0.100.0";
         }

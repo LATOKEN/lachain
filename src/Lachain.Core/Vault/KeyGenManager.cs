@@ -135,7 +135,7 @@ namespace Lachain.Core.Vault
                 Logger.LogDebug($"Send value tx invocation: {tx.Invocation}, proposer = {proposer.ToHex()}");
                 if (keygen.HandleSendValue(
                     sender,
-                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
+                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(true), EncryptedValues = encryptedValues}
                 ))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();

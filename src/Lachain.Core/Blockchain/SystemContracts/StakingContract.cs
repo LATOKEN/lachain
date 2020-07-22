@@ -266,14 +266,59 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
-            var transferExecutionResult = Hepler.CallSystemContract(frame,
-                ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodTransfer,
-                MsgSender(), stake);
+            var getPenaltyExecutionResult = Hepler.CallSystemContract(
+                frame,
+                ContractRegisterer.StakingContract, 
+                ContractRegisterer.StakingContract, StakingInterface.MethodGetPenalty,
+                MsgSender()
+            );
 
-            if (transferExecutionResult.Status != ExecutionStatus.Ok)
+            if (getPenaltyExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
 
-            var fail = transferExecutionResult.ReturnValue!.ToUInt256().IsZero();
+            var penalty = getPenaltyExecutionResult.ReturnValue!.ToUInt256();
+
+            if (stake.ToMoney().CompareTo(penalty.ToMoney()) < 0)
+            {
+                penalty = stake;
+                stake = UInt256Utils.Zero;
+            }
+            else
+            {
+                stake = (stake.ToMoney() - penalty.ToMoney()).ToUInt256();
+            }
+
+            var transferStakeExecutionResult = Hepler.CallSystemContract(
+                frame,
+                ContractRegisterer.LatokenContract, 
+                ContractRegisterer.StakingContract, 
+                Lrc20Interface.MethodTransfer,
+                MsgSender(), 
+                stake
+            );
+
+            if (transferStakeExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+
+            var fail = transferStakeExecutionResult.ReturnValue!.ToUInt256().IsZero();
+            Logger.LogInformation($"transferStakeExecutionResult {fail}");
+            if (fail)
+                return ExecutionStatus.ExecutionHalted;
+
+            var burnPenaltyExecutionResult = Hepler.CallSystemContract(
+                frame,
+                ContractRegisterer.LatokenContract, 
+                ContractRegisterer.StakingContract, 
+                Lrc20Interface.MethodTransfer,
+                UInt160Utils.Zero, 
+                penalty
+            );
+            
+            if (burnPenaltyExecutionResult.Status != ExecutionStatus.Ok)
+                return ExecutionStatus.ExecutionHalted;
+
+            fail = burnPenaltyExecutionResult.ReturnValue!.ToUInt256().IsZero();
+            Logger.LogInformation($"burnPenaltyExecutionResult {fail}");
             if (fail)
                 return ExecutionStatus.ExecutionHalted;
 
@@ -524,18 +569,18 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 /* Reward for the cycle */
 
                 var activeBlocks = GetActiveBlocksCount(validator);
-                // Logger.LogDebug($"Attendance: {activeBlocks} address: {validatorAddress.ToHex()}");
+                Logger.LogDebug($"Attendance: {activeBlocks} address: {validatorAddress.ToHex()}");
                 var validatorReward = maxValidatorReward * activeBlocks / (int) CycleDuration;
-                // Logger.LogDebug($"Total reward: {validatorReward} LA for {validatorAddress.ToHex()}");
+                Logger.LogDebug($"Total reward: {validatorReward} LA for {validatorAddress.ToHex()}");
 
                 var rewardToMint = SubPenalty(validatorAddress, validatorReward);
                 if (rewardToMint > Money.Zero)
                 {
                     var newBalance = _context.Snapshot.Balances.AddBalance(
-                        validatorAddress, rewardToMint
+                        validatorAddress, rewardToMint, true
                     );
                     Logger.LogDebug($"Minted reward: {rewardToMint} LA for {validatorAddress.ToHex()}");
-                    // Logger.LogDebug($"New balance: {newBalance} LA of {validatorAddress.ToHex()}");
+                    Logger.LogDebug($"New balance: {newBalance} LA of {validatorAddress.ToHex()}");
                 }
 
                 ClearAttendanceVotes(validator);
@@ -859,6 +904,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return Money.Zero;
         }
 
+        private void DeletePenalty(UInt160 staker)
+        {
+            var key = staker.ToBytes();
+            _userToPenalty.SetValue(key, UInt256Utils.Zero.ToBytes());
+        }
+
         [ContractMethod(StakingInterface.MethodGetStake)]
         public ExecutionStatus GetStake(UInt160 staker, SystemContractExecutionFrame frame)
         {
@@ -956,6 +1007,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             SetWithdrawRequestCycle(staker, 0);
             SetStake(staker, UInt256Utils.Zero);
+            DeletePenalty(staker);
             DeleteStakerPublicKey(staker);
             DeleteStartCycle(staker);
         }

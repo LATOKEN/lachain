@@ -12,8 +12,9 @@
         TransactionCountByFrom = 0x0402,
         TransactionPool = 0x0404,
 
-        /* balance */
+        /* native token */
         BalanceByOwnerAndAsset = 0x0501,
+        TotalSupply = 0x0502,
 
         /* storage version & index by height */
         StorageVersionIndex = 0x0601,

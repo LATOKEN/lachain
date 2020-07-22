@@ -22,10 +22,8 @@ namespace Lachain.Core.RPC
         private readonly IBlockManager _blockManager;
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
-        private readonly IVirtualMachine _virtualMachine;
         private readonly IPrivateWallet _privateWallet;
         private readonly ITransactionSigner _transactionSigner;
-        private readonly ITransactionBuilder _transactionBuilder;
         private readonly IBlockchainEventFilter _blockchainEventFilter;
         private readonly INetworkManager _networkManager;
         private readonly IContractRegisterer _contractRegisterer;
@@ -59,7 +57,6 @@ namespace Lachain.Core.RPC
             _configManager = configManager;
             _stateManager = stateManager;
             _transactionPool = transactionPool;
-            _virtualMachine = virtualMachine;
             _contractRegisterer = contractRegisterer;
             _validatorStatusManager = validatorStatusManager;
             _systemContractReader = systemContractReader;
@@ -67,7 +64,6 @@ namespace Lachain.Core.RPC
             _localTransactionRepository = localTransactionRepository;
             _transactionSigner = transactionSigner;
             _privateWallet = privateWallet;
-            _transactionBuilder = transactionBuilder;
             _blockchainEventFilter = blockchainEventFilter;
             _networkManager = networkManager;
         }
@@ -83,12 +79,12 @@ namespace Lachain.Core.RPC
                     _blockSynchronizer, _systemContractReader),
                 new AccountService(_stateManager, _transactionManager, _transactionPool),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager),
-                new AccountServiceWeb3(_stateManager),
+                new AccountServiceWeb3(_stateManager, _contractRegisterer),
                 new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet),
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader,
                     _localTransactionRepository, _validatorStatusManager, _privateWallet),
-                new NodeService(_blockchainEventFilter, _networkManager)
+                new NodeService(_blockSynchronizer, _blockchainEventFilter, _networkManager)
             };
 
             RpcConfig rpcConfig;
@@ -105,7 +101,6 @@ namespace Lachain.Core.RPC
                 };
             else
                 rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
-
 
             _httpService = new HttpService();
             _httpService.Start(rpcConfig);

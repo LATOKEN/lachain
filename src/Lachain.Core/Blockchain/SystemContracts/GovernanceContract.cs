@@ -41,7 +41,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
         private readonly StorageVariable _collectedFees;
-        private readonly StorageVariable _gasPriceBase; // TODO: should it be in the governance state?
 
         public GovernanceContract(InvocationContext context)
         {
@@ -85,11 +84,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 ContractRegisterer.GovernanceContract,
                 context.Snapshot.Storage,
                 new BigInteger(7).ToUInt256()
-            );
-            _gasPriceBase = new StorageVariable(
-                ContractRegisterer.GovernanceContract,
-                context.Snapshot.Storage,
-                new BigInteger(8).ToUInt256()
             );
         }
 
@@ -210,6 +204,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var gen = GetConsensusGeneration();
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
+
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
@@ -225,8 +220,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var tsKeys = GetTSKeys();
             var tpkeKey = GetTpkeKey();
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
+
             var gen = GetConsensusGeneration();
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
+
 
             if (votes + 1 < players - faulty)
                 return ExecutionStatus.ExecutionHalted;

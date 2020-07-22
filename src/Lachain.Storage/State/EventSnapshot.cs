@@ -2,6 +2,7 @@
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.State
 {
@@ -25,13 +26,13 @@ namespace Lachain.Storage.State
 
         public void AddEvent(Event @event)
         {
-            var total = GetTotalTransactionEvents(@event.TransactionHash);
+            var total = GetTotalTransactionEvents(@event.TransactionHash ?? UInt256Utils.Zero);
             @event.Index = total;
             _state.AddOrUpdate(
-                EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash),
+                EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash ?? UInt256Utils.Zero),
                 (total + 1).ToBytes().ToArray()
             );
-            var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash, total);
+            var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash?? UInt256Utils.Zero, total);
             _state.AddOrUpdate(prefix, @event.ToByteArray());
         }
 

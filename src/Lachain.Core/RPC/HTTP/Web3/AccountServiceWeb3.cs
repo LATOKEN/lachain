@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using AustinHarris.JsonRpc;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 
@@ -8,10 +9,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
     public class AccountServiceWeb3 : JsonRpcService
     {
         private readonly IStateManager _stateManager;
+        private readonly IContractRegisterer _contractRegisterer;
 
-        public AccountServiceWeb3(IStateManager stateManager)
+        public AccountServiceWeb3(IStateManager stateManager, IContractRegisterer contractRegisterer)
         {
             _stateManager = stateManager;
+            _contractRegisterer = contractRegisterer;
         }
 
         [JsonRpcMethod("eth_getBalance")]
@@ -41,13 +44,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getCode")]
-        private string GetCode(string contract, string blockId)
+        private string GetCode(string contractAddr, string blockId)
         {
-            /*
-            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
-                contract.HexToUInt160());
-            return contractByHash is null ? "0x" : "0x1";
-            */
+            // var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
+            //     contractAddr.HexToUInt160());
+            // var systemContract = _contractRegisterer.GetContractByAddress(contractAddr.HexToUInt160());
+            // return contractByHash is null ? "0x" : "0x1";
+            
                 
             // hardcoded to prevent default 21000 gas in Metamask
             return "0x01";
