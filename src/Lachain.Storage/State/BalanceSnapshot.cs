@@ -46,7 +46,7 @@ namespace Lachain.Storage.State
         public void SetSupply(Money value)
         {
             var key = EntryPrefix.TotalSupply.BuildPrefix();
-            _state.AddOrUpdate(key, value.ToUInt256().ToByteArray());
+            _state.AddOrUpdate(key, value.ToUInt256(false).ToByteArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
