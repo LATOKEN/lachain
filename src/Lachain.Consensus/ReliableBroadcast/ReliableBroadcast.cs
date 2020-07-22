@@ -49,9 +49,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage ?? throw new InvalidOperationException();
-                // Logger.LogError(
-                //     $"{Id} processing message:x {message.PayloadCase}, thread = {Thread.CurrentThread.ManagedThreadId}");
-
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
@@ -72,8 +69,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             else
             {
                 var message = envelope.InternalMessage ?? throw new InvalidOperationException();
-                // Logger.LogError(
-                //     $"{Id} processing message: {message.GetType()}, thread = {Thread.CurrentThread.ManagedThreadId}");
                 switch (message)
                 {
                     case ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested:
@@ -91,7 +86,6 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleInputMessage(ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested)
         {
-            // Logger.LogDebug($"{Id}: got request with input, empty={broadcastRequested.Input == null}");
             _requested = ResultStatus.Requested;
             if (broadcastRequested.Input == null)
             {
@@ -104,7 +98,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             foreach (var (valMessage, i) in ConstructValMessages(input).WithIndex())
                 Broadcaster.SendToValidator(new ConsensusMessage {ValMessage = valMessage}, i);
 
-            // Logger.LogDebug($"{Id} finished sending VAL messages");
             CheckResult();
         }
 
@@ -118,12 +111,10 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             _sentValMessage[validator] = true;
             Broadcaster.Broadcast(CreateEchoMessage(val));
-            // Logger.LogDebug($"{Id}, player {GetMyId()} broadcast ECHO");
         }
 
         private void HandleEchoMessage(ECHOMessage echo, int validator)
         {
-            // Logger.LogDebug($"{Id} got ECHO from {validator}");
             if (_echoMessages[validator] != null)
             {
                 Logger.LogWarning($"{Id} already received correct echo from {validator}");
@@ -165,7 +156,6 @@ namespace Lachain.Consensus.ReliableBroadcast
                 .OrderByDescending(x => x.cnt)
                 .First();
             if (bestRootCnt != N - F) return;
-            // Logger.LogDebug($"{Id} got {N - F} ECHO messages, interpolating result to send READY");
             var interpolationData = _echoMessages
                 .WithIndex()
                 .Where(x => bestRoot.Equals(x.item?.MerkleTreeRoot))
@@ -364,7 +354,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             return result;
         }
-        
+
         public byte[] DecodeFromEchos(IReadOnlyCollection<(ECHOMessage echo, int from)> echos)
         {
             Debug.Assert(echos.Count == N - 2 * F);

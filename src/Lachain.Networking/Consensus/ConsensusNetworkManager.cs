@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Benchmark;
@@ -46,6 +47,7 @@ namespace Lachain.Networking.Consensus
             );
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public int GetReadyForConnect(ECDSAPublicKey publicKey)
         {
             if (_incoming.TryGetValue(publicKey, out var existingConnection))
@@ -79,6 +81,7 @@ namespace Lachain.Networking.Consensus
         {
             var (publicKey, messageId) = message;
             var ack = _messageFactory.Ack(messageId);
+            Logger.LogTrace($"Sending ack {messageId} for {publicKey.ToHex()}");
             _throughputCalculator.RegisterMeasurement(ack.CalculateSize());
             EnsureConnection(publicKey).Send(ack);
         }
@@ -91,7 +94,6 @@ namespace Lachain.Networking.Consensus
 
         public void AdvanceEra(long era)
         {
-            // Logger.LogTrace($"Cleaning up unacked message for era < {era}");
         }
 
         private OutgoingPeerConnection EnsureConnection(ECDSAPublicKey key)

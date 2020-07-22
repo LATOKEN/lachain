@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
@@ -24,7 +25,6 @@ namespace Lachain.Networking.ZeroMQ
         private readonly IMessageFactory _messageFactory;
         private readonly PushSocket _socket;
         private readonly Thread _worker;
-        private ulong _batchTs;
 
         private readonly IDictionary<ulong, (MessageBatch msg, ulong timestamp)> _unacked =
             new ConcurrentDictionary<ulong, (MessageBatch, ulong)>();
@@ -46,32 +46,28 @@ namespace Lachain.Networking.ZeroMQ
         public void Stop()
         {
             IsConnected = false;
-            lock (_queueNotEmpty) Monitor.Pulse(_queueNotEmpty);
             _worker.Join();
         }
 
         public static void SendOnce(PeerAddress address, MessageBatch message)
         {
-            var endpoint = $"tcp://{address.Host}:{address.Port}";
-            using var socket = new PushSocket();
-            socket.Connect(endpoint);
-            socket.SendFrame(message.ToByteArray());
-            Thread.Sleep(TimeSpan.FromMilliseconds(10)); // TODO: wtf?
+            Task.Factory.StartNew(() =>
+            {
+                var endpoint = $"tcp://{address.Host}:{address.Port}";
+                using var socket = new PushSocket();
+                socket.Connect(endpoint);
+                socket.SendFrame(message.ToByteArray());
+                Thread.Sleep(TimeSpan.FromMilliseconds(1000)); // TODO: wtf?                
+            });
         }
 
         private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
-        private readonly object _queueNotEmpty = new object();
 
         public void Send(NetworkMessage message)
         {
             lock (_messageQueue)
             {
                 _messageQueue.Enqueue(message);
-            }
-
-            lock (_queueNotEmpty)
-            {
-                Monitor.Pulse(_queueNotEmpty);
             }
         }
 
@@ -86,21 +82,19 @@ namespace Lachain.Networking.ZeroMQ
                 List<MessageBatch> toSend = new List<MessageBatch>();
                 lock (_messageQueue)
                 {
-                    if (now - _batchTs > 1_000 && _messageQueue.Count != 0)
+                    if (_messageQueue.Count != 0)
                     {
-                        var batch = _messageFactory.MessagesBatch(_messageQueue.ToArray());
-                        _unacked[batch.MessageId] = (batch, now);
-                        toSend.Add(batch);
+                        var content = _messageQueue.ToArray();
                         _messageQueue.Clear();
-                        _batchTs = now;
+                        var batch = _messageFactory.MessagesBatch(content);
+                        if (content.Any(msg => msg.MessageCase != NetworkMessage.MessageOneofCase.Ack))
+                            _unacked[batch.MessageId] = (batch, now);
+                        toSend.Add(batch);
                     }
                 }
 
                 lock (_unacked)
                 {
-                    var cnt = _unacked.Count;
-                    if (cnt == 0) continue;
-                    Logger.LogTrace($"Got {cnt} unacked messages, resending");
                     foreach (var msg in _unacked.Values
                         .Where(x => x.timestamp < now - 5_000)
                         .Where(x => x.timestamp > now - 30_000)

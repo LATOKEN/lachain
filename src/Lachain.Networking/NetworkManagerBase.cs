@@ -181,6 +181,7 @@ namespace Lachain.Networking
                 ? clientWorker
                 : Connect(address);
             var port = ConsensusNetworkManager.GetReadyForConnect(request.Node.PublicKey);
+            Logger.LogTrace($"Got handshake request from {address}");
             peer?.Send(_messageFactory.HandshakeReply(LocalNode, port));
         }
 
@@ -188,6 +189,7 @@ namespace Lachain.Networking
         {
             var address = PeerAddress.FromNode(reply.Node);
             address.Port = (int) reply.Port;
+            Logger.LogTrace($"Got handshake reply from {reply.Node.Address}");
             ConsensusNetworkManager.InitOutgoingConnection(reply.Node.PublicKey, address);
         }
 
@@ -224,15 +226,12 @@ namespace Lachain.Networking
             {
                 Logger.LogWarning(
                     $"Message from unrecognized peer {publicKey.ToHex()} or invalid signature, skipping");
-                //: {string.Join(", ", batch.Content.Messages.Select(x => x.MessageCase.ToString()))}
                 return;
             }
 
-            Logger.LogTrace($"Envelope: pub={publicKey.ToHex()} peer={envelope.RemotePeer?.Address}");
             GetPeerByPublicKey(envelope.PublicKey)?.Send(_messageFactory.Ack(batch.MessageId));
-
-            var messages = MessageBatchContent.Parser.ParseFrom(batch.Content);
-            foreach (var message in messages.Messages)
+            var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
+            foreach (var message in content.Messages)
             {
                 try
                 {
@@ -343,6 +342,7 @@ namespace Lachain.Networking
                     {
                         try
                         {
+                            Logger.LogTrace($"Sending handshake request to {address}");
                             ClientWorker.SendOnce(
                                 address,
                                 _messageFactory.MessagesBatch(new[] {_messageFactory.HandshakeRequest(LocalNode)})

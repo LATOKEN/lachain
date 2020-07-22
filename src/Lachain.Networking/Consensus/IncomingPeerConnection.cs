@@ -1,5 +1,5 @@
 using System;
-using Google.Protobuf;
+using System.Linq;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
@@ -67,10 +67,11 @@ namespace Lachain.Networking.Consensus
                 );
                 return;
             }
-
-            OnReceive?.Invoke(this, (_publicKey, batch.MessageId));
-
+            
             var messages = MessageBatchContent.Parser.ParseFrom(batch.Content);
+            if (messages.Messages.Any(msg => msg.MessageCase != NetworkMessage.MessageOneofCase.Ack))
+                OnReceive?.Invoke(this, (_publicKey, batch.MessageId));
+
             foreach (var message in messages.Messages)
             {
                 if (message.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage &&
@@ -87,6 +88,7 @@ namespace Lachain.Networking.Consensus
                     OnAck?.Invoke(this, (_publicKey, message.Ack.MessageId));
                     continue;
                 }
+                Logger.LogTrace($"Got consensus message {message.ConsensusMessage.PayloadCase} from {_publicKey.ToHex()}");
 
                 OnMessage?.Invoke(this, (message.ConsensusMessage, _publicKey));
             }
