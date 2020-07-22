@@ -72,6 +72,12 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             );
         }
 
+        public bool IsValid()
+        {
+            return _coefficients.Length == (Degree + 1) * (Degree + 2) / 2 &&
+                   _coefficients.All(x => x.IsValid());
+        }
+
         public bool Equals(Commitment? other)
         {
             if (ReferenceEquals(null, other)) return false;

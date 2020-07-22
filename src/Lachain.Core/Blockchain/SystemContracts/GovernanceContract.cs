@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
+using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -26,6 +27,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly InvocationContext _context;
 
         private static readonly Func<byte[], byte[]> ToAddress = CryptoProvider.GetCrypto().ComputeAddress;
+
         private static readonly ILogger<GovernanceContract> Logger =
             LoggerFactory.GetLoggerForClass<GovernanceContract>();
 
@@ -93,12 +95,34 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
 
+        [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
+        public ExecutionStatus DistributeCycleRewardsAndPenalties(SystemContractExecutionFrame frame)
+        {
+            if (!MsgSender().IsZero())
+                return ExecutionStatus.ExecutionHalted;
+
+            var txFeesAmount = GetCollectedFees();
+
+            if (txFeesAmount > Money.Zero)
+            {
+                _context.Snapshot.Balances.SubBalance(
+                    ContractRegisterer.GovernanceContract, txFeesAmount
+                );
+            }
+
+            var totalReward = GetBlockReward().ToMoney() * (int) StakingContract.CycleDuration + txFeesAmount;
+            _context.Sender = ContractRegisterer.GovernanceContract;
+            var staking = new StakingContract(_context);
+            staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
+            return ExecutionStatus.Ok;
+        }
+
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
         public ExecutionStatus ChangeValidators(byte[][] newValidators, SystemContractExecutionFrame frame)
         {
             if (!MsgSender().Equals(ContractRegisterer.StakingContract) && !MsgSender().IsZero())
-                throw new Exception("Auth failure");
-            
+                return ExecutionStatus.ExecutionHalted;
+
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.ChangeValidatorsCost);
             foreach (var publicKey in newValidators)
@@ -116,34 +140,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return ExecutionStatus.Ok;
         }
 
-        [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
-        public ExecutionStatus DistributeCycleRewardsAndPenalties(SystemContractExecutionFrame frame)
-        {
-            if (!MsgSender().IsZero())
-                return ExecutionStatus.ExecutionHalted;
-            
-            var txFeesAmount = GetCollectedFees();
-            
-            if (txFeesAmount > Money.Zero)
-            {
-                _context.Snapshot.Balances.SubBalance(
-                    ContractRegisterer.GovernanceContract, txFeesAmount
-                );
-            }
-            
-            var totalReward = GetBlockReward().ToMoney() * (int) StakingContract.CycleDuration + txFeesAmount;
-            
-            _context.Sender = ContractRegisterer.GovernanceContract;
-            var staking = new StakingContract(_context);
-            staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
-            return ExecutionStatus.Ok;
-        }
-
         [ContractMethod(GovernanceInterface.MethodKeygenCommit)]
         public ExecutionStatus KeyGenCommit(byte[] commitment, byte[][] encryptedRows,
             SystemContractExecutionFrame frame)
         {
-            // TODO: validate everything
+            try
+            {
+                var c = Commitment.FromBytes(commitment);
+                if (!c.IsValid()) throw new Exception();
+                var n = _nextValidators.Get().Length / CryptoUtils.PublicKeyLength;
+                if (c.Degree != (n - 1) / 3) throw new Exception();
+                if (encryptedRows.Length != n) throw new Exception();
+            }
+            catch
+            {
+                return ExecutionStatus.ExecutionHalted;
+            }
+
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenCommitCost);
             return ExecutionStatus.Ok;
@@ -153,7 +166,18 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues,
             SystemContractExecutionFrame frame)
         {
-            // TODO: validate everything
+            try
+            {
+                var n = _nextValidators.Get().Length / CryptoUtils.PublicKeyLength;
+                var p = proposer.ToBigInteger();
+                if (p < 0 || p >= n) throw new Exception();
+                if (encryptedValues.Length != n) throw new Exception();
+            }
+            catch
+            {
+                return ExecutionStatus.ExecutionHalted;
+            }
+
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenSendValueCost);
             return ExecutionStatus.Ok;
@@ -167,30 +191,29 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
-            var tsKeys = new PublicKeySet(
-                thresholdSignaturePublicKeys.Select(x => Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
-                faulty
-            );
-            var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
-            var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
+            UInt256 keyringHash;
+            PublicKeySet tsKeys;
+            try
+            {
+                tsKeys = new PublicKeySet(
+                    thresholdSignaturePublicKeys.Select(x => Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
+                    faulty
+                );
+                var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
+                keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
+            }
+            catch
+            {
+                return ExecutionStatus.ExecutionHalted;
+            }
 
             var gen = GetConsensusGeneration();
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
-
-            // Console.WriteLine($"Msg sender {MsgSender().ToHex()}");
-            // Console.WriteLine($"players count {players}");
-            // Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
-            // Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
-            // Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
-            // Console.WriteLine($"gen {gen}");
-            // Console.WriteLine($"votes {votes}");
-
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
-            
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
-            SetTPKEKey(tpkePublicKey);
+            SetTpkeKey(tpkePublicKey);
             return ExecutionStatus.Ok;
         }
 
@@ -200,34 +223,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var players = GetPlayersCount();
             var faulty = (players - 1) / 3;
             var tsKeys = GetTSKeys();
-            var tpkeKey = GetTPKEKey();
-            
-            // Console.WriteLine($"players count {players}");
-            // Console.WriteLine($"tsKeys {tsKeys.ToBytes().ToHex()}");
-            // Console.WriteLine($"tpkeKey {tpkeKey.ToHex()}");
-            
+            var tpkeKey = GetTpkeKey();
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
-
-            // Console.WriteLine($"keyringHash {keyringHash.ToBytes().ToHex()}");
-            
             var gen = GetConsensusGeneration();
-            // Console.WriteLine($"gen {gen}");
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
-            // Console.WriteLine($"votes {votes}");
-            
+
             if (votes + 1 < players - faulty)
-                throw new Exception("not enogh votes");
-            // return ExecutionStatus.ExecutionHalted;
+                return ExecutionStatus.ExecutionHalted;
 
             var ecdsaPublicKeys = _nextValidators.Get()
                 .Batch(CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray().ToPublicKey())
                 .ToArray();
-            
-            // Console.WriteLine($"ecdsaPublicKeys len {ecdsaPublicKeys.Length}");
 
             _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-            // Console.WriteLine($"UpdateValidators success");
             _context.Snapshot.Events.AddEvent(new Event
             {
                 Contract = ContractRegisterer.GovernanceContract,
@@ -235,29 +244,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 Index = 0,
                 TransactionHash = _context.Receipt?.Hash
             });
-            // Console.WriteLine($"AddEvent success");
-            
+
             var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
-                ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract, Lrc20Interface.MethodBalanceOf,
+                ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract,
+                Lrc20Interface.MethodBalanceOf,
                 ContractRegisterer.GovernanceContract);
-            
+
             if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
-            
-            // Console.WriteLine($"balanceOfExecutionResult success");
-            
+
             var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
-            // Console.WriteLine($"txFeesAmount {txFeesAmount}");
-            
             SetColelctedFees(txFeesAmount);
-            
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
-            // Console.WriteLine($"SetConsensusGeneration success");
-            // Logger.LogWarning("Enough confirmations collected, validators will be changed in the next block");
-            // Logger.LogWarning(
-            //     $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
-            // Logger.LogWarning($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
-            // Logger.LogWarning($"  - TPKE public key: {tpkeKey.ToHex()}");
+            Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
+            Logger.LogDebug(
+                $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
+            Logger.LogDebug($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
+            Logger.LogDebug($"  - TPKE public key: {tpkeKey.ToHex()}");
             return ExecutionStatus.Ok;
         }
 
@@ -266,7 +269,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var gen = _consensusGeneration.Get();
             return gen.Length == 0 ? 0 : gen.AsReadOnlySpan().ToUInt64();
         }
-        
+
         private UInt256 GetBlockReward()
         {
             var reward = _blockReward.Get();
@@ -282,7 +285,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             _playersCount.Set(count.ToBytes().ToArray());
         }
-        
+
         private int GetPlayersCount()
         {
             var count = _playersCount.Get();
@@ -293,7 +296,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             _tsKeys.Set(tsKeys.ToBytes().ToArray());
         }
-        
+
         private PublicKeySet GetTSKeys()
         {
             var tsKeys = _tsKeys.Get();
@@ -304,19 +307,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             _collectedFees.Set(fees.ToUInt256().ToBytes());
         }
-        
+
         private Money GetCollectedFees()
         {
             var fees = _collectedFees.Get();
             return fees.ToUInt256().ToMoney();
         }
 
-        private void SetTPKEKey(byte[] tpkePublicKey)
+        private void SetTpkeKey(byte[] tpkePublicKey)
         {
             _tpkeKey.Set(tpkePublicKey);
         }
-        
-        private PublicKey GetTPKEKey()
+
+        private PublicKey GetTpkeKey()
         {
             var tpkePublicKey = _tpkeKey.Get();
             return PublicKey.FromBytes(tpkePublicKey);
@@ -357,15 +360,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public byte[][] GetNextValidators()
         {
-            var validators = new byte[][]{};
-            var data = _nextValidators.Get();
-            for (var startByte = 0; startByte < data.Length; startByte += CryptoUtils.PublicKeyLength)
-            {
-                var validator = data.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
-                validators = validators.Append(validator).ToArray();
-            }
-
-            return validators;
+            return _nextValidators.Get().Batch(CryptoUtils.PublicKeyLength)
+                .Select(x => x.ToArray())
+                .ToArray();
         }
 
         private UInt160 MsgSender()
