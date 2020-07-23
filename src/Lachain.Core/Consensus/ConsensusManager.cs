@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
@@ -183,7 +184,10 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
-                        _networkManager.ConnectToValidators(_validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet);
+                        _networkManager.ConnectToValidators(
+                            _validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet
+                                .Where(x => !_privateWallet.EcdsaKeyPair.PublicKey.Equals(x))
+                        );
                         var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(CurrentEra);
                         broadcaster.InternalRequest(
