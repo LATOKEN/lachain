@@ -70,6 +70,7 @@ namespace Lachain.Networking.Consensus
 
         public void Dispose()
         {
+            _unsent.Clear();
             _client?.Dispose();
         }
     }

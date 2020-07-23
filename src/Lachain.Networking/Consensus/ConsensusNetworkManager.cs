@@ -37,7 +37,7 @@ namespace Lachain.Networking.Consensus
                 .Select(PeerAddress.Parse)
                 .Where(x => x.PublicKey != null)
                 .ToDictionary(x => x.PublicKey!);
-            
+
             _throughputCalculator = new ThroughputCalculator(
                 TimeSpan.FromSeconds(1),
                 (speed, cnt) =>
@@ -50,15 +50,18 @@ namespace Lachain.Networking.Consensus
         [MethodImpl(MethodImplOptions.Synchronized)]
         public int GetReadyForConnect(ECDSAPublicKey publicKey)
         {
-            if (_incoming.TryGetValue(publicKey, out var existingConnection))
-                return existingConnection.Port;
-            var connection = new IncomingPeerConnection("0.0.0.0", publicKey);
-            _incoming[publicKey] = connection;
-            connection.OnReceive += SendAck;
-            connection.OnAck += ProcessAck;
-            connection.OnMessage += HandleConsensusMessage;
-            Logger.LogTrace($"Opened port {connection.Port} for peer {publicKey.ToHex()}");
-            return connection.Port;
+            lock (_incoming)
+            {
+                if (_incoming.TryGetValue(publicKey, out var existingConnection))
+                    return existingConnection.Port;
+                var connection = new IncomingPeerConnection("0.0.0.0", publicKey);
+                _incoming[publicKey] = connection;
+                connection.OnReceive += SendAck;
+                connection.OnAck += ProcessAck;
+                connection.OnMessage += HandleConsensusMessage;
+                Logger.LogTrace($"Opened port {connection.Port} for peer {publicKey.ToHex()}");
+                return connection.Port;                
+            }
         }
 
         private void HandleConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) e)
@@ -92,16 +95,47 @@ namespace Lachain.Networking.Consensus
             EnsureConnection(publicKey).Send(networkMessage);
         }
 
-        public void AdvanceEra(long era)
-        {
-        }
-
         private OutgoingPeerConnection EnsureConnection(ECDSAPublicKey key)
         {
-            if (_outgoing.TryGetValue(key, out var existingConnection)) return existingConnection;
-            if (!_peerAddresses.TryGetValue(key, out var address))
-                throw new InvalidOperationException($"Cannot cannot to peer {key}: address not resolved");
-            return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory, _localNode);
+            lock (_outgoing)
+            {
+                if (_outgoing.TryGetValue(key, out var existingConnection)) return existingConnection;
+                if (!_peerAddresses.TryGetValue(key, out var address))
+                    throw new InvalidOperationException($"Cannot cannot to peer {key}: address not resolved");
+                return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory, _localNode);
+            }
+        }
+
+        public void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators)
+        {
+            var validatorsSet = validators.ToHashSet();
+            lock (_outgoing)
+            {
+                foreach (var connection in _outgoing.Values)
+                {
+                    connection.Dispose();
+                }
+                _outgoing.Clear();
+            }
+
+            lock (_incoming)
+            {
+                var toDel = new List<ECDSAPublicKey>();
+                foreach (var key in _incoming.Keys)
+                {
+                    if (validatorsSet.Contains(key)) continue;
+                    _incoming[key].Dispose();
+                    toDel.Add(key);
+                }
+
+                foreach (var key in toDel)
+                    _incoming.Remove(key);
+            }
+
+            foreach (var validator in validatorsSet)
+            {
+                EnsureConnection(validator);
+            }
         }
     }
 }

@@ -51,6 +51,8 @@ namespace Lachain.Networking
         private readonly ServerWorker _serverWorker;
 
         private readonly NetworkConfig _networkConfig;
+
+        private IList<PeerAddress> _currentConsensusPeers;
         public ConsensusNetworkManager ConsensusNetworkManager { get; }
 
         public event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
@@ -102,6 +104,16 @@ namespace Lachain.Networking
             _serverWorker.OnMessage += _HandleMessage;
             _serverWorker.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
             ConsensusNetworkManager.OnMessage += (sender, e) => OnConsensusMessage?.Invoke(sender, e);
+            _currentConsensusPeers = new List<PeerAddress>();
+        }
+
+        public void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators)
+        {
+            var addresses = _networkConfig.Peers
+                .Select(PeerAddress.Parse)
+                .ToDictionary(x => x.PublicKey, x => x);
+            _currentConsensusPeers = validators.Select(x => addresses[x]).ToList();
+            ConsensusNetworkManager.ConnectToValidators(_currentConsensusPeers.Select(x => x.PublicKey!));
         }
 
         public void SendToPeerByPublicKey(ECDSAPublicKey publicKey, NetworkMessage message)
@@ -338,7 +350,7 @@ namespace Lachain.Networking
                     Monitor.Wait(_hasPeersToConnect, TimeSpan.FromSeconds(5));
                     if (!_clientWorkers.Any())
                         continue;
-                    foreach (var address in _clientWorkers.Keys)
+                    foreach (var address in _currentConsensusPeers)
                     {
                         try
                         {
@@ -355,11 +367,6 @@ namespace Lachain.Networking
                     }
                 }
             }
-        }
-
-        public void AdvanceEra(long era)
-        {
-            ConsensusNetworkManager.AdvanceEra(era);
         }
 
         public void BroadcastLocalTransaction(TransactionReceipt e)

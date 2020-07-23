@@ -13,7 +13,6 @@ namespace Lachain.Networking
         bool IsReady { get; }
         void Start();
         void Stop();
-        void AdvanceEra(long era);
         void BroadcastLocalTransaction(TransactionReceipt receipt);
 
         event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
@@ -38,5 +37,6 @@ namespace Lachain.Networking
 
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
         IEnumerable<PeerAddress> GetConnectedPeers();
+        void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators);
     }
 }

@@ -59,7 +59,8 @@ namespace Lachain.Networking.ZeroMQ
             {
                 try
                 {
-                    var buffer = _socket.ReceiveFrameBytes();
+                    if (!_socket.TryReceiveFrameBytes(TimeSpan.FromSeconds(1), out var buffer))
+                        continue;
                     if (buffer == null || buffer.Length <= 0)
                         continue;
                     Task.Factory.StartNew(() =>

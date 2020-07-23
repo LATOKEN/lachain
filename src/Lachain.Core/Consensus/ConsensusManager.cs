@@ -26,9 +26,9 @@ namespace Lachain.Core.Consensus
         private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly INetworkManager _networkManager;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockManager _blockManager;
-        private readonly INetworkManager _networkManager;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
 
@@ -41,7 +41,6 @@ namespace Lachain.Core.Consensus
         private readonly object _blockPersistedLock = new object();
 
         private readonly ulong _targetBlockInterval;
-
 
         public ConsensusManager(
             IConsensusMessageDeliverer consensusMessageDeliverer,
@@ -98,7 +97,6 @@ namespace Lachain.Core.Consensus
             }
 
             CurrentEra = newEra;
-            _networkManager.AdvanceEra(CurrentEra);
         }
 
         private bool IsValidatorForEra(long era)
@@ -137,7 +135,6 @@ namespace Lachain.Core.Consensus
         public void Start(long startingEra)
         {
             CurrentEra = startingEra;
-            _networkManager.AdvanceEra(CurrentEra);
             new Thread(Run).Start();
         }
 
@@ -148,7 +145,6 @@ namespace Lachain.Core.Consensus
                 ulong lastBlock = 0;
                 for (;; CurrentEra += 1)
                 {
-                    _networkManager.AdvanceEra(CurrentEra);
                     var now = TimeUtils.CurrentTimeMillis();
                     if (lastBlock + _targetBlockInterval > now)
                     {
@@ -187,6 +183,7 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
+                        _networkManager.ConnectToValidators(_validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet);
                         var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(CurrentEra);
                         broadcaster.InternalRequest(
@@ -212,6 +209,7 @@ namespace Lachain.Core.Consensus
                         Logger.LogTrace("Root protocol finished, waiting for new era...");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
+
                     DefaultCrypto.ResetBenchmark();
                 }
             }
