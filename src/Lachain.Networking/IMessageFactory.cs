@@ -18,6 +18,10 @@ namespace Lachain.Networking
 
         NetworkMessage GetBlocksByHashesRequest(IEnumerable<UInt256> blockHashes);
 
+        NetworkMessage GetPeersRequest();
+
+        NetworkMessage GetPeersReply(Peer[] peers, ECDSAPublicKey[] publicKeys);
+
         NetworkMessage GetBlocksByHashesReply(IEnumerable<Block> blocks);
 
         NetworkMessage GetBlocksByHeightRangeRequest(ulong fromHeight, ulong toHeight);

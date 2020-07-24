@@ -8,9 +8,10 @@ namespace Lachain.Core.Network
     {
         public NetworkManager(
             IConfigManager configManager,
-            IPrivateWallet privateWallet
+            IPrivateWallet privateWallet,
+            IPeerManager peerManager
         )
-            : base(configManager.GetConfig<NetworkConfig>("network"), privateWallet.EcdsaKeyPair)
+            : base(configManager.GetConfig<NetworkConfig>("network"), privateWallet.EcdsaKeyPair, peerManager)
         {
         }
     }

@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Google.Protobuf;
+using Lachain.Proto;
 
 namespace Lachain.Utility.Utils
 {
@@ -45,7 +47,29 @@ namespace Lachain.Utility.Utils
                 var result = new List<T>();
                 var parser = new MessageParser<T>(() => new T());
                 for (var i = 0UL; i < length; i++)
-                    result.Add(parser.ParseFrom(stream));
+                {
+                    var el = parser.ParseFrom(stream);
+                    result.Add(el);
+                }
+
+                return result;
+            }
+        }
+        
+        public static ICollection<ECDSAPublicKey> ToEcdsaPublicKeys(this byte[] buffer, ulong limit = ulong.MaxValue)
+        {
+            using (var stream = new MemoryStream(buffer))
+            using (var reader = new BinaryReader(stream))
+            {
+                var length = reader.ReadLength(limit);
+                var result = new List<ECDSAPublicKey>();
+                for (var i = 0UL; i < length; i++)
+                {
+                    var el = reader.ReadBytes(35).Skip(2).ToArray();
+                    result.Add(new ECDSAPublicKey {Buffer = ByteString.CopyFrom(el)});
+                    Console.WriteLine(el.ToHex());
+                }
+
                 return result;
             }
         }

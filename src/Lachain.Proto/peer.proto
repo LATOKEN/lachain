@@ -1,0 +1,10 @@
+syntax = "proto3";
+option csharp_namespace = "Lachain.Proto";
+option java_package = "com.latoken.proto";
+import "default.proto";
+
+message Peer {
+    string host = 1;
+    uint32 port = 2;
+    uint32 timestamp = 3;
+}

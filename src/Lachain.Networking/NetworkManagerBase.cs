@@ -42,11 +42,14 @@ namespace Lachain.Networking
         public Node LocalNode { get; }
 
         public IMessageFactory? MessageFactory => _messageFactory;
+        private readonly IPeerManager _peerManager;
 
         private readonly IDictionary<PeerAddress, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<PeerAddress, ClientWorker>();
 
         private readonly MessageFactory _messageFactory;
+        
+        private readonly EcdsaKeyPair _keyPair;
 
         private readonly ServerWorker _serverWorker;
 
@@ -84,11 +87,13 @@ namespace Lachain.Networking
             return _clientWorkers.Keys;
         }
 
-        public NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair)
+        public NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IPeerManager peerManager)
         {
             if (networkConfig?.Peers is null) throw new ArgumentNullException();
             _networkConfig = networkConfig;
+            _peerManager = peerManager;
             _messageFactory = new MessageFactory(keyPair);
+            _keyPair = keyPair;
             LocalNode = new Node
             {
                 Version = 0,
@@ -127,8 +132,9 @@ namespace Lachain.Networking
         {
             _serverWorker.Start();
             Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
-            foreach (var peer in _networkConfig.Peers!)
-                Connect(PeerAddress.Parse(peer));
+            foreach (var peer in _peerManager.Start(_networkConfig,  this, _keyPair))
+                Connect(peer);
+            _peerManager.BroadcastGetPeersRequest();
         }
 
         public IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey)
@@ -147,9 +153,19 @@ namespace Lachain.Networking
             var localHost = new IPAddress(0x0100007f);
             if (ipAddress.Equals(localHost))
                 return true;
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            if (host.AddressList.Contains(ipAddress))
-                return true;
+            
+            Console.WriteLine("ipAddress: " + ipAddress);
+            try
+            {
+                var host = Dns.GetHostEntry(Dns.GetHostName());
+                if (host.AddressList.Contains(ipAddress))
+                    return true;
+            }
+            catch (Exception e)
+            {
+                // ignored
+            }
+
             var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
             return networkInterfaces
                 .Where(ni =>
@@ -166,7 +182,7 @@ namespace Lachain.Networking
 
         public IRemotePeer? Connect(PeerAddress address)
         {
-            Logger.LogTrace($"Connecting to peer {address}");
+            Logger.LogInformation($"Connecting to peer {address}");
             lock (_hasPeersToConnect)
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
@@ -330,6 +346,9 @@ namespace Lachain.Networking
                     OnGetTransactionsByHashesReply?.Invoke(this,
                         (message.GetTransactionsByHashesReply, envelope.PublicKey)
                     );
+                    break;
+                case NetworkMessage.MessageOneofCase.GetPeersRequest:
+                    Logger.LogInformation("PeersRequest received");
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
                     GetPeerByPublicKey(envelope.PublicKey)?.ReceiveAck(message.Ack.MessageId);

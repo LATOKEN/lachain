@@ -23,6 +23,7 @@ namespace Lachain.Core.Network
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
         private readonly INetworkManager _networkManager;
+        private readonly IPeerManager _peerManager;
 
         /*
          * TODO: message queue is a hack. We should design additional layer for storing/persisting consensus messages
@@ -36,7 +37,8 @@ namespace Lachain.Core.Network
             IStateManager stateManager,
             IConsensusManager consensusManager,
             IBlockManager blockManager,
-            INetworkManager networkManager
+            INetworkManager networkManager, 
+            IPeerManager peerManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -44,6 +46,7 @@ namespace Lachain.Core.Network
             _stateManager = stateManager;
             _consensusManager = consensusManager;
             _networkManager = networkManager;
+            _peerManager = peerManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingRequest += OnPingRequest;
@@ -140,6 +143,18 @@ namespace Lachain.Core.Network
                 .Select(tx => tx!)
                 .ToList();
             callback(new GetTransactionsByHashesReply {Transactions = {txs}});
+        }
+
+        private void OnGetPeersRequest(object sender,
+            (GetPeersRequest request, Action<GetPeersReply> callback) @event)
+        {
+            var (request, callback) = @event;
+            var (peers, publicKeys) = _peerManager.GetPeersToBroadcast();
+            callback(new GetPeersReply()
+            {
+                Peers = { peers },
+                PublicKeys = { publicKeys }
+            });
         }
 
         private void OnGetTransactionsByHashesReply(object sender,

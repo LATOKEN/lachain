@@ -42,5 +42,9 @@
 
         /* local transactions */
         LocalTransactionsState = 0x0d01,
+
+        /* validator attendance */
+        PeerList = 0x0e01,
+        PeerByPublicKey = 0x0e01,
     }
 }
