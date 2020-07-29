@@ -111,7 +111,7 @@ namespace Lachain.Networking
                 BlockHeight = 0,
                 Agent = "Lachain-v0.0-dev"
             };
-            ConsensusNetworkManager = new ConsensusNetworkManager(_messageFactory, networkConfig, LocalNode);
+            ConsensusNetworkManager = new ConsensusNetworkManager(_messageFactory, networkConfig, LocalNode, peerManager);
             _serverWorker = new ServerWorker(networkConfig.Address, networkConfig.Port);
             _serverWorker.OnMessage += _HandleMessage;
             _serverWorker.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
@@ -121,15 +121,9 @@ namespace Lachain.Networking
 
         public void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators)
         {
-            var addresses = _networkConfig.Peers
-                .Select(x =>
-                {
-                    var address = PeerAddress.Parse(x);
-                    address.Host = CheckLocalConnection(address.Host!);
-                    return address;
-                })
-                .ToDictionary(x => x.PublicKey, x => x);
-            _currentConsensusPeers = validators.Select(x => addresses[x]).ToList();
+            var ecdsaPublicKeys = validators.ToList();
+            _currentConsensusPeers = _peerManager.GetPeerAddressesByPublicKeys(ecdsaPublicKeys);
+            if (_currentConsensusPeers.Count != ecdsaPublicKeys.Count) throw new Exception("Peers count mismatch");
             ConsensusNetworkManager.ConnectToValidators(_currentConsensusPeers.Select(x => x.PublicKey!));
         }
 

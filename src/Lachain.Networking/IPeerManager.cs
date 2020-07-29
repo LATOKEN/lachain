@@ -13,6 +13,8 @@ namespace Lachain.Networking
         void Stop();
 
         Peer GetCurrentPeer();
+        PeerAddress? GetPeerAddressByPublicKey(ECDSAPublicKey key);
+        List<PeerAddress> GetPeerAddressesByPublicKeys(IEnumerable<ECDSAPublicKey> keys);
         void UpdatePeerTimestamp(ECDSAPublicKey publicKey);
         void AddPeer(Peer peer, ECDSAPublicKey publicKey);
         

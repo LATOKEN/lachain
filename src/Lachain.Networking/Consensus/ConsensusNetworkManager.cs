@@ -26,15 +26,22 @@ namespace Lachain.Networking.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly Node _localNode;
         private readonly ThroughputCalculator _throughputCalculator;
+        private readonly IPeerManager _peerManager;
 
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnMessage;
 
-        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode)
+        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode, IPeerManager peerManager)
         {
             _messageFactory = messageFactory;
             _localNode = localNode;
+            _peerManager = peerManager;
             _peerAddresses = networkConfig.Peers
-                .Select(PeerAddress.Parse)
+                .Select(x =>
+                {
+                    var address = PeerAddress.Parse(x);
+                    address.Host = NetworkManagerBase.CheckLocalConnection(address.Host!);
+                    return address;
+                })
                 .Where(x => x.PublicKey != null)
                 .ToDictionary(x => x.PublicKey!);
 
@@ -101,8 +108,23 @@ namespace Lachain.Networking.Consensus
             {
                 if (_outgoing.TryGetValue(key, out var existingConnection)) return existingConnection;
                 if (!_peerAddresses.TryGetValue(key, out var address))
-                    throw new InvalidOperationException($"Cannot cannot to peer {key}: address not resolved");
+                {
+                    var newValidatorPeer = _peerManager.GetPeerAddressByPublicKey(key);
+                    if (newValidatorPeer == null) 
+                        throw new InvalidOperationException($"Cannot connect to peer {key.ToHex()}: address not resolved");
+                    _peerAddresses.Add(key, newValidatorPeer);
+                }
                 return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory, _localNode);
+            }
+        }
+
+        private void RemoveOddPeers(ICollection<ECDSAPublicKey> keys)
+        {
+            lock (_peerAddresses)
+            {
+                foreach (var key in _peerAddresses.Keys)
+                    if (!keys.Contains(key))
+                        _peerAddresses.Remove(key);
             }
         }
 
@@ -131,6 +153,8 @@ namespace Lachain.Networking.Consensus
                 foreach (var key in toDel)
                     _incoming.Remove(key);
             }
+
+            RemoveOddPeers(validatorsSet);
 
             foreach (var validator in validatorsSet)
             {

@@ -63,7 +63,7 @@ namespace Lachain.Core.Vault
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
             if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
             {
-                Logger.LogTrace($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
+                Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
                 var data = new GovernanceContract(context).GetNextValidators();
                 var publicKeys =
                     (data ?? throw new ArgumentException("Cannot parse method args"))
@@ -90,7 +90,7 @@ namespace Lachain.Core.Vault
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
             {
-                Logger.LogTrace($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
+                Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null)
                 {
@@ -123,7 +123,7 @@ namespace Lachain.Core.Vault
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenSendValue))
             {
-                Logger.LogTrace($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
+                Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
@@ -150,7 +150,7 @@ namespace Lachain.Core.Vault
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))
             {
-                Logger.LogTrace($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
+                Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());

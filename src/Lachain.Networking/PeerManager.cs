@@ -139,6 +139,25 @@ namespace Lachain.Networking
             };
         }
 
+        public PeerAddress? GetPeerAddressByPublicKey(ECDSAPublicKey key)
+        {
+            var peer = _peerRepository.GetPeerByPublicKey(key);
+            if (peer == null) return null;
+            return ToPeerAddress(peer, key);
+        }
+
+        public List<PeerAddress> GetPeerAddressesByPublicKeys(IEnumerable<ECDSAPublicKey> keys)
+        {
+            var result = new List<PeerAddress>();
+            foreach (var key in keys)
+            {
+                var peerAddr = GetPeerAddressByPublicKey(key);
+                if (peerAddr!= null) result.Add(peerAddr);
+            }
+
+            return result;
+        }
+
         public void BroadcastGetPeersRequest()
         {
             Logger.LogInformation("Broadcasting getPeersRequest");

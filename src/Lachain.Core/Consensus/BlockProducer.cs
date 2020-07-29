@@ -169,8 +169,6 @@ namespace Lachain.Core.Consensus
                 blockWithTransactions.Block, blockWithTransactions.Transactions, commit: true,
                 checkStateHash: true);
             
-            Logger.LogDebug(JsonConvert.SerializeObject(blockWithTransactions.Block));
-
             if (result != OperatingError.Ok)
                 Logger.LogError(
                     $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}"
