@@ -25,9 +25,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="obj" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
   </ItemGroup>
 </Project>
