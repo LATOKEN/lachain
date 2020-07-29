@@ -45,7 +45,7 @@ namespace Lachain.Networking
             return new PeerAddress
             {
                 Protocol = proto,
-                Host = address,
+                Host = NetworkManagerBase.CheckLocalConnection(address),
                 Port = int.Parse(port),
                 PublicKey = publicKeyHex.HexToBytes().ToPublicKey()
             };
@@ -58,8 +58,7 @@ namespace Lachain.Networking
                 throw new ArgumentNullException(nameof(value), "Unable to parse protocol from URL (" + value + ")");
             if (!Enum.TryParse<Protocol>(match.Groups["proto"].ToString(), true, out var proto))
                 throw new ArgumentOutOfRangeException(nameof(value), "Unable to resolve protocol specified (" + match.Groups["proto"] +") from URL");
-            if (!match.Groups["address"].Success)
-                throw new ArgumentNullException(nameof(value), "Unable to parse address from URL (" + value + ")");
+            CheckAddress(value);
             var address = match.Groups["address"].ToString();
             if (!match.Groups["port"].Success)
                 throw new ArgumentNullException(nameof(value), "Unable to parse port from URL (" + value + ")");
@@ -77,10 +76,17 @@ namespace Lachain.Networking
                 PublicKey = pk.HexToBytes().ToPublicKey()
             };
         }
+
+        public static void CheckAddress(string value)
+        {
+            var match = IpEndPointPattern.Match(value);
+            if (!match.Groups["address"].Success)
+                throw new ArgumentNullException(nameof(value), "Unable to parse address from URL (" + value + ")");
+        }
         
         public override string ToString()
         {
-            return $"{Protocol.ToString().ToLower()}://{Host}:{Port}@{PublicKey?.ToHex().Substring(2)}";
+            return $"{Protocol.ToString().ToLower()}://{PublicKey?.ToHex().Substring(2)}@{Host}:{Port}";
         }
         
         public override int GetHashCode()

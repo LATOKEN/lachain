@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Google.Protobuf;
 using Lachain.Crypto;
@@ -27,7 +29,12 @@ namespace Lachain.Networking
 
         private readonly IPeerRepository _peerRepository;
         // private readonly ECDSAPublicKey _localPubKey;
-        private INetworkBroadcaster _broadcaster;
+        private INetworkBroadcaster? _broadcaster;
+
+        private readonly ulong _peerCheckTimeout = 1 * 60;
+        private bool _started = false;
+        private Thread? _worker;
+        private NetworkConfig? _networkConfig;
 
         public PeerManager(IPeerRepository peerRepository)
         {
@@ -35,9 +42,11 @@ namespace Lachain.Networking
             // _localPubKey = keyPair.PublicKey;
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public List<PeerAddress> Start(NetworkConfig networkConfig, INetworkBroadcaster broadcaster, EcdsaKeyPair keyPair)
         {
             _broadcaster = broadcaster;
+            _networkConfig = networkConfig;
             MessageFactory = new MessageFactory(keyPair);
             string[] peers;
             var storedPeersCount = _peerRepository.GetPeersCount();
@@ -51,7 +60,7 @@ namespace Lachain.Networking
                     var peerAddress = PeerAddress.Parse(peerStr);
                     var peer = new Peer
                     {
-                        Host = peerAddress.Host,
+                        Host = NetworkManagerBase.CheckLocalConnection(peerAddress.Host!),
                         Port = (uint)peerAddress.Port,
                         Timestamp = 0,
                     };
@@ -59,17 +68,55 @@ namespace Lachain.Networking
                     _peerRepository.AddOrUpdatePeer(peerAddress.PublicKey!, peer);
                 }
             }
-
-            var currentPeer = new Peer
-            {
-                Host = GetExternalIp(),
-                Port = networkConfig!.Port,
-                Timestamp = (uint) (TimeUtils.CurrentTimeMillis() / 1000),
-            };
             
-            _peerRepository.AddOrUpdatePeer(keyPair.PublicKey, currentPeer);
+            _peerRepository.AddOrUpdatePeer(keyPair.PublicKey, GetCurrentPeer());
+            
+            StartCheckingWorker();
 
             return GetSavedPeers();
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void Run()
+        {
+            try
+            {
+                Logger.LogInformation($"Peer manager started");
+
+                while (_started)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(_peerCheckTimeout));
+                    BroadcastGetPeersRequest();
+                }
+            }
+            catch (ThreadInterruptedException e)
+            {
+                Logger.LogDebug($"Interrupt received, exiting: {e}");
+            }
+            catch (Exception e)
+            {
+                Logger.LogCritical($"Fatal error in peer manager, exiting: {e}");
+                Environment.Exit(1);
+            }
+        }
+        
+        
+        public void StartCheckingWorker()
+        {
+            if (_started)
+            {
+                Logger.LogWarning("Service already started");
+                return;
+            }
+
+            _started = true;
+            _worker = new Thread(Run);
+            _worker.Start();
+        }
+
+        public void Stop()
+        {
+            _worker?.Interrupt();
         }
 
         public void UpdatePeerTimestamp(ECDSAPublicKey publicKey)
@@ -77,208 +124,81 @@ namespace Lachain.Networking
             _peerRepository.UpdatePeerTimestampIfExist(publicKey);
         }
 
-        // private void _HandleMessage(object sender, byte[] buffer)
-        // {
-        //     MessageBatch? batch;
-        //     try
-        //     {
-        //         batch = MessageBatch.Parser.ParseFrom(buffer);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Logger.LogError($"Unable to parse protocol message: {e}");
-        //         Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
-        //         return;
-        //     }
-        //
-        //     if (batch is null)
-        //     {
-        //         Logger.LogError("Unable to parse protocol message");
-        //         Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");
-        //         return;
-        //     }
-        //
-        //     var publicKey = Crypto.RecoverSignature(batch.Content.ToArray(), batch.Signature.Encode())
-        //         .ToPublicKey();
-        //     var envelope = new MessageEnvelope
-        //     {
-        //         MessageFactory = MessageFactory,
-        //         PublicKey = publicKey,
-        //         RemotePeer = GetPeerByPublicKey(publicKey)
-        //     };
-        //     if (envelope.RemotePeer is null)
-        //     {
-        //         Logger.LogWarning(
-        //             $"Message from unrecognized peer {publicKey.ToHex()} or invalid signature, skipping");
-        //         return;
-        //     }
-        //
-        //     GetPeerByPublicKey(envelope.PublicKey)?.Send(MessageFactory.Ack(batch.MessageId));
-        //     var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
-        //     foreach (var message in content.Messages)
-        //     {
-        //         try
-        //         {
-        //             HandleMessageUnsafe(message, envelope);
-        //         }
-        //         catch (Exception e)
-        //         {
-        //             Logger.LogError($"Unexpected error occurred: {e}");
-        //         }
-        //     }
-        // }
+        public void AddPeer(Peer peer, ECDSAPublicKey publicKey)
+        {
+            _peerRepository.AddOrUpdatePeer(publicKey, peer);
+        }
 
-        // private Action<IMessage> SendTo(IRemotePeer? peer)
-        // {
-        //     return x =>
-        //     {
-        //         Logger.LogTrace($"Sending {x.GetType()} to {peer?.Address}");
-        //         NetworkMessage msg = x switch
-        //         {
-        //             PingReply pingReply => new NetworkMessage {PingReply = pingReply},
-        //             GetBlocksByHashesReply getBlocksByHashesReply => new NetworkMessage
-        //             {
-        //                 GetBlocksByHashesReply = getBlocksByHashesReply
-        //             },
-        //             GetBlocksByHeightRangeReply getBlocksByHeightRangeReply => new NetworkMessage
-        //             {
-        //                 GetBlocksByHeightRangeReply = getBlocksByHeightRangeReply
-        //             },
-        //             GetBlocksByHashesRequest getBlocksByHashesRequest => new NetworkMessage
-        //             {
-        //                 GetBlocksByHashesRequest = getBlocksByHashesRequest
-        //             },
-        //             GetTransactionsByHashesReply getTransactionsByHashesReply => new NetworkMessage
-        //             {
-        //                 GetTransactionsByHashesReply = getTransactionsByHashesReply
-        //             },
-        //             _ => throw new InvalidOperationException()
-        //         };
-        //         peer?.Send(msg);
-        //     };
-        // }
-
-        // private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
-        // {
-        //     if (envelope.PublicKey is null) throw new InvalidOperationException();
-        //     switch (message.MessageCase)
-        //     {
-        //         case NetworkMessage.MessageOneofCase.HandshakeRequest:
-        //             _HandshakeRequest(message.HandshakeRequest);
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.HandshakeReply:
-        //             _HandshakeReply(message.HandshakeReply);
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.PingRequest:
-        //             OnPingRequest?.Invoke(this, (message.PingRequest, SendTo(envelope.RemotePeer)));
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.PingReply:
-        //             OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.GetBlocksByHashesRequest:
-        //             OnGetBlocksByHashesRequest?.Invoke(this,
-        //                 (message.GetBlocksByHashesRequest, SendTo(envelope.RemotePeer))
-        //             );
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.GetBlocksByHashesReply:
-        //             OnGetBlocksByHashesReply?.Invoke(this, (message.GetBlocksByHashesReply, envelope.PublicKey));
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeRequest:
-        //             OnGetBlocksByHeightRangeRequest?.Invoke(this,
-        //                 (message.GetBlocksByHeightRangeRequest, SendTo(envelope.RemotePeer))
-        //             );
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeReply:
-        //             OnGetBlocksByHeightRangeReply?.Invoke(this,
-        //                 (message.GetBlocksByHeightRangeReply, SendTo(envelope.RemotePeer))
-        //             );
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.GetTransactionsByHashesRequest:
-        //             OnGetTransactionsByHashesRequest?.Invoke(this,
-        //                 (message.GetTransactionsByHashesRequest, SendTo(envelope.RemotePeer))
-        //             );
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.GetTransactionsByHashesReply:
-        //             OnGetTransactionsByHashesReply?.Invoke(this,
-        //                 (message.GetTransactionsByHashesReply, envelope.PublicKey)
-        //             );
-        //             break;
-        //         case NetworkMessage.MessageOneofCase.Ack:
-        //             GetPeerByPublicKey(envelope.PublicKey)?.ReceiveAck(message.Ack.MessageId);
-        //             break;
-        //         default:
-        //             throw new ArgumentOutOfRangeException(nameof(message),
-        //                 "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
-        //     }
-        // }
-
-        // private void _ConnectWorker()
-        // {
-        //     var thread = Thread.CurrentThread;
-        //     while (thread.IsAlive)
-        //     {
-        //         lock (_hasPeersToConnect)
-        //         {
-        //             Monitor.Wait(_hasPeersToConnect, TimeSpan.FromSeconds(5));
-        //             if (!_clientWorkers.Any())
-        //                 continue;
-        //             foreach (var address in _clientWorkers.Keys)
-        //             {
-        //                 try
-        //                 {
-        //                     Logger.LogTrace($"Sending handshake request to {address}");
-        //                     ClientWorker.SendOnce(
-        //                         address,
-        //                         MessageFactory.MessagesBatch(new[] {MessageFactory.HandshakeRequest(LocalNode)})
-        //                     );
-        //                 }
-        //                 catch (Exception e)
-        //                 {
-        //                     Logger.LogError($"Failed to connect to node {address}: {e}");
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        public Peer GetCurrentPeer()
+        {
+            return new Peer
+            {
+                Host = GetExternalIp(),
+                Port = _networkConfig!.Port,
+                Timestamp = (uint) (TimeUtils.CurrentTimeMillis() / 1000),
+            };
+        }
 
         public void BroadcastGetPeersRequest()
         {
-            Logger.LogInformation("Broadcasting get peer request");
+            Logger.LogInformation("Broadcasting getPeersRequest");
             var message = MessageFactory?.GetPeersRequest() ??
                           throw new InvalidOperationException();
-            _broadcaster.Broadcast(message);
+            _broadcaster!.Broadcast(message);
         }
 
-        // public void BroadcastGetPeersReply()
-        // {
-        //     var (peers, publicKeys) = GetPeersToBroadcast();
-        //     
-        //     var message = MessageFactory?.GetPeersReply(peers, publicKeys) ?? throw new InvalidOperationException();
-        //     _broadcaster.Broadcast(message);
-        // }
+        public void BroadcastPeerJoin()
+        {
+            var message = MessageFactory?.PeerJoin(GetCurrentPeer()) ??
+                          throw new InvalidOperationException();
+            Logger.LogInformation("Broadcasting PeerJoin");
+            _broadcaster!.Broadcast(message);
+        }
 
         public (Peer[], ECDSAPublicKey[]) GetPeersToBroadcast()
         {
-            var publicKeys = _peerRepository.GetPeerList().ToArray();
+            var allPublicKeys = _peerRepository.GetPeerList().ToArray();
+            var publicKeysToBroadcast = new List<ECDSAPublicKey>();
 
-            var peers = publicKeys.Select(pub =>
+            var peers = allPublicKeys.Select(pub => 
                     _peerRepository.GetPeerByPublicKey(pub)!)
-                .Where(peer => peer.Timestamp > TimeUtils.CurrentTimeMillis() / 1000 - 3 * 3600)
+                .Where((peer, i) =>
+                {
+                    if (peer.Timestamp > TimeUtils.CurrentTimeMillis() / 1000 - 3 * 3600)
+                    {
+                        publicKeysToBroadcast.Add(allPublicKeys[i]);
+                        return true;
+                    }
+
+                    return false;
+                })
                 .ToArray();
-            return (peers, publicKeys);
+            return (peers, publicKeysToBroadcast.ToArray());
         }
-        //
-        // public void Stop()
-        // {
-        //     _serverWorker?.Stop();
-        // }
+        
+        public List<PeerAddress> HandlePeersFromPeer(IEnumerable<Peer> peers, IEnumerable<ECDSAPublicKey> publicKeys)
+        {
+            var peerArray = peers as Peer[] ?? peers.ToArray();
+            foreach (var peer in peerArray)
+            {
+                peer.Host = NetworkManagerBase.CheckLocalConnection(peer.Host);
+            }
+            var newPeers = new List<PeerAddress>();
+            var keys = publicKeys as ECDSAPublicKey[] ?? publicKeys.ToArray();
+            if (peerArray.Length != keys.Length) 
+                throw new ArgumentException($"peers.Length: {peerArray.Length} != keys.Length: {keys.Length}");
+            
+            for (var i = 0; i < peerArray.Length; i++)
+            {
+                if (!_peerRepository.ContainsPublicKey(keys[i]))
+                    newPeers.Add(ToPeerAddress(peerArray[i], keys[i]));
+                _peerRepository.AddOrUpdatePeer(keys[i], peerArray[i]);
+            }
 
-        // public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
-        // {
-        //     ConsensusNetworkManager.SendTo(publicKey, networkMessage);
-        // }
+            return newPeers;
+        }
 
-        private static string GetExternalIp()
+        public static string GetExternalIp()
         {
             Random rnd = new Random();
             var ipResolverUrls = new[]
@@ -297,16 +217,19 @@ namespace Lachain.Networking
             {
                 try
                 {
-                    ip = new WebClient().DownloadString(url);
+                    var input = new WebClient().DownloadString(url);
+                    Regex ipRg = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
+                    MatchCollection result = ipRg.Matches(input);
+                    ip = result[0].ToString();
                     break;
                 }
-                catch (WebException e)
+                catch (Exception e)
                 {
-                    Logger.LogError($"Can't access {url}");
+                    Logger.LogError($"Unable to resolve ip via {url}: {ip}");
                 }
             }
-            if (ip == null) throw new Exception("Cannot resolve external node IP");
-            Logger.LogInformation($"My ip: {ip}");
+            if (ip == null) 
+                throw new Exception("Cannot resolve external node IP");
             return ip;
         }
         

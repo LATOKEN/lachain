@@ -17,6 +17,7 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Newtonsoft.Json;
 
 namespace Lachain.Core.Consensus
 {
@@ -167,6 +168,8 @@ namespace Lachain.Core.Consensus
             var result = _blockManager.Execute(
                 blockWithTransactions.Block, blockWithTransactions.Transactions, commit: true,
                 checkStateHash: true);
+            
+            Logger.LogDebug(JsonConvert.SerializeObject(blockWithTransactions.Block));
 
             if (result != OperatingError.Ok)
                 Logger.LogError(

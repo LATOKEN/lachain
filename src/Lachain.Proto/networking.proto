@@ -33,6 +33,10 @@ message PingReply {
 
 message GetPeersRequest {}
 
+message PeerJoin {
+    Peer peer = 1;
+}
+
 message GetPeersReply {
     repeated Peer peers = 1;
     repeated ECDSAPublicKey public_keys = 2;
@@ -79,6 +83,7 @@ message NetworkMessage {
         Ack ack = 22;
         GetPeersRequest get_peers_request = 23;
         GetPeersReply get_peers_reply = 24;
+        PeerJoin peer_join = 25;
     }
 }
 

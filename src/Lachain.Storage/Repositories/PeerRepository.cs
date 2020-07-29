@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -11,6 +12,8 @@ namespace Lachain.Storage.Repositories
     public class PeerRepository : IPeerRepository
     {
         private readonly IRocksDbContext _rocksDbContext;
+        private static readonly ILogger<PeerRepository> Logger =
+            LoggerFactory.GetLoggerForClass<PeerRepository>();
         
         public PeerRepository(IRocksDbContext rocksDbContext)
         {
@@ -20,7 +23,6 @@ namespace Lachain.Storage.Repositories
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Peer? GetPeerByPublicKey(ECDSAPublicKey publicKey)
         {
-            Console.WriteLine($"GetPeerByPublicKey: {publicKey.ToHex()}");
             var prefix = EntryPrefix.PeerByPublicKey.BuildPrefix(publicKey.ToByteArray());
             var raw = _rocksDbContext.Get(prefix);
             return raw == null ? null : Peer.Parser.ParseFrom(raw);
@@ -30,14 +32,6 @@ namespace Lachain.Storage.Repositories
         public ICollection<ECDSAPublicKey> GetPeerList()
         {
             var raw = _rocksDbContext.Get(EntryPrefix.PeerList.BuildPrefix());
-            Console.WriteLine($"GetPeerList: raw: {raw.ToHex()}");
-            var listStr = "";
-            var array = raw.ToEcdsaPublicKeys().Select(x => { 
-                listStr += x.ToHex() + ", ";
-                return x;
-            });
-            Console.WriteLine($"GetPeerList: len: {array.Count()}");
-            Console.WriteLine($"GetPeerList: {listStr}");
             return raw == null ? new List<ECDSAPublicKey>() : raw.ToEcdsaPublicKeys();
         }
 
@@ -60,10 +54,9 @@ namespace Lachain.Storage.Repositories
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool AddOrUpdatePeer(ECDSAPublicKey publicKey, Peer peer)
         {
-            Console.WriteLine($"AddOrUpdatePeer: {publicKey.ToHex()}");
             /* write peer to storage */
-            var prefixTx = EntryPrefix.PeerByPublicKey.BuildPrefix(publicKey.ToByteArray());
-            var rawPeer = _rocksDbContext.Get(prefixTx);
+            var prefix = EntryPrefix.PeerByPublicKey.BuildPrefix(publicKey.ToByteArray());
+            var rawPeer = _rocksDbContext.Get(prefix);
             if (rawPeer != null)
             {
                 var currentTs = TimeUtils.CurrentTimeMillis() / 1000;
@@ -86,8 +79,10 @@ namespace Lachain.Storage.Repositories
                 peers.Add(publicKey);
                 
                 _rocksDbContext.Save(EntryPrefix.PeerList.BuildPrefix(), peers.ToByteArray());
+                // Logger.LogDebug($"Peer added to storage: {publicKey.ToHex()}. Total peers: {peers.Count}");
             }
-            _rocksDbContext.Save(prefixTx, peer.ToByteArray());
+            _rocksDbContext.Save(prefix, peer.ToByteArray());
+            Logger.LogDebug($"Peer updated: {publicKey.ToHex()}@{peer.Host} Timestamp: {peer.Timestamp}");
             return true;
         }
 

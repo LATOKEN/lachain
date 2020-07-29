@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -34,6 +37,29 @@ namespace Lachain.CoreTest
             Console.WriteLine($"after len {peers.Count()}");
             Console.WriteLine($"after {peers.ToByteArray().ToHex()}");
         }
+        [Test]
+        public void Test_NetworkInterfaces()
+        {
+            
+            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (var networkInterface in networkInterfaces)
+            {
+                foreach (var ip in networkInterface.GetIPProperties().UnicastAddresses)
+                {
+                 
+                    Console.WriteLine($"{ip.Address}");
+                    
+                }   
+            }
+            
+            IPAddress [] IPS = Dns.GetHostAddresses(Dns.GetHostName());
+            foreach (IPAddress ip in IPS) {
+                if (ip.AddressFamily == AddressFamily.InterNetwork) {
+
+                    Console.WriteLine("IP address: " + ip);
+                }
+            }
+        }
 
         
 
@@ -48,7 +74,7 @@ namespace Lachain.CoreTest
                 {
                     var el = reader.ReadBytes(35).Skip(2).ToArray();
                     result.Add(new ECDSAPublicKey {Buffer = ByteString.CopyFrom(el)});
-                    Console.WriteLine(el.ToHex());
+                    // Console.WriteLine(el.ToHex());
                 }
 
                 return result;

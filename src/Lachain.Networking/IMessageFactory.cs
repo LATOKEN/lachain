@@ -20,6 +20,8 @@ namespace Lachain.Networking
 
         NetworkMessage GetPeersRequest();
 
+        NetworkMessage PeerJoin(Peer peer);
+
         NetworkMessage GetPeersReply(Peer[] peers, ECDSAPublicKey[] publicKeys);
 
         NetworkMessage GetBlocksByHashesReply(IEnumerable<Block> blocks);

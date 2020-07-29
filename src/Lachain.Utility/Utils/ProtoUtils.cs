@@ -67,7 +67,6 @@ namespace Lachain.Utility.Utils
                 {
                     var el = reader.ReadBytes(35).Skip(2).ToArray();
                     result.Add(new ECDSAPublicKey {Buffer = ByteString.CopyFrom(el)});
-                    Console.WriteLine(el.ToHex());
                 }
 
                 return result;

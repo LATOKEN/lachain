@@ -85,6 +85,18 @@ namespace Lachain.Networking
             };
         }
 
+        public NetworkMessage PeerJoin(Peer peer)
+        {
+            var request = new PeerJoin
+            {
+                Peer = peer,
+            };
+            return new NetworkMessage
+            {
+                PeerJoin = request,
+            };
+        }
+
         public NetworkMessage GetPeersReply(Peer[] peers, ECDSAPublicKey[] publicKeys)
         {
             var reply = new GetPeersReply

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
@@ -11,6 +12,7 @@ using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Org.BouncyCastle.Crypto.Tls;
 
 namespace Lachain.Core.Network
 {
@@ -54,7 +56,9 @@ namespace Lachain.Core.Network
             _networkManager.OnGetBlocksByHashesRequest += OnGetBlocksByHashesRequest;
             _networkManager.OnGetBlocksByHashesReply += OnGetBlocksByHashesReply;
             _networkManager.OnGetBlocksByHeightRangeRequest += OnGetBlocksByHeightRangeRequest;
+            _networkManager.OnGetPeersRequest += OnGetPeersRequest;
             _networkManager.OnGetBlocksByHeightRangeReply += OnGetBlocksByHeightRangeReply;
+            _networkManager.OnGetPeersReply += OnGetPeersReply;
             _networkManager.OnGetTransactionsByHashesRequest += OnGetTransactionsByHashesRequest;
             _networkManager.OnGetTransactionsByHashesReply += OnGetTransactionsByHashesReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
@@ -92,6 +96,7 @@ namespace Lachain.Core.Network
         {
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, publicKey);
+            // _peerManager.UpdatePeerTimestamp(publicKey);
         }
 
         private void OnGetBlocksByHashesRequest(object sender,
@@ -112,6 +117,8 @@ namespace Lachain.Core.Network
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
                 _blockSynchronizer.HandleBlockFromPeer(block, publicKey);
+            
+            _peerManager.UpdatePeerTimestamp(publicKey);
         }
 
         private void OnGetBlocksByHeightRangeRequest(object sender,
@@ -148,9 +155,14 @@ namespace Lachain.Core.Network
         private void OnGetPeersRequest(object sender,
             (GetPeersRequest request, Action<GetPeersReply> callback) @event)
         {
-            var (request, callback) = @event;
+            var (_, callback) = @event;
             var (peers, publicKeys) = _peerManager.GetPeersToBroadcast();
-            callback(new GetPeersReply()
+            var externalIp = PeerManager.GetExternalIp();
+            foreach (var peer in peers)
+                if (IPAddress.Parse(peer.Host).Equals(new IPAddress(0x0100007f)))
+                    peer.Host = externalIp;
+            
+            callback(new GetPeersReply
             {
                 Peers = { peers },
                 PublicKeys = { publicKeys }
@@ -161,6 +173,20 @@ namespace Lachain.Core.Network
             (GetTransactionsByHashesReply reply, ECDSAPublicKey publicKey) @event)
         {
             _blockSynchronizer.HandleTransactionsFromPeer(@event.reply.Transactions, @event.publicKey);
+            _peerManager.UpdatePeerTimestamp(@event.publicKey);
+        }
+
+        private void OnGetPeersReply(object sender,
+            (GetPeersReply reply, ECDSAPublicKey publicKey, Func<PeerAddress, IRemotePeer> connect) @event)
+        {
+            foreach (var t in @event.reply.Peers)
+            {
+                t.Host = NetworkManagerBase.CheckLocalConnection(t.Host);
+            }
+            var newPeers = _peerManager.HandlePeersFromPeer(@event.reply.Peers, @event.reply.PublicKeys);
+            _peerManager.UpdatePeerTimestamp(@event.publicKey);
+            foreach (var peer in newPeers)
+                @event.connect(peer);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

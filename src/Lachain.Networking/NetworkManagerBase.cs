@@ -69,6 +69,10 @@ namespace Lachain.Networking
         public event EventHandler<(GetBlocksByHeightRangeRequest message, Action<GetBlocksByHeightRangeReply> callback)>
             ?
             OnGetBlocksByHeightRangeRequest;
+        
+        public event EventHandler<(GetPeersRequest message, Action<GetPeersReply> callback)>
+            ?
+            OnGetPeersRequest;
 
         public event EventHandler<(GetBlocksByHeightRangeReply message, Action<GetBlocksByHashesRequest> callback)>?
             OnGetBlocksByHeightRangeReply;
@@ -79,6 +83,9 @@ namespace Lachain.Networking
 
         public event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
             OnGetTransactionsByHashesReply;
+
+        public event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<PeerAddress, IRemotePeer> connect)>?
+            OnGetPeersReply;
 
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
 
@@ -115,7 +122,12 @@ namespace Lachain.Networking
         public void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators)
         {
             var addresses = _networkConfig.Peers
-                .Select(PeerAddress.Parse)
+                .Select(x =>
+                {
+                    var address = PeerAddress.Parse(x);
+                    address.Host = CheckLocalConnection(address.Host!);
+                    return address;
+                })
                 .ToDictionary(x => x.PublicKey, x => x);
             _currentConsensusPeers = validators.Select(x => addresses[x]).ToList();
             ConsensusNetworkManager.ConnectToValidators(_currentConsensusPeers.Select(x => x.PublicKey!));
@@ -132,8 +144,10 @@ namespace Lachain.Networking
         {
             _serverWorker.Start();
             Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
-            foreach (var peer in _peerManager.Start(_networkConfig,  this, _keyPair))
+            var peers = _peerManager.Start(_networkConfig, this, _keyPair);
+            foreach (var peer in peers)
                 Connect(peer);
+            _peerManager.BroadcastPeerJoin();
             _peerManager.BroadcastGetPeersRequest();
         }
 
@@ -153,8 +167,10 @@ namespace Lachain.Networking
             var localHost = new IPAddress(0x0100007f);
             if (ipAddress.Equals(localHost))
                 return true;
+
+            if (ipAddress.Equals(IPAddress.Parse(PeerManager.GetExternalIp())))
+                return true;
             
-            Console.WriteLine("ipAddress: " + ipAddress);
             try
             {
                 var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -167,6 +183,7 @@ namespace Lachain.Networking
             }
 
             var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+            
             return networkInterfaces
                 .Where(ni =>
                     ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
@@ -187,8 +204,10 @@ namespace Lachain.Networking
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
                     return worker;
+                
                 if (_IsSelfConnect(IPAddress.Parse(address.Host)) && _networkConfig.Port == address.Port)
                     return null;
+
                 if (address.PublicKey is null)
                     throw new InvalidOperationException($"Cannot connect to peer {address}: no public key");
                 worker = new ClientWorker(address, address.PublicKey!, _messageFactory);
@@ -197,6 +216,25 @@ namespace Lachain.Networking
                 Monitor.PulseAll(_hasPeersToConnect);
                 Logger.LogTrace($"Successfully connected to peer {address}");
                 return worker;
+            }
+        }
+
+        public void Disconnect(ECDSAPublicKey publicKey)
+        {
+            lock (_hasPeersToConnect)
+            {
+                var workerAddresses = _clientWorkers.Keys.ToArray();
+                foreach (var workerAddress in workerAddresses)
+                {
+                    if (!workerAddress.PublicKey!.Equals(publicKey)) continue;
+                    if (_clientWorkers.TryGetValue(workerAddress, out var worker))
+                    {
+                        worker.Stop();
+                    }
+                    Logger.LogInformation($"Disconnecting from peer {workerAddress}");
+                    _clientWorkers.Remove(workerAddress);
+                }
+                Monitor.PulseAll(_hasPeersToConnect);
             }
         }
 
@@ -252,24 +290,58 @@ namespace Lachain.Networking
             };
             if (envelope.RemotePeer is null)
             {
+                try
+                {
+                    var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
+                    var joinMsg = content.Messages.FirstOrDefault(msg =>
+                        msg.MessageCase == NetworkMessage.MessageOneofCase.PeerJoin);
+
+                    if (joinMsg != null)
+                    {
+                        joinMsg.PeerJoin.Peer.Host = CheckLocalConnection(joinMsg.PeerJoin.Peer.Host);
+                        _peerManager.AddPeer(joinMsg.PeerJoin.Peer, publicKey);
+                        Connect(PeerManager.ToPeerAddress(joinMsg.PeerJoin.Peer, publicKey));
+                        GetPeerByPublicKey(publicKey)?.Send(_messageFactory.Ack(batch.MessageId));
+
+                        Logger.LogDebug(
+                            $"Peer join message received: {publicKey.ToHex()}");
+                        return;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Exception was thrown: {e}");
+                }
                 Logger.LogWarning(
                     $"Message from unrecognized peer {publicKey.ToHex()} or invalid signature, skipping");
                 return;
             }
 
             GetPeerByPublicKey(envelope.PublicKey)?.Send(_messageFactory.Ack(batch.MessageId));
-            var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
-            foreach (var message in content.Messages)
             {
-                try
+                var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
+                foreach (var message in content.Messages)
                 {
-                    HandleMessageUnsafe(message, envelope);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError($"Unexpected error occurred: {e}");
+                    try
+                    {
+                        HandleMessageUnsafe(message, envelope);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError($"Unexpected error occurred: {e}");
+                    }
                 }
             }
+        }
+
+        public static string CheckLocalConnection(string host)
+        {
+            if (IPAddress.Parse(host).Equals(IPAddress.Parse(PeerManager.GetExternalIp())))
+            {
+                return new IPAddress(0x0100007f).ToString();
+            }
+
+            return host;
         }
 
         private Action<IMessage> SendTo(IRemotePeer? peer)
@@ -295,6 +367,10 @@ namespace Lachain.Networking
                     GetTransactionsByHashesReply getTransactionsByHashesReply => new NetworkMessage
                     {
                         GetTransactionsByHashesReply = getTransactionsByHashesReply
+                    },
+                    GetPeersReply getPeersReply => new NetworkMessage
+                    {
+                        GetPeersReply = getPeersReply
                     },
                     _ => throw new InvalidOperationException()
                 };
@@ -348,10 +424,36 @@ namespace Lachain.Networking
                     );
                     break;
                 case NetworkMessage.MessageOneofCase.GetPeersRequest:
-                    Logger.LogInformation("PeersRequest received");
+                    Logger.LogDebug($"Got GetPeersRequest");
+                    Logger.LogDebug(envelope.RemotePeer.Address.ToString());
+                    OnGetPeersRequest?.Invoke(this,
+                        (message.GetPeersRequest, SendTo(envelope.RemotePeer))
+                    );
+                    break;
+                case NetworkMessage.MessageOneofCase.GetPeersReply:
+                    OnGetPeersReply?.Invoke(this,
+                        (message.GetPeersReply, envelope.PublicKey, Connect)
+                    );
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
                     GetPeerByPublicKey(envelope.PublicKey)?.ReceiveAck(message.Ack.MessageId);
+                    break;
+                case NetworkMessage.MessageOneofCase.PeerJoin:
+                    Logger.LogTrace($"Peer join message received from known peer");
+                    message.PeerJoin.Peer.Host = CheckLocalConnection(message.PeerJoin.Peer.Host);
+                    var peerAddress = PeerManager.ToPeerAddress(message.PeerJoin.Peer, envelope.PublicKey);
+                    if (!_clientWorkers.ContainsKey(peerAddress))
+                    {
+                        _peerManager.AddPeer(message.PeerJoin.Peer, envelope.PublicKey);
+                        Disconnect(envelope.PublicKey);
+                        Connect(peerAddress);
+                        Logger.LogTrace($"Peer reconnected with new address: {peerAddress}");
+                    }
+                    else
+                    {
+                        Logger.LogTrace($"Connection already established");
+                    }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),
@@ -398,6 +500,7 @@ namespace Lachain.Networking
         public void Stop()
         {
             _serverWorker?.Stop();
+            _peerManager.Stop();
         }
 
         public void Broadcast(NetworkMessage networkMessage)

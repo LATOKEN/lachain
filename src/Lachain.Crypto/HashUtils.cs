@@ -50,14 +50,11 @@ namespace Lachain.Crypto
         public static UInt256 Keccak(this BlockHeader header)
         {
             
-            var emptyUncleHash = Nethereum.RLP.RLP.EncodeList(new byte[][] { }).KeccakBytes();
             byte[][] headerBytes =
             {
                 header.PrevBlockHash.ToBytes(),
-                emptyUncleHash,
-                header.StateHash.ToBytes(), // state root
-                header.MerkleRoot.ToBytes(), // tx root
-                header.MerkleRoot.ToBytes(), // tx root
+                header.StateHash.ToBytes(),
+                header.MerkleRoot.ToBytes(),
                 header.Index.ToBytes().ToArray(),
                 header.Nonce.ToBytes().ToArray(),
             };
