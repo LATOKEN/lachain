@@ -26,7 +26,7 @@ namespace Lachain.Networking
 
         public ECDSAPublicKey? PublicKey { get; set; }
 
-        public static PeerAddress FromNode(Node node)
+        public static PeerAddress FromNode(Node node, Func<string, string> checkLocalConnection)
         {
             var publicKeyHex = node.PublicKey.ToHex();
             if (publicKeyHex.StartsWith("0x"))
@@ -45,7 +45,7 @@ namespace Lachain.Networking
             return new PeerAddress
             {
                 Protocol = proto,
-                Host = NetworkManagerBase.CheckLocalConnection(address),
+                Host = checkLocalConnection(address),
                 Port = int.Parse(port),
                 PublicKey = publicKeyHex.HexToBytes().ToPublicKey()
             };

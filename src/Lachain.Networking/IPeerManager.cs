@@ -20,6 +20,7 @@ namespace Lachain.Networking
         
         void BroadcastGetPeersRequest();
         void BroadcastPeerJoin();
+        string GetExternalIp();
 
         (Peer[], ECDSAPublicKey[]) GetPeersToBroadcast();
         List<PeerAddress> HandlePeersFromPeer(IEnumerable<Peer> peers, IEnumerable<ECDSAPublicKey> publicKeys);

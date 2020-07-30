@@ -33,6 +33,7 @@ namespace Lachain.Networking
 
         private readonly ulong _peerCheckTimeout = 1 * 60;
         private bool _started = false;
+        private string? _externalIP = null;
         private Thread? _worker;
         private NetworkConfig? _networkConfig;
 
@@ -60,7 +61,7 @@ namespace Lachain.Networking
                     var peerAddress = PeerAddress.Parse(peerStr);
                     var peer = new Peer
                     {
-                        Host = NetworkManagerBase.CheckLocalConnection(peerAddress.Host!),
+                        Host = CheckLocalConnection(peerAddress.Host!),
                         Port = (uint)peerAddress.Port,
                         Timestamp = 0,
                     };
@@ -200,7 +201,7 @@ namespace Lachain.Networking
             var peerArray = peers as Peer[] ?? peers.ToArray();
             foreach (var peer in peerArray)
             {
-                peer.Host = NetworkManagerBase.CheckLocalConnection(peer.Host);
+                peer.Host = CheckLocalConnection(peer.Host);
             }
             var newPeers = new List<PeerAddress>();
             var keys = publicKeys as ECDSAPublicKey[] ?? publicKeys.ToArray();
@@ -217,7 +218,13 @@ namespace Lachain.Networking
             return newPeers;
         }
 
-        public static string GetExternalIp()
+        public string GetExternalIp()
+        {
+            if (_externalIP == null) DetectExternalIp();
+            return _externalIP!;
+        }
+
+        private void DetectExternalIp()
         {
             Random rnd = new Random();
             var ipResolverUrls = new[]
@@ -247,9 +254,18 @@ namespace Lachain.Networking
                     Logger.LogError($"Unable to resolve ip via {url}: {ip}");
                 }
             }
-            if (ip == null) 
-                throw new Exception("Cannot resolve external node IP");
-            return ip;
+
+            _externalIP = ip ?? throw new Exception("Cannot resolve external node IP");
+        }
+
+        public string CheckLocalConnection(string host)
+        {
+            if (IPAddress.Parse(host).Equals(IPAddress.Parse(GetExternalIp())))
+            {
+                return new IPAddress(0x0100007f).ToString();
+            }
+
+            return host;
         }
         
         public static PeerAddress ToPeerAddress(Peer peer, ECDSAPublicKey pub)

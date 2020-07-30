@@ -111,7 +111,7 @@ namespace Lachain.Networking
                 BlockHeight = 0,
                 Agent = "Lachain-v0.0-dev"
             };
-            ConsensusNetworkManager = new ConsensusNetworkManager(_messageFactory, networkConfig, LocalNode, peerManager);
+            ConsensusNetworkManager = new ConsensusNetworkManager(_messageFactory, networkConfig, LocalNode, peerManager, this);
             _serverWorker = new ServerWorker(networkConfig.Address, networkConfig.Port);
             _serverWorker.OnMessage += _HandleMessage;
             _serverWorker.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
@@ -156,13 +156,13 @@ namespace Lachain.Networking
             return _clientWorkers.ContainsKey(address);
         }
 
-        private static bool _IsSelfConnect(IPAddress ipAddress)
+        private bool _IsSelfConnect(IPAddress ipAddress)
         {
             var localHost = new IPAddress(0x0100007f);
             if (ipAddress.Equals(localHost))
                 return true;
 
-            if (ipAddress.Equals(IPAddress.Parse(PeerManager.GetExternalIp())))
+            if (ipAddress.Equals(IPAddress.Parse(_peerManager.GetExternalIp())))
                 return true;
             
             try
@@ -236,7 +236,7 @@ namespace Lachain.Networking
         {
             if (request.Node.PublicKey is null)
                 throw new Exception("Public key can't be null");
-            var address = PeerAddress.FromNode(request.Node);
+            var address = PeerAddress.FromNode(request.Node, CheckLocalConnection);
             var peer = _clientWorkers.TryGetValue(address, out var clientWorker)
                 ? clientWorker
                 : Connect(address);
@@ -247,7 +247,7 @@ namespace Lachain.Networking
 
         private void _HandshakeReply(HandshakeReply reply)
         {
-            var address = PeerAddress.FromNode(reply.Node);
+            var address = PeerAddress.FromNode(reply.Node, CheckLocalConnection);
             address.Port = (int) reply.Port;
             Logger.LogTrace($"Got handshake reply from {reply.Node.Address}");
             ConsensusNetworkManager.InitOutgoingConnection(reply.Node.PublicKey, address);
@@ -328,9 +328,9 @@ namespace Lachain.Networking
             }
         }
 
-        public static string CheckLocalConnection(string host)
+        public string CheckLocalConnection(string host)
         {
-            if (IPAddress.Parse(host).Equals(IPAddress.Parse(PeerManager.GetExternalIp())))
+            if (IPAddress.Parse(host).Equals(IPAddress.Parse(_peerManager.GetExternalIp())))
             {
                 return new IPAddress(0x0100007f).ToString();
             }

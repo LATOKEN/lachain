@@ -44,5 +44,6 @@ namespace Lachain.Networking
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
         IEnumerable<PeerAddress> GetConnectedPeers();
         void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators);
+        string CheckLocalConnection(string host);
     }
 }
