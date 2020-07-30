@@ -499,7 +499,15 @@ namespace Lachain.Core.Blockchain.Operations
             );
 
             _stateManager.Approve();
-            var error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: false);
+            var (error, removeTransactions, stateHash, relayTransactions) =
+                Emulate(genesisBlock.Block, genesisBlock.Transactions);
+            if (error != OperatingError.Ok) throw new InvalidBlockException(error);
+            if (removeTransactions.Count != 0) throw new InvalidBlockException(OperatingError.InvalidTransaction);
+            if (relayTransactions.Count != 0) throw new InvalidBlockException(OperatingError.InvalidTransaction);
+            genesisBlock.Block.Header.StateHash = stateHash;
+            genesisBlock.Block.Hash = genesisBlock.Block.Header.Keccak();
+
+            error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: true);
             if (error != OperatingError.Ok) throw new InvalidBlockException(error);
             _stateManager.Commit();
             BlockPersisted(genesisBlock.Block);

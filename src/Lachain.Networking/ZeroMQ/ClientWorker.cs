@@ -26,8 +26,8 @@ namespace Lachain.Networking.ZeroMQ
         private readonly PushSocket _socket;
         private readonly Thread _worker;
 
-        private readonly IDictionary<ulong, (MessageBatch msg, ulong timestamp)> _unacked =
-            new ConcurrentDictionary<ulong, (MessageBatch, ulong)>();
+        private readonly IDictionary<ulong, (MessageBatch msg, ulong timestamp, int cnt)> _unacked =
+            new ConcurrentDictionary<ulong, (MessageBatch, ulong, int cnt)>();
 
         public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? publicKey, IMessageFactory messageFactory)
         {
@@ -78,6 +78,7 @@ namespace Lachain.Networking.ZeroMQ
             IsConnected = true;
             while (IsConnected)
             {
+                Logger.LogTrace($"{Address}: unacked {_unacked.Count}, queue: {_messageQueue.Count}");
                 var now = TimeUtils.CurrentTimeMillis();
                 List<MessageBatch> toSend = new List<MessageBatch>();
                 lock (_messageQueue)
@@ -88,20 +89,29 @@ namespace Lachain.Networking.ZeroMQ
                         _messageQueue.Clear();
                         var batch = _messageFactory.MessagesBatch(content);
                         if (content.Any(msg => msg.MessageCase != NetworkMessage.MessageOneofCase.Ack))
-                            _unacked[batch.MessageId] = (batch, now);
+                            _unacked[batch.MessageId] = (batch, now, 0);
                         toSend.Add(batch);
                     }
                 }
 
                 lock (_unacked)
                 {
-                    foreach (var msg in _unacked.Values
+                    foreach (var (msg, _, cnt) in _unacked.Values
                         .Where(x => x.timestamp < now - 5_000)
                         .Where(x => x.timestamp > now - 30_000)
-                        .Select(t => t.msg))
+                        .Where(x => x.cnt < 3)
+                    )
                     {
-                        _unacked[msg.MessageId] = (msg, now);
+                        _unacked[msg.MessageId] = (msg, now, cnt + 1);
                         toSend.Add(msg);
+                    }
+
+                    foreach (var key in _unacked
+                        .Where(x => x.Value.timestamp <= now - 30_000 || x.Value.cnt >= 3)
+                        .Select(x => x.Key)
+                        .ToArray())
+                    {
+                        _unacked.Remove(key);
                     }
                 }
 
@@ -129,6 +139,7 @@ namespace Lachain.Networking.ZeroMQ
 
         public void Dispose()
         {
+            lock (_messageQueue) _messageQueue.Clear();
             Stop();
             _socket.Dispose();
         }

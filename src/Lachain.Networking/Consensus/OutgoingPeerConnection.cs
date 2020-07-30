@@ -4,6 +4,7 @@ using Lachain.Logger;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Utility.Benchmark;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus
 {
@@ -12,13 +13,15 @@ namespace Lachain.Networking.Consensus
         private static readonly ILogger<OutgoingPeerConnection> Logger =
             LoggerFactory.GetLoggerForClass<OutgoingPeerConnection>();
 
+        private readonly PeerAddress _address;
         private readonly IMessageFactory _messageFactory;
         private readonly ThroughputCalculator _throughputCalculator;
-        private readonly List<NetworkMessage> _unsent = new List<NetworkMessage>();
+        private readonly LinkedList<NetworkMessage> _unsent = new LinkedList<NetworkMessage>();
         private ClientWorker? _client;
 
         public OutgoingPeerConnection(PeerAddress address, IMessageFactory messageFactory, Node localNode)
         {
+            _address = address;
             _messageFactory = messageFactory;
             _throughputCalculator = new ThroughputCalculator(
                 TimeSpan.FromSeconds(1),
@@ -53,7 +56,14 @@ namespace Lachain.Networking.Consensus
             {
                 lock (_unsent)
                 {
-                    _unsent.Add(message);
+                    _unsent.AddLast(message);
+                    if (_unsent.Count > 1000)
+                    {
+                        Logger.LogWarning(
+                            $"More than 1000 unsent messages queued to {_address.PublicKey?.ToHex()}@{_address.Host}, clearing"
+                        );
+                        while (_unsent.Count > 1000) _unsent.RemoveFirst();
+                    }
                 }
             }
             else
