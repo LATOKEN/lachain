@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -22,7 +21,7 @@ namespace Lachain.Storage.State
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
             var value = _state.Get(key);
-            var balance = value != null ? UInt256.Parser.ParseFrom(value): UInt256Utils.Zero;
+            var balance = value?.ToUInt256() ?? UInt256Utils.Zero;
             return new Money(balance);
         }
 
@@ -31,7 +30,7 @@ namespace Lachain.Storage.State
         {
             var key = EntryPrefix.TotalSupply.BuildPrefix();
             var value = _state.Get(key);
-            var supply = value != null ? UInt256.Parser.ParseFrom(value): UInt256Utils.Zero;
+            var supply = value?.ToUInt256() ?? UInt256Utils.Zero;
             return new Money(supply);
         }
 
@@ -39,14 +38,14 @@ namespace Lachain.Storage.State
         public void SetBalance(UInt160 owner, Money value)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
-            _state.AddOrUpdate(key, value.ToUInt256(false).ToByteArray());
+            _state.AddOrUpdate(key, value.ToUInt256(false).ToBytes());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetSupply(Money value)
         {
             var key = EntryPrefix.TotalSupply.BuildPrefix();
-            _state.AddOrUpdate(key, value.ToUInt256(false).ToByteArray());
+            _state.AddOrUpdate(key, value.ToUInt256(false).ToBytes());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -61,6 +60,7 @@ namespace Lachain.Storage.State
                 supply += value;
                 SetSupply(supply);
             }
+
             return balance;
         }
 
@@ -83,7 +83,7 @@ namespace Lachain.Storage.State
             AddBalance(to, value);
             return true;
         }
-        
+
         public void Commit()
         {
             _state.Commit();

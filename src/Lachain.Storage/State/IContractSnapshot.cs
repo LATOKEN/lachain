@@ -1,4 +1,5 @@
 ﻿using Lachain.Proto;
+using Lachain.Utility;
 
 namespace Lachain.Storage.State
 {

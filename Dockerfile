@@ -22,6 +22,7 @@ FROM mcr.microsoft.com/dotnet/core/runtime:3.1.5-buster-slim
 RUN apt update && apt install -y libc6-dev
 WORKDIR /lachain
 COPY --from=build-env /lachain/Lachain.Console/out .
+RUN rm -rf /lachain/wallet.json /lachain/config.json
 ARG CONFIG=src/Lachain.Console/config0.json
 ARG WALLET=src/Lachain.Console/wallet0.json
 COPY $CONFIG /lachain/config.json

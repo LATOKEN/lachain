@@ -7,7 +7,6 @@ using Lachain.Logger;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
-using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;

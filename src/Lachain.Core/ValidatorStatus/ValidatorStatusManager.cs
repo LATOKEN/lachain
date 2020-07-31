@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;

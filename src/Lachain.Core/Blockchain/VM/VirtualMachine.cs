@@ -8,7 +8,7 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
-using Lachain.Proto;
+using Lachain.Utility;
 using WebAssembly.Runtime;
 
 namespace Lachain.Core.Blockchain.VM
@@ -59,7 +59,7 @@ namespace Lachain.Core.Blockchain.VM
         )
         {
             var status = FrameFactory.FromInvocation(
-                contract.ByteCode.ToByteArray(),
+                contract.ByteCode,
                 context,
                 contract.ContractAddress,
                 input,

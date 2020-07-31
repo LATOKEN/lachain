@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
@@ -9,7 +8,7 @@ using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
-using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
@@ -18,7 +17,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class DeployContract : ISystemContract
     {
         private readonly InvocationContext _context;
-        
+
         private static readonly ILogger<DeployContract> Logger = LoggerFactory.GetLoggerForClass<DeployContract>();
 
         public DeployContract(InvocationContext context)
@@ -39,14 +38,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .Concat(receipt.Transaction.Nonce.ToBytes())
                 .Ripemd();
 
-            var contract = new Contract
-            {
-                // TODO: this is fake, we have to think of what happens if someone tries to get current address during deploy
-                ContractAddress = hash,
-                ByteCode = ByteString.CopyFrom(byteCode)
-            };
+            // TODO: this is fake, we have to think of what happens if someone tries to get current address during deploy
+            var contract = new Contract(hash, byteCode);
 
-            if (!VirtualMachine.VerifyContract(contract.ByteCode.ToByteArray()))
+            if (!VirtualMachine.VerifyContract(contract.ByteCode))
                 return ExecutionStatus.ExecutionHalted;
 
             try
@@ -61,11 +56,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 // if (result.Status != ExecutionStatus.Ok || result.ReturnValue is null)
                 //     return ExecutionStatus.ExecutionHalted;
 
-                _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract
-                {
-                    ByteCode = ByteString.CopyFrom(contract.ByteCode.ToByteArray()),
-                    ContractAddress = hash
-                });
+                _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, contract.ByteCode));
                 Logger.LogInformation($"New contract with address {hash.ToHex()} deployed");
             }
             catch (OutOfGasException e)

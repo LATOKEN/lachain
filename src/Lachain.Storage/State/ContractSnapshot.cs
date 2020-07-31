@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
-using Google.Protobuf;
 using Lachain.Proto;
+using Lachain.Utility;
 
 namespace Lachain.Storage.State
 {
@@ -27,13 +27,13 @@ namespace Lachain.Storage.State
         public Contract? GetContractByHash(UInt160 contractHash)
         {
             var value = _state.Get(EntryPrefix.ContractByHash.BuildPrefix(contractHash));
-            return value != null ? Contract.Parser.ParseFrom(value) : null;
+            return value != null ? Contract.FromBytes(value) : null;
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddContract(UInt160 sender, Contract contract)
         {
-            _state.AddOrUpdate(EntryPrefix.ContractByHash.BuildPrefix(contract.ContractAddress), contract.ToByteArray());
+            _state.AddOrUpdate(EntryPrefix.ContractByHash.BuildPrefix(contract.ContractAddress), contract.ToBytes());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
