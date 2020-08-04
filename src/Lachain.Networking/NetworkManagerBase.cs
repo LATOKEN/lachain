@@ -217,18 +217,17 @@ namespace Lachain.Networking
                 var nonConsensusPeerCount = _clientWorkers.Count(worker => !stakers.Contains(worker.Key.PublicKey!));
                 var isConsensusPeer = stakers.Contains(address.PublicKey) || stakers.Length == 0;
 
-                Logger.LogInformation($"Non consensus peers count before connection: {nonConsensusPeerCount}");
+                Logger.LogTrace($"Non consensus peers count before connection: {nonConsensusPeerCount}");
                 if (!isConsensusPeer && nonConsensusPeerCount >= CONNECTION_LIMIT)
                 {
-                    Logger.LogInformation($"Connections limit reached. Peer is not connected: {address}");
+                    Logger.LogTrace($"Connections limit reached. Peer is not connected: {address}");
                     return null;
                 }
-                Logger.LogInformation($"Connecting to peer {address}");
-                Logger.LogInformation($"Open connections count {_clientWorkers.Count}");
+                Logger.LogTrace($"Connecting to peer {address}");
                 
                 worker = new ClientWorker(address, address.PublicKey!, _messageFactory);
                 _clientWorkers.Add(address, worker);
-                Logger.LogInformation($"Added worker for peer {address}");
+                Logger.LogTrace($"Added worker for peer {address}");
                 worker.Start();
                 var peerJoinMsg = _messageFactory.PeerJoinRequest(_peerManager.GetCurrentPeer());
                 SendToPeerByPublicKey(address.PublicKey!, peerJoinMsg);
@@ -441,8 +440,8 @@ namespace Lachain.Networking
                     );
                     break;
                 case NetworkMessage.MessageOneofCase.GetPeersRequest:
-                    Logger.LogDebug($"Got GetPeersRequest");
-                    Logger.LogDebug(envelope.RemotePeer.Address.ToString());
+                    Logger.LogTrace($"Got GetPeersRequest");
+                    Logger.LogTrace(envelope.RemotePeer!.Address.ToString());
                     OnGetPeersRequest?.Invoke(this,
                         (message.GetPeersRequest, SendTo(envelope.RemotePeer))
                     );
@@ -468,7 +467,7 @@ namespace Lachain.Networking
                     }
                     else
                     {
-                        Logger.LogDebug($"Connection already established");
+                        Logger.LogDebug($"Connection already established: {peerAddress}");
                     }
 
                     break;
