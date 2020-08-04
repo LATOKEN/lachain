@@ -85,15 +85,15 @@ namespace Lachain.Networking
             };
         }
 
-        public NetworkMessage PeerJoin(Peer peer)
+        public NetworkMessage PeerJoinRequest(Peer peer)
         {
-            var request = new PeerJoin
+            var request = new PeerJoinRequest
             {
                 Peer = peer,
             };
             return new NetworkMessage
             {
-                PeerJoin = request,
+                PeerJoinRequest = request,
             };
         }
 

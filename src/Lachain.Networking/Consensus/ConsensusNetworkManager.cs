@@ -30,7 +30,7 @@ namespace Lachain.Networking.Consensus
 
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnMessage;
 
-        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode, IPeerManager peerManager, INetworkManager _networkManager)
+        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode, IPeerManager peerManager, Func<string, string> checkLocalConnection)
         {
             _messageFactory = messageFactory;
             _localNode = localNode;
@@ -39,7 +39,7 @@ namespace Lachain.Networking.Consensus
                 .Select(x =>
                 {
                     var address = PeerAddress.Parse(x);
-                    address.Host = _networkManager.CheckLocalConnection(address.Host!);
+                    address.Host = checkLocalConnection(address.Host!);
                     return address;
                 })
                 .Where(x => x.PublicKey != null)

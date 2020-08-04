@@ -157,10 +157,9 @@ namespace Lachain.Core.Network
         {
             var (_, callback) = @event;
             var (peers, publicKeys) = _peerManager.GetPeersToBroadcast();
-            var externalIp = _peerManager.GetExternalIp();
             foreach (var peer in peers)
-                if (IPAddress.Parse(peer.Host).Equals(new IPAddress(0x0100007f)))
-                    peer.Host = externalIp;
+                if (_networkManager.IsSelfConnect(IPAddress.Parse(peer.Host)))
+                    peer.Host = _peerManager.GetExternalIp();
             
             callback(new GetPeersReply
             {
@@ -183,9 +182,9 @@ namespace Lachain.Core.Network
             {
                 t.Host = _networkManager.CheckLocalConnection(t.Host);
             }
-            var newPeers = _peerManager.HandlePeersFromPeer(@event.reply.Peers, @event.reply.PublicKeys);
+            var peers = _peerManager.HandlePeersFromPeer(@event.reply.Peers, @event.reply.PublicKeys);
             _peerManager.UpdatePeerTimestamp(@event.publicKey);
-            foreach (var peer in newPeers)
+            foreach (var peer in peers)
                 @event.connect(peer);
         }
 

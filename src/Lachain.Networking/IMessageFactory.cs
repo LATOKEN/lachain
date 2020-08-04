@@ -20,7 +20,7 @@ namespace Lachain.Networking
 
         NetworkMessage GetPeersRequest();
 
-        NetworkMessage PeerJoin(Peer peer);
+        NetworkMessage PeerJoinRequest(Peer peer);
 
         NetworkMessage GetPeersReply(Peer[] peers, ECDSAPublicKey[] publicKeys);
 

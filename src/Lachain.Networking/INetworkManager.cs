@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -45,5 +46,6 @@ namespace Lachain.Networking
         IEnumerable<PeerAddress> GetConnectedPeers();
         void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators);
         string CheckLocalConnection(string host);
+        public bool IsSelfConnect(IPAddress ipAddress);
     }
 }

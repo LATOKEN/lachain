@@ -33,8 +33,12 @@ message PingReply {
 
 message GetPeersRequest {}
 
-message PeerJoin {
+message PeerJoinRequest {
     Peer peer = 1;
+}
+
+message PeerJoinReply {
+    bool connected = 1;
 }
 
 message GetPeersReply {
@@ -83,7 +87,8 @@ message NetworkMessage {
         Ack ack = 22;
         GetPeersRequest get_peers_request = 23;
         GetPeersReply get_peers_reply = 24;
-        PeerJoin peer_join = 25;
+        PeerJoinRequest peer_join_request = 25;
+        PeerJoinReply peer_join_reply = 26;
     }
 }
 
