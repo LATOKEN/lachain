@@ -63,7 +63,7 @@ namespace Lachain.Storage.Repositories
                 var storedPeer = Peer.Parser.ParseFrom(rawPeer);
                 if (storedPeer.Timestamp > peer.Timestamp)
                 {
-                    Logger.LogDebug($"Received peer ({peer.Timestamp}) is older than we have ({storedPeer.Timestamp}). Skipping...");
+                    Logger.LogTrace($"Received peer ({peer.Timestamp}) is older than we have ({storedPeer.Timestamp}). Skipping...");
                     return false;
                 }
 
@@ -71,13 +71,13 @@ namespace Lachain.Storage.Repositories
                     || peer.Timestamp < currentTs - 3600 * 2)
                 {
                     
-                    Logger.LogDebug($"Received peer's timestamp ({peer.Timestamp}) is too old or too fresh. Setting it to 5d ago.");
+                    Logger.LogTrace($"Received peer's timestamp ({peer.Timestamp}) is too old or too fresh. Setting it to 5d ago.");
                     peer.Timestamp = (uint) (currentTs - 3600 * 24 * 5);
                 }
                 else
                 {
                     
-                    Logger.LogDebug($"Received peer's timestamp ({peer.Timestamp}) is ok. Subtracting 2h.");
+                    Logger.LogTrace($"Received peer's timestamp ({peer.Timestamp}) is ok. Subtracting 2h.");
                     peer.Timestamp -= 3600 * 2;
                 }
             }
@@ -93,7 +93,7 @@ namespace Lachain.Storage.Repositories
                 // Logger.LogDebug($"Peer added to storage: {publicKey.ToHex()}. Total peers: {peers.Count}");
             }
             _rocksDbContext.Save(prefix, peer.ToByteArray());
-            Logger.LogDebug($"Peer updated: {publicKey.ToHex()}@{peer.Host} Timestamp: {peer.Timestamp}");
+            Logger.LogTrace($"Peer updated: {publicKey.ToHex()}@{peer.Host} Timestamp: {peer.Timestamp}");
             return true;
         }
 

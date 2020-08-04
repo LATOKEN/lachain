@@ -199,14 +199,14 @@ namespace Lachain.Networking
             {
                 if (_clientWorkers.TryGetValue(address, out var worker))
                 {
-                    Logger.LogInformation($"Found worker for peer {address}");
+                    Logger.LogTrace($"Found worker for peer {address}");
                     return worker;
                 }
 
-                Logger.LogInformation($"Not found worker for peer {address}");
+                Logger.LogTrace($"Not found worker for peer {address}");
                 if (IsSelfConnect(IPAddress.Parse(address.Host)) && _networkConfig.Port == address.Port)
                 {
-                    Logger.LogInformation($"Self connect, skipping");
+                    Logger.LogTrace($"Self connect, skipping");
                     return null;
                 }
 
@@ -464,11 +464,11 @@ namespace Lachain.Networking
                         _peerManager.AddPeer(message.PeerJoinRequest.Peer, envelope.PublicKey);
                         Disconnect(envelope.PublicKey);
                         Connect(peerAddress);
-                        Logger.LogTrace($"Peer reconnected with new address: {peerAddress}");
+                        Logger.LogDebug($"Peer reconnected with new address: {peerAddress}");
                     }
                     else
                     {
-                        Logger.LogTrace($"Connection already established");
+                        Logger.LogDebug($"Connection already established");
                     }
 
                     break;
