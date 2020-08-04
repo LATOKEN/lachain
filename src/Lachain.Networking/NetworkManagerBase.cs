@@ -334,7 +334,7 @@ namespace Lachain.Networking
                 {
                     Logger.LogError($"Exception was thrown while peer join msg parsing: {e}");
                 }
-                Logger.LogWarning(
+                Logger.LogTrace(
                     $"Message from unrecognized peer {publicKey.ToHex()} or invalid signature, skipping");
                 return;
             }
