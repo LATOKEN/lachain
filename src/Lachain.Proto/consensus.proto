@@ -4,19 +4,6 @@ option java_package = "com.latoken.proto";
 import "default.proto";
 import "block.proto";
 
-// consensus state stored in blockchain
-
-message ValidatorCredentials {
-    ECDSAPublicKey public_key = 1;
-    string resolvable_address = 2;
-    bytes threshold_signature_public_key = 3;
-}
-
-message ConsensusState {
-    bytes tpke_public_key = 1;
-    repeated ValidatorCredentials validators = 3;
-}
-
 // HBBFT messages
 
 message Validator {

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
@@ -456,16 +455,15 @@ namespace Lachain.Core.Blockchain.Operations
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
             if (genesisConfig is null) return false;
             genesisConfig.ValidateOrThrow();
-            var initialConsensusState = new ConsensusState
-            {
-                TpkePublicKey = ByteString.CopyFrom(genesisConfig.ThresholdEncryptionPublicKey.HexToBytes())
-            };
-            initialConsensusState.Validators.Add(genesisConfig.Validators.Select(v => new ValidatorCredentials
-            {
-                PublicKey = v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
-                ResolvableAddress = v.ResolvableName,
-                ThresholdSignaturePublicKey = ByteString.CopyFrom(v.ThresholdSignaturePublicKey.HexToBytes()),
-            }));
+            var initialConsensusState = new ConsensusState(
+                genesisConfig.ThresholdEncryptionPublicKey.HexToBytes(),
+                genesisConfig.Validators.Select(v => new ValidatorCredentials
+                (
+                    v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
+                    v.ResolvableName,
+                    v.ThresholdSignaturePublicKey.HexToBytes()
+                )).ToArray()
+            );
             snapshot.Validators.SetConsensusState(initialConsensusState);
 
             // init system contracts storage

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
+using Lachain.Utility;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Storage.State

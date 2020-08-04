@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -61,7 +60,7 @@ namespace Lachain.Storage
 
         public static byte[] BuildPrefix(this EntryPrefix prefix, UInt160 key)
         {
-            return BuildPrefix(prefix, key.ToByteArray());
+            return BuildPrefix(prefix, key.ToBytes());
         }
 
         public static byte[] BuildPrefix(this EntryPrefix prefix, params UInt256[] keys)

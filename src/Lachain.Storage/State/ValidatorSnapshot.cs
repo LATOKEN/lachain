@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
@@ -31,12 +31,12 @@ namespace Lachain.Storage.State
         {
             var raw = _state.Get(EntryPrefix.ConsensusState.BuildPrefix()) ??
                       throw new ConsensusStateNotPresentException();
-            return ConsensusState.Parser.ParseFrom(raw);
+            return ConsensusState.FromBytes(raw);
         }
 
         public void SetConsensusState(ConsensusState consensusState)
         {
-            var raw = consensusState.ToByteArray();
+            var raw = consensusState.ToBytes();
             _state.AddOrUpdate(EntryPrefix.ConsensusState.BuildPrefix(), raw);
         }
 
@@ -49,13 +49,12 @@ namespace Lachain.Storage.State
             IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey
         )
         {
-            var state = new ConsensusState {TpkePublicKey = ByteString.CopyFrom(tpkePublicKey.ToBytes())};
-            state.Validators.AddRange(ecdsaKeys.Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials
-            {
-                PublicKey = ecdsaKey,
-                ResolvableAddress = "",
-                ThresholdSignaturePublicKey = ByteString.CopyFrom(tsKey.ToBytes())
-            }));
+            var state = new ConsensusState(
+                tpkePublicKey.ToBytes(),
+                ecdsaKeys
+                    .Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials(ecdsaKey, "", tsKey.ToBytes()))
+                    .ToArray()
+            );
             SetConsensusState(state);
         }
     }

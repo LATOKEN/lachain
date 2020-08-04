@@ -1,9 +1,0 @@
-syntax = "proto3";
-option csharp_namespace = "Lachain.Proto";
-option java_package = "com.latoken.proto";
-import "default.proto";
-
-message Contract {
-    UInt160 contract_address = 1;
-    bytes byte_code = 3;
-}

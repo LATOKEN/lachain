@@ -1,20 +1,22 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Lachain.Logger;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Nethereum.RLP;
 
-namespace Lachain.Core.ValidatorStatus
+namespace Lachain.Consensus
 {
     public class ValidatorAttendance : IEquatable<ValidatorAttendance>
     {
-        private static readonly ILogger<ValidatorAttendance> Logger = LoggerFactory.GetLoggerForClass<ValidatorAttendance>();
-        private IDictionary<string, ulong> _previousAttendance;
-        private IDictionary<string, ulong> _nextAttendance;
-        public ulong PreviousCycleNum { get; set; }
-        public ulong NextCycleNum { get; set; }
+        private static readonly ILogger<ValidatorAttendance> Logger =
+            LoggerFactory.GetLoggerForClass<ValidatorAttendance>();
+
+        private readonly IDictionary<string, ulong> _previousAttendance;
+        private readonly IDictionary<string, ulong> _nextAttendance;
+        public ulong PreviousCycleNum { get; }
+        public ulong NextCycleNum { get; }
 
         public ValidatorAttendance(ulong previousCycleNum)
         {
@@ -25,7 +27,8 @@ namespace Lachain.Core.ValidatorStatus
             _nextAttendance = new Dictionary<string, ulong>();
         }
 
-        private ValidatorAttendance(ulong previousCycleNum, IDictionary<string, ulong> validatorPreviousAttendance, IDictionary<string, ulong> nextValidatorAttendance)
+        private ValidatorAttendance(ulong previousCycleNum, IDictionary<string, ulong> validatorPreviousAttendance,
+            IDictionary<string, ulong> nextValidatorAttendance)
         {
             PreviousCycleNum = previousCycleNum;
             NextCycleNum = previousCycleNum + 1;
@@ -55,55 +58,60 @@ namespace Lachain.Core.ValidatorStatus
 
         public byte[] ToBytes()
         {
-            using var stream = new MemoryStream();
-            stream.Write(_previousAttendance.Count.ToBytes().ToArray());
-            stream.Write(PreviousCycleNum.ToBytes().ToArray());
-           
+            var a = new List<byte[]>
+            {
+                _previousAttendance.Count.ToBytes().ToArray(),
+                PreviousCycleNum.ToBytes().ToArray()
+            };
             foreach (var (publicKey, attendance) in _previousAttendance)
             {
-                stream.Write(publicKey.HexToBytes());
-                stream.Write(attendance.ToBytes().ToArray());
+                a.Add(publicKey.HexToBytes());
+                a.Add(attendance.ToBytes().ToArray());
             }
-           
+
             foreach (var (publicKey, attendance) in _nextAttendance)
             {
-                stream.Write(publicKey.HexToBytes());
-                stream.Write(attendance.ToBytes().ToArray());
+                a.Add(publicKey.HexToBytes());
+                a.Add(attendance.ToBytes().ToArray());
             }
-            
-            return stream.ToArray();
+
+            return RLP.EncodeList(a.Select(RLP.EncodeElement).ToArray());
         }
 
         public static ValidatorAttendance FromBytes(ReadOnlyMemory<byte> bytes, ulong currentCycle, bool currentAsNext)
         {
-            var previousAttendanceCount = bytes.Slice(0, 4).Span.ToInt32();
-            var previousCycle = bytes.Slice(4, 8).Span.ToUInt64();
-            
-            var previousAttendanceDict = bytes.Slice(12, previousAttendanceCount * (33 + 8))
-                .Batch(33 + 8)
-                .Select(x => new KeyValuePair<string, ulong>(
-                    x.Slice(0, 33).ToArray().ToHex(),
-                    x.Slice(33, 8).Span.ToUInt64())
-                ).ToDictionary(pair => pair.Key, pair => pair.Value);
-            
-            var nextAttendanceOffset = 12 + previousAttendanceCount * (33 + 8);
-            var nextAttendanceDict = bytes.Slice(nextAttendanceOffset)
-                .Batch(33 + 8)
-                .Select(x => new KeyValuePair<string, ulong>(
-                    x.Slice(0, 33).ToArray().ToHex(),
-                    x.Slice(33, 8).Span.ToUInt64())
-                ).ToDictionary(pair => pair.Key, pair => pair.Value);
-            
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var previousAttendanceCount = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
+            var previousCycle = decoded[1].RLPData.AsReadOnlySpan().ToUInt64();
+
+            var previousAttendanceDict = Enumerable.Range(0, previousAttendanceCount)
+                .Select(i => (
+                    decoded[2 + 2 * i].RLPData.ToHex(),
+                    decoded[2 + 2 * i + 1].RLPData.AsReadOnlySpan().ToUInt64())
+                )
+                .ToDictionary(x => x.Item1, y => y.Item2);
+
+            var nextAttendanceDict = decoded.Skip(2 + 2 * previousAttendanceCount)
+                .Select(x => x.RLPData)
+                .Batch(2)
+                .Select(x =>
+                {
+                    var t = x.ToArray();
+                    return (t[0].ToHex(), t[1].AsReadOnlySpan().ToUInt64());
+                })
+                .ToDictionary(x => x.Item1, x => x.Item2);
+
             if (previousCycle == currentCycle)
                 return new ValidatorAttendance(previousCycle, previousAttendanceDict, nextAttendanceDict);
 
-            if (previousCycle == currentCycle - 1 && !currentAsNext) 
+            if (previousCycle == currentCycle - 1 && !currentAsNext)
                 return new ValidatorAttendance(previousCycle, previousAttendanceDict, nextAttendanceDict);
 
-            if (previousCycle == currentCycle - 1 && currentAsNext) 
+            if (previousCycle == currentCycle - 1 && currentAsNext)
                 return new ValidatorAttendance(currentCycle, nextAttendanceDict, new Dictionary<string, ulong>());
-            
-            return new ValidatorAttendance(previousCycle, new Dictionary<string, ulong>(), new Dictionary<string, ulong>());
+
+            return new ValidatorAttendance(previousCycle, new Dictionary<string, ulong>(),
+                new Dictionary<string, ulong>());
         }
 
         public bool Equals(ValidatorAttendance? other)
