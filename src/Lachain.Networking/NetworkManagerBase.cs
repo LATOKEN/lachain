@@ -503,6 +503,8 @@ namespace Lachain.Networking
                         }
                     }
                     var stakers = _peerManager.GetStakers();
+                    if (!stakers.Any())
+                        continue;
                     var nonConsensusPeers = _clientWorkers.Where(worker => !stakers.Contains(worker.Key.PublicKey!)).ToArray();
                     if (nonConsensusPeers.Length < CONNECTION_LIMIT) continue;
 
