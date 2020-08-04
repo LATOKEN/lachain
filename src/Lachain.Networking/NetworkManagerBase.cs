@@ -215,9 +215,9 @@ namespace Lachain.Networking
                 
                 var stakers = _peerManager.GetStakers();
                 var nonConsensusPeerCount = _clientWorkers.Count(worker => !stakers.Contains(worker.Key.PublicKey!));
+                var isConsensusPeer = stakers.Contains(address.PublicKey) || stakers.Length == 0;
 
-                var isConsensusPeer = stakers.Contains(address.PublicKey);
-
+                Logger.LogInformation($"Non consensus peers count before connection: {nonConsensusPeerCount}");
                 if (!isConsensusPeer && nonConsensusPeerCount >= CONNECTION_LIMIT)
                 {
                     Logger.LogInformation($"Connections limit reached. Peer is not connected: {address}");
