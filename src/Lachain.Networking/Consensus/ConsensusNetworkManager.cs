@@ -78,13 +78,13 @@ namespace Lachain.Networking.Consensus
 
         public void InitOutgoingConnection(ECDSAPublicKey publicKey, PeerAddress address)
         {
-            EnsureConnection(publicKey).InitConnection(address);
+            EnsureConnection(publicKey)?.InitConnection(address);
         }
 
         private void ProcessAck(object sender, (ECDSAPublicKey publicKey, ulong messageId) message)
         {
             var (publicKey, messageId) = message;
-            EnsureConnection(publicKey).ReceiveAck(messageId);
+            EnsureConnection(publicKey)?.ReceiveAck(messageId);
         }
 
         private void SendAck(object sender, (ECDSAPublicKey publicKey, ulong messageId) message)
@@ -93,16 +93,16 @@ namespace Lachain.Networking.Consensus
             var ack = _messageFactory.Ack(messageId);
             Logger.LogTrace($"Sending ack {messageId} for {publicKey.ToHex()}");
             _throughputCalculator.RegisterMeasurement(ack.CalculateSize());
-            EnsureConnection(publicKey).Send(ack);
+            EnsureConnection(publicKey)?.Send(ack);
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
         {
             _throughputCalculator.RegisterMeasurement(networkMessage.CalculateSize());
-            EnsureConnection(publicKey).Send(networkMessage);
+            EnsureConnection(publicKey)?.Send(networkMessage);
         }
 
-        private OutgoingPeerConnection EnsureConnection(ECDSAPublicKey key)
+        private OutgoingPeerConnection? EnsureConnection(ECDSAPublicKey key)
         {
             lock (_outgoing)
             {
@@ -110,8 +110,12 @@ namespace Lachain.Networking.Consensus
                 if (!_peerAddresses.TryGetValue(key, out var address))
                 {
                     var newValidatorPeer = _peerManager.GetPeerAddressByPublicKey(key);
-                    if (newValidatorPeer == null) 
-                        throw new InvalidOperationException($"Cannot connect to peer {key.ToHex()}: address not resolved");
+                    if (newValidatorPeer == null)
+                    {
+                        Logger.LogWarning($"Cannot connect to peer {key.ToHex()}: address not resolved");
+                        return null;
+                    }
+
                     _peerAddresses.Add(key, newValidatorPeer);
                 }
                 return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory, _localNode);
