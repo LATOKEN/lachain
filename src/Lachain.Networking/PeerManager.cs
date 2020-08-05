@@ -301,7 +301,7 @@ namespace Lachain.Networking
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError($"Unable to resolve ip via {url}: {ip}");
+                    Logger.LogError($"Unable to resolve ip via {url}: {e}");
                 }
             }
 

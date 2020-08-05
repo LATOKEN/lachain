@@ -14,7 +14,6 @@ using Lachain.Logger;
 using Lachain.Networking.Consensus;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
-using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -28,7 +27,7 @@ namespace Lachain.Networking
         private static readonly ILogger<NetworkManagerBase> Logger =
             LoggerFactory.GetLoggerForClass<NetworkManagerBase>();
 
-        private const int CONNECTION_LIMIT = 10;
+        private static int ConnectionLimit { get; } = 10;
 
         public IDictionary<PeerAddress, IRemotePeer> ActivePeers
         {
@@ -126,7 +125,8 @@ namespace Lachain.Networking
         {
             var ecdsaPublicKeys = validators.ToList();
             _currentConsensusPeers = _peerManager.GetPeerAddressesByPublicKeys(ecdsaPublicKeys);
-            if (_currentConsensusPeers.Count != ecdsaPublicKeys.Count) throw new Exception("Peers count mismatch");
+            // TODO: seems it's not so fatal
+            // if (_currentConsensusPeers.Count != ecdsaPublicKeys.Count) throw new Exception("Peers count mismatch");
             ConsensusNetworkManager.ConnectToValidators(_currentConsensusPeers.Select(x => x.PublicKey!));
         }
 
@@ -218,7 +218,7 @@ namespace Lachain.Networking
                 var isConsensusPeer = stakers.Contains(address.PublicKey) || stakers.Length == 0;
 
                 Logger.LogTrace($"Non consensus peers count before connection: {nonConsensusPeerCount}");
-                if (!isConsensusPeer && nonConsensusPeerCount >= CONNECTION_LIMIT)
+                if (!isConsensusPeer && nonConsensusPeerCount >= ConnectionLimit)
                 {
                     Logger.LogTrace($"Connections limit reached. Peer is not connected: {address}");
                     return null;
@@ -506,7 +506,7 @@ namespace Lachain.Networking
                     if (!stakers.Any())
                         continue;
                     var nonConsensusPeers = _clientWorkers.Where(worker => !stakers.Contains(worker.Key.PublicKey!)).ToArray();
-                    if (nonConsensusPeers.Length < CONNECTION_LIMIT) continue;
+                    if (nonConsensusPeers.Length < ConnectionLimit) continue;
 
                     PeerAddress? oldestPeer = null;
                     var oldestPeerTime = uint.MaxValue;
