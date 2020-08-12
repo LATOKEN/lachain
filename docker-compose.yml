@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5050:5050"
@@ -28,7 +28,7 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5051:5051"
@@ -46,7 +46,7 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5052:5052"
@@ -64,7 +64,7 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5053:5053"
