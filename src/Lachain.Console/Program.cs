@@ -187,6 +187,9 @@ namespace Lachain.Console
                 return;
             }
 
+            // TrustedKeyGen();
+            // return;
+
             // GenWallet(
             //     "wallet.json", 
             //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 

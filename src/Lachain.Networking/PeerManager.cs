@@ -274,11 +274,14 @@ namespace Lachain.Networking
             return _externalIp!;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void DetectExternalIp()
         {
             Random rnd = new Random();
             var ipResolverUrls = new[]
             {
+                "http://checkip.dyndns.org",
+                "https://www.showmyip.com",
                 "http://icanhazip.com",
                 "https://api.ipify.org",
                 "https://ip.seeip.org/",
@@ -305,7 +308,7 @@ namespace Lachain.Networking
                 }
             }
 
-            _externalIp = ip ?? throw new Exception("Cannot resolve external node IP");
+            _externalIp = ip ?? throw new Exception("Cannot resolve node external IP");
             _externalIpLastCheckTime = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         }
 
