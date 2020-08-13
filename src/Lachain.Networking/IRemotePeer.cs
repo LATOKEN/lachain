@@ -7,7 +7,7 @@ namespace Lachain.Networking
     {
         bool IsConnected { get; }
         PeerAddress Address { get; }
-        ECDSAPublicKey? PublicKey { get; }
+        ECDSAPublicKey? PeerPublicKey { get; }
         DateTime Connected { get; }
         void Send(NetworkMessage message);
         void ReceiveAck(ulong ackMessageId);

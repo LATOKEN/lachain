@@ -23,6 +23,11 @@ namespace Lachain.Networking
             _keyPair = keyPair;
         }
 
+        public ECDSAPublicKey GetPublicKey()
+        {
+            return _keyPair.PublicKey;
+        }
+
         public NetworkMessage Ack(ulong messageId)
         {
             var ack = new Ack {MessageId = messageId};
@@ -119,6 +124,24 @@ namespace Lachain.Networking
             };
             batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode()).ToSignature();
             return batch;
+        }
+
+        public Signature SignCommunicationHubSend(ECDSAPublicKey to, byte[] payload)
+        {
+            return Crypto.SignHashed(
+                to.EncodeCompressed().Concat(payload).ToArray().KeccakBytes(),
+                _keyPair.PrivateKey.Encode()
+            ).ToSignature();
+        }
+
+        public Signature SignCommunicationHubReceive(ulong timestamp)
+        {
+            var tsBytes = BitConverter.GetBytes(timestamp);
+            if (BitConverter.IsLittleEndian) tsBytes = tsBytes.Reverse().ToArray();
+            return Crypto.SignHashed(
+                _keyPair.PublicKey.EncodeCompressed().Concat(tsBytes).ToArray().KeccakBytes(),
+                _keyPair.PrivateKey.Encode()
+            ).ToSignature();
         }
 
         private ulong GenerateMessageId()

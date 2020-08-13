@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Google.Protobuf;
 using Lachain.Logger;
+using Lachain.Networking.Hub;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Utility.Benchmark;
-using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus
 {
@@ -21,6 +22,7 @@ namespace Lachain.Networking.Consensus
 
         public OutgoingPeerConnection(PeerAddress address, IMessageFactory messageFactory, Node localNode)
         {
+            if (address.PublicKey is null) throw new Exception("Peer address must have public key");
             _address = address;
             _messageFactory = messageFactory;
             _throughputCalculator = new ThroughputCalculator(
@@ -57,12 +59,19 @@ namespace Lachain.Networking.Consensus
                 lock (_unsent)
                 {
                     _unsent.AddLast(message);
-                    if (_unsent.Count > 1000)
+                    if (_unsent.Count > 10)
                     {
-                        Logger.LogWarning(
-                            $"More than 1000 unsent messages queued to {_address.PublicKey?.ToHex()}@{_address.Host}, clearing"
-                        );
-                        while (_unsent.Count > 1000) _unsent.RemoveFirst();
+                        while (_unsent.Count > 10)
+                        {
+                            var payload = _unsent.First.Value.ToByteArray();
+                            CommunicationHub.Send(
+                                _messageFactory.GetPublicKey(),
+                                _address.PublicKey!,
+                                payload,
+                                _messageFactory.SignCommunicationHubSend(_address.PublicKey!, payload)
+                            );
+                            _unsent.RemoveFirst();
+                        }
                     }
                 }
             }

@@ -5,6 +5,7 @@ namespace Lachain.Networking
 {
     public interface IMessageFactory
     {
+        ECDSAPublicKey GetPublicKey();
         NetworkMessage Ack(ulong messageId);
         NetworkMessage HandshakeRequest(Node node);
 
@@ -29,5 +30,8 @@ namespace Lachain.Networking
         NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions);
         
         MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
+
+        Signature SignCommunicationHubSend(ECDSAPublicKey to, byte[] payload);
+        Signature SignCommunicationHubReceive(ulong timestamp);
     }
 }

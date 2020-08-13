@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="NetMQ" Version="4.0.1.2-pre" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="RestSharp" Version="106.11.5-alpha.0.18" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />

@@ -9,6 +9,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using Lachain.Proto;
 using Lachain.Logger;
+using Lachain.Networking.Hub;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.ZeroMQ
@@ -19,7 +20,7 @@ namespace Lachain.Networking.ZeroMQ
 
         public bool IsConnected { get; private set; }
         public PeerAddress Address { get; }
-        public ECDSAPublicKey? PublicKey { get; }
+        public ECDSAPublicKey? PeerPublicKey { get; }
         public DateTime Connected { get; } = DateTime.Now;
 
         private readonly IMessageFactory _messageFactory;
@@ -29,10 +30,10 @@ namespace Lachain.Networking.ZeroMQ
         private readonly IDictionary<ulong, (MessageBatch msg, ulong timestamp, int cnt)> _unacked =
             new ConcurrentDictionary<ulong, (MessageBatch, ulong, int cnt)>();
 
-        public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? publicKey, IMessageFactory messageFactory)
+        public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? peerPublicKey, IMessageFactory messageFactory)
         {
             _messageFactory = messageFactory;
-            PublicKey = publicKey;
+            PeerPublicKey = peerPublicKey;
             Address = peerAddress;
             _socket = new PushSocket();
             _worker = new Thread(Worker);
@@ -106,11 +107,20 @@ namespace Lachain.Networking.ZeroMQ
                         toSend.Add(msg);
                     }
 
-                    foreach (var key in _unacked
+                    foreach (var (key, v) in _unacked
                         .Where(x => x.Value.timestamp <= now - 30_000 || x.Value.cnt >= 3)
-                        .Select(x => x.Key)
                         .ToArray())
                     {
+                        if (PeerPublicKey != null)
+                        {
+                            var payload = v.msg.ToByteArray();
+                            CommunicationHub.Send(
+                                _messageFactory.GetPublicKey(),
+                                PeerPublicKey,
+                                payload,
+                                _messageFactory.SignCommunicationHubSend(PeerPublicKey, payload)
+                            );
+                        }
                         _unacked.Remove(key);
                     }
                 }

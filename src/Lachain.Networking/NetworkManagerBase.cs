@@ -12,6 +12,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.Consensus;
+using Lachain.Networking.Hub;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -126,15 +127,16 @@ namespace Lachain.Networking
         public void Start()
         {
             _serverWorker.Start();
-            Task.Factory.StartNew(_ConnectWorker, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(ConnectWorker, TaskCreationOptions.LongRunning);
             foreach (var peer in _networkConfig.Peers!)
                 Connect(PeerAddress.Parse(peer));
+            Task.Factory.StartNew(HubWorker, TaskCreationOptions.LongRunning);
         }
 
         public IRemotePeer? GetPeerByPublicKey(ECDSAPublicKey publicKey)
         {
             return _clientWorkers.Values
-                .FirstOrDefault(x => publicKey.Equals(x?.PublicKey));
+                .FirstOrDefault(x => publicKey.Equals(x?.PeerPublicKey));
         }
 
         public bool IsConnected(PeerAddress address)
@@ -334,13 +336,38 @@ namespace Lachain.Networking
                 case NetworkMessage.MessageOneofCase.Ack:
                     GetPeerByPublicKey(envelope.PublicKey)?.ReceiveAck(message.Ack.MessageId);
                     break;
+                case NetworkMessage.MessageOneofCase.ConsensusMessage:
+                    ConsensusNetworkManager.HandleConsensusMessage(
+                        this,
+                        (message.ConsensusMessage, envelope.PublicKey)
+                    );
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),
                         "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
             }
         }
 
-        private void _ConnectWorker()
+        private void HubWorker()
+        {
+            while (Thread.CurrentThread.IsAlive)
+            {
+                var ts = TimeUtils.CurrentTimeMillis();
+                var messages = CommunicationHub.Receive(
+                    _messageFactory.GetPublicKey(),
+                    ts,
+                    _messageFactory.SignCommunicationHubReceive(ts)
+                );
+                foreach (var message in messages)
+                {
+                    _HandleMessage(this, message);
+                }
+
+                Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+            }
+        }
+
+        private void ConnectWorker()
         {
             var thread = Thread.CurrentThread;
             while (thread.IsAlive)

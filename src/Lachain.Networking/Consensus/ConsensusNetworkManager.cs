@@ -64,7 +64,7 @@ namespace Lachain.Networking.Consensus
             }
         }
 
-        private void HandleConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) e)
+        public void HandleConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) e)
         {
             OnMessage?.Invoke(sender, e);
         }
