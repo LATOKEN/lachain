@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5050:5050"
@@ -27,8 +27,8 @@ services:
         WALLET: src/Lachain.Console/wallet1.json
       dockerfile: Dockerfile
     stdin_open: true
-    #environment:
-    #  - LOG_LEVEL=Trace
+    environment:
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5051:5051"
@@ -45,8 +45,8 @@ services:
         WALLET: src/Lachain.Console/wallet2.json
       dockerfile: Dockerfile
     stdin_open: true
-    #environment:
-    #  - LOG_LEVEL=Trace
+    environment:
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5052:5052"
@@ -63,8 +63,8 @@ services:
         WALLET: src/Lachain.Console/wallet3.json
       dockerfile: Dockerfile
     stdin_open: true
-    #environment:
-    #  - LOG_LEVEL=Trace
+    environment:
+      - LOG_LEVEL=Debug
     tty: true
 #    ports:
 #    - "5053:5053"

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -26,6 +27,9 @@ namespace Lachain.Networking
         event EventHandler<(GetBlocksByHeightRangeRequest message, Action<GetBlocksByHeightRangeReply> callback)>?
             OnGetBlocksByHeightRangeRequest;
 
+        event EventHandler<(GetPeersRequest message, Action<GetPeersReply> callback)>?
+            OnGetPeersRequest;
+
         event EventHandler<(GetBlocksByHeightRangeReply message, Action<GetBlocksByHashesRequest> callback)>?
             OnGetBlocksByHeightRangeReply;
 
@@ -35,8 +39,13 @@ namespace Lachain.Networking
         event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
             OnGetTransactionsByHashesReply;
 
+        event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<PeerAddress, IRemotePeer> connect)>?
+            OnGetPeersReply;
+
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
         IEnumerable<PeerAddress> GetConnectedPeers();
         void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators);
+        string CheckLocalConnection(string host);
+        public bool IsSelfConnect(IPAddress ipAddress);
     }
 }

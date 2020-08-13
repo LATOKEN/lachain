@@ -117,9 +117,6 @@ namespace Lachain.Core.Blockchain.Operations
                     $" stateHash={currentStateHash.ToHex()}, gasUsed={gasUsed}"
                 );
                 _stateManager.RollbackTo(snapshotBefore);
-                Logger.LogDebug(
-                    $"Rolled back to height {_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}"
-                );
                 return Tuple.Create(error, removedTransactions, currentStateHash, relayedTransactions);
             });
             return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);

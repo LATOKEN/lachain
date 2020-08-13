@@ -81,6 +81,40 @@ namespace Lachain.Networking
             return new NetworkMessage {GetBlocksByHashesRequest = request};
         }
 
+        public NetworkMessage GetPeersRequest()
+        {
+            var request = new GetPeersRequest();
+            return new NetworkMessage
+            {
+                GetPeersRequest = request,
+            };
+        }
+
+        public NetworkMessage PeerJoinRequest(Peer peer)
+        {
+            var request = new PeerJoinRequest
+            {
+                Peer = peer,
+            };
+            return new NetworkMessage
+            {
+                PeerJoinRequest = request,
+            };
+        }
+
+        public NetworkMessage GetPeersReply(Peer[] peers, ECDSAPublicKey[] publicKeys)
+        {
+            var reply = new GetPeersReply
+            {
+                Peers = { peers },
+                PublicKeys = { publicKeys },
+            };
+            return new NetworkMessage
+            {
+                GetPeersReply = reply,
+            };
+        }
+
         public NetworkMessage GetBlocksByHashesReply(IEnumerable<Block> blocks)
         {
             var reply = new GetBlocksByHashesReply {Blocks = {blocks}};

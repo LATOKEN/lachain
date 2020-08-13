@@ -22,11 +22,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
-        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private readonly InvocationContext _context;
+        public static readonly BigInteger ExpectedValidatorsCount = 22;
         public const ulong CycleDuration = 100; // in blocks
         public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
         public const ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
+        
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private readonly InvocationContext _context;
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
         private readonly StorageVariable _nextValidators; // array of public keys
         private readonly StorageVariable _previousValidators; // array of public keys
@@ -35,7 +37,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _vrfSeed;
         private readonly StorageVariable _nextVrfSeed;
         public static readonly byte[] Role = Encoding.ASCII.GetBytes("staker");
-        public static readonly BigInteger ExpectedValidatorsCount = 22;
         private readonly StorageMapping _userToPubKey;
         private readonly StorageMapping _userToStake;
         private readonly StorageMapping _userToPenalty;

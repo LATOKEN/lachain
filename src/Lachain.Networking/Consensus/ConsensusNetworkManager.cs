@@ -26,15 +26,22 @@ namespace Lachain.Networking.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly Node _localNode;
         private readonly ThroughputCalculator _throughputCalculator;
+        private readonly IPeerManager _peerManager;
 
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnMessage;
 
-        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode)
+        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode, IPeerManager peerManager, Func<string, string> checkLocalConnection)
         {
             _messageFactory = messageFactory;
             _localNode = localNode;
+            _peerManager = peerManager;
             _peerAddresses = networkConfig.Peers
-                .Select(PeerAddress.Parse)
+                .Select(x =>
+                {
+                    var address = PeerAddress.Parse(x);
+                    address.Host = checkLocalConnection(address.Host!);
+                    return address;
+                })
                 .Where(x => x.PublicKey != null)
                 .ToDictionary(x => x.PublicKey!);
 
@@ -71,13 +78,13 @@ namespace Lachain.Networking.Consensus
 
         public void InitOutgoingConnection(ECDSAPublicKey publicKey, PeerAddress address)
         {
-            EnsureConnection(publicKey).InitConnection(address);
+            EnsureConnection(publicKey)?.InitConnection(address);
         }
 
         private void ProcessAck(object sender, (ECDSAPublicKey publicKey, ulong messageId) message)
         {
             var (publicKey, messageId) = message;
-            EnsureConnection(publicKey).ReceiveAck(messageId);
+            EnsureConnection(publicKey)?.ReceiveAck(messageId);
         }
 
         private void SendAck(object sender, (ECDSAPublicKey publicKey, ulong messageId) message)
@@ -86,23 +93,42 @@ namespace Lachain.Networking.Consensus
             var ack = _messageFactory.Ack(messageId);
             Logger.LogTrace($"Sending ack {messageId} for {publicKey.ToHex()}");
             _throughputCalculator.RegisterMeasurement(ack.CalculateSize());
-            EnsureConnection(publicKey).Send(ack);
+            EnsureConnection(publicKey)?.Send(ack);
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
         {
             _throughputCalculator.RegisterMeasurement(networkMessage.CalculateSize());
-            EnsureConnection(publicKey).Send(networkMessage);
+            EnsureConnection(publicKey)?.Send(networkMessage);
         }
 
-        private OutgoingPeerConnection EnsureConnection(ECDSAPublicKey key)
+        private OutgoingPeerConnection? EnsureConnection(ECDSAPublicKey key)
         {
             lock (_outgoing)
             {
                 if (_outgoing.TryGetValue(key, out var existingConnection)) return existingConnection;
                 if (!_peerAddresses.TryGetValue(key, out var address))
-                    throw new InvalidOperationException($"Cannot cannot to peer {key}: address not resolved");
+                {
+                    var newValidatorPeer = _peerManager.GetPeerAddressByPublicKey(key);
+                    if (newValidatorPeer == null)
+                    {
+                        Logger.LogWarning($"Cannot connect to peer {key.ToHex()}: address not resolved");
+                        return null;
+                    }
+
+                    _peerAddresses.Add(key, newValidatorPeer);
+                }
                 return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory, _localNode);
+            }
+        }
+
+        private void RemoveOddPeers(ICollection<ECDSAPublicKey> keys)
+        {
+            lock (_peerAddresses)
+            {
+                foreach (var key in _peerAddresses.Keys)
+                    if (!keys.Contains(key))
+                        _peerAddresses.Remove(key);
             }
         }
 
@@ -131,6 +157,8 @@ namespace Lachain.Networking.Consensus
                 foreach (var key in toDel)
                     _incoming.Remove(key);
             }
+
+            RemoveOddPeers(validatorsSet);
 
             foreach (var validator in validatorsSet)
             {

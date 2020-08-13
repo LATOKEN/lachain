@@ -206,6 +206,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            Logger.LogDebug($"players count: {players}");
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
             SetTpkeKey(tpkePublicKey);
@@ -286,6 +287,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private int GetPlayersCount()
         {
             var count = _playersCount.Get();
+            Logger.LogDebug(count.ToHex());
             return count.AsReadOnlySpan().ToInt32();
         }
 

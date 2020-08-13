@@ -9,6 +9,7 @@ namespace Lachain.Core.DI.Modules
         public void Register(IContainerBuilder containerBuilder, IConfigManager configManager)
         {
             containerBuilder.RegisterSingleton<INetworkManager, NetworkManager>();
+            containerBuilder.RegisterSingleton<IPeerManager, PeerManager>();
             containerBuilder.RegisterSingleton<IBlockSynchronizer, BlockSynchronizer>();
             containerBuilder.RegisterSingleton<IMessageHandler, MessageHandler>();
         }

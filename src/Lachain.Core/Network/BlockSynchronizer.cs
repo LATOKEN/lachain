@@ -246,7 +246,7 @@ namespace Lachain.Core.Network
                     while (thread.IsAlive)
                     {
                         _Worker();
-                        Thread.Sleep(5000);
+                        Thread.Sleep(5_000);
                     }
                 }
                 catch (Exception e)

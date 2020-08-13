@@ -21,16 +21,16 @@ namespace Lachain.Crypto
         public static void ResetBenchmark()
         {
             var fn = new Func<TimeBenchmark, string>(x => $"{x.Count} times, total = {x.TotalTime} ms");
-            Logger.LogDebug("Ec operations benchmark:");
-            Logger.LogDebug($"  - ec_recover: {fn(EcRecover)}");
-            Logger.LogDebug($"  - ec_verify: {fn(EcVerify)}");
-            Logger.LogDebug($"  - ec_sign: {fn(EcSign)}");
-            Logger.LogDebug($"  - ts_sign: {fn(ThresholdSigner.SignBenchmark)}");
-            Logger.LogDebug($"  - ts_verify: {fn(ThresholdSigner.VerifyBenchmark)}");
-            Logger.LogDebug($"  - ts_combine: {fn(ThresholdSigner.CombineBenchmark)}");
-            Logger.LogDebug($"  - tpke_encrypt: {fn(TPKE.PublicKey.EncryptBenchmark)}");
-            Logger.LogDebug($"  - tpke_full_decrypt: {fn(TPKE.PublicKey.FullDecryptBenchmark)}");
-            Logger.LogDebug($"  - tpke_part_decrypt: {fn(TPKE.PrivateKey.DecryptBenchmark)}");
+            Logger.LogTrace("Ec operations benchmark:");
+            Logger.LogTrace($"  - ec_recover: {fn(EcRecover)}");
+            Logger.LogTrace($"  - ec_verify: {fn(EcVerify)}");
+            Logger.LogTrace($"  - ec_sign: {fn(EcSign)}");
+            Logger.LogTrace($"  - ts_sign: {fn(ThresholdSigner.SignBenchmark)}");
+            Logger.LogTrace($"  - ts_verify: {fn(ThresholdSigner.VerifyBenchmark)}");
+            Logger.LogTrace($"  - ts_combine: {fn(ThresholdSigner.CombineBenchmark)}");
+            Logger.LogTrace($"  - tpke_encrypt: {fn(TPKE.PublicKey.EncryptBenchmark)}");
+            Logger.LogTrace($"  - tpke_full_decrypt: {fn(TPKE.PublicKey.FullDecryptBenchmark)}");
+            Logger.LogTrace($"  - tpke_part_decrypt: {fn(TPKE.PrivateKey.DecryptBenchmark)}");
             EcRecover.Reset();
             EcSign.Reset();
             EcVerify.Reset();
