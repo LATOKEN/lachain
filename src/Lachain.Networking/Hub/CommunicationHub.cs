@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -29,7 +28,7 @@ namespace Lachain.Networking.Hub
             [JsonProperty("signature")] public string Signature;
         }
 
-        private static readonly IRestClient Client = new RestClient("http://127.0.0.1:9090")
+        private static readonly IRestClient Client = new RestClient("http://95.217.215.141:9090")
             .UseSerializer<JsonSerializer>();
 
         public static void Send(ECDSAPublicKey from, ECDSAPublicKey to, byte[] payload, Signature signature)

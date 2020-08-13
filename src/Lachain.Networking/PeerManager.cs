@@ -6,18 +6,14 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
-using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
-using NLog.Fluent;
-using PingReply = Lachain.Proto.PingReply;
 
 namespace Lachain.Networking
 {
