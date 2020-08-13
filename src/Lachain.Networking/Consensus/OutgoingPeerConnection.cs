@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Utility.Benchmark;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Consensus
 {
@@ -18,6 +20,7 @@ namespace Lachain.Networking.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly ThroughputCalculator _throughputCalculator;
         private readonly LinkedList<NetworkMessage> _unsent = new LinkedList<NetworkMessage>();
+        private readonly ulong _createTimestamp;
         private ClientWorker? _client;
 
         public OutgoingPeerConnection(PeerAddress address, IMessageFactory messageFactory, Node localNode)
@@ -36,6 +39,7 @@ namespace Lachain.Networking.Consensus
                 address,
                 messageFactory.MessagesBatch(new[] {messageFactory.HandshakeRequest(localNode)})
             );
+            _createTimestamp = TimeUtils.CurrentTimeMillis();
         }
 
         public void InitConnection(PeerAddress address)
@@ -58,20 +62,25 @@ namespace Lachain.Networking.Consensus
             {
                 lock (_unsent)
                 {
-                    _unsent.AddLast(message);
-                    if (_unsent.Count > 10)
+                    if (TimeUtils.CurrentTimeMillis() - _createTimestamp > 10_000)
                     {
-                        while (_unsent.Count > 10)
+                        Logger.LogError(
+                            $"Cannot establish connection with {_address} for >10s sending via communication hub");
+                        foreach (var payload in _unsent.Select(msg => msg.ToByteArray()))
                         {
-                            var payload = _unsent.First.Value.ToByteArray();
                             CommunicationHub.Send(
                                 _messageFactory.GetPublicKey(),
                                 _address.PublicKey!,
                                 payload,
                                 _messageFactory.SignCommunicationHubSend(_address.PublicKey!, payload)
                             );
-                            _unsent.RemoveFirst();
                         }
+
+                        _unsent.Clear();
+                    }
+                    else
+                    {
+                        _unsent.AddLast(message);
                     }
                 }
             }
