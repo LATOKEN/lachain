@@ -48,8 +48,10 @@ namespace Lachain.Networking.Hub
                 }
             });
             var response = Client.Post(request);
-            Logger.LogDebug(response.Content);
-            Logger.LogDebug(response.ToString());
+            if (!response.IsSuccessful)
+            {
+                Logger.LogError($"Cannot send message to communication hub: {response.ErrorMessage}");
+            }
         }
 
         public static byte[][] Receive(ECDSAPublicKey publicKey, ulong timestamp, Signature signature)
