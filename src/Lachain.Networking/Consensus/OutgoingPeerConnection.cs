@@ -46,10 +46,10 @@ namespace Lachain.Networking.Consensus
         {
             if (_client != null) return;
             Logger.LogDebug($"Initiating consensus connection to peer {address}");
-            _client = new ClientWorker(address, address.PublicKey, _messageFactory);
-            _client.Start();
             lock (_unsent)
             {
+                _client = new ClientWorker(address, address.PublicKey, _messageFactory);
+                _client.Start();
                 Logger.LogTrace($"Sending {_unsent.Count} unsent messages to {address}");
                 foreach (var msg in _unsent) Send(msg);
                 _unsent.Clear();
@@ -62,10 +62,10 @@ namespace Lachain.Networking.Consensus
             {
                 lock (_unsent)
                 {
-                    if (TimeUtils.CurrentTimeMillis() - _createTimestamp > 10_000)
+                    if (TimeUtils.CurrentTimeMillis() - _createTimestamp > 30_000)
                     {
                         Logger.LogError(
-                            $"Cannot establish connection with {_address} for >10s sending via communication hub");
+                            $"Cannot establish connection with {_address} for >30s sending via communication hub");
                         foreach (var payload in _unsent.Select(msg => msg.ToByteArray()))
                         {
                             CommunicationHub.Send(
