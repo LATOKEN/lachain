@@ -266,3 +266,4 @@ src/Lachain.Proto/*.cs
 *.AppImage
 *.tar.gz
 *.exe
+*.bak

@@ -4,18 +4,18 @@ option java_package = "com.latoken.proto";
 import "default.proto";
 import "transaction.proto";
 import "block.proto";
-import "node.proto";
+//import "node.proto";
 import "consensus.proto";
 import "peer.proto";
 
-message HandshakeRequest {
-    Node node = 1;
-}
-
-message HandshakeReply {
-    Node node = 1;
-    uint32 port = 2;
-}
+//message HandshakeRequest {
+//    Node node = 1;
+//}
+//
+//message HandshakeReply {
+//    Node node = 1;
+//    uint32 port = 2;
+//}
 
 message Ack {
     uint64 message_id = 1;
@@ -73,8 +73,8 @@ message GetTransactionsByHashesReply {
 
 message NetworkMessage {
     oneof message {
-        HandshakeRequest handshake_request = 10;
-        HandshakeReply handshake_reply = 11;
+//        HandshakeRequest handshake_request = 10;
+//        HandshakeReply handshake_reply = 11;
         PingRequest ping_request = 12;
         PingReply ping_reply = 13;
         GetBlocksByHashesRequest get_blocks_by_hashes_request = 14;
@@ -99,6 +99,10 @@ message MessageBatchContent {
 message MessageBatch {
     uint32 magic = 1;
     uint64 message_id = 2;
-    bytes content = 3;
+    // This is serialized MessageBatchContent. It's opaque intentionally to make message content deterministic
+    // for the sake of signature check. It's required since MessageBatchContent.ToByteArray() can give different results
+    // for different processes/languages/platforms or even for different invocations in the same process. 
+    bytes content = 3; 
     Signature signature = 4;
+    ECDSAPublicKey sender = 5;
 }

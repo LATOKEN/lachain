@@ -33,23 +33,7 @@ namespace Lachain.Networking
             var ack = new Ack {MessageId = messageId};
             return new NetworkMessage {Ack = ack};
         }
-
-        public NetworkMessage HandshakeRequest(Node node)
-        {
-            var request = new HandshakeRequest {Node = node};
-            return new NetworkMessage {HandshakeRequest = request};
-        }
-
-        public NetworkMessage HandshakeReply(Node node, int port)
-        {
-            var reply = new HandshakeReply
-            {
-                Node = node,
-                Port = (uint) port
-            };
-            return new NetworkMessage {HandshakeReply = reply};
-        }
-
+        
         public NetworkMessage PingRequest(ulong timestamp, ulong blockHeight)
         {
             var request = new PingRequest
@@ -106,8 +90,8 @@ namespace Lachain.Networking
         {
             var reply = new GetPeersReply
             {
-                Peers = { peers },
-                PublicKeys = { publicKeys },
+                Peers = {peers},
+                PublicKeys = {publicKeys},
             };
             return new NetworkMessage
             {
@@ -155,6 +139,7 @@ namespace Lachain.Networking
             {
                 MessageId = GenerateMessageId(),
                 Content = ByteString.CopyFrom(new MessageBatchContent {Messages = {messages}}.ToByteArray()),
+                Sender = _keyPair.PublicKey,
             };
             batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode()).ToSignature();
             return batch;

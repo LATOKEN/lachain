@@ -24,18 +24,17 @@ namespace Lachain.Networking.Consensus
         private readonly IDictionary<ECDSAPublicKey, PeerAddress> _peerAddresses;
 
         private readonly IMessageFactory _messageFactory;
-        private readonly Node _localNode;
         private readonly ThroughputCalculator _throughputCalculator;
         private readonly IPeerManager _peerManager;
 
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnMessage;
 
-        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig, Node localNode, IPeerManager peerManager, Func<string, string> checkLocalConnection)
+        public ConsensusNetworkManager(IMessageFactory messageFactory, NetworkConfig networkConfig,
+            IPeerManager peerManager, Func<string, string> checkLocalConnection)
         {
             _messageFactory = messageFactory;
-            _localNode = localNode;
             _peerManager = peerManager;
-            _peerAddresses = networkConfig.Peers
+            _peerAddresses = networkConfig.Peers?
                 .Select(x =>
                 {
                     var address = PeerAddress.Parse(x);
@@ -43,7 +42,8 @@ namespace Lachain.Networking.Consensus
                     return address;
                 })
                 .Where(x => x.PublicKey != null)
-                .ToDictionary(x => x.PublicKey!);
+                .ToDictionary(x => x.PublicKey!)
+                ?? throw new Exception("No peers specified in network config");
 
             _throughputCalculator = new ThroughputCalculator(
                 TimeSpan.FromSeconds(1),
@@ -67,18 +67,13 @@ namespace Lachain.Networking.Consensus
                 connection.OnAck += ProcessAck;
                 connection.OnMessage += HandleConsensusMessage;
                 Logger.LogTrace($"Opened port {connection.Port} for peer {publicKey.ToHex()}");
-                return connection.Port;                
+                return connection.Port;
             }
         }
 
         public void HandleConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) e)
         {
             OnMessage?.Invoke(sender, e);
-        }
-
-        public void InitOutgoingConnection(ECDSAPublicKey publicKey, PeerAddress address)
-        {
-            EnsureConnection(publicKey)?.InitConnection(address);
         }
 
         private void ProcessAck(object sender, (ECDSAPublicKey publicKey, ulong messageId) message)
@@ -118,7 +113,8 @@ namespace Lachain.Networking.Consensus
 
                     _peerAddresses.Add(key, newValidatorPeer);
                 }
-                return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory, _localNode);
+
+                return _outgoing[key] = new OutgoingPeerConnection(address, _messageFactory);
             }
         }
 
@@ -141,6 +137,7 @@ namespace Lachain.Networking.Consensus
                 {
                     connection.Dispose();
                 }
+
                 _outgoing.Clear();
             }
 
