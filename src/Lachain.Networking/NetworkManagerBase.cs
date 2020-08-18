@@ -97,6 +97,11 @@ namespace Lachain.Networking
             return _clientWorkers.Keys;
         }
 
+        public void AdvanceEra(long era)
+        {
+            ConsensusNetworkManager.AdvanceEra(era);
+        }
+
         public NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IPeerManager peerManager)
         {
             if (networkConfig?.Peers is null) throw new ArgumentNullException();
@@ -120,13 +125,8 @@ namespace Lachain.Networking
             _serverWorker = new ServerWorker(networkConfig.Address, networkConfig.Port);
             _serverWorker.OnMessage += _HandleMessage;
             _serverWorker.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
-            ConsensusNetworkManager.OnMessage += (sender, e) => OnConsensusMessage?.Invoke(sender, e);
         }
-
-        public void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators)
-        {
-        }
-
+        
         public void SendToPeerByPublicKey(ECDSAPublicKey publicKey, NetworkMessage message)
         {
             GetPeerByPublicKey(publicKey)?.Send(message);
@@ -324,7 +324,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            GetPeerByPublicKey(envelope.PublicKey)?.Send(_messageFactory.Ack(batch.MessageId));
+            envelope.RemotePeer.Send(_messageFactory.Ack(batch.MessageId));
             {
                 var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
                 foreach (var message in content.Messages)
@@ -465,6 +465,7 @@ namespace Lachain.Networking
                     ts,
                     _messageFactory.SignCommunicationHubReceive(ts)
                 );
+                Logger.LogError($"Got message batch from communication hub: {messages.Length} messages");
                 foreach (var message in messages)
                 {
                     _HandleMessage(this, message);

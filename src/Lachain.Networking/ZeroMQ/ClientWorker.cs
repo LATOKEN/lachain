@@ -3,13 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
 using Lachain.Proto;
 using Lachain.Logger;
-using Lachain.Networking.Hub;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.ZeroMQ
@@ -27,8 +25,10 @@ namespace Lachain.Networking.ZeroMQ
         private readonly PushSocket _socket;
         private readonly Thread _worker;
 
-        private readonly IDictionary<ulong, (MessageBatch msg, ulong timestamp, int cnt)> _unacked =
-            new ConcurrentDictionary<ulong, (MessageBatch, ulong, int cnt)>();
+        private readonly IDictionary<ulong, (MessageBatchContent batch, ulong timestamp)> _unacked =
+            new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
+
+        private long CurrentEra = -1;
 
         public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? peerPublicKey, IMessageFactory messageFactory)
         {
@@ -50,18 +50,6 @@ namespace Lachain.Networking.ZeroMQ
             _worker.Join();
         }
 
-        public static void SendOnce(PeerAddress address, MessageBatch message)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                var endpoint = $"tcp://{address.Host}:{address.Port}";
-                using var socket = new PushSocket();
-                socket.Connect(endpoint);
-                socket.SendFrame(message.ToByteArray());
-                Thread.Sleep(TimeSpan.FromMilliseconds(1000)); // TODO: wtf?                
-            });
-        }
-
         private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
 
         public void Send(NetworkMessage message)
@@ -81,58 +69,48 @@ namespace Lachain.Networking.ZeroMQ
             {
                 Logger.LogTrace($"{Address}: unacked {_unacked.Count}, queue: {_messageQueue.Count}");
                 var now = TimeUtils.CurrentTimeMillis();
-                List<MessageBatch> toSend = new List<MessageBatch>();
+                List<MessageBatchContent> toSend = new List<MessageBatchContent>();
                 lock (_messageQueue)
                 {
                     if (_messageQueue.Count != 0)
                     {
                         var content = _messageQueue.ToArray();
                         _messageQueue.Clear();
-                        var batch = _messageFactory.MessagesBatch(content);
-                        if (content.Any(msg => msg.MessageCase != NetworkMessage.MessageOneofCase.Ack))
-                            _unacked[batch.MessageId] = (batch, now, 0);
+                        var batch = new MessageBatchContent();
+                        batch.Messages.AddRange(content);
                         toSend.Add(batch);
                     }
                 }
 
                 lock (_unacked)
                 {
-                    foreach (var (msg, _, cnt) in _unacked.Values
+                    var batch = new MessageBatchContent();
+                    batch.Messages.AddRange(_unacked.Values
                         .Where(x => x.timestamp < now - 5_000)
-                        .Where(x => x.timestamp > now - 30_000)
-                        .Where(x => x.cnt < 3)
-                    )
+                        .SelectMany(tuple => tuple.batch.Messages)
+                        .Where(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage)
+                        .Where(msg => msg.ConsensusMessage.Validator.Era >= CurrentEra)
+                    );
+                    if (batch.Messages.Count > 0)
                     {
-                        _unacked[msg.MessageId] = (msg, now, cnt + 1);
-                        toSend.Add(msg);
-                    }
-
-                    foreach (var (key, v) in _unacked
-                        .Where(x => x.Value.timestamp <= now - 30_000 || x.Value.cnt >= 3)
-                        .ToArray())
-                    {
-                        if (PeerPublicKey != null)
-                        {
-                            var payload = v.msg.ToByteArray();
-                            CommunicationHub.Send(
-                                _messageFactory.GetPublicKey(),
-                                PeerPublicKey,
-                                payload,
-                                _messageFactory.SignCommunicationHubSend(PeerPublicKey, payload)
-                            );
-                        }
-                        _unacked.Remove(key);
+                        Logger.LogWarning($"Resubmit {batch.Messages.Count} consensus messages because we got no ack in 5s");
+                        toSend.Add(batch);                        
                     }
                 }
 
-                foreach (var msg in toSend)
-                {
-                    _socket.SendFrame(msg.ToByteArray());
-                }
+                var megaBatchContent = new MessageBatchContent();
+                megaBatchContent.Messages.AddRange(toSend.SelectMany(batch => batch.Messages));
+                var megaBatch = _messageFactory.MessagesBatch(megaBatchContent.Messages);
+                var megaBatchBytes = megaBatch.ToByteArray();
+                Logger.LogTrace(
+                    $"Sending batch {megaBatch.MessageId}" +
+                    $" with {toSend.Sum(b => b.Messages.Count)} messages," +
+                    $" total {megaBatchBytes.Length} bytes"
+                );
+                _socket.SendFrame(megaBatchBytes);
+                _unacked[megaBatch.MessageId] = (megaBatchContent, now);
 
-                var toSleep = 500 - (long) (TimeUtils.CurrentTimeMillis() - now);
-                if (toSleep <= 0) toSleep = 1;
-                if (toSleep > 1000) toSleep = 1000;
+                var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
 
@@ -143,6 +121,7 @@ namespace Lachain.Networking.ZeroMQ
         {
             lock (_unacked)
             {
+                Logger.LogTrace($"Got ack for message {messageId}");
                 _unacked.Remove(messageId);
             }
         }
@@ -152,6 +131,11 @@ namespace Lachain.Networking.ZeroMQ
             lock (_messageQueue) _messageQueue.Clear();
             Stop();
             _socket.Dispose();
+        }
+
+        public void AdvanceEra(long era)
+        {
+            CurrentEra = era;
         }
     }
 }

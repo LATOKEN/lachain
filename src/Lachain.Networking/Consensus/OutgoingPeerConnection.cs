@@ -43,5 +43,10 @@ namespace Lachain.Networking.Consensus
         {
             _client.Dispose();
         }
+
+        public void AdvanceEra(long era)
+        {
+            _client.AdvanceEra(era);
+        }
     }
 }

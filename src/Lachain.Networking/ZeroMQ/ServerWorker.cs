@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Logger;
-using Lachain.Networking.Consensus;
 using NetMQ;
 using NetMQ.Sockets;
 
@@ -10,8 +9,8 @@ namespace Lachain.Networking.ZeroMQ
 {
     public class ServerWorker : IDisposable
     {
-        private static readonly ILogger<IncomingPeerConnection> Logger =
-            LoggerFactory.GetLoggerForClass<IncomingPeerConnection>();
+        private static readonly ILogger<ServerWorker> Logger =
+            LoggerFactory.GetLoggerForClass<ServerWorker>();
 
         public event EventHandler<byte[]>? OnMessage;
         public event EventHandler<Exception>? OnError;

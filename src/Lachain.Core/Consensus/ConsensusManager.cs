@@ -98,6 +98,7 @@ namespace Lachain.Core.Consensus
             }
 
             CurrentEra = newEra;
+            _networkManager.AdvanceEra(CurrentEra);
         }
 
         private bool IsValidatorForEra(long era)
@@ -136,6 +137,7 @@ namespace Lachain.Core.Consensus
         public void Start(long startingEra)
         {
             CurrentEra = startingEra;
+            _networkManager.AdvanceEra(CurrentEra);
             new Thread(Run).Start();
         }
 
@@ -146,6 +148,7 @@ namespace Lachain.Core.Consensus
                 ulong lastBlock = 0;
                 for (;; CurrentEra += 1)
                 {
+                    _networkManager.AdvanceEra(CurrentEra);
                     var now = TimeUtils.CurrentTimeMillis();
                     if (lastBlock + _targetBlockInterval > now)
                     {
@@ -184,10 +187,10 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
-                        _networkManager.ConnectToValidators(
-                            _validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet
-                                .Where(x => !_privateWallet.EcdsaKeyPair.PublicKey.Equals(x))
-                        );
+                        // _networkManager.ConnectToValidators(
+                        //     _validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet
+                        //         .Where(x => !_privateWallet.EcdsaKeyPair.PublicKey.Equals(x))
+                        // );
                         var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(CurrentEra);
                         broadcaster.InternalRequest(

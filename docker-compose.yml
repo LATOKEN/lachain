@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Debug
+      - LOG_LEVEL=Trace
     tty: true
 #    ports:
 #    - "5050:5050"
