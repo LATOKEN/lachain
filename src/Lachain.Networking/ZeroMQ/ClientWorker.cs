@@ -28,7 +28,7 @@ namespace Lachain.Networking.ZeroMQ
         private readonly IDictionary<ulong, (MessageBatchContent batch, ulong timestamp)> _unacked =
             new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
 
-        private long CurrentEra = -1;
+        private long _currentEra = -1;
 
         public ClientWorker(PeerAddress peerAddress, ECDSAPublicKey? peerPublicKey, IMessageFactory messageFactory)
         {
@@ -89,12 +89,21 @@ namespace Lachain.Networking.ZeroMQ
                         .Where(x => x.timestamp < now - 5_000)
                         .SelectMany(tuple => tuple.batch.Messages)
                         .Where(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage)
-                        .Where(msg => msg.ConsensusMessage.Validator.Era >= CurrentEra)
+                        .Where(msg => msg.ConsensusMessage.Validator.Era >= _currentEra)
                     );
                     if (batch.Messages.Count > 0)
                     {
-                        Logger.LogWarning($"Resubmit {batch.Messages.Count} consensus messages because we got no ack in 5s");
-                        toSend.Add(batch);                        
+                        Logger.LogWarning(
+                            $"Resubmit {batch.Messages.Count} consensus messages because we got no ack in 5s");
+                        toSend.Add(batch);
+                    }
+
+                    foreach (var msgId in _unacked
+                        .Where(x => x.Value.timestamp < now - 5_000)
+                        .Select(x => x.Key)
+                        .ToArray())
+                    {
+                        _unacked.Remove(msgId);
                     }
                 }
 
@@ -135,7 +144,7 @@ namespace Lachain.Networking.ZeroMQ
 
         public void AdvanceEra(long era)
         {
-            CurrentEra = era;
+            _currentEra = era;
         }
     }
 }
