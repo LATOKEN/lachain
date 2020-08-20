@@ -8,6 +8,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using Lachain.Proto;
 using Lachain.Logger;
+using Lachain.Networking.Hub;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.ZeroMQ
@@ -98,10 +99,32 @@ namespace Lachain.Networking.ZeroMQ
                         toSend.Add(batch);
                     }
 
+
+                    if (PeerPublicKey != null)
+                    {
+                        var hubBatchContent = new MessageBatchContent();
+                        hubBatchContent.Messages.AddRange(
+                            _unacked
+                                .Where(x => x.Value.timestamp < now - 5_000)
+                                .SelectMany(x => x.Value.batch.Messages)
+                        );
+                        var hubBatch = _messageFactory.MessagesBatch(hubBatchContent.Messages);
+                        var hubBatchBytes = hubBatch.ToByteArray();
+                        Logger.LogTrace(
+                            $"Sending batch {hubBatch.MessageId}" +
+                            $" with {toSend.Sum(b => b.Messages.Count)} messages," +
+                            $" total {hubBatchBytes.Length} bytes"
+                        );
+                        CommunicationHub.Send(_messageFactory.GetPublicKey(), PeerPublicKey, hubBatchBytes,
+                            hubBatch.Signature);
+                    }
+
+
                     foreach (var msgId in _unacked
                         .Where(x => x.Value.timestamp < now - 5_000)
                         .Select(x => x.Key)
-                        .ToArray())
+                        .ToArray()
+                    )
                     {
                         _unacked.Remove(msgId);
                     }
