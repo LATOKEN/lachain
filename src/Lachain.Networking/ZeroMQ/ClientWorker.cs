@@ -99,15 +99,14 @@ namespace Lachain.Networking.ZeroMQ
                         toSend.Add(batch);
                     }
 
-
-                    if (PeerPublicKey != null)
+                    var hubBatchContent = new MessageBatchContent();
+                    hubBatchContent.Messages.AddRange(
+                        _unacked
+                            .Where(x => x.Value.timestamp < now - 5_000)
+                            .SelectMany(x => x.Value.batch.Messages)
+                    );
+                    if (PeerPublicKey != null && hubBatchContent.Messages.Count > 0)
                     {
-                        var hubBatchContent = new MessageBatchContent();
-                        hubBatchContent.Messages.AddRange(
-                            _unacked
-                                .Where(x => x.Value.timestamp < now - 5_000)
-                                .SelectMany(x => x.Value.batch.Messages)
-                        );
                         var hubBatch = _messageFactory.MessagesBatch(hubBatchContent.Messages);
                         var hubBatchBytes = hubBatch.ToByteArray();
                         Logger.LogTrace(
