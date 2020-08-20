@@ -25,23 +25,19 @@
     "validators": [
       {
         "ECDSAPublicKey": "023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746",
-        "thresholdSignaturePublicKey": "0x641e886d7a628d36bdbe0e9ab3269edca6b96fd0f7d754721b784df28bb783222214201e15106b18a0bba03205665a8e",
-        "resolvableName": "localhost:5050"
+        "thresholdSignaturePublicKey": "0x641e886d7a628d36bdbe0e9ab3269edca6b96fd0f7d754721b784df28bb783222214201e15106b18a0bba03205665a8e"
       },
       {
         "ECDSAPublicKey": "02867b79666bac79f845ed33f4b2b0a964f9ac5b9be676b82bd9a01edcdad42415",
-        "thresholdSignaturePublicKey": "0xda8e0006a73a5e9b38a7e1d8eff65dbca58add8146b4c98ac3f8cf082c3509cec81e4e1270db041d4348bff1286ec692",
-        "resolvableName": "localhost:5051"
+        "thresholdSignaturePublicKey": "0xda8e0006a73a5e9b38a7e1d8eff65dbca58add8146b4c98ac3f8cf082c3509cec81e4e1270db041d4348bff1286ec692"
       },
       {
         "ECDSAPublicKey": "02a3ec3502ef652a969613696ec98a7bfd2c7b87d20efed47b3af726285d197d3c",
-        "thresholdSignaturePublicKey": "0xe70fa12eae63272010534abbb8188eb4c905ed279c1efa0a9ca2ec77300c5d58bbb5982bf9301995a868caf4e39aa719",
-        "resolvableName": "localhost:5052"
+        "thresholdSignaturePublicKey": "0xe70fa12eae63272010534abbb8188eb4c905ed279c1efa0a9ca2ec77300c5d58bbb5982bf9301995a868caf4e39aa719"
       },
       {
         "ECDSAPublicKey": "0272f1805337a1d2a0ad98c1e823b8103113a1824c1d8899187eaae748dd78229d",
-        "thresholdSignaturePublicKey": "0x2214faec98bbf6f1f2f536a6f59c5d231f872e6afb1b121ade52f774490cb13a54ee66f1ec1873973d555f5ac48ab518",
-        "resolvableName": "localhost:5053"
+        "thresholdSignaturePublicKey": "0x2214faec98bbf6f1f2f536a6f59c5d231f872e6afb1b121ade52f774490cb13a54ee66f1ec1873973d555f5ac48ab518"
       }
     ],
     "blockReward": "5.000000000000000000",

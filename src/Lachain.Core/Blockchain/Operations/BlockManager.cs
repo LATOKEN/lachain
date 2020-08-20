@@ -460,7 +460,6 @@ namespace Lachain.Core.Blockchain.Operations
                 genesisConfig.Validators.Select(v => new ValidatorCredentials
                 (
                     v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
-                    v.ResolvableName,
                     v.ThresholdSignaturePublicKey.HexToBytes()
                 )).ToArray()
             );

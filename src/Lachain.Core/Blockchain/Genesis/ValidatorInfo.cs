@@ -8,14 +8,11 @@ namespace Lachain.Core.Blockchain.Genesis
 
         [JsonProperty("thresholdSignaturePublicKey")]
         public string ThresholdSignaturePublicKey;
-
-        [JsonProperty("resolvableName")] public string ResolvableName;
-
-        public ValidatorInfo(string ecdsaPublicKey, string thresholdSignaturePublicKey, string resolvableName)
+        
+        public ValidatorInfo(string ecdsaPublicKey, string thresholdSignaturePublicKey)
         {
             EcdsaPublicKey = ecdsaPublicKey;
             ThresholdSignaturePublicKey = thresholdSignaturePublicKey;
-            ResolvableName = resolvableName;
         }
     }
 }

@@ -4,18 +4,8 @@ option java_package = "com.latoken.proto";
 import "default.proto";
 import "transaction.proto";
 import "block.proto";
-//import "node.proto";
 import "consensus.proto";
 import "peer.proto";
-
-//message HandshakeRequest {
-//    Node node = 1;
-//}
-//
-//message HandshakeReply {
-//    Node node = 1;
-//    uint32 port = 2;
-//}
 
 message Ack {
     uint64 message_id = 1;
@@ -73,8 +63,6 @@ message GetTransactionsByHashesReply {
 
 message NetworkMessage {
     oneof message {
-//        HandshakeRequest handshake_request = 10;
-//        HandshakeReply handshake_reply = 11;
         PingRequest ping_request = 12;
         PingReply ping_reply = 13;
         GetBlocksByHashesRequest get_blocks_by_hashes_request = 14;

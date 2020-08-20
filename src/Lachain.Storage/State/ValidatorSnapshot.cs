@@ -52,7 +52,7 @@ namespace Lachain.Storage.State
             var state = new ConsensusState(
                 tpkePublicKey.ToBytes(),
                 ecdsaKeys
-                    .Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials(ecdsaKey, "", tsKey.ToBytes()))
+                    .Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials(ecdsaKey, tsKey.ToBytes()))
                     .ToArray()
             );
             SetConsensusState(state);
