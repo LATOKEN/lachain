@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -28,6 +29,13 @@ namespace Lachain.Networking.Hub
             [JsonProperty("signature")] public string Signature;
         }
 
+        [JsonObject]
+        public class ReceiveResponse
+        {
+            [JsonProperty("payload")] public string Payload;
+            [JsonProperty("from")] public string From;
+        }
+
         private static readonly IRestClient Client = new RestClient("http://95.217.215.141:9090")
             .UseSerializer<JsonSerializer>();
 
@@ -48,10 +56,11 @@ namespace Lachain.Networking.Hub
                 }
             });
             var response = Client.Post(request);
+            var parsed = JsonConvert.DeserializeObject<JsonRpcResponse<string?>>(response.Content);
             if (!response.IsSuccessful)
-            {
                 Logger.LogError($"Cannot send message to communication hub: {response.ErrorMessage}");
-            }
+            if (parsed.Error != null)
+                Logger.LogError($"Cannot send data to communication hub: {parsed.Error.message}");
         }
 
         public static byte[][] Receive(ECDSAPublicKey publicKey, ulong timestamp, Signature signature)
@@ -70,9 +79,11 @@ namespace Lachain.Networking.Hub
                 }
             });
             var response = Client.Post(request);
-            return JsonConvert.DeserializeObject<JsonRpcRespnse<string[]>>(response.Content)
-                .Result
-                .Select(x => x.HexToBytes())
+            var parsed = JsonConvert.DeserializeObject<JsonRpcResponse<ReceiveResponse[]>>(response.Content);
+            if (parsed.Error != null)
+                throw new Exception($"Cannot get data from hub: {parsed.Error.message}");
+            return parsed.Result
+                .Select(x => x.Payload.HexToBytes())
                 .ToArray();
         }
     }

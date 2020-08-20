@@ -460,18 +460,25 @@ namespace Lachain.Networking
             while (Thread.CurrentThread.IsAlive)
             {
                 var ts = TimeUtils.CurrentTimeMillis();
-                var messages = CommunicationHub.Receive(
-                    _messageFactory.GetPublicKey(),
-                    ts,
-                    _messageFactory.SignCommunicationHubReceive(ts)
-                );
-                if (messages.Length > 0)
+                try
                 {
-                    Logger.LogTrace($"Got message batch from communication hub: {messages.Length} messages");
-                    foreach (var message in messages)
+                    var messages = CommunicationHub.Receive(
+                        _messageFactory.GetPublicKey(),
+                        ts,
+                        _messageFactory.SignCommunicationHubReceive(ts)
+                    );
+                    if (messages.Length > 0)
                     {
-                        _HandleMessage(this, message);
+                        Logger.LogTrace($"Got message batch from communication hub: {messages.Length} messages");
+                        foreach (var message in messages)
+                        {
+                            _HandleMessage(this, message);
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Unexpected error getting messages from hub: {e}");
                 }
 
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
