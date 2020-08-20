@@ -110,8 +110,8 @@ namespace Lachain.Networking.ZeroMQ
                         var hubBatch = _messageFactory.MessagesBatch(hubBatchContent.Messages);
                         var hubBatchBytes = hubBatch.ToByteArray();
                         Logger.LogTrace(
-                            $"Sending batch {hubBatch.MessageId}" +
-                            $" with {toSend.Sum(b => b.Messages.Count)} messages," +
+                            $"Sending batch {hubBatch.MessageId} via communication hub" +
+                            $" with {hubBatchContent.Messages.Count} messages," +
                             $" total {hubBatchBytes.Length} bytes"
                         );
                         CommunicationHub.Send(_messageFactory.GetPublicKey(), PeerPublicKey, hubBatchBytes,
@@ -135,7 +135,7 @@ namespace Lachain.Networking.ZeroMQ
                 var megaBatchBytes = megaBatch.ToByteArray();
                 Logger.LogTrace(
                     $"Sending batch {megaBatch.MessageId}" +
-                    $" with {toSend.Sum(b => b.Messages.Count)} messages," +
+                    $" with {megaBatchContent.Messages} messages," +
                     $" total {megaBatchBytes.Length} bytes"
                 );
                 _socket.SendFrame(megaBatchBytes);
