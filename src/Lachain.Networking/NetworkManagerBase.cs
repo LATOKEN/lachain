@@ -126,7 +126,7 @@ namespace Lachain.Networking
             _serverWorker.OnMessage += _HandleMessage;
             _serverWorker.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
         }
-        
+
         public void SendToPeerByPublicKey(ECDSAPublicKey publicKey, NetworkMessage message)
         {
             GetPeerByPublicKey(publicKey)?.Send(message);
@@ -465,10 +465,13 @@ namespace Lachain.Networking
                     ts,
                     _messageFactory.SignCommunicationHubReceive(ts)
                 );
-                Logger.LogError($"Got message batch from communication hub: {messages.Length} messages");
-                foreach (var message in messages)
+                if (messages.Length > 0)
                 {
-                    _HandleMessage(this, message);
+                    Logger.LogTrace($"Got message batch from communication hub: {messages.Length} messages");
+                    foreach (var message in messages)
+                    {
+                        _HandleMessage(this, message);
+                    }
                 }
 
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));

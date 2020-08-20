@@ -114,8 +114,11 @@ namespace Lachain.Networking.ZeroMQ
                             $" with {hubBatchContent.Messages.Count} messages," +
                             $" total {hubBatchBytes.Length} bytes"
                         );
-                        CommunicationHub.Send(_messageFactory.GetPublicKey(), PeerPublicKey, hubBatchBytes,
-                            hubBatch.Signature);
+
+                        CommunicationHub.Send(
+                            _messageFactory.GetPublicKey(), PeerPublicKey, hubBatchBytes,
+                            _messageFactory.SignCommunicationHubSend(PeerPublicKey, hubBatchBytes)
+                        );
                     }
 
 
