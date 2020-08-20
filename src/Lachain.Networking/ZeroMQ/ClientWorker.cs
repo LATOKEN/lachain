@@ -138,7 +138,7 @@ namespace Lachain.Networking.ZeroMQ
                 var megaBatchBytes = megaBatch.ToByteArray();
                 Logger.LogTrace(
                     $"Sending batch {megaBatch.MessageId}" +
-                    $" with {megaBatchContent.Messages} messages," +
+                    $" with {megaBatchContent.Messages.Count} messages," +
                     $" total {megaBatchBytes.Length} bytes"
                 );
                 _socket.SendFrame(megaBatchBytes);
