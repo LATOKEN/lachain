@@ -225,7 +225,7 @@ namespace Lachain.CoreTest
 
             var keyPair = _wallet.EcdsaKeyPair;
 
-            var headerSignature = _crypto.Sign(
+            var headerSignature = _crypto.SignHashed(
                 header.Keccak().ToBytes(),
                 keyPair.PrivateKey.Encode()
             ).ToSignature();

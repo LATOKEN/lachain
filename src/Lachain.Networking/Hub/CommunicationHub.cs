@@ -56,10 +56,10 @@ namespace Lachain.Networking.Hub
                 }
             });
             var response = Client.Post(request);
-            var parsed = JsonConvert.DeserializeObject<JsonRpcResponse<string?>>(response.Content);
             if (!response.IsSuccessful)
                 Logger.LogError($"Cannot send message to communication hub: {response.ErrorMessage}");
-            if (parsed.Error != null)
+            var parsed = JsonConvert.DeserializeObject<JsonRpcResponse<string?>?>(response.Content);
+            if (parsed?.Error != null)
                 Logger.LogError($"Cannot send data to communication hub: {parsed.Error.message}");
         }
 

@@ -366,14 +366,15 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Signature Sign(BlockHeader block, EcdsaKeyPair keyPair)
         {
-            return Crypto.Sign(block.Keccak().ToBytes(), keyPair.PrivateKey.Encode())
-                .ToSignature();
+            return Crypto.SignHashed(
+                block.Keccak().ToBytes(), keyPair.PrivateKey.Encode()
+            ).ToSignature();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
-            var result = Crypto.VerifySignature(
+            var result = Crypto.VerifySignatureHashed(
                 blockHeader.Keccak().ToBytes(), signature.Encode(), publicKey.EncodeCompressed()
             );
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;

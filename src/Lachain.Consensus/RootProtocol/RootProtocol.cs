@@ -70,7 +70,7 @@ namespace Lachain.Consensus.RootProtocol
                     Logger.LogWarning($"Header we received {signedHeaderMessage.Header}");
                 }
 
-                if (!_crypto.VerifySignature(
+                if (!_crypto.VerifySignatureHashed(
                     signedHeaderMessage.Header.Keccak().ToBytes(),
                     signedHeaderMessage.Signature.Encode(),
                     Wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
@@ -169,7 +169,7 @@ namespace Lachain.Consensus.RootProtocol
                 return;
             }
 
-            var signature = _crypto.Sign(
+            var signature = _crypto.SignHashed(
                 _header.Keccak().ToBytes(),
                 _keyPair.PrivateKey.Encode()
             ).ToSignature();
