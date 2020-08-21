@@ -1,4 +1,6 @@
+using System.IO;
 using System.Numerics;
+using System.Reflection;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
@@ -15,11 +17,11 @@ namespace Lachain.CoreTest
 
         public StorageTest()
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json", (s, s1) => null));
-
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                (s, s1) => null)
+            );
             containerBuilder.RegisterModule<StorageModule>();
-
             _container = containerBuilder.Build();
         }
 

@@ -36,17 +36,7 @@ namespace Lachain.Crypto
             digest.DoFinal(output, 0);
             return output;
         }
-
-        public static byte[] KeccakBytes<T>(this T t) where T : IMessage<T>
-        {
-            return t.ToByteArray().KeccakBytes();
-        }
-
-        public static UInt256 Keccak<T>(this T t) where T : IMessage<T>
-        {
-            return t.ToByteArray().KeccakBytes().ToUInt256();
-        }
-
+        
         public static UInt256 Keccak(this BlockHeader header)
         {
             

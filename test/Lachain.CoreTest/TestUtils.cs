@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Config;
@@ -50,14 +51,10 @@ namespace Lachain.CoreTest
 
         public static void DeleteTestChainData()
         {
-            if (Directory.Exists("ChainTest"))
-            {
-                Directory.Delete("ChainTest", true);
-            }
-            if (Directory.Exists("ChainTest2"))
-            {
-                Directory.Delete("ChainTest2", true);
-            }
+            var chainTest = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ChainTest");
+            if (Directory.Exists(chainTest)) Directory.Delete(chainTest, true);
+            var chainTest2 = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ChainTest2");
+            if (Directory.Exists(chainTest2)) Directory.Delete(chainTest2, true);
         }
     }
 }

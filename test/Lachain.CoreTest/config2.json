@@ -2,7 +2,7 @@
   "network": {
     "magic": 56754,
     "host": "tcp://172.16.238.1",
-    "port": 5050,
+    "port": 5051,
     "peers": [
     ],
     "forceIPv6": false,
@@ -32,7 +32,7 @@
     "hosts": [
       "+"
     ],
-    "port": 7070
+    "port": 7071
   },
   "vault": {
     "path": "wallet2.json",

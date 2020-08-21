@@ -7,18 +7,18 @@
     <RootNamespace>Lachain.CoreTest</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <None Update="config.json">
+    <Content Include="config.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="config2.json">
+    </Content>
+    <Content Include="config2.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="wallet.json">
+    </Content>
+    <Content Include="wallet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="wallet2.json">
+    </Content>
+    <Content Include="wallet2.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />

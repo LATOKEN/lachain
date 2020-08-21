@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
@@ -35,7 +37,9 @@ namespace Lachain.CoreTest
         [SetUp]
         public void Setup()
         {
-            var containerBuilder = TestUtils.GetContainerBuilder("config.json");
+            var containerBuilder = TestUtils.GetContainerBuilder(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
+            );
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _stateManager = _container.Resolve<IStateManager>();
@@ -54,22 +58,28 @@ namespace Lachain.CoreTest
         [Test]
         public void Test_Genesis()
         {
-            var localContainerBuilder = TestUtils.GetContainerBuilder("config2.json");
+            var localContainerBuilder = TestUtils.GetContainerBuilder(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json")
+            );
             using var container = localContainerBuilder.Build();
             var blockManager = container.Resolve<IBlockManager>();
             var stateManager = container.Resolve<IStateManager>();
             blockManager.TryBuildGenesisBlock();
             var genesis =
                 stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(stateManager.LastApprovedSnapshot.Blocks
-                    .GetTotalBlockHeight());
-            Assert.AreEqual(0, genesis!.Header.Index);
-            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
-                genesis!.Header.PrevBlockHash);
-            Assert.AreEqual("0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
-                genesis!.Header.StateHash);
-            Assert.AreEqual(0, genesis!.GasPrice);
-            Assert.AreEqual(null, genesis!.Multisig);
-            Assert.AreEqual(0, genesis!.Timestamp);
+                    .GetTotalBlockHeight()) ?? throw new Exception();
+            Assert.AreEqual(0, genesis.Header.Index);
+            Assert.AreEqual(
+                "0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
+                genesis.Header.PrevBlockHash
+            );
+            Assert.AreEqual(
+                "0x58272e9099317e9fb283b8f0f951dd156b1983d7e008c1cf811658d19d7aa36b".HexToUInt256(),
+                genesis.Header.StateHash
+            );
+            Assert.AreEqual(0, genesis.GasPrice);
+            Assert.AreEqual(null, genesis.Multisig);
+            Assert.AreEqual(0, genesis.Timestamp);
         }
 
         [Test]
@@ -216,7 +226,7 @@ namespace Lachain.CoreTest
             var keyPair = _wallet.EcdsaKeyPair;
 
             var headerSignature = _crypto.Sign(
-                header.KeccakBytes(),
+                header.Keccak().ToBytes(),
                 keyPair.PrivateKey.Encode()
             ).ToSignature();
 

@@ -21,7 +21,7 @@ using PingReply = Lachain.Proto.PingReply;
 namespace Lachain.Networking
 {
     public abstract class NetworkManagerBase : INetworkManager, INetworkContext, INetworkBroadcaster,
-        IConsensusMessageDeliverer
+        IConsensusMessageDeliverer, IDisposable
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
@@ -543,6 +543,11 @@ namespace Lachain.Networking
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage networkMessage)
         {
             ConsensusNetworkManager.SendTo(publicKey, networkMessage);
+        }
+
+        public void Dispose()
+        {
+            _serverWorker.Dispose();
         }
     }
 }

@@ -48,8 +48,7 @@ namespace Lachain.Networking.ZeroMQ
         public void Stop()
         {
             IsActive = false;
-            _worker.Interrupt();
-            _worker.Join();
+            if (_worker.ThreadState == ThreadState.Running) _worker.Join();
         }
 
         private void Worker()

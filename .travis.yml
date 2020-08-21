@@ -11,7 +11,9 @@ install:
 
 script:
   - dotnet build -c Release
-  - dotnet test
+  - dotnet test test/Lachain.CryptoTest
+  - dotnet test test/Lachain.ConsensusTest
+  - dotnet test test/Lachain.CoreTest
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime win-x64 src/Lachain.Console/Lachain.Console.csproj
   - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true --runtime osx-x64 src/Lachain.Console/Lachain.Console.csproj

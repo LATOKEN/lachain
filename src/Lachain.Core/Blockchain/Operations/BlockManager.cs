@@ -366,7 +366,7 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Signature Sign(BlockHeader block, EcdsaKeyPair keyPair)
         {
-            return Crypto.Sign(block.KeccakBytes(), keyPair.PrivateKey.Encode())
+            return Crypto.Sign(block.Keccak().ToBytes(), keyPair.PrivateKey.Encode())
                 .ToSignature();
         }
 
@@ -374,7 +374,7 @@ namespace Lachain.Core.Blockchain.Operations
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
             var result = Crypto.VerifySignature(
-                blockHeader.KeccakBytes(), signature.Encode(), publicKey.EncodeCompressed()
+                blockHeader.Keccak().ToBytes(), signature.Encode(), publicKey.EncodeCompressed()
             );
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }

@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using System.IO;
+using System.Reflection;
+using NUnit.Framework;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
@@ -12,8 +14,10 @@ namespace Lachain.CoreTest
 
         public VirtualMachineTest()
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json", (s, s1) => null));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                (s, s1) => null
+            ));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -23,17 +27,18 @@ namespace Lachain.CoreTest
 
             _container = containerBuilder.Build();
         }
-        
+
         [SetUp]
         public void Setup()
         {
             TestUtils.DeleteTestChainData();
         }
-        
+
         [TearDown]
         public void Teardown()
         {
             TestUtils.DeleteTestChainData();
+            _container.Dispose();
         }
 
         [Test]

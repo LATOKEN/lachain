@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Reflection;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -43,14 +46,18 @@ namespace Lachain.CoreTest
 
             var receipt = signer.Sign(tx, keyPair);
 
-            Assert.AreEqual("0xf6424d2c0bba618078cfbb42bf0e997f6c850f162935129d7b31ac15aae63b28".HexToUInt256(),
-                receipt.Hash);
+            Assert.AreEqual(
+                "0xc1fdf2042d3e86986f38be1410c579ff16f5a0f1a72096d11beb48df1455060a".HexToUInt256(),
+                receipt.Hash
+            );
         }
 
         [Test]
         public void Test_Tx_Pool_Adding()
         {
-            var containerBuilder = TestUtils.GetContainerBuilder("config.json");
+            var containerBuilder = TestUtils.GetContainerBuilder(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
+            );
             using var container = containerBuilder.Build();
             var txPool = container.Resolve<ITransactionPool>();
 
