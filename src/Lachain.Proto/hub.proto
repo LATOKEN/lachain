@@ -1,4 +1,7 @@
 syntax = "proto3";
+
+package hub;
+
 option csharp_namespace = "Lachain.Proto";
 option java_package = "com.latoken.proto";
 

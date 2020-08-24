@@ -35,8 +35,8 @@ namespace Lachain.Networking.Hub
             };
             client.Init(init);
             _hubStream = client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
-            _running = false;
             _readWorker = new Thread(ReadWorker);
+            _running = true;
             _readWorker.Start();
         }
 

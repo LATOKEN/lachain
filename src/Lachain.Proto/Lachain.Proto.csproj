@@ -10,6 +10,6 @@
     <PackageReference Include="Grpc" Version="2.30.0-pre1" />
     <PackageReference Include="Grpc.Tools" Version="2.30.0-pre1" />
     <Protobuf Include="*.proto" ProtoRoot="./" />
-    <Protobuf Include="hub.proto" GrpcServices="Client" />
+    <Protobuf Update="hub.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>
