@@ -7,6 +7,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Nethereum.RLP;
 
 namespace Lachain.Networking
 {
@@ -161,6 +162,15 @@ namespace Lachain.Networking
                 _keyPair.PublicKey.EncodeCompressed().Concat(tsBytes).ToArray().KeccakBytes(),
                 _keyPair.PrivateKey.Encode()
             ).ToSignature();
+        }
+
+        public byte[] SignCommunicationHubInit(byte[] nodeKey, byte[] hubKey)
+        {
+            var toSign = RLP.EncodeList(
+                RLP.EncodeElement(nodeKey),
+                RLP.EncodeElement(hubKey)
+            );
+            return Crypto.Sign(toSign, _keyPair.PrivateKey.Encode());
         }
 
         private ulong GenerateMessageId()

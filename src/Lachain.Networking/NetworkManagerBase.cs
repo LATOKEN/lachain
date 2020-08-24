@@ -52,9 +52,8 @@ namespace Lachain.Networking
                 BlockHeight = 0,
                 Agent = "Lachain-v0.0-dev"
             };
-            _hubConnector = new HubConnector(networkConfig.HubAddress);
+            _hubConnector = new HubConnector(networkConfig.HubAddress, _messageFactory);
             _hubConnector.OnMessage += _HandleMessage;
-            _hubConnector.OnError += (sender, error) => Logger.LogError($"Server error: {error}");
         }
 
         public void AdvanceEra(long era)
