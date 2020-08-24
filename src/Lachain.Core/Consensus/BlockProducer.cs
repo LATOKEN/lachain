@@ -17,7 +17,6 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
-using Newtonsoft.Json;
 
 namespace Lachain.Core.Consensus
 {

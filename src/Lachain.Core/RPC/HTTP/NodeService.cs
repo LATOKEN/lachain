@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Network;
@@ -43,29 +42,31 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("net_peers")]
         private JArray GetConnectedPeers()
         {
-            var peers = _networkManager.GetConnectedPeers();
-            var result = new JArray();
-
-            foreach (var peer in peers)
-            {
-                var peerJObject = new JObject
-                {
-                    ["publicKey"] = peer.PublicKey!.ToHex(),
-                    ["host"] = peer.Host,
-                    ["port"] = peer.Port,
-                    ["protocol"] = peer.Protocol.ToString(),
-                };
-                result.Add(peerJObject);
-            }
-
-            return result;
+            return new JArray();
+            // var peers = _networkManager.GetConnectedPeers();
+            // var result = new JArray();
+            //
+            // foreach (var peer in peers)
+            // {
+            //     var peerJObject = new JObject
+            //     {
+            //         ["publicKey"] = peer.PublicKey!.ToHex(),
+            //         ["host"] = peer.Host,
+            //         ["port"] = peer.Port,
+            //         ["protocol"] = peer.Protocol.ToString(),
+            //     };
+            //     result.Add(peerJObject);
+            // }
+            //
+            // return result;
         }
 
         [JsonRpcMethod("net_peerCount")]
         private string GetPeerCount()
         {
-            var peers = _networkManager.GetConnectedPeers().ToArray();
-            return peers.Length.ToHex();
+            return 0.ToHex();
+            // var peers = _networkManager.GetConnectedPeers().ToArray();
+            // return peers.Length.ToHex();
         }
 
         [JsonRpcMethod("net_listening")]

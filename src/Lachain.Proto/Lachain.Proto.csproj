@@ -10,14 +10,6 @@
     <PackageReference Include="Grpc" Version="2.30.0-pre1" />
     <PackageReference Include="Grpc.Tools" Version="2.30.0-pre1" />
     <Protobuf Include="*.proto" ProtoRoot="./" />
-    <Protobuf Update="peer.proto">
-      <GrpcServices>Both</GrpcServices>
-      <Access>Public</Access>
-      <ProtoCompile>True</ProtoCompile>
-      <ProtoRoot>./</ProtoRoot>
-      <CompileOutputs>True</CompileOutputs>
-      <OutputDir>obj/Debug/netstandard2.0/</OutputDir>
-      <Generator>MSBuild:Compile</Generator>
-    </Protobuf>
+    <Protobuf Include="hub.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>

@@ -9,10 +9,10 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
 using Lachain.Networking;
+using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
-using Org.BouncyCastle.Crypto.Tls;
 
 namespace Lachain.Core.Network
 {
@@ -176,7 +176,7 @@ namespace Lachain.Core.Network
         }
 
         private void OnGetPeersReply(object sender,
-            (GetPeersReply reply, ECDSAPublicKey publicKey, Func<PeerAddress, IRemotePeer> connect) @event)
+            (GetPeersReply reply, ECDSAPublicKey publicKey, Func<ECDSAPublicKey, ClientWorker> connect) @event)
         {
             foreach (var t in @event.reply.Peers)
             {
@@ -185,7 +185,7 @@ namespace Lachain.Core.Network
             var peers = _peerManager.HandlePeersFromPeer(@event.reply.Peers, @event.reply.PublicKeys);
             _peerManager.UpdatePeerTimestamp(@event.publicKey);
             foreach (var peer in peers)
-                @event.connect(peer);
+                @event.connect(peer.PublicKey!);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

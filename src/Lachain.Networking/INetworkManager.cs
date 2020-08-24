@@ -1,20 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
+using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 
 namespace Lachain.Networking
 {
-    public interface INetworkManager
+    public interface INetworkManager : IDisposable
     {
-        IMessageFactory? MessageFactory { get; }
-        bool IsConnected(PeerAddress address);
-        IRemotePeer? Connect(PeerAddress address);
-        void SendToPeerByPublicKey(ECDSAPublicKey publicKey, NetworkMessage message);
-        bool IsReady { get; }
+        IMessageFactory MessageFactory { get; }
+        void SendTo(ECDSAPublicKey publicKey, NetworkMessage message);
         void Start();
-        void Stop();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
+        void AdvanceEra(long era);
+        string CheckLocalConnection(string host);
+        public bool IsSelfConnect(IPAddress ipAddress);
+        Node LocalNode { get; }
 
         event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
         event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
@@ -39,14 +39,9 @@ namespace Lachain.Networking
         event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
             OnGetTransactionsByHashesReply;
 
-        event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<PeerAddress, IRemotePeer> connect)>?
+        event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<ECDSAPublicKey, ClientWorker> connect)>?
             OnGetPeersReply;
 
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
-        IEnumerable<PeerAddress> GetConnectedPeers();
-        // void ConnectToValidators(IEnumerable<ECDSAPublicKey> validators);
-        void AdvanceEra(long era);
-        string CheckLocalConnection(string host);
-        public bool IsSelfConnect(IPAddress ipAddress);
     }
 }

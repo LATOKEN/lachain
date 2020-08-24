@@ -22,7 +22,6 @@ namespace Lachain.Core.Network
 
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly INetworkContext _networkContext;
         private readonly INetworkBroadcaster _networkBroadcaster;
         private readonly INetworkManager _networkManager;
         private readonly ITransactionPool _transactionPool;
@@ -37,7 +36,6 @@ namespace Lachain.Core.Network
         public BlockSynchronizer(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            INetworkContext networkContext,
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
             ITransactionPool transactionPool,
@@ -46,7 +44,6 @@ namespace Lachain.Core.Network
         {
             _transactionManager = transactionManager;
             _blockManager = blockManager;
-            _networkContext = networkContext;
             _networkBroadcaster = networkBroadcaster;
             _networkManager = networkManager;
             _transactionPool = transactionPool;
@@ -165,10 +162,9 @@ namespace Lachain.Core.Network
 
         public bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers)
         {
-            if (_networkContext.LocalNode is null) throw new InvalidOperationException();
             var myHeight = _blockManager.GetHeight();
-            if (myHeight > _networkContext.LocalNode.BlockHeight)
-                _networkContext.LocalNode.BlockHeight = myHeight;
+            if (myHeight > _networkManager.LocalNode.BlockHeight)
+                _networkManager.LocalNode.BlockHeight = myHeight;
             var setOfPeers = peers.ToHashSet();
             if (setOfPeers.Count == 0) return false;
 
@@ -202,14 +198,11 @@ namespace Lachain.Core.Network
 
         private void _Worker()
         {
-            if (_networkContext.LocalNode is null) throw new InvalidOperationException();
+            if (_networkManager.LocalNode is null) throw new InvalidOperationException();
             var myHeight = _blockManager.GetHeight();
-            if (myHeight > _networkContext.LocalNode.BlockHeight)
-                _networkContext.LocalNode.BlockHeight = myHeight;
-
-            if (_networkContext.ActivePeers.Values.Count == 0)
-                return;
-
+            if (myHeight > _networkManager.LocalNode.BlockHeight)
+                _networkManager.LocalNode.BlockHeight = myHeight;
+            
             var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
             _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
@@ -225,7 +218,7 @@ namespace Lachain.Core.Network
 
             foreach (var peer in peers)
             {
-                _networkManager.SendToPeerByPublicKey(
+                _networkManager.SendTo(
                     peer,
                     messageFactory.GetBlocksByHeightRangeRequest(myHeight + 1, maxHeight)
                 );

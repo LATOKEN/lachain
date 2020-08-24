@@ -1,13 +1,18 @@
-﻿using Lachain.Proto;
+﻿using Lachain.Networking.ZeroMQ;
+using Lachain.Proto;
 
 namespace Lachain.Networking
 {
     public class MessageEnvelope
     {
-        public MessageFactory? MessageFactory { get; set; }
-
-        public ECDSAPublicKey? PublicKey { get; set; }
+        public MessageEnvelope(ECDSAPublicKey publicKey, ClientWorker remotePeer)
+        {
+            PublicKey = publicKey;
+            RemotePeer = remotePeer;
+        }
         
-        public IRemotePeer? RemotePeer { get; set; }
+        public ECDSAPublicKey PublicKey { get; }
+
+        public ClientWorker RemotePeer { get; }
     }
 }
