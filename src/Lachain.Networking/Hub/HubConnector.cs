@@ -68,7 +68,10 @@ namespace Lachain.Networking.Hub
                     _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
                     continue;
                 }
-                OnMessage?.Invoke(this, _hubStream.ResponseStream.Current.Data.ToByteArray());
+
+                var message = _hubStream.ResponseStream.Current.Data.ToByteArray();
+                Logger.LogTrace($"Got a message from hub, length: {message}");
+                OnMessage?.Invoke(this, message);
             }
         }
 
