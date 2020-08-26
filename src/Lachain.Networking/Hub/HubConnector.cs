@@ -2,39 +2,48 @@ using System;
 using System.Threading;
 using Google.Protobuf;
 using Grpc.Core;
-using Grpc.Net.Client;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
+using Protobuf;
 
 namespace Lachain.Networking.Hub
 {
     public class HubConnector : IDisposable
     {
-        private readonly GrpcChannel _channel;
-        private readonly AsyncDuplexStreamingCall<SendMessageRequest, MessageResponse> _hubStream;
+        private static readonly ILogger<HubConnector> Logger = LoggerFactory.GetLoggerForClass<HubConnector>();
+        
         private bool _running;
-        private readonly Thread _readWorker;
+        private readonly byte[] _hubId;
+        private readonly CommunicationHub.CommunicationHubClient _client;
+        private readonly IMessageFactory _messageFactory;
+
+        private AsyncDuplexStreamingCall<InboundMessage, OutboundMessage>? _hubStream;
+        private Thread? _readWorker;
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string endpoint, MessageFactory messageFactory)
+        public HubConnector(string endpoint, IMessageFactory messageFactory)
         {
-            MessageFactory messageFactory1 = messageFactory;
-            _channel = GrpcChannel.ForAddress(endpoint);
-            CommunicationHub.CommunicationHubClient client = new CommunicationHub.CommunicationHubClient(_channel);
-            var hubKey = client.GetKey(new GetKeyRequest(), Metadata.Empty);
-            if (hubKey?.HubPublicKey is null) throw new Exception("Cannot connect to hub");
-            var signature = messageFactory1.SignCommunicationHubInit(
-                messageFactory1.GetPublicKey().EncodeCompressed(),
-                hubKey.HubPublicKey.ToByteArray()
-            );
+            Logger.LogDebug("Requesting hub id from communication hub");
+            _messageFactory = messageFactory;
+            var channel = new Channel(endpoint, ChannelCredentials.Insecure);
+            _client = new CommunicationHub.CommunicationHubClient(channel);
+            var hubKey = _client.GetKey(new GetHubIdRequest(), Metadata.Empty);
+            if (hubKey?.Id is null) throw new Exception("Cannot connect to hub");
+            _hubId = hubKey.Id.ToByteArray();
+        }
+
+        public void Start()
+        {
+            Logger.LogDebug("Sending init request to communication hub");
             var init = new InitRequest
             {
-                NodePublicKey = ByteString.CopyFrom(messageFactory1.GetPublicKey().EncodeCompressed()),
-                Signature = ByteString.CopyFrom(signature)
+                Signature = ByteString.CopyFrom(_messageFactory.SignCommunicationHubInit(_hubId))
             };
-            client.Init(init);
-            _hubStream = client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
+            _client.Init(init);
+            Logger.LogDebug("Establishing bi-directional connection with hub");
+            _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
             _readWorker = new Thread(ReadWorker);
             _running = true;
             _readWorker.Start();
@@ -43,28 +52,32 @@ namespace Lachain.Networking.Hub
         public void Dispose()
         {
             _running = false;
-            _readWorker.Join();
-            _hubStream.Dispose();
-            _channel.Dispose();
+            _readWorker?.Join();
+            _hubStream?.Dispose();
         }
 
         private void ReadWorker()
         {
             while (_running)
             {
-                var task = _hubStream.ResponseStream.MoveNext();
+                var task = _hubStream!.ResponseStream.MoveNext();
                 task.Wait();
-                if (!task.Result) break;
-                OnMessage?.Invoke(this, _hubStream.ResponseStream.Current.Content.ToByteArray());
+                if (!task.Result)
+                {
+                    _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
+                    continue;
+                }
+                OnMessage?.Invoke(this, _hubStream.ResponseStream.Current.Data.ToByteArray());
             }
         }
 
         public void Send(ECDSAPublicKey publicKey, byte[] message)
         {
-            var request = new SendMessageRequest
+            if (_hubStream is null) throw new InvalidOperationException("HubConnector is not yet initialized");
+            var request = new InboundMessage
             {
-                Content = ByteString.CopyFrom(message),
-                To = ByteString.CopyFrom(publicKey.EncodeCompressed())
+                Data = ByteString.CopyFrom(message),
+                PublicKey = ByteString.CopyFrom(publicKey.EncodeCompressed())
             };
 
             _hubStream.RequestStream.WriteAsync(request);

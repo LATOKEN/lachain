@@ -70,6 +70,7 @@ namespace Lachain.Networking
 
         public void Start()
         {
+            _hubConnector.Start();
             var peers = _peerManager.Start(_networkConfig, this, _keyPair);
             foreach (var peer in peers.Select(peer => peer.PublicKey!))
                 Connect(peer);

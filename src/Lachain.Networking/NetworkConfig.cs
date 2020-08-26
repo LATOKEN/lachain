@@ -16,6 +16,6 @@ namespace Lachain.Networking
 
         [JsonProperty("maxPeers")] public ushort MaxPeers { get; set; }
 
-        [JsonProperty("hubAddress")] public string HubAddress { get; set; } = "http://127.0.0.1:8175";
+        [JsonProperty("hubAddress")] public string HubAddress { get; set; } = "127.0.0.1:50001";
     }
 }

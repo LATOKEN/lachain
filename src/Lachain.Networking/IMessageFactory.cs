@@ -22,7 +22,6 @@ namespace Lachain.Networking
         NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions);
         MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
 
-        Signature SignCommunicationHubSend(ECDSAPublicKey to, byte[] payload);
-        Signature SignCommunicationHubReceive(ulong timestamp);
+        byte[] SignCommunicationHubInit(byte[] hubKey);
     }
 }

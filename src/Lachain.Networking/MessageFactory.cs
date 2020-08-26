@@ -146,31 +146,9 @@ namespace Lachain.Networking
             return batch;
         }
 
-        public Signature SignCommunicationHubSend(ECDSAPublicKey to, byte[] payload)
+        public byte[] SignCommunicationHubInit(byte[] hubKey)
         {
-            return Crypto.SignHashed(
-                to.EncodeCompressed().Concat(payload).ToArray().KeccakBytes(),
-                _keyPair.PrivateKey.Encode()
-            ).ToSignature();
-        }
-
-        public Signature SignCommunicationHubReceive(ulong timestamp)
-        {
-            var tsBytes = BitConverter.GetBytes(timestamp);
-            if (BitConverter.IsLittleEndian) tsBytes = tsBytes.Reverse().ToArray();
-            return Crypto.SignHashed(
-                _keyPair.PublicKey.EncodeCompressed().Concat(tsBytes).ToArray().KeccakBytes(),
-                _keyPair.PrivateKey.Encode()
-            ).ToSignature();
-        }
-
-        public byte[] SignCommunicationHubInit(byte[] nodeKey, byte[] hubKey)
-        {
-            var toSign = RLP.EncodeList(
-                RLP.EncodeElement(nodeKey),
-                RLP.EncodeElement(hubKey)
-            );
-            return Crypto.Sign(toSign, _keyPair.PrivateKey.Encode());
+            return Crypto.Sign(hubKey, _keyPair.PrivateKey.Encode());
         }
 
         private ulong GenerateMessageId()

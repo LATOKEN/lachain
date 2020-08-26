@@ -1,33 +1,35 @@
 syntax = "proto3";
 
-package hub;
+option go_package = "github.com/LAtoken/lachain-communication-hub/grpc/protobuf";
 
-option csharp_namespace = "Lachain.Proto";
-option java_package = "com.latoken.proto";
+package protobuf;
 
 service CommunicationHub {
-    rpc GetKey(GetKeyRequest) returns (GetKeyResponse) {}
-    rpc Init(InitRequest) returns (InitResponse) {}
-    rpc Communicate(stream SendMessageRequest) returns (stream MessageResponse) {}
+    rpc GetKey (GetHubIdRequest) returns (GetHubIdReply) {}
+    rpc Init (InitRequest) returns (InitReply) {}
+    rpc Communicate (stream InboundMessage) returns (stream OutboundMessage) {}
 }
 
-message GetKeyRequest {
+message InboundMessage {
+    bytes publicKey = 1;
+    bytes data = 2;
 }
-message GetKeyResponse {
-    bytes hub_public_key = 1;
+
+message OutboundMessage {
+    bytes data = 1;
 }
 
 message InitRequest {
-    bytes node_public_key = 1;
-    bytes signature = 2;
-}
-message InitResponse {
+    bytes signature = 1;
 }
 
-message MessageResponse {
-    bytes content = 1;
+message InitReply {
+    bool result = 1;
 }
-message SendMessageRequest {
-    bytes to = 1;
-    bytes content = 2;
+
+message GetHubIdRequest {
+}
+
+message GetHubIdReply {
+    bytes id = 1;
 }
