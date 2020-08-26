@@ -58,7 +58,6 @@ namespace Lachain.Networking.Hub
             _isConnected = true;
             while (_isConnected)
             {
-                Logger.LogTrace($"{PeerPublicKey.ToHex()}: unacked {_unacked.Count}, queue: {_messageQueue.Count}");
                 var now = TimeUtils.CurrentTimeMillis();
                 List<MessageBatchContent> toSend = new List<MessageBatchContent>();
                 lock (_messageQueue)
@@ -94,11 +93,6 @@ namespace Lachain.Networking.Hub
                 megaBatchContent.Messages.AddRange(toSend.SelectMany(batch => batch.Messages));
                 var megaBatch = _messageFactory.MessagesBatch(megaBatchContent.Messages);
                 var megaBatchBytes = megaBatch.ToByteArray();
-                Logger.LogTrace(
-                    $"Sending batch {megaBatch.MessageId}" +
-                    $" with {megaBatchContent.Messages.Count} messages," +
-                    $" total {megaBatchBytes.Length} bytes"
-                );
                 _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                 _unacked[megaBatch.MessageId] = (megaBatchContent, now);
 
