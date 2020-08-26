@@ -148,7 +148,9 @@ namespace Lachain.Networking
 
         public byte[] SignCommunicationHubInit(byte[] hubKey)
         {
-            return Crypto.Sign(hubKey, _keyPair.PrivateKey.Encode());
+            var signature = Crypto.Sign(hubKey, _keyPair.PrivateKey.Encode());
+            signature[^1] = (byte) (signature[^1] - 35 - TransactionUtils.ChainId * 2);
+            return signature;
         }
 
         private ulong GenerateMessageId()

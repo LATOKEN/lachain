@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Google.Protobuf;
 using Grpc.Core;
@@ -71,6 +72,7 @@ namespace Lachain.Networking.Hub
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(ECDSAPublicKey publicKey, byte[] message)
         {
             if (_hubStream is null) throw new InvalidOperationException("HubConnector is not yet initialized");
@@ -79,8 +81,9 @@ namespace Lachain.Networking.Hub
                 Data = ByteString.CopyFrom(message),
                 PublicKey = ByteString.CopyFrom(publicKey.EncodeCompressed())
             };
-
-            _hubStream.RequestStream.WriteAsync(request);
+            
+            var task = _hubStream.RequestStream.WriteAsync(request);
+            task.Wait();
         }
     }
 }
