@@ -64,6 +64,7 @@ namespace Lachain.Networking
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)
         {
+            Connect(publicKey)?.Send(message);
         }
 
         public void Start()
