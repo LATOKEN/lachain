@@ -49,6 +49,10 @@ namespace Lachain.Networking.Hub
         {
             lock (_messageQueue)
             {
+                if (message.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage)
+                {
+                    Logger.LogError($"Sending consensus message to {PeerPublicKey.ToHex()}");
+                }
                 _messageQueue.Enqueue(message);
             }
         }
@@ -105,7 +109,6 @@ namespace Lachain.Networking.Hub
         {
             lock (_unacked)
             {
-                Logger.LogTrace($"Got ack for message {messageId}");
                 _unacked.Remove(messageId);
             }
         }
