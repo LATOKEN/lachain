@@ -1,6 +1,6 @@
 using Lachain.Proto;
 
-namespace Lachain.Networking.Consensus
+namespace Lachain.Networking
 {
     public interface IConsensusMessageDeliverer
     {

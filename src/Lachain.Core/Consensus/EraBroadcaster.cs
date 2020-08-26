@@ -15,7 +15,6 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
-using Lachain.Networking.Consensus;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;

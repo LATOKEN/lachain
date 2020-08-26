@@ -9,7 +9,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
 using Lachain.Networking;
-using Lachain.Networking.ZeroMQ;
+using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
@@ -176,7 +176,7 @@ namespace Lachain.Core.Network
         }
 
         private void OnGetPeersReply(object sender,
-            (GetPeersReply reply, ECDSAPublicKey publicKey, Func<ECDSAPublicKey, ClientWorker> connect) @event)
+            (GetPeersReply reply, ECDSAPublicKey publicKey, Func<ECDSAPublicKey, ClientWorker?> connect) @event)
         {
             foreach (var t in @event.reply.Peers)
             {

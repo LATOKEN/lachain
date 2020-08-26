@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Net;
-using Lachain.Networking.ZeroMQ;
+using Lachain.Networking.Hub;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -39,7 +39,7 @@ namespace Lachain.Networking
         event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
             OnGetTransactionsByHashesReply;
 
-        event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<ECDSAPublicKey, ClientWorker> connect)>?
+        event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<ECDSAPublicKey, ClientWorker?> connect)>?
             OnGetPeersReply;
 
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;

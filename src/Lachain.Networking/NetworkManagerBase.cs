@@ -8,9 +8,7 @@ using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
-using Lachain.Networking.Consensus;
 using Lachain.Networking.Hub;
-using Lachain.Networking.ZeroMQ;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
@@ -79,8 +77,9 @@ namespace Lachain.Networking
 
         private readonly object _hasPeersToConnect = new object();
 
-        private ClientWorker Connect(ECDSAPublicKey publicKey)
+        private ClientWorker? Connect(ECDSAPublicKey publicKey)
         {
+            if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;
             lock (_hasPeersToConnect)
             {
                 if (_clientWorkers.TryGetValue(publicKey, out var existingWorker))
@@ -127,6 +126,7 @@ namespace Lachain.Networking
 
             if (!_clientWorkers.TryGetValue(batch.Sender, out var worker))
             {
+                if (batch.Sender.Equals(_messageFactory.GetPublicKey())) return;
                 try
                 {
                     var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
@@ -137,7 +137,7 @@ namespace Lachain.Networking
                     {
                         joinMsg.PeerJoinRequest.Peer.Host = CheckLocalConnection(joinMsg.PeerJoinRequest.Peer.Host);
                         _peerManager.AddPeer(joinMsg.PeerJoinRequest.Peer, batch.Sender);
-                        var peer = Connect(batch.Sender);
+                        var peer = Connect(batch.Sender)!;
                         peer.Send(_messageFactory.Ack(batch.MessageId));
                         return;
                     }
@@ -352,7 +352,7 @@ namespace Lachain.Networking
             OnGetTransactionsByHashesReply;
 
         public event
-            EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<ECDSAPublicKey, ClientWorker> connect)>?
+            EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<ECDSAPublicKey, ClientWorker?> connect)>?
             OnGetPeersReply;
 
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;

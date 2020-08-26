@@ -1,4 +1,4 @@
-﻿using Lachain.Networking.ZeroMQ;
+﻿using Lachain.Networking.Hub;
 using Lachain.Proto;
 
 namespace Lachain.Networking

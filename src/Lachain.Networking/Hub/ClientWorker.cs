@@ -4,12 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Google.Protobuf;
-using Lachain.Proto;
 using Lachain.Logger;
-using Lachain.Networking.Hub;
+using Lachain.Proto;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Networking.ZeroMQ
+namespace Lachain.Networking.Hub
 {
     public class ClientWorker : IDisposable
     {

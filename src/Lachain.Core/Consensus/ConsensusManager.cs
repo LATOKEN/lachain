@@ -13,7 +13,6 @@ using Lachain.Core.Config;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
-using Lachain.Networking.Consensus;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
