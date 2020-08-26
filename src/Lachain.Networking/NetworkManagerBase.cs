@@ -110,7 +110,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            if (batch is null)
+            if (batch?.Content is null || batch.Signature is null)
             {
                 Logger.LogError("Unable to parse protocol message");
                 Logger.LogTrace($"Original message bytes: {buffer.ToHex()}");

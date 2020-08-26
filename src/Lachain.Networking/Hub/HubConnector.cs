@@ -70,7 +70,7 @@ namespace Lachain.Networking.Hub
                 }
 
                 var message = _hubStream.ResponseStream.Current.Data.ToByteArray();
-                Logger.LogTrace($"Got a message from hub, length: {message}");
+                Logger.LogTrace($"Got a message from hub, length: {message.Length}");
                 OnMessage?.Invoke(this, message);
             }
         }
