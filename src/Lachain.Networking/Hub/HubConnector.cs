@@ -43,6 +43,7 @@ namespace Lachain.Networking.Hub
                 Signature = ByteString.CopyFrom(_messageFactory.SignCommunicationHubInit(_hubId))
             };
             _client.Init(init);
+            Thread.Sleep(TimeSpan.FromMilliseconds(5_000));
             Logger.LogDebug("Establishing bi-directional connection with hub");
             _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
             _readWorker = new Thread(ReadWorker);
