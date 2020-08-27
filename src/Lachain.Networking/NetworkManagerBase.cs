@@ -271,7 +271,6 @@ namespace Lachain.Networking
 
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
-                    Logger.LogError($"GOT CONSENSUS MESSAGE {message.ConsensusMessage.PayloadCase}!!!!");
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
                     break;
                 default:
