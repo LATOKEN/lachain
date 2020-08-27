@@ -99,8 +99,10 @@ namespace Lachain.Networking.Hub
                         var message = _messageQueue.First.Value;
                         if (message.CalculateSize() > MaxMessageSize)
                         {
-                            Logger.LogCritical($"Encountered messaged with size {message.CalculateSize()} > {MaxMessageSize}");
+                            Logger.LogCritical(
+                                $"Encountered messaged with size {message.CalculateSize()} > {MaxMessageSize}");
                         }
+
                         if (message.CalculateSize() + toSendSize > MaxMessageSize) break;
                         _messageQueue.RemoveFirst();
                         batch.Messages.Add(message);
@@ -112,12 +114,16 @@ namespace Lachain.Networking.Hub
 
                 var megaBatchContent = new MessageBatchContent();
                 megaBatchContent.Messages.AddRange(toSend.SelectMany(batch => batch.Messages));
-                var megaBatch = _messageFactory.MessagesBatch(megaBatchContent.Messages);
-                var megaBatchBytes = megaBatch.ToByteArray();
-                if (megaBatchBytes.Length > 4096)
-                    Logger.LogWarning("Attempt to sent message with >4096 bytes it might be not delivered correctly");
-                _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                _unacked[megaBatch.MessageId] = (megaBatchContent, now);
+                if (megaBatchContent.Messages.Count > 0)
+                {
+                    var megaBatch = _messageFactory.MessagesBatch(megaBatchContent.Messages);
+                    var megaBatchBytes = megaBatch.ToByteArray();
+                    if (megaBatchBytes.Length > 4096)
+                        Logger.LogWarning(
+                            "Attempt to sent message with >4096 bytes it might be not delivered correctly");
+                    _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                    _unacked[megaBatch.MessageId] = (megaBatchContent, now);
+                }
 
                 var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
