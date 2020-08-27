@@ -97,6 +97,10 @@ namespace Lachain.Networking.Hub
                     while (_messageQueue.Count > 0)
                     {
                         var message = _messageQueue.First.Value;
+                        if (message.CalculateSize() > MaxMessageSize)
+                        {
+                            Logger.LogCritical($"Encountered messaged with size {message.CalculateSize()} > {MaxMessageSize}");
+                        }
                         if (message.CalculateSize() + toSendSize > MaxMessageSize) break;
                         _messageQueue.RemoveFirst();
                         batch.Messages.Add(message);
