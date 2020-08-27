@@ -73,7 +73,10 @@ namespace Lachain.Networking.Hub
                 }
 
                 var message = _hubStream.ResponseStream.Current.Data.ToByteArray();
-                OnMessage?.Invoke(this, message);
+                if (message.Length > 0)
+                    OnMessage?.Invoke(this, message);
+                else
+                    Logger.LogWarning("Received empty message from hub");
             }
         }
 
