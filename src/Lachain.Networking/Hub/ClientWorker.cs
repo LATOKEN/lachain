@@ -66,11 +66,12 @@ namespace Lachain.Networking.Hub
 
                 lock (_unacked)
                 {
+                    const int consensusMessageAckTimeMs = 10_000;
                     var cnt = 0;
                     lock (_messageQueue)
                     {
                         foreach (var message in _unacked.Values
-                            .Where(x => x.timestamp < now - 5_000)
+                            .Where(x => x.timestamp < now - consensusMessageAckTimeMs)
                             .SelectMany(tuple => tuple.batch.Messages)
                             .Where(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage)
                             .Where(msg => msg.ConsensusMessage.Validator.Era >= _currentEra))
@@ -81,10 +82,10 @@ namespace Lachain.Networking.Hub
                     }
 
                     if (cnt > 0)
-                        Logger.LogWarning($"Resubmit {cnt} consensus messages because we got no ack in 5s");
+                        Logger.LogWarning($"Resubmit {cnt} consensus messages because we got no ack in {consensusMessageAckTimeMs}ms");
 
                     foreach (var (key, _) in _unacked
-                        .Where(x => x.Value.timestamp < now - 5_000)
+                        .Where(x => x.Value.timestamp < now - consensusMessageAckTimeMs)
                         .ToArray())
                     {
                         _unacked.Remove(key);
@@ -103,9 +104,9 @@ namespace Lachain.Networking.Hub
                         }
 
                         if (message.CalculateSize() + toSendSize > MaxMessageSize) break;
-                        _messageQueue.RemoveFirst();
                         toSend.Messages.Add(message);
                         toSendSize += message.CalculateSize();
+                        _messageQueue.RemoveFirst();
                     }
                 }
 
