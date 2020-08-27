@@ -13,13 +13,14 @@ namespace Lachain.Networking.Hub
     public class HubConnector : IDisposable
     {
         private static readonly ILogger<HubConnector> Logger = LoggerFactory.GetLoggerForClass<HubConnector>();
-        
+
         private bool _running;
         private readonly byte[] _hubId;
         private readonly CommunicationHub.CommunicationHubClient _client;
         private readonly IMessageFactory _messageFactory;
 
         private AsyncDuplexStreamingCall<InboundMessage, OutboundMessage>? _hubStream;
+        private readonly object _hubStreamLock = new object();
         private Thread? _readWorker;
 
         public event EventHandler<byte[]>? OnMessage;
@@ -67,6 +68,7 @@ namespace Lachain.Networking.Hub
                 if (!task.Result)
                 {
                     _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
+                    lock (_hubStreamLock) Monitor.Pulse(_hubStreamLock);
                     continue;
                 }
 
@@ -78,13 +80,16 @@ namespace Lachain.Networking.Hub
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(ECDSAPublicKey publicKey, byte[] message)
         {
-            if (_hubStream is null) throw new InvalidOperationException("HubConnector is not yet initialized");
+            lock (_hubStreamLock)
+                while (_hubStream is null)
+                    Monitor.Wait(_hubStreamLock);
+
             var request = new InboundMessage
             {
                 Data = ByteString.CopyFrom(message),
                 PublicKey = ByteString.CopyFrom(publicKey.EncodeCompressed())
             };
-            
+
             var task = _hubStream.RequestStream.WriteAsync(request);
             task.Wait();
         }
