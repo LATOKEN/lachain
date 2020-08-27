@@ -61,7 +61,7 @@ namespace Lachain.Networking.Hub
             while (_isConnected)
             {
                 var now = TimeUtils.CurrentTimeMillis();
-                List<MessageBatchContent> toSend = new List<MessageBatchContent>();
+                MessageBatchContent toSend = new MessageBatchContent();
                 var toSendSize = 0;
 
                 lock (_unacked)
@@ -93,7 +93,6 @@ namespace Lachain.Networking.Hub
 
                 lock (_messageQueue)
                 {
-                    var batch = new MessageBatchContent();
                     while (_messageQueue.Count > 0)
                     {
                         var message = _messageQueue.First.Value;
@@ -105,24 +104,22 @@ namespace Lachain.Networking.Hub
 
                         if (message.CalculateSize() + toSendSize > MaxMessageSize) break;
                         _messageQueue.RemoveFirst();
-                        batch.Messages.Add(message);
+                        toSend.Messages.Add(message);
                         toSendSize += message.CalculateSize();
                     }
-
-                    toSend.Add(batch);
                 }
 
-                var megaBatchContent = new MessageBatchContent();
-                megaBatchContent.Messages.AddRange(toSend.SelectMany(batch => batch.Messages));
-                if (megaBatchContent.Messages.Count > 0)
+                if (toSend.Messages.Count > 0)
                 {
-                    var megaBatch = _messageFactory.MessagesBatch(megaBatchContent.Messages);
+                    var megaBatch = _messageFactory.MessagesBatch(toSend.Messages);
                     var megaBatchBytes = megaBatch.ToByteArray();
                     if (megaBatchBytes.Length > 4096)
                         Logger.LogWarning(
-                            "Attempt to sent message with >4096 bytes it might be not delivered correctly");
+                            "Attempt to sent message with >4096 bytes. It might be not delivered correctly");
+                    if (megaBatchBytes.Length == 0)
+                        throw new Exception("Cannot send empty message");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                    _unacked[megaBatch.MessageId] = (megaBatchContent, now);
+                    _unacked[megaBatch.MessageId] = (toSend, now);
                 }
 
                 var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
