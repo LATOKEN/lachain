@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 option go_package = "github.com/LAtoken/lachain-communication-hub/grpc/protobuf";
+option csharp_namespace = "Lachain.Proto";
 
 package protobuf;
 

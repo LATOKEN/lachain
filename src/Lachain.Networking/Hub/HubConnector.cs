@@ -6,7 +6,6 @@ using Grpc.Core;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
-using Protobuf;
 
 namespace Lachain.Networking.Hub
 {
@@ -16,21 +15,25 @@ namespace Lachain.Networking.Hub
 
         private bool _running;
         private readonly byte[] _hubId;
-        private readonly CommunicationHub.CommunicationHubClient _client;
+        private readonly Proto.CommunicationHub.CommunicationHubClient _client;
         private readonly IMessageFactory _messageFactory;
 
         private AsyncDuplexStreamingCall<InboundMessage, OutboundMessage>? _hubStream;
         private readonly object _hubStreamLock = new object();
         private Thread? _readWorker;
+        private readonly Thread _hubThread;
 
         public event EventHandler<byte[]>? OnMessage;
 
         public HubConnector(string endpoint, IMessageFactory messageFactory)
         {
+            _hubThread = new Thread(CommunicationHub.Net.Hub.Start);
+            _hubThread.Start();
+            Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             Logger.LogDebug("Requesting hub id from communication hub");
             _messageFactory = messageFactory;
             var channel = new Channel(endpoint, ChannelCredentials.Insecure);
-            _client = new CommunicationHub.CommunicationHubClient(channel);
+            _client = new Proto.CommunicationHub.CommunicationHubClient(channel);
             var hubKey = _client.GetKey(new GetHubIdRequest(), Metadata.Empty);
             if (hubKey?.Id is null) throw new Exception("Cannot connect to hub");
             _hubId = hubKey.Id.ToByteArray();
@@ -54,6 +57,7 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
+            CommunicationHub.Net.Hub.Stop();
             _running = false;
             _readWorker?.Join();
             _hubStream?.Dispose();
