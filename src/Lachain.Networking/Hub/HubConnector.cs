@@ -30,14 +30,29 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
             _hubThread = new Thread(CommunicationHub.Net.Hub.Start);
             _hubThread.Start();
-            Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             Logger.LogDebug("Requesting hub id from communication hub");
             _messageFactory = messageFactory;
             var channel = new Channel(endpoint, ChannelCredentials.Insecure);
             _client = new Proto.CommunicationHub.CommunicationHubClient(channel);
-            var hubKey = _client.GetKey(new GetHubIdRequest(), Metadata.Empty);
-            if (hubKey?.Id is null) throw new Exception("Cannot connect to hub");
-            _hubId = hubKey.Id.ToByteArray();
+            _hubId = RequestHubId();
+        }
+
+        private byte[] RequestHubId()
+        {
+            while (true)
+            {
+                try
+                {
+                    var hubKey = _client.GetKey(new GetHubIdRequest(), Metadata.Empty);
+                    return hubKey.Id.ToByteArray();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogWarning($"Hub is not yet available: {e.Message}");
+                }   
+                Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+            }
+            
         }
 
         public void Start()
