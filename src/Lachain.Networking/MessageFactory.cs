@@ -7,7 +7,6 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
-using Nethereum.RLP;
 
 namespace Lachain.Networking
 {

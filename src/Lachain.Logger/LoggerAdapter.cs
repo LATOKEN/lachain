@@ -21,6 +21,17 @@ namespace Lachain.Logger
             return _logger.IsEnabled(logLevel);
         }
 
+        public LogLevel LowestLogLevel()
+        {
+            if (IsEnabled(LogLevel.Trace)) return LogLevel.Trace;
+            if (IsEnabled(LogLevel.Debug)) return LogLevel.Debug;
+            if (IsEnabled(LogLevel.Info)) return LogLevel.Info;
+            if (IsEnabled(LogLevel.Warn)) return LogLevel.Warn;
+            if (IsEnabled(LogLevel.Error)) return LogLevel.Error;
+            if (IsEnabled(LogLevel.Fatal)) return LogLevel.Fatal;
+            return LogLevel.Off;
+        }
+
         //------------------------------------------DEBUG------------------------------------------//
 
         /// <inheritdoc />

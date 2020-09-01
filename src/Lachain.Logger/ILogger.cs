@@ -7,6 +7,8 @@ namespace Lachain.Logger
     {
         bool IsEnabled(LogLevel logLevel);
 
+        public LogLevel LowestLogLevel();
+
         /// <summary>
         /// Formats and writes a debug log message.
         /// </summary>

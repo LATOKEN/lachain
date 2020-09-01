@@ -27,6 +27,7 @@ namespace Lachain.Networking.Hub
 
         public HubConnector(string endpoint, IMessageFactory messageFactory)
         {
+            CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
             _hubThread = new Thread(CommunicationHub.Net.Hub.Start);
             _hubThread.Start();
             Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
