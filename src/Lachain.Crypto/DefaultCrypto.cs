@@ -52,20 +52,21 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey)
         {
+            if (messageHash.Length != 32 || signature.Length != 65) return false;
             return EcVerify.Benchmark(() =>
             {
                 var pk = new byte[64];
                 if (!Secp256K1.PublicKeyParse(pk, publicKey))
-                    throw new ArgumentException();
+                    return false;
 
                 var publicKeySerialized = new byte[33];
                 if (!Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED))
-                    throw new ArgumentException();
+                    throw new Exception("Cannot serialize parsed key: how did it happen?");
 
                 var parsedSig = new byte[65];
                 var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
-                    throw new ArgumentException();
+                    return false;
 
                 return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
             });
@@ -81,14 +82,16 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] SignHashed(byte[] messageHash, byte[] privateKey)
         {
+            if (privateKey.Length != 32) throw new ArgumentException(nameof(privateKey));
+            if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
             return EcSign.Benchmark(() =>
             {
                 var sig = new byte[65];
                 if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
-                    throw new ArgumentException();
+                    throw new Exception("secp256k1.sign_recoverable failed");
                 var serialized = new byte[64];
                 if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
-                    throw new ArgumentException();
+                    throw new Exception("Cannot serialize recoverable signature: how did it happen?");
                 recId = TransactionUtils.ChainId * 2 + 35 + recId;
                 return serialized.Concat(new[] {(byte) recId}).ToArray();
             });
@@ -104,22 +107,20 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature)
         {
+            if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
+            if (signature.Length != 65) throw new ArgumentException(nameof(signature));
             return EcRecover.Benchmark(() =>
             {
                 var parsedSig = new byte[65];
                 var pk = new byte[64];
                 var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
-                    throw new ArgumentException();
+                    throw new ArgumentException(nameof(signature));
                 if (!Secp256K1.Recover(pk, parsedSig, messageHash))
                     throw new ArgumentException("Bad signature");
-
                 var result = new byte[33];
                 if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
-                {
-                    throw new ArgumentException("Bad signature");
-                }
-
+                    throw new Exception("Cannot serialize recovered public key: how did it happen?");
                 return result;
             });
         }
@@ -131,6 +132,7 @@ namespace Lachain.Crypto
 
         public byte[] ComputePublicKey(byte[] privateKey, bool compress = true)
         {
+            if (privateKey.Length != 32) throw new ArgumentException(nameof(privateKey));
             var publicKey = new byte[64];
             var result = new byte[33];
             if (!Secp256K1.PublicKeyCreate(publicKey, privateKey))
@@ -173,13 +175,11 @@ namespace Lachain.Crypto
 
         public byte[] GenerateRandomBytes(int length)
         {
-            if (length < 1)
-                throw new ArgumentException(nameof(length));
-
+            if (length == 0) return new byte[] { };
+            if (length < 0) throw new ArgumentException(nameof(length));
             var privateKey = new byte[length];
-            using (var rng = RandomNumberGenerator.Create())
-                rng.GetBytes(privateKey);
-
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(privateKey);
             return privateKey;
         }
 
