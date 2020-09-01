@@ -25,8 +25,6 @@ namespace Lachain.Networking.Hub
         private readonly IDictionary<ulong, (MessageBatchContent batch, ulong timestamp)> _unacked =
             new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
 
-        private const int MaxMessageSize = 4000;
-
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
             _messageFactory = messageFactory;
@@ -62,8 +60,7 @@ namespace Lachain.Networking.Hub
             {
                 var now = TimeUtils.CurrentTimeMillis();
                 MessageBatchContent toSend = new MessageBatchContent();
-                var toSendSize = 0;
-
+                
                 lock (_unacked)
                 {
                     const int consensusMessageAckTimeMs = 10_000;
@@ -97,15 +94,7 @@ namespace Lachain.Networking.Hub
                     while (_messageQueue.Count > 0)
                     {
                         var message = _messageQueue.First.Value;
-                        if (message.CalculateSize() > MaxMessageSize)
-                        {
-                            Logger.LogCritical(
-                                $"Encountered messaged with size {message.CalculateSize()} > {MaxMessageSize}");
-                        }
-
-                        if (message.CalculateSize() + toSendSize > MaxMessageSize) break;
                         toSend.Messages.Add(message);
-                        toSendSize += message.CalculateSize();
                         _messageQueue.RemoveFirst();
                     }
                 }
@@ -114,9 +103,6 @@ namespace Lachain.Networking.Hub
                 {
                     var megaBatch = _messageFactory.MessagesBatch(toSend.Messages);
                     var megaBatchBytes = megaBatch.ToByteArray();
-                    if (megaBatchBytes.Length > 4096)
-                        Logger.LogWarning(
-                            "Attempt to sent message with >4096 bytes. It might be not delivered correctly");
                     if (megaBatchBytes.Length == 0)
                         throw new Exception("Cannot send empty message");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
