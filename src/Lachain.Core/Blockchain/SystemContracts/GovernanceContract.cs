@@ -252,7 +252,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
 
             var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
-            SetColelctedFees(txFeesAmount);
+            SetCollectedFees(txFeesAmount);
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
             Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
             Logger.LogDebug(
@@ -302,7 +302,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return PublicKeySet.FromBytes(tsKeys);
         }
 
-        private void SetColelctedFees(Money fees)
+        private void SetCollectedFees(Money fees)
         {
             _collectedFees.Set(fees.ToUInt256().ToBytes());
         }

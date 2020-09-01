@@ -65,7 +65,10 @@ namespace Lachain.Utility.Utils
 
         public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false, bool addLeadingZeros = false)
         {
-            if (!addTrailingZeros && !addLeadingZeros && buffer.Length != 32 || buffer.Length > 32)
+            if (buffer.Length == 0)
+                buffer = Zero.ToBytes();
+
+            if (!addTrailingZeros && !addLeadingZeros && buffer.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
 
             if (!addLeadingZeros)
