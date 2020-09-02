@@ -12,6 +12,7 @@ using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using NLog;
 
 namespace Lachain.Core.Network
 {
@@ -29,6 +30,7 @@ namespace Lachain.Core.Network
 
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
+        private LogLevel _logLevelForSync = LogLevel.Trace;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
@@ -150,7 +152,7 @@ namespace Lachain.Core.Network
 
         public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
         {
-            Logger.LogTrace($"Peer {publicKey.ToHex()} has height {blockHeight}");
+            Logger.Log(_logLevelForSync, $"Peer {publicKey.ToHex()} has height {blockHeight}");
             lock (_peerHasBlocks)
             {
                 if (_peerHeights.TryGetValue(publicKey, out var peerHeight) && blockHeight <= peerHeight)
@@ -184,10 +186,12 @@ namespace Lachain.Core.Network
         public void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers)
         {
             var peersArray = peers.ToArray();
+            _logLevelForSync = LogLevel.Debug;
             while (IsSynchronizingWith(peersArray))
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             }
+            _logLevelForSync = LogLevel.Trace;
         }
 
         public ulong? GetHighestBlock()
