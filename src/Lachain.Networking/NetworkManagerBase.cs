@@ -208,6 +208,7 @@ namespace Lachain.Networking
 
         private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
         {
+            Logger.LogTrace($"Processing network message {message.MessageCase}");
             if (envelope.PublicKey is null) throw new InvalidOperationException();
             switch (message.MessageCase)
             {
