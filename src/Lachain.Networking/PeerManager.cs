@@ -209,20 +209,11 @@ namespace Lachain.Networking
         public (Peer[], ECDSAPublicKey[]) GetPeersToBroadcast()
         {
             var allPublicKeys = _peerRepository.GetPeerList().ToArray();
-            var publicKeysToBroadcast = new List<ECDSAPublicKey>();
-
-            var peers = allPublicKeys.Select(pub => 
-                    _peerRepository.GetPeerByPublicKey(pub)!)
-                .Where((peer, i) =>
-                {
-                    if (peer.Timestamp > TimeUtils.CurrentTimeMillis() / 1000 - 3 * 3600)
-                    {
-                        publicKeysToBroadcast.Add(allPublicKeys[i]);
-                        return true;
-                    }
-
-                    return false;
-                })
+            var peers = allPublicKeys
+                .Select(pub => _peerRepository.GetPeerByPublicKey(pub)!)
+                .ToArray();
+            var publicKeysToBroadcast = allPublicKeys
+                .Where((k, i) => peers[i].Timestamp > TimeUtils.CurrentTimeMillis() / 1000 - 3 * 3600)
                 .ToArray();
             return (peers, publicKeysToBroadcast.ToArray());
         }

@@ -13,6 +13,7 @@ using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using NLog.Fluent;
 
 namespace Lachain.Core.Network
 {
@@ -157,6 +158,7 @@ namespace Lachain.Core.Network
         {
             var (_, callback) = @event;
             var (peers, publicKeys) = _peerManager.GetPeersToBroadcast();
+            Logger.LogTrace($"Got {publicKeys.Length} public keys and {peers.Length} peers to broadcast");
             foreach (var peer in peers)
                 if (_networkManager.IsSelfConnect(IPAddress.Parse(peer.Host)))
                     peer.Host = _peerManager.GetExternalIp();
