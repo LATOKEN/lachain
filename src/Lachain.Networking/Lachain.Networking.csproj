@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" Version="2.31.0" />
-    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.11" />
+    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.12" />
     <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.2" />
     <PackageReference Include="NetMQ" Version="4.0.1.2-pre" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
