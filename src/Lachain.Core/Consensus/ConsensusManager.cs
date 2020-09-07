@@ -93,6 +93,7 @@ namespace Lachain.Core.Consensus
                 var broadcaster = EnsureEra(i);
                 broadcaster?.Terminate();
                 _eras.Remove(i);
+                _postponedMessages.Remove(i);
             }
 
             CurrentEra = newEra;
@@ -110,9 +111,7 @@ namespace Lachain.Core.Consensus
         public void Dispatch(ConsensusMessage message, ECDSAPublicKey from)
         {
             var era = message.Validator.Era;
-            if (CurrentEra == -1)
-                Logger.LogWarning($"Consensus has not been started yet, skipping message with era {era}");
-            else if (era < CurrentEra)
+            if (era < CurrentEra)
                 Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
             else if (era > CurrentEra)
                 _postponedMessages
@@ -185,10 +184,6 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
-                        // _networkManager.ConnectToValidators(
-                        //     _validatorManager.GetValidators(CurrentEra - 1).EcdsaPublicKeySet
-                        //         .Where(x => !_privateWallet.EcdsaKeyPair.PublicKey.Equals(x))
-                        // );
                         var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(CurrentEra);
                         broadcaster.InternalRequest(
