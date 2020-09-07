@@ -89,15 +89,16 @@ namespace Lachain.Core.RPC
 
             RpcConfig rpcConfig;
             if (
-                !(_configManager.GetCliArg("rpcaddr") is null) &&
-                !(_configManager.GetCliArg("rpcport") is null) &&
-                !(_configManager.GetCliArg("apikey") is null)
+                
+                !(_configManager.CommandLineOptions.RpcAddress is null) &&
+                !_configManager.CommandLineOptions.RpcPort.HasValue &&
+                !(_configManager.CommandLineOptions.RpcApiKey is null)
             )
                 rpcConfig = new RpcConfig
                 {
-                    Hosts = new[] {_configManager.GetCliArg("rpcaddr")!},
-                    Port = short.Parse(_configManager.GetCliArg("rpcport")),
-                    ApiKey = _configManager.GetCliArg("apikey"),
+                    Hosts = new[] {_configManager.CommandLineOptions.RpcAddress!},
+                    Port = _configManager.CommandLineOptions.RpcPort!.Value,
+                    ApiKey = _configManager.CommandLineOptions.RpcApiKey,
                 };
             else
                 rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;

@@ -15,7 +15,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IStateManager, StateManager>();
 
             /* global */
-            var dataDir = configManager.GetCliArg("datadir");
+            var dataDir = configManager.CommandLineOptions.DataDir;
             dataDir ??= configManager.GetConfig<StorageConfig>("storage")!.Path!;
             dataDir = Path.IsPathRooted(dataDir) || dataDir.StartsWith("~/")
                 ? dataDir

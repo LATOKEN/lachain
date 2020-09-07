@@ -30,12 +30,13 @@ namespace Lachain.Core.Vault
 
         public PrivateWallet(IConfigManager configManager)
         {
-            var config = configManager.GetConfig<VaultConfig>("vault");
+            var config = configManager.GetConfig<VaultConfig>("vault") ??
+                         throw new Exception("No 'vault' section in config file");
 
-            if (!(configManager.GetCliArg("wallet") is null))
-                config!.Path = configManager.GetCliArg("wallet");
+            if (!(configManager.CommandLineOptions.WalletPath is null))
+                config.Path = configManager.CommandLineOptions.WalletPath;
 
-            if (config?.Path is null || config.Password is null)
+            if (config.Path is null || config.Password is null)
                 throw new ArgumentNullException(nameof(config));
 
             _walletPath = Path.IsPathRooted(config.Path) || config.Path.StartsWith("~/")

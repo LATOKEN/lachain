@@ -5,6 +5,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
@@ -28,8 +29,8 @@ namespace Lachain.Benchmark
             if (Directory.Exists("ChainLachain"))
                 Directory.Delete("ChainLachain", true);
 
-            var containerBuilder = new SimpleInjectorContainerBuilder(
-                new ConfigManager("config.json", (s, s1) => null));
+            var containerBuilder =
+                new SimpleInjectorContainerBuilder(new ConfigManager("config.json", new RunOptions()));
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -40,7 +41,7 @@ namespace Lachain.Benchmark
             _container = containerBuilder.Build();
         }
 
-        public void Start(string[] args)
+        public void Start(RunOptions options)
         {
             var configManager = _container.Resolve<IConfigManager>();
             var crypto = _container.Resolve<ICrypto>();

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Lachain.Core.CLI;
 using Lachain.Core.DI;
 
 namespace Lachain.Benchmark
@@ -31,7 +32,7 @@ namespace Lachain.Benchmark
                 default:
                     throw new Exception("Invalid benchmark type");
             }
-            app.Start(args.Skip(1).ToArray());
+            app.Start(new RunOptions());
         }
     }
 }

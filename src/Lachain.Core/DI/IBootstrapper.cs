@@ -1,7 +1,9 @@
-﻿namespace Lachain.Core.DI
+﻿using Lachain.Core.CLI;
+
+namespace Lachain.Core.DI
 {
     public interface IBootstrapper
     {
-        void Start(string[] args);
+        void Start(RunOptions options);
     }
 }

@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using CommandLine;
 using Lachain.Core.Blockchain;
 using Newtonsoft.Json;
 using Lachain.Core.Blockchain.Genesis;
+using Lachain.Core.CLI;
 using Lachain.Core.RPC;
 using Lachain.Core.RPC.HTTP;
 using Lachain.Core.Vault;
@@ -181,12 +182,17 @@ namespace Lachain.Console
 
         internal static void Main(string[] args)
         {
-            if (IsArgumentPassed("version"))
-            {
-                System.Console.WriteLine(new NodeService(null!, null!, null!).GetNetVersion());
-                return;
-            }
-
+            var x = Parser.Default.ParseArguments<VersionOptions, RunOptions, DecryptOptions>(args)
+                .WithParsed<VersionOptions>(options => PrintVersion())
+                .WithParsed<RunOptions>(options => RunNode(options))
+                .WithParsed<DecryptOptions>(options => DecryptWallet(options))
+                .WithNotParsed(errors =>
+                {
+                    foreach (var error in errors)
+                    {
+                        System.Console.Error.WriteLine(error);
+                    }
+                });
             // TrustedKeyGen();
             // return;
 
@@ -220,33 +226,31 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
-            var getArg = GetArgParser(args);
-            var configPath = getArg("config", "./config.json")!;
-            using var app = new Application(configPath, getArg);
-            app.Start(args);
         }
 
-        private static Func<string, string?, string?> GetArgParser(string[] args)
+        private static void DecryptWallet(DecryptOptions options)
         {
-            return (name, defaultValue) =>
-            {
-                var value = defaultValue;
-                for (var i = 0; i < args.Length; i++)
-                {
-                    if (args[i] == "--" + name && args.Length > i + 1)
-                    {
-                        value = args[i + 1];
-                    }
-                }
-
-                return value;
-            };
+            string path = options.WalletPath;
+            path = Path.IsPathRooted(path) || path.StartsWith("~/")
+                ? path
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(path)), path);
+            var encryptedContent = File.ReadAllBytes(path);
+            var key = Encoding.UTF8.GetBytes(options.WalletPassword).KeccakBytes();
+            var crypto = CryptoProvider.GetCrypto();
+            var decryptedContent =
+                Encoding.UTF8.GetString(crypto.AesGcmDecrypt(key, encryptedContent));
+            System.Console.WriteLine(decryptedContent);
         }
 
-        private static bool IsArgumentPassed(string name)
+        private static void RunNode(RunOptions options)
         {
-            string[] arguments = Environment.GetCommandLineArgs();
-            return arguments.Any(arg => arg == "--" + name);
+            using var app = new Application(options.ConfigPath, options);
+            app.Start(options);
+        }
+
+        private static void PrintVersion()
+        {
+            System.Console.WriteLine(new NodeService(null!, null!, null!).GetNetVersion());
         }
     }
 }

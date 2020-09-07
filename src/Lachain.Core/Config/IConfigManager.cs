@@ -1,4 +1,6 @@
-﻿namespace Lachain.Core.Config
+﻿using Lachain.Core.CLI;
+
+namespace Lachain.Core.Config
 {
     public interface IConfigManager
     {
@@ -6,7 +8,6 @@
 
         string ConfigPath { get; }
 
-        string? GetCliArg(string name);
-
+        RunOptions CommandLineOptions { get; }
     }
 }

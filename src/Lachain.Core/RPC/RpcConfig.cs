@@ -22,7 +22,7 @@ namespace Lachain.Core.RPC
         public string[]? Hosts { get; set; }
 
         [JsonProperty("port")]
-        public short Port { get; set; }
+        public ushort Port { get; set; }
 
         [JsonProperty("apiKey")]
         public string? ApiKey { get; set; }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
@@ -19,7 +20,7 @@ namespace Lachain.CoreTest
     {
         public static SimpleInjectorContainerBuilder GetContainerBuilder(string configPath)
         {
-            var configManager = new ConfigManager(configPath, (s, s1) => null);
+            var configManager = new ConfigManager(configPath, new RunOptions());
             var containerBuilder = new SimpleInjectorContainerBuilder(configManager);
 
             containerBuilder.RegisterModule<StorageModule>();

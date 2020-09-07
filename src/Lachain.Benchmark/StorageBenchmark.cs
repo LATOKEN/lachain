@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
@@ -22,7 +23,7 @@ namespace Lachain.Benchmark
                 Console.Error.WriteLine(exception);
             };
 
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json", ArgGetter));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager("config.json", new RunOptions()));
 
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
@@ -59,7 +60,7 @@ namespace Lachain.Benchmark
             return buffer.ToUInt256();
         }
 
-        public void Start(string[] args)
+        public void Start(RunOptions options)
         {
             var stateManager = _container.Resolve<IStateManager>();
             

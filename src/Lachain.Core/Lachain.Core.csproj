@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="AustinHarris.JsonRpc" Version="1.2.2" />
     <PackageReference Include="C5" Version="3.0.0-beta" />
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Crc32" Version="1.1.0" />
     <PackageReference Include="Google.Protobuf" Version="3.12.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0-preview.5.20278.1" />

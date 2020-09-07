@@ -26,16 +26,16 @@ namespace Lachain.Console
     {
         private readonly IContainer _container;
 
-        public Application(string configPath, Func<string, string?, string?> argGetter)
+        public Application(string configPath, RunOptions options)
         {
-            var logLevel = argGetter("log", Environment.GetEnvironmentVariable("LOG_LEVEL"));
+            var logLevel = options.LogLevel ?? Environment.GetEnvironmentVariable("LOG_LEVEL");
             if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
             if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
                 logLevel = "Info";
             LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
             LogManager.ReconfigExistingLoggers();
 
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath, argGetter));
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath, options));
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<MessagingModule>();
@@ -44,7 +44,7 @@ namespace Lachain.Console
             _container = containerBuilder.Build();
         }
 
-        public void Start(string[] args)
+        public void Start(RunOptions options)
         {
             var configManager = _container.Resolve<IConfigManager>();
             var blockManager = _container.Resolve<IBlockManager>();
@@ -82,13 +82,11 @@ namespace Lachain.Console
             System.Console.WriteLine($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
             System.Console.WriteLine("-------------------------------");
 
-            var networkConfig = configManager.GetConfig<NetworkConfig>("network");
+            var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
+                                throw new Exception("No 'network' section in config file");
 
-            if (!(configManager.GetCliArg("port") is null))
-                networkConfig!.Port = ushort.Parse(configManager.GetCliArg("port")!);
-
-            if (!(configManager.GetCliArg("host") is null))
-                networkConfig!.MyHost = configManager.GetCliArg("host");
+            if (!(options.ConsensusPort is null)) networkConfig.Port = options.ConsensusPort.Value;
+            if (!(options.ConsensusHost is null)) networkConfig.MyHost = options.ConsensusHost;
 
             networkManager.Start();
             transactionVerifier.Start();

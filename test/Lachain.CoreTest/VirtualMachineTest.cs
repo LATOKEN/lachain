@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Reflection;
+using Lachain.Core.CLI;
 using NUnit.Framework;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
@@ -16,7 +17,7 @@ namespace Lachain.CoreTest
         {
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
-                (s, s1) => null
+                new RunOptions()
             ));
 
             containerBuilder.RegisterModule<BlockchainModule>();
