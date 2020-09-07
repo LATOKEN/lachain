@@ -33,7 +33,7 @@ namespace Lachain.Networking
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
 
-        public NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IPeerManager peerManager)
+        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IPeerManager peerManager)
         {
             if (networkConfig?.Peers is null) throw new ArgumentNullException();
             _networkConfig = networkConfig;
@@ -155,9 +155,10 @@ namespace Lachain.Networking
 
             var envelope = new MessageEnvelope(batch.Sender, worker);
 
-            envelope.RemotePeer.Send(_messageFactory.Ack(batch.MessageId));
             {
                 var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
+                if (content.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
+                    envelope.RemotePeer.Send(_messageFactory.Ack(batch.MessageId));
                 foreach (var message in content.Messages)
                 {
                     try

@@ -17,11 +17,11 @@ namespace Lachain.Core.Vault
             EcdsaPrivateKey = ecdsaPrivateKey;
         }
 
-        [JsonProperty("tpkeKeys")] public Dictionary<ulong, string> TpkePrivateKeys { get; set; }
+        [JsonProperty("tpkeKeys")] public Dictionary<ulong, string>? TpkePrivateKeys { get; set; }
 
         [JsonProperty("thresholdSignatureKeys")]
-        public Dictionary<ulong, string> ThresholdSignatureKeys { get; set; }
+        public Dictionary<ulong, string>? ThresholdSignatureKeys { get; set; }
 
-        [JsonProperty("ecdsaPrivateKey")] public string EcdsaPrivateKey { get; set; }
+        [JsonProperty("ecdsaPrivateKey")] public string? EcdsaPrivateKey { get; set; }
     }
 }

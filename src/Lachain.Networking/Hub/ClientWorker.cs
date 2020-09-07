@@ -91,7 +91,8 @@ namespace Lachain.Networking.Hub
 
                 lock (_messageQueue)
                 {
-                    while (_messageQueue.Count > 0)
+                    const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
+                    while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                     {
                         var message = _messageQueue.First.Value;
                         toSend.Messages.Add(message);
@@ -106,7 +107,8 @@ namespace Lachain.Networking.Hub
                     if (megaBatchBytes.Length == 0)
                         throw new Exception("Cannot send empty message");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                    _unacked[megaBatch.MessageId] = (toSend, now);
+                    if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
+                        _unacked[megaBatch.MessageId] = (toSend, now);
                 }
 
                 var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);

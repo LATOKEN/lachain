@@ -113,6 +113,10 @@ namespace Lachain.Core.Vault
                 Encoding.UTF8.GetString(Crypto.AesGcmDecrypt(key, encryptedContent));
 
             var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
+            if (wallet.EcdsaPrivateKey is null)
+                throw new Exception("Decrypted wallet does not contain ECDSA key");
+            wallet.ThresholdSignatureKeys ??= new Dictionary<ulong, string>();
+            wallet.TpkePrivateKeys ??= new Dictionary<ulong, string>();
 
             keyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
             _tpkeKeys.AddAll(wallet.TpkePrivateKeys
