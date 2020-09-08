@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using CommandLine;
 
 namespace Lachain.Core.CLI
@@ -15,6 +18,26 @@ namespace Lachain.Core.CLI
 
         [Option('p', "password", Required = true, HelpText = "Password")]
         public string WalletPassword { get; set; } = null!;
+    }
+    
+    [Verb("encrypt", HelpText = "Encrypt wallet")]
+    public class EncryptOptions
+    {
+        [Option('w', "wallet", Required = false, HelpText = "Path to wallet file")]
+        public string WalletPath { get; set; } = "./wallet.json";
+
+        [Option('p', "password", Required = true, HelpText = "Password")]
+        public string WalletPassword { get; set; } = null!;
+    }
+    
+    [Verb("keygen", HelpText = "Run trusted threshold keygen")]
+    public class KeygenOptions
+    {
+        [Option('i', "ips", Required = false, Separator = ' ', HelpText = "IP addresses for config generation")]
+        public IEnumerable<string> IpAddresses { get; set; } = Enumerable.Empty<string>();
+        
+        [Option('f', "faulty", Required = true, HelpText = "Total number of faulty participants")]
+        public int F { get; set; }
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]

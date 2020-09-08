@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,8 +13,6 @@ using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Storage;
-using Lachain.Utility.Serialization;
-using Lachain.Utility.Utils;
 
 namespace Lachain.Console
 {
@@ -41,151 +39,15 @@ namespace Lachain.Console
 
     class Program
     {
-        static void TrustedKeyGen()
-        {
-            const int n = 22, f = 7;
-            // const int n = 4, f = 1;
-            // const int n = 7, f = 2;
-            var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
-            var tpkePubKey = tpkeKeyGen.GetPubKey();
-
-            var sigKeyGen = new Crypto.ThresholdSignature.TrustedKeyGen(n, f);
-            var privShares = sigKeyGen.GetPrivateShares().ToArray();
-            var pubShares = sigKeyGen.GetPrivateShares()
-                .Select(s => s.GetPublicKeyShare())
-                .Select(s => s.ToHex())
-                .ToArray();
-
-            // var ips = new[]
-            // {
-            //     "116.203.75.72", "78.46.123.99", "95.217.4.100", "88.99.190.27", "78.46.229.200", "95.217.6.171",
-            //     "88.99.190.191", "94.130.78.183", "94.130.24.163", "94.130.110.127", "94.130.110.95", "94.130.58.63",
-            //     "88.99.86.166", "88.198.78.106", "88.198.78.141", "88.99.126.144", "88.99.87.58", "95.217.6.234",
-            //     "95.217.12.226", "95.217.14.117", "95.217.17.248", "95.217.12.230"
-            // };
-
-            var ips = new[]
-            {
-                "116.203.75.72", "178.128.113.97", "165.227.45.119", "206.189.137.112", "157.245.160.201",
-                "95.217.6.171", "88.99.190.191", "94.130.78.183", "94.130.24.163", "94.130.110.127", "94.130.110.95",
-                "94.130.58.63", "88.99.86.166", "88.198.78.106", "88.198.78.141", "88.99.126.144", "88.99.87.58",
-                "95.217.6.234", "95.217.12.226", "95.217.14.117", "95.217.17.248", "95.217.12.230"
-            };
-
-            var ecdsaPrivateKeys = new string[n];
-            var ecdsaPublicKeys = new string[n];
-            var addresses = new string[n];
-            var crypto = CryptoProvider.GetCrypto();
-            for (var i = 0; i < n; ++i)
-            {
-                ecdsaPrivateKeys[i] = crypto.GenerateRandomBytes(32).ToHex(false);
-                ecdsaPublicKeys[i] = crypto.ComputePublicKey(ecdsaPrivateKeys[i].HexToBytes(), true).ToHex(false);
-                addresses[i] = ecdsaPrivateKeys[i].HexToBytes().ToPrivateKey().GetPublicKey().GetAddress().ToHex();
-            }
-
-            var peers = ips.Zip(ecdsaPublicKeys)
-                .Select((t, i) => $"tcp://{t.Second}@{t.First}:5050")
-                .ToArray();
-
-            for (var i = 0; i < n; ++i)
-            {
-                var net = new NetworkConfig
-                {
-                    Port = 5050,
-                    MyHost = $"tcp://{ips[i]}",
-                    Address = "0.0.0.0",
-                    Peers = peers,
-                    MaxPeers = 100,
-                    ForceIPv6 = false
-                };
-                var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
-                {
-                    Balances = new Dictionary<string, string>
-                    {
-                        {
-                            "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
-                        }
-                    },
-                    Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j]
-                    )).ToList()
-                };
-                for (var j = 0; j < n; ++j)
-                {
-                    genesis.Balances[addresses[j]] = "1000000";
-                }
-
-                var rpc = new RpcConfig
-                {
-                    Hosts = new[] {"+"},
-                    Port = 7070,
-                    ApiKey = "asdasdasd",
-                };
-                var walletPath = "wallet.json";
-                var vault = new VaultConfig
-                {
-                    Path = walletPath,
-                    Password = "12345"
-                };
-                var storage = new StorageConfig
-                {
-                    Path = "ChainLachain",
-                    Provider = "RocksDB",
-                };
-                var blockchain = new BlockchainConfig();
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain);
-                File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
-                GenWallet(
-                    $"wallet{i + 1:D2}.json",
-                    ecdsaPrivateKeys[i],
-                    tpkeKeyGen.GetPrivKey(i).ToHex(),
-                    privShares[i].ToHex()
-                );
-            }
-
-            var tpkePrivKeys = string.Join(
-                ", ",
-                Enumerable.Range(0, n)
-                    .Select(idx => tpkeKeyGen.GetPrivKey(idx))
-                    .Select(x => $"\"{x.ToHex()}\""));
-            var tsKeys = string.Join(
-                ", ",
-                sigKeyGen.GetPrivateShares()
-                    .Select(x => $"(\"{x.GetPublicKeyShare().ToHex()}\", \"{x.ToHex()}\")")
-            );
-            System.Console.WriteLine(
-                $"{n}: " + "{" +
-                "  \"tpke\": (" +
-                $"    \"{tpkePubKey.ToHex()}\"," +
-                $"    [{tpkePrivKeys}]" +
-                "  )," +
-                $"  \"ts\": [{tsKeys}]," +
-                "}");
-            System.Console.WriteLine(
-                string.Join(", ", ecdsaPrivateKeys.Zip(ecdsaPublicKeys).Zip(addresses)
-                    .Select(t => $"(\"{t.First.Second}\", \"{t.First.First}\", \"{t.Second}\")"))
-            );
-        }
-
-        private static void GenWallet(string path, string ecdsaKey, string tpkeKey, string tsKey)
-        {
-            var config = new JsonWallet(
-                ecdsaKey,
-                new Dictionary<ulong, string> {{0, tpkeKey}},
-                new Dictionary<ulong, string> {{0, tsKey}}
-            );
-            var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
-            var passwordHash = Encoding.UTF8.GetBytes("12345").KeccakBytes();
-            var crypto = CryptoProvider.GetCrypto();
-            File.WriteAllBytes(path, crypto.AesGcmEncrypt(passwordHash, json));
-        }
-
         internal static void Main(string[] args)
         {
-            var x = Parser.Default.ParseArguments<VersionOptions, RunOptions, DecryptOptions>(args)
+            var x = Parser.Default
+                .ParseArguments<VersionOptions, RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
                 .WithParsed<VersionOptions>(options => PrintVersion())
-                .WithParsed<RunOptions>(options => RunNode(options))
-                .WithParsed<DecryptOptions>(options => DecryptWallet(options))
+                .WithParsed<RunOptions>(RunNode)
+                .WithParsed<DecryptOptions>(DecryptWallet)
+                .WithParsed<EncryptOptions>(EncryptWallet)
+                .WithParsed<KeygenOptions>(RunKeygen)
                 .WithNotParsed(errors =>
                 {
                     foreach (var error in errors)
@@ -193,8 +55,6 @@ namespace Lachain.Console
                         System.Console.Error.WriteLine(error);
                     }
                 });
-            // TrustedKeyGen();
-            // return;
 
             // GenWallet(
             //     "wallet.json", 
@@ -226,6 +86,43 @@ namespace Lachain.Console
             //     "0x030000009199c5d2300431458cf806b5658420ce024089d4a788878b1582fe99e524c839",
             //     "0xfb80a7053ff590fad46eaad80d52fcd512360cb90d8043d4e3289a16dcec4f2b"
             // );
+        }
+
+        private static void RunKeygen(KeygenOptions options)
+        {
+            // var ips = new[]
+            // {
+            //     "116.203.75.72", "78.46.123.99", "95.217.4.100", "88.99.190.27", "78.46.229.200", "95.217.6.171",
+            //     "88.99.190.191", "94.130.78.183", "94.130.24.163", "94.130.110.127", "94.130.110.95", "94.130.58.63",
+            //     "88.99.86.166", "88.198.78.106", "88.198.78.141", "88.99.126.144", "88.99.87.58", "95.217.6.234",
+            //     "95.217.12.226", "95.217.14.117", "95.217.17.248", "95.217.12.230"
+            // };
+            var ips = options.IpAddresses.ToArray();
+
+            if (ips.Length == 0)
+                ips = new[]
+                {
+                    "116.203.75.72", "178.128.113.97", "165.227.45.119", "206.189.137.112", "157.245.160.201",
+                    "95.217.6.171", "88.99.190.191", "94.130.78.183", "94.130.24.163", "94.130.110.127",
+                    "94.130.110.95",
+                    "94.130.58.63", "88.99.86.166", "88.198.78.106", "88.198.78.141", "88.99.126.144", "88.99.87.58",
+                    "95.217.6.234", "95.217.12.226", "95.217.14.117", "95.217.17.248", "95.217.12.230"
+                };
+            TrustedKeygen.DoKeygen(ips.Length, options.F, ips);
+        }
+
+        private static void EncryptWallet(EncryptOptions options)
+        {
+            string path = options.WalletPath;
+            path = Path.IsPathRooted(path) || path.StartsWith("~/")
+                ? path
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(path)), path);
+            var content = File.ReadAllBytes(path) ?? throw new Exception($"Cannot read file {path}");
+            var key = Encoding.UTF8.GetBytes(options.WalletPassword).KeccakBytes();
+            var crypto = CryptoProvider.GetCrypto();
+            var encryptedContent = crypto.AesGcmEncrypt(key, content);
+            using var stream = System.Console.OpenStandardOutput();
+            stream.Write(encryptedContent, 0, encryptedContent.Length);
         }
 
         private static void DecryptWallet(DecryptOptions options)
