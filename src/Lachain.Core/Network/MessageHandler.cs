@@ -146,12 +146,15 @@ namespace Lachain.Core.Network
             (GetTransactionsByHashesRequest request, Action<GetTransactionsByHashesReply> callback) @event)
         {
             var (request, callback) = @event;
+            Logger.LogTrace($"Get request for {request.TransactionHashes.Count} transactions");
             var txs = request.TransactionHashes
                 .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
                                   _transactionPool.GetByHash(txHash))
                 .Where(tx => tx != null)
                 .Select(tx => tx!)
                 .ToList();
+            Logger.LogTrace($"Replying request with {txs.Count} transactions");
+            if (txs.Count == 0) return;
             callback(new GetTransactionsByHashesReply {Transactions = {txs}});
         }
 
