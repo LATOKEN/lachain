@@ -87,6 +87,7 @@ namespace Lachain.Console
 
             if (!(options.ConsensusPort is null)) networkConfig.Port = options.ConsensusPort.Value;
             if (!(options.ConsensusHost is null)) networkConfig.MyHost = options.ConsensusHost;
+            if (!(options.HubAddress is null)) networkConfig.HubAddress = options.HubAddress;
 
             networkManager.Start();
             transactionVerifier.Start();
