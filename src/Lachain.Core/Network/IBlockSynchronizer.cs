@@ -10,7 +10,7 @@ namespace Lachain.Core.Network
 
         uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey);
 
-        void HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey);
+        bool HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey);
 
         void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey);
 

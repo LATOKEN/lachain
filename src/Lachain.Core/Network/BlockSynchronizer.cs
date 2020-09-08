@@ -71,7 +71,7 @@ namespace Lachain.Core.Network
                 .Take(maxPeersToAsk)
                 .ToArray();
 
-            Logger.LogTrace($"Sending query for blocks to {peers.Length} peers");
+            Logger.LogTrace($"Sending query for {txHashes.Length} transactions to {peers.Length} peers");
             var request = _networkManager.MessageFactory.GetTransactionsByHashesRequest(lostTxs);
             foreach (var peer in peers) _networkManager.SendTo(peer, request);
 
@@ -95,8 +95,10 @@ namespace Lachain.Core.Network
         [MethodImpl(MethodImplOptions.Synchronized)]
         public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
         {
+            var txs = transactions.ToArray();
+            Logger.LogTrace($"Received {txs.Length} transactions from peer {publicKey.ToHex()}");
             var persisted = 0u;
-            foreach (var tx in transactions)
+            foreach (var tx in txs)
             {
                 if (tx.Signature.IsZero())
                 {
@@ -119,17 +121,18 @@ namespace Lachain.Core.Network
 
             lock (_peerHasTransactions)
                 Monitor.PulseAll(_peerHasTransactions);
+            Logger.LogTrace($"Persisted {persisted} transactions from peer {publicKey.ToHex()}");
             return persisted;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
+        public bool HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
         {
             Logger.LogDebug(
                 $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
             var myHeight = _blockManager.GetHeight();
             if (block.Header.Index != myHeight + 1)
-                return;
+                return false;
             /* if we don't have transactions from block than request it */
             var haveNotTxs = _GetMissingTransactions(block);
             if (haveNotTxs.Count > 0)
@@ -139,7 +142,7 @@ namespace Lachain.Core.Network
                 Logger.LogTrace($"Got {totalFound} transactions out of {haveNotTxs.Count} missing");
                 /* if peer can't provide all hashes from block than he might be a liar */
                 if (totalFound != haveNotTxs.Count)
-                    return;
+                    return false;
             }
 
             /* persist block to database */
@@ -161,16 +164,17 @@ namespace Lachain.Core.Network
                 return _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
             });
             if (error == OperatingError.BlockAlreadyExists)
-                return;
+                return true;
             if (error != OperatingError.Ok)
             {
                 Logger.LogWarning(
                     $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
-                return;
+                return false;
             }
 
             lock (_peerHasBlocks)
                 Monitor.PulseAll(_peerHasBlocks);
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

@@ -39,7 +39,7 @@ namespace Lachain.Core.Network
             IStateManager stateManager,
             IConsensusManager consensusManager,
             IBlockManager blockManager,
-            INetworkManager networkManager, 
+            INetworkManager networkManager,
             IPeerManager peerManager
         )
         {
@@ -116,8 +116,11 @@ namespace Lachain.Core.Network
             var (reply, publicKey) = @event;
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
-                _blockSynchronizer.HandleBlockFromPeer(block, publicKey);
-            
+            {
+                if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
+                    break;
+            }
+
             _peerManager.UpdatePeerTimestamp(publicKey);
         }
 
@@ -161,11 +164,11 @@ namespace Lachain.Core.Network
             foreach (var peer in peers)
                 if (_networkManager.IsSelfConnect(IPAddress.Parse(peer.Host)))
                     peer.Host = _peerManager.GetExternalIp();
-            
+
             callback(new GetPeersReply
             {
-                Peers = { peers },
-                PublicKeys = { publicKeys }
+                Peers = {peers},
+                PublicKeys = {publicKeys}
             });
         }
 
@@ -183,6 +186,7 @@ namespace Lachain.Core.Network
             {
                 t.Host = _networkManager.CheckLocalConnection(t.Host);
             }
+
             var peers = _peerManager.HandlePeersFromPeer(@event.reply.Peers, @event.reply.PublicKeys);
             _peerManager.UpdatePeerTimestamp(@event.publicKey);
             foreach (var peer in peers)
