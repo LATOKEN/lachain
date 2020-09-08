@@ -60,14 +60,27 @@ namespace Lachain.Core.Network
         {
             var txHashes = transactionHashes as UInt256[] ?? transactionHashes.ToArray();
             var lostTxs = _GetMissingTransactions(txHashes);
-            _networkBroadcaster.Broadcast(_networkManager.MessageFactory?.GetTransactionsByHashesRequest(lostTxs) ??
-                                          throw new InvalidOperationException());
+
+            const int maxPeersToAsk = 3;
+            var maxHeight = _peerHeights.Values.Max();
+            var rnd = new Random();
+            var peers = _peerHeights
+                .Where(entry => entry.Value == maxHeight)
+                .Select(entry => entry.Key)
+                .OrderBy(_ => rnd.Next())
+                .Take(maxPeersToAsk)
+                .ToArray();
+
+            Logger.LogTrace($"Sending query for blocks to {peers.Length} peers");
+            var request = _networkManager.MessageFactory.GetTransactionsByHashesRequest(lostTxs);
+            foreach (var peer in peers) _networkManager.SendTo(peer, request);
+
             var endWait = DateTime.UtcNow.Add(timeout);
             while (_GetMissingTransactions(txHashes).Count != 0)
             {
                 lock (_peerHasTransactions)
                 {
-                    var timeToWait = endWait.Subtract(DateTime.Now);
+                    var timeToWait = endWait.Subtract(DateTime.UtcNow);
                     if (timeToWait.TotalMilliseconds < 0)
                         timeToWait = TimeSpan.Zero;
                     Monitor.Wait(_peerHasTransactions, timeToWait);
@@ -79,6 +92,7 @@ namespace Lachain.Core.Network
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
         {
             var persisted = 0u;
@@ -111,7 +125,8 @@ namespace Lachain.Core.Network
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
         {
-            Logger.LogDebug($"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
+            Logger.LogDebug(
+                $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
             var myHeight = _blockManager.GetHeight();
             if (block.Header.Index != myHeight + 1)
                 return;
@@ -228,25 +243,28 @@ namespace Lachain.Core.Network
                     if (_peerHeights.Count == 0)
                         return;
 
-                    var maxHeight = _peerHeights.Values.Max(v => v);
+                    var maxHeight = _peerHeights.Values.Max();
                     if (myHeight >= maxHeight)
                         return;
 
                     const int maxPeersToAsk = 3;
                     const int maxBlocksToRequest = 100;
-            
+
                     var rnd = new Random();
                     var peers = _peerHeights
                         .Where(entry => entry.Value == maxHeight)
                         .Select(entry => entry.Key)
                         .OrderBy(_ => rnd.Next())
-                        .Take(maxPeersToAsk);
+                        .Take(maxPeersToAsk)
+                        .ToArray();
 
+                    Logger.LogTrace($"Sending query for blocks to {peers.Length} peers");
                     foreach (var peer in peers)
                     {
                         var leftBound = myHeight + 1;
                         var rightBound = Math.Min(maxHeight, myHeight + maxBlocksToRequest);
-                        _networkManager.SendTo(peer, messageFactory.GetBlocksByHeightRangeRequest(leftBound, rightBound));
+                        _networkManager.SendTo(peer,
+                            messageFactory.GetBlocksByHeightRangeRequest(leftBound, rightBound));
                     }
 
                     lock (_peerHasBlocks)
@@ -256,6 +274,7 @@ namespace Lachain.Core.Network
                 {
                     Logger.LogError($"Error in block synchronizer: {e}");
                 }
+
                 Thread.Sleep(5_000);
             }
         }
