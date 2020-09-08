@@ -89,6 +89,9 @@ namespace Lachain.Console
             if (!(options.ConsensusHost is null)) networkConfig.MyHost = options.ConsensusHost;
             if (!(options.HubAddress is null)) networkConfig.HubAddress = options.HubAddress;
 
+            if (!(configManager.GetCliArg("hubAddress") is null))
+                networkConfig!.HubAddress = configManager.GetCliArg("hubAddress");
+
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
