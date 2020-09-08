@@ -256,7 +256,7 @@ namespace Lachain.Core.Network
                     }
 
                     const int maxPeersToAsk = 3;
-                    const int maxBlocksToRequest = 100;
+                    const int maxBlocksToRequest = 5;
 
                     var peers = _peerHeights
                         .Where(entry => entry.Value >= maxHeight)
