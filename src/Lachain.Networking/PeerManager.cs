@@ -17,23 +17,23 @@ using Nethereum.Util;
 
 namespace Lachain.Networking
 {
-    public class PeerManager: IPeerManager
+    public class PeerManager : IPeerManager
     {
         private static readonly ILogger<NetworkManagerBase> Logger =
             LoggerFactory.GetLoggerForClass<NetworkManagerBase>();
-        
+
         private IMessageFactory? MessageFactory { get; set; }
 
         private readonly IPeerRepository _peerRepository;
         private INetworkBroadcaster? _broadcaster;
         private Dictionary<PeerAddress, ulong> _lastRequest = new Dictionary<PeerAddress, ulong>();
 
-        private static ulong PeerRequestTimeout { get; } = 15 * 60;
+        private const ulong PeerRequestTimeout = 15 * 60;
+        private const ulong CleanUpTick = 5 * 60 * 60 / PeerRequestTimeout + 1;
+        private const ulong ExternalIpCheckTimeout = 15 * 60;
 
-        private static readonly ulong CleanUpTick = 5 * 60 * 60 / PeerRequestTimeout + 1;
         private bool _started;
         private string? _externalIp;
-        private ulong _externalIpCheckTimeout = 15 * 60;
         private ulong _externalIpLastCheckTime;
         private Thread? _worker;
         private NetworkConfig? _networkConfig;
@@ -44,19 +44,19 @@ namespace Lachain.Networking
             _peerRepository = peerRepository;
             _stateManager = stateManager;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public List<PeerAddress> Start(NetworkConfig networkConfig, INetworkBroadcaster broadcaster, EcdsaKeyPair keyPair)
+        public List<PeerAddress> Start(NetworkConfig networkConfig, INetworkBroadcaster broadcaster,
+            EcdsaKeyPair keyPair)
         {
             _broadcaster = broadcaster;
             _networkConfig = networkConfig;
             MessageFactory = new MessageFactory(keyPair);
-            string[] peers;
             var storedPeersCount = _peerRepository.GetPeersCount();
             if (storedPeersCount == 0 || networkConfig?.Peers != null)
             {
-                peers = networkConfig?.Peers ?? throw new ArgumentException("Empty peer set");
-                
+                string[] peers = networkConfig.Peers ?? throw new ArgumentException("Empty peer set");
+
                 /* fill storage with initial peers */
                 foreach (var peerStr in peers)
                 {
@@ -64,16 +64,16 @@ namespace Lachain.Networking
                     var peer = new Peer
                     {
                         Host = CheckLocalConnection(peerAddress.Host!),
-                        Port = (uint)peerAddress.Port,
+                        Port = (uint) peerAddress.Port,
                         Timestamp = 0,
                     };
-                    
+
                     _peerRepository.AddOrUpdatePeer(peerAddress.PublicKey!, peer);
                 }
             }
-            
+
             _peerRepository.AddOrUpdatePeer(keyPair.PublicKey, GetCurrentPeer());
-            
+
             StartCheckingWorker();
 
             return GetSavedPeers();
@@ -84,7 +84,7 @@ namespace Lachain.Networking
             var stakersData = _stateManager.LastApprovedSnapshot.Storage.GetRawValue(
                 new BigInteger(3).ToUInt160(),
                 new BigInteger(6).ToUInt256().ToBytes());
-            var stakers = new List<ECDSAPublicKey> ();
+            var stakers = new List<ECDSAPublicKey>();
             for (var i = CryptoUtils.PublicKeyLength; i < stakersData.Length; i += CryptoUtils.PublicKeyLength)
             {
                 var staker = stakersData.Slice(i, i + CryptoUtils.PublicKeyLength).ToPublicKey();
@@ -93,11 +93,11 @@ namespace Lachain.Networking
 
             return stakers.ToArray();
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void Run()
         {
-            var ticks = (ulong) 1; 
+            var ticks = (ulong) 1;
             try
             {
                 Logger.LogInformation($"Peer manager started");
@@ -112,7 +112,7 @@ namespace Lachain.Networking
                     }
                     else
                         ticks++;
-                    
+
                     BroadcastGetPeersRequest();
                 }
             }
@@ -126,8 +126,8 @@ namespace Lachain.Networking
                 Environment.Exit(1);
             }
         }
-        
-        
+
+
         public void StartCheckingWorker()
         {
             if (_started)
@@ -169,8 +169,7 @@ namespace Lachain.Networking
         public PeerAddress? GetPeerAddressByPublicKey(ECDSAPublicKey key)
         {
             var peer = _peerRepository.GetPeerByPublicKey(key);
-            if (peer == null) return null;
-            return ToPeerAddress(peer, key);
+            return peer == null ? null : ToPeerAddress(peer, key);
         }
 
         public Peer? GetPeerByPublicKey(ECDSAPublicKey key)
@@ -180,14 +179,11 @@ namespace Lachain.Networking
 
         public List<PeerAddress> GetPeerAddressesByPublicKeys(IEnumerable<ECDSAPublicKey> keys)
         {
-            var result = new List<PeerAddress>();
-            foreach (var key in keys)
-            {
-                var peerAddr = GetPeerAddressByPublicKey(key);
-                if (peerAddr!= null) result.Add(peerAddr);
-            }
-
-            return result;
+            return keys
+                .Select(GetPeerAddressByPublicKey)
+                .Where(peerAddr => peerAddr != null)
+                .Select(peerAddr => peerAddr!)
+                .ToList();
         }
 
         public void BroadcastGetPeersRequest()
@@ -208,14 +204,14 @@ namespace Lachain.Networking
 
         public (Peer[], ECDSAPublicKey[]) GetPeersToBroadcast()
         {
-            var allPublicKeys = _peerRepository.GetPeerList().ToArray();
-            var peers = allPublicKeys
-                .Select(pub => _peerRepository.GetPeerByPublicKey(pub)!)
+            var peers = _peerRepository.GetPeerList()
+                .Select(pub => (pub, peer: _peerRepository.GetPeerByPublicKey(pub)!))
+                .Where(t => t.peer.Timestamp > TimeUtils.CurrentTimeMillis() / 1000 - 3 * 3600)
                 .ToArray();
-            var publicKeysToBroadcast = allPublicKeys
-                .Where((k, i) => peers[i].Timestamp > TimeUtils.CurrentTimeMillis() / 1000 - 3 * 3600)
-                .ToArray();
-            return (peers, publicKeysToBroadcast.ToArray());
+            return (
+                peers.Select(p => p.peer).ToArray(),
+                peers.Select(p => p.pub).ToArray()
+            );
         }
 
         private void PeerCleanUp()
@@ -230,7 +226,7 @@ namespace Lachain.Networking
                 _peerRepository.RemovePeer(publicKey);
             }
         }
-        
+
         public List<PeerAddress> HandlePeersFromPeer(IEnumerable<Peer> peers, IEnumerable<ECDSAPublicKey> publicKeys)
         {
             var peerArray = peers as Peer[] ?? peers.ToArray();
@@ -238,14 +234,14 @@ namespace Lachain.Networking
             {
                 peer.Host = CheckLocalConnection(peer.Host);
             }
+
             var peerAddresses = new List<PeerAddress>();
             var keys = publicKeys as ECDSAPublicKey[] ?? publicKeys.ToArray();
-            if (peerArray.Length != keys.Length) 
+            if (peerArray.Length != keys.Length)
                 throw new ArgumentException($"peers.Length: {peerArray.Length} != keys.Length: {keys.Length}");
-            
+
             for (var i = 0; i < peerArray.Length; i++)
             {
-                
                 peerAddresses.Add(ToPeerAddress(peerArray[i], keys[i]));
                 _peerRepository.AddOrUpdatePeer(keys[i], peerArray[i]);
             }
@@ -256,7 +252,7 @@ namespace Lachain.Networking
         public string GetExternalIp()
         {
             var shouldUpdateIp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds() >
-                                 _externalIpLastCheckTime + _externalIpCheckTimeout;
+                                 _externalIpLastCheckTime + ExternalIpCheckTimeout;
             if (_externalIp == null || shouldUpdateIp) DetectExternalIp();
             return _externalIp!;
         }
@@ -284,14 +280,17 @@ namespace Lachain.Networking
                 try
                 {
                     var input = new WebClient().DownloadString(url);
-                    Regex ipRg = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
+                    Regex ipRg = new Regex(
+                        @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+                    );
                     MatchCollection result = ipRg.Matches(input);
+                    if (result.Count <= 0) continue;
                     ip = result[0].ToString();
                     break;
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError($"Unable to resolve ip via {url}: {e}");
+                    Logger.LogWarning($"Unable to resolve ip via {url}: {e}");
                 }
             }
 
@@ -305,9 +304,11 @@ namespace Lachain.Networking
         {
             // TODO: this is hack
             // Here should be code to determine correct path to node 
-            return IPAddress.Parse(host).Equals(IPAddress.Parse(GetExternalIp())) ? new IPAddress(0x0100007f).ToString() : host;
+            return IPAddress.Parse(host).Equals(IPAddress.Parse(GetExternalIp()))
+                ? new IPAddress(0x0100007f).ToString()
+                : host;
         }
-        
+
         public static PeerAddress ToPeerAddress(Peer peer, ECDSAPublicKey pub)
         {
             var peerAddrStr = $"tcp://{pub.EncodeCompressed().ToHex(false)}@{peer.Host}:{peer.Port}";
@@ -320,7 +321,9 @@ namespace Lachain.Networking
             if (storedPeers.Length == 0)
                 throw new Exception("There are no peers to load");
 
-            return (from peerPubKey in storedPeers let peer = _peerRepository.GetPeerByPublicKey(peerPubKey)! select ToPeerAddress(peer, peerPubKey)).ToList();
+            return (from peerPubKey in storedPeers
+                let peer = _peerRepository.GetPeerByPublicKey(peerPubKey)!
+                select ToPeerAddress(peer, peerPubKey)).ToList();
         }
     }
 }

@@ -13,7 +13,6 @@ using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
-using NLog.Fluent;
 
 namespace Lachain.Core.Network
 {
