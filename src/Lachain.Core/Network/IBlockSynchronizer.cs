@@ -4,7 +4,7 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Network
 {
-    public interface IBlockSynchronizer
+    public interface IBlockSynchronizer : IDisposable
     {
         uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
 

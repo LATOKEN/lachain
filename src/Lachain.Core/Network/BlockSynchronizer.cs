@@ -31,6 +31,8 @@ namespace Lachain.Core.Network
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
+        private bool _running;
+        private readonly Thread _workerThread;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
@@ -50,6 +52,7 @@ namespace Lachain.Core.Network
             _networkManager = networkManager;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
+            _workerThread = new Thread(Worker);
         }
 
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
@@ -191,6 +194,7 @@ namespace Lachain.Core.Network
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             }
+
             _logLevelForSync = LogLevel.Trace;
         }
 
@@ -200,77 +204,78 @@ namespace Lachain.Core.Network
             return _peerHeights.Max(v => v.Value);
         }
 
-        private void _Worker()
+        private void Worker()
         {
-            if (_networkManager.LocalNode is null) throw new InvalidOperationException();
-            var myHeight = _blockManager.GetHeight();
-            if (myHeight > _networkManager.LocalNode.BlockHeight)
-                _networkManager.LocalNode.BlockHeight = myHeight;
-            
-            var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
-            _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
-            lock (_peerHasBlocks)
-                Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
-            if (_peerHeights.Count == 0)
-                return;
-
-            var maxHeight = _peerHeights.Values.Max(v => v);
-            if (myHeight >= maxHeight)
-                return;
-
-            var peers = _peerHeights.Where(entry => entry.Value == maxHeight).Select(entry => entry.Key);
-
-            foreach (var peer in peers)
+            _running = true;
+            Logger.LogDebug("Starting block synchronization worker");
+            while (_running)
             {
-                _networkManager.SendTo(
-                    peer,
-                    messageFactory.GetBlocksByHeightRangeRequest(myHeight + 1, maxHeight)
-                );
-            }
+                try
+                {
+                    var myHeight = _blockManager.GetHeight();
+                    if (myHeight > _networkManager.LocalNode.BlockHeight)
+                        _networkManager.LocalNode.BlockHeight = myHeight;
 
-            lock (_peerHasBlocks)
-                Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
+                    var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
+                    _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
+                    lock (_peerHasBlocks)
+                        Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
+                    if (_peerHeights.Count == 0)
+                        return;
+
+                    var maxHeight = _peerHeights.Values.Max(v => v);
+                    if (myHeight >= maxHeight)
+                        return;
+
+                    const int maxPeersToAsk = 3;
+                    const int maxBlocksToRequest = 100;
+            
+                    var rnd = new Random();
+                    var peers = _peerHeights
+                        .Where(entry => entry.Value == maxHeight)
+                        .Select(entry => entry.Key)
+                        .OrderBy(_ => rnd.Next())
+                        .Take(maxPeersToAsk);
+
+                    foreach (var peer in peers)
+                    {
+                        var leftBound = myHeight + 1;
+                        var rightBound = Math.Min(maxHeight, myHeight + maxBlocksToRequest);
+                        _networkManager.SendTo(peer, messageFactory.GetBlocksByHeightRangeRequest(leftBound, rightBound));
+                    }
+
+                    lock (_peerHasBlocks)
+                        Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Error in block synchronizer: {e}");
+                }
+                Thread.Sleep(5_000);
+            }
         }
 
         public void Start()
         {
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(15_000);
-                try
-                {
-                    var thread = Thread.CurrentThread;
-                    while (thread.IsAlive)
-                    {
-                        _Worker();
-                        Thread.Sleep(5_000);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.Error.WriteLine(e);
-                    Logger.LogError(e.Message);
-                }
-            }, TaskCreationOptions.LongRunning);
+            _workerThread.Start();
         }
 
         private List<UInt256> _GetMissingTransactions(IEnumerable<UInt256> txHashes)
         {
-            var list = new List<UInt256>();
-            foreach (var hash in txHashes)
-            {
-                var tx = _transactionManager.GetByHash(hash) ?? _transactionPool.GetByHash(hash);
-                if (tx != null)
-                    continue;
-                list.Add(hash);
-            }
-
-            return list;
+            return txHashes
+                .Where(hash => (_transactionManager.GetByHash(hash) ?? _transactionPool.GetByHash(hash)) is null)
+                .ToList();
         }
 
         private List<UInt256> _GetMissingTransactions(Block block)
         {
             return _GetMissingTransactions(block.TransactionHashes);
+        }
+
+        public void Dispose()
+        {
+            _running = false;
+            _workerThread.Join();
         }
     }
 }
