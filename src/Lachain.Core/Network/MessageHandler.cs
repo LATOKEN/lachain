@@ -83,36 +83,42 @@ namespace Lachain.Core.Network
 
         private void OnPingRequest(object sender, (PingRequest request, Action<PingReply> callback) @event)
         {
+            Logger.LogTrace("Start processing PingRequest");
             var (_, callback) = @event;
             var reply = new PingReply
             {
                 Timestamp = TimeUtils.CurrentTimeMillis(),
                 BlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
             };
+            Logger.LogTrace("Finished processing PingRequest");
             callback(reply);
         }
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
         {
+            Logger.LogTrace("Start processing PingReply");
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, publicKey);
-            // _peerManager.UpdatePeerTimestamp(publicKey);
+            Logger.LogTrace("Finished processing PingReply");
         }
 
         private void OnGetBlocksByHashesRequest(object sender,
             (GetBlocksByHashesRequest request, Action<GetBlocksByHashesReply> callback) @event)
         {
+            Logger.LogTrace("Start processing GetBlocksByHashesRequest");
             var (request, callback) = @event;
             var reply = new GetBlocksByHashesReply
             {
                 Blocks = {_stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes)}
             };
             callback(reply);
+            Logger.LogTrace("Finished processing GetBlocksByHashesRequest");
         }
 
         private void OnGetBlocksByHashesReply(object sender,
             (GetBlocksByHashesReply reply, ECDSAPublicKey publicKey) @event)
         {
+            Logger.LogTrace("Start processing GetBlocksByHashesReply");
             var (reply, publicKey) = @event;
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
             foreach (var block in orderedBlocks)
@@ -122,23 +128,28 @@ namespace Lachain.Core.Network
             }
 
             _peerManager.UpdatePeerTimestamp(publicKey);
+            Logger.LogTrace("Finished processing GetBlocksByHashesReply");
         }
 
         private void OnGetBlocksByHeightRangeRequest(object sender,
             (GetBlocksByHeightRangeRequest request, Action<GetBlocksByHeightRangeReply> callback) @event)
         {
+            Logger.LogTrace("Start processing GetBlocksByHeightRangeRequest");
             var (request, callback) = @event;
             var blockHashes = _stateManager.LastApprovedSnapshot.Blocks
                 .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                 .Select(block => block.Hash);
+            Logger.LogTrace("Finished processing GetBlocksByHeightRangeRequest");
             callback(new GetBlocksByHeightRangeReply {BlockHashes = {blockHashes}});
         }
 
         private void OnGetBlocksByHeightRangeReply(object sender,
             (GetBlocksByHeightRangeReply reply, Action<GetBlocksByHashesRequest> callback) @event)
         {
+            Logger.LogTrace("Start processing GetBlocksByHeightRangeReply");
             var (reply, callback) = @event;
             var request = new GetBlocksByHashesRequest {BlockHashes = {reply.BlockHashes}};
+            Logger.LogTrace("Finished processing GetBlocksByHeightRangeReply");
             callback(request);
         }
 
@@ -167,7 +178,7 @@ namespace Lachain.Core.Network
             foreach (var peer in peers)
                 if (_networkManager.IsSelfConnect(IPAddress.Parse(peer.Host)))
                     peer.Host = _peerManager.GetExternalIp();
-
+            Logger.LogTrace("Finished processing GetPeersRequest");
             callback(new GetPeersReply
             {
                 Peers = {peers},
@@ -178,13 +189,17 @@ namespace Lachain.Core.Network
         private void OnGetTransactionsByHashesReply(object sender,
             (GetTransactionsByHashesReply reply, ECDSAPublicKey publicKey) @event)
         {
-            _blockSynchronizer.HandleTransactionsFromPeer(@event.reply.Transactions, @event.publicKey);
-            _peerManager.UpdatePeerTimestamp(@event.publicKey);
+            Logger.LogTrace("Start processing GetTransactionsByHashesReply");
+            var (reply, publicKey) = @event;
+            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, publicKey);
+            _peerManager.UpdatePeerTimestamp(publicKey);
+            Logger.LogTrace("Finished processing GetTransactionsByHashesReply");
         }
 
         private void OnGetPeersReply(object sender,
             (GetPeersReply reply, ECDSAPublicKey publicKey, Func<ECDSAPublicKey, ClientWorker?> connect) @event)
         {
+            Logger.LogTrace("Start processing GetPeersReply");
             foreach (var t in @event.reply.Peers)
             {
                 t.Host = _networkManager.CheckLocalConnection(t.Host);
@@ -194,6 +209,7 @@ namespace Lachain.Core.Network
             _peerManager.UpdatePeerTimestamp(@event.publicKey);
             foreach (var peer in peers)
                 @event.connect(peer.PublicKey!);
+            Logger.LogTrace("Finished processing GetPeersReply");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
