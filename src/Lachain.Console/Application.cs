@@ -85,12 +85,7 @@ namespace Lachain.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
-            if (!(options.ConsensusPort is null)) networkConfig.Port = options.ConsensusPort.Value;
-            if (!(options.ConsensusHost is null)) networkConfig.MyHost = options.ConsensusHost;
-            if (!(options.HubAddress is null)) networkConfig.HubAddress = options.HubAddress;
-
-            if (!(configManager.GetCliArg("hubAddress") is null))
-                networkConfig!.HubAddress = configManager.GetCliArg("hubAddress");
+            if (!(options.HubPort is null)) networkConfig.Port = options.HubPort.Value;
 
             networkManager.Start();
             transactionVerifier.Start();

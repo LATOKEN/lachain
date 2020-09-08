@@ -63,13 +63,7 @@ namespace Lachain.Core.CLI
         [Option('a', "apikey", Required = false, HelpText = "Api key for RPC")]
         public string? RpcApiKey { get; set; }
 
-        [Option('p', "port", Required = false, HelpText = "Consensus port")]
-        public ushort? ConsensusPort { get; set; }
-
-        [Option('h', "host", Required = false, HelpText = "Consensus bind address")]
-        public string? ConsensusHost { get; set; }
-
-        [Option('u', "hub", Required = false, HelpText = "Hub local address/port (i.e. :50001)")]
-        public string? HubAddress { get; set; }
+        [Option('p', "port", Required = false, HelpText = "Communication hub port")]
+        public ushort? HubPort { get; set; }
     }
 }

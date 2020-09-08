@@ -51,7 +51,6 @@ namespace Lachain.Console
                 var net = new NetworkConfig
                 {
                     Port = 5050,
-                    Address = "0.0.0.0",
                     Peers = peers,
                     MaxPeers = 100,
                     ForceIPv6 = false

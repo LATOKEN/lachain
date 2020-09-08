@@ -26,31 +26,6 @@ namespace Lachain.Networking
 
         public ECDSAPublicKey? PublicKey { get; set; }
 
-        public static PeerAddress FromNode(Node node, Func<string, string> checkLocalConnection)
-        {
-            var publicKeyHex = node.PublicKey.ToHex();
-            if (publicKeyHex.StartsWith("0x"))
-                publicKeyHex = publicKeyHex.Substring(2);
-            var match = IpEndPointPattern.Match(node.Address);
-            if (!match.Groups["proto"].Success)
-                throw new ArgumentNullException(nameof(node.Address), "Unable to parse protocol from URL (" + node.Address + ")");
-            if (!Enum.TryParse<Protocol>(match.Groups["proto"].ToString(), true, out var proto))
-                throw new ArgumentOutOfRangeException(nameof(node.Address), "Unable to resolve protocol specified (" + match.Groups["proto"] +") from URL");
-            if (!match.Groups["address"].Success)
-                throw new ArgumentNullException(nameof(node.Address), "Unable to parse address from URL (" + node.Address + ")");
-            var address = match.Groups["address"].ToString();
-            if (!match.Groups["port"].Success)
-                throw new ArgumentNullException(nameof(node.Address), "Unable to parse port from URL (" + node.Address + ")");
-            var port = match.Groups["port"].ToString();
-            return new PeerAddress
-            {
-                Protocol = proto,
-                Host = checkLocalConnection(address),
-                Port = int.Parse(port),
-                PublicKey = publicKeyHex.HexToBytes().ToPublicKey()
-            };
-        }
-        
         public static PeerAddress Parse(string value)
         {
             var match = IpEndPointPattern.Match(value);

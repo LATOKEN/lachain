@@ -44,13 +44,12 @@ namespace Lachain.Networking
             {
                 Version = 0,
                 Timestamp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Address = $"{networkConfig.MyHost}:{networkConfig.Port}",
                 PublicKey = keyPair.PublicKey,
                 Nonce = (uint) new Random().Next(1 << 30),
                 BlockHeight = 0,
                 Agent = "Lachain-v0.0-dev"
             };
-            _hubConnector = new HubConnector(networkConfig.HubAddress, _messageFactory);
+            _hubConnector = new HubConnector($"127.0.0.1:{networkConfig.Port}", _messageFactory);
             _hubConnector.OnMessage += _HandleMessage;
         }
 
