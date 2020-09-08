@@ -68,5 +68,8 @@ namespace Lachain.Core.CLI
 
         [Option('h', "host", Required = false, HelpText = "Consensus bind address")]
         public string? ConsensusHost { get; set; }
+
+        [Option('u', "hub", Required = false, HelpText = "Hub local address/port (i.e. :50001)")]
+        public string? HubAddress { get; set; }
     }
 }
