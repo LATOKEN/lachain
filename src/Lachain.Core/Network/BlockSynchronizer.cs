@@ -71,7 +71,7 @@ namespace Lachain.Core.Network
                 .Take(maxPeersToAsk)
                 .ToArray();
 
-            Logger.LogTrace($"Sending query for {txHashes.Length} transactions to {peers.Length} peers");
+            Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
             var request = _networkManager.MessageFactory.GetTransactionsByHashesRequest(lostTxs);
             foreach (var peer in peers) _networkManager.SendTo(peer, request);
 
@@ -138,7 +138,7 @@ namespace Lachain.Core.Network
             if (haveNotTxs.Count > 0)
             {
                 Logger.LogTrace($"Waiting for {haveNotTxs.Count} transactions not present in block");
-                var totalFound = WaitForTransactions(block.TransactionHashes, TimeSpan.FromSeconds(5));
+                var totalFound = WaitForTransactions(haveNotTxs, TimeSpan.FromSeconds(5));
                 Logger.LogTrace($"Got {totalFound} transactions out of {haveNotTxs.Count} missing");
                 /* if peer can't provide all hashes from block than he might be a liar */
                 if (totalFound != haveNotTxs.Count)
