@@ -65,7 +65,7 @@ namespace Lachain.Core.Network
             var maxHeight = _peerHeights.Values.Max();
             var rnd = new Random();
             var peers = _peerHeights
-                .Where(entry => entry.Value == maxHeight)
+                .Where(entry => entry.Value >= maxHeight)
                 .Select(entry => entry.Key)
                 .OrderBy(_ => rnd.Next())
                 .Take(maxPeersToAsk)
@@ -173,6 +173,7 @@ namespace Lachain.Core.Network
                 Monitor.PulseAll(_peerHasBlocks);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
         {
             Logger.Log(_logLevelForSync, $"Peer {publicKey.ToHex()} has height {blockHeight}");
@@ -226,6 +227,7 @@ namespace Lachain.Core.Network
 
         private void Worker()
         {
+            var rnd = new Random();
             _running = true;
             Logger.LogDebug("Starting block synchronization worker");
             while (_running)
@@ -241,18 +243,23 @@ namespace Lachain.Core.Network
                     lock (_peerHasBlocks)
                         Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
                     if (_peerHeights.Count == 0)
+                    {
+                        Logger.LogWarning("Peer height map is empty, nobody responds to pings?");
                         return;
+                    }
 
                     var maxHeight = _peerHeights.Values.Max();
                     if (myHeight >= maxHeight)
+                    {
+                        Logger.LogTrace($"Nothing to do: my height is {myHeight} and peers are at {maxHeight}");
                         return;
+                    }
 
                     const int maxPeersToAsk = 3;
                     const int maxBlocksToRequest = 100;
 
-                    var rnd = new Random();
                     var peers = _peerHeights
-                        .Where(entry => entry.Value == maxHeight)
+                        .Where(entry => entry.Value >= maxHeight)
                         .Select(entry => entry.Key)
                         .OrderBy(_ => rnd.Next())
                         .Take(maxPeersToAsk)
