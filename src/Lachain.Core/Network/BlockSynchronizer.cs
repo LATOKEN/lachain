@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Logger;
@@ -107,8 +108,10 @@ namespace Lachain.Core.Network
             return persisted;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
         {
+            Logger.LogDebug($"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
             var myHeight = _blockManager.GetHeight();
             if (block.Header.Index != myHeight + 1)
                 return;
@@ -116,7 +119,9 @@ namespace Lachain.Core.Network
             var haveNotTxs = _GetMissingTransactions(block);
             if (haveNotTxs.Count > 0)
             {
+                Logger.LogTrace($"Waiting for {haveNotTxs.Count} transactions not present in block");
                 var totalFound = WaitForTransactions(block.TransactionHashes, TimeSpan.FromSeconds(5));
+                Logger.LogTrace($"Got {totalFound} transactions out of {haveNotTxs.Count} missing");
                 /* if peer can't provide all hashes from block than he might be a liar */
                 if (totalFound != haveNotTxs.Count)
                     return;
