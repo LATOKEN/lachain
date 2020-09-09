@@ -259,9 +259,7 @@ namespace Lachain.Core.Blockchain.Pool
         public ulong GetNextNonceForAddress(UInt160 address)
         {
             var poolNonce = GetMaxNonceForAddress(address);
-            // Console.WriteLine($"poolNonce addr: {address.ToHex()} nonce: {poolNonce}");
             var stateNonce = _transactionManager.CalcNextTxNonce(address);
-            // Console.WriteLine($"stateNonce addr: {address.ToHex()} nonce: {stateNonce}");
             return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
         }
     }

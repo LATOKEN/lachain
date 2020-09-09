@@ -89,6 +89,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
 
+        public static bool IsKeygenBlock(ulong block)
+        {
+            return block % StakingContract.CycleDuration >= StakingContract.VrfSubmissionPhaseDuration;
+        }
+        
+        public static bool SameCycle(ulong a, in ulong b)
+        {
+            return a / StakingContract.CycleDuration == b / StakingContract.CycleDuration;
+        }
+
         [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
         public ExecutionStatus DistributeCycleRewardsAndPenalties(SystemContractExecutionFrame frame)
         {

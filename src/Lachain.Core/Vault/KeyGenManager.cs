@@ -10,6 +10,7 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Network;
 using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
@@ -31,6 +32,7 @@ namespace Lachain.Core.Vault
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
         private readonly IKeyGenRepository _keyGenRepository;
+        private readonly IBlockSynchronizer _blockSynchronizer;
 
         public KeyGenManager(
             IBlockManager blockManager,
@@ -38,7 +40,8 @@ namespace Lachain.Core.Vault
             IPrivateWallet privateWallet,
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
-            IKeyGenRepository keyGenRepository
+            IKeyGenRepository keyGenRepository,
+            IBlockSynchronizer blockSynchronizer
         )
         {
             _transactionBuilder = transactionBuilder;
@@ -46,12 +49,27 @@ namespace Lachain.Core.Vault
             _transactionPool = transactionPool;
             _transactionSigner = transactionSigner;
             _keyGenRepository = keyGenRepository;
+            _blockSynchronizer = blockSynchronizer;
             blockManager.OnSystemContractInvoked += BlockManagerOnSystemContractInvoked;
         }
 
         private void BlockManagerOnSystemContractInvoked(object _, InvocationContext context)
         {
             if (context.Receipt is null) return;
+            var highestBlock = _blockSynchronizer.GetHighestBlock();
+            if (highestBlock.HasValue)
+            {
+                if (!GovernanceContract.IsKeygenBlock(highestBlock.Value) || 
+                    !GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block))
+                {
+                    Logger.LogWarning(
+                        $"Skipping keygen event since blockchain is already at height {highestBlock.Value} " +
+                        $"and we are at {context.Receipt.Block}"
+                    );
+                    return;
+                }
+            }
+
             var tx = context.Receipt.Transaction;
             if (
                 !tx.To.Equals(ContractRegisterer.GovernanceContract) &&
