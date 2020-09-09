@@ -16,27 +16,6 @@ using Lachain.Storage;
 
 namespace Lachain.Console
 {
-    internal class Config
-    {
-        public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
-            StorageConfig storage, BlockchainConfig blockchain)
-        {
-            Network = network;
-            Genesis = genesis;
-            Rpc = rpc;
-            Vault = vault;
-            Storage = storage;
-            Blockchain = blockchain;
-        }
-
-        [JsonProperty("network")] public NetworkConfig Network { get; set; }
-        [JsonProperty("genesis")] public GenesisConfig Genesis { get; set; }
-        [JsonProperty("rpc")] public RpcConfig Rpc { get; set; }
-        [JsonProperty("vault")] public VaultConfig Vault { get; set; }
-        [JsonProperty("storage")] public StorageConfig Storage { get; set; }
-        [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
-    }
-
     class Program
     {
         internal static void Main(string[] args)

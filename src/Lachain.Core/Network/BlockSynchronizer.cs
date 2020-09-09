@@ -257,14 +257,14 @@ namespace Lachain.Core.Network
                     if (_peerHeights.Count == 0)
                     {
                         Logger.LogWarning("Peer height map is empty, nobody responds to pings?");
-                        return;
+                        continue;
                     }
 
                     var maxHeight = _peerHeights.Values.Max();
                     if (myHeight >= maxHeight)
                     {
                         Logger.LogTrace($"Nothing to do: my height is {myHeight} and peers are at {maxHeight}");
-                        return;
+                        continue;
                     }
 
                     const int maxPeersToAsk = 3;

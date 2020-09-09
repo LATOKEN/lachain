@@ -18,6 +18,27 @@ namespace Lachain.Console
 {
     public class TrustedKeygen
     {
+        internal class Config
+        {
+            public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
+                StorageConfig storage, BlockchainConfig blockchain)
+            {
+                Network = network;
+                Genesis = genesis;
+                Rpc = rpc;
+                Vault = vault;
+                Storage = storage;
+                Blockchain = blockchain;
+            }
+
+            [JsonProperty("network")] public NetworkConfig Network { get; set; }
+            [JsonProperty("genesis")] public GenesisConfig Genesis { get; set; }
+            [JsonProperty("rpc")] public RpcConfig Rpc { get; set; }
+            [JsonProperty("vault")] public VaultConfig Vault { get; set; }
+            [JsonProperty("storage")] public StorageConfig Storage { get; set; }
+            [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
+        }
+        
         public static void DoKeygen(int n, int f, IEnumerable<string> ips)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -43,7 +64,7 @@ namespace Lachain.Console
             }
 
             var peers = ips.Zip(ecdsaPublicKeys)
-                .Select((t, i) => $"tcp://{t.Second}@{t.First}:5050")
+                .Select((t, i) => $"tcp://{t.Second}@{t.First}:5050") // any ip and port, only public key matters
                 .ToArray();
 
             for (var i = 0; i < n; ++i)
