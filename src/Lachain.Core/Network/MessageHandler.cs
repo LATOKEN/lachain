@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -121,12 +122,14 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Start processing GetBlocksByHashesReply");
             var (reply, publicKey) = @event;
             var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
-            foreach (var block in orderedBlocks)
+            Task.Factory.StartNew(() =>
             {
-                if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
-                    break;
-            }
-
+                foreach (var block in orderedBlocks)
+                {
+                    if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
+                        break;
+                }
+            }, TaskCreationOptions.LongRunning);
             _peerManager.UpdatePeerTimestamp(publicKey);
             Logger.LogTrace("Finished processing GetBlocksByHashesReply");
         }
