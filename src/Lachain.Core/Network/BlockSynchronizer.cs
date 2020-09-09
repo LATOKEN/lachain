@@ -118,8 +118,11 @@ namespace Lachain.Core.Network
                         continue;
                     }
 
-                    if (_transactionPool.Add(tx) == OperatingError.Ok)
+                    error = _transactionPool.Add(tx);
+                    if (error == OperatingError.Ok)
                         persisted++;
+                    else
+                        Logger.LogTrace($"Transaction {tx.Hash.ToHex()} not persisted: {error}");
                 }
 
                 lock (_peerHasTransactions)
