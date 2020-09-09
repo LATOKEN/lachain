@@ -31,6 +31,8 @@ namespace Lachain.Core.Network
 
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
+        private readonly object _blocksLock = new object();
+        private readonly object _txLock = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
         private readonly Thread _workerThread;
@@ -92,92 +94,95 @@ namespace Lachain.Core.Network
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
         {
-            var txs = transactions.ToArray();
-            Logger.LogTrace($"Received {txs.Length} transactions from peer {publicKey.ToHex()}");
-            var persisted = 0u;
-            foreach (var tx in txs)
+            lock (_txLock)
             {
-                if (tx.Signature.IsZero())
+                var txs = transactions.ToArray();
+                Logger.LogTrace($"Received {txs.Length} transactions from peer {publicKey.ToHex()}");
+                var persisted = 0u;
+                foreach (var tx in txs)
                 {
-                    Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
+                    if (tx.Signature.IsZero())
+                    {
+                        Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
+                        if (_transactionPool.Add(tx) == OperatingError.Ok)
+                            persisted++;
+                        continue;
+                    }
+
+                    var error = _transactionManager.Verify(tx);
+                    if (error != OperatingError.Ok)
+                    {
+                        Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
+                        continue;
+                    }
+
                     if (_transactionPool.Add(tx) == OperatingError.Ok)
                         persisted++;
-                    continue;
                 }
 
-                var error = _transactionManager.Verify(tx);
-                if (error != OperatingError.Ok)
-                {
-                    Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
-                    continue;
-                }
-
-                if (_transactionPool.Add(tx) == OperatingError.Ok)
-                    persisted++;
+                lock (_peerHasTransactions)
+                    Monitor.PulseAll(_peerHasTransactions);
+                Logger.LogTrace($"Persisted {persisted} transactions from peer {publicKey.ToHex()}");
+                return persisted;
             }
-
-            lock (_peerHasTransactions)
-                Monitor.PulseAll(_peerHasTransactions);
-            Logger.LogTrace($"Persisted {persisted} transactions from peer {publicKey.ToHex()}");
-            return persisted;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
         {
-            Logger.LogDebug(
-                $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
-            var myHeight = _blockManager.GetHeight();
-            if (block.Header.Index != myHeight + 1)
-                return false;
-            /* if we don't have transactions from block than request it */
-            var haveNotTxs = _GetMissingTransactions(block);
-            if (haveNotTxs.Count > 0)
+            lock (_blocksLock)
             {
-                Logger.LogTrace($"Waiting for {haveNotTxs.Count} transactions not present in block");
-                var totalFound = WaitForTransactions(haveNotTxs, TimeSpan.FromSeconds(5));
-                Logger.LogTrace($"Got {totalFound} transactions out of {haveNotTxs.Count} missing");
-                /* if peer can't provide all hashes from block than he might be a liar */
-                if (totalFound != haveNotTxs.Count)
+                Logger.LogDebug(
+                    $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
+                var myHeight = _blockManager.GetHeight();
+                if (block.Header.Index != myHeight + 1)
                     return false;
-            }
-
-            /* persist block to database */
-            var txs = block.TransactionHashes
-                .Select(txHash => _transactionPool.GetByHash(txHash))
-                .Where(tx => !(tx is null))
-                .Select(tx => tx!)
-                .ToList();
-
-            var error = _stateManager.SafeContext(() =>
-            {
-                if (_blockManager.GetHeight() + 1 != block.Header.Index)
+                /* if we don't have transactions from block than request it */
+                var haveNotTxs = _GetMissingTransactions(block);
+                if (haveNotTxs.Count > 0)
                 {
-                    Logger.LogTrace(
-                        $"We have Blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
-                    return OperatingError.BlockAlreadyExists;
+                    Logger.LogTrace($"Waiting for {haveNotTxs.Count} transactions not present in block");
+                    var totalFound = WaitForTransactions(haveNotTxs, TimeSpan.FromSeconds(5));
+                    Logger.LogTrace($"Got {totalFound} transactions out of {haveNotTxs.Count} missing");
+                    /* if peer can't provide all hashes from block than he might be a liar */
+                    if (totalFound != haveNotTxs.Count)
+                        return false;
                 }
 
-                return _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
-            });
-            if (error == OperatingError.BlockAlreadyExists)
-                return true;
-            if (error != OperatingError.Ok)
-            {
-                Logger.LogWarning(
-                    $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
-                return false;
-            }
+                /* persist block to database */
+                var txs = block.TransactionHashes
+                    .Select(txHash => _transactionPool.GetByHash(txHash))
+                    .Where(tx => !(tx is null))
+                    .Select(tx => tx!)
+                    .ToList();
 
-            lock (_peerHasBlocks)
-                Monitor.PulseAll(_peerHasBlocks);
-            return true;
+                var error = _stateManager.SafeContext(() =>
+                {
+                    if (_blockManager.GetHeight() + 1 != block.Header.Index)
+                    {
+                        Logger.LogTrace(
+                            $"We have Blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
+                        return OperatingError.BlockAlreadyExists;
+                    }
+
+                    return _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
+                });
+                if (error == OperatingError.BlockAlreadyExists)
+                    return true;
+                if (error != OperatingError.Ok)
+                {
+                    Logger.LogWarning(
+                        $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
+                    return false;
+                }
+
+                lock (_peerHasBlocks)
+                    Monitor.PulseAll(_peerHasBlocks);
+                return true;
+            }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
         {
             Logger.Log(_logLevelForSync, $"Peer {publicKey.ToHex()} has height {blockHeight}");

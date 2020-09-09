@@ -172,6 +172,16 @@ namespace Lachain.Core.Network
             callback(new GetTransactionsByHashesReply {Transactions = {txs}});
         }
 
+        private void OnGetTransactionsByHashesReply(object sender,
+            (GetTransactionsByHashesReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            Logger.LogTrace("Start processing GetTransactionsByHashesReply");
+            var (reply, publicKey) = @event;
+            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, publicKey);
+            _peerManager.UpdatePeerTimestamp(publicKey);
+            Logger.LogTrace("Finished processing GetTransactionsByHashesReply");
+        }
+
         private void OnGetPeersRequest(object sender,
             (GetPeersRequest request, Action<GetPeersReply> callback) @event)
         {
@@ -187,16 +197,6 @@ namespace Lachain.Core.Network
                 Peers = {peers},
                 PublicKeys = {publicKeys}
             });
-        }
-
-        private void OnGetTransactionsByHashesReply(object sender,
-            (GetTransactionsByHashesReply reply, ECDSAPublicKey publicKey) @event)
-        {
-            Logger.LogTrace("Start processing GetTransactionsByHashesReply");
-            var (reply, publicKey) = @event;
-            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, publicKey);
-            _peerManager.UpdatePeerTimestamp(publicKey);
-            Logger.LogTrace("Finished processing GetTransactionsByHashesReply");
         }
 
         private void OnGetPeersReply(object sender,
