@@ -106,6 +106,7 @@ namespace Lachain.Networking.Hub
                     var megaBatchBytes = megaBatch.ToByteArray();
                     if (megaBatchBytes.Length == 0)
                         throw new Exception("Cannot send empty message");
+                    Logger.LogTrace($"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
                         _unacked[megaBatch.MessageId] = (toSend, now);
