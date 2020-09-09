@@ -13,8 +13,8 @@ namespace Lachain.Networking.Hub
     {
         private static readonly ILogger<HubConnector> Logger = LoggerFactory.GetLoggerForClass<HubConnector>();
 
+        private bool _started;
         private bool _running;
-        private readonly byte[] _hubId;
         private readonly Proto.CommunicationHub.CommunicationHubClient _client;
         private readonly IMessageFactory _messageFactory;
 
@@ -29,12 +29,9 @@ namespace Lachain.Networking.Hub
         {
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
             _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(endpoint));
-            _hubThread.Start();
-            Logger.LogDebug("Requesting hub id from communication hub");
             _messageFactory = messageFactory;
             var channel = new Channel(endpoint, ChannelCredentials.Insecure);
             _client = new Proto.CommunicationHub.CommunicationHubClient(channel);
-            _hubId = RequestHubId();
         }
 
         private byte[] RequestHubId()
@@ -49,18 +46,22 @@ namespace Lachain.Networking.Hub
                 catch (Exception e)
                 {
                     Logger.LogWarning($"Hub is not yet available: {e.Message}");
-                }   
+                }
+
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
             }
-            
         }
 
         public void Start()
         {
+            _started = true;
+            _hubThread.Start();
+            Logger.LogDebug("Requesting hub id from communication hub");
+            var hubId = RequestHubId();
             Logger.LogDebug("Sending init request to communication hub");
             var init = new InitRequest
             {
-                Signature = ByteString.CopyFrom(_messageFactory.SignCommunicationHubInit(_hubId))
+                Signature = ByteString.CopyFrom(_messageFactory.SignCommunicationHubInit(hubId))
             };
             _client.Init(init);
             Thread.Sleep(TimeSpan.FromMilliseconds(5_000));
@@ -69,14 +70,6 @@ namespace Lachain.Networking.Hub
             _readWorker = new Thread(ReadWorker);
             _running = true;
             _readWorker.Start();
-        }
-
-        public void Dispose()
-        {
-            CommunicationHub.Net.Hub.Stop();
-            _running = false;
-            _readWorker?.Join();
-            _hubStream?.Dispose();
         }
 
         private void ReadWorker()
@@ -115,6 +108,14 @@ namespace Lachain.Networking.Hub
 
             var task = _hubStream.RequestStream.WriteAsync(request);
             task.Wait();
+        }
+
+        public void Dispose()
+        {
+            if (_started) CommunicationHub.Net.Hub.Stop();
+            _running = false;
+            _readWorker?.Join();
+            _hubStream?.Dispose();
         }
     }
 }

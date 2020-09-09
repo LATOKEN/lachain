@@ -2,9 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
@@ -318,7 +316,8 @@ namespace Lachain.Core.Network
         public void Dispose()
         {
             _running = false;
-            _workerThread.Join();
+            if (_workerThread.ThreadState == ThreadState.Running)
+                _workerThread.Join();
         }
     }
 }
