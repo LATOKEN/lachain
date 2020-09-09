@@ -26,7 +26,6 @@ namespace Lachain.Networking
 
         private readonly IPeerRepository _peerRepository;
         private INetworkBroadcaster? _broadcaster;
-        private Dictionary<PeerAddress, ulong> _lastRequest = new Dictionary<PeerAddress, ulong>();
 
         private const ulong PeerRequestTimeout = 15 * 60;
         private const ulong CleanUpTick = 5 * 60 * 60 / PeerRequestTimeout + 1;
@@ -114,6 +113,10 @@ namespace Lachain.Networking
                         ticks++;
 
                     BroadcastGetPeersRequest();
+                    
+                    var shouldUpdateIp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds() >
+                                         _externalIpLastCheckTime + ExternalIpCheckTimeout;
+                    if (_externalIp == null || shouldUpdateIp) DetectExternalIp();
                 }
             }
             catch (ThreadInterruptedException e)
@@ -251,9 +254,7 @@ namespace Lachain.Networking
 
         public string GetExternalIp()
         {
-            var shouldUpdateIp = (ulong) DateTimeOffset.UtcNow.ToUnixTimeSeconds() >
-                                 _externalIpLastCheckTime + ExternalIpCheckTimeout;
-            if (_externalIp == null || shouldUpdateIp) DetectExternalIp();
+            if (_externalIp == null) DetectExternalIp();
             return _externalIp!;
         }
 
@@ -279,11 +280,17 @@ namespace Lachain.Networking
             {
                 try
                 {
-                    var input = new WebClient().DownloadString(url);
+                    var input = new WebClient().DownloadStringTaskAsync(url);
+                    var tokenSource = new CancellationTokenSource();
+                    if (!input.Wait(2_000, tokenSource.Token))
+                    {
+                        tokenSource.Cancel();
+                        continue;
+                    }
                     Regex ipRg = new Regex(
                         @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
                     );
-                    MatchCollection result = ipRg.Matches(input);
+                    MatchCollection result = ipRg.Matches(input.Result);
                     if (result.Count <= 0) continue;
                     ip = result[0].ToString();
                     break;
