@@ -13,6 +13,7 @@ namespace Lachain.Core.Blockchain.Validators
     {
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private static readonly ILogger<ValidatorManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorManager>();
+        private static Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>> _pubkeyCache = new Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>>();
 
         public ValidatorManager(ISnapshotIndexRepository snapshotIndexRepository)
         {
@@ -38,9 +39,16 @@ namespace Lachain.Core.Blockchain.Validators
 
         public IReadOnlyCollection<ECDSAPublicKey> GetValidatorsPublicKeys(long afterBlock)
         {
-            return _snapshotIndexRepository.GetSnapshotForBlock((ulong) afterBlock).Validators
-                .GetValidatorsPublicKeys()
-                .ToArray();
+            if (!_pubkeyCache.ContainsKey(afterBlock))
+            {
+                IReadOnlyCollection<ECDSAPublicKey> res = _snapshotIndexRepository.GetSnapshotForBlock((ulong)afterBlock).Validators
+                    .GetValidatorsPublicKeys()
+                    .ToArray();
+                if (res.Count() == 0)
+                    return res; // do not cache empty value,  it can change in future
+                _pubkeyCache.Add(afterBlock, res);
+            }
+            return _pubkeyCache[afterBlock];
         }
 
         public ECDSAPublicKey GetPublicKey(uint validatorIndex, long afterBlock)
