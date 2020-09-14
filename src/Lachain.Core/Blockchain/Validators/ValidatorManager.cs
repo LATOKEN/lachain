@@ -13,7 +13,7 @@ namespace Lachain.Core.Blockchain.Validators
     {
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private static readonly ILogger<ValidatorManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorManager>();
-        private static Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>> _pubkeyCache = new Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>>();
+        private readonly Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>> _pubkeyCache = new Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>>();
 
         public ValidatorManager(ISnapshotIndexRepository snapshotIndexRepository)
         {
