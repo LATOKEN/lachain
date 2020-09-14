@@ -5,7 +5,12 @@ import "default.proto";
 import "transaction.proto";
 import "block.proto";
 import "consensus.proto";
-import "peer.proto";
+
+message Peer {
+    reserved 1, 2; // deleted
+    uint64 timestamp = 3;
+    ECDSAPublicKey publicKey = 4;
+}
 
 message Ack {
     uint64 message_id = 1;
@@ -23,41 +28,30 @@ message PingReply {
 
 message GetPeersRequest {}
 
-message PeerJoinRequest {
-    Peer peer = 1;
-}
-
-message PeerJoinReply {
-    bool connected = 1;
-}
-
 message GetPeersReply {
     repeated Peer peers = 1;
-    repeated ECDSAPublicKey public_keys = 2;
 }
 
-message GetBlocksByHashesRequest {
-    repeated UInt256 block_hashes = 1;
-}
-
-message GetBlocksByHashesReply {
-    repeated Block blocks = 1;
-}
-
-message GetBlocksByHeightRangeRequest {
+message SyncBlocksRequest {
     uint64 from_height = 1;
     uint64 to_height = 2;
 }
 
-message GetBlocksByHeightRangeReply {
-    repeated UInt256 block_hashes = 1;
+message BlockInfo {
+    Block block = 1;
+    repeated TransactionReceipt transactions = 2;
 }
 
-message GetTransactionsByHashesRequest {
-    repeated UInt256 transaction_hashes = 1;
+message SyncBlocksReply {
+    repeated BlockInfo blocks = 1;
 }
 
-message GetTransactionsByHashesReply {
+message SyncPoolRequest {
+    repeated UInt256 hashes = 1;
+    // TODO: switch to sync entire pool?
+}
+
+message SyncPoolReply {
     repeated TransactionReceipt transactions = 1;
 }
 
@@ -65,19 +59,16 @@ message NetworkMessage {
     oneof message {
         PingRequest ping_request = 12;
         PingReply ping_reply = 13;
-        GetBlocksByHashesRequest get_blocks_by_hashes_request = 14;
-        GetBlocksByHashesReply get_blocks_by_hashes_reply = 15;
-        GetBlocksByHeightRangeRequest get_blocks_by_height_range_request = 16;
-        GetBlocksByHeightRangeReply get_blocks_by_height_range_reply = 17;
-        GetTransactionsByHashesRequest get_transactions_by_hashes_request = 18;
-        GetTransactionsByHashesReply get_transactions_by_hashes_reply = 19;
         ConsensusMessage consensus_message = 21;
         Ack ack = 22;
         GetPeersRequest get_peers_request = 23;
         GetPeersReply get_peers_reply = 24;
-        PeerJoinRequest peer_join_request = 25;
-        PeerJoinReply peer_join_reply = 26;
+        SyncBlocksRequest sync_blocks_request = 27;
+        SyncBlocksReply sync_blocks_reply = 28;
+        SyncPoolRequest sync_pool_request = 29;
+        SyncPoolReply sync_pool_reply = 30;
     }
+    reserved 14 to 19, 25, 26; // deleted
 }
 
 message MessageBatchContent {

@@ -12,14 +12,15 @@ namespace Lachain.Storage.Repositories
     public class PeerRepository : IPeerRepository
     {
         private readonly IRocksDbContext _rocksDbContext;
+
         private static readonly ILogger<PeerRepository> Logger =
             LoggerFactory.GetLoggerForClass<PeerRepository>();
-        
+
         public PeerRepository(IRocksDbContext rocksDbContext)
         {
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Peer? GetPeerByPublicKey(ECDSAPublicKey publicKey)
         {
@@ -27,7 +28,7 @@ namespace Lachain.Storage.Repositories
             var raw = _rocksDbContext.Get(prefix);
             return raw == null ? null : Peer.Parser.ParseFrom(raw);
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ICollection<ECDSAPublicKey> GetPeerList()
         {
@@ -63,20 +64,20 @@ namespace Lachain.Storage.Repositories
                 var storedPeer = Peer.Parser.ParseFrom(rawPeer);
                 if (storedPeer.Timestamp > peer.Timestamp)
                 {
-                    Logger.LogTrace($"Received peer ({peer.Timestamp}) is older than we have ({storedPeer.Timestamp}). Skipping...");
+                    Logger.LogTrace(
+                        $"Received peer ({peer.Timestamp}) is older than we have ({storedPeer.Timestamp}). Skipping...");
                     return false;
                 }
 
-                if (peer.Timestamp > currentTs
-                    || peer.Timestamp < currentTs - 3600 * 2)
+                if (peer.Timestamp > currentTs || peer.Timestamp < currentTs - 3600 * 2)
                 {
-                    
-                    Logger.LogTrace($"Received peer's timestamp ({peer.Timestamp}) is too old or too fresh. Setting it to 5d ago.");
+                    Logger.LogTrace(
+                        $"Received peer's timestamp ({peer.Timestamp}) is too old or too fresh. Setting it to 5d ago."
+                    );
                     peer.Timestamp = (uint) (currentTs - 3600 * 24 * 5);
                 }
                 else
                 {
-                    
                     Logger.LogTrace($"Received peer's timestamp ({peer.Timestamp}) is ok. Subtracting 2h.");
                     peer.Timestamp -= 3600 * 2;
                 }
@@ -86,14 +87,12 @@ namespace Lachain.Storage.Repositories
                 /* add peer to peer list */
                 var peersRaw = _rocksDbContext.Get(EntryPrefix.PeerList.BuildPrefix());
                 var peers = peersRaw != null ? peersRaw.ToEcdsaPublicKeys() : new List<ECDSAPublicKey>();
-                
                 peers.Add(publicKey);
-                
                 _rocksDbContext.Save(EntryPrefix.PeerList.BuildPrefix(), peers.ToByteArray());
-                // Logger.LogDebug($"Peer added to storage: {publicKey.ToHex()}. Total peers: {peers.Count}");
             }
+
             _rocksDbContext.Save(prefix, peer.ToByteArray());
-            Logger.LogTrace($"Peer updated: {publicKey.ToHex()}@{peer.Host} Timestamp: {peer.Timestamp}");
+            Logger.LogTrace($"Peer updated: {publicKey.ToHex()} Timestamp: {peer.Timestamp}");
             return true;
         }
 
@@ -103,16 +102,16 @@ namespace Lachain.Storage.Repositories
             /* update peer */
             var prefixTx = EntryPrefix.PeerByPublicKey.BuildPrefix(publicKey.ToByteArray());
             var rawPeer = _rocksDbContext.Get(prefixTx);
-            
+
             if (rawPeer == null)
                 return false;
-            
+
             var storedPeer = Peer.Parser.ParseFrom(rawPeer);
             storedPeer.Timestamp = (uint) (TimeUtils.CurrentTimeMillis() / 1000);
             _rocksDbContext.Save(prefixTx, storedPeer.ToByteArray());
             return true;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool ContainsPublicKey(ECDSAPublicKey publicKey)
         {
@@ -120,7 +119,7 @@ namespace Lachain.Storage.Repositories
             var raw = _rocksDbContext.Get(prefix);
             return raw != null;
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public int GetPeersCount()
         {

@@ -72,7 +72,7 @@ namespace Lachain.Core.Network
                 .ToArray();
 
             Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
-            var request = _networkManager.MessageFactory.GetTransactionsByHashesRequest(lostTxs);
+            var request = _networkManager.MessageFactory.SyncPoolRequest(lostTxs);
             foreach (var peer in peers) _networkManager.SendTo(peer, request);
 
             var endWait = DateTime.UtcNow.Add(timeout);
@@ -130,44 +130,26 @@ namespace Lachain.Core.Network
             }
         }
 
-        public bool HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey)
+        public bool HandleBlockFromPeer(BlockInfo blockWithTransactions, ECDSAPublicKey publicKey)
         {
             lock (_blocksLock)
             {
+                var block = blockWithTransactions.Block;
+                var receipts = blockWithTransactions.Transactions;
                 Logger.LogDebug(
                     $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
                 var myHeight = _blockManager.GetHeight();
                 if (block.Header.Index != myHeight + 1)
                     return false;
-                /* if we don't have transactions from block than request it */
-                var haveNotTxs = _GetMissingTransactions(block);
-                if (haveNotTxs.Count > 0)
-                {
-                    Logger.LogTrace($"Waiting for {haveNotTxs.Count} transactions not present in block");
-                    var totalFound = WaitForTransactions(haveNotTxs, TimeSpan.FromSeconds(5));
-                    Logger.LogTrace($"Got {totalFound} transactions out of {haveNotTxs.Count} missing");
-                    /* if peer can't provide all hashes from block than he might be a liar */
-                    if (totalFound != haveNotTxs.Count)
-                        return false;
-                }
-
-                /* persist block to database */
-                var txs = block.TransactionHashes
-                    .Select(txHash => _transactionPool.GetByHash(txHash))
-                    .Where(tx => !(tx is null))
-                    .Select(tx => tx!)
-                    .ToList();
-
+                if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
+                    return false;
                 var error = _stateManager.SafeContext(() =>
                 {
-                    if (_blockManager.GetHeight() + 1 != block.Header.Index)
-                    {
-                        Logger.LogTrace(
-                            $"We have Blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
-                        return OperatingError.BlockAlreadyExists;
-                    }
-
-                    return _blockManager.Execute(block, txs, commit: true, checkStateHash: true);
+                    if (_blockManager.GetHeight() + 1 == block.Header.Index)
+                        return _blockManager.Execute(block, receipts, commit: true, checkStateHash: true);
+                    Logger.LogTrace(
+                        $"We have blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
+                    return OperatingError.BlockAlreadyExists;
                 });
                 if (error == OperatingError.BlockAlreadyExists)
                     return true;
@@ -280,8 +262,7 @@ namespace Lachain.Core.Network
                     {
                         var leftBound = myHeight + 1;
                         var rightBound = Math.Min(maxHeight, myHeight + maxBlocksToRequest);
-                        _networkManager.SendTo(peer,
-                            messageFactory.GetBlocksByHeightRangeRequest(leftBound, rightBound));
+                        _networkManager.SendTo(peer, messageFactory.SyncBlocksRequest(leftBound, rightBound));
                     }
 
                     lock (_peerHasBlocks)
@@ -306,11 +287,6 @@ namespace Lachain.Core.Network
             return txHashes
                 .Where(hash => (_transactionManager.GetByHash(hash) ?? _transactionPool.GetByHash(hash)) is null)
                 .ToList();
-        }
-
-        private List<UInt256> _GetMissingTransactions(Block block)
-        {
-            return _GetMissingTransactions(block.TransactionHashes);
         }
 
         public void Dispose()

@@ -9,13 +9,11 @@ namespace Lachain.Core.Network
         uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
 
         uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey);
-
-        bool HandleBlockFromPeer(Block block, ECDSAPublicKey publicKey);
-
+        
         void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey);
 
-        bool IsSynchronizingWith(IEnumerable<ECDSAPublicKey> peers);
-
+        bool HandleBlockFromPeer(BlockInfo block, ECDSAPublicKey publicKey);
+        
         ulong? GetHighestBlock();
 
         void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers);
