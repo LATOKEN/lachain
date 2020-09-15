@@ -4,11 +4,6 @@ using CommandLine;
 
 namespace Lachain.Core.CLI
 {
-    [Verb("version", HelpText = "Print version and exit")]
-    public class VersionOptions
-    {
-    }
-
     [Verb("decrypt", HelpText = "Decrypt wallet")]
     public class DecryptOptions
     {

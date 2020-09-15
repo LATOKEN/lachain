@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Version>0.0.8</Version>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Lachain.Console</RootNamespace>

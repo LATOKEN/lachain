@@ -3,16 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using CommandLine;
-using Lachain.Core.Blockchain;
-using Newtonsoft.Json;
-using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.CLI;
-using Lachain.Core.RPC;
-using Lachain.Core.RPC.HTTP;
-using Lachain.Core.Vault;
 using Lachain.Crypto;
-using Lachain.Networking;
-using Lachain.Storage;
 
 namespace Lachain.Console
 {
@@ -20,9 +12,8 @@ namespace Lachain.Console
     {
         internal static void Main(string[] args)
         {
-            var x = Parser.Default
-                .ParseArguments<VersionOptions, RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
-                .WithParsed<VersionOptions>(options => PrintVersion())
+            Parser.Default
+                .ParseArguments<RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
                 .WithParsed<RunOptions>(RunNode)
                 .WithParsed<DecryptOptions>(DecryptWallet)
                 .WithParsed<EncryptOptions>(EncryptWallet)
@@ -31,6 +22,7 @@ namespace Lachain.Console
                 {
                     foreach (var error in errors)
                     {
+                        if (error is CommandLine.VersionRequestedError) continue;
                         System.Console.Error.WriteLine(error);
                     }
                 });
@@ -122,11 +114,6 @@ namespace Lachain.Console
         {
             using var app = new Application(options.ConfigPath, options);
             app.Start(options);
-        }
-
-        private static void PrintVersion()
-        {
-            System.Console.WriteLine(new NodeService(null!, null!, null!).GetNetVersion());
         }
     }
 }

@@ -145,8 +145,8 @@ namespace Lachain.Networking
                 NetworkMessage msg = x switch
                 {
                     PingReply pingReply => new NetworkMessage {PingReply = pingReply},
-                    SyncBlocksRequest syncBlockRequest => new NetworkMessage {SyncBlocksRequest = syncBlockRequest},
                     SyncBlocksReply syncBlockReply => new NetworkMessage {SyncBlocksReply = syncBlockReply},
+                    SyncPoolReply syncPoolReply => new NetworkMessage {SyncPoolReply = syncPoolReply},
                     GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
                     _ => throw new InvalidOperationException()
                 };
@@ -177,7 +177,7 @@ namespace Lachain.Networking
                     OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolReply:
-                    OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));
                     _peerManager.UpdatePeerTimestamp(envelope.PublicKey);
                     break;
                 case NetworkMessage.MessageOneofCase.GetPeersRequest:

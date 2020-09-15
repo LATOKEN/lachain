@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Google.Protobuf.Collections;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -103,7 +104,21 @@ namespace Lachain.Core.Network
             var (request, callback) = @event;
             var reply = new SyncBlocksReply
             {
-                // Blocks = {_stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes)}
+                Blocks =
+                {
+                    _stateManager.LastApprovedSnapshot.Blocks
+                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight)
+                        .Select(block => new BlockInfo
+                        {
+                            Block = block,
+                            Transactions =
+                            {
+                                block.TransactionHashes
+                                    .Select(txHash =>
+                                        _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash))
+                            }
+                        })
+                }
             };
             callback(reply);
             Logger.LogTrace("Finished processing SyncBlocksRequest");
@@ -113,7 +128,11 @@ namespace Lachain.Core.Network
         {
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
-            var orderedBlocks = reply.Blocks.OrderBy(x => x.Block.Header.Index).ToArray();
+            Logger.LogTrace(reply.ToString());
+            var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
+                .Where(x => x.Block?.Header?.Index != null)
+                .OrderBy(x => x.Block.Header.Index)
+                .ToArray();
             Task.Factory.StartNew(() =>
             {
                 foreach (var block in orderedBlocks)
@@ -125,15 +144,8 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }
 
-        private void OnSyncPoolReply(object sender, (SyncPoolReply reply, ECDSAPublicKey publicKey) @event)
-        {
-            Logger.LogTrace("Start processing SyncPoolReply");
-            var (reply, publicKey) = @event;
-            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, publicKey);
-            Logger.LogTrace("Finished processing SyncPoolReply");
-        }
-
-        private void OnSyncPoolRequest(object sender, (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
+        private void OnSyncPoolRequest(object sender,
+            (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
             var (request, callback) = @event;
             Logger.LogTrace($"Get request for {request.Hashes.Count} transactions");
@@ -146,6 +158,16 @@ namespace Lachain.Core.Network
             Logger.LogTrace($"Replying request with {txs.Count} transactions");
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
+        }
+
+        private void OnSyncPoolReply(object sender, (SyncPoolReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            Logger.LogTrace("Start processing SyncPoolReply");
+            var (reply, publicKey) = @event;
+            _blockSynchronizer.HandleTransactionsFromPeer(
+                reply.Transactions ?? Enumerable.Empty<TransactionReceipt>(), publicKey
+            );
+            Logger.LogTrace("Finished processing SyncPoolReply");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
