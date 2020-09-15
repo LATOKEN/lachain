@@ -44,7 +44,9 @@ namespace Lachain.Networking
                 BlockHeight = 0,
                 Agent = "Lachain-v0.0-dev"
             };
-            _hubConnector = new HubConnector($"127.0.0.1:{networkConfig.Port}", _messageFactory);
+            _hubConnector = new HubConnector(
+                $"127.0.0.1:{networkConfig.Port}", networkConfig.BootstrapAddress, _messageFactory
+            );
             _hubConnector.OnMessage += _HandleMessage;
         }
 
@@ -114,7 +116,7 @@ namespace Lachain.Networking
             var worker = Connect(batch.Sender);
             if (worker is null)
             {
-                Logger.LogWarning($"Got batch from {batch.Sender.ToHex()} but cannot connect to him skipping");
+                Logger.LogWarning($"Got batch from {batch.Sender.ToHex()} but cannot connect to him, skipping");
                 return;
             }
 
@@ -165,50 +167,26 @@ namespace Lachain.Networking
                     OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
+                    OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksReply:
+                    OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    _peerManager.UpdatePeerTimestamp(envelope.PublicKey);
+                    break;
+                case NetworkMessage.MessageOneofCase.SyncPoolRequest:
+                    OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolReply:
+                    OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    _peerManager.UpdatePeerTimestamp(envelope.PublicKey);
                     break;
-                // case NetworkMessage.MessageOneofCase.GetBlocksByHashesRequest:
-                //     OnGetBlocksByHashesRequest?.Invoke(this,
-                //         (message.GetBlocksByHashesRequest, SendTo(envelope.RemotePeer))
-                //     );
-                //     break;
-                // case NetworkMessage.MessageOneofCase.GetBlocksByHashesReply:
-                //     OnGetBlocksByHashesReply?.Invoke(this, (message.GetBlocksByHashesReply, envelope.PublicKey));
-                //     break;
-                // case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeRequest:
-                //     OnGetBlocksByHeightRangeRequest?.Invoke(this,
-                //         (message.GetBlocksByHeightRangeRequest, SendTo(envelope.RemotePeer))
-                //     );
-                //     break;
-                // case NetworkMessage.MessageOneofCase.GetBlocksByHeightRangeReply:
-                //     OnGetBlocksByHeightRangeReply?.Invoke(this,
-                //         (message.GetBlocksByHeightRangeReply, SendTo(envelope.RemotePeer))
-                //     );
-                //     break;
-                // case NetworkMessage.MessageOneofCase.GetTransactionsByHashesRequest:
-                //     OnGetTransactionsByHashesRequest?.Invoke(this,
-                //         (message.GetTransactionsByHashesRequest, SendTo(envelope.RemotePeer))
-                //     );
-                //     break;
-                // case NetworkMessage.MessageOneofCase.GetTransactionsByHashesReply:
-                //     OnGetTransactionsByHashesReply?.Invoke(this,
-                //         (message.GetTransactionsByHashesReply, envelope.PublicKey)
-                //     );
-                //     break;
                 case NetworkMessage.MessageOneofCase.GetPeersRequest:
-                    Logger.LogTrace("Start processing GetPeersRequest");
                     var peersToBroadcast = _peerManager.GetPeersToBroadcast();
-                    Logger.LogTrace($"Got {peersToBroadcast.Length} public keys to broadcast");
                     SendTo(envelope.RemotePeer)(new GetPeersReply {Peers = {peersToBroadcast}});
                     break;
                 case NetworkMessage.MessageOneofCase.GetPeersReply:
-                    Logger.LogTrace("Start processing GetPeersReply");
                     var peers = _peerManager.HandlePeersFromPeer(message.GetPeersReply.Peers);
                     foreach (var peer in peers) Connect(peer.PublicKey);
-                    Logger.LogTrace("Finished processing GetPeersReply");
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
                     envelope.RemotePeer.ReceiveAck(message.Ack.MessageId);

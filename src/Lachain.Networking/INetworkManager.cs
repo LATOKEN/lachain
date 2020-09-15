@@ -1,5 +1,4 @@
 ﻿using System;
-using Lachain.Networking.Hub;
 using Lachain.Proto;
 
 namespace Lachain.Networking

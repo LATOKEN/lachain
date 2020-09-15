@@ -25,12 +25,12 @@ namespace Lachain.Networking.Hub
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string endpoint, IMessageFactory messageFactory)
+        public HubConnector(string grpcEndpoint, string hubBootstrapAddress, IMessageFactory messageFactory)
         {
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
-            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(endpoint));
+            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(grpcEndpoint, hubBootstrapAddress));
             _messageFactory = messageFactory;
-            var channel = new Channel(endpoint, ChannelCredentials.Insecure);
+            var channel = new Channel(grpcEndpoint, ChannelCredentials.Insecure);
             _client = new Proto.CommunicationHub.CommunicationHubClient(channel);
         }
 

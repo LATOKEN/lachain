@@ -23,8 +23,8 @@ namespace Lachain.Core.Network
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
+
         private readonly INetworkManager _networkManager;
-        private readonly IPeerManager _peerManager;
 
         /*
          * TODO: message queue is a hack. We should design additional layer for storing/persisting consensus messages
@@ -38,8 +38,7 @@ namespace Lachain.Core.Network
             IStateManager stateManager,
             IConsensusManager consensusManager,
             IBlockManager blockManager,
-            INetworkManager networkManager,
-            IPeerManager peerManager
+            INetworkManager networkManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -47,7 +46,6 @@ namespace Lachain.Core.Network
             _stateManager = stateManager;
             _consensusManager = consensusManager;
             _networkManager = networkManager;
-            _peerManager = peerManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingRequest += OnPingRequest;
@@ -124,7 +122,6 @@ namespace Lachain.Core.Network
                         break;
                 }
             }, TaskCreationOptions.LongRunning);
-            _peerManager.UpdatePeerTimestamp(publicKey);
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }
 
@@ -133,7 +130,6 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Start processing SyncPoolReply");
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, publicKey);
-            _peerManager.UpdatePeerTimestamp(publicKey);
             Logger.LogTrace("Finished processing SyncPoolReply");
         }
 
