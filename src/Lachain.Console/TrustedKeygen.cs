@@ -38,7 +38,7 @@ namespace Lachain.Console
             [JsonProperty("storage")] public StorageConfig Storage { get; set; }
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
-        
+
         public static void DoKeygen(int n, int f, IEnumerable<string> ips)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -51,7 +51,7 @@ namespace Lachain.Console
                 .Select(s => s.GetPublicKeyShare())
                 .Select(s => s.ToHex())
                 .ToArray();
-            
+
             var ecdsaPrivateKeys = new string[n];
             var ecdsaPublicKeys = new string[n];
             var addresses = new string[n];
@@ -63,9 +63,7 @@ namespace Lachain.Console
                 addresses[i] = ecdsaPrivateKeys[i].HexToBytes().ToPrivateKey().GetPublicKey().GetAddress().ToHex();
             }
 
-            var peers = ips.Zip(ecdsaPublicKeys)
-                .Select((t, i) => $"tcp://{t.Second}@{t.First}:5050") // any ip and port, only public key matters
-                .ToArray();
+            var peers = ecdsaPublicKeys.ToArray();
 
             for (var i = 0; i < n; ++i)
             {
@@ -74,7 +72,8 @@ namespace Lachain.Console
                     Port = 5050,
                     Peers = peers,
                     MaxPeers = 100,
-                    ForceIPv6 = false
+                    ForceIPv6 = false,
+                    BootstrapAddress = "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41011"
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -144,7 +143,7 @@ namespace Lachain.Console
                     .Select(t => $"(\"{t.First.Second}\", \"{t.First.First}\", \"{t.Second}\")"))
             );
         }
-        
+
         private static void GenWallet(string path, string ecdsaKey, string tpkeKey, string tsKey)
         {
             var config = new JsonWallet(
