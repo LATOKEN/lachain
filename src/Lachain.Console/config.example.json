@@ -1,12 +1,11 @@
 {
   "network": {
-    "magic": 56754,
-    "host": "tcp://172.16.238.1",
     "port": 5050,
     "peers": [
     ],
     "forceIPv6": false,
-    "maxPeers": 100
+    "maxPeers": 100,
+    "bootstrapAddress": "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41011"
   },
   "genesis" : {
     "balances": {

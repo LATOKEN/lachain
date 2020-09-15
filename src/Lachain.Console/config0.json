@@ -1,17 +1,15 @@
 {
   "network": {
-    "magic": 56754,
-    "address": "0.0.0.0",
-    "host": "tcp://127.0.0.1",
     "port": 5050,
     "peers": [
-      "tcp://023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746@127.0.0.1:5050",
-      "tcp://02867b79666bac79f845ed33f4b2b0a964f9ac5b9be676b82bd9a01edcdad42415@127.0.0.1:5051",
-      "tcp://02a3ec3502ef652a969613696ec98a7bfd2c7b87d20efed47b3af726285d197d3c@127.0.0.1:5052",
-      "tcp://0272f1805337a1d2a0ad98c1e823b8103113a1824c1d8899187eaae748dd78229d@127.0.0.1:5053"
+      "023aa2e28f6f02e26c1f6fcbcf80a0876e55a320cefe563a3a343689b3fd056746",
+      "02867b79666bac79f845ed33f4b2b0a964f9ac5b9be676b82bd9a01edcdad42415",
+      "02a3ec3502ef652a969613696ec98a7bfd2c7b87d20efed47b3af726285d197d3c",
+      "0272f1805337a1d2a0ad98c1e823b8103113a1824c1d8899187eaae748dd78229d"
     ],
     "forceIPv6": false,
-    "maxPeers": 100
+    "maxPeers": 100,
+    "bootstrapAddress": "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"
   },
   "genesis": {
     "TPKEPublicKey": "0x01000000b8877b6ada80038c67fb0e7ae998db9698c239c3feec7bd9eee9da6af7882158b844942860955667d7a0d5af436ae717",

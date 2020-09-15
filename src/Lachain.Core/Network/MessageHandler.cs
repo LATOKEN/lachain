@@ -2,15 +2,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Google.Protobuf.Collections;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
 using Lachain.Networking;
-using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
@@ -25,8 +24,8 @@ namespace Lachain.Core.Network
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
+
         private readonly INetworkManager _networkManager;
-        private readonly IPeerManager _peerManager;
 
         /*
          * TODO: message queue is a hack. We should design additional layer for storing/persisting consensus messages
@@ -40,8 +39,7 @@ namespace Lachain.Core.Network
             IStateManager stateManager,
             IConsensusManager consensusManager,
             IBlockManager blockManager,
-            INetworkManager networkManager,
-            IPeerManager peerManager
+            INetworkManager networkManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -49,19 +47,14 @@ namespace Lachain.Core.Network
             _stateManager = stateManager;
             _consensusManager = consensusManager;
             _networkManager = networkManager;
-            _peerManager = peerManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingRequest += OnPingRequest;
             _networkManager.OnPingReply += OnPingReply;
-            _networkManager.OnGetBlocksByHashesRequest += OnGetBlocksByHashesRequest;
-            _networkManager.OnGetBlocksByHashesReply += OnGetBlocksByHashesReply;
-            _networkManager.OnGetBlocksByHeightRangeRequest += OnGetBlocksByHeightRangeRequest;
-            _networkManager.OnGetPeersRequest += OnGetPeersRequest;
-            _networkManager.OnGetBlocksByHeightRangeReply += OnGetBlocksByHeightRangeReply;
-            _networkManager.OnGetPeersReply += OnGetPeersReply;
-            _networkManager.OnGetTransactionsByHashesRequest += OnGetTransactionsByHashesRequest;
-            _networkManager.OnGetTransactionsByHashesReply += OnGetTransactionsByHashesReply;
+            _networkManager.OnSyncBlocksRequest += OnSyncBlocksRequest;
+            _networkManager.OnSyncBlocksReply += OnSyncBlocksReply;
+            _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
+            _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
         }
 
@@ -103,25 +96,43 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing PingReply");
         }
 
-        private void OnGetBlocksByHashesRequest(object sender,
-            (GetBlocksByHashesRequest request, Action<GetBlocksByHashesReply> callback) @event)
+        private void OnSyncBlocksRequest(object sender,
+            (SyncBlocksRequest request, Action<SyncBlocksReply> callback) @event
+        )
         {
-            Logger.LogTrace("Start processing GetBlocksByHashesRequest");
+            Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
-            var reply = new GetBlocksByHashesReply
+            var reply = new SyncBlocksReply
             {
-                Blocks = {_stateManager.LastApprovedSnapshot.Blocks.GetBlocksByHashes(request.BlockHashes)}
+                Blocks =
+                {
+                    _stateManager.LastApprovedSnapshot.Blocks
+                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight)
+                        .Select(block => new BlockInfo
+                        {
+                            Block = block,
+                            Transactions =
+                            {
+                                block.TransactionHashes
+                                    .Select(txHash =>
+                                        _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash))
+                            }
+                        })
+                }
             };
             callback(reply);
-            Logger.LogTrace("Finished processing GetBlocksByHashesRequest");
+            Logger.LogTrace("Finished processing SyncBlocksRequest");
         }
 
-        private void OnGetBlocksByHashesReply(object sender,
-            (GetBlocksByHashesReply reply, ECDSAPublicKey publicKey) @event)
+        private void OnSyncBlocksReply(object sender, (SyncBlocksReply reply, ECDSAPublicKey publicKey) @event)
         {
-            Logger.LogTrace("Start processing GetBlocksByHashesReply");
+            Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
-            var orderedBlocks = reply.Blocks.OrderBy(block => block.Header.Index).ToArray();
+            Logger.LogTrace(reply.ToString());
+            var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
+                .Where(x => x.Block?.Header?.Index != null)
+                .OrderBy(x => x.Block.Header.Index)
+                .ToArray();
             Task.Factory.StartNew(() =>
             {
                 foreach (var block in orderedBlocks)
@@ -130,38 +141,15 @@ namespace Lachain.Core.Network
                         break;
                 }
             }, TaskCreationOptions.LongRunning);
-            _peerManager.UpdatePeerTimestamp(publicKey);
-            Logger.LogTrace("Finished processing GetBlocksByHashesReply");
+            Logger.LogTrace("Finished processing SyncBlocksReply");
         }
 
-        private void OnGetBlocksByHeightRangeRequest(object sender,
-            (GetBlocksByHeightRangeRequest request, Action<GetBlocksByHeightRangeReply> callback) @event)
-        {
-            Logger.LogTrace("Start processing GetBlocksByHeightRangeRequest");
-            var (request, callback) = @event;
-            var blockHashes = _stateManager.LastApprovedSnapshot.Blocks
-                .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
-                .Select(block => block.Hash);
-            Logger.LogTrace("Finished processing GetBlocksByHeightRangeRequest");
-            callback(new GetBlocksByHeightRangeReply {BlockHashes = {blockHashes}});
-        }
-
-        private void OnGetBlocksByHeightRangeReply(object sender,
-            (GetBlocksByHeightRangeReply reply, Action<GetBlocksByHashesRequest> callback) @event)
-        {
-            Logger.LogTrace("Start processing GetBlocksByHeightRangeReply");
-            var (reply, callback) = @event;
-            var request = new GetBlocksByHashesRequest {BlockHashes = {reply.BlockHashes}};
-            Logger.LogTrace("Finished processing GetBlocksByHeightRangeReply");
-            callback(request);
-        }
-
-        private void OnGetTransactionsByHashesRequest(object sender,
-            (GetTransactionsByHashesRequest request, Action<GetTransactionsByHashesReply> callback) @event)
+        private void OnSyncPoolRequest(object sender,
+            (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
             var (request, callback) = @event;
-            Logger.LogTrace($"Get request for {request.TransactionHashes.Count} transactions");
-            var txs = request.TransactionHashes
+            Logger.LogTrace($"Get request for {request.Hashes.Count} transactions");
+            var txs = request.Hashes
                 .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
                                   _transactionPool.GetByHash(txHash))
                 .Where(tx => tx != null)
@@ -169,50 +157,17 @@ namespace Lachain.Core.Network
                 .ToList();
             Logger.LogTrace($"Replying request with {txs.Count} transactions");
             if (txs.Count == 0) return;
-            callback(new GetTransactionsByHashesReply {Transactions = {txs}});
+            callback(new SyncPoolReply {Transactions = {txs}});
         }
 
-        private void OnGetTransactionsByHashesReply(object sender,
-            (GetTransactionsByHashesReply reply, ECDSAPublicKey publicKey) @event)
+        private void OnSyncPoolReply(object sender, (SyncPoolReply reply, ECDSAPublicKey publicKey) @event)
         {
-            Logger.LogTrace("Start processing GetTransactionsByHashesReply");
+            Logger.LogTrace("Start processing SyncPoolReply");
             var (reply, publicKey) = @event;
-            _blockSynchronizer.HandleTransactionsFromPeer(reply.Transactions, publicKey);
-            _peerManager.UpdatePeerTimestamp(publicKey);
-            Logger.LogTrace("Finished processing GetTransactionsByHashesReply");
-        }
-
-        private void OnGetPeersRequest(object sender,
-            (GetPeersRequest request, Action<GetPeersReply> callback) @event)
-        {
-            var (_, callback) = @event;
-            var (peers, publicKeys) = _peerManager.GetPeersToBroadcast();
-            Logger.LogTrace($"Got {publicKeys.Length} public keys and {peers.Length} peers to broadcast");
-            foreach (var peer in peers)
-                if (_networkManager.IsSelfConnect(IPAddress.Parse(peer.Host)))
-                    peer.Host = _peerManager.GetExternalIp();
-            Logger.LogTrace("Finished processing GetPeersRequest");
-            callback(new GetPeersReply
-            {
-                Peers = {peers},
-                PublicKeys = {publicKeys}
-            });
-        }
-
-        private void OnGetPeersReply(object sender,
-            (GetPeersReply reply, ECDSAPublicKey publicKey, Func<ECDSAPublicKey, ClientWorker?> connect) @event)
-        {
-            Logger.LogTrace("Start processing GetPeersReply");
-            foreach (var t in @event.reply.Peers)
-            {
-                t.Host = _networkManager.CheckLocalConnection(t.Host);
-            }
-
-            var peers = _peerManager.HandlePeersFromPeer(@event.reply.Peers, @event.reply.PublicKeys);
-            _peerManager.UpdatePeerTimestamp(@event.publicKey);
-            foreach (var peer in peers)
-                @event.connect(peer.PublicKey!);
-            Logger.LogTrace("Finished processing GetPeersReply");
+            _blockSynchronizer.HandleTransactionsFromPeer(
+                reply.Transactions ?? Enumerable.Empty<TransactionReceipt>(), publicKey
+            );
+            Logger.LogTrace("Finished processing SyncPoolReply");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

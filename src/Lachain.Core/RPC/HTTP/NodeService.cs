@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Reflection;
 using AustinHarris.JsonRpc;
 using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Network;
@@ -75,21 +77,23 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        public string GetNetVersion()
+        private static string GetVersion()
         {
-            return "0.100.0";
+            return Assembly.GetEntryAssembly()!
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                .InformationalVersion;
         }
 
         [JsonRpcMethod("web3_clientVersion")]
         private string GetWeb3ClientVersion()
         {
-            return "Lachain/v0.0.0-test6/linux-x64/.NetSDK3.1";
+            return $"Lachain/v{GetVersion()}/linux-x64/.NetSDK3.1";
         }
 
         [JsonRpcMethod("eth_protocolVersion")]
         private string GetProtocolVersion()
         {
-            return "v0.0.0-test6";
+            return GetVersion();
         }
 
         [JsonRpcMethod("eth_newBlockFilter")]

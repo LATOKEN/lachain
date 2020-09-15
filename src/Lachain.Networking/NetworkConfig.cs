@@ -11,5 +11,7 @@ namespace Lachain.Networking
         [JsonProperty("forceIPv6")] public bool ForceIPv6 { get; set; }
 
         [JsonProperty("maxPeers")] public ushort MaxPeers { get; set; }
+        
+        [JsonProperty("bootstrapAddress")] public string BootstrapAddress { get; set; }
     }
 }

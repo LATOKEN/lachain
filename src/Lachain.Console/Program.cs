@@ -3,16 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using CommandLine;
-using Lachain.Core.Blockchain;
-using Newtonsoft.Json;
-using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.CLI;
-using Lachain.Core.RPC;
-using Lachain.Core.RPC.HTTP;
-using Lachain.Core.Vault;
 using Lachain.Crypto;
-using Lachain.Networking;
-using Lachain.Storage;
 
 namespace Lachain.Console
 {
@@ -20,9 +12,8 @@ namespace Lachain.Console
     {
         internal static void Main(string[] args)
         {
-            var x = Parser.Default
-                .ParseArguments<VersionOptions, RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
-                .WithParsed<VersionOptions>(options => PrintVersion())
+            Parser.Default
+                .ParseArguments<RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
                 .WithParsed<RunOptions>(RunNode)
                 .WithParsed<DecryptOptions>(DecryptWallet)
                 .WithParsed<EncryptOptions>(EncryptWallet)
@@ -31,6 +22,7 @@ namespace Lachain.Console
                 {
                     foreach (var error in errors)
                     {
+                        if (error is CommandLine.VersionRequestedError) continue;
                         System.Console.Error.WriteLine(error);
                     }
                 });
@@ -69,13 +61,6 @@ namespace Lachain.Console
 
         private static void RunKeygen(KeygenOptions options)
         {
-            // var ips = new[]
-            // {
-            //     "116.203.75.72", "78.46.123.99", "95.217.4.100", "88.99.190.27", "78.46.229.200", "95.217.6.171",
-            //     "88.99.190.191", "94.130.78.183", "94.130.24.163", "94.130.110.127", "94.130.110.95", "94.130.58.63",
-            //     "88.99.86.166", "88.198.78.106", "88.198.78.141", "88.99.126.144", "88.99.87.58", "95.217.6.234",
-            //     "95.217.12.226", "95.217.14.117", "95.217.17.248", "95.217.12.230"
-            // };
             var ips = options.IpAddresses.ToArray();
 
             if (ips.Length == 0)
@@ -122,11 +107,6 @@ namespace Lachain.Console
         {
             using var app = new Application(options.ConfigPath, options);
             app.Start(options);
-        }
-
-        private static void PrintVersion()
-        {
-            System.Console.WriteLine(new NodeService(null!, null!, null!).GetNetVersion());
         }
     }
 }

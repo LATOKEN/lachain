@@ -33,7 +33,7 @@ namespace Lachain.Networking
             var ack = new Ack {MessageId = messageId};
             return new NetworkMessage {Ack = ack};
         }
-        
+
         public NetworkMessage PingRequest(ulong timestamp, ulong blockHeight)
         {
             var request = new PingRequest
@@ -59,78 +59,32 @@ namespace Lachain.Networking
             return new NetworkMessage {ConsensusMessage = message};
         }
 
-        public NetworkMessage GetBlocksByHashesRequest(IEnumerable<UInt256> blockHashes)
-        {
-            var request = new GetBlocksByHashesRequest {BlockHashes = {blockHashes}};
-            return new NetworkMessage {GetBlocksByHashesRequest = request};
-        }
-
         public NetworkMessage GetPeersRequest()
         {
             var request = new GetPeersRequest();
+            return new NetworkMessage {GetPeersRequest = request};
+        }
+
+        public NetworkMessage GetPeersReply(Peer[] peers)
+        {
+            var reply = new GetPeersReply {Peers = {peers}};
+            return new NetworkMessage {GetPeersReply = reply};
+        }
+
+        public NetworkMessage SyncPoolRequest(IEnumerable<UInt256> hashes)
+        {
+            return new NetworkMessage {SyncPoolRequest = new SyncPoolRequest {Hashes = {hashes}}};
+        }
+
+        public NetworkMessage SyncPoolReply(IEnumerable<TransactionReceipt> transactions)
+        {
+            return new NetworkMessage {SyncPoolReply = new SyncPoolReply {Transactions = {transactions}}};
+        }
+
+        public NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight)
+        {
             return new NetworkMessage
-            {
-                GetPeersRequest = request,
-            };
-        }
-
-        public NetworkMessage PeerJoinRequest(Peer peer)
-        {
-            var request = new PeerJoinRequest
-            {
-                Peer = peer,
-            };
-            return new NetworkMessage
-            {
-                PeerJoinRequest = request,
-            };
-        }
-
-        public NetworkMessage GetPeersReply(Peer[] peers, ECDSAPublicKey[] publicKeys)
-        {
-            var reply = new GetPeersReply
-            {
-                Peers = {peers},
-                PublicKeys = {publicKeys},
-            };
-            return new NetworkMessage
-            {
-                GetPeersReply = reply,
-            };
-        }
-
-        public NetworkMessage GetBlocksByHashesReply(IEnumerable<Block> blocks)
-        {
-            var reply = new GetBlocksByHashesReply {Blocks = {blocks}};
-            return new NetworkMessage {GetBlocksByHashesReply = reply};
-        }
-
-        public NetworkMessage GetBlocksByHeightRangeRequest(ulong fromHeight, ulong toHeight)
-        {
-            var request = new GetBlocksByHeightRangeRequest
-            {
-                FromHeight = fromHeight,
-                ToHeight = toHeight
-            };
-            return new NetworkMessage {GetBlocksByHeightRangeRequest = request};
-        }
-
-        public NetworkMessage GetBlocksByHeightRangeReply(IEnumerable<UInt256> blockHashes)
-        {
-            var reply = new GetBlocksByHeightRangeReply {BlockHashes = {blockHashes}};
-            return new NetworkMessage {GetBlocksByHeightRangeReply = reply};
-        }
-
-        public NetworkMessage GetTransactionsByHashesRequest(IEnumerable<UInt256> transactionHashes)
-        {
-            var request = new GetTransactionsByHashesRequest {TransactionHashes = {transactionHashes}};
-            return new NetworkMessage {GetTransactionsByHashesRequest = request};
-        }
-
-        public NetworkMessage GetTransactionsByHashesReply(IEnumerable<TransactionReceipt> transactions)
-        {
-            var reply = new GetTransactionsByHashesReply {Transactions = {transactions}};
-            return new NetworkMessage {GetTransactionsByHashesReply = reply};
+                {SyncBlocksRequest = new SyncBlocksRequest {FromHeight = fromHeight, ToHeight = toHeight}};
         }
 
         public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)

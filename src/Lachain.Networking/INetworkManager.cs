@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Net;
-using Lachain.Networking.Hub;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -12,36 +10,14 @@ namespace Lachain.Networking
         void Start();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(long era);
-        string CheckLocalConnection(string host);
-        public bool IsSelfConnect(IPAddress ipAddress);
         Node LocalNode { get; }
 
         event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
         event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
-
-        event EventHandler<(GetBlocksByHashesRequest message, Action<GetBlocksByHashesReply> callback)>?
-            OnGetBlocksByHashesRequest;
-
-        event EventHandler<(GetBlocksByHashesReply message, ECDSAPublicKey address)>? OnGetBlocksByHashesReply;
-
-        event EventHandler<(GetBlocksByHeightRangeRequest message, Action<GetBlocksByHeightRangeReply> callback)>?
-            OnGetBlocksByHeightRangeRequest;
-
-        event EventHandler<(GetPeersRequest message, Action<GetPeersReply> callback)>?
-            OnGetPeersRequest;
-
-        event EventHandler<(GetBlocksByHeightRangeReply message, Action<GetBlocksByHashesRequest> callback)>?
-            OnGetBlocksByHeightRangeReply;
-
-        event EventHandler<(GetTransactionsByHashesRequest message, Action<GetTransactionsByHashesReply> callback)>?
-            OnGetTransactionsByHashesRequest;
-
-        event EventHandler<(GetTransactionsByHashesReply message, ECDSAPublicKey address)>?
-            OnGetTransactionsByHashesReply;
-
-        event EventHandler<(GetPeersReply message, ECDSAPublicKey address, Func<ECDSAPublicKey, ClientWorker?> connect)>?
-            OnGetPeersReply;
-
+        event EventHandler<(SyncBlocksRequest message, Action<SyncBlocksReply> callback)>? OnSyncBlocksRequest;
+        event EventHandler<(SyncBlocksReply message, ECDSAPublicKey address)>? OnSyncBlocksReply;
+        event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
+        event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
     }
 }
