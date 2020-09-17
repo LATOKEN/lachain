@@ -20,21 +20,19 @@ namespace Lachain.Networking
 
         private static readonly ILogger<NetworkManagerBase> Logger =
             LoggerFactory.GetLoggerForClass<NetworkManagerBase>();
-
         public Node LocalNode { get; }
         public IMessageFactory MessageFactory => _messageFactory;
-        private readonly IPeerManager _peerManager;
         private readonly MessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
+        private readonly ClientWorker _broadcaster;
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
 
-        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, IPeerRepository peerRepository)
+        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair)
         {
             if (networkConfig.Peers is null) throw new ArgumentNullException();
             _messageFactory = new MessageFactory(keyPair);
-            _peerManager = new PeerManager(peerRepository, this, _messageFactory, networkConfig);
             LocalNode = new Node
             {
                 Version = 0,
@@ -48,6 +46,11 @@ namespace Lachain.Networking
                 $"127.0.0.1:{networkConfig.Port}", networkConfig.BootstrapAddress, _messageFactory
             );
             _hubConnector.OnMessage += _HandleMessage;
+
+            var zeroBytes = new byte[33];
+            Array.Clear(zeroBytes, 0, 33);
+            _broadcaster = new ClientWorker(zeroBytes, _messageFactory, _hubConnector);
+            _broadcaster.Start();
         }
 
         public void AdvanceEra(long era)
@@ -60,19 +63,15 @@ namespace Lachain.Networking
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)
         {
-            Connect(publicKey)?.Send(message);
+            CreateMsgChannel(publicKey)?.AddMsgToQueue(message);
         }
 
         public void Start()
         {
             _hubConnector.Start();
-            var peers = _peerManager.Start();
-            foreach (var peer in peers.Select(peer => peer.PublicKey))
-                Connect(peer);
-            _peerManager.BroadcastGetPeersRequest();
         }
 
-        private ClientWorker? Connect(ECDSAPublicKey publicKey)
+        private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
         {
             if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;
             if (_clientWorkers.TryGetValue(publicKey, out var existingWorker))
@@ -113,7 +112,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            var worker = Connect(batch.Sender);
+            var worker = CreateMsgChannel(batch.Sender);
             if (worker is null)
             {
                 Logger.LogWarning($"Got batch from {batch.Sender.ToHex()} but cannot connect to him, skipping");
@@ -123,7 +122,7 @@ namespace Lachain.Networking
             var envelope = new MessageEnvelope(batch.Sender, worker);
             var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
             if (content.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
-                envelope.RemotePeer.Send(_messageFactory.Ack(batch.MessageId));
+                envelope.RemotePeer.AddMsgToQueue(_messageFactory.Ack(batch.MessageId));
             foreach (var message in content.Messages)
             {
                 try
@@ -150,7 +149,7 @@ namespace Lachain.Networking
                     GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
                     _ => throw new InvalidOperationException()
                 };
-                peer.Send(msg);
+                peer.AddMsgToQueue(msg);
             };
         }
 
@@ -171,22 +170,12 @@ namespace Lachain.Networking
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksReply:
                     OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
-                    _peerManager.UpdatePeerTimestamp(envelope.PublicKey);
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolRequest:
                     OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolReply:
                     OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));
-                    _peerManager.UpdatePeerTimestamp(envelope.PublicKey);
-                    break;
-                case NetworkMessage.MessageOneofCase.GetPeersRequest:
-                    var peersToBroadcast = _peerManager.GetPeersToBroadcast();
-                    SendTo(envelope.RemotePeer)(new GetPeersReply {Peers = {peersToBroadcast}});
-                    break;
-                case NetworkMessage.MessageOneofCase.GetPeersReply:
-                    var peers = _peerManager.HandlePeersFromPeer(message.GetPeersReply.Peers);
-                    foreach (var peer in peers) Connect(peer.PublicKey);
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
                     envelope.RemotePeer.ReceiveAck(message.Ack.MessageId);
@@ -207,15 +196,11 @@ namespace Lachain.Networking
 
         public void Broadcast(NetworkMessage networkMessage)
         {
-            foreach (var client in _clientWorkers.Values)
-            {
-                client.Send(networkMessage);
-            }
+            _broadcaster.AddMsgToQueue(networkMessage);
         }
 
         private void Stop()
         {
-            _peerManager.Stop();
             foreach (var client in _clientWorkers.Values)
             {
                 client.Stop();

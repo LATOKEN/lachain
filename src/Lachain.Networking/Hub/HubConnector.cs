@@ -95,7 +95,7 @@ namespace Lachain.Networking.Hub
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Send(ECDSAPublicKey publicKey, byte[] message)
+        public void Send(byte[] publicKey, byte[] message)
         {
             lock (_hubStreamLock)
                 while (_hubStream is null)
@@ -104,7 +104,7 @@ namespace Lachain.Networking.Hub
             var request = new InboundMessage
             {
                 Data = ByteString.CopyFrom(message),
-                PublicKey = ByteString.CopyFrom(publicKey.EncodeCompressed())
+                PublicKey = ByteString.CopyFrom(publicKey)
             };
 
             var task = _hubStream.RequestStream.WriteAsync(request);

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Google.Protobuf;
+using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -13,7 +14,7 @@ namespace Lachain.Networking.Hub
     public class ClientWorker : IDisposable
     {
         private static readonly ILogger<ClientWorker> Logger = LoggerFactory.GetLoggerForClass<ClientWorker>();
-        public ECDSAPublicKey PeerPublicKey { get; }
+        public byte[] PeerPublicKey { get; }
         private readonly IMessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
@@ -26,6 +27,14 @@ namespace Lachain.Networking.Hub
             new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
 
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
+        {
+            _messageFactory = messageFactory;
+            _hubConnector = hubConnector;
+            PeerPublicKey = peerPublicKey.EncodeCompressed();
+            _worker = new Thread(Worker);
+        }
+
+        public ClientWorker(byte[] peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
             _messageFactory = messageFactory;
             _hubConnector = hubConnector;
@@ -45,7 +54,7 @@ namespace Lachain.Networking.Hub
         }
 
 
-        public void Send(NetworkMessage message)
+        public void AddMsgToQueue(NetworkMessage message)
         {
             lock (_messageQueue)
             {
