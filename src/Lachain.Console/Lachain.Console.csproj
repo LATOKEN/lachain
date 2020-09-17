@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Lachain.Console</RootNamespace>
@@ -27,5 +27,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
+    <PackageReference Include="Microsoft.Packaging.Tools.Trimming" Version="1.1.0-preview1-26619-01" />
   </ItemGroup>
 </Project>
