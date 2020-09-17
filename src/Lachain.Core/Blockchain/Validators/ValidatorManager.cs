@@ -39,16 +39,17 @@ namespace Lachain.Core.Blockchain.Validators
 
         public IReadOnlyCollection<ECDSAPublicKey> GetValidatorsPublicKeys(long afterBlock)
         {
-            if (!_pubkeyCache.ContainsKey(afterBlock))
+            lock (_pubkeyCache)
             {
+                if (_pubkeyCache.ContainsKey(afterBlock)) return _pubkeyCache[afterBlock];
                 IReadOnlyCollection<ECDSAPublicKey> res = _snapshotIndexRepository.GetSnapshotForBlock((ulong)afterBlock).Validators
                     .GetValidatorsPublicKeys()
                     .ToArray();
-                if (res.Count() == 0)
+                if (!res.Any())
                     return res; // do not cache empty value,  it can change in future
                 _pubkeyCache.Add(afterBlock, res);
+                return _pubkeyCache[afterBlock];
             }
-            return _pubkeyCache[afterBlock];
         }
 
         public ECDSAPublicKey GetPublicKey(uint validatorIndex, long afterBlock)
