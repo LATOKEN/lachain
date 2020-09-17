@@ -57,8 +57,7 @@ namespace Lachain.Core.Vault
         {
             if (context.Receipt is null) return;
             var highestBlock = _blockSynchronizer.GetHighestBlock();
-            var skip = false;
-            if (highestBlock.HasValue)
+            if (highestBlock.HasValue && highestBlock.Value > context.Receipt.Block)
             {
                 if (!GovernanceContract.IsKeygenBlock(highestBlock.Value) || 
                     !GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block))
@@ -67,7 +66,7 @@ namespace Lachain.Core.Vault
                         $"Skipping keygen event since blockchain is already at height {highestBlock.Value} " +
                         $"and we are at {context.Receipt.Block}"
                     );
-                    skip = true;
+                    return;
                 }
             }
 
@@ -83,7 +82,6 @@ namespace Lachain.Core.Vault
             if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
             {
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
-                if (skip) return;
                 var data = new GovernanceContract(context).GetNextValidators();
                 var publicKeys =
                     (data ?? throw new ArgumentException("Cannot parse method args"))
@@ -111,7 +109,6 @@ namespace Lachain.Core.Vault
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
             {
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
-                if (skip) return;
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null)
                 {
@@ -145,7 +142,6 @@ namespace Lachain.Core.Vault
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenSendValue))
             {
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
-                if (skip) return;
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
@@ -173,7 +169,6 @@ namespace Lachain.Core.Vault
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))
             {
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
-                if (skip) return;
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());

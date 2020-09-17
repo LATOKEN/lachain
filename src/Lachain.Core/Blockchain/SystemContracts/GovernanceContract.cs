@@ -196,9 +196,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
             
-            Console.WriteLine($"players: {players}");
-            Console.WriteLine($"faulty: {faulty}");
-            
             UInt256 keyringHash;
             PublicKeySet tsKeys;
             try
@@ -295,7 +292,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void SetPlayersCount(int count)
         {
-            Console.WriteLine($"setting players: {count}");
             _playersCount.Set(count.ToBytes().ToArray());
         }
 
