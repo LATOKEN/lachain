@@ -153,7 +153,7 @@ namespace Lachain.CoreTest
             ExecuteBlock(topUpBlock, blockTxs);
 
             var storedBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receiver);
-            Assert.AreEqual(storedBalance, balance.ToMoney());
+            Assert.AreEqual(balance.ToMoney(), storedBalance);
 
             var storedAllowance = _stateManager.LastApprovedSnapshot.Storage.GetRawValue(
                 ContractRegisterer.LatokenContract,
