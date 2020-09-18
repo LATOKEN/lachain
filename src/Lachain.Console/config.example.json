@@ -2,7 +2,7 @@
   "network": {
     "port": 5050,
     "peers": [
-      "02dfadd8bc3f892983c67e40f399dda34b5b790f8a6f54a59cbf6592503e067453"
+      "023f7d80bc1c1f2a93bca97e81b9f3073150e15cef78b8d37a7ec4c947993ad5e7"
     ],
     "forceIPv6": false,
     "maxPeers": 100,
@@ -14,12 +14,12 @@
     "basicGasPrice": "0.000000100000000000",
     "balances": {
       "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000",
-      "0x95bc3cea26cacff818f1c8b5d7efccba3b650ab1": "1000000"
+      "0xa4aee5f4599fa96cfca74f339c0544635e70d152": "1000000"
     },
     "validators": [
       {
-        "ECDSAPublicKey": "02dfadd8bc3f892983c67e40f399dda34b5b790f8a6f54a59cbf6592503e067453",
-        "thresholdSignaturePublicKey": "0x254fe01592ed67fbf94165f2afae63d09e9ee4efb2caa402c852b007ecb408084c78a1339ca19b1e39c468fc7abdb700"
+        "ECDSAPublicKey": "023f7d80bc1c1f2a93bca97e81b9f3073150e15cef78b8d37a7ec4c947993ad5e7",
+        "thresholdSignaturePublicKey": "0xaf200dc267794e9578957f9f64a514bc674894b437e8541bf6e0798867a01754dd04496e6db3bd980398c1f471911695"
       }
     ]
   },
