@@ -195,7 +195,7 @@ namespace Lachain.Crypto
             }
         }
 
-        private const int AesGcmTagSizeBytes = 12;
+        private const int AesGcmTagSizeBytes = 16;
         private const int AesGcmNonceSizeBytes = 16;
 
         public byte[] AesGcmEncrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> plaintext)

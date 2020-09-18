@@ -2,35 +2,33 @@
   "network": {
     "port": 5050,
     "peers": [
+      "02dfadd8bc3f892983c67e40f399dda34b5b790f8a6f54a59cbf6592503e067453"
     ],
     "forceIPv6": false,
     "maxPeers": 100,
-    "bootstrapAddress": "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41011"
+    "bootstrapAddress": "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"
   },
-  "genesis" : {
+  "genesis": {
+    "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000",
     "balances": {
-      "0xe855e8f8e5f66a84c62800e9fc8fa06d77c35baf": "100.0",
-      "0x6c809b2845b1334bd860988d24adccc9fab2a28d": "123.321",
-      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000.0"
+      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000",
+      "0x95bc3cea26cacff818f1c8b5d7efccba3b650ab1": "1000000"
     },
     "validators": [
       {
-        "ECDSAPublicKey": "02e5974f3e1e9599ff5af036b5d6057d80855e7182afb4c2fa1fe38bc6efb9072b",
-        "thresholdSignaturePublicKey": "0xa89024362500526196412db2f8b2c113386af2a7c334738202d052b294d2e48999fc7d69c43b2ae2d75280446ddc5309"
+        "ECDSAPublicKey": "02dfadd8bc3f892983c67e40f399dda34b5b790f8a6f54a59cbf6592503e067453",
+        "thresholdSignaturePublicKey": "0x254fe01592ed67fbf94165f2afae63d09e9ee4efb2caa402c852b007ecb408084c78a1339ca19b1e39c468fc7abdb700"
       }
-    ],
-    "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-    "blockReward": "5.000000000000000000",
-    "basicGasPrice": "0.000000100000000000"
-  },
-  "blockchain": {
-    "targetBlockTime": 5000
+    ]
   },
   "rpc": {
     "hosts": [
       "+"
     ],
-    "port": 7070
+    "port": 7070,
+    "apiKey": "asdasdasd"
   },
   "vault": {
     "path": "wallet.json",
@@ -39,5 +37,8 @@
   "storage": {
     "provider": "RocksDB",
     "path": "ChainLachain"
+  },
+  "blockchain": {
+    "targetBlockTime": 5000
   }
 }

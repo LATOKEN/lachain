@@ -1,43 +1,43 @@
 {
   "network": {
-    "port": 5051,
+    "port": 5050,
     "peers": [
-      "030352543c5d54c90ffc40d5489d0a149f59843cd7a697551811aaaf311580596b",
-      "025c2f02ef43370e2060cea594fa990dfd18cc6ba7452148a58c3a351ab53828c9",
-      "029b7180c1dc41a51ee73f2e0f7165cddc272991930ab9e1cebe23202405048a70",
-      "033b709cd732b78c1951c76e2755c3d815049a7a55cf1e62a2ba8a6593ab4ea05e"
+      "030e5882ea0b78d02be6d76e1bf14bb381595f88ad6dd5b5a957a81a2fa602946d",
+      "031e0822c585192e6b8aabd0643c968dd3c143439f0bd347c965e78e07f5125936",
+      "03addb1d39b9b9916739d65bea41ac9d8b2eed8d3b054665c1497d12c0cb3fd12a",
+      "02e7233e499b0d3634d90eb01755a584a96afc6775434376396222cb5c1ad0d3d3"
     ],
     "forceIPv6": false,
     "maxPeers": 100,
     "bootstrapAddress": "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"
   },
   "genesis": {
-    "TPKEPublicKey": "0x01000000347f623a6f386ccba03bfff0bd7abc5993b30d2bed4ef3f0aaa064a6172e1c52a08c7376c0214938d49a2451812ed996",
+    "TPKEPublicKey": "0x01000000a31c3d55d7ac753f2301ea06da56a8570bfb28b9c49e3c6e732815e265e348552736434b67e6381d939b37a62b64c796",
     "blockReward": "5.000000000000000000",
     "basicGasPrice": "0.000000100000000000",
     "balances": {
       "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000",
-      "0xbc3257aa0482b332719b69bd3dc79091e8b7bbdf": "1000000",
-      "0x9ef411f92b021e33a4faf983a023d40d61275eec": "1000000",
-      "0x743b513c53ad178b3200d50f302fbe5325b7ce42": "1000000",
-      "0x802e2a8ebea87bd54e02e95561de9ff944ec5c3d": "1000000"
+      "0xee05738647193a60b3804ba96f68ab7208463f31": "1000000",
+      "0x8e881f34a897fc472d7007085a02d6016f7d068d": "1000000",
+      "0xe843b56d1216e775f3a456291981a79f3ce94092": "1000000",
+      "0xa4fc9ce58e4c6159409b69e2df8d47edfc6a717a": "1000000"
     },
     "validators": [
       {
-        "ECDSAPublicKey": "030352543c5d54c90ffc40d5489d0a149f59843cd7a697551811aaaf311580596b",
-        "thresholdSignaturePublicKey": "0xf38eda0c463053f63d55afa788771891f10ab47e7b15133b04743301bae5357491640b91d4d4df8e2ecc0d998e53ab8d"
+        "ECDSAPublicKey": "030e5882ea0b78d02be6d76e1bf14bb381595f88ad6dd5b5a957a81a2fa602946d",
+        "thresholdSignaturePublicKey": "0x643de831baa99d1f7c8128f725ba01a9e17efb920227fac9bb3265567ccfdce52ae2d2acd82364a588ce1e97ed0c8691"
       },
       {
-        "ECDSAPublicKey": "025c2f02ef43370e2060cea594fa990dfd18cc6ba7452148a58c3a351ab53828c9",
-        "thresholdSignaturePublicKey": "0xe39b839ca461c08925a5022664247f1fbc5b6b7f992b4b771e3dae3542a70b4cc8c34a8205a32b3a71fb6fa540f93798"
+        "ECDSAPublicKey": "031e0822c585192e6b8aabd0643c968dd3c143439f0bd347c965e78e07f5125936",
+        "thresholdSignaturePublicKey": "0x34565b03f9a99cc8ddfd37106d475f309b30bfcd8b37c9d2e42f83adcceb54855d3be231a55911464d83425cfd491f88"
       },
       {
-        "ECDSAPublicKey": "029b7180c1dc41a51ee73f2e0f7165cddc272991930ab9e1cebe23202405048a70",
-        "thresholdSignaturePublicKey": "0x144d581783104bbecdee829ba98657f8a2c2614efa4c6476ea32c561f3ec5438d581dafbef04537998f8bfa1a7d07692"
+        "ECDSAPublicKey": "03addb1d39b9b9916739d65bea41ac9d8b2eed8d3b054665c1497d12c0cb3fd12a",
+        "thresholdSignaturePublicKey": "0x790b0a2ffbdfb7a777623f96a33321cb8c5544dd7e1b8bddd98004019beaf51d8f79f612a980c29c34caeab7c233b216"
       },
       {
-        "ECDSAPublicKey": "033b709cd732b78c1951c76e2755c3d815049a7a55cf1e62a2ba8a6593ab4ea05e",
-        "thresholdSignaturePublicKey": "0x14668e40fc3eab1c8868750c03bb84e8def68f9acec8f58cc7373dd139111d6805dfeaf901eb771d65c1e8297f61f016"
+        "ECDSAPublicKey": "02e7233e499b0d3634d90eb01755a584a96afc6775434376396222cb5c1ad0d3d3",
+        "thresholdSignaturePublicKey": "0x1676b2a216577a7f840da25830ed756665f8d2983395a05c98c4a8d18be41de4734db07a44f8fbcfaab95b7ca7e73b0b"
       }
     ]
   },
@@ -45,7 +45,7 @@
     "hosts": [
       "+"
     ],
-    "port": 7071,
+    "port": 7070,
     "apiKey": "asdasdasd"
   },
   "vault": {
