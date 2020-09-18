@@ -106,6 +106,7 @@ namespace Lachain.Console
             {
                 System.Console.WriteLine("Interrupt received. Exiting...");
                 _interrupt = true;
+                Dispose();
             };
 
             while (!_interrupt)

@@ -195,6 +195,7 @@ namespace Lachain.Core.Network
                 .ToArray();
             if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
+            if (!validatorPeers.Any()) return false;
             var maxHeight = validatorPeers.Max(v => v.Value);
             return myHeight < maxHeight;
         }

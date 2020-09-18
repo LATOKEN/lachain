@@ -77,20 +77,28 @@ namespace Lachain.Networking.Hub
         {
             while (_running)
             {
-                var task = _hubStream!.ResponseStream.MoveNext();
-                task.Wait();
-                if (!task.Result)
+                try
                 {
-                    _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
-                    lock (_hubStreamLock) Monitor.Pulse(_hubStreamLock);
-                    continue;
-                }
+                    var task = _hubStream!.ResponseStream.MoveNext();
 
-                var message = _hubStream.ResponseStream.Current.Data.ToByteArray();
-                if (message.Length > 0)
-                    OnMessage?.Invoke(this, message);
-                else
-                    Logger.LogWarning("Received empty message from hub");
+                    task.Wait();
+                    if (!task.Result)
+                    {
+                        _hubStream = _client.Communicate() ?? throw new Exception("Cannot establish connection to hub");
+                        lock (_hubStreamLock) Monitor.Pulse(_hubStreamLock);
+                        continue;
+                    }
+
+                    var message = _hubStream.ResponseStream.Current.Data.ToByteArray();
+                    if (message.Length > 0)
+                        OnMessage?.Invoke(this, message);
+                    else
+                        Logger.LogWarning("Received empty message from hub");
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError("Error occured", e);
+                }
             }
         }
 
@@ -113,10 +121,14 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            if (_started) CommunicationHub.Net.Hub.Stop();
+            Console.WriteLine("Dispose HubConnector");
             _running = false;
+            if (_started)
+                CommunicationHub.Net.Hub.Stop();
+            _started = false;
             _readWorker?.Join();
             _hubStream?.Dispose();
+            Console.WriteLine("Disposed HubConnector");
         }
     }
 }

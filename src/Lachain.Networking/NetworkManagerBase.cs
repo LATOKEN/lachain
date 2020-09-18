@@ -211,11 +211,6 @@ namespace Lachain.Networking
         {
             Stop();
             _hubConnector.Dispose();
-            foreach (var client in _clientWorkers.Values)
-            {
-                client.Dispose();
-            }
-
             _clientWorkers.Clear();
         }
 
