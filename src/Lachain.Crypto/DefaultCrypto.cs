@@ -5,6 +5,9 @@ using System.Security.Cryptography;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Utility.Benchmark;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
 using Secp256k1Net;
 
 namespace Lachain.Crypto
@@ -192,28 +195,41 @@ namespace Lachain.Crypto
             }
         }
 
+        private const int AesGcmTagSizeBytes = 12;
+        private const int AesGcmNonceSizeBytes = 16;
+
         public byte[] AesGcmEncrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> plaintext)
         {
-            var tag = new byte[AesGcm.TagByteSizes.MaxSize];
-            var nonce = GenerateRandomBytes(AesGcm.NonceByteSizes.MaxSize);
-            var ciphertext = new byte[plaintext.Length];
-            using var aes = new AesGcm(key);
-            aes.Encrypt(nonce, plaintext, ciphertext, tag);
-            return tag.Concat(nonce).Concat(ciphertext).ToArray();
+            var nonce = GenerateRandomBytes(AesGcmNonceSizeBytes);
+            var cipher = new GcmBlockCipher(new AesEngine());
+            var parameters = new AeadParameters(
+                new KeyParameter(key.ToArray()), AesGcmTagSizeBytes * 8, nonce, new byte[]{}
+            );
+            cipher.Init(true, parameters);
+
+            var result = new byte[AesGcmNonceSizeBytes + cipher.GetOutputSize(plaintext.Length)];
+            var len = cipher.ProcessBytes(plaintext.ToArray(), 0, plaintext.Length, result, AesGcmNonceSizeBytes);
+            cipher.DoFinal(result, len + AesGcmNonceSizeBytes);
+            Array.Copy(nonce, 0, result, 0, AesGcmNonceSizeBytes);
+            return result;
         }
 
         public byte[] AesGcmDecrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> ciphertext)
         {
-            if (ciphertext.Length < AesGcm.NonceByteSizes.MaxSize + AesGcm.TagByteSizes.MaxSize)
+            if (ciphertext.Length < AesGcmNonceSizeBytes + AesGcmTagSizeBytes)
                 throw new ArgumentException("Ciphertext is too short", nameof(ciphertext));
-            var tag = ciphertext.Slice(0, AesGcm.TagByteSizes.MaxSize);
-            var nonce = ciphertext.Slice(AesGcm.TagByteSizes.MaxSize, AesGcm.NonceByteSizes.MaxSize);
-            var result = new byte[ciphertext.Length - AesGcm.NonceByteSizes.MaxSize - AesGcm.TagByteSizes.MaxSize];
-            using var aes = new AesGcm(key);
-            aes.Decrypt(
-                nonce, ciphertext.Slice(AesGcm.TagByteSizes.MaxSize + AesGcm.NonceByteSizes.MaxSize), tag, result
+            var cipher = new GcmBlockCipher(new AesEngine());
+            var nonce = ciphertext.Slice(0, AesGcmNonceSizeBytes).ToArray();
+            var parameters = new AeadParameters(
+                new KeyParameter(key.ToArray()), AesGcmTagSizeBytes * 8, nonce, new byte[]{}
             );
-            return result;
+            cipher.Init(false, parameters);
+
+            var encrypted = ciphertext.Slice(AesGcmNonceSizeBytes).ToArray();
+            var plaintext = new byte[cipher.GetOutputSize(encrypted.Length)];
+            var len = cipher.ProcessBytes(encrypted, 0, encrypted.Length, plaintext, 0);
+            cipher.DoFinal(plaintext, len);
+            return plaintext;
         }
 
         public byte[] Secp256K1Encrypt(Span<byte> recipientPublicKey, ReadOnlySpan<byte> plaintext)
