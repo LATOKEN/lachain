@@ -148,16 +148,18 @@ namespace Lachain.Core.Consensus
                 for (;; CurrentEra += 1)
                 {
                     _networkManager.AdvanceEra(CurrentEra);
+                    Logger.LogTrace($"Advanced to era {CurrentEra}");
                     var now = TimeUtils.CurrentTimeMillis();
-                    if(prevBlock > 0)
-                        delta += (long)(lastBlock - prevBlock) - (long)_targetBlockInterval;
-                    long wait_time = (long)_targetBlockInterval - delta;
-                    if (wait_time < 0)
-                        wait_time = 0;
+                    if (prevBlock > 0)
+                        delta += (long) (lastBlock - prevBlock) - (long) _targetBlockInterval;
+                    var waitTime = Math.Max(0, (long) _targetBlockInterval - delta);
                     prevBlock = lastBlock;
-                    if (lastBlock + (ulong)wait_time > now)
+                    if (lastBlock + (ulong) waitTime > now)
                     {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong)wait_time - now));
+                        Logger.LogTrace(
+                            $"Waiting {lastBlock + (ulong) waitTime - now}ms until launching Root protocol"
+                        );
+                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong) waitTime - now));
                     }
 
                     if ((long) _blockManager.GetHeight() >= CurrentEra)
