@@ -143,13 +143,21 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
+                ulong prevBlock = 0;
+                long delta = 0;
                 for (;; CurrentEra += 1)
                 {
                     _networkManager.AdvanceEra(CurrentEra);
                     var now = TimeUtils.CurrentTimeMillis();
-                    if (lastBlock + _targetBlockInterval > now)
+                    if(prevBlock > 0)
+                        delta += (long)(lastBlock - prevBlock) - (long)_targetBlockInterval;
+                    long wait_time = (long)_targetBlockInterval - delta;
+                    if (wait_time < 0)
+                        wait_time = 0;
+                    prevBlock = lastBlock;
+                    if (lastBlock + (ulong)wait_time > now)
                     {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + _targetBlockInterval - now));
+                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong)wait_time - now));
                     }
 
                     if ((long) _blockManager.GetHeight() >= CurrentEra)
