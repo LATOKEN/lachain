@@ -71,6 +71,7 @@ namespace Lachain.Core.Network
                 .Take(maxPeersToAsk)
                 .ToArray();
 
+            if (lostTxs.Count == 0) return (uint) txHashes.Length;
             Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
             var request = _networkManager.MessageFactory.SyncPoolRequest(lostTxs);
             foreach (var peer in peers) _networkManager.SendTo(peer, request);

@@ -143,13 +143,23 @@ namespace Lachain.Core.Consensus
             try
             {
                 ulong lastBlock = 0;
+                ulong prevBlock = 0;
+                long delta = 0;
                 for (;; CurrentEra += 1)
                 {
                     _networkManager.AdvanceEra(CurrentEra);
+                    Logger.LogTrace($"Advanced to era {CurrentEra}");
                     var now = TimeUtils.CurrentTimeMillis();
-                    if (lastBlock + _targetBlockInterval > now)
+                    if (prevBlock > 0)
+                        delta += (long) (lastBlock - prevBlock) - (long) _targetBlockInterval;
+                    var waitTime = Math.Max(0, (long) _targetBlockInterval - delta);
+                    prevBlock = lastBlock;
+                    if (lastBlock + (ulong) waitTime > now)
                     {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + _targetBlockInterval - now));
+                        Logger.LogTrace(
+                            $"Waiting {lastBlock + (ulong) waitTime - now}ms until launching Root protocol"
+                        );
+                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong) waitTime - now));
                     }
 
                     if ((long) _blockManager.GetHeight() >= CurrentEra)

@@ -20,6 +20,7 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
+        private readonly IBlockManager _blockManager;
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -40,22 +41,24 @@ namespace Lachain.Core.Blockchain.Pool
             IBlockManager blockManager
         )
         {
-            _transactionVerifier = transactionVerifier ?? throw new ArgumentNullException(nameof(transactionVerifier));
-            _poolRepository = poolRepository ?? throw new ArgumentNullException(nameof(poolRepository));
+            _transactionVerifier = transactionVerifier;
+            _poolRepository = poolRepository;
             _transactionManager = transactionManager;
+            _blockManager = blockManager;
             _transactionsQueue = new HashSet<TransactionReceipt>();
             _relayQueue = new HashSet<TransactionReceipt>();
 
-            blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
+            _blockManager.OnBlockPersisted += OnBlockPersisted;
             Restore();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void BlockManagerOnOnBlockPersisted(object sender, Block e)
+        private void OnBlockPersisted(object sender, Block e)
         {
-            foreach (var tx in e.TransactionHashes)
+            Sanitize();
+            foreach (var txHash in e.TransactionHashes)
             {
-                Delete(tx);
+                Delete(txHash);
             }
         }
 
@@ -144,8 +147,17 @@ namespace Lachain.Core.Blockchain.Pool
 
         private void Sanitize()
         {
+            var wasRelayQueueSize = _relayQueue.Count;
+            var wasTransactionsQueue = _transactionsQueue.Count;
             _relayQueue = new HashSet<TransactionReceipt>(_relayQueue.Where(TxNonceValid));
             _transactionsQueue = new HashSet<TransactionReceipt>(_transactionsQueue.Where(TxNonceValid));
+            if (wasRelayQueueSize != _relayQueue.Count || wasTransactionsQueue != _transactionsQueue.Count)
+            {
+                Logger.LogTrace(
+                    $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs" +
+                    $" from queue & {wasRelayQueueSize - _relayQueue.Count} tx from relay queue"
+                );
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
