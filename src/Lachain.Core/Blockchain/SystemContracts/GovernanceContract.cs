@@ -106,6 +106,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
 
             var txFeesAmount = GetCollectedFees();
+            SetCollectedFees(new Money(0));
 
             if (txFeesAmount > Money.Zero)
             {

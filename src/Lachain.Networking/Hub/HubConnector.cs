@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Google.Protobuf;
 using Grpc.Core;
-using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 
@@ -25,10 +24,10 @@ namespace Lachain.Networking.Hub
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string grpcEndpoint, string hubBootstrapAddress, IMessageFactory messageFactory)
+        public HubConnector(string grpcEndpoint, string hubBootstrapAddresses, IMessageFactory messageFactory)
         {
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
-            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(grpcEndpoint, hubBootstrapAddress));
+            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(grpcEndpoint, hubBootstrapAddresses));
             _messageFactory = messageFactory;
             var channel = new Channel(grpcEndpoint, ChannelCredentials.Insecure);
             _client = new Proto.CommunicationHub.CommunicationHubClient(channel);
@@ -121,14 +120,12 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            Console.WriteLine("Dispose HubConnector");
             _running = false;
             if (_started)
                 CommunicationHub.Net.Hub.Stop();
             _started = false;
             _readWorker?.Join();
             _hubStream?.Dispose();
-            Console.WriteLine("Disposed HubConnector");
         }
     }
 }

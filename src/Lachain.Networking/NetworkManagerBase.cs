@@ -8,7 +8,6 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
-using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -43,7 +42,7 @@ namespace Lachain.Networking
                 Agent = "Lachain-v0.0-dev"
             };
             _hubConnector = new HubConnector(
-                $"127.0.0.1:{networkConfig.Port}", networkConfig.BootstrapAddress, _messageFactory
+                $"127.0.0.1:{networkConfig.Port}", string.Join( ",", networkConfig.BootstrapAddresses), _messageFactory
             );
             _hubConnector.OnMessage += _HandleMessage;
 

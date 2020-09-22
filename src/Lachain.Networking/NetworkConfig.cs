@@ -12,6 +12,6 @@ namespace Lachain.Networking
 
         [JsonProperty("maxPeers")] public ushort MaxPeers { get; set; }
         
-        [JsonProperty("bootstrapAddress")] public string BootstrapAddress { get; set; }
+        [JsonProperty("bootstrapAddresses")] public string[]? BootstrapAddresses { get; set; }
     }
 }

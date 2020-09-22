@@ -73,7 +73,17 @@ namespace Lachain.Console
                     Peers = peers,
                     MaxPeers = 100,
                     ForceIPv6 = false,
-                    BootstrapAddress = "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41011"
+                    BootstrapAddresses = new [] {
+                        "QmPejdxA3NX4vLwaCoPacCwPgh925YdSbsMQRGwJFqvbXS@127.0.0.1:41011",
+                        "QmWoXjwda5yymjnr4nvju7vvJG3RWvTn1nU2kTAmkaVbUn@127.0.0.1:41012",
+                        "QmRwzaNrFap41HbpGTQQ6GP6wzxrPT5z97iWmqSis3jhRg@127.0.0.1:41013",
+                        "QmTfKbZL6gBZcryZn8ksNk8bH1cbKrChs1xJydV9ndLVro@127.0.0.1:41014",
+                        "QmfSo1LBJkqiodELhHbeyWE6138kMaM7z1V9oXJDbbwUjT@127.0.0.1:41015",
+                        "QmbrMzdTf4WJ1CmvZXxQYh2ATGn1gFzjMMowaChapUyqqg@127.0.0.1:41016",
+                        "QmTLUeXfjkZM45o7UG2Kgcr2SgA86Aczmu278UGU99T4Ep@127.0.0.1:41017",
+                        "QmWmavV4ZBX5TXTG1RiqtBGXZMHxjAbg9APTbt43QnySdV@127.0.0.1:41018",
+                        "QmaJuxgaxPLwNjWB65c1uD5mU5Vk5waDAMHLbraXd361wq@127.0.0.1:41019",
+                    }
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {

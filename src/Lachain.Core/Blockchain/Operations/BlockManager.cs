@@ -160,11 +160,14 @@ namespace Lachain.Core.Blockchain.Operations
                     return OperatingError.Ok;
                 _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index,
                     _stateManager.LastApprovedSnapshot); // TODO: this is hack
-                Logger.LogInformation(
-                    $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
-                    $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime} ms, " +
-                    $"gas used {gasUsed}, fee {totalFee}"
-                );
+                if (block.Header.Index > 0)
+                    Logger.LogInformation(
+                        $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
+                        $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime}ms, " +
+                        $"gas used {gasUsed}, fee {totalFee}. " +
+                        $"Since last block: " +
+                        $"{block.Timestamp - _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index - 1)!.Timestamp} ms"
+                    );
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;
