@@ -121,7 +121,7 @@ namespace Lachain.Networking.Hub
                         _unacked[megaBatch.MessageId] = (toSend, now);
                 }
 
-                var toSleep = Math.Clamp(200 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
+                var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
         }
