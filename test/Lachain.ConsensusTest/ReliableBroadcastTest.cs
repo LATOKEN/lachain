@@ -77,8 +77,8 @@ namespace Lachain.ConsensusTest
             while (cnt < f)
             {
                 var x = _rnd.Next(n);
+                if (x == 0 && dealerMode == 1) continue;
                 if (_broadcasts[x] != null) continue;
-                if (_broadcasts[x] != null && dealerMode == 1) continue;
                 _broadcasts[x] = new SilentProtocol<ReliableBroadcastId>(new ReliableBroadcastId(0, 0));
                 silentId.Add(x);
                 ++cnt;
@@ -239,7 +239,8 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
 
-                [Test]
+        [Test]
+        [Timeout(5000)]
         public void TestOneDealerSomeSilent_7_2()
         {
             const int n = 7, f = 2;
@@ -267,6 +268,7 @@ namespace Lachain.ConsensusTest
         }
         
         [Test]
+        [Timeout(5000)]
         public void TestAllDealerSomeSilent_7_2()
         {
             const int n = 7, f = 2;
