@@ -70,7 +70,7 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        private void SetupSomeSilent(int n, int f, ICollection<int> silentId)
+        private void SetupSomeSilent(int n, int f, ICollection<int> silentId, int dealerMode = 0)
         {
             SetUp(n, f);
             var cnt = 0;
@@ -78,6 +78,7 @@ namespace Lachain.ConsensusTest
             {
                 var x = _rnd.Next(n);
                 if (_broadcasts[x] != null) continue;
+                if (_broadcasts[x] != null && dealerMode == 1) continue;
                 _broadcasts[x] = new SilentProtocol<ReliableBroadcastId>(new ReliableBroadcastId(0, 0));
                 silentId.Add(x);
                 ++cnt;
@@ -238,12 +239,13 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
 
-        [Test]
-        public void TestSomeSilent_7_2()
+                [Test]
+        public void TestOneDealerSomeSilent_7_2()
         {
             const int n = 7, f = 2;
             var silentId = new List<int>();
-            SetupSomeSilent(n, f, silentId);
+            int oneDealer = 1;
+            SetupSomeSilent(n, f, silentId, oneDealer);
             for (var i = 0; i < n; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
@@ -251,17 +253,59 @@ namespace Lachain.ConsensusTest
                     i == Sender ? _testShare : null
                 ));
             }
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+            for (var i = 0; i < n; ++i)
+            {
+                // Check true share only for NOT silent players
+                if (!silentId.Contains(i))
+                {
+                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                }
+                    
+            }
+            for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
+        }
+        
+        [Test]
+        public void TestAllDealerSomeSilent_7_2()
+        {
+            const int n = 7, f = 2;
+            var silentId = new List<int>();
+            SetupSomeSilent(n, f, silentId);
+
+            for (var j = 0; j < n; ++j)
+            {
+                _broadcasters[j].InternalRequest(
+                    new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(_resultInterceptors[j].Id, new ReliableBroadcastId(j, 0), _testShare)
+                    );
+                
+                for (var i = 0; i < n; ++i)
+                {
+                    if (i != j)
+                    {
+                        _broadcasters[j].InternalRequest(
+                            new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
+                                _resultInterceptors[j].Id, new ReliableBroadcastId(i, 0), null 
+                                )
+                            );    
+                    }
+                    
+                }    
+            }
 
             for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
             for (var i = 0; i < n; ++i)
             {
                 // Check true share only for NOT silent players
                 if (!silentId.Contains(i))
+                {
                     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                }
+                    
             }
-
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
         }
+
 
 
         [Test]
