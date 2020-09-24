@@ -27,6 +27,9 @@ namespace Lachain.Core.CLI
     [Verb("keygen", HelpText = "Run trusted threshold keygen")]
     public class KeygenOptions
     {
+        [Option('i', "ips", Required = true, Separator = ' ', HelpText = "IP addresses for config generation")]
+        public IEnumerable<string> IpAddresses { get; set; } = Enumerable.Empty<string>();
+
         [Option('n', "players", Required = true, HelpText = "Total number of participants")]
         public int N { get; set; }
         
