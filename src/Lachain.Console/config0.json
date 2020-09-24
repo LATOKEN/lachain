@@ -9,7 +9,7 @@
     ],
     "forceIPv6": false,
     "maxPeers": 100,
-    "bootstrapAddress": "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"
+    "bootstrapAddresses": ["QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"]
   },
   "genesis": {
     "TPKEPublicKey": "0x01000000a31c3d55d7ac753f2301ea06da56a8570bfb28b9c49e3c6e732815e265e348552736434b67e6381d939b37a62b64c796",
