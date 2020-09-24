@@ -26,12 +26,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
     {
         private readonly InvocationContext _context;
 
-        private static readonly Func<byte[], byte[]> ToAddress = CryptoProvider.GetCrypto().ComputeAddress;
-
         private static readonly ILogger<GovernanceContract> Logger =
             LoggerFactory.GetLoggerForClass<GovernanceContract>();
 
-        private static readonly ICrypto CryptoInstance = CryptoProvider.GetCrypto();
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private readonly StorageVariable _consensusGeneration;
         private readonly StorageVariable _nextValidators;
@@ -133,7 +131,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             foreach (var publicKey in newValidators)
             {
                 if (publicKey.Length != CryptoUtils.PublicKeyLength) return ExecutionStatus.ExecutionHalted;
-                if (!CryptoInstance.TryDecodePublicKey(publicKey, false, out _))
+                if (!Crypto.TryDecodePublicKey(publicKey, false, out _))
                     return ExecutionStatus.ExecutionHalted;
             }
 
@@ -202,7 +200,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             try
             {
                 tsKeys = new PublicKeySet(
-                    thresholdSignaturePublicKeys.Select(x => Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
+                    thresholdSignaturePublicKeys.Select(x => Lachain.Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
                     faulty
                 );
                 var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
