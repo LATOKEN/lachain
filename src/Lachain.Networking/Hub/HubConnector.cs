@@ -57,6 +57,7 @@ namespace Lachain.Networking.Hub
             _hubThread.Start();
             Logger.LogDebug("Requesting hub id from communication hub");
             var hubId = RequestHubId();
+            Thread.Sleep(TimeSpan.FromMilliseconds(5_000));
             Logger.LogDebug("Sending init request to communication hub");
             var init = new InitRequest
             {
