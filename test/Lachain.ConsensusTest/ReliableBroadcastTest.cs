@@ -70,7 +70,7 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        private void SetupSomeSilent(int n, int f, ICollection<int> silentId, int dealerMode = 0)
+        private void SetupSomeSilent(int n, int f, ICollection<int> silentId)
         {
             SetUp(n, f);
             var cnt = 0;
@@ -245,8 +245,7 @@ namespace Lachain.ConsensusTest
         {
             const int n = 7, f = 2;
             var silentId = new List<int>();
-            int oneDealer = 1;
-            SetupSomeSilent(n, f, silentId, oneDealer);
+            SetupSomeSilent(n, f, silentId);
             for (var i = 0; i < n; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
