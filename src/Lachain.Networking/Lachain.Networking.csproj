@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" Version="2.31.0" />
-    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.28" />
+    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.29" />
     <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.4" />
   </ItemGroup>
   <ItemGroup>
