@@ -6,7 +6,8 @@
     "peers": [
     ],
     "forceIPv6": false,
-    "maxPeers": 100
+    "maxPeers": 100,
+    "bootstrapAddresses": []
   },
   "genesis" : {
     "balances": {
