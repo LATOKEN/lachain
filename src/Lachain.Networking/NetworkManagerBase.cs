@@ -154,7 +154,7 @@ namespace Lachain.Networking
 
         private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
         {
-            Logger.LogTrace($"Processing network message {message.MessageCase}");
+            // Logger.LogTrace($"Processing network message {message.MessageCase}");
             if (envelope.PublicKey is null) throw new InvalidOperationException();
             switch (message.MessageCase)
             {
@@ -204,6 +204,7 @@ namespace Lachain.Networking
             {
                 client.Stop();
             }
+            _broadcaster!.Stop();
         }
 
         public void Dispose()
