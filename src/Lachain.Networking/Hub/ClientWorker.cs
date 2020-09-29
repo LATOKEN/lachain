@@ -19,6 +19,7 @@ namespace Lachain.Networking.Hub
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
         private bool _isConnected;
+        private int _eraMsgCounter = 0;
 
         private readonly LinkedList<NetworkMessage> _messageQueue = new LinkedList<NetworkMessage>();
         private long _currentEra = -1;
@@ -119,6 +120,7 @@ namespace Lachain.Networking.Hub
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
                         _unacked[megaBatch.MessageId] = (toSend, now);
+                    _eraMsgCounter += toSend.Messages.Count;
                 }
 
                 var toSleep = Math.Clamp(100 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
@@ -140,9 +142,14 @@ namespace Lachain.Networking.Hub
             Stop();
         }
 
-        public void AdvanceEra(long era)
+        public int AdvanceEra(long era)
         {
+            var sentMessages = _eraMsgCounter;
             _currentEra = era;
+            _eraMsgCounter = 0;
+            Logger.LogInformation($"Sent {sentMessages} messages during {era - 1} era for {PeerPublicKey.ToHex()}");
+
+            return sentMessages;
         }
     }
 }

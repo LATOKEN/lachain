@@ -68,7 +68,7 @@ namespace Lachain.Core.Consensus
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
             Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era");
-            if ((long) e.Header.Index >= CurrentEra)
+            if ((long) e.Header.Index > CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
             }
@@ -82,12 +82,12 @@ namespace Lachain.Core.Consensus
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AdvanceEra(long newEra)
         {
-            if (newEra < CurrentEra)
+            if (newEra <= CurrentEra)
             {
                 throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
             }
 
-            for (var i = CurrentEra; i <= newEra; ++i)
+            for (var i = CurrentEra; i < newEra; ++i)
             {
                 if (!IsValidatorForEra(i)) continue;
                 var broadcaster = EnsureEra(i);
@@ -98,6 +98,16 @@ namespace Lachain.Core.Consensus
 
             CurrentEra = newEra;
             _networkManager.AdvanceEra(CurrentEra);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void ClearCurrentEraMsg()
+        {
+            if (!IsValidatorForEra(CurrentEra)) return;
+            var broadcaster = EnsureEra(CurrentEra);
+            broadcaster?.Terminate();
+            _eras.Remove(CurrentEra);
+            _postponedMessages.Remove(CurrentEra);
         }
 
         private bool IsValidatorForEra(long era)
@@ -162,9 +172,15 @@ namespace Lachain.Core.Consensus
                         Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong) waitTime - now));
                     }
 
-                    if ((long) _blockManager.GetHeight() >= CurrentEra)
+                    var blockHeight = (long) _blockManager.GetHeight();
+
+                    if (blockHeight == CurrentEra)
                     {
-                        AdvanceEra((long) _blockManager.GetHeight());
+                        ClearCurrentEraMsg();
+                    } 
+                    else if (blockHeight > CurrentEra)
+                    {
+                        AdvanceEra(blockHeight);
                         continue;
                     }
 

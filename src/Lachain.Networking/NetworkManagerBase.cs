@@ -54,10 +54,12 @@ namespace Lachain.Networking
 
         public void AdvanceEra(long era)
         {
+            var totalProcessedMsgCount = 0;
             foreach (var clientWorker in _clientWorkers.Values)
             {
-                clientWorker.AdvanceEra(era);
+                totalProcessedMsgCount += clientWorker.AdvanceEra(era);
             }
+            Logger.LogInformation($"Total sent msg count for {era - 1} era: {totalProcessedMsgCount}");
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)

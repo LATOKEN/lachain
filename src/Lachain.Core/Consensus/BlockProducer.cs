@@ -133,6 +133,12 @@ namespace Lachain.Core.Consensus
 
         public void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig)
         {
+            Logger.LogDebug($"Producing block {header.Index}");
+            if (_blockManager.GetHeight() >= header.Index)
+            {
+                Logger.LogWarning("Block already produced");
+                return;
+            }
             var hashes = txHashes as UInt256[] ?? txHashes.ToArray();
             var txCount = hashes.Count();
             var indexInCycle = header.Index % StakingContract.CycleDuration;
