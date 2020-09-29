@@ -15,7 +15,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
         private readonly BinaryBroadcastId _broadcastId;
         private BoolSet _binValues;
-        private readonly ISet<int>[] _receivedValues;
+        private readonly BoolSet[] _receivedValues;
         private readonly int[] _receivedCount;
         private readonly bool[] _playerSentAux;
         private readonly bool[] _validatorSentConf;
@@ -35,11 +35,11 @@ namespace Lachain.Consensus.BinaryAgreement
             _requested = ResultStatus.NotRequested;
 
             _binValues = new BoolSet();
-            _receivedValues = new ISet<int>[N];
+            _receivedValues = new BoolSet[N];
             _playerSentAux = new bool[N];
             _validatorSentConf = new bool[N];
             for (var i = 0; i < N; ++i)
-                _receivedValues[i] = new HashSet<int>();
+                _receivedValues[i] = new BoolSet();
             _receivedCount = new int[2];
             _receivedAux = new int[2];
             _wasBvalBroadcasted = new bool[2];
@@ -114,13 +114,13 @@ namespace Lachain.Consensus.BinaryAgreement
 
             var b = bval.Value ? 1 : 0;
 
-            if (_receivedValues[sender].Contains(b))
+            if (_receivedValues[sender].Contains(b == 1))
             {
                 Logger.LogTrace($"{_broadcastId}: double receive message {bval} from {sender}");
                 return;
             }
 
-            _receivedValues[sender].Add(b);
+            _receivedValues[sender].Add(b == 1);
             ++_receivedCount[b];
 
             if (!_wasBvalBroadcasted[b] && _receivedCount[b] >= F + 1)

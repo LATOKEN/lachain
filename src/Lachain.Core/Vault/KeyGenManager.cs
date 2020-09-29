@@ -59,7 +59,7 @@ namespace Lachain.Core.Vault
             var highestBlock = _blockSynchronizer.GetHighestBlock();
             if (highestBlock.HasValue && highestBlock.Value > context.Receipt.Block)
             {
-                if (!GovernanceContract.IsKeygenBlock(highestBlock.Value) || 
+                if (!GovernanceContract.IsKeygenBlock(highestBlock.Value) ||
                     !GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block))
                 {
                     Logger.LogWarning(
@@ -79,7 +79,15 @@ namespace Lachain.Core.Vault
 
             var signature = ContractEncoder.MethodSignatureAsInt(tx.Invocation);
             var decoder = new ContractDecoder(tx.Invocation.ToArray());
-            if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
+            var contractAddress = tx.To;
+
+            if (contractAddress.Equals(ContractRegisterer.GovernanceContract) && signature ==
+                ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodFinishCycle))
+            {
+                Logger.LogDebug("Aborting ongoing keygen because cycle was finished");
+                _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
+            }
+            else if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
             {
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
                 var data = new GovernanceContract(context).GetNextValidators();

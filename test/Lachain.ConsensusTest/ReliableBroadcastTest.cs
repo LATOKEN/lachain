@@ -77,6 +77,7 @@ namespace Lachain.ConsensusTest
             while (cnt < f)
             {
                 var x = _rnd.Next(n);
+                if (x == 0) continue;
                 if (_broadcasts[x] != null) continue;
                 _broadcasts[x] = new SilentProtocol<ReliableBroadcastId>(new ReliableBroadcastId(0, 0));
                 silentId.Add(x);
@@ -239,7 +240,8 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        public void TestSomeSilent_7_2()
+        [Timeout(5000)]
+        public void TestOneDealerSomeSilent_7_2()
         {
             const int n = 7, f = 2;
             var silentId = new List<int>();
@@ -251,17 +253,61 @@ namespace Lachain.ConsensusTest
                     i == Sender ? _testShare : null
                 ));
             }
-
             for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
             for (var i = 0; i < n; ++i)
             {
                 // Check true share only for NOT silent players
                 if (!silentId.Contains(i))
+                {
                     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                }
+                    
             }
-
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
         }
+        
+        // [Test]
+        // //[Timeout(5000)]
+        // [Repeat(300)]
+        // public void TestAllDealerSomeSilent_7_2()
+        // {
+        //     const int n = 7, f = 2;
+        //     var silentId = new List<int>();
+        //     SetupSomeSilent(n, f, silentId);
+        //
+        //     for (var j = 0; j < n; ++j)
+        //     {
+        //         _broadcasters[j].InternalRequest(
+        //             new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(_resultInterceptors[j].Id, new ReliableBroadcastId(j, 0), _testShare)
+        //             );
+        //         
+        //         for (var i = 0; i < n; ++i)
+        //         {
+        //             if (i != j)
+        //             {
+        //                 _broadcasters[j].InternalRequest(
+        //                     new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
+        //                         _resultInterceptors[j].Id, new ReliableBroadcastId(i, 0), null 
+        //                         )
+        //                     );    
+        //             }
+        //             
+        //         }    
+        //     }
+        //
+        //     for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+        //     for (var i = 0; i < n; ++i)
+        //     {
+        //         // Check true share only for NOT silent players
+        //         if (!silentId.Contains(i))
+        //         {
+        //             Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+        //         }
+        //             
+        //     }
+        //     for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
+        // }
+
 
 
         [Test]

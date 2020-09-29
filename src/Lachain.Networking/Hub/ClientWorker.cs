@@ -23,6 +23,9 @@ namespace Lachain.Networking.Hub
 
         private readonly LinkedList<NetworkMessage> _messageQueue = new LinkedList<NetworkMessage>();
 
+        private readonly IDictionary<ulong, (MessageBatchContent batch, ulong timestamp)> _unacked =
+            new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
+
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
             _messageFactory = messageFactory;
@@ -56,6 +59,9 @@ namespace Lachain.Networking.Hub
         {
             lock (_messageQueue)
             {
+                if (message.MessageCase == NetworkMessage.MessageOneofCase.PingRequest &&
+                    _messageQueue.Any(x => x.MessageCase == NetworkMessage.MessageOneofCase.PingRequest)
+                ) return;
                 _messageQueue.AddLast(message);
             }
         }
@@ -85,8 +91,11 @@ namespace Lachain.Networking.Hub
                     var megaBatchBytes = megaBatch.ToByteArray();
                     if (megaBatchBytes.Length == 0)
                         throw new Exception("Cannot send empty message");
-                    Logger.LogTrace($"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
+                    Logger.LogTrace(
+                        $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                    if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
+                        _unacked[megaBatch.MessageId] = (toSend, now);
                     _eraMsgCounter += 1;
                 }
 
