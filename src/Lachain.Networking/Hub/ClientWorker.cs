@@ -59,6 +59,9 @@ namespace Lachain.Networking.Hub
         {
             lock (_messageQueue)
             {
+                if (message.MessageCase == NetworkMessage.MessageOneofCase.PingRequest &&
+                    _messageQueue.Any(x => x.MessageCase == NetworkMessage.MessageOneofCase.PingRequest)
+                ) return;
                 _messageQueue.AddLast(message);
             }
         }
@@ -70,7 +73,7 @@ namespace Lachain.Networking.Hub
             {
                 var now = TimeUtils.CurrentTimeMillis();
                 MessageBatchContent toSend = new MessageBatchContent();
-                
+
                 lock (_unacked)
                 {
                     const int consensusMessageAckTimeMs = 10_000;
@@ -89,7 +92,8 @@ namespace Lachain.Networking.Hub
                     }
 
                     if (cnt > 0)
-                        Logger.LogWarning($"Resubmit {cnt} consensus messages because we got no ack in {consensusMessageAckTimeMs}ms");
+                        Logger.LogWarning(
+                            $"Resubmit {cnt} consensus messages because we got no ack in {consensusMessageAckTimeMs}ms");
 
                     foreach (var (key, _) in _unacked
                         .Where(x => x.Value.timestamp < now - consensusMessageAckTimeMs)
@@ -116,7 +120,8 @@ namespace Lachain.Networking.Hub
                     var megaBatchBytes = megaBatch.ToByteArray();
                     if (megaBatchBytes.Length == 0)
                         throw new Exception("Cannot send empty message");
-                    Logger.LogTrace($"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
+                    Logger.LogTrace(
+                        $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
                         _unacked[megaBatch.MessageId] = (toSend, now);
