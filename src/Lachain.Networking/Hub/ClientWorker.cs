@@ -19,13 +19,9 @@ namespace Lachain.Networking.Hub
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
         private bool _isConnected;
-        private int _eraMsgCounter = 0;
+        private int _eraMsgCounter;
 
         private readonly LinkedList<NetworkMessage> _messageQueue = new LinkedList<NetworkMessage>();
-        private long _currentEra = -1;
-
-        private readonly IDictionary<ulong, (MessageBatchContent batch, ulong timestamp)> _unacked =
-            new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
 
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
@@ -45,6 +41,7 @@ namespace Lachain.Networking.Hub
 
         public void Start()
         {
+            _eraMsgCounter = 0;
             _worker.Start();
         }
 
@@ -70,34 +67,6 @@ namespace Lachain.Networking.Hub
             {
                 var now = TimeUtils.CurrentTimeMillis();
                 MessageBatchContent toSend = new MessageBatchContent();
-                
-                lock (_unacked)
-                {
-                    const int consensusMessageAckTimeMs = 10_000;
-                    var cnt = 0;
-                    lock (_messageQueue)
-                    {
-                        foreach (var message in _unacked.Values
-                            .Where(x => x.timestamp < now - consensusMessageAckTimeMs)
-                            .SelectMany(tuple => tuple.batch.Messages)
-                            .Where(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage)
-                            .Where(msg => msg.ConsensusMessage.Validator.Era >= _currentEra))
-                        {
-                            _messageQueue.AddFirst(message);
-                            ++cnt;
-                        }
-                    }
-
-                    if (cnt > 0)
-                        Logger.LogWarning($"Resubmit {cnt} consensus messages because we got no ack in {consensusMessageAckTimeMs}ms");
-
-                    foreach (var (key, _) in _unacked
-                        .Where(x => x.Value.timestamp < now - consensusMessageAckTimeMs)
-                        .ToArray())
-                    {
-                        _unacked.Remove(key);
-                    }
-                }
 
                 lock (_messageQueue)
                 {
@@ -118,21 +87,11 @@ namespace Lachain.Networking.Hub
                         throw new Exception("Cannot send empty message");
                     Logger.LogTrace($"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                    if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
-                        _unacked[megaBatch.MessageId] = (toSend, now);
                     _eraMsgCounter += 1;
                 }
 
                 var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
-            }
-        }
-
-        public void ReceiveAck(ulong messageId)
-        {
-            lock (_unacked)
-            {
-                _unacked.Remove(messageId);
             }
         }
 
@@ -145,9 +104,8 @@ namespace Lachain.Networking.Hub
         public int AdvanceEra(long era)
         {
             var sentBatches = _eraMsgCounter;
-            _currentEra = era;
             _eraMsgCounter = 0;
-            Logger.LogInformation($"Sent {sentBatches} msgBatches during {era - 1} era for {PeerPublicKey.ToHex()}");
+            Logger.LogTrace($"Sent {sentBatches} msgBatches during era #{era - 1} for {PeerPublicKey.ToHex()}");
 
             return sentBatches;
         }

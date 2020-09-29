@@ -59,7 +59,7 @@ namespace Lachain.Networking
             {
                 totalBatchesCount += clientWorker.AdvanceEra(era);
             }
-            Logger.LogInformation($"Total sent msgbtaches count during {era - 1}th era: {totalBatchesCount}");
+            Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)
@@ -179,7 +179,6 @@ namespace Lachain.Networking
                     OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
-                    envelope.RemotePeer.ReceiveAck(message.Ack.MessageId);
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
