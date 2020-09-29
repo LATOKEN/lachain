@@ -26,14 +26,15 @@ namespace Lachain.CoreTest
     [TestFixture]
     public class BlocksTest
     {
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private static readonly ITransactionSigner Signer = new TransactionSigner();
+        
         private IBlockManager _blockManager = null!;
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IContainer? _container;
-        private ICrypto _crypto = CryptoProvider.GetCrypto();
-        private ITransactionSigner _signer = new TransactionSigner();
-
+        
         [SetUp]
         public void Setup()
         {
@@ -225,7 +226,7 @@ namespace Lachain.CoreTest
 
             var keyPair = _wallet.EcdsaKeyPair;
 
-            var headerSignature = _crypto.SignHashed(
+            var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
                 keyPair.PrivateKey.Encode()
             ).ToSignature();
@@ -285,7 +286,7 @@ namespace Lachain.CoreTest
                         (ulong) nonceInc,
                 Value = value
             };
-            return _signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
         }
 
         private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
@@ -302,7 +303,7 @@ namespace Lachain.CoreTest
                         (ulong) nonceInc,
                 Value = UInt256Utils.Zero,
             };
-            return _signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
         }
     }
 }
