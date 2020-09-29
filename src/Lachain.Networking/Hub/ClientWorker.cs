@@ -120,10 +120,10 @@ namespace Lachain.Networking.Hub
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
                         _unacked[megaBatch.MessageId] = (toSend, now);
-                    _eraMsgCounter += toSend.Messages.Count;
+                    _eraMsgCounter += 1;
                 }
 
-                var toSleep = Math.Clamp(100 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
+                var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
         }
@@ -144,12 +144,12 @@ namespace Lachain.Networking.Hub
 
         public int AdvanceEra(long era)
         {
-            var sentMessages = _eraMsgCounter;
+            var sentBatches = _eraMsgCounter;
             _currentEra = era;
             _eraMsgCounter = 0;
-            Logger.LogInformation($"Sent {sentMessages} messages during {era - 1} era for {PeerPublicKey.ToHex()}");
+            Logger.LogInformation($"Sent {sentBatches} msgBatches during {era - 1} era for {PeerPublicKey.ToHex()}");
 
-            return sentMessages;
+            return sentBatches;
         }
     }
 }
