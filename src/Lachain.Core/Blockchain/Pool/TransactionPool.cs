@@ -136,6 +136,7 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddTransaction(receipt);
 
             UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
+            Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
             TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }

@@ -62,7 +62,7 @@ namespace Lachain.Core.Network
             var lostTxs = _GetMissingTransactions(txHashes);
 
             const int maxPeersToAsk = 3;
-            var maxHeight = _peerHeights.Values.Count == 0 ?  0: _peerHeights.Values.Max();
+            var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
             var rnd = new Random();
             var peers = _peerHeights
                 .Where(entry => entry.Value >= maxHeight)
