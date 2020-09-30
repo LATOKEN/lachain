@@ -122,8 +122,8 @@ namespace Lachain.Networking
 
             var envelope = new MessageEnvelope(batch.Sender, worker);
             var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
-            if (content.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
-                envelope.RemotePeer.AddMsgToQueue(_messageFactory.Ack(batch.MessageId));
+            // if (content.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
+            //     envelope.RemotePeer.AddMsgToQueue(_messageFactory.Ack(batch.MessageId));
             foreach (var message in content.Messages)
             {
                 try

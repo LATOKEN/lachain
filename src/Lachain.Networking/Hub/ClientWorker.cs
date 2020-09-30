@@ -23,9 +23,6 @@ namespace Lachain.Networking.Hub
 
         private readonly LinkedList<NetworkMessage> _messageQueue = new LinkedList<NetworkMessage>();
 
-        private readonly IDictionary<ulong, (MessageBatchContent batch, ulong timestamp)> _unacked =
-            new ConcurrentDictionary<ulong, (MessageBatchContent, ulong)>();
-
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
             _messageFactory = messageFactory;
@@ -94,8 +91,6 @@ namespace Lachain.Networking.Hub
                     Logger.LogTrace(
                         $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                    if (toSend.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
-                        _unacked[megaBatch.MessageId] = (toSend, now);
                     _eraMsgCounter += 1;
                 }
 
