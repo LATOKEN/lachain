@@ -19,6 +19,7 @@ namespace Lachain.Networking
 
         private static readonly ILogger<NetworkManagerBase> Logger =
             LoggerFactory.GetLoggerForClass<NetworkManagerBase>();
+
         public Node LocalNode { get; }
         public IMessageFactory MessageFactory => _messageFactory;
         private readonly MessageFactory _messageFactory;
@@ -42,7 +43,7 @@ namespace Lachain.Networking
                 Agent = "Lachain-v0.0-dev"
             };
             _hubConnector = new HubConnector(
-                $"127.0.0.1:{networkConfig.Port}", string.Join( ",", networkConfig.BootstrapAddresses), _messageFactory
+                $"127.0.0.1:{networkConfig.Port}", string.Join(",", networkConfig.BootstrapAddresses), _messageFactory
             );
             _hubConnector.OnMessage += _HandleMessage;
 
@@ -54,11 +55,7 @@ namespace Lachain.Networking
 
         public void AdvanceEra(long era)
         {
-            var totalBatchesCount = 0;
-            foreach (var clientWorker in _clientWorkers.Values)
-            {
-                totalBatchesCount += clientWorker.AdvanceEra(era);
-            }
+            var totalBatchesCount = _clientWorkers.Values.Sum(clientWorker => clientWorker.AdvanceEra(era));
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
         }
 
@@ -205,6 +202,7 @@ namespace Lachain.Networking
             {
                 client.Stop();
             }
+
             _broadcaster!.Stop();
         }
 

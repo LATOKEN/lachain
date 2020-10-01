@@ -14,6 +14,7 @@ using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -25,6 +26,7 @@ namespace Lachain.Console
     public class Application : IBootstrapper, IDisposable
     {
         private readonly IContainer _container;
+        private static readonly ILogger<Application> Logger = LoggerFactory.GetLoggerForClass<Application>();
 
         public Application(string configPath, RunOptions options)
         {
@@ -63,24 +65,22 @@ namespace Lachain.Console
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
             if (blockManager.TryBuildGenesisBlock())
-                System.Console.WriteLine("Generated genesis block");
+                Logger.LogInformation("Generated genesis block");
 
             var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0)
                                ?? throw new Exception("Genesis block was not persisted");
-            System.Console.WriteLine("Genesis Block: " + genesisBlock.Hash.ToHex());
-            System.Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
-            System.Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
-            System.Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
-            System.Console.WriteLine($" + transactionHashes: {genesisBlock.TransactionHashes.ToArray().Length}");
+            Logger.LogInformation("Genesis Block: " + genesisBlock.Hash.ToHex());
+            Logger.LogInformation($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
+            Logger.LogInformation($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
+            Logger.LogInformation($" + nonce: {genesisBlock.Header.Nonce}");
+            Logger.LogInformation($" + transactionHashes: {genesisBlock.TransactionHashes.ToArray().Length}");
             foreach (var s in genesisBlock.TransactionHashes)
-                System.Console.WriteLine($" + - {s.ToHex()}");
-            System.Console.WriteLine($" + hash: {genesisBlock.Hash.ToHex()}");
+                Logger.LogInformation($" + - {s.ToHex()}");
+            Logger.LogInformation($" + hash: {genesisBlock.Hash.ToHex()}");
 
-            System.Console.WriteLine("-------------------------------");
-            System.Console.WriteLine("Current block height: " + blockManager.GetHeight());
-            System.Console.WriteLine($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
-            System.Console.WriteLine($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
-            System.Console.WriteLine("-------------------------------");
+            Logger.LogInformation("Current block height: " + blockManager.GetHeight());
+            Logger.LogInformation($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
+            Logger.LogInformation($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
@@ -93,12 +93,12 @@ namespace Lachain.Console
             rpcManager.Start();
 
             blockSynchronizer.Start();
-            System.Console.WriteLine("Synchronizing blocks...");
+            Logger.LogInformation("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
-            System.Console.WriteLine("Block synchronization finished, starting consensus...");
+            Logger.LogInformation("Block synchronization finished, starting consensus...");
             consensusManager.Start((long) blockManager.GetHeight() + 1);
             validatorStatusManager.Start(false);
 
