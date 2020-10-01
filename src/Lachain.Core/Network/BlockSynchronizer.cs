@@ -198,6 +198,7 @@ namespace Lachain.Core.Network
                 return true;
             if (!validatorPeers.Any()) return false;
             var maxHeight = validatorPeers.Max(v => v.Value);
+            Logger.LogDebug($"Max height among peers: {maxHeight}, my height: {myHeight}");
             return myHeight < maxHeight;
         }
 
@@ -205,6 +206,7 @@ namespace Lachain.Core.Network
         {
             var peersArray = peers.ToArray();
             _logLevelForSync = LogLevel.Debug;
+            Logger.LogDebug($"Synchronizing with peers: {string.Join(", ", peersArray.Select(x => x.ToHex()))}");
             while (IsSynchronizingWith(peersArray))
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
