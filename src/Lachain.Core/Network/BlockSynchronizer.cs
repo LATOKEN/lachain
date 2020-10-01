@@ -194,6 +194,7 @@ namespace Lachain.Core.Network
             var validatorPeers = _peerHeights
                 .Where(entry => setOfPeers.Contains(entry.Key))
                 .ToArray();
+            Logger.LogDebug($"Got {validatorPeers.Length} connected out of {setOfPeers.Count}");
             if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
             if (!validatorPeers.Any()) return false;
