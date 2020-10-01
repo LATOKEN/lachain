@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
@@ -69,6 +70,7 @@ namespace Lachain.Networking
             _hubConnector.Start();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
         {
             if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;
