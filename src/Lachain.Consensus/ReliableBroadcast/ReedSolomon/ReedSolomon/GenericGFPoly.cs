@@ -292,9 +292,7 @@ namespace Lachain.Consensus.ReliableBroadcast.ReedSolomon.ReedSolomon
             int[] product = new int[size + degree];
             for (int i = 0; i < size; i++)
             {
-                
                 product[i] = field.multiply(coefficients[i], coefficient);
-                //Console.WriteLine(""product[i]);
             }
             return new GenericGFPoly(field, product, encoding);
         }
