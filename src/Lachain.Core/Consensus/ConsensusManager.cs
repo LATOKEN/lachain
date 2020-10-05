@@ -68,12 +68,7 @@ namespace Lachain.Core.Consensus
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
-            Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era(s): CurrentEra={CurrentEra}");
-            if ((long) e.Header.Index >= CurrentEra)
-            {
-                AdvanceEra((long) e.Header.Index);
-            }
-
+            Logger.LogTrace($"Block {e.Header.Index} is persisted, notifying consensus which is on era {CurrentEra}");
             lock (_blockPersistedLock)
             {
                 Monitor.PulseAll(_blockPersistedLock);
@@ -87,6 +82,7 @@ namespace Lachain.Core.Consensus
             {
                 throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
             }
+
             Logger.LogTrace($"Advancing era from {CurrentEra} to {newEra}");
 
             for (var i = CurrentEra; i <= newEra; ++i)
@@ -175,20 +171,22 @@ namespace Lachain.Core.Consensus
                         Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong) waitTime - now));
                     }
 
-                    var blockHeight = (long) _blockManager.GetHeight();
+                    for (var blockHeight = (long) _blockManager.GetHeight();
+                        blockHeight != CurrentEra - 1;
+                        blockHeight = (long) _blockManager.GetHeight()
+                    )
+                    {
+                        Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {CurrentEra}");
+                        if (blockHeight == CurrentEra)
+                        {
+                            ClearCurrentEraMsg();
+                        }
+                        else if (blockHeight > CurrentEra)
+                        {
+                            AdvanceEra(blockHeight + 1);
+                            continue;
+                        }
 
-                    if (blockHeight == CurrentEra)
-                    {
-                        ClearCurrentEraMsg();
-                    } 
-                    else if (blockHeight > CurrentEra)
-                    {
-                        AdvanceEra(blockHeight);
-                        continue;
-                    }
-
-                    while ((long) _blockManager.GetHeight() != CurrentEra - 1)
-                    {
                         lock (_blockPersistedLock)
                         {
                             Monitor.Wait(_blockPersistedLock);
@@ -213,6 +211,7 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
+                        Logger.LogTrace("Starting new era and requesting root protocol");
                         var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(CurrentEra);
                         broadcaster.InternalRequest(
@@ -235,7 +234,7 @@ namespace Lachain.Core.Consensus
                         broadcaster.WaitFinish();
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
-                        Logger.LogTrace("Root protocol finished, waiting for new era...");
+                        Logger.LogTrace("Root protocol finished, waiting for new era");
                         lastBlock = TimeUtils.CurrentTimeMillis();
                     }
 
