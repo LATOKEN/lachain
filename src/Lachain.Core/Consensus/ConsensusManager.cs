@@ -65,10 +65,11 @@ namespace Lachain.Core.Consensus
             _targetBlockInterval = configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetBlockTime ?? 5_000;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
-            Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era(s)");
-            if ((long) e.Header.Index > CurrentEra)
+            Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era(s): CurrentEra={CurrentEra}");
+            if ((long) e.Header.Index >= CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
             }
@@ -82,7 +83,7 @@ namespace Lachain.Core.Consensus
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AdvanceEra(long newEra)
         {
-            if (newEra <= CurrentEra)
+            if (newEra < CurrentEra)
             {
                 throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
             }
