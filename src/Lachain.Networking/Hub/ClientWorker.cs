@@ -94,7 +94,7 @@ namespace Lachain.Networking.Hub
                     _eraMsgCounter += 1;
                 }
 
-                var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
+                var toSleep = Math.Clamp(50 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
         }

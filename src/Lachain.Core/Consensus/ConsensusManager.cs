@@ -67,7 +67,7 @@ namespace Lachain.Core.Consensus
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
-            Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era");
+            Logger.LogTrace($"Block {e.Header.Index} is persisted, terminating corresponding era(s)");
             if ((long) e.Header.Index > CurrentEra)
             {
                 AdvanceEra((long) e.Header.Index);
@@ -86,11 +86,13 @@ namespace Lachain.Core.Consensus
             {
                 throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
             }
+            Logger.LogTrace($"Advancing era from {CurrentEra} to {newEra}");
 
-            for (var i = CurrentEra; i < newEra; ++i)
+            for (var i = CurrentEra; i <= newEra; ++i)
             {
                 if (!IsValidatorForEra(i)) continue;
                 var broadcaster = EnsureEra(i);
+                Logger.LogTrace($"Terminating era {i}");
                 broadcaster?.Terminate();
                 _eras.Remove(i);
                 _postponedMessages.Remove(i);
