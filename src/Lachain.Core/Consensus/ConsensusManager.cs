@@ -85,7 +85,7 @@ namespace Lachain.Core.Consensus
 
             Logger.LogTrace($"Advancing era from {CurrentEra} to {newEra}");
 
-            for (var i = CurrentEra; i <= newEra; ++i)
+            for (var i = CurrentEra; i < newEra; ++i)
             {
                 if (!IsValidatorForEra(i)) continue;
                 var broadcaster = EnsureEra(i);
@@ -97,16 +97,6 @@ namespace Lachain.Core.Consensus
 
             CurrentEra = newEra;
             _networkManager.AdvanceEra(CurrentEra);
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private void ClearCurrentEraMsg()
-        {
-            if (!IsValidatorForEra(CurrentEra)) return;
-            var broadcaster = EnsureEra(CurrentEra);
-            broadcaster?.Terminate();
-            _eras.Remove(CurrentEra);
-            _postponedMessages.Remove(CurrentEra);
         }
 
         private bool IsValidatorForEra(long era)
@@ -177,11 +167,7 @@ namespace Lachain.Core.Consensus
                     )
                     {
                         Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {CurrentEra}");
-                        if (blockHeight == CurrentEra)
-                        {
-                            ClearCurrentEraMsg();
-                        }
-                        else if (blockHeight > CurrentEra)
+                        if (blockHeight >= CurrentEra)
                         {
                             AdvanceEra(blockHeight + 1);
                             continue;
@@ -205,7 +191,7 @@ namespace Lachain.Core.Consensus
                         {
                             lock (_blockPersistedLock)
                             {
-                                Monitor.Wait(_blockPersistedLock);
+                                Monitor.Wait(_blockPersistedLock, TimeSpan.FromMilliseconds(1_000));
                             }
                         }
                     }
