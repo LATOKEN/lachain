@@ -98,7 +98,9 @@ namespace Lachain.Core.Consensus
             if (_blockManager.LatestBlock().Header.Index + 1 != index)
             {
                 throw new InvalidOperationException(
-                    $"Latest block is {_blockManager.LatestBlock()}, but we are trying to create block {index}");
+                    $"Latest block is {_blockManager.LatestBlock().Header.Index} " +
+                    $"with hash {_blockManager.LatestBlock().Hash.ToHex()}, " +
+                    $"but we are trying to create block {index}");
             }
 
             var blockWithTransactions =
@@ -139,6 +141,7 @@ namespace Lachain.Core.Consensus
                 Logger.LogWarning("Block already produced");
                 return;
             }
+
             var hashes = txHashes as UInt256[] ?? txHashes.ToArray();
             var txCount = hashes.Count();
             var indexInCycle = header.Index % StakingContract.CycleDuration;
@@ -173,7 +176,7 @@ namespace Lachain.Core.Consensus
             var result = _blockManager.Execute(
                 blockWithTransactions.Block, blockWithTransactions.Transactions, commit: true,
                 checkStateHash: true);
-            
+
             if (result != OperatingError.Ok)
                 Logger.LogError(
                     $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}"

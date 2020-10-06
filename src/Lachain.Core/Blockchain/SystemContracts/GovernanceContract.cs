@@ -92,7 +92,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return block % StakingContract.CycleDuration >= StakingContract.VrfSubmissionPhaseDuration;
         }
         
-        public static bool SameCycle(ulong a, in ulong b)
+        public static bool SameCycle(ulong a, ulong b)
         {
             return a / StakingContract.CycleDuration == b / StakingContract.CycleDuration;
         }
