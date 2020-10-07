@@ -217,7 +217,15 @@ namespace Lachain.Core.Consensus
                             _postponedMessages.Remove(CurrentEra);
                         }
 
-                        broadcaster.WaitFinish();
+                        while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
+                        {
+                            if ((long) _blockManager.GetHeight() >= CurrentEra)
+                            {
+                                Logger.LogTrace("Aborting root protocol since block is already persisted");
+                                break;
+                            }
+                            Logger.LogTrace("Still waiting for root protocol to terminate...");
+                        }
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
                         Logger.LogTrace("Root protocol finished, waiting for new era");
