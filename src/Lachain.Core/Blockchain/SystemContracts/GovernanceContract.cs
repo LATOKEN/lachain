@@ -91,7 +91,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             return block % StakingContract.CycleDuration >= StakingContract.VrfSubmissionPhaseDuration;
         }
-        
+
         public static bool SameCycle(ulong a, ulong b)
         {
             return a / StakingContract.CycleDuration == b / StakingContract.CycleDuration;
@@ -194,7 +194,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
-            
+
             UInt256 keyringHash;
             PublicKeySet tsKeys;
             try
@@ -227,31 +227,34 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus FinishCycle(SystemContractExecutionFrame frame)
         {
             var players = GetPlayersCount();
-            var faulty = (players - 1) / 3;
-            var tsKeys = GetTSKeys();
-            var tpkeKey = GetTpkeKey();
-            var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
-
             var gen = GetConsensusGeneration();
-            var votes = GetConfirmations(keyringHash.ToBytes(), gen);
-
-
-            if (votes + 1 < players - faulty)
-                return ExecutionStatus.ExecutionHalted;
-
-            var ecdsaPublicKeys = _nextValidators.Get()
-                .Batch(CryptoUtils.PublicKeyLength)
-                .Select(x => x.ToArray().ToPublicKey())
-                .ToArray();
-
-            _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-            _context.Snapshot.Events.AddEvent(new Event
+            if (players != null)
             {
-                Contract = ContractRegisterer.GovernanceContract,
-                Data = ByteString.Empty,
-                Index = 0,
-                TransactionHash = _context.Receipt?.Hash
-            });
+                var faulty = (players - 1) / 3;
+                var tsKeys = GetTSKeys();
+                var tpkeKey = GetTpkeKey();
+                var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
+                var votes = GetConfirmations(keyringHash.ToBytes(), gen);
+                if (votes + 1 < players - faulty)
+                    return ExecutionStatus.ExecutionHalted;
+                var ecdsaPublicKeys = _nextValidators.Get()
+                    .Batch(CryptoUtils.PublicKeyLength)
+                    .Select(x => x.ToArray().ToPublicKey())
+                    .ToArray();
+                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
+                _context.Snapshot.Events.AddEvent(new Event
+                {
+                    Contract = ContractRegisterer.GovernanceContract,
+                    Data = ByteString.Empty,
+                    Index = 0,
+                    TransactionHash = _context.Receipt?.Hash
+                });
+                Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
+                Logger.LogDebug(
+                    $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
+                Logger.LogDebug($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
+                Logger.LogDebug($"  - TPKE public key: {tpkeKey.ToHex()}");
+            }
 
             var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract,
@@ -264,11 +267,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
             SetCollectedFees(txFeesAmount);
             SetConsensusGeneration(gen + 1); // this "clears" confirmations
-            Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
-            Logger.LogDebug(
-                $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
-            Logger.LogDebug($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
-            Logger.LogDebug($"  - TPKE public key: {tpkeKey.ToHex()}");
+            ClearPlayersCount();
             return ExecutionStatus.Ok;
         }
 
@@ -294,10 +293,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _playersCount.Set(count.ToBytes().ToArray());
         }
 
-        private int GetPlayersCount()
+        private void ClearPlayersCount()
+        {
+            _playersCount.Set(Array.Empty<byte>());
+        }
+
+        private int? GetPlayersCount()
         {
             var count = _playersCount.Get();
-            Logger.LogDebug(count.ToHex());
+            if (count.Length == 0) return null;
             return count.AsReadOnlySpan().ToInt32();
         }
 
