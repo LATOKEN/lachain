@@ -34,9 +34,9 @@ namespace Lachain.ConsensusTest
         private class QueueItem
         {
             public int sender;
-            public object payload;
+            public object? payload;
 
-            public QueueItem(int sender, object payload)
+            public QueueItem(int sender, object? payload)
             {
                 this.payload = payload;
                 this.sender = sender;
@@ -62,7 +62,7 @@ namespace Lachain.ConsensusTest
             var curKeys = keyGens.Select(_ => (ThresholdKeyring?) null).ToArray();
             while (messageLedger.Count > 0)
             {
-                QueueItem msg;
+                QueueItem? msg;
                 var success = mode switch
                 {
                     DeliveryServiceMode.TAKE_FIRST => messageLedger.TryDequeue(out msg),
@@ -71,7 +71,7 @@ namespace Lachain.ConsensusTest
                     _ => throw new NotImplementedException($"Unknown mode {mode}")
                 };
                 Assert.IsTrue(success);
-                switch (msg.payload)
+                switch (msg?.payload)
                 {
                     case null:
                         for (var i = 0; i < n; ++i)
@@ -106,8 +106,8 @@ namespace Lachain.ConsensusTest
                     }
 
                     Assert.IsTrue(curKey.Value.TpkePrivateKey.ToBytes()
-                        .SequenceEqual(curKeys[i].Value.TpkePrivateKey.ToBytes()));
-                    Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i].Value.PublicPartHash());
+                        .SequenceEqual(curKeys[i]!.Value.TpkePrivateKey.ToBytes()));
+                    Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i]!.Value.PublicPartHash());
                 }
 
                 for (var i = 0; i < n; ++i)

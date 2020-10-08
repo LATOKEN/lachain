@@ -77,7 +77,7 @@ namespace Lachain.Benchmark
                         return;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* mint */
@@ -92,7 +92,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: totalSupply (0x18160ddd) */
@@ -107,7 +107,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: balanceOf */
@@ -122,7 +122,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: transfer */
@@ -137,7 +137,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: balanceOf */
@@ -152,7 +152,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: balanceOf */
@@ -167,7 +167,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: approve */
@@ -182,7 +182,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: transferFrom */
@@ -198,7 +198,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
 
                 {
@@ -214,7 +214,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
                     /* ERC-20: balanceOf */
@@ -229,7 +229,7 @@ namespace Lachain.Benchmark
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {status.ReturnValue.ToHex()}");
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
 
                 stateManager.Approve();

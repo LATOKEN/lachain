@@ -160,6 +160,10 @@ namespace Lachain.Consensus.RootProtocol
             try
             {
                 _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);
+                if (_header == null)
+                {
+                    return;
+                }
             }
             catch (Exception e)
             {

@@ -16,7 +16,7 @@ namespace Lachain.Core.Blockchain.VM
         
         public ExecutionStatus Status { get; internal set; }
         
-        public UInt256[] Logs { get; internal set; }
+        public UInt256[]? Logs { get; internal set; }
 
         public byte[]? ReturnValue { get; internal set; }
     }

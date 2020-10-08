@@ -33,7 +33,7 @@ namespace Lachain.ConsensusTest
             return $"Invoker {Id}";
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;

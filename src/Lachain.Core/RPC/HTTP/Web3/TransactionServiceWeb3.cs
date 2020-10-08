@@ -199,23 +199,24 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_call")]
         private string Call(JObject opts, string? blockId)
         {
-            string? from = (string)opts["from"];
-            string? to = (string)opts["to"];
-            string? data = (string)opts["data"];
-            if (to is null || data is null) return "0x";
+            var from = opts["from"];
+            var to = opts["to"];
+            var data = opts["data"];
+            
+            if (to is null && data is null) return "0x";
+            
+            var invocation = ((string)data!).HexToBytes();
+            var destination = ((string)to!).HexToUInt160();
+            var source = from is null ? UInt160Utils.Zero : ((string)from!).HexToUInt160();
             //string from, string to, string gas, string gasPrice, string value, string data
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
-                to.HexToUInt160());
-            var systemContract= _contractRegisterer.GetContractByAddress(to.HexToUInt160());
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
+            var systemContract= _contractRegisterer.GetContractByAddress(destination);
             
             if (contract is null && systemContract is null)
             {
                 Logger.LogWarning("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
                 return "0x";
             }
-            
-            if (string.IsNullOrEmpty(from))
-                from = UInt160Utils.Zero.ToHex();
 
             if (!(contract is null))
             {
@@ -224,12 +225,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var snapshot = _stateManager.NewSnapshot();
                     var res = VirtualMachine.InvokeWasmContract(
                         contract,
-                        new InvocationContext(from.HexToUInt160(), snapshot, new TransactionReceipt
+                        new InvocationContext(source, snapshot, new TransactionReceipt
                         {
                             // TODO: correctly fill these fields
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
                         }),
-                        data.HexToBytes(),
+                        invocation,
                         100_000_000
                     );
                     _stateManager.Rollback();
@@ -239,7 +240,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return result.ReturnValue?.ToHex() ?? "0x";
             }
             
-            var (err, invocationResult) = _InvokeSystemContract(to.HexToUInt160(), data.HexToBytes(), from.HexToUInt160(), _stateManager.LastApprovedSnapshot);
+            var (err, invocationResult) = _InvokeSystemContract(destination, invocation, source, _stateManager.LastApprovedSnapshot);
             if (err != OperatingError.Ok)
             {
                 return "0x";
@@ -281,20 +282,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string? EstimateGas(JObject opts)
         {
             var gasUsed = GasMetering.DefaultTxCost;
-            string? from = (string)opts["from"];
-            string? to = (string)opts["to"];
-            string? data = (string)opts["data"];
-            
-            var invocation = data.HexToBytes();
-            var addressTo = to.HexToUInt160();
-            var addressFrom = from is null ? UInt160Utils.Zero : from.HexToUInt160();
-            gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
+            var from = opts["from"];
+            var to = opts["to"];
+            var data = opts["data"];
             
             if (to is null && data is null) return null;
             
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
-                to.HexToUInt160());
-            var systemContract= _contractRegisterer.GetContractByAddress(to.HexToUInt160());
+            var invocation = ((string)data!).HexToBytes();
+            var destination = ((string)to!).HexToUInt160();
+            var source = from is null ? UInt160Utils.Zero : ((string)from!).HexToUInt160();
+            gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
+            
+            
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
+            var systemContract= _contractRegisterer.GetContractByAddress(destination);
             
             if (contract is null && systemContract is null)
             {
@@ -308,12 +309,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var snapshot = _stateManager.NewSnapshot();
                     var res = VirtualMachine.InvokeWasmContract(
                         contract,
-                        new InvocationContext(addressFrom, snapshot, new TransactionReceipt
+                        new InvocationContext(source, snapshot, new TransactionReceipt
                         {
                             // TODO: correctly fill these fields
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
                         }),
-                        data.HexToBytes(),
+                        invocation,
                         100_000_000
                     );
                     _stateManager.Rollback();
@@ -326,11 +327,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
             {
                 var snapshot = _stateManager.NewSnapshot();
-                var systemContractContext = new InvocationContext(addressFrom, snapshot, new TransactionReceipt
+                var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
                 {
                     Block = snapshot.Blocks.GetTotalBlockHeight(),
                 });
-                var invocationResult = ContractInvoker.Invoke(addressTo, systemContractContext, invocation, 100_000_000);
+                var invocationResult = ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
                 _stateManager.Rollback();
                 
                 return invocationResult;

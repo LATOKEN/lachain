@@ -53,10 +53,16 @@ namespace Lachain.Core.Consensus
             return taken;
         }
 
-        public BlockHeader CreateHeader(
+        public BlockHeader? CreateHeader(
             ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken
         )
         {
+            if (_blockManager.GetHeight() >= index)
+            {
+                Logger.LogWarning("Block already produced");
+                hashesTaken = new UInt256[]{};
+                return null;
+            }
             var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromDays(1)); // TODO: timeout?
             if (txsGot != txHashes.Count)
             {

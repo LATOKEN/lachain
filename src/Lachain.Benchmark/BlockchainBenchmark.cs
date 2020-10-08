@@ -63,7 +63,7 @@ namespace Lachain.Benchmark
                 Console.WriteLine("Generated genesis block");
 
             var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
-            Console.WriteLine("Genesis Block: " + genesisBlock.Hash.ToHex());
+            Console.WriteLine("Genesis Block: " + genesisBlock!.Hash.ToHex());
             Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
             Console.WriteLine($" + nonce: {genesisBlock.Header.Nonce}");
