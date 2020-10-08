@@ -90,11 +90,14 @@ namespace Lachain.Networking.Hub
                         throw new Exception("Cannot send empty message");
                     Logger.LogTrace(
                         $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
+                    Logger.LogTrace(
+                        $"Messages types: {string.Join("; ", toSend.Messages.Select(m => m.MessageCase.ToString()))}"
+                    );
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     _eraMsgCounter += 1;
                 }
 
-                var toSleep = Math.Clamp(500 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
+                var toSleep = Math.Clamp(250 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
         }

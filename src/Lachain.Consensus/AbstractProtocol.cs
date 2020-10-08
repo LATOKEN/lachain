@@ -45,6 +45,11 @@ namespace Lachain.Consensus
             _thread.Join();
         }
 
+        public bool WaitFinish(TimeSpan timeout)
+        {
+            return _thread.Join(timeout);
+        }
+
         public void WaitResult()
         {
             lock (_resultLock)

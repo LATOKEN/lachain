@@ -83,7 +83,6 @@ namespace Lachain.Core.RPC.HTTP
             }
             using var reader = new StreamReader(request.InputStream);
             var body = reader.ReadToEnd();
-            Console.WriteLine($"RPC request: {body}");
             var isArray = body.StartsWith("[");
                     
             if (request.Headers["Origin"] != null)
@@ -99,7 +98,6 @@ namespace Lachain.Core.RPC.HTTP
                 if (isArray && !jsonRpcStateAsync.Result.StartsWith("["))
                     resultString = "[" + resultString + "]";
                     
-                // Console.WriteLine(resultString);
                 var output = Encoding.UTF8.GetBytes(resultString);
                 response.OutputStream.Write(output, 0, output.Length);
                 response.OutputStream.Flush();

@@ -320,9 +320,9 @@ namespace Lachain.Core.Consensus
                 throw new InvalidOperationException($"Era mismatched, expected {_era} got message with {id.Era}");
         }
 
-        public void WaitFinish()
+        public bool WaitFinish(TimeSpan timeout)
         {
-            EnsureProtocol(new RootProtocolId(_era))?.WaitFinish();
+            return EnsureProtocol(new RootProtocolId(_era))?.WaitFinish(timeout) ?? true;
         }
     }
 }

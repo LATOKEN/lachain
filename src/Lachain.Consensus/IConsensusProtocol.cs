@@ -1,4 +1,5 @@
-﻿using Lachain.Consensus.Messages;
+﻿using System;
+using Lachain.Consensus.Messages;
 
 namespace Lachain.Consensus
 {
@@ -9,6 +10,7 @@ namespace Lachain.Consensus
 
         void Start();
         void WaitFinish();
+        bool WaitFinish(TimeSpan timeout);
         void WaitResult();
 
         void Terminate();

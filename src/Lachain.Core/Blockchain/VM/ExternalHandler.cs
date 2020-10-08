@@ -101,7 +101,6 @@ namespace Lachain.Core.Blockchain.VM
             var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
             if (buffer == null)
                 throw new InvalidContractException("Bad call to WRITELOG");
-            Console.WriteLine($"Contract ({frame.CurrentAddress}) logged: {buffer.ToHex()}");
         }
 
         public static int Handler_Env_InvokeContract(

@@ -95,6 +95,9 @@ namespace Lachain.Core.Vault
                     (data ?? throw new ArgumentException("Cannot parse method args"))
                     .Select(x => x.ToPublicKey())
                     .ToArray();
+                Logger.LogTrace(
+                    $"Keygen is started for validator set: {string.Join(",", publicKeys.Select(x => x.ToHex()))}"
+                );
                 if (!publicKeys.Contains(_privateWallet.EcdsaKeyPair.PublicKey))
                 {
                     Logger.LogWarning("Skipping validator change event since we are not new validator");
@@ -107,6 +110,7 @@ namespace Lachain.Core.Vault
                 var faulty = (publicKeys.Length - 1) / 3;
                 keygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
                 var commitTx = MakeCommitTransaction(keygen.StartKeygen());
+                Logger.LogTrace($"Produced commit tx with hash: {commitTx.Hash.ToHex()}");
                 if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
                     Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
                 else
