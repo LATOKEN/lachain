@@ -301,8 +301,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private int? GetPlayersCount()
         {
             var count = _playersCount.Get();
+            Logger.LogTrace($"Players count: {count.ToHex()}");
             if (count.Length == 0) return null;
-            return count.AsReadOnlySpan().ToInt32();
+            try
+            {
+                return count.AsReadOnlySpan().ToInt32();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private void SetTSKeys(PublicKeySet tsKeys)
