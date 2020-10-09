@@ -85,6 +85,11 @@ namespace Lachain.ConsensusTest
         {
         }
 
+        public bool WaitFinish(TimeSpan timeout)
+        {
+            throw new NotImplementedException();
+        }
+
         public void WaitResult()
         {
             throw new NotImplementedException();

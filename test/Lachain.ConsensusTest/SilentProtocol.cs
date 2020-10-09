@@ -1,3 +1,4 @@
+using System;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 
@@ -21,6 +22,11 @@ namespace Lachain.ConsensusTest
 
         public void WaitFinish()
         {
+        }
+
+        public bool WaitFinish(TimeSpan timeout)
+        {
+            throw new NotImplementedException();
         }
 
         public void WaitResult()
