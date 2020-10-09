@@ -229,6 +229,7 @@ namespace Lachain.Core.Blockchain.Operations
             }
 
             /* execute transactions */
+            ulong indexInBlock = 0;
             foreach (var (txHash, i) in block.TransactionHashes.Select((tx, i) => (tx, i)))
             {
                 Logger.LogTrace($"Trying to execute tx : {txHash.ToHex()}");
@@ -236,7 +237,7 @@ namespace Lachain.Core.Blockchain.Operations
                 var receipt = currentTransactions[txHash];
                 receipt.Block = block.Header.Index;
                 receipt.GasUsed = GasMetering.DefaultTxCost;
-                receipt.IndexInBlock = (ulong) i;
+                receipt.IndexInBlock = indexInBlock;
                 var transaction = receipt.Transaction;
                 var snapshot = _stateManager.NewSnapshot();
 
@@ -308,6 +309,7 @@ namespace Lachain.Core.Blockchain.Operations
                 }
 
                 _stateManager.Approve();
+                indexInBlock++;
                 if (_contractTxJustExecuted != null && !isEmulation)
                 {
                     OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
