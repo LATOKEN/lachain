@@ -13,7 +13,7 @@ namespace Lachain.Core.RPC.HTTP
     public class NodeService : JsonRpcService
     {
         private readonly ulong _startTs;
-        private readonly INetworkManager _networkManager;
+        private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockchainEventFilter _blockchainEventFilter;
 
         public NodeService(
@@ -23,7 +23,7 @@ namespace Lachain.Core.RPC.HTTP
         )
         {
             _blockchainEventFilter = blockchainEventFilter;
-            _networkManager = networkManager;
+            _blockSynchronizer = blockSynchronizer;
             _blockchainEventFilter = blockchainEventFilter;
             _startTs = TimeUtils.CurrentTimeMillis();
         }
@@ -44,23 +44,20 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("net_peers")]
         private JArray GetConnectedPeers()
         {
-            return new JArray();
-            // var peers = _networkManager.GetConnectedPeers();
-            // var result = new JArray();
-            //
-            // foreach (var peer in peers)
-            // {
-            //     var peerJObject = new JObject
-            //     {
-            //         ["publicKey"] = peer.PublicKey!.ToHex(),
-            //         ["host"] = peer.Host,
-            //         ["port"] = peer.Port,
-            //         ["protocol"] = peer.Protocol.ToString(),
-            //     };
-            //     result.Add(peerJObject);
-            // }
-            //
-            // return result;
+            var peers = _blockSynchronizer.GetConnectedPeers();
+            var result = new JArray();
+            
+            foreach (var (ecdsaPublicKey, height) in peers)
+            {
+                var peerJObject = new JObject
+                {
+                    ["publicKey"] = ecdsaPublicKey!.ToHex(),
+                    ["height"] = height,
+                };
+                result.Add(peerJObject);
+            }
+            
+            return result;
         }
 
         [JsonRpcMethod("net_peerCount")]

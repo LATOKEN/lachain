@@ -130,7 +130,7 @@ namespace Lachain.Core.RPC.HTTP
             var isSyncing = !max.HasValue || max > current;
             return new JObject
             {
-                ["syncing"] = false,
+                ["syncing"] = isSyncing,
                 ["currentBlock"] = _blockManager.GetHeight().ToHex(),
                 ["highestBlock"] = current.ToHex(),
                 // TODO: check time correctness

@@ -202,11 +202,10 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             {
                 var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
 
-                if (!(receipt is null))
-                {
-                    results.Add(FormatTx(receipt,
-                        _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block)!));
-                }
+                if (receipt is null) continue;
+                var txFormatted = FormatTx(receipt,
+                    _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block)!); 
+                results.Add(txFormatted);
             }
 
             return new JObject
@@ -248,7 +247,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["type"] = "send",
                 ["from"] = receipt.Transaction.From.ToHex(),
                 ["to"] = receipt.Transaction.To.ToHex(),
-                ["amount"] = receipt.Transaction.Value.ToMoney(false).ToString(),
+                ["amount"] = receipt.Transaction.Value.ToMoney().ToString(),
                 ["usedFee"] = block is null
                     ? "0"
                     : new Money(new BigInteger(receipt.GasUsed) * receipt.Transaction.GasPrice).ToString(),

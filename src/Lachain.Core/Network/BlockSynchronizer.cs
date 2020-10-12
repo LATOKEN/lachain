@@ -222,6 +222,11 @@ namespace Lachain.Core.Network
             return _peerHeights.Max(v => v.Value);
         }
 
+        public IDictionary<ECDSAPublicKey, ulong> GetConnectedPeers()
+        {
+            return _peerHeights;
+        }
+
         private void Worker()
         {
             var rnd = new Random();
