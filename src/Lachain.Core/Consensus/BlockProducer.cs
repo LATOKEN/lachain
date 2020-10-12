@@ -184,9 +184,13 @@ namespace Lachain.Core.Consensus
                 checkStateHash: true);
 
             if (result != OperatingError.Ok)
+            {
                 Logger.LogError(
                     $"Block {blockWithTransactions.Block.Header.Index} ({blockWithTransactions.Block.Hash.ToHex()}) was not persisted: {result}"
                 );
+                Logger.LogTrace($"Block raw data: {blockWithTransactions.Block.ToByteArray().ToHex()}");
+                Logger.LogTrace($"Block transactions data: {string.Join(", ", blockWithTransactions.Transactions.Select(tx => tx.ToByteArray().ToHex()))}");
+            }
         }
 
         private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt()
