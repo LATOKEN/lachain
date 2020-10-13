@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Google.Protobuf;
+using Lachain.Consensus;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -91,20 +92,10 @@ namespace Lachain.Networking.Hub
                     Logger.LogTrace(
                         $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}");
                     var messageTypes = toSend.Messages.Select(m =>
-                    {
-                        if (m.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage)
-                            return m.MessageCase.ToString();
-                        return m.ConsensusMessage.PayloadCase switch
-                        {
-                            ConsensusMessage.PayloadOneofCase.ValMessage =>
-                                $"VAL(Er={m.ConsensusMessage.Validator.Era}, A={m.ConsensusMessage.ValMessage.SenderId})",
-                            ConsensusMessage.PayloadOneofCase.EchoMessage =>
-                                $"ECHO(Er={m.ConsensusMessage.Validator.Era}, A={m.ConsensusMessage.EchoMessage.SenderId})",
-                            ConsensusMessage.PayloadOneofCase.ReadyMessage =>
-                                $"READY(Er={m.ConsensusMessage.Validator.Era}, A={m.ConsensusMessage.ReadyMessage.SenderId})",
-                            _ => $"{m.ConsensusMessage.PayloadCase}({m.ConsensusMessage.Validator.Era})"
-                        };
-                    });
+                        m.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage
+                            ? m.MessageCase.ToString()
+                            : m.ConsensusMessage.PrettyTypeString()
+                    );
                     Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     _eraMsgCounter += 1;
