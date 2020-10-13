@@ -92,7 +92,10 @@ namespace Lachain.Core.Consensus
                 Logger.LogTrace($"Terminating era {i}");
                 broadcaster?.Terminate();
                 _eras.Remove(i);
-                _postponedMessages.Remove(i);
+                lock (_postponedMessages)
+                {
+                    _postponedMessages.Remove(i);                    
+                }
             }
 
             CurrentEra = newEra;
@@ -113,9 +116,14 @@ namespace Lachain.Core.Consensus
             if (era < CurrentEra)
                 Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
             else if (era > CurrentEra)
-                _postponedMessages
-                    .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
-                    .Add((message, from));
+            {
+                lock (_postponedMessages)
+                {
+                    _postponedMessages
+                        .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
+                        .Add((message, from));    
+                }
+            }
             else
             {
                 if (!IsValidatorForEra(era))
@@ -204,19 +212,22 @@ namespace Lachain.Core.Consensus
                             new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId, _blockProducer)
                         );
 
-                        if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
+                        lock (_postponedMessages)
                         {
-                            Logger.LogDebug(
-                                $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
-                            foreach (var (message, from) in savedMessages)
+                            if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
                             {
-                                var fromIndex = _validatorManager.GetValidatorIndex(from, CurrentEra - 1);
-                                broadcaster.Dispatch(message, fromIndex);
+                                Logger.LogDebug(
+                                    $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
+                                foreach (var (message, from) in savedMessages)
+                                {
+                                    var fromIndex = _validatorManager.GetValidatorIndex(from, CurrentEra - 1);
+                                    broadcaster.Dispatch(message, fromIndex);
+                                }
+
+                                _postponedMessages.Remove(CurrentEra);
                             }
-
-                            _postponedMessages.Remove(CurrentEra);
                         }
-
+                        
                         while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
                             if ((long) _blockManager.GetHeight() >= CurrentEra)
