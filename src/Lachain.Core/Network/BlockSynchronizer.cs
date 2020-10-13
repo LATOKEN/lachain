@@ -141,9 +141,21 @@ namespace Lachain.Core.Network
                     $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
                 var myHeight = _blockManager.GetHeight();
                 if (block.Header.Index != myHeight + 1)
+                {
+                    Logger.LogTrace(
+                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: our height is {myHeight}");
                     return false;
+                }
+
                 if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
+                {
+                    var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
+                    var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
+                    Logger.LogTrace(
+                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
                     return false;
+                }
+
                 var error = _stateManager.SafeContext(() =>
                 {
                     if (_blockManager.GetHeight() + 1 == block.Header.Index)
@@ -267,11 +279,11 @@ namespace Lachain.Core.Network
                         .Take(maxPeersToAsk)
                         .ToArray();
 
-                    Logger.LogTrace($"Sending query for blocks to {peers.Length} peers");
+                    var leftBound = myHeight + 1;
+                    var rightBound = Math.Min(maxHeight, myHeight + maxBlocksToRequest);
+                    Logger.LogTrace($"Sending query for blocks [{leftBound}; {rightBound}] to {peers.Length} peers");
                     foreach (var peer in peers)
                     {
-                        var leftBound = myHeight + 1;
-                        var rightBound = Math.Min(maxHeight, myHeight + maxBlocksToRequest);
                         _networkManager.SendTo(peer, messageFactory.SyncBlocksRequest(leftBound, rightBound));
                     }
 
