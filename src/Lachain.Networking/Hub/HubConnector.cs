@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Net.Client;
 using Lachain.Logger;
 using Lachain.Proto;
 
@@ -29,7 +30,12 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
             _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(grpcEndpoint, hubBootstrapAddresses));
             _messageFactory = messageFactory;
-            var channel = new Channel(grpcEndpoint, ChannelCredentials.Insecure);
+            var options = new[]
+            {
+                new ChannelOption(ChannelOptions.MaxReceiveMessageLength, 100 * 1024 * 1024),
+                new ChannelOption(ChannelOptions.MaxSendMessageLength, 100 * 1024 * 1024),
+            };
+            var channel = new Channel(grpcEndpoint, ChannelCredentials.Insecure, options);
             _client = new Proto.CommunicationHub.CommunicationHubClient(channel);
         }
 
