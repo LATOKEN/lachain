@@ -97,7 +97,7 @@ namespace Lachain.Networking.Hub
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError("Error occured", e);
+                    Logger.LogError($"Error occured: {e}");
                 }
             }
         }
