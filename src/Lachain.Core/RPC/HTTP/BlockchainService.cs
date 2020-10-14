@@ -127,7 +127,9 @@ namespace Lachain.Core.RPC.HTTP
         {
             var current = _blockManager.GetHeight();
             var max = _blockSynchronizer.GetHighestBlock();
-            var isSyncing = !max.HasValue || max > current;
+            
+            // add 1 to prevent non full sync status appearance on each new block
+            var isSyncing = !max.HasValue || max > current + 1;
             return new JObject
             {
                 ["syncing"] = isSyncing,
