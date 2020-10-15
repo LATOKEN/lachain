@@ -134,11 +134,19 @@ namespace Lachain.Core.Network
                 .ToArray();
             Task.Factory.StartNew(() =>
             {
-                foreach (var block in orderedBlocks)
+                try
                 {
-                    if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
-                        break;
+                    foreach (var block in orderedBlocks)
+                    {
+                        if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
+                            break;
+                    }
                 }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Error occured while handling blocks from peer: {e}");
+                }
+                
             }, TaskCreationOptions.LongRunning);
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }

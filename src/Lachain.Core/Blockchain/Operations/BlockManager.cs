@@ -230,7 +230,7 @@ namespace Lachain.Core.Blockchain.Operations
 
             /* execute transactions */
             ulong indexInBlock = 0;
-            foreach (var (txHash, i) in block.TransactionHashes.Select((tx, i) => (tx, i)))
+            foreach (var txHash in block.TransactionHashes)
             {
                 Logger.LogTrace($"Trying to execute tx : {txHash.ToHex()}");
                 /* try to find transaction by hash */
@@ -317,7 +317,6 @@ namespace Lachain.Core.Blockchain.Operations
                     _localTransactionRepository.TryAddTransaction(receipt);
                 }
             }
-
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
 
             /* save block to repository */

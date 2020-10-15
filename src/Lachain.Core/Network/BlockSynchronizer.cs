@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
@@ -165,7 +166,12 @@ namespace Lachain.Core.Network
                     return OperatingError.BlockAlreadyExists;
                 });
                 if (error == OperatingError.BlockAlreadyExists)
+                {
+                    Logger.LogTrace(
+                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: block already exists");
                     return true;
+                }
+
                 if (error != OperatingError.Ok)
                 {
                     Logger.LogWarning(
