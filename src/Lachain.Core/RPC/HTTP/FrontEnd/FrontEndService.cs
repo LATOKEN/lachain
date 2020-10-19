@@ -185,7 +185,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 10000000,
                 Nonce = nonce,
-                Value = value.ToUInt256(false)
+                Value = value.ToUInt256()
             };
 
             return AddTxToPool(tx);
