@@ -130,11 +130,12 @@ namespace Lachain.Core.RPC.HTTP
             
             // add 1 to prevent non full sync status appearance on each new block
             var isSyncing = !max.HasValue || max > current + 1;
+            var maxBlock = max.HasValue ? max.Value : 0;
             return new JObject
             {
                 ["syncing"] = isSyncing,
                 ["currentBlock"] = _blockManager.GetHeight().ToHex(),
-                ["highestBlock"] = current.ToHex(),
+                ["highestBlock"] = maxBlock.ToHex(),
                 // TODO: check time correctness
                 ["wrongTime"] = false,
             };
