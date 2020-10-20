@@ -8,6 +8,7 @@ using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Operations
@@ -113,6 +114,9 @@ namespace Lachain.Core.Blockchain.Operations
             if (transaction.GasLimit > GasMetering.DefaultBlockGasLimit ||
                 transaction.GasLimit < GasMetering.DefaultTxCost)
                 return OperatingError.InvalidGasLimit;
+
+            if (transaction.Value.ToBigInteger() > Money.MaxValue.ToUInt256().ToBigInteger())
+                return OperatingError.ValueOverflow;
             /* verify transaction via persister */
             return _transactionExecuter.Verify(transaction);
         }

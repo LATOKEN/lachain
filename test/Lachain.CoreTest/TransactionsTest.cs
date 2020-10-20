@@ -53,6 +53,20 @@ namespace Lachain.CoreTest
         }
 
         [Test]
+        public void Test_Money_Converting()
+        {
+
+            var money = Money.Parse("1.0");
+            Assert.IsTrue(VerifyMoney(money.ToUInt256()));
+            Assert.IsFalse(VerifyMoney(money.ToUInt256(false)));
+        }
+
+        private bool VerifyMoney(UInt256 value)
+        {
+            return Money.MaxValue.ToUInt256().ToBigInteger() > value.ToBigInteger();
+        } 
+
+        [Test]
         public void Test_Tx_Pool_Adding()
         {
             var containerBuilder = TestUtils.GetContainerBuilder(

@@ -26,5 +26,6 @@
         InvalidInput,
         BlockGasOverflow,
         Underpriced,
+        ValueOverflow,
     }
 }
