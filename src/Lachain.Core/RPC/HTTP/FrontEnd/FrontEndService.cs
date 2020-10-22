@@ -79,6 +79,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         private JObject GetAccount(string? address = null)
         {
             address ??= _systemContractReader.NodeAddress().ToHex();
+            var publicKey = _systemContractReader.NodePublicKey().ToHex();
             var addressUint160 = address.HexToBytes().ToUInt160();
             var balance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
@@ -130,6 +131,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             return new JObject
             {
                 ["address"] = address,
+                ["publicKey"] = publicKey,
                 ["balance"] = balance.ToString(),
                 ["stake"] = stake.ToString(),
                 ["penalty"] = penalty.ToString(),

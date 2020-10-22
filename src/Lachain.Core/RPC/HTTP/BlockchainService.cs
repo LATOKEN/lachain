@@ -6,6 +6,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Network;
+using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
@@ -96,6 +97,20 @@ namespace Lachain.Core.RPC.HTTP
                 if (ev is null)
                     continue;
                 jArray.Add(ev.ToJson());
+            }
+
+            return jArray;
+        }
+
+        [JsonRpcMethod("bcn_validators")]
+        private JArray GetValidatorPublicKeys()
+        {
+            var publicKeys = _stateManager.LastApprovedSnapshot.Validators.GetValidatorsPublicKeys();
+            var jArray = new JArray();
+            var ecdsaPublicKeys = publicKeys as ECDSAPublicKey[] ?? publicKeys.ToArray();
+            for (var i = 0; i < ecdsaPublicKeys.Count(); i++)
+            {
+                jArray.Add(ecdsaPublicKeys[i].ToHex());
             }
 
             return jArray;
