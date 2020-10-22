@@ -312,9 +312,19 @@ namespace Lachain.Core.Blockchain.Operations
                 indexInBlock++;
                 if (_contractTxJustExecuted != null && !isEmulation)
                 {
-                    OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
-                    _contractTxJustExecuted = null;
-                    _localTransactionRepository.TryAddTransaction(receipt);
+                    try
+                    {
+                        OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError($"While executing block {block.Header.Index} exception occured while processing system contract call: {e}");
+                    }
+                    finally
+                    {
+                        _contractTxJustExecuted = null;
+                        _localTransactionRepository.TryAddTransaction(receipt);   
+                    }
                 }
             }
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
