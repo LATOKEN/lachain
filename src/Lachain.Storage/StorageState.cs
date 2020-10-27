@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Storage.Trie;
+using RocksDbSharp;
 
 namespace Lachain.Storage
 {
@@ -72,15 +73,16 @@ namespace Lachain.Storage
 
         public ulong Commit()
         {
-            _trieMap.Checkpoint(CurrentVersion);
-            _repositoryManager.SetState(CurrentVersion);
+            using var tx = _repositoryManager.CreateTransaction();
+            _trieMap.Checkpoint(CurrentVersion, tx);
+            _repositoryManager.SetState(CurrentVersion, tx);
+            tx.Commit();
             return CurrentVersion;
         }
 
         public ulong Cancel()
         {
             _trieMap.ClearCaches();
-            _repositoryManager.SetState(_initialVersion);
             return _initialVersion;
         }
     }

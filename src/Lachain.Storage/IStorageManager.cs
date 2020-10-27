@@ -8,6 +8,5 @@ namespace Lachain.Storage
 
         IStorageState GetLastState(uint repository);
         IStorageState GetState(uint repository, ulong version);
-        void SetLastState(uint repositrory, IStorageState state);
     }
 }

@@ -7,6 +7,7 @@ namespace Lachain.Storage
     public class RepositoryManager
     {
         private readonly uint _repositoryId;
+        private readonly IRocksDbContext _dbContext;
         private readonly VersionFactory _versionFactory;
         private readonly VersionRepository _versionRepository;
         public readonly ITrieMap TrieMap;
@@ -16,14 +17,21 @@ namespace Lachain.Storage
             uint repositoryId,
             IRocksDbContext dbContext,
             VersionFactory versionFactory,
-            VersionRepository versionRepository)
+            VersionRepository versionRepository
+            )
         {
             _repositoryId = repositoryId;
+            _dbContext = dbContext;
             _versionFactory = versionFactory;
             _versionRepository = versionRepository;
             var storageContext = new NodeRepository(dbContext);
             TrieMap = new TrieHashMap(storageContext, versionFactory);
             LatestVersion = _versionRepository.GetVersion(_repositoryId);
+        }
+
+        public RocksDbAtomicWrite CreateTransaction()
+        {
+            return new RocksDbAtomicWrite(_dbContext);
         }
 
         public IStorageState GetLastState()
@@ -36,11 +44,11 @@ namespace Lachain.Storage
             return new StorageState(this, version);
         }
 
-        internal void SetState(ulong version)
+        internal void SetState(ulong version, RocksDbAtomicWrite tx)
         {
             LatestVersion = version;
-            _versionRepository.SetVersion(_repositoryId, LatestVersion);
-            _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1);
+            _versionRepository.SetVersion(_repositoryId, LatestVersion, tx);
+            _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1, tx);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Lachain.Utility.Serialization;
+﻿using System.Linq;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.Repositories
 {
@@ -17,9 +18,9 @@ namespace Lachain.Storage.Repositories
             return rawVersion?.AsReadOnlySpan().ToUInt64() ?? 0u;
         }
 
-        public void SetVersion(uint repository, ulong version)
+        public void SetVersion(uint repository, ulong version, RocksDbAtomicWrite tx)
         {
-            _dbContext.Save(EntryPrefix.StorageVersionIndex.BuildPrefix(repository), version.ToBytes());
+            tx.Put(EntryPrefix.StorageVersionIndex.BuildPrefix(repository), version.ToBytes().ToArray());
         }
     }
 }

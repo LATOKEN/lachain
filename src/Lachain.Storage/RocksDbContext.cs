@@ -35,6 +35,15 @@ namespace Lachain.Storage
             writeOptions.SetSync(true);
             _rocksDb.Put(key, content, null, writeOptions);
         }
+
+        public void SaveBatch(WriteBatch batch)
+        {
+            _ThrowIfNotInitialized();
+            var writeOptions = new WriteOptions();
+            writeOptions.DisableWal(0);
+            writeOptions.SetSync(true);
+            _rocksDb.Write(batch, writeOptions);
+        }
         
         public void Save(IEnumerable<byte> key, IEnumerable<byte> content)
         {

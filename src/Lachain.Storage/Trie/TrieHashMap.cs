@@ -4,6 +4,7 @@ using System.Linq;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using RocksDbSharp;
 
 namespace Lachain.Storage.Trie
 {
@@ -21,20 +22,20 @@ namespace Lachain.Storage.Trie
             _versionFactory = versionFactory;
         }
 
-        private void EnsurePersisted(ulong root)
+        private void EnsurePersisted(ulong root, RocksDbAtomicWrite batch)
         {
             if (root == 0) return;
             if (!_nodeCache.TryGetValue(root, out var node) || _persistedNodes.Contains(root))
                 return;
             foreach (var child in node.Children)
-                EnsurePersisted(child);
-            _repository.WriteNode(root, node);
+                EnsurePersisted(child, batch);
+            _repository.WriteNodeToBatch(root, node, batch);
             _persistedNodes.Add(root);
         }
 
-        public void Checkpoint(ulong root)
+        public void Checkpoint(ulong root, RocksDbAtomicWrite batch)
         {
-            EnsurePersisted(root);
+            EnsurePersisted(root, batch);
             ClearCaches();
         }
 

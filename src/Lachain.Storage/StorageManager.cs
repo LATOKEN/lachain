@@ -43,10 +43,5 @@ namespace Lachain.Storage
         {
             return _repositoryManagers[repository].GetState(version);
         }
-
-        public void SetLastState(uint repositrory, IStorageState state)
-        {
-            _repositoryManagers[repositrory].SetState(state.CurrentVersion);
-        }
     }
 }

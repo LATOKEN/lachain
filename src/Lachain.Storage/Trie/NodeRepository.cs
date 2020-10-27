@@ -1,4 +1,6 @@
-﻿namespace Lachain.Storage.Trie
+﻿using RocksDbSharp;
+
+namespace Lachain.Storage.Trie
 {
     internal class NodeRepository
     {
@@ -16,10 +18,20 @@
             return NodeSerializer.FromBytes(raw);
         }
 
-        public void WriteNode(ulong id, IHashTrieNode node)
+        public WriteBatch CreateBatch()
+        {
+            return new WriteBatch();
+        }
+
+        public void WriteNodeToBatch(ulong id, IHashTrieNode node, RocksDbAtomicWrite tx)
         {
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            _rocksDbContext.Save(prefix, NodeSerializer.ToBytes(node));
+            tx.Put(prefix, NodeSerializer.ToBytes(node));
+        }
+
+        public void SaveBatch(WriteBatch batch)
+        {
+            _rocksDbContext.SaveBatch(batch);
         }
     }
 }
