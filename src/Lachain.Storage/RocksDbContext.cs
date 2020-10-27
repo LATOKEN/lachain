@@ -8,9 +8,15 @@ namespace Lachain.Storage
     public class RocksDbContext : IRocksDbContext
     {
         private readonly RocksDb _rocksDb;
+        private readonly WriteOptions _writeOptions;
+
 
         public RocksDbContext(string path = "ChainLachain")
         {
+            _writeOptions = new WriteOptions();
+            _writeOptions.DisableWal(0);
+            _writeOptions.SetSync(true);
+
             var options = new DbOptions().SetCreateIfMissing();
             _rocksDb = RocksDb.Open(options, path);
         }
@@ -30,37 +36,25 @@ namespace Lachain.Storage
         public void Save(byte[] key, byte[] content)
         {
             _ThrowIfNotInitialized();
-            var writeOptions = new WriteOptions();
-            writeOptions.DisableWal(0);
-            writeOptions.SetSync(true);
-            _rocksDb.Put(key, content, null, writeOptions);
+            _rocksDb.Put(key, content, null, _writeOptions);
         }
 
         public void SaveBatch(WriteBatch batch)
         {
             _ThrowIfNotInitialized();
-            var writeOptions = new WriteOptions();
-            writeOptions.DisableWal(0);
-            writeOptions.SetSync(true);
-            _rocksDb.Write(batch, writeOptions);
+            _rocksDb.Write(batch, _writeOptions);
         }
         
         public void Save(IEnumerable<byte> key, IEnumerable<byte> content)
         {
             _ThrowIfNotInitialized();
-            var writeOptions = new WriteOptions();
-            writeOptions.DisableWal(0);
-            writeOptions.SetSync(true);
-            _rocksDb.Put(key.ToArray(), content.ToArray(), null, writeOptions);
+            _rocksDb.Put(key.ToArray(), content.ToArray(), null, _writeOptions);
         }
 
         public void Delete(byte[] key)
         {
             _ThrowIfNotInitialized();
-            var writeOptions = new WriteOptions();
-            writeOptions.DisableWal(0);
-            writeOptions.SetSync(true);
-            _rocksDb.Remove(key, null, writeOptions);
+            _rocksDb.Remove(key, null, _writeOptions);
         }
         
         public void Dispose()
