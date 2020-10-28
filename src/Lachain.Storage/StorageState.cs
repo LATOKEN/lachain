@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Storage.Trie;
 using RocksDbSharp;
@@ -32,35 +33,41 @@ namespace Lachain.Storage
 
         public ulong CurrentVersion { get; private set; }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[]? Get(byte[] key)
         {
             return _trieMap.Find(CurrentVersion, key);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Add(byte[] key, byte[] value)
         {
             CurrentVersion = _trieMap.Add(CurrentVersion, key, value);
             return CurrentVersion;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong AddOrUpdate(byte[] key, byte[] value)
         {
             CurrentVersion = _trieMap.AddOrUpdate(CurrentVersion, key, value);
             return CurrentVersion;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Update(byte[] key, byte[] value)
         {
             CurrentVersion = _trieMap.Update(CurrentVersion, key, value);
             return CurrentVersion;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Delete(byte[] key, out byte[]? value)
         {
             CurrentVersion = _trieMap.Delete(CurrentVersion, key, out value);
             return CurrentVersion;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong TryDelete(byte[] key, out byte[]? value)
         {
             CurrentVersion = _trieMap.TryDelete(CurrentVersion, key, out value);
@@ -71,6 +78,7 @@ namespace Lachain.Storage
 
         public UInt256 Hash => _trieMap.GetHash(CurrentVersion);
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Commit()
         {
             using var tx = _repositoryManager.CreateTransaction();
@@ -80,6 +88,7 @@ namespace Lachain.Storage
             return CurrentVersion;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Cancel()
         {
             _trieMap.ClearCaches();

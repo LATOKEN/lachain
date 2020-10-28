@@ -1,4 +1,6 @@
-﻿namespace Lachain.Storage
+﻿using System.Runtime.CompilerServices;
+
+namespace Lachain.Storage
 {
     public class VersionFactory
     {
@@ -9,13 +11,11 @@
 
         public ulong CurrentVersion { get; private set; }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong NewVersion()
         {
-            lock (this)
-            {
-                CurrentVersion++;
-                return CurrentVersion;
-            }
+            CurrentVersion++;
+            return CurrentVersion;
         }
     }
 }

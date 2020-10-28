@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Lachain.Storage.State
 {
@@ -30,6 +31,7 @@ namespace Lachain.Storage.State
             RepositoryId = repositoryId;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public TSnapshotInterface NewSnapshot()
         {
             if (PendingSnapshot != null)
@@ -38,12 +40,14 @@ namespace Lachain.Storage.State
             return _pendingSnapshot;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Approve()
         {
             _lastApprovedSnapshot = _pendingSnapshot ?? throw new InvalidOperationException("Nothing to approve");
             _pendingSnapshot = null;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Rollback()
         {
             if (PendingSnapshot == null)
@@ -51,11 +55,13 @@ namespace Lachain.Storage.State
             _pendingSnapshot = null;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {
             _lastApprovedSnapshot.Commit();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void RollbackTo(TSnapshotInterface snapshot)
         {
             if (_pendingSnapshot != null)
