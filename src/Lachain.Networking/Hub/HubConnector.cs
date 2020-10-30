@@ -114,15 +114,7 @@ namespace Lachain.Networking.Hub
             lock (_hubStreamLock)
                 while (_hubStream is null)
                     Monitor.Wait(_hubStreamLock);
-
-            var request = new InboundMessage
-            {
-                Data = ByteString.CopyFrom(message),
-                PublicKey = ByteString.CopyFrom(publicKey)
-            };
-
-            var task = _hubStream.RequestStream.WriteAsync(request);
-            task.Wait();
+            CommunicationHub.Net.Hub.Send(publicKey, message);
         }
 
         public void Dispose()

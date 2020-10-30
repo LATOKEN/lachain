@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" Version="2.31.0" />
     <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.38" />
-    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.5" />
+    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.6" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Consensus\Lachain.Consensus.csproj" />
