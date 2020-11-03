@@ -7,9 +7,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Net.Client" Version="2.31.0" />
-    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.41" />
-    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.9" />
+    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.42" />
+    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.10" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Consensus\Lachain.Consensus.csproj" />

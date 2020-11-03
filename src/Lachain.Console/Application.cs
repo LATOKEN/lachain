@@ -85,8 +85,6 @@ namespace Lachain.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
-            if (!(options.HubPort is null)) networkConfig.Port = options.HubPort.Value;
-
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);

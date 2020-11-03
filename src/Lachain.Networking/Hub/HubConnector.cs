@@ -17,16 +17,15 @@ namespace Lachain.Networking.Hub
         private bool _running;
         private readonly IMessageFactory _messageFactory;
 
-        private readonly object _hubStreamLock = new object();
         private Thread? _readWorker;
         private readonly Thread _hubThread;
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string grpcEndpoint, string hubBootstrapAddresses, IMessageFactory messageFactory)
+        public HubConnector(string hubBootstrapAddresses, IMessageFactory messageFactory)
         {
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
-            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(grpcEndpoint, hubBootstrapAddresses));
+            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses));
             _messageFactory = messageFactory;
         }
 

@@ -60,8 +60,5 @@ namespace Lachain.Core.CLI
 
         [Option('a', "apikey", Required = false, HelpText = "Api key for RPC")]
         public string? RpcApiKey { get; set; }
-
-        [Option('p', "port", Required = false, HelpText = "Communication hub port")]
-        public ushort? HubPort { get; set; }
     }
 }
