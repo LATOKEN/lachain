@@ -70,7 +70,14 @@ namespace Lachain.Networking.Hub
                     var messages = CommunicationHub.Net.Hub.Get();
                     foreach (var message in messages)
                     {
-                        OnMessage?.Invoke(this, message);
+                        try
+                        {
+                            OnMessage?.Invoke(this, message);                            
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError($"Error occured: {e}");
+                        }                        
                     }
                     if (messages.Length == 0) Thread.Sleep(TimeSpan.FromMilliseconds(100));
                 }
