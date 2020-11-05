@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.45" />
-    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.11" />
+    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.12" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Consensus\Lachain.Consensus.csproj" />
