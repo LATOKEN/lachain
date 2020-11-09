@@ -49,7 +49,6 @@ namespace Lachain.Core.Network
             _networkManager = networkManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
-            _networkManager.OnPingRequest += OnPingRequest;
             _networkManager.OnPingReply += OnPingReply;
             _networkManager.OnSyncBlocksRequest += OnSyncBlocksRequest;
             _networkManager.OnSyncBlocksReply += OnSyncBlocksReply;
@@ -73,19 +72,6 @@ namespace Lachain.Core.Network
             {
                 OnConsensusMessage(this, (message, key));
             }
-        }
-
-        private void OnPingRequest(object sender, (PingRequest request, Action<PingReply> callback) @event)
-        {
-            Logger.LogTrace("Start processing PingRequest");
-            var (_, callback) = @event;
-            var reply = new PingReply
-            {
-                Timestamp = TimeUtils.CurrentTimeMillis(),
-                BlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
-            };
-            Logger.LogTrace("Finished processing PingRequest");
-            callback(reply);
         }
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
@@ -146,7 +132,6 @@ namespace Lachain.Core.Network
                 {
                     Logger.LogError($"Error occured while handling blocks from peer: {e}");
                 }
-                
             }, TaskCreationOptions.LongRunning);
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }

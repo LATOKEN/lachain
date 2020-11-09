@@ -34,7 +34,8 @@ namespace Lachain.Core.Network
         private readonly object _txLock = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
-        private readonly Thread _workerThread;
+        private readonly Thread _blockSyncThread;
+        private readonly Thread _pingThread;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
@@ -54,7 +55,8 @@ namespace Lachain.Core.Network
             _networkManager = networkManager;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
-            _workerThread = new Thread(Worker);
+            _blockSyncThread = new Thread(BlockSyncWorker);
+            _pingThread = new Thread(PingWorker);
         }
 
         public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
@@ -205,8 +207,6 @@ namespace Lachain.Core.Network
             var setOfPeers = peers.ToHashSet();
             if (setOfPeers.Count == 0) return false;
 
-            var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
-            _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
             lock (_peerHasBlocks)
                 Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
             var validatorPeers = _peerHeights
@@ -245,10 +245,29 @@ namespace Lachain.Core.Network
             return _peerHeights;
         }
 
-        private void Worker()
+        private void PingWorker()
+        {
+            while (_running)
+            {
+                try
+                {
+                    var reply = _networkManager.MessageFactory.PingReply(
+                        TimeUtils.CurrentTimeMillis(), _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
+                    );
+                    _networkBroadcaster.Broadcast(reply);
+                    Logger.LogTrace($"Broadcasted our height: {reply.PingReply.BlockHeight}");
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Error in ping worker: {e}");
+                }
+                Thread.Sleep(TimeSpan.FromMilliseconds(3_000));
+            }
+        }
+
+        private void BlockSyncWorker()
         {
             var rnd = new Random();
-            _running = true;
             Logger.LogDebug("Starting block synchronization worker");
             while (_running)
             {
@@ -259,7 +278,6 @@ namespace Lachain.Core.Network
                         _networkManager.LocalNode.BlockHeight = myHeight;
 
                     var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
-                    _networkBroadcaster.Broadcast(messageFactory.PingRequest(TimeUtils.CurrentTimeMillis(), myHeight));
                     lock (_peerHasBlocks)
                         Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
                     if (_peerHeights.Count == 0)
@@ -292,9 +310,6 @@ namespace Lachain.Core.Network
                     {
                         _networkManager.SendTo(peer, messageFactory.SyncBlocksRequest(leftBound, rightBound));
                     }
-
-                    lock (_peerHasBlocks)
-                        Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
                 }
                 catch (Exception e)
                 {
@@ -307,7 +322,9 @@ namespace Lachain.Core.Network
 
         public void Start()
         {
-            _workerThread.Start();
+            _running = true;
+            _blockSyncThread.Start();
+            _pingThread.Start();
         }
 
         private List<UInt256> _GetMissingTransactions(IEnumerable<UInt256> txHashes)
@@ -320,8 +337,10 @@ namespace Lachain.Core.Network
         public void Dispose()
         {
             _running = false;
-            if (_workerThread.ThreadState == ThreadState.Running)
-                _workerThread.Join();
+            if (_blockSyncThread.ThreadState == ThreadState.Running)
+                _blockSyncThread.Join();
+            if (_pingThread.ThreadState == ThreadState.Running)
+                _pingThread.Join();
         }
     }
 }

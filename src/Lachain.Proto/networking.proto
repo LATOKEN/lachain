@@ -16,11 +16,6 @@ message Ack {
     uint64 message_id = 1;
 }
 
-message PingRequest {
-    uint64 timestamp = 1;
-    uint64 block_height = 2;
-}
-
 message PingReply {
     uint64 timestamp = 1;
     uint64 block_height = 2;
@@ -57,7 +52,6 @@ message SyncPoolReply {
 
 message NetworkMessage {
     oneof message {
-        PingRequest ping_request = 12;
         PingReply ping_reply = 13;
         ConsensusMessage consensus_message = 21;
         Ack ack = 22;
@@ -68,7 +62,7 @@ message NetworkMessage {
         SyncPoolRequest sync_pool_request = 29;
         SyncPoolReply sync_pool_reply = 30;
     }
-    reserved 14 to 19, 25, 26; // deleted
+    reserved 12, 14 to 19, 25, 26; // deleted
 }
 
 message MessageBatchContent {

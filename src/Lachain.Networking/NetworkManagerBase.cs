@@ -157,9 +157,6 @@ namespace Lachain.Networking
             if (envelope.PublicKey is null) throw new InvalidOperationException();
             switch (message.MessageCase)
             {
-                case NetworkMessage.MessageOneofCase.PingRequest:
-                    OnPingRequest?.Invoke(this, (message.PingRequest, SendTo(envelope.RemotePeer)));
-                    break;
                 case NetworkMessage.MessageOneofCase.PingReply:
                     OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
                     break;
@@ -213,7 +210,6 @@ namespace Lachain.Networking
             _clientWorkers.Clear();
         }
 
-        public event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
         public event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
 
         public event EventHandler<(SyncBlocksRequest message, Action<SyncBlocksReply> callback)>?

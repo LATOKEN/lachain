@@ -12,7 +12,6 @@ namespace Lachain.Networking
         void AdvanceEra(long era);
         Node LocalNode { get; }
 
-        event EventHandler<(PingRequest message, Action<PingReply> callback)>? OnPingRequest;
         event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
         event EventHandler<(SyncBlocksRequest message, Action<SyncBlocksReply> callback)>? OnSyncBlocksRequest;
         event EventHandler<(SyncBlocksReply message, ECDSAPublicKey address)>? OnSyncBlocksReply;

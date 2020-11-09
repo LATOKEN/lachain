@@ -8,7 +8,6 @@ namespace Lachain.Networking
         ECDSAPublicKey GetPublicKey();
 
         NetworkMessage Ack(ulong messageId);
-        NetworkMessage PingRequest(ulong timestamp, ulong blockHeight);
         NetworkMessage PingReply(ulong timestamp, ulong blockHeight);
         NetworkMessage ConsensusMessage(ConsensusMessage message);
         NetworkMessage GetPeersRequest();

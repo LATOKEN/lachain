@@ -57,9 +57,6 @@ namespace Lachain.Networking.Hub
         {
             lock (_messageQueue)
             {
-                if (message.MessageCase == NetworkMessage.MessageOneofCase.PingRequest &&
-                    _messageQueue.Any(x => x.MessageCase == NetworkMessage.MessageOneofCase.PingRequest)
-                ) return;
                 _messageQueue.AddLast(message);
             }
         }

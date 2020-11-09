@@ -34,16 +34,6 @@ namespace Lachain.Networking
             return new NetworkMessage {Ack = ack};
         }
 
-        public NetworkMessage PingRequest(ulong timestamp, ulong blockHeight)
-        {
-            var request = new PingRequest
-            {
-                Timestamp = timestamp,
-                BlockHeight = blockHeight
-            };
-            return new NetworkMessage {PingRequest = request};
-        }
-
         public NetworkMessage PingReply(ulong timestamp, ulong blockHeight)
         {
             var reply = new PingReply
