@@ -261,6 +261,7 @@ namespace Lachain.Core.Network
                 {
                     Logger.LogError($"Error in ping worker: {e}");
                 }
+
                 Thread.Sleep(TimeSpan.FromMilliseconds(3_000));
             }
         }
@@ -277,12 +278,10 @@ namespace Lachain.Core.Network
                     if (myHeight > _networkManager.LocalNode.BlockHeight)
                         _networkManager.LocalNode.BlockHeight = myHeight;
 
-                    var messageFactory = _networkManager.MessageFactory ?? throw new InvalidOperationException();
-                    lock (_peerHasBlocks)
-                        Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
                     if (_peerHeights.Count == 0)
                     {
                         Logger.LogWarning("Peer height map is empty, nobody responds to pings?");
+                        Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
                         continue;
                     }
 
@@ -290,6 +289,7 @@ namespace Lachain.Core.Network
                     if (myHeight >= maxHeight)
                     {
                         Logger.LogTrace($"Nothing to do: my height is {myHeight} and peers are at {maxHeight}");
+                        Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
                         continue;
                     }
 
@@ -308,15 +308,27 @@ namespace Lachain.Core.Network
                     Logger.LogTrace($"Sending query for blocks [{leftBound}; {rightBound}] to {peers.Length} peers");
                     foreach (var peer in peers)
                     {
-                        _networkManager.SendTo(peer, messageFactory.SyncBlocksRequest(leftBound, rightBound));
+                        _networkManager.SendTo(
+                            peer, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound)
+                        );
+                    }
+
+                    var waitStart = TimeUtils.CurrentTimeMillis();
+                    while (true)
+                    {
+                        lock (_peerHasBlocks)
+                        {
+                            Monitor.Wait(_peerHasBlocks, TimeSpan.FromMilliseconds(1_000));
+                        }
+
+                        if (TimeUtils.CurrentTimeMillis() - waitStart > 5_000) break;
                     }
                 }
                 catch (Exception e)
                 {
                     Logger.LogError($"Error in block synchronizer: {e}");
+                    Thread.Sleep(1_000);
                 }
-
-                Thread.Sleep(5_000);
             }
         }
 
