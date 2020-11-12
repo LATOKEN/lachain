@@ -63,36 +63,27 @@ namespace Lachain.Core.Network
         {
             var txHashes = transactionHashes as UInt256[] ?? transactionHashes.ToArray();
             var lostTxs = _GetMissingTransactions(txHashes);
-
-            const int maxPeersToAsk = 3;
-            var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
-            var rnd = new Random();
-            var peers = _peerHeights
-                .Where(entry => entry.Value >= maxHeight)
-                .Select(entry => entry.Key)
-                .OrderBy(_ => rnd.Next())
-                .Take(maxPeersToAsk)
-                .ToArray();
-
-            if (lostTxs.Count == 0) return (uint) txHashes.Length;
-            Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
-            var request = _networkManager.MessageFactory.SyncPoolRequest(lostTxs);
-            foreach (var peer in peers) _networkManager.SendTo(peer, request);
-
             var endWait = DateTime.UtcNow.Add(timeout);
+
             while (_GetMissingTransactions(txHashes).Count != 0)
             {
+                const int maxPeersToAsk = 1;
+                var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
+                var rnd = new Random();
+                var peers = _peerHeights
+                    .Where(entry => entry.Value >= maxHeight)
+                    .Select(entry => entry.Key)
+                    .OrderBy(_ => rnd.Next())
+                    .Take(maxPeersToAsk)
+                    .ToArray();
+                if (lostTxs.Count == 0) return (uint) txHashes.Length;
+                Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
+                var request = _networkManager.MessageFactory.SyncPoolRequest(lostTxs);
+                foreach (var peer in peers) _networkManager.SendTo(peer, request);
                 lock (_peerHasTransactions)
-                {
-                    var timeToWait = endWait.Subtract(DateTime.UtcNow);
-                    if (timeToWait.TotalMilliseconds < 0)
-                        timeToWait = TimeSpan.Zero;
-                    Monitor.Wait(_peerHasTransactions, timeToWait);
-                }
-
+                    Monitor.Wait(_peerHasTransactions, TimeSpan.FromMilliseconds(5_000));
                 if (DateTime.UtcNow.CompareTo(endWait) > 0) break;
             }
-
             return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
         }
 
@@ -293,8 +284,8 @@ namespace Lachain.Core.Network
                         continue;
                     }
 
-                    const int maxPeersToAsk = 3;
-                    const int maxBlocksToRequest = 5;
+                    const int maxPeersToAsk = 1;
+                    const int maxBlocksToRequest = 10;
 
                     var peers = _peerHeights
                         .Where(entry => entry.Value >= maxHeight)
