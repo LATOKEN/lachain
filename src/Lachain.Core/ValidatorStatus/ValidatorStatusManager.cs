@@ -37,6 +37,7 @@ namespace Lachain.Core.ValidatorStatus
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ISystemContractReader _systemContractReader;
         private UInt256? _sendingTxHash;
+        private BigInteger? _stakeSize;
 
         public ValidatorStatusManager(
             ITransactionPool transactionPool,
@@ -58,6 +59,13 @@ namespace Lachain.Core.ValidatorStatus
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _systemContractReader = systemContractReader;
             _withdrawTriggered = false;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void StartWithStake(UInt256 stake)
+        {
+            _stakeSize = new Money(stake).ToWei();
+            Start(false);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -117,12 +125,13 @@ namespace Lachain.Core.ValidatorStatus
                         Logger.LogInformation($"Trying to become staker");
                         var balance =
                             _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
-                        var isEnoughBalance = balance.ToWei() > StakingContract.TokenUnitsInRoll + coverFeesAmount;
+                        var isEnoughBalance = balance.ToWei() > (_stakeSize ?? StakingContract.TokenUnitsInRoll) + coverFeesAmount;
                         if (isEnoughBalance)
                         {
-                            var rolls = (balance.ToWei() - coverFeesAmount) / StakingContract.TokenUnitsInRoll;
+                            var rolls = (_stakeSize ?? (balance.ToWei() - coverFeesAmount)) / StakingContract.TokenUnitsInRoll;
                             Logger.LogDebug($"Sending transaction to become staker");
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
+                            _stakeSize = null;
                             continue;
                         }
 
