@@ -3,6 +3,7 @@ using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
@@ -182,6 +183,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             return jArray;
+        }
+
+        [JsonRpcMethod("eth_chainId")]
+        private string ChainId()
+        {
+            return TransactionUtils.ChainId.ToHex();
         }
 
 
