@@ -308,7 +308,7 @@ namespace Lachain.Core.CLI
             if (arguments.Length == 0)
                 _validatorStatusManager.Start(false);
             else
-                _validatorStatusManager.StartWithStake(Money.Parse(arguments[0]).ToUInt256());
+                _validatorStatusManager.StartWithStake(Money.Parse(arguments[0]).ToUInt256(false));
             return "Validator is started";
         }
 
