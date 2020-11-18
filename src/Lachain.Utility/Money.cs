@@ -31,9 +31,9 @@ namespace Lachain.Utility
             _value = value;
         }
 
-        public Money(UInt256 value)
+        public Money(UInt256 value, bool littleEndian = false)
         {
-            _value = value.ToBigInteger(false);
+            _value = value.ToBigInteger(littleEndian);
         }
 
         public BigInteger ToWei()
