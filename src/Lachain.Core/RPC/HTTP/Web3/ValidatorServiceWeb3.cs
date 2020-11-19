@@ -2,6 +2,7 @@
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Logger;
+using Lachain.Utility;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -23,13 +24,28 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("validator_start")]
         private string StartValidator()
         {
-            if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
+            if (_privateWallet.GetWalletInstance() is null) 
+                return "wallet_locked";
 
             Logger.LogDebug("validator start command received");
-            if (!_validatorStatusManager.IsStarted())
-            {
-                _validatorStatusManager.Start(false);
-            }
+            if (_validatorStatusManager.IsStarted())
+                return "withdraw previous stake first"; 
+            
+            _validatorStatusManager.Start(false);
+
+            return "validator_started";
+        }
+
+        [JsonRpcMethod("validator_start_with_stake")]
+        private string StartValidatorWithStake(string stake)
+        {
+            if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
+
+            Logger.LogDebug("validator start_with_stake command received");
+            if (_validatorStatusManager.IsStarted())
+                return "withdraw previous stake first";
+
+            _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256(false));
 
             return "validator_started";
         }
@@ -37,7 +53,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("validator_status")]
         private string GetValidatorStatus()
         {
-            return _validatorStatusManager.IsStarted() ? "0x01" : "0x00";
+            if (!_validatorStatusManager.IsStarted()) return "0x00";
+            return _validatorStatusManager.IsWithdrawTriggered() ? "0x002" : "0x01";
         }
 
         [JsonRpcMethod("eth_mining")]
