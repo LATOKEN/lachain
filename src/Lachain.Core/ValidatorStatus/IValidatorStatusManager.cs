@@ -1,8 +1,9 @@
+using System;
 using Lachain.Proto;
 
 namespace Lachain.Core.ValidatorStatus
 {
-    public interface IValidatorStatusManager
+    public interface IValidatorStatusManager : IDisposable
     {
         void Start(bool isWithdrawTriggered);
 
@@ -11,7 +12,9 @@ namespace Lachain.Core.ValidatorStatus
         bool IsStarted();
     
         bool IsWithdrawTriggered();
-        
+
         void WithdrawStakeAndStop();
+
+        void Stop();
     }
 }
