@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto.ECDSA;
 using Lachain.Storage.State;
 
@@ -20,6 +21,8 @@ namespace Lachain.Core.CLI
         private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
+        private readonly ISystemContractReader _systemContractReader;
+        private readonly IValidatorStatusManager _validatorStatusManager;
         private IConsoleCommands? _consoleCommands;
 
         public bool IsWorking { get; set; }
@@ -30,7 +33,9 @@ namespace Lachain.Core.CLI
             ITransactionManager transactionManager,
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
-            IStateManager stateManager
+            IStateManager stateManager,
+            ISystemContractReader systemContractReader,
+            IValidatorStatusManager validatorStatusManager
         )
         {
             _blockManager = blockManager;
@@ -39,13 +44,16 @@ namespace Lachain.Core.CLI
             _transactionManager = transactionManager;
             _transactionSigner = transactionSigner;
             _stateManager = stateManager;
+            _systemContractReader = systemContractReader;
+            _validatorStatusManager = validatorStatusManager;
         }
 
         private void _Worker(EcdsaKeyPair keyPair)
         {
             _consoleCommands = new ConsoleCommands(
                 _transactionBuilder, _transactionPool, _transactionManager, _transactionSigner,
-                _blockManager, _stateManager, keyPair
+                _blockManager, _stateManager, _systemContractReader, _validatorStatusManager, 
+                keyPair
             );
             try
             {

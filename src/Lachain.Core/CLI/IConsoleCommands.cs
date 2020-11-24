@@ -22,6 +22,14 @@ namespace Lachain.Core.CLI
 
         string DeployContract(string[] arguments);
 
-        string CallContract(string[] arguments);        
+        string CallContract(string[] arguments);
+
+        string NewStake(string[] arguments);
+
+        string ValidatorStatus(string[] arguments);
+
+        string WithdrawStake(string[] arguments);
+
+        string CurrentStake(string[] arguments);
     }
 }

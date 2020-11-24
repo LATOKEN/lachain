@@ -6,6 +6,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
@@ -26,6 +27,8 @@ namespace Lachain.Core.CLI
         private readonly ITransactionSigner _transactionSigner;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
+        private readonly ISystemContractReader _systemContractReader;
+        private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly EcdsaKeyPair _keyPair;
 
         public ConsoleCommands(
@@ -35,6 +38,8 @@ namespace Lachain.Core.CLI
             ITransactionSigner transactionSigner,
             IBlockManager blockManager,
             IStateManager stateManager,
+            ISystemContractReader systemContractReader,
+            IValidatorStatusManager validatorStatusManager,
             EcdsaKeyPair keyPair
         )
         {
@@ -44,6 +49,8 @@ namespace Lachain.Core.CLI
             _transactionManager = transactionManager;
             _transactionSigner = transactionSigner;
             _stateManager = stateManager;
+            _systemContractReader = systemContractReader;
+            _validatorStatusManager = validatorStatusManager;
             _keyPair = keyPair;
         }
 
@@ -275,5 +282,64 @@ namespace Lachain.Core.CLI
                 : "Signature validity: INVALID");
             return "\n";
         }
+
+        /// <summary>
+        /// CurrentStake:
+        ///  outputs current stake size
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns>current stake size</returns>
+        public string CurrentStake(string[] arguments)
+        {
+            var stake = _systemContractReader.GetStake().ToMoney();
+            return $"{stake}";
+        }
+
+        /// <summary>
+        /// Stake:
+        ///  stake amount
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns>stake tx hash/returns>
+        public string NewStake(string[] arguments)
+        {
+            if (_validatorStatusManager.IsStarted())
+                return "ERROR: Withdraw current stake first";
+            if (arguments.Length == 0)
+                _validatorStatusManager.Start(false);
+            else
+                _validatorStatusManager.StartWithStake(Money.Parse(arguments[0]).ToUInt256(false));
+            return "Validator is started";
+        }
+
+        /// <summary>
+        /// ValidatorStatus:
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns>tx hash</returns>
+        public string ValidatorStatus(string[] arguments)
+        {
+            if (!_validatorStatusManager.IsStarted())
+                return "Validator is off";
+            if (_validatorStatusManager.IsWithdrawTriggered())
+                return "Stake withdraw is triggered";
+            return "Validator is on";
+        }
+
+        /// <summary>
+        /// WithdrawStake:
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns>tx hash</returns>
+        public string WithdrawStake(string[] arguments)
+        {
+            if (!_validatorStatusManager.IsStarted())
+                return "ERROR: Validator is off";
+            if (_validatorStatusManager.IsWithdrawTriggered())
+                return "ERROR: Stake withdraw is triggered already";
+            _validatorStatusManager.WithdrawStakeAndStop();
+            return "Stake withdraw is initiated";
+        }
+
     }
 }

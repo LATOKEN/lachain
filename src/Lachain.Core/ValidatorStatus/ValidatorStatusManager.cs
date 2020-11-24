@@ -31,12 +31,15 @@ namespace Lachain.Core.ValidatorStatus
         private bool _withdrawTriggered;
         private readonly IPrivateWallet _privateWallet;
         private bool _started;
+        private Thread _thread;
+        private bool _stopRequested;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ISystemContractReader _systemContractReader;
         private UInt256? _sendingTxHash;
+        private BigInteger? _stakeSize;
 
         public ValidatorStatusManager(
             ITransactionPool transactionPool,
@@ -58,6 +61,22 @@ namespace Lachain.Core.ValidatorStatus
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _systemContractReader = systemContractReader;
             _withdrawTriggered = false;
+            _started = false;
+            _thread = null;
+            _stopRequested = false;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void StartWithStake(UInt256 stake)
+        {
+            if (_started)
+            {
+                Logger.LogInformation("ValidatorStatusManager already started");
+                return;
+            }
+
+            _stakeSize = new Money(stake).ToWei();
+            Start(false);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -65,13 +84,33 @@ namespace Lachain.Core.ValidatorStatus
         {
             if (_started)
             {
-                Logger.LogWarning("Service already started");
+                Logger.LogInformation("ValidatorStatusManager already started");
                 return;
             }
 
             _started = true;
+            _stopRequested = false;
             _withdrawTriggered = isWithdrawTriggered;
-            new Thread(Run).Start();
+            _thread = new Thread(Run);
+            _thread.Start();
+        }
+
+        public void Stop()
+        {
+            if (!_started)
+                return;
+
+            _stopRequested = true;
+            if (_thread != null)
+            {
+                _thread.Join();
+                _thread = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            Stop();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -86,6 +125,8 @@ namespace Lachain.Core.ValidatorStatus
 
                 while (!_withdrawTriggered)
                 {
+                    if (_stopRequested)
+                        break;
                     if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
                         GetCurrentCycle() == passingCycle)
                     {
@@ -117,12 +158,15 @@ namespace Lachain.Core.ValidatorStatus
                         Logger.LogInformation($"Trying to become staker");
                         var balance =
                             _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
-                        var isEnoughBalance = balance.ToWei() > StakingContract.TokenUnitsInRoll + coverFeesAmount;
+                        Logger.LogInformation($"Balance is {balance.ToWei()}");
+                        Logger.LogInformation($"Stake size is {_stakeSize ?? new BigInteger(0.0)}");
+                        var isEnoughBalance = balance.ToWei() > (_stakeSize ?? StakingContract.TokenUnitsInRoll) + coverFeesAmount;
                         if (isEnoughBalance)
                         {
-                            var rolls = (balance.ToWei() - coverFeesAmount) / StakingContract.TokenUnitsInRoll;
-                            Logger.LogDebug($"Sending transaction to become staker");
+                            var rolls = (_stakeSize ?? (balance.ToWei() - coverFeesAmount)) / StakingContract.TokenUnitsInRoll;
+                            Logger.LogInformation($"Sending transaction to become staker for {rolls} rolls");
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
+                            _stakeSize = null;
                             continue;
                         }
 
@@ -180,6 +224,8 @@ namespace Lachain.Core.ValidatorStatus
                 // Try to withdraw stake
                 while (!_systemContractReader.GetStake().IsZero())
                 {
+                    if (_stopRequested)
+                        break;
                     if (_sendingTxHash != null)
                     {
                         if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) ==
