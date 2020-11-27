@@ -31,5 +31,7 @@ namespace Lachain.Core.CLI
         string WithdrawStake(string[] arguments);
 
         string CurrentStake(string[] arguments);
+
+        string Debug(string[] arguments);
     }
 }

@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0-rc.1.20451.14" />
     <PackageReference Include="Nethereum.Web3" Version="3.8.0" />
     <PackageReference Include="SimpleInjector" Version="5.1.0" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.156101" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\wasm\WebAssembly\WebAssembly.csproj" />
