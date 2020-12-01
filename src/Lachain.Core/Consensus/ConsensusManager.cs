@@ -8,7 +8,6 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Vault;
@@ -211,6 +210,9 @@ namespace Lachain.Core.Consensus
                         }
                         else
                         {
+                            Logger.LogWarning("Keys were not present but were found. State of protocols might be inconsistent now. Killing node to reboot it!");
+                            Environment.Exit(0);
+                            // this is unreachable but for the sake of logic
                             haveKeys = true;
                         }
                     }
