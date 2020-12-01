@@ -343,39 +343,66 @@ namespace Lachain.Core.CLI
             return "Stake withdraw is initiated";
         }
 
-        private void DumpStack(DataTarget dataTarget, ClrHeap heap, ulong start,  ulong stop)
+        private string DumpObjInfo(ClrObject obj, ClrType type, bool toplevel)
         {
-            // We'll walk these in pointer order.
-            if (start > stop)
+            var result = "";
+            if (type.IsString & !toplevel)
             {
-                ulong tmp = start;
-                start = stop;
-                stop = tmp;
+                result = $"{obj} [";
+                ulong size = 0;
+                if (obj.IsNull | !obj.IsValid)
+                    result += "null";
+                else
+                    result += obj.AsString((int)obj.Size);
+                result += "]";
             }
-
-            Console.WriteLine();
-            Console.WriteLine("Stack objects:");
-
-            // Walk each pointer aligned address.  Ptr is a stack address.
-            for (ulong ptr = start; ptr <= stop; ptr += (uint)IntPtr.Size)
+            else if (type.Name.StartsWith("Lachain."))
             {
-                // Read the value of this pointer.  If we fail to read the memory, break.  The
-                // stack region should be in the crash dump.
-                if (!dataTarget.DataReader.ReadPointer(ptr, out ulong obj))
-                    break;
+                result = $"{obj} [";
+                foreach (ClrInstanceField f in type.Fields)
+                {
+                    try
+                    {
+                        if (f is null)
+                            continue;
+                        if (!f.IsValueType)
+                            continue;
+                        if (f.Type is null)
+                            continue;
+                        result += $"{f}:{DumpObjInfo(obj.ReadObjectField(f.Name), f.Type, false)};";
+                    }
+                    catch { }
+                }
+                result += "]";
+            }
+            return result;
+        }
 
-                // 003DF2A4 
-                // We check to see if this address is a valid object by simply calling
-                // GetObjectType.  If that returns null, it's not an object.
-                ClrType type = heap.GetObjectType(obj);
+        private void DumpHeap(ClrHeap heap)
+        {
+            bool firstEntry = true;
+            // Walk each pointer aligned address.  Ptr is a stack address.
+            foreach (ClrObject obj in heap.EnumerateObjects())
+            {
+                ClrType type = obj.Type;
                 if (type == null)
                     continue;
 
                 // Don't print out free objects as there tends to be a lot of them on
                 // the stack.
                 if (!type.IsFree)
-                    Console.WriteLine("{0,16:X} {1,16:X} {2}", ptr, obj, type.Name);
+                {
+                    if(firstEntry)
+                    {
+                        Console.WriteLine("Stack objects:");
+                        firstEntry = false;
+                    }
+                    var msg = DumpObjInfo(obj, type, true);
+                    if (msg.Length > 0)
+                        Console.WriteLine($"        {msg}");
+                }
             }
+            Console.WriteLine();
         }
 
         public string Debug(string[] arguments)
@@ -405,35 +432,27 @@ namespace Lachain.Core.CLI
                     if (currException is ClrException ex)
                         Console.WriteLine("Exception: {0:X} ({1}), HRESULT={2:X}", ex.Address, ex.Type.Name, ex.HResult);
 
-                    // Walk the stack of the thread and print output similar to !ClrStack.
                     Console.WriteLine();
                     Console.WriteLine("Managed Callstack:");
-                    // We'll need heap data to find objects on the stack.
-                    ClrHeap heap = runtime.Heap;
 
                     foreach (ClrStackFrame frame in thread.EnumerateStackTrace())
                     {
-                        // Note that CLRStackFrame currently only has three pieces of data: stack pointer,
-                        // instruction pointer, and frame name (which comes from ToString).  Future
-                        // versions of this API will allow you to get the type/function/module of the
-                        // method (instead of just the name).  This is not yet implemented.
-                        Console.WriteLine($"    {frame.StackPointer:x12} {frame.InstructionPointer:x12} {frame}");
-                        // Walk each pointer aligned address on the stack.  Note that StackBase/StackLimit
-                        // is exactly what they are in the TEB.  This means StackBase > StackLimit on AMD64.
-                        DumpStack(dataTarget, heap, frame.StackPointer, frame.InstructionPointer);
+                        ClrMethod m = frame.Method;
+                        int offset = (m!=null) ? m.GetILOffset(frame.InstructionPointer) : 0;
+                        Console.WriteLine($"    {frame.StackPointer:x12} {frame.InstructionPointer:x12} {frame}:{offset}");
                     }
-
-                    // Walk each pointer aligned address on the stack.  Note that StackBase/StackLimit
-                    // is exactly what they are in the TEB.  This means StackBase > StackLimit on AMD64.
-                    ulong start = thread.StackBase;
-                    ulong stop = thread.StackLimit;
-
-                    DumpStack(dataTarget, heap, start, stop);
 
                     Console.WriteLine();
                     Console.WriteLine("----------------------------------");
                     Console.WriteLine();
+
                 }
+                ClrHeap heap = runtime.Heap;
+                DumpHeap(heap);
+
+                Console.WriteLine();
+                Console.WriteLine("----------------------------------");
+                Console.WriteLine();
             }
             return "********\n";
         }
