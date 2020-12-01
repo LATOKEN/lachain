@@ -230,11 +230,12 @@ namespace Lachain.Core.Vault
 
         private TransactionReceipt MakeConfirmTransaction(ThresholdKeyring keyring)
         {
-            var tx = _transactionBuilder.InvokeTransaction(
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenConfirm,
+                0,
                 keyring.TpkePublicKey.ToBytes(),
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
@@ -243,11 +244,12 @@ namespace Lachain.Core.Vault
 
         private TransactionReceipt MakeSendValueTransaction(ValueMessage valueMessage)
         {
-            var tx = _transactionBuilder.InvokeTransaction(
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenSendValue,
+                0,
                 new BigInteger(valueMessage.Proposer).ToUInt256(),
                 valueMessage.EncryptedValues
             );
@@ -256,11 +258,12 @@ namespace Lachain.Core.Vault
 
         private TransactionReceipt MakeCommitTransaction(CommitMessage commitMessage)
         {
-            var tx = _transactionBuilder.InvokeTransaction(
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenCommit,
+                0,
                 commitMessage.Commitment.ToBytes(),
                 commitMessage.EncryptedRows
             );
