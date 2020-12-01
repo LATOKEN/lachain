@@ -128,6 +128,11 @@ namespace Lachain.Core.Vault
                     new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
                         PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
         }
+        
+        public bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet)
+        {
+            return thresholdSignaturePublicKeySet.Keys.Contains(_tsKeys.FindMax().Value.GetPublicKeyShare());
+        }
 
         public bool Unlock(string password, long s)
         {
@@ -140,7 +145,7 @@ namespace Lachain.Core.Vault
 
             return false;
         }
-
+        
         public bool IsLocked()
         {
             return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() > _unlockEndTime;

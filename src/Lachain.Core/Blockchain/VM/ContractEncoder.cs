@@ -42,9 +42,14 @@ namespace Lachain.Core.Blockchain.VM
             return encoder.ToByteArray();
         }
 
-        public static uint MethodSignatureAsInt(string methodSignature)
+        public static IEnumerable<byte> MethodSignature(string method)
         {
-            return MethodSignatureAsInt(Encoding.ASCII.GetBytes(methodSignature).KeccakBytes());
+            return Encoding.ASCII.GetBytes(method).KeccakBytes();
+        }
+
+        public static uint MethodSignatureAsInt(string method)
+        {
+            return MethodSignatureAsInt(MethodSignature(method));
         }
 
         public static uint MethodSignatureAsInt(IEnumerable<byte> bytes)
