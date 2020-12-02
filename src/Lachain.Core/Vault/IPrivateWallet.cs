@@ -1,4 +1,5 @@
 using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.ThresholdSignature;
 
 namespace Lachain.Core.Vault
 {
@@ -19,5 +20,6 @@ namespace Lachain.Core.Vault
         bool Unlock(string password, long ms);
         
         bool IsLocked();
+        bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet);
     }
 }

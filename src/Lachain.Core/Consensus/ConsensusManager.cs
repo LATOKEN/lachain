@@ -30,6 +30,7 @@ namespace Lachain.Core.Consensus
         private readonly IBlockManager _blockManager;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
+        private readonly IKeyGenManager _keyGenManager;
 
         private readonly IDictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>> _postponedMessages
             = new Dictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>>();
@@ -49,7 +50,8 @@ namespace Lachain.Core.Consensus
             IPrivateWallet privateWallet,
             IValidatorAttendanceRepository validatorAttendanceRepository,
             IConfigManager configManager,
-            INetworkManager networkManager
+            INetworkManager networkManager,
+            IKeyGenManager keyGenManager
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
@@ -59,6 +61,7 @@ namespace Lachain.Core.Consensus
             _privateWallet = privateWallet;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _networkManager = networkManager;
+            _keyGenManager = keyGenManager;
             _terminated = false;
 
             _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
@@ -94,7 +97,7 @@ namespace Lachain.Core.Consensus
                 _eras.Remove(i);
                 lock (_postponedMessages)
                 {
-                    _postponedMessages.Remove(i);                    
+                    _postponedMessages.Remove(i);
                 }
             }
 
@@ -121,7 +124,7 @@ namespace Lachain.Core.Consensus
                 {
                     _postponedMessages
                         .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
-                        .Add((message, from));    
+                        .Add((message, from));
                 }
             }
             else
@@ -192,9 +195,31 @@ namespace Lachain.Core.Consensus
                         .EcdsaPublicKeySet
                         .Contains(_privateWallet.EcdsaKeyPair.PublicKey);
 
-                    if (!weAreValidator)
+                    var haveKeys = _privateWallet.HasKeyForKeySet(
+                        _validatorManager.GetValidators(CurrentEra - 1).ThresholdSignaturePublicKeySet
+                    );
+
+                    if (weAreValidator && !haveKeys)
                     {
-                        Logger.LogWarning($"We are not validator for era {CurrentEra}, waiting");
+                        Logger.LogError(
+                            $"No required keys for block {CurrentEra}, need to rescan latest cycle to generate keys");
+                        if (!_keyGenManager.RescanBlockChainForKeys(_validatorManager.GetValidators(CurrentEra - 1)))
+                        {
+                            Logger.LogError(
+                                $"Failed to find relevant keygen in blockchain, cannot restore my key, waiting...");
+                        }
+                        else
+                        {
+                            Logger.LogWarning("Keys were not present but were found. State of protocols might be inconsistent now. Killing node to reboot it!");
+                            Environment.Exit(0);
+                            // this is unreachable but for the sake of logic
+                            haveKeys = true;
+                        }
+                    }
+
+                    if (!weAreValidator || !haveKeys)
+                    {
+                        Logger.LogWarning($"We are not validator for era {CurrentEra} (or keys are missing), waiting");
                         while ((long) _blockManager.GetHeight() < CurrentEra)
                         {
                             lock (_blockPersistedLock)
@@ -228,7 +253,7 @@ namespace Lachain.Core.Consensus
                                 _postponedMessages.Remove(CurrentEra);
                             }
                         }
-                        
+
                         while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
                             if ((long) _blockManager.GetHeight() >= CurrentEra)
@@ -236,8 +261,10 @@ namespace Lachain.Core.Consensus
                                 Logger.LogTrace("Aborting root protocol since block is already persisted");
                                 break;
                             }
+
                             Logger.LogTrace("Still waiting for root protocol to terminate...");
                         }
+
                         broadcaster.Terminate();
                         _eras.Remove(CurrentEra);
                         Logger.LogTrace("Root protocol finished, waiting for new era");

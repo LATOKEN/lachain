@@ -220,6 +220,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
             SetTpkeKey(tpkePublicKey);
+            // TODO: fire event
             return ExecutionStatus.Ok;
         }
 
