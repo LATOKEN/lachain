@@ -196,7 +196,8 @@ namespace Lachain.Core.Consensus
                         .Contains(_privateWallet.EcdsaKeyPair.PublicKey);
 
                     var haveKeys = _privateWallet.HasKeyForKeySet(
-                        _validatorManager.GetValidators(CurrentEra - 1).ThresholdSignaturePublicKeySet
+                        _validatorManager.GetValidators(CurrentEra - 1).ThresholdSignaturePublicKeySet,
+                        (ulong) CurrentEra
                     );
 
                     if (weAreValidator && !haveKeys)
@@ -210,7 +211,8 @@ namespace Lachain.Core.Consensus
                         }
                         else
                         {
-                            Logger.LogWarning("Keys were not present but were found. State of protocols might be inconsistent now. Killing node to reboot it!");
+                            Logger.LogWarning(
+                                "Keys were not present but were found. State of protocols might be inconsistent now. Killing node to reboot it!");
                             Environment.Exit(0);
                             // this is unreachable but for the sake of logic
                             haveKeys = true;

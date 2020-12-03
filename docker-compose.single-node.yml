@@ -1,0 +1,19 @@
+version: '2.4'
+services:
+  node0:
+    build:
+      network: host
+      context: ./
+      args:
+        CONFIG: src/Lachain.Console/config.example.json
+        WALLET: src/Lachain.Console/wallet.example.json
+      dockerfile: Dockerfile
+    stdin_open: true
+    environment:
+      - LOG_LEVEL=Trace
+    tty: true
+#    ports:
+#    - "5050:5050"
+#    - "7071:7070"
+    network_mode: "host"
+    restart: always

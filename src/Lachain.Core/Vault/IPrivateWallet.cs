@@ -20,6 +20,6 @@ namespace Lachain.Core.Vault
         bool Unlock(string password, long ms);
         
         bool IsLocked();
-        bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet);
+        bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet, ulong beforeBlock);
     }
 }

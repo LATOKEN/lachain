@@ -129,9 +129,17 @@ namespace Lachain.Core.Vault
                         PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
         }
         
-        public bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet)
+        public bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet, ulong beforeBlock)
         {
-            return thresholdSignaturePublicKeySet.Keys.Contains(_tsKeys.FindMax().Value.GetPublicKeyShare());
+            try
+            {
+                return thresholdSignaturePublicKeySet.Keys.Contains(_tsKeys.Predecessor(beforeBlock).Value
+                    .GetPublicKeyShare());
+            }
+            catch (NoSuchItemException)
+            {
+                return false;
+            }
         }
 
         public bool Unlock(string password, long s)
