@@ -17,6 +17,7 @@ using Lachain.Core.DI;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -36,11 +37,14 @@ namespace Lachain.CoreTest
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
+        private INetworkManager _networkManager;
         private IContainer? _container;
-
+        
         [SetUp]
         public void Setup()
         {
+            TestUtils.DeleteTestChainData();
+            Directory.CreateDirectory("./ChainLachain"); // TODO: this is some dirty hack, hub creates file not in correct place
             var containerBuilder = TestUtils.GetContainerBuilder(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
             );
@@ -49,8 +53,9 @@ namespace Lachain.CoreTest
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _networkManager = _container.Resolve<INetworkManager>();
+            _networkManager.Start();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
-            TestUtils.DeleteTestChainData();
         }
 
         [TearDown]
@@ -81,7 +86,7 @@ namespace Lachain.CoreTest
             Assert.IsTrue(_validatorStatusManager.IsStarted());
             Assert.IsTrue(_validatorStatusManager.IsWithdrawTriggered());
 
-            // Test node is the only vaidator, so it is a next validator always 
+            // Test node is the only validator, so it is a next validator always 
             // and it can't withdraw its stake. TODO: test to check withdraw is working
             //GenerateBlocks(50);
             //Assert.IsFalse(_validatorStatusManager.IsStarted());
