@@ -341,5 +341,14 @@ namespace Lachain.Core.CLI
             return "Stake withdraw is initiated";
         }
 
+        /// <summary>
+        /// Pprof:
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns>pprof URL</returns>
+        public string Pprof(string[] arguments)
+        {
+            return $"http://localhost:{CommunicationHub.Net.Hub.GetProfilerPort()}/debug/pprof/";
+        }
     }
 }

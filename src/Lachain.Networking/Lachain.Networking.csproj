@@ -7,8 +7,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.50" />
-    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.12" />
+    <PackageReference Include="Lachain.CommunicationHub.Native" Version="0.0.52" />
+    <PackageReference Include="Lachain.CommunicationHub.Net" Version="0.0.13" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Consensus\Lachain.Consensus.csproj" />
