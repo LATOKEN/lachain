@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Google.Protobuf;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -117,6 +118,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _context.Sender = ContractRegisterer.GovernanceContract;
             var staking = new StakingContract(_context);
             staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
+
+            var eventData = Encoding.ASCII
+                .GetBytes(GovernanceInterface.EventDistributeCycleRewardsAndPenalties)
+                .KeccakBytes()
+                .Concat(totalReward.ToUInt256().ToBytes())
+                .ToArray();
+
+            _context.Snapshot.Events.AddEvent(new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            });
+
             return ExecutionStatus.Ok;
         }
 
@@ -140,6 +155,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .Flatten()
                 .ToArray()
             );
+
+            var serializedValidators = new byte[0];
+            foreach (byte[] v in newValidators)
+                serializedValidators.Concat(v.AddLeadingZeros());
+
+            var eventData = Encoding.ASCII.GetBytes(GovernanceInterface.EventChangeValidators).KeccakBytes()
+                .Concat(serializedValidators)
+                .ToArray();
+
+            _context.Snapshot.Events.AddEvent(new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            });
+
             return ExecutionStatus.Ok;
         }
 
@@ -159,6 +190,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 return ExecutionStatus.ExecutionHalted;
             }
+
+            var serializedEncryptedRows = new byte[0];
+            foreach (byte[] r in encryptedRows)
+                serializedEncryptedRows.Concat(r.AddLeadingZeros());
+
+            var eventData = Encoding.ASCII.GetBytes(GovernanceInterface.EventKeygenCommit).KeccakBytes()
+                .Concat(commitment.AddLeadingZeros())
+                .Concat(serializedEncryptedRows)
+                .ToArray();
+
+            _context.Snapshot.Events.AddEvent(new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            });
 
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenCommitCost);
@@ -180,6 +227,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 return ExecutionStatus.ExecutionHalted;
             }
+
+            var serializedEncryptedValues = new byte[0];
+            foreach (byte[] v in encryptedValues)
+                serializedEncryptedValues.Concat(v.AddLeadingZeros());
+
+            var eventData = Encoding.ASCII.GetBytes(GovernanceInterface.EventKeygenSendValue).KeccakBytes()
+                .Concat(proposer.ToBytes().AddLeadingZeros())
+                .Concat(serializedEncryptedValues)
+                .ToArray();
+
+            _context.Snapshot.Events.AddEvent(new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            });
 
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenSendValueCost);
