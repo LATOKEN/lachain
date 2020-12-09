@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -146,6 +147,11 @@ namespace Lachain.Core.Blockchain.Pool
             return receipt.Transaction.Nonce >= _transactionManager.CalcNextTxNonce(receipt.Transaction.From);
         }
 
+        private bool IsGovernanceTx(TransactionReceipt receipt)
+        {
+            return receipt.Transaction.To == ContractRegisterer.GovernanceContract;
+        }
+
         private void Sanitize()
         {
             var wasRelayQueueSize = _relayQueue.Count;
@@ -161,14 +167,55 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
+        private void RemoveTxes(IReadOnlyCollection<TransactionReceipt> txes)
+        {
+            foreach (var tx in txes)
+            {
+                _transactionsQueue.Remove(tx);
+                _relayQueue.Remove(tx);
+            }
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake)
         {
             Sanitize();
             var rnd = new Random();
-            var result = _relayQueue.ToList();
-            // First we try to take transactions from relay queue
-            if (result.Count >= txsToTake) return result.Take(txsToTake).ToList();
+            // First,  get governance txes from relay queue
+            var result = new HashSet<TransactionReceipt>(_relayQueue.Where(IsGovernanceTx));
+            if (result.Count >= txsToTake)
+            {
+                result = new HashSet<TransactionReceipt>(result
+                    .Take(txsToTake)
+                    .Where(tx => _transactions.TryRemove(tx.Hash, out _))
+                    .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
+                RemoveTxes(result);
+                return result.ToList();
+            }
+            // Get governance txes from tx queue
+            result.UnionWith(_transactionsQueue.Where(IsGovernanceTx));
+            if (result.Count >= txsToTake)
+            {
+                result = new HashSet<TransactionReceipt>(result
+                    .Take(txsToTake)
+                    .Where(tx => _transactions.TryRemove(tx.Hash, out _))
+                    .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
+                RemoveTxes(result);
+                return result.ToList();
+            }
+            // Remove selected txes (TODO: Check if we can loss this txes due to the exceptions)
+            RemoveTxes(result);
+            // Take the rest of transactions from relay queue
+            result.UnionWith(_relayQueue);
+            if (result.Count >= txsToTake)
+            {
+                result = new HashSet<TransactionReceipt>(result
+                    .Take(txsToTake)
+                    .Where(tx => _transactions.TryRemove(tx.Hash, out _))
+                    .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
+                RemoveTxes(result);
+                return result.ToList();
+            }
             txsToTake -= result.Count;
 
             // We first greedily take some most profitable transactions. Let's group by sender and
@@ -215,15 +262,10 @@ namespace Lachain.Core.Blockchain.Pool
                 if (txsFrom.Count == 0) txsBySender.Remove(key);
             }
 
-            result = result
+            result = new HashSet<TransactionReceipt>(result
                 .Where(tx => _transactions.TryRemove(tx.Hash, out _))
-                .Where(tx => _transactionManager.GetByHash(tx.Hash) is null)
-                .ToList();
-            foreach (var tx in result)
-            {
-                _transactionsQueue.Remove(tx);
-                _relayQueue.Remove(tx);
-            }
+                .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
+            RemoveTxes(result);
 
             return result;
         }

@@ -13,5 +13,9 @@ namespace Lachain.Core.Blockchain.Interface
         Transaction InvokeTransaction(
             UInt160 from, UInt160 contract, Money value, string methodSignature, params dynamic[] values
         );
+        Transaction InvokeTransactionWithGasPrice(
+            UInt160 from, UInt160 contract, Money value, string methodSignature, ulong gasPrice, params dynamic[] values
+        );
+
     }
 }
