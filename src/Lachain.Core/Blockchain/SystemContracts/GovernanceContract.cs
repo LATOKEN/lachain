@@ -101,6 +101,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
         public ExecutionStatus DistributeCycleRewardsAndPenalties(SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation("DistributeCycleRewardsAndPenalties");
             if (!MsgSender().IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
@@ -140,6 +141,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
         public ExecutionStatus ChangeValidators(byte[][] newValidators, SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation("ChangeValidators");
             if (!MsgSender().Equals(ContractRegisterer.StakingContract) && !MsgSender().IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
@@ -182,6 +184,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenCommit(byte[] commitment, byte[][] encryptedRows,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation("KeyGenCommit");
             try
             {
                 var c = Commitment.FromBytes(commitment);
@@ -222,6 +225,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation("KeyGenSendValue");
             try
             {
                 var n = _nextValidators.Get().Length / CryptoUtils.PublicKeyLength;
@@ -261,6 +265,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenConfirm(byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation("KeyGenConfirm");
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
@@ -316,6 +321,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodFinishCycle)]
         public ExecutionStatus FinishCycle(SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation("FinishCycle");
             var players = GetPlayersCount();
             var gen = GetConsensusGeneration();
             if (players != null)
