@@ -99,7 +99,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             foreach (var (valMessage, i) in ConstructValMessages(input).WithIndex())
             {
                 Broadcaster.SendToValidator(new ConsensusMessage {ValMessage = valMessage}, i);
-                Logger.LogTrace($"Protocol {Id} sent VAL to validator {i}");
+                Logger.LogTrace($"Protocol {Id} sent VAL to validator {i} ({Wallet.EcdsaPublicKeySet[i].ToHex()})");
             }
 
             CheckResult();
@@ -107,13 +107,16 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleValMessage(ValMessage val, int validator)
         {
+            var validatorPubKey = Wallet.EcdsaPublicKeySet[validator].ToHex();
             if (_sentValMessage[validator])
             {
-                Logger.LogWarning($"{Id}: validator {validator} tried to send VAL message twice");
+                Logger.LogWarning($"{Id}: validator {validator} ({validatorPubKey}) tried to send VAL message twice");
                 return;
             }
 
-            Logger.LogTrace($"Protocol {Id} got VAL message from {validator}, sending ECHO");
+            Logger.LogTrace(
+                $"Protocol {Id} got VAL message from {validator} ({validatorPubKey}), sending ECHO"
+            );
 
             _sentValMessage[validator] = true;
             Broadcaster.Broadcast(CreateEchoMessage(val));
@@ -121,19 +124,20 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleEchoMessage(ECHOMessage echo, int validator)
         {
+            var validatorPubKey = Wallet.EcdsaPublicKeySet[validator].ToHex();
             if (_echoMessages[validator] != null)
             {
-                Logger.LogWarning($"{Id} already received correct echo from {validator}");
+                Logger.LogWarning($"{Id} already received correct echo from {validator} ({validatorPubKey})");
                 return;
             }
 
             if (!CheckEchoMessage(echo, validator))
             {
-                Logger.LogWarning($"{Id}: validator {validator} sent incorrect ECHO");
+                Logger.LogWarning($"{Id}: validator {validator} ({validatorPubKey}) sent incorrect ECHO");
                 return;
             }
 
-            Logger.LogTrace($"Protocol {Id} got ECHO message from {validator}");
+            Logger.LogTrace($"Protocol {Id} got ECHO message from {validator} ({validatorPubKey})");
             _echoMessages[validator] = echo;
             TrySendReadyMessageFromEchos();
             CheckResult();
@@ -141,13 +145,14 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private void HandleReadyMessage(ReadyMessage readyMessage, int validator)
         {
+            var validatorPubKey = Wallet.EcdsaPublicKeySet[validator].ToHex();
             if (_readyMessages[validator] != null)
             {
-                Logger.LogWarning($"{Id} received duplicate ready from validator {validator}");
+                Logger.LogWarning($"{Id} received duplicate ready from validator {validator} ({validatorPubKey})");
                 return;
             }
 
-            Logger.LogTrace($"Protocol {Id} got READY message from {validator}");
+            Logger.LogTrace($"Protocol {Id} got READY message from {validator} ({validatorPubKey})");
             _readyMessages[validator] = readyMessage;
             TrySendReadyMessageFromReady();
             CheckResult();
