@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
@@ -56,10 +57,10 @@ namespace Lachain.Core.CLI
 
         private static bool IsValidHexString(IEnumerable<char> hexString)
         {
-            return hexString.Select(currentCharacter =>
+            return hexString.All(currentCharacter =>
                 currentCharacter >= '0' && currentCharacter <= '9' ||
                 currentCharacter >= 'a' && currentCharacter <= 'f' ||
-                currentCharacter >= 'A' && currentCharacter <= 'F').All(isHexCharacter => isHexCharacter);
+                currentCharacter >= 'A' && currentCharacter <= 'F');
         }
 
         private static string EraseHexPrefix(string hexString)
@@ -233,17 +234,20 @@ namespace Lachain.Core.CLI
         /*
          * SendTransaction:
          * 1. to, UInt160,
-         * 2. assetName, string
-         * 3. value, UInt256,
-         * 4. fee, UInt256
+         * 2. value, UInt256,
+         * 3. gasPrice, UInt256
         */
         public string SendTransaction(string[] arguments)
         {
             var to = arguments[1].HexToUInt160();
             var value = Money.Parse(arguments[2]);
-            var fee = Money.Parse(arguments[3]);
+            var gasPrice = ulong.Parse(arguments[3]);
             var from = _keyPair.PublicKey.GetAddress();
-            var tx = _transactionBuilder.TransferTransaction(from, to, value);
+            var tx = _transactionBuilder.TransferTransaction(from, to, value, gasPrice);
+            if (gasPrice == 0)
+            {
+                Console.WriteLine($"Set recommended gas price: {tx.GasPrice}");
+            }
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();

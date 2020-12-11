@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -26,15 +27,16 @@ namespace Lachain.Core.Blockchain.Operations
             _transactionPool = transactionPool;
         }
 
-        public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, byte[]? input)
+        public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, ulong gasPrice, byte[]? input)
         {
             var nonce = _transactionPool.GetNextNonceForAddress(from);
+            if (gasPrice == 0) gasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice;
             var tx = new Transaction
             {
                 To = to,
                 Value = value.ToUInt256(false),
                 From = from,
-                GasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice,
+                GasPrice = gasPrice,
                 GasLimit = GasMetering.DefaultBlockGasLimit,
                 Nonce = nonce
             };
@@ -97,7 +99,8 @@ namespace Lachain.Core.Blockchain.Operations
             return tx;
         }
 
-        public Transaction InvokeTransactionWithGasPrice(UInt160 from, UInt160 contract, Money value, string methodSignature,
+        public Transaction InvokeTransactionWithGasPrice(UInt160 from, UInt160 contract, Money value,
+            string methodSignature,
             ulong gasPrice,
             params dynamic[] values)
         {
