@@ -31,9 +31,8 @@ namespace Lachain.Core.ValidatorStatus
         private bool _withdrawTriggered;
         private readonly IPrivateWallet _privateWallet;
         private bool _started;
-        private Thread _thread;
+        private Thread? _thread;
         private bool _stopRequested;
-        private readonly IContractRegisterer _contractRegisterer;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
@@ -47,7 +46,6 @@ namespace Lachain.Core.ValidatorStatus
             ITransactionBuilder transactionBuilder,
             IPrivateWallet privateWallet,
             IStateManager stateManager,
-            IContractRegisterer contractRegisterer,
             IValidatorAttendanceRepository validatorAttendanceRepository,
             ISystemContractReader systemContractReader
         )
@@ -57,7 +55,6 @@ namespace Lachain.Core.ValidatorStatus
             _transactionBuilder = transactionBuilder;
             _privateWallet = privateWallet;
             _stateManager = stateManager;
-            _contractRegisterer = contractRegisterer;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _systemContractReader = systemContractReader;
             _withdrawTriggered = false;
@@ -101,11 +98,9 @@ namespace Lachain.Core.ValidatorStatus
                 return;
 
             _stopRequested = true;
-            if (_thread != null)
-            {
-                _thread.Join();
-                _thread = null;
-            }
+            if (_thread?.ThreadState == ThreadState.Running)
+                _thread?.Join();
+            _thread = null;
         }
 
         public void Dispose()
@@ -141,7 +136,8 @@ namespace Lachain.Core.ValidatorStatus
                         if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) ==
                             null)
                         {
-                            Logger.LogInformation($"Transaction submitted, waiting for including in block");
+                            Logger.LogInformation(
+                                $"Transaction {_sendingTxHash.ToHex()} submitted, waiting for including in block");
                             Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                             continue;
                         }
@@ -159,11 +155,13 @@ namespace Lachain.Core.ValidatorStatus
                         var balance =
                             _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
                         Logger.LogInformation($"Balance is {balance.ToWei()}");
-                        Logger.LogInformation($"Stake size is {_stakeSize ?? new BigInteger(0.0)}");
-                        var isEnoughBalance = balance.ToWei() > (_stakeSize ?? StakingContract.TokenUnitsInRoll) + coverFeesAmount;
+                        Logger.LogInformation($"Stake size is {_stakeSize ?? new BigInteger(0)}");
+                        var isEnoughBalance = balance.ToWei() >
+                                              (_stakeSize ?? StakingContract.TokenUnitsInRoll) + coverFeesAmount;
                         if (isEnoughBalance)
                         {
-                            var rolls = (_stakeSize ?? (balance.ToWei() - coverFeesAmount)) / StakingContract.TokenUnitsInRoll;
+                            var rolls = (_stakeSize ?? (balance.ToWei() - coverFeesAmount)) /
+                                        StakingContract.TokenUnitsInRoll;
                             Logger.LogInformation($"Sending transaction to become staker for {rolls} rolls");
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
                             _stakeSize = null;
@@ -177,7 +175,8 @@ namespace Lachain.Core.ValidatorStatus
                     var requestCycle = _systemContractReader.GetWithdrawRequestCycle();
                     if (requestCycle != 0)
                     {
-                        Logger.LogInformation($"Stake withdrawal triggered externally. Processing withdrawal...");
+                        Logger.LogInformation(
+                            $"Stake withdrawal triggered externally in cycle {requestCycle}. Processing withdrawal...");
                         _withdrawTriggered = true;
                         continue;
                     }
@@ -231,7 +230,8 @@ namespace Lachain.Core.ValidatorStatus
                         if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) ==
                             null)
                         {
-                            Logger.LogInformation($"Transaction submitted, waiting for including in block");
+                            Logger.LogInformation(
+                                $"Transaction {_sendingTxHash.ToHex()} submitted, waiting for including in block");
                             Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                             continue;
                         }
@@ -239,7 +239,6 @@ namespace Lachain.Core.ValidatorStatus
                         _sendingTxHash = null;
                     }
 
-                    // Logger.LogDebug($"Stake: {GetStake().ToMoney()}");
                     if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
                         GetCurrentCycle() == passingCycle)
                     {
@@ -276,9 +275,12 @@ namespace Lachain.Core.ValidatorStatus
                         continue;
                     }
 
-                    if (!(GetCurrentCycle() > requestCycle))
+                    if (GetCurrentCycle() <= requestCycle)
                     {
-                        Logger.LogInformation($"Waiting for the next cycle to withdraw stake...");
+                        Logger.LogInformation(
+                            $"Stake withdrawal request in cycle {requestCycle}, current cycle is {GetCurrentCycle()}. " +
+                            $"Waiting for the next cycle to withdraw stake..."
+                        );
                         passingCycle = GetCurrentCycle();
                         continue;
                     }
