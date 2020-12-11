@@ -39,7 +39,6 @@ namespace Lachain.CoreTest
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
-        private IKeyGenManager _keyGenManager = null!;
         private INetworkManager _networkManager;
         private IContainer? _container;
         
@@ -60,7 +59,6 @@ namespace Lachain.CoreTest
             _networkManager = _container.Resolve<INetworkManager>();
             _networkManager.Start();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
-            _keyGenManager = _container.Resolve<IKeyGenManager>();
         }
 
         [TearDown]
@@ -103,6 +101,17 @@ namespace Lachain.CoreTest
             for (int i = 0; i < blockNum; i++)
             {
                 var txes = GetCurrentPoolTxes();
+                var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+                if (height % 50 == 0)
+                {
+                    var new_txes = new TransactionReceipt[txes.Length + 1];
+                    txes.CopyTo(new_txes, 0);
+                    new_txes[txes.Length] = BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+                        GovernanceInterface.MethodFinishCycle);
+                    txes = new_txes;
+                    Console.WriteLine($"Tx with a contract call, {txes.Length} txes");
+                }
+
                 var block = BuildNextBlock(txes);
                 var result = ExecuteBlock(block, txes);
                 Assert.AreEqual(OperatingError.Ok, result);
@@ -118,21 +127,13 @@ namespace Lachain.CoreTest
         {
             receipts ??= new TransactionReceipt[] { };
 
-            var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-            if (height % 50 == 0)
-            {
-                receipts.Concat(new TransactionReceipt[] {
-                    BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-  GovernanceInterface.MethodFinishCycle)
-                });
-            }
-
             var merkleRoot = UInt256Utils.Zero;
 
             if (receipts.Any())
                 merkleRoot = MerkleTree.ComputeRoot(receipts.Select(tx => tx.Hash).ToArray()) ??
                              throw new InvalidOperationException();
 
+            var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var predecessor =
                 _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(height);
                 
@@ -188,17 +189,9 @@ namespace Lachain.CoreTest
         {
             receipts ??= new TransactionReceipt[] { };
 
-            var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-            if (height % 50 == 0)
-            {
-                receipts.Concat(new TransactionReceipt[] {
-                    BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                        GovernanceInterface.MethodFinishCycle)
-                });
-            }
-
             var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
 
+            var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var predecessor =
                 _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(height);
             var (header, multisig) = BuildHeaderAndMultisig(block.Header.MerkleRoot, predecessor, stateHash);
@@ -207,9 +200,7 @@ namespace Lachain.CoreTest
             block.Multisig = multisig;
             block.Hash = header.Keccak();
 
-            _blockProducer.ProduceBlock(receipts.Select(tx=>tx.Hash).ToArray(), header, multisig);
-            var status = OperatingError.Ok;
-            //var status = _blockManager.Execute(block, receipts, true, true);
+            var status = _blockManager.Execute(block, receipts, true, true);
             return status;
         }
 
