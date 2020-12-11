@@ -24,6 +24,7 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using NUnit.Framework;
+using Secp256k1Net;
 
 namespace Lachain.CoreTest
 {
@@ -39,7 +40,7 @@ namespace Lachain.CoreTest
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
-        private INetworkManager _networkManager;
+        private INetworkManager _networkManager = null!;
         private IContainer? _container;
         
         [SetUp]
@@ -59,6 +60,7 @@ namespace Lachain.CoreTest
             _networkManager = _container.Resolve<INetworkManager>();
             _networkManager.Start();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
+            _validatorStatusManager.Start(false);
         }
 
         [TearDown]
@@ -72,7 +74,6 @@ namespace Lachain.CoreTest
         public void Test_CountEvents()
         {
             _blockManager.TryBuildGenesisBlock();
-            _validatorStatusManager.Start(false);
 
             for (int i = 0; i < 60; i++)
             {
@@ -226,13 +227,7 @@ namespace Lachain.CoreTest
                 GasLimit = 100000000,
                 Invocation = ByteString.CopyFrom(abi),
             };
-            return new TransactionReceipt
-            {
-                Hash = transaction.FullHash(SignatureUtils.Zero),
-                Status = TransactionStatus.Pool,
-                Transaction = transaction,
-                Signature = SignatureUtils.Zero,
-            };
+            return Signer.Sign(transaction, _wallet.EcdsaKeyPair);
         }
 
     }
