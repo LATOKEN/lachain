@@ -248,9 +248,12 @@ namespace Lachain.Core.CLI
             {
                 Console.WriteLine($"Set recommended gas price: {tx.GasPrice}");
             }
+
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
-            _transactionPool.Add(signedTx);
-            return signedTx.Hash.ToHex();
+            var error = _transactionPool.Add(signedTx);
+            return error != OperatingError.Ok
+                ? $"Error adding tx {signedTx.Hash.ToHex()} to pool: {error}"
+                : signedTx.Hash.ToHex();
         }
 
         /// <summary>
