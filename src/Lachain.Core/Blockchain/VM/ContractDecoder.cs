@@ -71,16 +71,16 @@ namespace Lachain.Core.Blockchain.VM
         private UInt256 DecodeUInt256(bool readFromDynamic = false)
         {
             return readFromDynamic
-                ? _binaryReaderDynamic.ReadBytes(32).ToArray().ToUInt256()
-                : _binaryReaderStatic.ReadBytes(32).ToArray().ToUInt256();
+                ? _binaryReaderDynamic.ReadBytes(32).Reverse().ToArray().ToUInt256()
+                : _binaryReaderStatic.ReadBytes(32).Reverse().ToArray().ToUInt256();
         }
 
         private UInt160 DecodeUInt160(bool readFromDynamic = false)
         {
             // decode uint160 as 32 byte zero padded
             return readFromDynamic
-                ? _binaryReaderDynamic.ReadBytes(32).Skip(12).ToArray().ToUInt160()
-                : _binaryReaderStatic.ReadBytes(32).Skip(12).ToArray().ToUInt160();
+                ? _binaryReaderDynamic.ReadBytes(32).Skip(12).Reverse().ToArray().ToUInt160()
+                : _binaryReaderStatic.ReadBytes(32).Skip(12).Reverse().ToArray().ToUInt160();
         }
 
         private byte[][] DecodeBytesList()

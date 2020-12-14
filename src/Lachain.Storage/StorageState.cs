@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Storage.Trie;
+using Lachain.Utility.Utils;
 using RocksDbSharp;
 
 namespace Lachain.Storage
@@ -42,6 +44,7 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Add(byte[] key, byte[] value)
         {
+            Console.WriteLine($"= {key.ToHex()} {value.ToHex()}");
             CurrentVersion = _trieMap.Add(CurrentVersion, key, value);
             return CurrentVersion;
         }
@@ -49,6 +52,7 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong AddOrUpdate(byte[] key, byte[] value)
         {
+            Console.WriteLine($"= {key.ToHex()} {value.ToHex()}");
             CurrentVersion = _trieMap.AddOrUpdate(CurrentVersion, key, value);
             return CurrentVersion;
         }
@@ -56,6 +60,7 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Update(byte[] key, byte[] value)
         {
+            Console.WriteLine($"= {key.ToHex()} {value.ToHex()}");
             CurrentVersion = _trieMap.Update(CurrentVersion, key, value);
             return CurrentVersion;
         }
@@ -63,6 +68,7 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Delete(byte[] key, out byte[]? value)
         {
+            Console.WriteLine($"- {key.ToHex()}");
             CurrentVersion = _trieMap.Delete(CurrentVersion, key, out value);
             return CurrentVersion;
         }
@@ -70,6 +76,7 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong TryDelete(byte[] key, out byte[]? value)
         {
+            Console.WriteLine($"- {key.ToHex()}");
             CurrentVersion = _trieMap.TryDelete(CurrentVersion, key, out value);
             return CurrentVersion;
         }

@@ -1,24 +1,22 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.Blockchain.SystemContracts.Interface;
-using Lachain.Core.Blockchain.VM;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
-using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -37,25 +35,29 @@ namespace Lachain.CoreTest
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
-        private INetworkManager _networkManager;
         private IContainer? _container;
-        
+
         [SetUp]
         public void Setup()
         {
             TestUtils.DeleteTestChainData();
-            Directory.CreateDirectory("./ChainLachain"); // TODO: this is some dirty hack, hub creates file not in correct place
-            var containerBuilder = TestUtils.GetContainerBuilder(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
-            );
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
-            _networkManager = _container.Resolve<INetworkManager>();
-            _networkManager.Start();
-            _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
+            _validatorStatusManager = new ValidatorStatusManager(
+                _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
+                _wallet, _stateManager, _container.Resolve<IValidatorAttendanceRepository>(),
+                _container.Resolve<ISystemContractReader>()
+            );
         }
 
         [TearDown]
@@ -102,14 +104,14 @@ namespace Lachain.CoreTest
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(systemContractReader.NodeAddress());
             var placeToStake = Money.Parse("2000.0");
             Assert.That(balance > placeToStake, "Not enough balance to make stake");
-            _validatorStatusManager.StartWithStake(placeToStake.ToUInt256(false));
+            _validatorStatusManager.StartWithStake(placeToStake.ToUInt256());
             Assert.That(_validatorStatusManager.IsStarted(), "Manager is not started");
             Assert.That(!_validatorStatusManager.IsWithdrawTriggered(), "Withdraw was triggered from the beggining");
 
             GenerateBlocks(50);
 
-            var stake = new Money(systemContractReader.GetStake(), true);
-            Assert.That(stake == placeToStake,$"Stake is not as intended: {stake} != {placeToStake}");
+            var stake = new Money(systemContractReader.GetStake());
+            Assert.That(stake == placeToStake, $"Stake is not as intended: {stake} != {placeToStake}");
 
             _validatorStatusManager.WithdrawStakeAndStop();
             Assert.That(_validatorStatusManager.IsStarted(), "Manager is stopped right after withdraw request");

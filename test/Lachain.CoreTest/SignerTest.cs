@@ -16,7 +16,8 @@ namespace Lachain.CoreTest
         [Test]
         public void Test_SignAndRecover()
         {
-            var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes().ToPrivateKey());
+            var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
+                .HexToBytes().ToPrivateKey());
             var signer = new TransactionSigner();
             var abi = ContractEncoder.Encode("hello()");
             var tx = new Transaction
@@ -32,11 +33,10 @@ namespace Lachain.CoreTest
             };
             var receipt = signer.Sign(tx, keyPair);
             Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash().ToHex());
-            
+
             var publicKey = receipt.RecoverPublicKey();
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }
-
     }
 }

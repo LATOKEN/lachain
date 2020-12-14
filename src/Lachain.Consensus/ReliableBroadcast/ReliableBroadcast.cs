@@ -243,7 +243,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private bool CheckEchoMessage(ECHOMessage msg, int from)
         {
-            UInt256 value = msg.Data.Keccak();
+            var value = msg.Data.Keccak();
             for (int i = from + _merkleTreeSize, j = 0; i > 1; i /= 2, ++j)
             {
                 value = (i & 1) == 0

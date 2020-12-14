@@ -1,9 +1,12 @@
-using System;
 using System.IO;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
@@ -44,35 +47,38 @@ namespace Lachain.CoreTest
                 Value = Money.Parse("20.0").ToUInt256()
             };
 
-            var receipt = signer.Sign(tx, keyPair);
+            // this is correct RLP of unsigned ethereum tx, check at https://toolkit.abdk.consulting/ethereum#transaction
+            var expectedRawHash =
+                "0xef8085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d0000080298080"
+                    .HexToBytes()
+                    .Keccak();
+            Assert.AreEqual(expectedRawHash, tx.RawHash());
 
+            // this is correct RLP of signed ethereum tx, check at https://toolkit.abdk.consulting/ethereum#transaction
+            // signature is deterministic in compliance with https://tools.ietf.org/html/rfc6979
+            var expectedFullHash =
+                "0xf86f8085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d000008076a0a62d5dc477e8ed4ed7077c129bac8b68c3e260c99329513f28e3f97b5d9f532da04333f86ce60ed12ea85aa7c9e5f3713b5b81dfbd7f492afc667e0dd5dd0a5939"
+                    .HexToBytes()
+                    .Keccak();
+            var receipt = signer.Sign(tx, keyPair);
             Assert.AreEqual(
-                "0xc1fdf2042d3e86986f38be1410c579ff16f5a0f1a72096d11beb48df1455060a".HexToUInt256(),
+                expectedFullHash,
                 receipt.Hash
             );
         }
 
         [Test]
-        public void Test_Money_Converting()
-        {
-
-            var money = Money.Parse("1.0");
-            Assert.IsTrue(VerifyMoney(money.ToUInt256()));
-            Assert.IsFalse(VerifyMoney(money.ToUInt256(false)));
-        }
-
-        private bool VerifyMoney(UInt256 value)
-        {
-            return Money.MaxValue.ToUInt256().ToBigInteger() > value.ToBigInteger();
-        } 
-
-        [Test]
         public void Test_Tx_Pool_Adding()
         {
-            var containerBuilder = TestUtils.GetContainerBuilder(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
-            );
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
             using var container = containerBuilder.Build();
+            
             var txPool = container.Resolve<ITransactionPool>();
 
             var tx = TestUtils.GetRandomTransaction();

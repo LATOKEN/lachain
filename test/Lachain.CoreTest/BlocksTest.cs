@@ -11,7 +11,11 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
 using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
@@ -28,19 +32,23 @@ namespace Lachain.CoreTest
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private static readonly ITransactionSigner Signer = new TransactionSigner();
-        
+
         private IBlockManager _blockManager = null!;
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IContainer? _container;
-        
+
         [SetUp]
         public void Setup()
         {
-            var containerBuilder = TestUtils.GetContainerBuilder(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
-            );
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _stateManager = _container.Resolve<IStateManager>();
@@ -59,16 +67,25 @@ namespace Lachain.CoreTest
         [Test]
         public void Test_Genesis()
         {
-            var localContainerBuilder = TestUtils.GetContainerBuilder(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json")
-            );
-            using var container = localContainerBuilder.Build();
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+            using var container = containerBuilder.Build();
+
             var blockManager = container.Resolve<IBlockManager>();
             var stateManager = container.Resolve<IStateManager>();
-            blockManager.TryBuildGenesisBlock();
+            Assert.IsTrue(blockManager.TryBuildGenesisBlock());
             var genesis =
                 stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(stateManager.LastApprovedSnapshot.Blocks
                     .GetTotalBlockHeight()) ?? throw new Exception();
+            Console.WriteLine(
+                stateManager.LastApprovedSnapshot.Balances
+                    .GetBalance("0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToUInt160())
+            );
             Assert.AreEqual(0, genesis.Header.Index);
             Assert.AreEqual(
                 "0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),

@@ -29,15 +29,10 @@ namespace Lachain.Core.Blockchain.VM
         public static byte[] Encode(string methodSignature, params dynamic[] values)
         {
             var encoder = new ContractEncoder(methodSignature, values);
-            if (values.GetType() == typeof (byte[][]))
-            {
+            if (values.GetType() == typeof(byte[][]))
                 encoder = encoder.Write((byte[][]) values);
-            }
             else
-            {
-                encoder = values.Aggregate(encoder,
-                    (current, value) => { return current.Write(value); });
-            }
+                encoder = values.Aggregate(encoder, (current, value) => current.Write(value));
 
             return encoder.ToByteArray();
         }
@@ -64,12 +59,12 @@ namespace Lachain.Core.Blockchain.VM
             var staticOffset = _values.Length * 32;
             var dynamicOffset = _dynamicBinaryWriter.BaseStream.Length;
             var offset = staticOffset + dynamicOffset;
-            
+
             if (toDynamic)
                 WriteDynamic(new BigInteger(offset).ToUInt256());
             else
                 Write(new BigInteger(offset).ToUInt256());
-            
+
             WriteDynamic(new BigInteger(array.Length).ToUInt256());
             foreach (var word in array.Batch(32))
                 _dynamicBinaryWriter.Write(word.PadRight((byte) 0, 32).ToArray());
@@ -100,45 +95,15 @@ namespace Lachain.Core.Blockchain.VM
             return this;
         }
 
-        public ContractEncoder Write(bool value)
-        {
-            _staticBinaryWriter.Write(value);
-            return this;
-        }
-
-        public ContractEncoder Write(short value)
-        {
-            _staticBinaryWriter.Write(value);
-            return this;
-        }
-
-        public ContractEncoder Write(int value)
-        {
-            _staticBinaryWriter.Write(value);
-            return this;
-        }
-
-        public ContractEncoder Write(uint value)
-        {
-            _staticBinaryWriter.Write(value);
-            return this;
-        }
-
-        public ContractEncoder Write(long value)
-        {
-            _staticBinaryWriter.Write(value);
-            return this;
-        }
-
         public ContractEncoder Write(UInt256 value)
         {
-            _staticBinaryWriter.Write(value.ToBytes().ToArray());
+            _staticBinaryWriter.Write(value.ToBytes().Reverse().ToArray());
             return this;
         }
 
         public ContractEncoder WriteDynamic(UInt256 value)
         {
-            _dynamicBinaryWriter.Write(value.ToBytes().ToArray());
+            _dynamicBinaryWriter.Write(value.ToBytes().Reverse().ToArray());
             return this;
         }
 
@@ -146,13 +111,13 @@ namespace Lachain.Core.Blockchain.VM
         {
             // encode uint160 as 32 byte zero padded
             _staticBinaryWriter.Write(new byte[12]);
-            _staticBinaryWriter.Write(value.ToBytes());
+            _staticBinaryWriter.Write(value.ToBytes().Reverse().ToArray());
             return this;
         }
 
         public ContractEncoder Write(Money value)
         {
-            _staticBinaryWriter.Write(value.ToUInt256().ToBytes());
+            Write(value.ToUInt256());
             return this;
         }
 
@@ -161,7 +126,7 @@ namespace Lachain.Core.Blockchain.VM
             var staticPart = (_staticBinaryWriter.BaseStream as MemoryStream)?.ToArray() ??
                              throw new InvalidOperationException();
             var dynamicPart = (_dynamicBinaryWriter.BaseStream as MemoryStream)?.ToArray() ??
-                             throw new InvalidOperationException();
+                              throw new InvalidOperationException();
             return staticPart.Concat(dynamicPart).ToArray();
         }
     }

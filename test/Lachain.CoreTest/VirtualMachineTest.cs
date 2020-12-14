@@ -22,8 +22,6 @@ namespace Lachain.CoreTest
 
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<MessagingModule>();
-            containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
 
             _container = containerBuilder.Build();

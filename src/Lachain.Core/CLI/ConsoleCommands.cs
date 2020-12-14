@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -82,27 +80,8 @@ namespace Lachain.Core.CLI
                 return null;
             }
 
-            var tx = _transactionManager.GetByHash(arguments[1].HexToUInt256()) ??
-                     throw new InvalidOperationException();
-            return ProtoUtils.ParsedObject(tx);
-            /*
-            var type = tx.Transaction.Type;
-            var txType = tx.Transaction.GetType().GetField(type.ToString());
-            var txByType = txType.GetValue(tx.Transaction);
-            var value = (UInt256) txByType.GetType().GetField("Value").GetValue(txByType);
-            var to = (UInt160) txByType.GetType().GetField("To").GetValue(txByType);
-            if (type != TransactionType.Contract)
-            {
-                to = (UInt160) txByType.GetType().GetField("Recipient").GetValue(txByType);
-            }
-            if (type == Tra)
-            var assetName = (Asset) txByType.GetType().GetField("Asset").GetValue(txByType);
-            var 
-            return
-                $"Hash: {tx.Hash.ToHex()}\n" +
-                $"Signature: {tx.Signature.ToByteArray()}\n" +
-                $"Type: {tx.Transaction.Type}\n" +
-                $"Nonce: {tx.Transaction.Nonce}\n" + value == null ? $"Value: {value.ToString()} : "";*/
+            var tx = _transactionManager.GetByHash(arguments[1].HexToUInt256());
+            return tx is null ? $"Transaction {arguments[1]} not found" : ProtoUtils.ParsedObject(tx);
         }
 
         /*
@@ -111,8 +90,7 @@ namespace Lachain.Core.CLI
         */
         public string? GetBlock(string[] arguments)
         {
-            if (arguments.Length != 2)
-                return null;
+            if (arguments.Length != 2) return "Wrong number of arguments";
             var value = EraseHexPrefix(arguments[1]);
             return ulong.TryParse(value, out var blockHeight)
                 ? ProtoUtils.ParsedObject(_blockManager.GetByHeight(blockHeight) ??
@@ -128,11 +106,9 @@ namespace Lachain.Core.CLI
         */
         public Money? GetBalance(string[] arguments)
         {
-            if (arguments.Length != 2)
-                return null;
+            if (arguments.Length != 2) return null;
             arguments[1] = EraseHexPrefix(arguments[1]);
-            if (!IsValidHexString(arguments[1]))
-                return null;
+            if (!IsValidHexString(arguments[1])) return null;
             return _stateManager.LastApprovedSnapshot.Balances
                 .GetBalance(arguments[1].HexToUInt160());
         }
@@ -143,8 +119,7 @@ namespace Lachain.Core.CLI
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var hash = from.ToBytes().Concat(nonce.ToBytes()).Keccak();
             var byteCode = arguments[1].HexToBytes();
-            if (!VirtualMachine.VerifyContract(byteCode))
-                return "Unable to validate smart-contract code";
+            if (!VirtualMachine.VerifyContract(byteCode)) return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
@@ -154,32 +129,17 @@ namespace Lachain.Core.CLI
 
         public string CallContract(string[] arguments)
         {
-            return "";
-            // var from = _keyPair.PublicKey.GetAddress();
-            // var contractHash = arguments[1].HexToUInt160();
-            // var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            // if (contract is null)
-            //     return $"Unable to find contract by hash {contractHash.ToHex()}";
-            // Console.WriteLine("Code: " + contract.ByteCode.ToByteArray().ToHex());
-            // var result = _stateManager.SafeContext(() =>
-            // {
-            //     _stateManager.NewSnapshot();
-            //     var invocationResult =
-            //         _virtualMachine.InvokeWasmContract(contract, new InvocationContext(from), new byte[] { }, 200_000);
-            //     _stateManager.Rollback();
-            //     return invocationResult;
-            // });
-            // return result.Status == ExecutionStatus.Ok
-            //     ? "Contract has been successfully executed"
-            //     : "Contract execution failed";
+            return ""; // TODO: implement it properly
         }
 
         public string Help(string[] arguments)
         {
-            var methods = GetType().GetMethods().Select(m =>
+            var methods = GetType().GetMethods().SelectMany(m =>
             {
+                if (new string[] {"gettype", "equals", "tostring", "gethashcode"}.Contains(m.Name.ToLower()))
+                    return Enumerable.Empty<string>();
                 var args = m.GetParameters().Select(arg => $"{arg.ParameterType.Name} {arg.Name}");
-                return $" - {m.Name.ToLower()}: {string.Join(", ", args)}";
+                return new[] {$" - {m.Name.ToLower()}: {string.Join(", ", args)}"};
             });
             return "Commands:\n" + string.Join("\n", methods);
         }
@@ -190,22 +150,6 @@ namespace Lachain.Core.CLI
         public IEnumerable<string> GetTransactionPool(string[] arguments)
         {
             return _transactionPool.Transactions.Values.Select(transaction => transaction.Hash.ToHex()).ToList();
-        }
-
-        /*
-         * SignBlock
-         * blockHash, UInt256
-        */
-        public string? SignBlock(string[] arguments)
-        {
-            if (arguments.Length != 2 || arguments[1].Length != TxLength)
-                return null;
-
-            arguments[1] = EraseHexPrefix(arguments[1]);
-            if (!IsValidHexString(arguments[1]))
-                return null;
-            var block = _blockManager.GetByHash(arguments[1].HexToUInt256());
-            return block is null ? null : _blockManager.Sign(block.Header, _keyPair).ToByteArray().ToString();
         }
 
         public string SignTransaction(string[] arguments)
@@ -227,8 +171,7 @@ namespace Lachain.Core.CLI
             var sig = arguments[2].HexToBytes().ToSignature();
             var result = _transactionPool.Add(tx, sig);
             Console.WriteLine($"Status: {result}");
-            Console.WriteLine($"Hash: {tx.FullHash(sig).ToHex()}");
-            return "";
+            return $"{tx.FullHash(sig).ToHex()}";
         }
 
         /*
@@ -244,11 +187,7 @@ namespace Lachain.Core.CLI
             var gasPrice = ulong.Parse(arguments[3]);
             var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value, gasPrice);
-            if (gasPrice == 0)
-            {
-                Console.WriteLine($"Set recommended gas price: {tx.GasPrice}");
-            }
-
+            if (gasPrice == 0) Console.WriteLine($"Set recommended gas price: {tx.GasPrice}");
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
             var error = _transactionPool.Add(signedTx);
             return error != OperatingError.Ok
@@ -265,29 +204,20 @@ namespace Lachain.Core.CLI
         /// <returns></returns>
         public string VerifyTransaction(string[] arguments)
         {
-            arguments[1] =
-                "0x080322160a14e855e8f8e5f66a84c62800e9fc8fa06d77c35baf323b0a160a14309ef5b9fed49a18eb3ea1d090c79df690936b9812160a146bc32575acb8754886dc283c2c8ac54b1bd931951a090a072386f26fc100007200";
-            arguments[2] =
-                "0x01aa279be6f82767f7d1c75a966b33c13d2ae573f7f39ccf7557d86cc0cdb8aa5731b2639ff6ef7555232fd1ed6e27e281e5ae96de22b49083df380fb892485761";
-
-            var tx = Transaction.Parser.ParseFrom(
-                arguments[1].HexToBytes());
+            var tx = Transaction.Parser.ParseFrom(arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
-            Console.WriteLine($"Tx Hash: {tx.FullHash(sig)}");
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,
                 Hash = tx.FullHash(sig),
                 Signature = sig
             };
-            Console.WriteLine("Transaction validity: " + _transactionManager.Verify(accepted));
-            Console.WriteLine(_transactionManager.VerifySignature(accepted) == OperatingError.Ok
-                ? "Signature validity: OK"
-                : "Signature validity: INVALID");
-            Console.WriteLine(_transactionManager.VerifySignature(accepted, false) == OperatingError.Ok
-                ? "Signature validity: OK"
-                : "Signature validity: INVALID");
-            return "\n";
+            var txValid = _transactionManager.Verify(accepted) == OperatingError.Ok;
+            var sigValid = _transactionManager.VerifySignature(accepted) == OperatingError.Ok;
+            Console.WriteLine($"Tx Hash: {tx.FullHash(sig)}");
+            Console.WriteLine("Transaction validity: " + txValid);
+            Console.WriteLine(sigValid ? "Signature validity: OK" : "Signature validity: INVALID");
+            return $"{txValid && sigValid}";
         }
 
         /// <summary>
@@ -298,8 +228,7 @@ namespace Lachain.Core.CLI
         /// <returns>current stake size</returns>
         public string CurrentStake(string[] arguments)
         {
-            var stake = _systemContractReader.GetStake().ToMoney();
-            return $"{stake}";
+            return $"{_systemContractReader.GetStake().ToMoney()}";
         }
 
         /// <summary>
@@ -307,15 +236,12 @@ namespace Lachain.Core.CLI
         ///  stake amount
         /// </summary>
         /// <param name="arguments"></param>
-        /// <returns>stake tx hash/returns>
+        /// <returns>stake tx hash</returns>
         public string NewStake(string[] arguments)
         {
-            if (_validatorStatusManager.IsStarted())
-                return "ERROR: Withdraw current stake first";
-            if (arguments.Length == 0)
-                _validatorStatusManager.Start(false);
-            else
-                _validatorStatusManager.StartWithStake(Money.Parse(arguments[0]).ToUInt256(false));
+            if (_validatorStatusManager.IsStarted()) return "ERROR: Withdraw current stake first";
+            if (arguments.Length == 0) _validatorStatusManager.Start(false);
+            else _validatorStatusManager.StartWithStake(Money.Parse(arguments[0]).ToUInt256());
             return "Validator is started";
         }
 
@@ -326,10 +252,8 @@ namespace Lachain.Core.CLI
         /// <returns>tx hash</returns>
         public string ValidatorStatus(string[] arguments)
         {
-            if (!_validatorStatusManager.IsStarted())
-                return "Validator is off";
-            if (_validatorStatusManager.IsWithdrawTriggered())
-                return "Stake withdraw is triggered";
+            if (!_validatorStatusManager.IsStarted()) return "Validator is off";
+            if (_validatorStatusManager.IsWithdrawTriggered()) return "Stake withdraw is triggered";
             return "Validator is on";
         }
 
@@ -340,10 +264,8 @@ namespace Lachain.Core.CLI
         /// <returns>tx hash</returns>
         public string WithdrawStake(string[] arguments)
         {
-            if (!_validatorStatusManager.IsStarted())
-                return "ERROR: Validator is off";
-            if (_validatorStatusManager.IsWithdrawTriggered())
-                return "ERROR: Stake withdraw is triggered already";
+            if (!_validatorStatusManager.IsStarted()) return "ERROR: Validator is off";
+            if (_validatorStatusManager.IsWithdrawTriggered()) return "ERROR: Stake withdraw is triggered already";
             _validatorStatusManager.WithdrawStakeAndStop();
             return "Stake withdraw is initiated";
         }

@@ -16,8 +16,8 @@ namespace Lachain.Utility
         private static readonly BigInteger MaxRawValue = MaxIntegralPart * D + D - 1;
         private static readonly BigInteger MinRawValue = -MaxRawValue;
 
-        public static readonly Money MaxValue = new Money(D * MaxIntegralPart);
-        public static readonly Money MinValue = new Money(-D * MaxIntegralPart);
+        public static readonly Money MaxValue = new Money(MaxRawValue);
+        public static readonly Money MinValue = new Money(MinRawValue);
         public static readonly Money One = new Money(D);
         public static readonly Money Zero = new Money(0);
         public static readonly Money Wei = new Money(1);
@@ -31,9 +31,9 @@ namespace Lachain.Utility
             _value = value;
         }
 
-        public Money(UInt256 value, bool littleEndian = false)
+        public Money(UInt256 value)
         {
-            _value = value.ToBigInteger(littleEndian);
+            _value = value.ToBigInteger();
         }
 
         public BigInteger ToWei()
@@ -41,9 +41,9 @@ namespace Lachain.Utility
             return _value;
         }
         
-        public UInt256 ToUInt256(bool littleEndian = true)
+        public UInt256 ToUInt256()
         {
-            return _value.ToUInt256(littleEndian);
+            return _value.ToUInt256();
         }
 
         public override string ToString()

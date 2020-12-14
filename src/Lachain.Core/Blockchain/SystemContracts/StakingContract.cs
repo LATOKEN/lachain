@@ -32,7 +32,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
         private readonly StorageVariable _nextValidators; // array of public keys
         private readonly StorageVariable _previousValidators; // array of public keys
-        private readonly StorageVariable _attendancetDetectorCheckIns; // array of public keys
+        private readonly StorageVariable _attendanceDetectorCheckIns; // array of public keys
         private readonly StorageVariable _stakers; // array of public keys
         private readonly StorageVariable _vrfSeed;
         private readonly StorageVariable _nextVrfSeed;
@@ -100,7 +100,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(9).ToUInt256()
             );
-            _attendancetDetectorCheckIns = new StorageVariable(
+            _attendanceDetectorCheckIns = new StorageVariable(
                 ContractRegisterer.StakingContract,
                 contractContext.Snapshot.Storage,
                 new BigInteger(10).ToUInt256()
@@ -123,7 +123,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (!ok)
                 return ExecutionStatus.ExecutionHalted;
 
-            if (amount.ToBigInteger(true) < TokenUnitsInRoll)
+            if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
             var getStakeExecutionResult = Hepler.CallSystemContract(frame,
@@ -450,7 +450,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (isCheckedInAttendanceDetection)
                 return ExecutionStatus.ExecutionHalted;
 
-            _attendancetDetectorCheckIns.Set(_attendancetDetectorCheckIns.Get().Concat(senderPublicKey).ToArray());
+            _attendanceDetectorCheckIns.Set(_attendanceDetectorCheckIns.Get().Concat(senderPublicKey).ToArray());
 
             for (var i = 0; i < faultPersons.Length; i++)
             {
@@ -501,7 +501,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void ClearAttendanceDetectorCheckIns()
         {
-            _attendancetDetectorCheckIns.Set(new byte[] { });
+            _attendanceDetectorCheckIns.Set(new byte[] { });
         }
 
         [ContractMethod(StakingInterface.MethodIsCheckedInAttendanceDetection)]
@@ -510,7 +510,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.StakingIsCheckedInAttendanceDetectionCost);
 
             var result = false;
-            var seenValidatorsBytes = _attendancetDetectorCheckIns.Get();
+            var seenValidatorsBytes = _attendanceDetectorCheckIns.Get();
             for (var startByte = 0; startByte < seenValidatorsBytes.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var validator = seenValidatorsBytes.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();

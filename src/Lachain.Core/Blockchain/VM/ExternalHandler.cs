@@ -115,7 +115,7 @@ namespace Lachain.Core.Blockchain.VM
             if (addressBuffer is null || inputBuffer is null)
                 throw new InvalidContractException("Bad call to call function");
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
-            var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256()?.ToMoney(false);
+            var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256().ToMoney();
             if (value is null)
                 throw new InvalidContractException("Bad call to call function");
             if (value > Money.Zero)

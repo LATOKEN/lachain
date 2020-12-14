@@ -7,12 +7,12 @@
         <RootNamespace>Lachain.CryptoTest</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Nethereum.RPC" Version="3.8.0"/>
-        <PackageReference Include="nunit" Version="3.12.0"/>
-        <PackageReference Include="NUnit3TestAdapter" Version="3.17.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1"/>
+        <PackageReference Include="Nethereum.RPC" Version="3.8.0" />
+        <PackageReference Include="nunit" Version="3.12.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Lachain.Consensus\Lachain.Consensus.csproj"/>
+        <ProjectReference Include="..\..\src\Lachain.Consensus\Lachain.Consensus.csproj" />
     </ItemGroup>
 </Project>

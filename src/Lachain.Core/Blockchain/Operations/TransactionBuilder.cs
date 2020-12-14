@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -34,7 +33,7 @@ namespace Lachain.Core.Blockchain.Operations
             var tx = new Transaction
             {
                 To = to,
-                Value = value.ToUInt256(false),
+                Value = value.ToUInt256(),
                 From = from,
                 GasPrice = gasPrice,
                 GasLimit = GasMetering.DefaultBlockGasLimit,
@@ -94,7 +93,7 @@ namespace Lachain.Core.Blockchain.Operations
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 100000000,
                 Nonce = nonce,
-                Value = value.ToUInt256(false)
+                Value = value.ToUInt256()
             };
             return tx;
         }
@@ -115,7 +114,7 @@ namespace Lachain.Core.Blockchain.Operations
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 100000000,
                 Nonce = nonce,
-                Value = value.ToUInt256(false)
+                Value = value.ToUInt256()
             };
             return tx;
         }

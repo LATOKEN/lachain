@@ -45,7 +45,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (_validatorStatusManager.IsStarted())
                 return "withdraw previous stake first";
 
-            _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256(false));
+            _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256());
 
             return "validator_started";
         }

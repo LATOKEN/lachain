@@ -16,8 +16,6 @@ namespace Lachain.Core.CLI
 
         string SignTransaction(string[] arguments);
 
-        string? SignBlock(string[] arguments);
-        
         Money? GetBalance(string[] arguments);
 
         string DeployContract(string[] arguments);

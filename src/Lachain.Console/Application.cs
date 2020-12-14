@@ -40,9 +40,11 @@ namespace Lachain.Console
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath, options));
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<MessagingModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<RpcModule>();
+            containerBuilder.RegisterModule<ConsoleModule>();
             _container = containerBuilder.Build();
         }
 

@@ -172,7 +172,7 @@ namespace Lachain.Core.Vault
                 Logger.LogDebug($"Send value tx invocation: {tx.Invocation}, proposer = {proposer.ToHex()}");
                 if (keygen.HandleSendValue(
                     sender,
-                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(true), EncryptedValues = encryptedValues}
+                    new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
                 ))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
@@ -334,7 +334,7 @@ namespace Lachain.Core.Vault
                         keygen.HandleSendValue(
                             sender,
                             new ValueMessage
-                                {Proposer = (int) proposer.ToBigInteger(true), EncryptedValues = encryptedValues}
+                                {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
                         );
                     }
                     else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirm))

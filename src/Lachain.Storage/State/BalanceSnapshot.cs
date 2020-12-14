@@ -38,23 +38,23 @@ namespace Lachain.Storage.State
         public void SetBalance(UInt160 owner, Money value)
         {
             var key = EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(owner);
-            _state.AddOrUpdate(key, value.ToUInt256(false).ToBytes());
+            _state.AddOrUpdate(key, value.ToUInt256().ToBytes());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetSupply(Money value)
         {
             var key = EntryPrefix.TotalSupply.BuildPrefix();
-            _state.AddOrUpdate(key, value.ToUInt256(false).ToBytes());
+            _state.AddOrUpdate(key, value.ToUInt256().ToBytes());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Money AddBalance(UInt160 owner, Money value, bool inceaseSupply = false)
+        public Money AddBalance(UInt160 owner, Money value, bool increaseSupply = false)
         {
             var balance = GetBalance(owner);
             balance += value;
             SetBalance(owner, balance);
-            if (inceaseSupply)
+            if (increaseSupply)
             {
                 var supply = GetSupply();
                 supply += value;

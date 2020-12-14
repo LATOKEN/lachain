@@ -36,7 +36,7 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 if (!receipt.Transaction.From.Equals(UInt160Utils.Zero)) return OperatingError.InvalidTransaction;
                 if (!receipt.Transaction.Invocation.IsEmpty) return OperatingError.InvalidTransaction;
-                snapshot.Balances.AddBalance(receipt.Transaction.To, transaction.Value.ToMoney(false), true);
+                snapshot.Balances.AddBalance(receipt.Transaction.To, transaction.Value.ToMoney(), true);
                 return OperatingError.Ok;
             }
 

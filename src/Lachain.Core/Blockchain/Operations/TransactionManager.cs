@@ -103,7 +103,7 @@ namespace Lachain.Core.Blockchain.Operations
         {
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-            
+
             if (canTransactionMissVerification && acceptedTransaction.Signature.IsZero())
                 return OperatingError.Ok;
 
@@ -115,7 +115,7 @@ namespace Lachain.Core.Blockchain.Operations
                 transaction.GasLimit < GasMetering.DefaultTxCost)
                 return OperatingError.InvalidGasLimit;
 
-            if (transaction.Value.ToBigInteger() > Money.MaxValue.ToUInt256().ToBigInteger())
+            if (transaction.Value.ToMoney() > Money.MaxValue)
                 return OperatingError.ValueOverflow;
             /* verify transaction via persister */
             return _transactionExecuter.Verify(transaction);

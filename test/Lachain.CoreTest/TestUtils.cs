@@ -18,18 +18,6 @@ namespace Lachain.CoreTest
 {
     public class TestUtils
     {
-        public static SimpleInjectorContainerBuilder GetContainerBuilder(string configPath)
-        {
-            var configManager = new ConfigManager(configPath, new RunOptions());
-            var containerBuilder = new SimpleInjectorContainerBuilder(configManager);
-
-            containerBuilder.RegisterModule<StorageModule>();
-            containerBuilder.Register<IConfigManager>(configManager);
-            containerBuilder.RegisterModule<NetworkModule>();
-            containerBuilder.RegisterModule<BlockchainModule>();
-            return containerBuilder;
-        }
-
         public static TransactionReceipt GetRandomTransaction()
         {
             var signer = new TransactionSigner();
