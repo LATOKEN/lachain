@@ -103,7 +103,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             Logger.LogInformation("DistributeCycleRewardsAndPenalties");
             if (!MsgSender().IsZero())
+            {
+                Logger.LogTrace("!MsgSender().IsZero()");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             var txFeesAmount = GetCollectedFees();
             SetCollectedFees(new Money(0));

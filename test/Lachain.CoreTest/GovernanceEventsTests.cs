@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Google.Protobuf;
 using Lachain.Consensus;
+using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
@@ -35,7 +38,7 @@ namespace Lachain.CoreTest
         private static readonly ITransactionSigner Signer = new TransactionSigner();
 
         private IBlockManager _blockManager = null!;
-        private IBlockProducer _blockProducer = null!;
+        private ITransactionBuilder _transactionBuilder = null!;
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
@@ -53,14 +56,14 @@ namespace Lachain.CoreTest
             );
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
-            _blockProducer = _container.Resolve<IBlockProducer>();
+            _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
-            _networkManager = _container.Resolve<INetworkManager>();
-            _networkManager.Start();
-            _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
-            _validatorStatusManager.Start(false);
+            // _networkManager = _container.Resolve<INetworkManager>();
+            // _networkManager.Start();
+            // _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
+            // _validatorStatusManager.Start(false);
         }
 
         [TearDown]
@@ -75,7 +78,7 @@ namespace Lachain.CoreTest
         {
             _blockManager.TryBuildGenesisBlock();
 
-            for (int i = 0; i < 60; i++)
+            for (int i = 0; i < 52; i++)
             {
                 GenerateBlocks(1);
 
@@ -96,22 +99,38 @@ namespace Lachain.CoreTest
             Assert.IsTrue(false);
         }
 
-
         private void GenerateBlocks(int blockNum)
         {
             for (int i = 0; i < blockNum; i++)
             {
                 var txes = GetCurrentPoolTxes();
                 var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-                if (height % 50 == 0)
+                if (height % 50 == 49) // next block is last in cycle
                 {
                     var new_txes = new TransactionReceipt[txes.Length + 1];
                     txes.CopyTo(new_txes, 0);
-                    new_txes[txes.Length] = BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                        GovernanceInterface.MethodFinishCycle);
+                    new_txes[txes.Length] = MakeDistributeCycleRewardsAndPenaltiesTxReceipt();
                     txes = new_txes;
                     Console.WriteLine($"Tx with a contract call, {txes.Length} txes");
                 }
+                if (height % 50 == 0) 
+                {
+                    var new_txes = new TransactionReceipt[txes.Length + 2];
+                    txes.CopyTo(new_txes, 0);
+                    new_txes[txes.Length] = MakeCommitTransaction();
+                    new_txes[txes.Length + 1] = MakeKeygenSendValuesTxReceipt();
+                    txes = new_txes;
+                    Console.WriteLine($"Tx with a contract call, {txes.Length} txes");
+                }
+                if (height % 50 == 1)
+                {
+                    var new_txes = new TransactionReceipt[txes.Length + 1];
+                    txes.CopyTo(new_txes, 0);
+                    new_txes[txes.Length] = MakeNextValidatorsTxReceipt();
+                    txes = new_txes;
+                    Console.WriteLine($"Tx with a contract call, {txes.Length} txes");
+                }
+                
 
                 var block = BuildNextBlock(txes);
                 var result = ExecuteBlock(block, txes);
@@ -212,23 +231,83 @@ namespace Lachain.CoreTest
             return status;
         }
 
-        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
+        private TransactionReceipt MakeDistributeCycleRewardsAndPenaltiesTxReceipt()
         {
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
-            var abi = ContractEncoder.Encode(mehodSignature);
-            var transaction = new Transaction
-            {
-                To = contractAddress,
-                Value = UInt256Utils.Zero,
-                From = UInt160Utils.Zero,
-                Nonce = nonce,
-                GasPrice = 0,
-                /* TODO: gas estimation */
-                GasLimit = 100000000,
-                Invocation = ByteString.CopyFrom(abi),
-            };
-            return Signer.Sign(transaction, _wallet.EcdsaKeyPair);
+            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties);
         }
 
+        private TransactionReceipt MakeNextValidatorsTxReceipt()
+        {
+            var sk = Crypto.GeneratePrivateKey();
+            var pk = Crypto.ComputePublicKey(sk, false);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                ContractRegisterer.GovernanceContract,
+                Money.Zero,
+                GovernanceInterface.MethodChangeValidators,
+                0,
+                (pk)
+            );
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+        }
+        
+        private TransactionReceipt MakeKeygenSendValuesTxReceipt()
+        {
+            var proposer = new BigInteger(0).ToUInt256();
+            var value = new Byte[0];
+            var sk = Crypto.GeneratePrivateKey();
+            var pk = Crypto.ComputePublicKey(sk, false);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                ContractRegisterer.GovernanceContract,
+                Money.Zero,
+                GovernanceInterface.MethodKeygenSendValue,
+                0,
+                proposer, (value)
+            );
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+        }
+        
+        private TransactionReceipt MakeFinishCircleTxReceipt()
+        {
+            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+                GovernanceInterface.MethodFinishCycle);
+        }
+        
+        private TransactionReceipt MakeCommitTransaction()
+        {
+            var biVarPoly = BiVarSymmetricPolynomial.Random(0);
+            var commitment = biVarPoly.Commit();
+            var row = new Byte[0];
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                ContractRegisterer.GovernanceContract,
+                Money.Zero,
+                GovernanceInterface.MethodKeygenCommit,
+                0,
+                commitment.ToBytes(),
+                 (row)
+            );
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+        }
+
+        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
+        {
+            var transaction =  _transactionBuilder.InvokeTransactionWithGasPrice(
+                UInt160Utils.Zero, 
+                contractAddress,
+                Money.Zero, 
+                mehodSignature, 
+                0
+                );
+            return new TransactionReceipt
+            {
+                Hash = transaction.FullHash(SignatureUtils.Zero),
+                Status = TransactionStatus.Pool,
+                Transaction = transaction,
+                Signature = SignatureUtils.Zero,
+            };
+        }
     }
 }
