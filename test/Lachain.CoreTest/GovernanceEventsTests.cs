@@ -13,6 +13,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
@@ -42,28 +43,24 @@ namespace Lachain.CoreTest
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
-        private IValidatorStatusManager _validatorStatusManager = null!;
-        private INetworkManager _networkManager = null!;
         private IContainer? _container;
+        private Dictionary<UInt256, ByteString> _eventData = null!;
         
         [SetUp]
         public void Setup()
         {
+            _eventData = new Dictionary<UInt256, ByteString>();
             TestUtils.DeleteTestChainData();
             Directory.CreateDirectory("./ChainLachain"); // TODO: this is some dirty hack, hub creates file not in correct place
             var containerBuilder = TestUtils.GetContainerBuilder(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
-            );
+            ); 
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
-            // _networkManager = _container.Resolve<INetworkManager>();
-            // _networkManager.Start();
-            // _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
-            // _validatorStatusManager.Start(false);
         }
 
         [TearDown]
@@ -74,7 +71,7 @@ namespace Lachain.CoreTest
         }
 
         [Test]
-        public void Test_CountEvents()
+        public void Test_EventFormat()
         {
             _blockManager.TryBuildGenesisBlock();
 
@@ -90,13 +87,14 @@ namespace Lachain.CoreTest
                     for(uint j = 0; j < event_count; j++)
                     {
                         var event_obj = _stateManager.CurrentSnapshot.Events.GetEventByTransactionHashAndIndex(tx, j);
-                        Console.WriteLine($"Event {j}: [{event_obj}]");
                         Assert.AreEqual(event_obj.TransactionHash, tx);
+                        if (_eventData.TryGetValue(event_obj.TransactionHash, out ByteString storedData))
+                        {
+                            Assert.IsTrue(event_obj.Data.Equals(storedData));
+                        }
                     }
                 }
             }
-
-            Assert.IsTrue(false);
         }
 
         private void GenerateBlocks(int blockNum)
@@ -115,10 +113,10 @@ namespace Lachain.CoreTest
                 }
                 if (height % 50 == 0) 
                 {
-                    var new_txes = new TransactionReceipt[txes.Length + 2];
+                    var new_txes = new TransactionReceipt[txes.Length + 1];
                     txes.CopyTo(new_txes, 0);
                     new_txes[txes.Length] = MakeCommitTransaction();
-                    new_txes[txes.Length + 1] = MakeKeygenSendValuesTxReceipt();
+                    //new_txes[txes.Length + 1] = MakeKeygenSendValuesTxReceipt();
                     txes = new_txes;
                     Console.WriteLine($"Tx with a contract call, {txes.Length} txes");
                 }
@@ -233,8 +231,13 @@ namespace Lachain.CoreTest
 
         private TransactionReceipt MakeDistributeCycleRewardsAndPenaltiesTxReceipt()
         {
-            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+            var res = BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
                 GovernanceInterface.MethodDistributeCycleRewardsAndPenalties);
+            _eventData.Add(res.Hash, 
+                ByteString.CopyFrom(ContractEncoder.Encode(
+                    GovernanceInterface.EventDistributeCycleRewardsAndPenalties, 
+                    Money.Parse("500.0").ToUInt256())));
+            return res;
         }
 
         private TransactionReceipt MakeNextValidatorsTxReceipt()
@@ -249,15 +252,16 @@ namespace Lachain.CoreTest
                 0,
                 (pk)
             );
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            _eventData.Add(res.Hash, 
+                ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventChangeValidators, (pk))));
+            return res;
         }
         
         private TransactionReceipt MakeKeygenSendValuesTxReceipt()
         {
             var proposer = new BigInteger(0).ToUInt256();
             var value = new Byte[0];
-            var sk = Crypto.GeneratePrivateKey();
-            var pk = Crypto.ComputePublicKey(sk, false);
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
@@ -266,19 +270,26 @@ namespace Lachain.CoreTest
                 0,
                 proposer, (value)
             );
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res =  Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            _eventData.Add(res.Hash, 
+                ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenSendValue, 
+                    proposer, (value))));
+            return res;
         }
         
         private TransactionReceipt MakeFinishCircleTxReceipt()
         {
-            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
+            var res = BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
                 GovernanceInterface.MethodFinishCycle);
+            _eventData.Add(res.Hash, 
+                ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventFinishCycle)));
+            return res;
         }
-        
+
         private TransactionReceipt MakeCommitTransaction()
         {
             var biVarPoly = BiVarSymmetricPolynomial.Random(0);
-            var commitment = biVarPoly.Commit();
+            var commitment = biVarPoly.Commit().ToBytes();
             var row = new Byte[0];
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
@@ -286,10 +297,15 @@ namespace Lachain.CoreTest
                 Money.Zero,
                 GovernanceInterface.MethodKeygenCommit,
                 0,
-                commitment.ToBytes(),
-                 (row)
-            );
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+                commitment, 
+                new byte[][]{row}
+        );
+
+        var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            _eventData.Add(res.Hash, 
+                ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenCommit, 
+                    commitment, new byte[][]{row})));
+            return res;
         }
 
         private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)

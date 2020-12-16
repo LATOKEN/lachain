@@ -17,11 +17,9 @@ namespace Lachain.UtilityTest
     {
         public static SimpleInjectorContainerBuilder GetContainerBuilder(string configPath)
         {
-            var options = new RunOptions();
-            options.LogLevel = "Trace";
             LogManager.Configuration.Variables["consoleLogLevel"] = "Trace";
             LogManager.ReconfigExistingLoggers();
-            var configManager = new ConfigManager(configPath, options);
+            var configManager = new ConfigManager(configPath, new RunOptions());
             var containerBuilder = new SimpleInjectorContainerBuilder(configManager);
 
             containerBuilder.RegisterModule<StorageModule>();
