@@ -62,23 +62,15 @@ namespace Lachain.Utility.Utils
             }
         }
 
-        public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false, bool addLeadingZeros = false)
+        public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false)
         {
             if (buffer.Length == 0) buffer = Zero.ToBytes();
 
-            if (!addTrailingZeros && !addLeadingZeros && buffer.Length != 32)
+            if (!addTrailingZeros && buffer.Length != 32 || buffer.Length > 32)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
 
-            if (!addLeadingZeros)
-                return new UInt256
-                {
-                    Buffer = ByteString.CopyFrom(buffer.Concat(Enumerable.Repeat((byte) 0, 32 - buffer.Length))
-                        .ToArray())
-                };
-            return new UInt256
-            {
-                Buffer = ByteString.CopyFrom(Enumerable.Repeat((byte) 0, 32 - buffer.Length).Concat(buffer).ToArray())
-            };
+            var padded = addTrailingZeros ? buffer.Concat(Enumerable.Repeat((byte) 0, 32 - buffer.Length)) : buffer;
+            return new UInt256 {Buffer = ByteString.CopyFrom(padded.ToArray())};
         }
     }
 }

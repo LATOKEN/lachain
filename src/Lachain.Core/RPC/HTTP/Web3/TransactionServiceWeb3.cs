@@ -24,13 +24,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class TransactionServiceWeb3 : JsonRpcService
     {
-        private static readonly ILogger<TransactionServiceWeb3> Logger = LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
-        
+        private static readonly ILogger<TransactionServiceWeb3> Logger =
+            LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
+
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
-        
+
         public TransactionServiceWeb3(
             IStateManager stateManager,
             ITransactionManager transactionManager,
@@ -43,6 +44,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _contractRegisterer = contractRegisterer;
         }
 
+        private Transaction MakeTransaction(SignedTransactionBase ethTx)
+        {
+            return new Transaction
+            {
+                // this is special case where empty uint160 is allowed
+                To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
+                Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
+                Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
+                GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
+                GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                Invocation = ethTx.Data is null ? ByteString.Empty : ByteString.CopyFrom(ethTx.Data),
+            };
+        }
+
         [JsonRpcMethod("eth_verifyRawTransaction")]
         private string VerifyRawTransaction(string rawTx)
         {
@@ -50,17 +66,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature();
             try
             {
-                var transaction = new Transaction
-                {
-                    // this is special case where empty uint160 is allowed
-                    To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
-                    Value = ethTx.Value.ToArray().ToUInt256(false, true),
-                    From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
-                    Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
-                    GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
-                    GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
-                };
-
+                var transaction = MakeTransaction(ethTx);
                 var txHash = transaction.FullHash(signature);
                 var result = _transactionManager.Verify(new TransactionReceipt
                 {
@@ -85,12 +91,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
-
-            if (receipt is null)
-            {
-                return null;
-            }
-
+            if (receipt is null) return null;
             return ToEthTxFormat(
                 _stateManager,
                 receipt,
@@ -118,34 +119,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string SendRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
-            
+
             var r = ethTx.Signature.R;
             while (r.Length < 32)
                 r = "00".HexToBytes().Concat(r).ToArray();
-            
+
             var s = ethTx.Signature.S;
             while (s.Length < 32)
                 s = "00".HexToBytes().Concat(s).ToArray();
-            
+
             var signature = r.Concat(s).Concat(ethTx.Signature.V).ToArray();
             try
             {
-                var transaction = new Transaction
-                {
-                    // this is special case where empty uint160 is allowed
-                    To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
-                    Value = ethTx.Value.ToArray().ToUInt256(false, true),
-                    From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
-                    Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
-                    GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
-                    GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
-                    Invocation = ethTx.Data is null ? ByteString.Empty : ByteString.CopyFrom(ethTx.Data),
-                };
+                var transaction = MakeTransaction(ethTx);
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {TransactionUtils.ChainId}))
-                {
                     return "Can not add to transaction pool: BadChainId";
-                }
-
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
                 if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
                 return transaction.FullHash(signature.ToSignature()).ToHex();
@@ -200,16 +188,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var from = opts["from"];
             var to = opts["to"];
             var data = opts["data"];
-            
+
             if (to is null && data is null) return "0x";
-            
-            var invocation = ((string)data!).HexToBytes();
-            var destination = ((string)to!).HexToUInt160();
-            var source = from is null ? UInt160Utils.Zero : ((string)from!).HexToUInt160();
+
+            var invocation = ((string) data!).HexToBytes();
+            var destination = ((string) to!).HexToUInt160();
+            var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
             //string from, string to, string gas, string gasPrice, string value, string data
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
-            var systemContract= _contractRegisterer.GetContractByAddress(destination);
-            
+            var systemContract = _contractRegisterer.GetContractByAddress(destination);
+
             if (contract is null && systemContract is null)
             {
                 Logger.LogWarning("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
@@ -237,8 +225,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                 return result.ReturnValue?.ToHex() ?? "0x";
             }
-            
-            var (err, invocationResult) = _InvokeSystemContract(destination, invocation, source, _stateManager.LastApprovedSnapshot);
+
+            var (err, invocationResult) =
+                _InvokeSystemContract(destination, invocation, source, _stateManager.LastApprovedSnapshot);
             if (err != OperatingError.Ok)
             {
                 return "0x";
@@ -264,7 +253,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return result ? "0x1" : "0x0";
                 case string result:
                     const string start = "0x0000000000000000000000000000000000000000000000000000000000000020";
-                    var value= Encoding.ASCII.GetBytes(result).ToHex();
+                    var value = Encoding.ASCII.GetBytes(result).ToHex();
                     var len = (value.Length / 2).ToBytes().ToHex(false);
                     while (len.Length < 64)
                         len = '0' + len;
@@ -283,23 +272,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var from = opts["from"];
             var to = opts["to"];
             var data = opts["data"];
-            
+
             if (to is null && data is null) return null;
-            
-            var invocation = ((string)data!).HexToBytes();
-            var destination = ((string)to!).HexToUInt160();
-            var source = from is null ? UInt160Utils.Zero : ((string)from!).HexToUInt160();
+
+            var invocation = ((string) data!).HexToBytes();
+            var destination = ((string) to!).HexToUInt160();
+            var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
             gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
-            
-            
+
+
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
-            var systemContract= _contractRegisterer.GetContractByAddress(destination);
-            
+            var systemContract = _contractRegisterer.GetContractByAddress(destination);
+
             if (contract is null && systemContract is null)
             {
                 return gasUsed.ToHex();
             }
-            
+
             if (!(contract is null))
             {
                 InvocationResult invRes = _stateManager.SafeContext(() =>
@@ -318,10 +307,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     _stateManager.Rollback();
                     return res;
                 });
-                return invRes.Status == ExecutionStatus.Ok ? (gasUsed + invRes.GasUsed).ToHex(): "0x";
+                return invRes.Status == ExecutionStatus.Ok ? (gasUsed + invRes.GasUsed).ToHex() : "0x";
             }
-            
-            
+
+
             InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
             {
                 var snapshot = _stateManager.NewSnapshot();
@@ -329,24 +318,26 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     Block = snapshot.Blocks.GetTotalBlockHeight(),
                 });
-                var invocationResult = ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
+                var invocationResult =
+                    ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
                 _stateManager.Rollback();
-                
+
                 return invocationResult;
             });
-            return systemContractInvRes.Status == ExecutionStatus.Ok ? (gasUsed + systemContractInvRes.GasUsed).ToHex(): "0x";
+            return systemContractInvRes.Status == ExecutionStatus.Ok
+                ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
+                : "0x";
         }
 
         [JsonRpcMethod("eth_gasPrice")]
         private string GetNetworkGasPrice()
         {
-            
             return _stateManager.CurrentSnapshot.NetworkGasPrice.ToHex(false);
         }
 
         public static JObject ToEthTxFormat(
-            IStateManager stateManager, 
-            TransactionReceipt receipt, 
+            IStateManager stateManager,
+            TransactionReceipt receipt,
             string? blockHash = null,
             string? blockNumber = null,
             Block? block = null,
@@ -373,7 +364,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 };
                 logs.Add(log);
             }
-            var res =  new JObject
+
+            var res = new JObject
             {
                 ["transactionHash"] = receipt.Hash.ToHex(),
                 ["transactionIndex"] = receipt.IndexInBlock.ToHex(),
@@ -395,7 +387,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
             if (!isReceipt)
             {
-                res["value"] = receipt.Transaction.Value.ToHex();
+                res["value"] = receipt.Transaction.Value.ToBytes().Reverse().SkipWhile(x => x == 0).ToHex();
                 res["nonce"] = receipt.Transaction.Nonce.ToHex();
                 res["input"] = receipt.Transaction.Invocation.ToHex();
                 res["hash"] = receipt.Hash.ToHex();
@@ -408,7 +400,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public static void ExtractDataAndTopics(byte[] eventData, out JArray topics, out byte[] data)
         {
             topics = new JArray();
-            
+
             if (eventData.Length < 32)
             {
                 data = eventData;
@@ -446,9 +438,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 });
                 var call = _contractRegisterer.DecodeContract(context, address, invocation);
                 if (call is null) return (OperatingError.ContractFailed, null);
-                
+
                 var result = VirtualMachine.InvokeSystemContract(call, context, invocation, 100_000_000);
-                
+
                 invResult = result.ReturnValue!;
             }
             catch (Exception e) when (
