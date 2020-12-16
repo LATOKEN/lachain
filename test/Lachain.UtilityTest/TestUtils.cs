@@ -9,26 +9,11 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
-using NLog;
 
 namespace Lachain.UtilityTest
 {
     public class TestUtils
     {
-        public static SimpleInjectorContainerBuilder GetContainerBuilder(string configPath)
-        {
-            LogManager.Configuration.Variables["consoleLogLevel"] = "Trace";
-            LogManager.ReconfigExistingLoggers();
-            var configManager = new ConfigManager(configPath, new RunOptions());
-            var containerBuilder = new SimpleInjectorContainerBuilder(configManager);
-
-            containerBuilder.RegisterModule<StorageModule>();
-            containerBuilder.Register<IConfigManager>(configManager);
-            containerBuilder.RegisterModule<NetworkModule>();
-            containerBuilder.RegisterModule<BlockchainModule>();
-            return containerBuilder;
-        }
-
         public static TransactionReceipt GetRandomTransaction()
         {
             var signer = new TransactionSigner();

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using Google.Protobuf;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;

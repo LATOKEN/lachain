@@ -17,16 +17,19 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
-using Lachain.Core.ValidatorStatus;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
 using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
-using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 using Secp256k1Net;
 
@@ -49,12 +52,15 @@ namespace Lachain.CoreTest
         [SetUp]
         public void Setup()
         {
-            _eventData = new Dictionary<UInt256, ByteString>();
             TestUtils.DeleteTestChainData();
-            Directory.CreateDirectory("./ChainLachain"); // TODO: this is some dirty hack, hub creates file not in correct place
-            var containerBuilder = TestUtils.GetContainerBuilder(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json")
-            ); 
+            _eventData = new Dictionary<UInt256, ByteString>();
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();

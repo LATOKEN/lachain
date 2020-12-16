@@ -107,7 +107,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 TransactionHash = _context.Receipt?.Hash
             };
             _context.Snapshot.Events.AddEvent(event_obj);
-            Logger.LogInformation($"Event: [{event_obj}]");
+            Logger.LogDebug($"Event: [{event_obj}]");
 
             return ExecutionStatus.Ok;
         }
