@@ -205,7 +205,7 @@ namespace Lachain.CryptoTest
             var tx = new Transaction
             {
                 To = ethTx.ReceiveAddress.ToUInt160(),
-                Value = ethTx.Value.ToArray().ToUInt256(false, true),
+                Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                 GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
                 GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16)
