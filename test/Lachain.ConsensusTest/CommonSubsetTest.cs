@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.CommonSubset;
@@ -8,6 +9,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using MCL.BLS12_381.Net;
 using TrustedKeyGen = Lachain.Crypto.ThresholdSignature.TrustedKeyGen;
@@ -35,7 +37,11 @@ namespace Lachain.ConsensusTest
             var keygen = new TrustedKeyGen(n, f);
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
-            _publicKeys = new PublicConsensusKeySet(n, f, null!, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
+            _publicKeys = new PublicConsensusKeySet(
+                n, f, null!, pubKeys,
+                Enumerable.Range(0, n)
+                    .Select(i => new ECDSAPublicKey {Buffer = ByteString.CopyFrom(i.ToBytes().ToArray())})
+            );
             for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CommonSubsetId, ISet<EncryptedShare>>();
@@ -136,37 +142,43 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestRandom_7_1()
         {
             TestAllCommonSubset(7, 1, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestRandom_7_2()
         {
             TestAllCommonSubset(7, 2, DeliveryServiceMode.TAKE_RANDOM);
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestSimple_7_1()
         {
             TestAllCommonSubset(7, 1);
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestSimple_7_2()
         {
             TestAllCommonSubset(7, 2);
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestSimple_10_3()
         {
             TestAllCommonSubset(10, 3);
         }
-        
+
         [Test]
         [Repeat(10)]
+        [Timeout(5000)]
         public void TestRandom()
         {
             var n = _rnd.Next(1, 10);

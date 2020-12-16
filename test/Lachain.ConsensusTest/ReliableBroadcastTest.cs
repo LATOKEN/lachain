@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using MCL.BLS12_381.Net;
 
@@ -33,7 +35,11 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[n];
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[n];
             _wallets = new IPrivateConsensusKeySet[n];
-            _publicKeys = new PublicConsensusKeySet(n, f, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
+            _publicKeys = new PublicConsensusKeySet(
+                n, f, null!, null!,
+                Enumerable.Range(0, n)
+                    .Select(i => new ECDSAPublicKey {Buffer = ByteString.CopyFrom(i.ToBytes().ToArray())})
+            );
             for (var i = 0; i < n; ++i)
             {
                 _wallets[i] = TestUtils.EmptyWallet(n, f);
@@ -253,6 +259,7 @@ namespace Lachain.ConsensusTest
                     i == Sender ? _testShare : null
                 ));
             }
+
             for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
             for (var i = 0; i < n; ++i)
             {
@@ -261,11 +268,11 @@ namespace Lachain.ConsensusTest
                 {
                     Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
                 }
-                    
             }
+
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
         }
-        
+
         // [Test]
         // //[Timeout(5000)]
         // [Repeat(300)]
@@ -309,8 +316,8 @@ namespace Lachain.ConsensusTest
         // }
 
 
-
         [Test]
+        [Timeout(5000)]
         public void TestNSenders_TakeFirst_7_2()
         {
             const int n = 7, f = 2;
@@ -319,6 +326,7 @@ namespace Lachain.ConsensusTest
 
 
         [Test]
+        [Timeout(5000)]
         public void TestNSenders_TakeLast_7_2()
         {
             const int n = 7, f = 2;
@@ -326,6 +334,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestNSenders_TakeRandom_7_2()
         {
             const int n = 7, f = 2;
@@ -333,6 +342,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestNSenders_TakeFirst_WithRepeat_7_2()
         {
             const int n = 7, f = 2;
@@ -340,6 +350,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestNSenders_TakeLast_WithRepeat_7_2()
         {
             const int n = 7, f = 2;
@@ -347,6 +358,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Timeout(5000)]
         public void TestNSenders_TakeLast_WithRandom_7_2()
         {
             const int n = 7, f = 2;
@@ -354,6 +366,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Timeout(5000)]
         [Repeat(5)]
         public void TestNSenders_FullRandom()
         {
