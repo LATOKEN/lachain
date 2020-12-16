@@ -9,7 +9,7 @@ using Lachain.Proto;
 using Lachain.Utility.Utils;
 using NUnit.Framework;
 
-namespace Lachain.CoreTest
+namespace Lachain.CoreTest.Blockchain.Operations
 {
     public class SignerTest
     {

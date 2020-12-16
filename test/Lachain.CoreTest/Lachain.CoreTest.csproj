@@ -7,18 +7,22 @@
     <RootNamespace>Lachain.CoreTest</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="config.json">
+    <ContentWithTargetPath Include="Resources\config.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="config2.json">
+      <TargetPath>config.json</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Resources\config2.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="wallet.json">
+      <TargetPath>config2.json</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Resources\wallet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="wallet2.json">
+      <TargetPath>wallet.json</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Resources\wallet2.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+      <TargetPath>wallet2.json</TargetPath>
+    </ContentWithTargetPath>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />
@@ -27,5 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lachain.Core\Lachain.Core.csproj" />
+    <ProjectReference Include="..\Lachain.UtilityTest\Lachain.UtilityTest.csproj" />
   </ItemGroup>
 </Project>

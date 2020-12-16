@@ -8,9 +8,10 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 
-namespace Lachain.CoreTest
+namespace Lachain.StorageTest
 {
     public class StorageTest
     {

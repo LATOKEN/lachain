@@ -1,13 +1,14 @@
 ﻿using System.IO;
 using System.Reflection;
 using Lachain.Core.CLI;
-using NUnit.Framework;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
+using Lachain.UtilityTest;
+using NUnit.Framework;
 
-namespace Lachain.CoreTest
+namespace Lachain.CoreTest.IntegrationTests
 {
     public class VirtualMachineTest
     {

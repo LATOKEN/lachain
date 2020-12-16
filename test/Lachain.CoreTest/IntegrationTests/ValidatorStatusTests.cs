@@ -8,10 +8,10 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
-using Lachain.Core.ValidatorStatus;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
@@ -20,9 +20,10 @@ using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 
-namespace Lachain.CoreTest
+namespace Lachain.CoreTest.IntegrationTests
 {
     [TestFixture]
     public class ValidatorStatusTest

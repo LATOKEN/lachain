@@ -23,9 +23,10 @@ using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 
-namespace Lachain.CoreTest
+namespace Lachain.CoreTest.IntegrationTests
 {
     [TestFixture]
     public class BlocksTest
@@ -92,7 +93,7 @@ namespace Lachain.CoreTest
                 genesis.Header.PrevBlockHash
             );
             Assert.AreEqual(
-                "0x58272e9099317e9fb283b8f0f951dd156b1983d7e008c1cf811658d19d7aa36b".HexToUInt256(),
+                "0x146314448e2095b57806dd6d7fdb47578487b67b17dc4461048b4308e533de13".HexToUInt256(),
                 genesis.Header.StateHash
             );
             Assert.AreEqual(0, genesis.GasPrice);

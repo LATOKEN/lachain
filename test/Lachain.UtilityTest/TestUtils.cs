@@ -3,10 +3,6 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using Lachain.Core.Blockchain.Operations;
-using Lachain.Core.CLI;
-using Lachain.Core.Config;
-using Lachain.Core.DI.Modules;
-using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
@@ -14,7 +10,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
 
-namespace Lachain.CoreTest
+namespace Lachain.UtilityTest
 {
     public class TestUtils
     {

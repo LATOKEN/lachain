@@ -12,9 +12,10 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 
-namespace Lachain.CoreTest
+namespace Lachain.CoreTest.IntegrationTests
 {
     public class TransactionsTest
     {
@@ -78,7 +79,7 @@ namespace Lachain.CoreTest
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
             using var container = containerBuilder.Build();
-            
+
             var txPool = container.Resolve<ITransactionPool>();
 
             var tx = TestUtils.GetRandomTransaction();

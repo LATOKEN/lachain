@@ -110,7 +110,8 @@ namespace Lachain.Core.Blockchain.Operations
                     out var relayedTransactions,
                     true,
                     out var gasUsed,
-                    out _);
+                    out _
+                );
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 Logger.LogDebug(
                     $"Block execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
@@ -137,8 +138,9 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
-                var operatingError = _Execute(block, transactions, out _, out _, false, out var gasUsed,
-                    out var totalFee);
+                var operatingError = _Execute(
+                    block, transactions, out _, out _, false, out var gasUsed, out var totalFee
+                );
                 if (operatingError != OperatingError.Ok)
                 {
                     Logger.LogError($"Error occured while executing block: {operatingError}");
@@ -158,8 +160,8 @@ namespace Lachain.Core.Blockchain.Operations
                 /* flush changes to database */
                 if (!commit)
                     return OperatingError.Ok;
-                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index,
-                    _stateManager.LastApprovedSnapshot); // TODO: this is hack
+                // TODO: this is hack to avoid concurrency issues, one more save will be done in BlockPersisted() call
+                _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
                 if (block.Header.Index > 0)
                     Logger.LogInformation(
                         $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
@@ -318,15 +320,17 @@ namespace Lachain.Core.Blockchain.Operations
                     }
                     catch (Exception e)
                     {
-                        Logger.LogError($"While executing block {block.Header.Index} exception occured while processing system contract call: {e}");
+                        Logger.LogError(
+                            $"While executing block {block.Header.Index} exception occured while processing system contract call: {e}");
                     }
                     finally
                     {
                         _contractTxJustExecuted = null;
-                        _localTransactionRepository.TryAddTransaction(receipt);   
+                        _localTransactionRepository.TryAddTransaction(receipt);
                     }
                 }
             }
+
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
 
             /* save block to repository */
