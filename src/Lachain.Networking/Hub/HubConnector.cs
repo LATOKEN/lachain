@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Hub
 {
@@ -72,7 +74,7 @@ namespace Lachain.Networking.Hub
                     {
                         try
                         {
-                            OnMessage?.Invoke(this, message);                            
+                            OnMessage?.Invoke(this, CompressUtils.DeflateDecompress(message).ToArray());                            
                         }
                         catch (Exception e)
                         {
@@ -91,7 +93,7 @@ namespace Lachain.Networking.Hub
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(byte[] publicKey, byte[] message)
         {
-            CommunicationHub.Net.Hub.Send(publicKey, message);
+            CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
         public void Dispose()

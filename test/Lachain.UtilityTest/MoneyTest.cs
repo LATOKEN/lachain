@@ -1,6 +1,5 @@
 using System.Numerics;
 using Lachain.Proto;
-using Lachain.Storage.Trie;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using NUnit.Framework;
