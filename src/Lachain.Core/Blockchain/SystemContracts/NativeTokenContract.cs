@@ -10,6 +10,7 @@ using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -17,6 +18,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class NativeTokenContract : ISystemContract
     {
+        private static readonly ILogger<NativeTokenContract> Logger =
+            LoggerFactory.GetLoggerForClass<NativeTokenContract>();
+
         private readonly InvocationContext _context;
 
         private readonly StorageMapping _allowance;
@@ -96,12 +100,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .Concat(value.ToBytes())
                 .ToArray();
 
-            _context.Snapshot.Events.AddEvent(new Event
+            var event_obj = new Event
             {
                 Contract = ContractRegisterer.LatokenContract,
                 Data = ByteString.CopyFrom(eventData),
                 TransactionHash = _context.Receipt?.Hash
-            });
+            };
+            _context.Snapshot.Events.AddEvent(event_obj);
+            Logger.LogDebug($"Event: [{event_obj}]");
 
             return ExecutionStatus.Ok;
         }

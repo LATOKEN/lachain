@@ -100,8 +100,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
         public ExecutionStatus DistributeCycleRewardsAndPenalties(SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug("DistributeCycleRewardsAndPenalties");
             if (!MsgSender().IsZero())
+            {
+                Logger.LogTrace("!MsgSender().IsZero()");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             var txFeesAmount = GetCollectedFees();
             SetCollectedFees(new Money(0));
@@ -117,12 +121,27 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _context.Sender = ContractRegisterer.GovernanceContract;
             var staking = new StakingContract(_context);
             staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
+
+            var eventData = ContractEncoder.Encode(
+                GovernanceInterface.EventDistributeCycleRewardsAndPenalties,
+                totalReward.ToUInt256());
+
+            var event_obj = new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            };
+            _context.Snapshot.Events.AddEvent(event_obj);
+            Logger.LogDebug($"Event: [{event_obj}]");
+
             return ExecutionStatus.Ok;
         }
 
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
         public ExecutionStatus ChangeValidators(byte[][] newValidators, SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug("ChangeValidators");
             if (!MsgSender().Equals(ContractRegisterer.StakingContract) && !MsgSender().IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
@@ -140,6 +159,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 .Flatten()
                 .ToArray()
             );
+
+            var eventData = ContractEncoder.Encode(
+                GovernanceInterface.EventChangeValidators,
+                newValidators);
+
+            var event_obj = new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            };
+            _context.Snapshot.Events.AddEvent(event_obj);
+            Logger.LogDebug($"Event: [{event_obj}]");
+
             return ExecutionStatus.Ok;
         }
 
@@ -147,6 +180,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenCommit(byte[] commitment, byte[][] encryptedRows,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug("KeyGenCommit");
             try
             {
                 var c = Commitment.FromBytes(commitment);
@@ -160,6 +194,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             }
 
+            var eventData = ContractEncoder.Encode(
+                GovernanceInterface.EventKeygenCommit,
+                commitment, 
+                encryptedRows);
+
+            var event_obj = new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            };
+            _context.Snapshot.Events.AddEvent(event_obj);
+            Logger.LogDebug($"Event: [{event_obj}]");
+
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenCommitCost);
             return ExecutionStatus.Ok;
@@ -169,6 +217,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenSendValue(UInt256 proposer, byte[][] encryptedValues,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug("KeyGenSendValue");
             try
             {
                 var n = _nextValidators.Get().Length / CryptoUtils.PublicKeyLength;
@@ -181,6 +230,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             }
 
+            var eventData = ContractEncoder.Encode(
+                GovernanceInterface.EventKeygenSendValue,
+                proposer, 
+                encryptedValues);
+
+            var event_obj = new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            };
+            _context.Snapshot.Events.AddEvent(event_obj);
+            Logger.LogDebug($"Event: [{event_obj}]");
+
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenSendValueCost);
             return ExecutionStatus.Ok;
@@ -190,6 +253,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus KeyGenConfirm(byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug("KeyGenConfirm");
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
@@ -220,13 +284,28 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
             SetTpkeKey(tpkePublicKey);
-            // TODO: fire event
+
+            var eventData = ContractEncoder.Encode(
+                GovernanceInterface.EventKeygenConfirm,
+                tpkePublicKey, 
+                thresholdSignaturePublicKeys);
+
+            var event_obj = new Event
+            {
+                Contract = ContractRegisterer.GovernanceContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt?.Hash
+            };
+            _context.Snapshot.Events.AddEvent(event_obj);
+            Logger.LogDebug($"Event: [{event_obj}]");
+
             return ExecutionStatus.Ok;
         }
 
         [ContractMethod(GovernanceInterface.MethodFinishCycle)]
         public ExecutionStatus FinishCycle(SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug("FinishCycle");
             var players = GetPlayersCount();
             var gen = GetConsensusGeneration();
             if (players != null)
@@ -243,13 +322,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     .Select(x => x.ToArray().ToPublicKey())
                     .ToArray();
                 _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-                _context.Snapshot.Events.AddEvent(new Event
+                var eventData = ContractEncoder.Encode(
+                    GovernanceInterface.EventFinishCycle);
+                var event_obj = new Event
                 {
                     Contract = ContractRegisterer.GovernanceContract,
-                    Data = ByteString.Empty,
+                    Data = ByteString.CopyFrom(eventData),
                     Index = 0,
                     TransactionHash = _context.Receipt?.Hash
-                });
+                };
+                _context.Snapshot.Events.AddEvent(event_obj);
+                Logger.LogDebug($"Event: [{event_obj}]");
                 Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
                 Logger.LogDebug(
                     $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
