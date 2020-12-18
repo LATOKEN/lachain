@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -81,44 +82,39 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return ExecutionStatus.Ok;
         }
 
+        [ContractMethod(Lrc20Interface.MethodAllowance)]
+        public ExecutionStatus Allowance(UInt160 owner, UInt160 spender, SystemContractExecutionFrame frame)
+        {
+            var allowance = GetAllowance(owner, spender);
+            frame.ReturnValue = allowance.ToBytes();
+            return ExecutionStatus.Ok;
+        }
+
         [ContractMethod(Lrc20Interface.MethodTransfer)]
         public ExecutionStatus Transfer(UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
             var from = _context.Sender ?? throw new InvalidOperationException();
-            if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferBalance(
                 from,
                 recipient,
                 value.ToMoney()
             );
+            Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
-
-            var eventData = Encoding.ASCII.GetBytes(Lrc20Interface.EventTransfer).KeccakBytes()
-                .Concat(from.ToBytes().AddLeadingZeros())
-                .Concat(recipient.ToBytes().AddLeadingZeros())
-                .Concat(value.ToBytes())
-                .ToArray();
-
-            var event_obj = new Event
-            {
-                Contract = ContractRegisterer.LatokenContract,
-                Data = ByteString.CopyFrom(eventData),
-                TransactionHash = _context.Receipt?.Hash
-            };
-            _context.Snapshot.Events.AddEvent(event_obj);
-            Logger.LogDebug($"Event: [{event_obj}]");
-
             return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodTransferFrom)]
-        public ExecutionStatus TransferFrom(UInt160 from, UInt160 recipient, UInt256 value,
-            SystemContractExecutionFrame frame)
+        public ExecutionStatus TransferFrom(
+            UInt160 from, UInt160 recipient, UInt256 value, SystemContractExecutionFrame frame
+        )
         {
             frame.UseGas(GasMetering.NativeTokenTransferFromCost);
-            SubAllowance(from, MsgSender(), value, frame);
+            if (!SubAllowance(from, Sender(), value, frame))
+                return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferBalance(from, recipient, value.ToMoney());
+            Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
@@ -127,19 +123,25 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Approve(UInt160 spender, UInt256 amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            if (_context.Snapshot is null) return ExecutionStatus.ExecutionHalted;
-            SetAllowance(MsgSender(), spender, amount);
+            SetAllowance(Sender(), spender, amount);
+            Emit(Lrc20Interface.EventApproval, Sender(), spender, amount);
             frame.ReturnValue = 1.ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
 
-        [ContractMethod(Lrc20Interface.MethodAllowance)]
-        public ExecutionStatus Allowance(UInt160 owner, UInt160 spender, SystemContractExecutionFrame frame)
+        private bool SubAllowance(UInt160 owner, UInt160 spender, UInt256 value, SystemContractExecutionFrame frame)
+        {
+            var allowance = GetAllowance(owner, spender).ToMoney();
+            if (allowance < value.ToMoney()) return false;
+            allowance -= value.ToMoney();
+            SetAllowance(owner, spender, allowance.ToUInt256());
+            return true;
+        }
+
+        private UInt256 GetAllowance(UInt160 owner, UInt160 spender)
         {
             var amountBytes = _allowance.GetValue(owner.ToBytes().Concat(spender.ToBytes()));
-            if (amountBytes.Length == 0) frame.ReturnValue = UInt256Utils.Zero.ToBytes();
-            frame.ReturnValue = amountBytes.ToUInt256().ToBytes();
-            return ExecutionStatus.Ok;
+            return amountBytes.Length == 0 ? UInt256Utils.Zero : amountBytes.ToUInt256();
         }
 
         private void SetAllowance(UInt160 owner, UInt160 spender, UInt256 amount)
@@ -147,17 +149,35 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _allowance.SetValue(owner.ToBytes().Concat(spender.ToBytes()), amount.ToBytes());
         }
 
-        private UInt160 MsgSender()
+        private UInt160 Sender()
         {
             return _context.Sender ?? throw new InvalidOperationException();
         }
 
-        public void SubAllowance(UInt160 owner, UInt160 spender, UInt256 value, SystemContractExecutionFrame frame)
+        private static string PrettyParam(dynamic param)
         {
-            Allowance(owner, spender, frame);
-            var allowance = frame.ReturnValue.ToUInt256().ToMoney();
-            allowance -= value.ToMoney();
-            SetAllowance(owner, spender, allowance.ToUInt256());
+            return param switch
+            {
+                UInt256 x => x.ToBytes().Reverse().ToHex(),
+                UInt160 x => x.ToBytes().ToHex(),
+                byte[] b => b.ToHex(),
+                byte[][] s => string.Join(", ", s.Select(t => t.ToHex())),
+                _ => param.ToString()
+            };
+        }
+
+        private void Emit(string eventSignature, params dynamic[] values)
+        {
+            var eventData = ContractEncoder.Encode(eventSignature, values);
+            var eventObj = new Event
+            {
+                Contract = ContractRegisterer.LatokenContract,
+                Data = ByteString.CopyFrom(eventData),
+                TransactionHash = _context.Receipt.Hash
+            };
+            _context.Snapshot.Events.AddEvent(eventObj);
+            Logger.LogDebug($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
+            Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
         }
     }
 }
