@@ -113,6 +113,11 @@ namespace Lachain.Core.CLI
                 .GetBalance(arguments[1].HexToUInt160());
         }
 
+        /*
+         * DeployContract
+         * contract, string, contract bytecode as a hexstring
+         * constructor params according to contract constructor
+         */
         public string DeployContract(string[] arguments)
         {
             var from = _keyPair.PublicKey.GetAddress();
@@ -121,15 +126,38 @@ namespace Lachain.Core.CLI
             var byteCode = arguments[1].HexToBytes();
             if (!VirtualMachine.VerifyContract(byteCode)) return "Unable to validate smart-contract code";
             Console.WriteLine("Contract Hash: " + hash.ToHex());
+            // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }
 
+        /*
+         * CallContract
+         * contractHash, UInt160
+         * methodSignature, string
+         * method args according its signature
+         */
         public string CallContract(string[] arguments)
         {
-            return ""; // TODO: implement it properly
+            var contractHash = arguments[1].HexToUInt160();
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            if (contract is null)
+                return $"Unable to find contract by hash {contractHash.ToHex()}";
+            var methodSignature = arguments[2];
+            // TODO: verify method exists and its signature is correct
+            var tx = _transactionBuilder.InvokeTransaction(
+                _keyPair.PublicKey.GetAddress(),
+                contractHash,
+                Money.Zero,
+                methodSignature,
+                arguments.Skip(3));
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
+            var error = _transactionPool.Add(signedTx);
+            return error != OperatingError.Ok
+                ? $"Error adding tx {signedTx.Hash.ToHex()} to pool: {error}"
+                : signedTx.Hash.ToHex();
         }
 
         public string Help(string[] arguments)
