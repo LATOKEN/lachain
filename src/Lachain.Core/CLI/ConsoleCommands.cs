@@ -153,7 +153,7 @@ namespace Lachain.Core.CLI
                 contractHash,
                 Money.Zero,
                 methodSignature,
-                arguments.Skip(3));
+                ContractEncoder.RestoreTypesFromStrings(arguments.Skip(3)));
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
             var error = _transactionPool.Add(signedTx);
             return error != OperatingError.Ok

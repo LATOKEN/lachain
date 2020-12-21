@@ -54,6 +54,41 @@ namespace Lachain.Core.Blockchain.VM
                 .Aggregate((x, y) => x | y);
         }
 
+        public static dynamic TypedValueFromString(string v)
+        {
+            if (v.StartsWith("0x")) // hex value
+            {
+                return v.Length switch
+                {
+                    // UInt160
+                    42 => v.HexToUInt160(),
+                    // UInt256
+                    66 => v.HexToUInt256(),
+                    _ => v.HexToBytes()
+                };
+            }
+
+            if (v.StartsWith("\"") && v.EndsWith("\"")) // string
+            {
+                return v.Substring(1, v.Length - 2);
+            }
+
+            int intValue;
+            if (int.TryParse(v, out intValue)) // numeric
+                return intValue;
+            
+            throw new InvalidOperationException();
+        }
+        
+        public static dynamic[] RestoreTypesFromStrings(IEnumerable<string> values)
+        {
+            dynamic[] result = new dynamic[values.Count()];
+            var idx = 0;
+            foreach (var v in values)
+                result[idx++] = TypedValueFromString(v);
+            return result;
+        }
+
         public ContractEncoder Write(byte[] array, bool toDynamic = false)
         {
             var staticOffset = _values.Length * 32;
