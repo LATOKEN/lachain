@@ -57,7 +57,7 @@ namespace Lachain.Core.RPC.HTTP
         {
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             if (!transaction.ToByteArray().SequenceEqual(rawTransaction.HexToBytes()))
-                throw new Exception("Failed to validate seiralized and deserialized transactions");
+                throw new Exception("Failed to validate serialized and deserialized transactions");
             var s = signature.HexToBytes().ToSignature();
             var txHash = transaction.FullHash(s);
             var json = new JObject {["hash"] = txHash.ToHex()};
