@@ -12,6 +12,7 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.RPC.HTTP
@@ -107,8 +108,6 @@ namespace Lachain.Core.RPC.HTTP
                 throw new Exception("Wallet is locked");
             if (string.IsNullOrEmpty(byteCodeInHex))
                 throw new ArgumentException("Invalid byteCode specified", nameof(byteCodeInHex));
-            if (string.IsNullOrEmpty(input))
-                throw new ArgumentException("Invalid input specified", nameof(input));
             var from = ecdsaKeyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             /* calculate contract hash */
@@ -120,49 +119,45 @@ namespace Lachain.Core.RPC.HTTP
             // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair);
-            _transactionPool.Add(signedTx);
+            var error = _transactionPool.Add(signedTx);
             return new JObject
             {
                 ["status"] = signedTx.Status.ToString(),
                 ["gasLimit"] = gasLimit,
                 ["gasUsed"] = signedTx.GasUsed,
-                ["ok"] = signedTx.Status != TransactionStatus.Failed,
+                ["ok"] = error == OperatingError.Ok,
                 ["result"] = hash.ToHex()
             };
         }
 
         [JsonRpcMethod("invokeContract")]
-        private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
+        private JObject InvokeContract(string contract, string methodSignature, string arguments, ulong gasLimit)
         {
-            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
-                contract.HexToUInt160());
+            var ecdsaKeyPair = _privateWallet.GetWalletInstance()?.EcdsaKeyPair;
+            if (ecdsaKeyPair == null)
+                throw new Exception("Wallet is locked");
+            if (string.IsNullOrEmpty(methodSignature))
+                throw new ArgumentException("Invalid method signature specified", nameof(methodSignature));
+            var contractHash = contract.HexToUInt160();
+            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
             if (contractByHash is null)
-                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
-            if (string.IsNullOrEmpty(input))
-                throw new ArgumentException("Invalid input specified", nameof(input));
-            if (string.IsNullOrEmpty(sender))
-                throw new ArgumentException("Invalid sender specified", nameof(sender));
-            var result = _stateManager.SafeContext(() =>
-            {
-                var snapshot = _stateManager.NewSnapshot();
-                var invocationResult = VirtualMachine.InvokeWasmContract(contractByHash,
-                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
-                    {
-                        // TODO: correctly fill in these fields
-                    }),
-                    input.HexToBytes(),
-                    gasLimit
-                );
-                _stateManager.Rollback();
-                return invocationResult;
-            });
+                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract)); 
+            var from = ecdsaKeyPair.PublicKey.GetAddress();
+            var tx = _transactionBuilder.InvokeTransaction(
+                from,
+                contractHash,
+                Money.Zero,
+                methodSignature,
+                ContractEncoder.RestoreTypesFromStrings(arguments.Split(',')));
+            var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair);
+            var error = _transactionPool.Add(signedTx);
             return new JObject
             {
-                ["status"] = result.Status.ToString(),
+                ["status"] = signedTx.Status.ToString(),
                 ["gasLimit"] = gasLimit,
-                ["gasUsed"] = result.GasUsed,
-                ["ok"] = result.Status == ExecutionStatus.Ok,
-                ["result"] = result.ReturnValue?.ToHex() ?? "0x"
+                ["gasUsed"] = signedTx.GasUsed,
+                ["ok"] = error == OperatingError.Ok,
+                ["result"] = signedTx.Hash.ToHex()
             };
         }
     }
