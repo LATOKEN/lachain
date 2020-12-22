@@ -7,9 +7,11 @@ using Lachain.Core.Blockchain.Interface;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.RPC.HTTP
@@ -19,16 +21,25 @@ namespace Lachain.Core.RPC.HTTP
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
+        private readonly IPrivateWallet _privateWallet;
+        private readonly ITransactionBuilder _transactionBuilder;
+        private readonly ITransactionSigner _transactionSigner;
 
         public AccountService(
             IStateManager stateManager,
             ITransactionManager transactionManager,
-            ITransactionPool transactionPool
+            ITransactionPool transactionPool,
+            IPrivateWallet privateWallet,
+            ITransactionBuilder transactionBuilder,
+            ITransactionSigner transactionSigner
         )
         {
             _stateManager = stateManager;
             _transactionManager = transactionManager;
             _transactionPool = transactionPool;
+            _privateWallet = privateWallet;
+            _transactionBuilder = transactionBuilder;
+            _transactionSigner = transactionSigner;
         }
 
         [JsonRpcMethod("getBalance")]
@@ -86,6 +97,38 @@ namespace Lachain.Core.RPC.HTTP
             var result = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
                 from.HexToBytes().ToUInt160());
             return result;
+        }
+
+        [JsonRpcMethod("deployContract")]
+        private JObject DeployContract(string byteCodeInHex, string input, ulong gasLimit)
+        {
+            var ecdsaKeyPair = _privateWallet.GetWalletInstance()?.EcdsaKeyPair;
+            if (ecdsaKeyPair == null)
+                throw new Exception("Wallet is locked");
+            if (string.IsNullOrEmpty(byteCodeInHex))
+                throw new ArgumentException("Invalid byteCode specified", nameof(byteCodeInHex));
+            if (string.IsNullOrEmpty(input))
+                throw new ArgumentException("Invalid input specified", nameof(input));
+            var from = ecdsaKeyPair.PublicKey.GetAddress();
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            /* calculate contract hash */
+            var hash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            Console.WriteLine("Contract Hash: " + hash.ToHex());
+            var byteCode = byteCodeInHex.HexToBytes();
+            if (!VirtualMachine.VerifyContract(byteCode)) 
+                throw new ArgumentException("Unable to validate smart-contract code");
+            // TODO: use deploy abi if required
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair);
+            _transactionPool.Add(signedTx);
+            return new JObject
+            {
+                ["status"] = signedTx.Status.ToString(),
+                ["gasLimit"] = gasLimit,
+                ["gasUsed"] = signedTx.GasUsed,
+                ["ok"] = signedTx.Status != TransactionStatus.Failed,
+                ["result"] = hash.ToHex()
+            };
         }
 
         [JsonRpcMethod("invokeContract")]
