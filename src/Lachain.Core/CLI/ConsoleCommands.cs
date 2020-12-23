@@ -137,10 +137,44 @@ namespace Lachain.Core.CLI
         /*
          * CallContract
          * contractHash, UInt160
+         * sender, string
          * methodSignature, string
          * method args according its signature
          */
         public string CallContract(string[] arguments)
+        {
+            var contractHash = arguments[1].HexToUInt160();
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            if (contract is null)
+                return $"Unable to find contract by hash {contractHash.ToHex()}";
+            var sender =  arguments[2];
+            var methodSignature = arguments[3];
+            var abi = ContractEncoder.Encode(methodSignature, 
+                ContractEncoder.RestoreTypesFromStrings(arguments.Skip(4)));
+            var result = _stateManager.SafeContext(() =>
+            {
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(contract,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill in these fields
+                    }),
+                    abi,
+                    GasMetering.DefaultBlockGasLimit
+                );
+                _stateManager.Rollback();
+                return invocationResult;
+            });
+            return result.ReturnValue?.ToHex() ?? "0x";
+        }
+
+        /*
+         * SendContract
+         * contractHash, UInt160
+         * methodSignature, string
+         * method args according its signature
+         */
+        public string SendContract(string[] arguments)
         {
             var contractHash = arguments[1].HexToUInt160();
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);

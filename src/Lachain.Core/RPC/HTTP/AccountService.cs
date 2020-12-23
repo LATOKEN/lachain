@@ -130,8 +130,43 @@ namespace Lachain.Core.RPC.HTTP
             };
         }
 
-        [JsonRpcMethod("invokeContract")]
-        private JObject InvokeContract(string contract, string methodSignature, string arguments, ulong gasLimit)
+        [JsonRpcMethod("callContract")]
+        private JObject CallContract(string contract, string sender, string input, ulong gasLimit)
+        {
+            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
+                contract.HexToUInt160());
+            if (contractByHash is null)
+                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
+            if (string.IsNullOrEmpty(input))
+                throw new ArgumentException("Invalid input specified", nameof(input));
+            if (string.IsNullOrEmpty(sender))
+                throw new ArgumentException("Invalid sender specified", nameof(sender));
+            var result = _stateManager.SafeContext(() =>
+            {
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(contractByHash,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill in these fields
+                    }),
+                    input.HexToBytes(),
+                    gasLimit
+                );
+                _stateManager.Rollback();
+                return invocationResult;
+            });
+            return new JObject
+            {
+                ["status"] = result.Status.ToString(),
+                ["gasLimit"] = gasLimit,
+                ["gasUsed"] = result.GasUsed,
+                ["ok"] = result.Status == ExecutionStatus.Ok,
+                ["result"] = result.ReturnValue?.ToHex() ?? "0x"
+            };
+        }
+        
+        [JsonRpcMethod("sendContract")]
+        private JObject SendContract(string contract, string methodSignature, string arguments, ulong gasLimit)
         {
             var ecdsaKeyPair = _privateWallet.GetWalletInstance()?.EcdsaKeyPair;
             if (ecdsaKeyPair == null)
