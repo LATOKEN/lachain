@@ -83,27 +83,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             ulong? blockNumber = null
         )
         {
-            // var logs = new JArray();
-            // var eventCount = stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(receipt.Hash);
-            // for (var i = (uint) 0; i < eventCount; i++)
-            // {
-            //     var eventLog = stateManager.LastApprovedSnapshot.Events
-            //         .GetEventByTransactionHashAndIndex(receipt.Hash, i)!;
-            //     ExtractDataAndTopics(eventLog.Data.ToByteArray(), out var topics, out var data);
-            //     var log = new JObject
-            //     {
-            //         ["address"] = eventLog.Contract.ToHex(),
-            //         ["topics"] = topics,
-            //         ["data"] = data.ToHex(true),
-            //         ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
-            //         ["transactionHash"] = receipt.Hash.ToHex(),
-            //         ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
-            //         ["logIndex"] = 0,
-            //         ["removed"] = false,
-            //     };
-            //     logs.Add(log);
-            // }
-
             var signature = receipt.Signature.Encode();
             return new JObject
             {
@@ -124,6 +103,30 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
+        public static JObject Web3Event(Event e, ulong? blockNumber = null)
+        {
+            return new JObject
+            {
+                ["address"] = Web3Data(e.Contract),
+                ["topics"] = new JArray(), // we don't support indexes
+                ["data"] = Web3Data(e.Data),
+                ["blockNumber"] = Web3Number(blockNumber ?? 0),
+                ["transactionHash"] = Web3Data(e.TransactionHash),
+                ["blockHash"] = Web3Data(e.BlockHash),
+                ["logIndex"] = Web3Number(e.Index),
+                ["transactionIndex"] = Web3Number(0),
+                ["removed"] = "false",
+            };
+        }
+
+        public static JArray Web3EventArray(IEnumerable<Event> events, ulong? blockNumber = null)
+        {
+            var logs = new JArray();
+            foreach(Event e in events)
+                logs.Add(Web3Event(e, blockNumber));
+            return logs;
+        }
+        
         public static JObject Web3TransactionReceipt(
             TransactionReceipt receipt, UInt256 blockHash, ulong blockNumber, ulong cumulativeGasUsed, JArray logs
         )
