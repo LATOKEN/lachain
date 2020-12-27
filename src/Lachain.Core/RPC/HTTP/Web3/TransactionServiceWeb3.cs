@@ -12,6 +12,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -29,19 +30,28 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionBuilder _transactionBuilder;
+        private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
+        private readonly IPrivateWallet _privateWallet;
 
         public TransactionServiceWeb3(
             IStateManager stateManager,
             ITransactionManager transactionManager,
+            ITransactionBuilder transactionBuilder,
+            ITransactionSigner transactionSigner,
             ITransactionPool transactionPool,
-            IContractRegisterer contractRegisterer)
+            IContractRegisterer contractRegisterer,
+            IPrivateWallet privateWallet)
         {
             _stateManager = stateManager;
             _transactionManager = transactionManager;
+            _transactionBuilder = transactionBuilder;
+            _transactionSigner = transactionSigner;
             _transactionPool = transactionPool;
             _contractRegisterer = contractRegisterer;
+            _privateWallet = privateWallet;
         }
 
         private Transaction MakeTransaction(SignedTransactionBase ethTx)
@@ -182,6 +192,56 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
+        [JsonRpcMethod("eth_sendTransaction")]
+        private string SendTransaction(JObject opts)
+        {
+            var from = opts["from"];
+            var gas = opts["gas"];
+            var gasPrice = opts["gasPrice"];
+            var data = opts["data"];
+            var to = opts["to"];
+            var value = opts["value"];
+            var nonce = opts["nonce"];
+            
+            if (to is null) // deploy transaction
+            {
+                if (data is null)  
+                    throw new ArgumentException("To and data fields are both empty");
+
+                // TODO: find other way to access keys to sign txes
+                // if (_privateWallet.IsLocked())
+                //     throw new MethodAccessException("Wallet is locked");
+                _privateWallet.Unlock("12345", 1000);
+                var keyPair = _privateWallet.EcdsaKeyPair;
+
+                var byteCode = ((string) data!).HexToBytes();
+                if (!VirtualMachine.VerifyContract(byteCode)) 
+                    throw new ArgumentException("Unable to validate smart-contract code");
+                var fromAddress = ((string) from!).HexToUInt160();
+                var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
+                var contractHash = fromAddress.ToBytes().Concat(nonceToUse.ToBytes()).Ripemd();
+                var tx = _transactionBuilder.DeployTransaction(fromAddress, byteCode);
+                var signedTx = _transactionSigner.Sign(tx, keyPair);
+                var error = _transactionPool.Add(signedTx);
+                if (error != OperatingError.Ok)
+                    throw new ApplicationException($"Can not add to transaction pool: {error}");
+                return Web3DataFormatUtils.Web3Data(signedTx.Hash);
+            }
+            else
+            {
+                if (data is null) // transfer tx
+                {
+                    
+                }
+                else // invoke tx
+                {
+                    
+                }
+            }
+            
+            return "0x";
+        }
+        
         [JsonRpcMethod("eth_call")]
         private string Call(JObject opts, string? blockId)
         {

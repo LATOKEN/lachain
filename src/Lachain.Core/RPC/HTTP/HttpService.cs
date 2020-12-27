@@ -6,11 +6,15 @@ using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
+using Lachain.Logger;
 
 namespace Lachain.Core.RPC.HTTP
 {
     public class HttpService
     {
+        private static readonly ILogger<HttpService> Logger =
+            LoggerFactory.GetLoggerForClass<HttpService>();
+        
         public void Start(RpcConfig rpcConfig)
         {
             Task.Factory.StartNew(() =>
@@ -69,6 +73,7 @@ namespace Lachain.Core.RPC.HTTP
         private bool _Handle(HttpListenerContext context)
         {
             var request = context.Request;
+            Logger.LogInformation($"{request.HttpMethod}");
             var response = context.Response;
             /* check is request options pre-flight */
             if (request.HttpMethod == "OPTIONS")
@@ -83,6 +88,7 @@ namespace Lachain.Core.RPC.HTTP
             }
             using var reader = new StreamReader(request.InputStream);
             var body = reader.ReadToEnd();
+            Logger.LogInformation($"Body: [{body}]");
             var isArray = body.StartsWith("[");
                     
             if (request.Headers["Origin"] != null)
@@ -99,6 +105,7 @@ namespace Lachain.Core.RPC.HTTP
                     resultString = "[" + resultString + "]";
                     
                 var output = Encoding.UTF8.GetBytes(resultString);
+                Logger.LogInformation($"output: [{resultString}]");
                 response.OutputStream.Write(output, 0, output.Length);
                 response.OutputStream.Flush();
                 response.Close();
@@ -127,6 +134,7 @@ namespace Lachain.Core.RPC.HTTP
                         ["id"] = ulong.Parse(requestObj["id"]!.ToString()),
                     };
                     var output = Encoding.UTF8.GetBytes(res.ToString());
+                    Logger.LogInformation($"output: [{res.ToString()}]");
                     response.OutputStream.Write(output, 0, output.Length);
                     response.OutputStream.Flush();
                     response.Close();
