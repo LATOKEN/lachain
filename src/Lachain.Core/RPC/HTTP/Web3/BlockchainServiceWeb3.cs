@@ -5,6 +5,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Crypto;
 using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
@@ -128,30 +129,38 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
-        private string? GetBlockTransactionsCountByNumber(string blockHeight)
+        private string? GetBlockTransactionsCountByNumber(string blockTag)
         {
-            if (blockHeight == "pending")
-            {
-                var count = _transactionPool.Size();
-                return $"0x{count:X}";
-            }
-            var blockNumber = blockHeight.HexToUlong();
-            try
-            {
-                var block = _blockManager.GetByHeight(blockNumber) ?? throw new Exception();
-                var count = block.TransactionHashes.Count;
-                return $"0x{count:X}";
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            var blockNumber =GetBlockNumberByTag(blockTag);
+            if (blockNumber == null) 
+                return Web3DataFormatUtils.Web3Number(_transactionPool.Size());
+            var block = _blockManager.GetByHeight((ulong)blockNumber);
+            return block == null ? null : Web3DataFormatUtils.Web3Number((ulong) block!.TransactionHashes.Count);
+        }
+
+        [JsonRpcMethod("eth_getBlockTransactionCountByHash")]
+        private string? GetBlockTransactionsCountByHash(string blockHash)
+        {
+            var block = _blockManager.GetByHash(blockHash.HexToUInt256());
+            return block == null ? null : Web3DataFormatUtils.Web3Number((ulong) block!.TransactionHashes.Count);
         }
 
         [JsonRpcMethod("eth_blockNumber")]
         private string GetBlockNumber()
         {
-            return $"0x{_blockManager.GetHeight():X}";
+            return Web3DataFormatUtils.Web3Number(_blockManager.GetHeight());
+        }
+
+        [JsonRpcMethod("eth_getUncleCountByBlockHash")]
+        private ulong GetUncleCountByBlockHash(string blockHash)
+        {
+            return 0;
+        }
+
+        [JsonRpcMethod("eth_getUncleCountByBlockNumber")]
+        private ulong GetUncleCountByBlockNumber(string blockTag)
+        {
+            return 0;
         }
 
         [JsonRpcMethod("eth_getEventsByTransactionHash")]
@@ -197,6 +206,24 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             var transaction = _transactionPool.GetByHash(txHash.HexToUInt256());
             return transaction?.ToJson();
+        }
+
+        [JsonRpcMethod("eth_getStorageAt")]
+        private string GetStorageAt(string address, string position, string blockTag)
+        {
+            // TODO: get data at given address and position, blockTag is the same as in eth_getBalance
+            throw new ApplicationException("Not implemented yet");
+        }
+
+        private ulong? GetBlockNumberByTag(string blockTag)
+        {
+            return blockTag switch
+            {
+                "latest" => _blockManager.GetHeight(),
+                "earliest" => 0,
+                "pending" => null,
+                _ => blockTag.HexToUlong()
+            };
         }
     }
 }

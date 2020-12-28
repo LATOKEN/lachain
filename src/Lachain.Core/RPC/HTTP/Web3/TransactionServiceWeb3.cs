@@ -146,7 +146,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return "Can not add to transaction pool: BadChainId";
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
                 if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
-                return transaction.FullHash(signature.ToSignature()).ToHex();
+                return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
             }
             catch (Exception e)
             {
@@ -213,6 +213,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 //     throw new MethodAccessException("Wallet is locked");
                 _privateWallet.Unlock("12345", 1000);
                 var keyPair = _privateWallet.EcdsaKeyPair;
+                Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
 
                 var byteCode = ((string) data!).HexToBytes();
                 if (!VirtualMachine.VerifyContract(byteCode)) 
@@ -220,6 +221,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var fromAddress = ((string) from!).HexToUInt160();
                 var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
                 var contractHash = fromAddress.ToBytes().Concat(nonceToUse.ToBytes()).Ripemd();
+                Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
                 var tx = _transactionBuilder.DeployTransaction(fromAddress, byteCode);
                 var signedTx = _transactionSigner.Sign(tx, keyPair);
                 var error = _transactionPool.Add(signedTx);
@@ -392,9 +394,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_gasPrice")]
         private string GetNetworkGasPrice()
         {
-            return _stateManager.CurrentSnapshot.NetworkGasPrice.ToHex(false);
+            return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
 
+        [JsonRpcMethod("eth_signTransaction")]
+        private string SignTransaction(JObject opts)
+        {
+            // TODO: implement tx signing
+            throw new ApplicationException("Not implemented yet");
+        }
+        
         public static JObject ToEthTxFormat(
             IStateManager stateManager,
             TransactionReceipt receipt,
@@ -433,7 +442,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
                 ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(), // TODO: plus previous
                 ["gasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(),
-                ["contractAddress"] = null,
+                ["contractAddress"] = receipt.Transaction.Invocation.ToHex(),
                 ["logs"] = logs,
                 ["logsBloom"] =
                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
