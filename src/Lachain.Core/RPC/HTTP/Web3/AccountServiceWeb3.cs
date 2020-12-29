@@ -61,6 +61,30 @@ namespace Lachain.Core.RPC.HTTP.Web3
             throw new ApplicationException("Not implemented yet");
         }
 
+        [JsonRpcMethod("eth_getCompilers")]
+        private JArray GetCompilers()
+        {
+            return new JArray();
+        }
+
+        [JsonRpcMethod("eth_compileLLL")]
+        private string CompileLLL(string sourceCode)
+        {
+            throw new ApplicationException("Not implemented");
+        }
+
+        [JsonRpcMethod("eth_compileSolidity")]
+        private string CompileSolidity(string sourceCode)
+        {
+            throw new ApplicationException("Not implemented");
+        }
+
+        [JsonRpcMethod("eth_compileSerpent")]
+        private string CompileSerpent(string sourceCode)
+        {
+            throw new ApplicationException("Not implemented");
+        }
+
         private IBlockchainSnapshot? GetSnapshotByTag(string tag)
         {
             switch (tag)
@@ -75,6 +99,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 default:
                 {
                     var blockNum = tag.HexToUlong();
+                    if (blockNum == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())
+                        return _stateManager.LastApprovedSnapshot;
                     // TODO: return address balance for given block
                     throw new ArgumentException("Previous blocks are not supported now");
                 }
