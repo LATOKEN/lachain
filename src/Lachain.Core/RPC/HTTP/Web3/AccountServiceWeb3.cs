@@ -41,14 +41,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getCode")]
         private string GetCode(string contractAddr, string blockId)
         {
-            // var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
-            //     contractAddr.HexToUInt160());
-            // var systemContract = _contractRegisterer.GetContractByAddress(contractAddr.HexToUInt160());
-            // return contractByHash is null ? "0x" : "0x1";
-            
-                
-            // hardcoded to prevent default 21000 gas in Metamask
-            return "0x01";
+            var hash = contractAddr.HexToUInt160();
+            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(hash);
+            return contractByHash != null ? Web3DataFormatUtils.Web3Data(contractByHash!.ByteCode) : "";
         }
         
         [JsonRpcMethod("eth_accounts")]

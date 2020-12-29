@@ -36,82 +36,34 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
-        private JObject? GetBlockByNumber(string blockHeight, bool fullTx)
+        private JObject? GetBlockByNumber(string blockTag, bool fullTx)
         {
-            var height = blockHeight == "latest" 
-                ? _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
-                : blockHeight.HexToUlong();
-            
-            var block = _blockManager.GetByHeight(height) ?? throw new InvalidOperationException("Block not found");
-
-            string parentHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
-            if (height > 0)
-            {
-                parentHash = _blockManager.GetByHeight(height - 1)!.Hash.ToHex();
-            }
-            ulong gasUsed = 0;
-            JArray txs;
-            {
-                txs = new JArray();
-                foreach (var txHash in block.TransactionHashes)
-                {
-                    var nativeTx = _transactionManager.GetByHash(txHash);
-                    if (nativeTx is null)
-                    {
-                        Logger.LogWarning($"Block {height} has tx {txHash.ToHex()}, but there is no such tx");
-                        continue;
-                    }
-
-                    gasUsed += nativeTx.GasUsed;
-                    if (fullTx)
-                    {
-                        txs.Add(TransactionServiceWeb3.ToEthTxFormat(
-                            _stateManager,
-                            nativeTx, 
-                            block.Hash.ToHex(), 
-                            block.Header.Index.ToHex()
-                            )
-                        );
-                    }
-                }
-            }
-            if (!fullTx)
-            {
-                txs = new JArray(block.TransactionHashes.Select(txHash => txHash.ToHex()));
-            }
-
-            return new JObject
-            {
-                ["author"] = "0x0300000000000000000000000000000000000000",
-                ["number"] = block.Header.Index.ToHex(),
-                ["hash"] = block.Hash.ToHex(),
-                ["parentHash"] = parentHash,
-                // ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
-                ["nonce"] = block.Header.Nonce,
-                ["sha3Uncles"] = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                ["logsBloom"] =
-                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                ["transactionsRoot"] = block.Header.MerkleRoot.ToHex(),
-                ["stateRoot"] = block.Header.StateHash.ToHex(),
-                ["receiptsRoot"] = "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
-                ["miner"] = "0x0300000000000000000000000000000000000000",
-                ["difficulty"] = "0x0",
-                ["totalDifficulty"] = "0x0",
-                ["extraData"] = "0x0",
-                ["size"] = block.CalculateSize().ToHex(),
-                ["gasLimit"] = "0x174876e800",
-                ["gasUsed"] = gasUsed.ToHex(),
-                ["timestamp"] = (block.Timestamp / 1000).ToHex(),
-                ["transactions"] = txs,
-                ["uncles"] = new JArray()
-            };
+            var blockNumber =GetBlockNumberByTag(blockTag);
+            if (blockNumber == null) 
+                return null;
+            var block = _blockManager.GetByHeight((ulong)blockNumber);
+            if (block == null)
+                return null;
+            var txs = block!.TransactionHashes
+                .Select(hash => _transactionManager.GetByHash(hash)!)
+                .ToList();
+            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+            var txArray = fullTx ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index) : new JArray();
+            return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
         private JObject? GetBlockByHash(string blockHash)
         {
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
-            return block?.ToJson();
+            if (block == null)
+                return null;
+            var txs = block!.TransactionHashes
+                .Select(hash => _transactionManager.GetByHash(hash)!)
+                .ToList();
+            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+            var txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
         [JsonRpcMethod("eth_getTransactionsByBlockHash")]
@@ -161,6 +113,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private ulong GetUncleCountByBlockNumber(string blockTag)
         {
             return 0;
+        }
+
+        [JsonRpcMethod("eth_getUncleByBlockHashAndIndex")]
+        private JObject? GetUncleByBlockHashAndIndex(string blockHash,  ulong index)
+        {
+            return null;
+        }
+
+        [JsonRpcMethod("eth_getUncleByBlockNumberAndIndex")]
+        private JObject? GetUncleByBlockNumberAndIndex(string blockTag,  ulong index)
+        {
+            return null;
         }
 
         [JsonRpcMethod("eth_getEventsByTransactionHash")]

@@ -103,6 +103,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
+        public static JArray Web3BlockTransactionArray(
+            IEnumerable<TransactionReceipt> txs,
+            UInt256? blockHash = null,
+            ulong? blockNumber = null
+        )
+        {
+            var logs = new JArray();
+            foreach(TransactionReceipt tx in txs)
+                logs.Add(Web3Transaction(tx, blockHash, blockNumber));
+            return logs;
+        }
+
         public static JObject Web3Event(Event e, ulong? blockNumber = null)
         {
             return new JObject
