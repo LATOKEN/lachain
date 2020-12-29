@@ -179,6 +179,28 @@ namespace Lachain.Core.RPC.HTTP.Web3
             throw new ApplicationException("Not implemented yet");
         }
 
+        [JsonRpcMethod("eth_getWork")]
+        private JArray GetWork()
+        {
+            return new JArray(
+                Web3DataFormatUtils.Web3Data(new UInt256()),
+                Web3DataFormatUtils.Web3Data(new UInt256()),
+                Web3DataFormatUtils.Web3Data(new UInt256())
+                );
+        }
+
+        [JsonRpcMethod("eth_submitWork")]
+        private bool SubmitWork(string p1, string p2, string p3)
+        {
+            return false;
+        }
+
+        [JsonRpcMethod("eth_submitHashrate")]
+        private bool SubmitHashrate(string p1, string p2)
+        {
+            return false;
+        }
+        
         private ulong? GetBlockNumberByTag(string blockTag)
         {
             return blockTag switch
