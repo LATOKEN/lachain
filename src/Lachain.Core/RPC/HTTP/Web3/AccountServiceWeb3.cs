@@ -2,6 +2,7 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -12,14 +13,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
     public class AccountServiceWeb3 : JsonRpcService
     {
         private readonly IStateManager _stateManager;
+        private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly ISystemContractReader _systemContractReader;
 
 
-        public AccountServiceWeb3(IStateManager stateManager, IContractRegisterer contractRegisterer,
+        public AccountServiceWeb3(IStateManager stateManager,
+            ISnapshotIndexRepository snapshotIndexer,
+            IContractRegisterer contractRegisterer,
             ISystemContractReader systemContractReader)
         {
             _stateManager = stateManager;
+            _snapshotIndexer = snapshotIndexer;
             _contractRegisterer = contractRegisterer;
             _systemContractReader = systemContractReader;
         }
@@ -92,17 +97,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 case "latest":
                     return _stateManager.LastApprovedSnapshot;
                 case "earliest":
-                    // TODO: return address balance after genesis block
-                    throw new ArgumentException("Earliest block is not supported now");
+                    return _snapshotIndexer.GetSnapshotForBlock(0);
                 case "pending":
                     return _stateManager.PendingSnapshot;
                 default:
                 {
                     var blockNum = tag.HexToUlong();
-                    if (blockNum == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())
-                        return _stateManager.LastApprovedSnapshot;
-                    // TODO: return address balance for given block
-                    throw new ArgumentException("Previous blocks are not supported now");
+                    return _snapshotIndexer.GetSnapshotForBlock(blockNum);
                 }
             }
         }

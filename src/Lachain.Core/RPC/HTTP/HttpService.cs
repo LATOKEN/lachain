@@ -78,11 +78,15 @@ namespace Lachain.Core.RPC.HTTP
             /* check is request options pre-flight */
             if (request.HttpMethod == "OPTIONS")
             {
+
                 if (request.Headers["Origin"] != null)
+                {
                     response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
+                }
                 response.AddHeader("Access-Control-Allow-Headers", "*");
                 response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
                 response.AddHeader("Access-Control-Max-Age", "1728000");
+                response.AddHeader("Access-Control-Allow-Credentials", "true");
                 response.Close();
                 return true;
             }
@@ -94,6 +98,7 @@ namespace Lachain.Core.RPC.HTTP
             if (request.Headers["Origin"] != null)
                 response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
+            response.Headers.Add("Access-Control-Allow-Credentials", "true");
             var rpcResultHandler = new AsyncCallback(result =>
             {
                 if (!(result is JsonRpcStateAsync jsonRpcStateAsync))
