@@ -62,8 +62,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             // TODO: implement message signing
             //var addressUint160 = address.HexToUInt160();
-            //return Web3DataFormatUtils.Web3Data("".HexToBytes());
-            throw new ApplicationException("Not implemented yet");
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented yet");
         }
 
         [JsonRpcMethod("eth_getCompilers")]
@@ -75,19 +75,22 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_compileLLL")]
         private string CompileLLL(string sourceCode)
         {
-            throw new ApplicationException("Not implemented");
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented");
         }
 
         [JsonRpcMethod("eth_compileSolidity")]
         private string CompileSolidity(string sourceCode)
         {
-            throw new ApplicationException("Not implemented");
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented");
         }
 
         [JsonRpcMethod("eth_compileSerpent")]
         private string CompileSerpent(string sourceCode)
         {
-            throw new ApplicationException("Not implemented");
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented");
         }
 
         private IBlockchainSnapshot? GetSnapshotByTag(string tag)

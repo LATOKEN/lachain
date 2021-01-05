@@ -194,11 +194,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 contract.HexToUInt160());
             if (contractByHash is null)
-                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
+            {
+                return new JObject();
+                //throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
+            }
+
             if (string.IsNullOrEmpty(input))
-                throw new ArgumentException("Invalid input specified", nameof(input));
+            {
+                return new JObject();
+                //throw new ArgumentException("Invalid input specified", nameof(input));
+            }
+
             if (string.IsNullOrEmpty(sender))
-                throw new ArgumentException("Invalid sender specified", nameof(sender));
+            {
+                return new JObject();
+                //throw new ArgumentException("Invalid sender specified", nameof(sender));
+            }
+
             var result = _stateManager.SafeContext(() =>
             {
                 var snapshot = _stateManager.NewSnapshot();
@@ -238,8 +250,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             
             if (to is null) // deploy transaction
             {
-                if (data is null)  
-                    throw new ArgumentException("To and data fields are both empty");
+                if (data is null)
+                {
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ArgumentException("To and data fields are both empty");
+                }
 
                 // TODO: find other way to access keys to sign txes
                 // if (_privateWallet.IsLocked())
@@ -259,7 +274,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var signedTx = _transactionSigner.Sign(tx, keyPair);
                 var error = _transactionPool.Add(signedTx);
                 if (error != OperatingError.Ok)
-                    throw new ApplicationException($"Can not add to transaction pool: {error}");
+                {
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ApplicationException($"Can not add to transaction pool: {error}");
+                }
+
                 return Web3DataFormatUtils.Web3Data(signedTx.Hash);
             }
             else
@@ -267,16 +286,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 if (data is null) // transfer tx
                 {
                     // TODO: implement transfer tx
-                    throw new ApplicationException("Not implemented yet");
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ApplicationException("Not implemented yet");
                 }
                 else // invoke tx
                 {
                     // TODO: implement invoke tx
-                    throw new ApplicationException("Not implemented yet");
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ApplicationException("Not implemented yet");
                 }
             }
             
-            return "0x";
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
         }
         
         [JsonRpcMethod("eth_call")]
@@ -437,7 +458,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string SignTransaction(JObject opts)
         {
             // TODO: implement tx signing
-            throw new ApplicationException("Not implemented yet");
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented yet");
         }
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot

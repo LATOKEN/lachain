@@ -69,8 +69,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getTransactionsByBlockHash")]
         private JObject? GetTransactionsByBlockHash(string blockHash)
         {
-            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256()) ??
-                        throw new Exception($"No block with hash {blockHash}");
+            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
+            if (block is null)
+                return new JObject{["transactions"] = new JArray()};
             var txs = block.TransactionHashes
                 .Select(hash => _transactionManager.GetByHash(hash)?.ToJson())
                 .ToList();
@@ -164,6 +165,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return TransactionUtils.ChainId.ToHex();
         }
 
+        [JsonRpcMethod("net_version")]
+        private string NetVersion()
+        {
+            return TransactionUtils.ChainId.ToHex();
+        }
+
 
         [JsonRpcMethod("eth_getTransactionPoolByHash")]
         private JObject? GetTransactionPoolByHash(string txHash)
@@ -176,7 +183,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private string GetStorageAt(string address, string position, string blockTag)
         {
             // TODO: get data at given address and position, blockTag is the same as in eth_getBalance
-            throw new ApplicationException("Not implemented yet");
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented");
         }
 
         [JsonRpcMethod("eth_getWork")]
