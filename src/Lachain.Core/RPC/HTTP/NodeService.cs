@@ -93,24 +93,52 @@ namespace Lachain.Core.RPC.HTTP
             return GetVersion();
         }
 
+        [JsonRpcMethod("eth_newFilter")]
+        private string SetFilter(JObject opt)
+        {
+            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
+        }
+
         [JsonRpcMethod("eth_newBlockFilter")]
         private string SetBlockFilter()
         {
-            return _blockchainEventFilter.Create(BlockchainEvent.Block).ToHex();
+            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
+        }
+
+        [JsonRpcMethod("eth_newPendingTransactionFilter")]
+        private string SetPendingTransactionFilter()
+        {
+            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Transaction));
         }
 
         [JsonRpcMethod("eth_uninstallFilter")]
-        private bool UnsetBlockFilter(string filterId)
+        private bool UnsetFilter(string filterId)
         {
             var id = filterId.HexToUlong();
             return _blockchainEventFilter.Remove(id);
         }
 
         [JsonRpcMethod("eth_getFilterChanges")]
-        private string[] GetFilterUpdates(string filterId)
+        private JArray GetFilterUpdates(string filterId)
         {
             var id = filterId.HexToUlong();
-            return _blockchainEventFilter.Sync(id);
+            var updates = _blockchainEventFilter.Sync(id);
+            var result = new JArray();
+            foreach (var e in updates)
+                result.Add(e);
+            return result;
+        }
+
+        [JsonRpcMethod("eth_getFilterLogs")]
+        private JArray GetFilterLogs(string filterId)
+        {
+            return new JArray();
+        }
+
+        [JsonRpcMethod("eth_getLogs")]
+        private JArray GetLogs(JObject opts)
+        {
+            return new JArray();
         }
 
         [JsonRpcMethod("eth_hashrate")]

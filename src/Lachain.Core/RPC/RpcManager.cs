@@ -22,6 +22,7 @@ namespace Lachain.Core.RPC
         private readonly IBlockManager _blockManager;
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
+        private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IPrivateWallet _privateWallet;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
@@ -39,6 +40,7 @@ namespace Lachain.Core.RPC
             IBlockManager blockManager,
             IConfigManager configManager,
             IStateManager stateManager,
+            ISnapshotIndexRepository snapshotIndexer,
             ITransactionPool transactionPool,
             IVirtualMachine virtualMachine,
             IContractRegisterer contractRegisterer,
@@ -57,6 +59,7 @@ namespace Lachain.Core.RPC
             _blockManager = blockManager;
             _configManager = configManager;
             _stateManager = stateManager;
+            _snapshotIndexer = snapshotIndexer;
             _transactionPool = transactionPool;
             _contractRegisterer = contractRegisterer;
             _validatorStatusManager = validatorStatusManager;
@@ -79,11 +82,13 @@ namespace Lachain.Core.RPC
             {
                 new BlockchainService(_transactionManager, _blockManager, _transactionPool, _stateManager,
                     _blockSynchronizer, _systemContractReader),
-                new AccountService(_stateManager, _transactionManager, _transactionPool, _privateWallet, _transactionBuilder, _transactionSigner),
+                new AccountService(_stateManager, _transactionManager, _transactionPool, _privateWallet, 
+                    _transactionBuilder, _transactionSigner),
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager),
-                new AccountServiceWeb3(_stateManager, _contractRegisterer),
+                new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader),
                 new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet),
-                new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionPool, _contractRegisterer),
+                new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner, 
+                    _transactionPool, _contractRegisterer, _privateWallet),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader,
                     _localTransactionRepository, _validatorStatusManager, _privateWallet),
                 new NodeService(_blockSynchronizer, _blockchainEventFilter, _networkManager)

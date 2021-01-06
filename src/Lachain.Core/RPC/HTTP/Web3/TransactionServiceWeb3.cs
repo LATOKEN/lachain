@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -12,12 +13,14 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Newtonsoft.Json.Serialization;
 using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -29,19 +32,28 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         private readonly IStateManager _stateManager;
         private readonly ITransactionManager _transactionManager;
+        private readonly ITransactionBuilder _transactionBuilder;
+        private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
+        private readonly IPrivateWallet _privateWallet;
 
         public TransactionServiceWeb3(
             IStateManager stateManager,
             ITransactionManager transactionManager,
+            ITransactionBuilder transactionBuilder,
+            ITransactionSigner transactionSigner,
             ITransactionPool transactionPool,
-            IContractRegisterer contractRegisterer)
+            IContractRegisterer contractRegisterer,
+            IPrivateWallet privateWallet)
         {
             _stateManager = stateManager;
             _transactionManager = transactionManager;
+            _transactionBuilder = transactionBuilder;
+            _transactionSigner = transactionSigner;
             _transactionPool = transactionPool;
             _contractRegisterer = contractRegisterer;
+            _privateWallet = privateWallet;
         }
 
         private Transaction MakeTransaction(SignedTransactionBase ethTx)
@@ -92,27 +104,58 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
             if (receipt is null) return null;
-            return ToEthTxFormat(
-                _stateManager,
-                receipt,
-                block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block),
-                isReceipt: true
-            );
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
+            if (block is null) return null; // ???
+            
+            var eventCount = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(receipt.Hash);
+            var events = new List<Event>();
+            for (var i = (uint) 0; i < eventCount; i++)
+            {
+                var eventLog = _stateManager.LastApprovedSnapshot.Events
+                    .GetEventByTransactionHashAndIndex(receipt.Hash, i)!;
+                events.Add(eventLog);
+            }
+            
+            return Web3DataFormatUtils.Web3TransactionReceipt(receipt, block!.Hash, receipt.Block, 
+                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt!.Block));
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
         private JObject? GetTransactionByHash(string txHash)
         {
-            var hash = txHash.HexToBytes().ToUInt256();
+            var hash = txHash.HexToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
+            if (receipt is null)
+                return null;
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
+            return Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
+        }
 
-            return receipt is null
-                ? null
-                : ToEthTxFormat(
-                    _stateManager,
-                    receipt,
-                    block: _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block)
-                );
+        [JsonRpcMethod("eth_getTransactionByBlockHashAndIndex")]
+        private JObject? GetTransactionByBlockHashAndIndex(string blockHash, ulong index)
+        {
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash.HexToUInt256());
+            if (block is null)
+                return null;
+            if ((int)index >= block.TransactionHashes.Count)
+                return null;
+            var txHash = block.TransactionHashes[(int)index];
+            var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
+            return receipt is null ? null : Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
+        }
+
+        [JsonRpcMethod("eth_getTransactionByBlockNumberAndIndex")]
+        private JObject? GetTransactionByBlockNumberAndIndex(string blockTag, ulong index)
+        {
+            var height = GetBlockNumberByTag(blockTag);
+            var block = (height is null) ? null : _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight((ulong) height);
+            if (block is null)
+                return null;
+            if ((int)index >= block.TransactionHashes.Count)
+                return null;
+            var txHash = block.TransactionHashes[(int)index];
+            var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
+            return receipt is null ? null : Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
         }
 
         [JsonRpcMethod("eth_sendRawTransaction")]
@@ -136,7 +179,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return "Can not add to transaction pool: BadChainId";
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
                 if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
-                return transaction.FullHash(signature.ToSignature()).ToHex();
+                return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
             }
             catch (Exception e)
             {
@@ -151,11 +194,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
                 contract.HexToUInt160());
             if (contractByHash is null)
-                throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
+            {
+                return new JObject();
+                //throw new ArgumentException("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
+            }
+
             if (string.IsNullOrEmpty(input))
-                throw new ArgumentException("Invalid input specified", nameof(input));
+            {
+                return new JObject();
+                //throw new ArgumentException("Invalid input specified", nameof(input));
+            }
+
             if (string.IsNullOrEmpty(sender))
-                throw new ArgumentException("Invalid sender specified", nameof(sender));
+            {
+                return new JObject();
+                //throw new ArgumentException("Invalid sender specified", nameof(sender));
+            }
+
             var result = _stateManager.SafeContext(() =>
             {
                 var snapshot = _stateManager.NewSnapshot();
@@ -182,6 +237,69 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
+        [JsonRpcMethod("eth_sendTransaction")]
+        private string SendTransaction(JObject opts)
+        {
+            var from = opts["from"];
+            var gas = opts["gas"];
+            var gasPrice = opts["gasPrice"];
+            var data = opts["data"];
+            var to = opts["to"];
+            var value = opts["value"];
+            var nonce = opts["nonce"];
+            
+            if (to is null) // deploy transaction
+            {
+                if (data is null)
+                {
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ArgumentException("To and data fields are both empty");
+                }
+
+                // TODO: find other way to access keys to sign txes
+                // if (_privateWallet.IsLocked())
+                //     throw new MethodAccessException("Wallet is locked");
+                _privateWallet.Unlock("12345", 1000);
+                var keyPair = _privateWallet.EcdsaKeyPair;
+                Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
+
+                var byteCode = ((string) data!).HexToBytes();
+                if (!VirtualMachine.VerifyContract(byteCode)) 
+                    throw new ArgumentException("Unable to validate smart-contract code");
+                var fromAddress = ((string) from!).HexToUInt160();
+                var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
+                var contractHash = fromAddress.ToBytes().Concat(nonceToUse.ToBytes()).Ripemd();
+                Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
+                var tx = _transactionBuilder.DeployTransaction(fromAddress, byteCode);
+                var signedTx = _transactionSigner.Sign(tx, keyPair);
+                var error = _transactionPool.Add(signedTx);
+                if (error != OperatingError.Ok)
+                {
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ApplicationException($"Can not add to transaction pool: {error}");
+                }
+
+                return Web3DataFormatUtils.Web3Data(signedTx.Hash);
+            }
+            else
+            {
+                if (data is null) // transfer tx
+                {
+                    // TODO: implement transfer tx
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ApplicationException("Not implemented yet");
+                }
+                else // invoke tx
+                {
+                    // TODO: implement invoke tx
+                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                    //throw new ApplicationException("Not implemented yet");
+                }
+            }
+            
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+        }
+        
         [JsonRpcMethod("eth_call")]
         private string Call(JObject opts, string? blockId)
         {
@@ -286,7 +404,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             if (contract is null && systemContract is null)
             {
-                return gasUsed.ToHex();
+                return Web3DataFormatUtils.Web3Number(gasUsed);
             }
 
             if (!(contract is null))
@@ -307,7 +425,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     _stateManager.Rollback();
                     return res;
                 });
-                return invRes.Status == ExecutionStatus.Ok ? (gasUsed + invRes.GasUsed).ToHex() : "0x";
+                return invRes.Status == ExecutionStatus.Ok ? 
+                    Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
             }
 
 
@@ -332,98 +451,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_gasPrice")]
         private string GetNetworkGasPrice()
         {
-            return _stateManager.CurrentSnapshot.NetworkGasPrice.ToHex(false);
+            return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
 
-        public static JObject ToEthTxFormat(
-            IStateManager stateManager,
-            TransactionReceipt receipt,
-            string? blockHash = null,
-            string? blockNumber = null,
-            Block? block = null,
-            bool isReceipt = false
-        )
+        [JsonRpcMethod("eth_signTransaction")]
+        private string SignTransaction(JObject opts)
         {
-            var logs = new JArray();
-            var eventCount = stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(receipt.Hash);
-            for (var i = (uint) 0; i < eventCount; i++)
-            {
-                var eventLog = stateManager.LastApprovedSnapshot.Events
-                    .GetEventByTransactionHashAndIndex(receipt.Hash, i)!;
-                ExtractDataAndTopics(eventLog.Data.ToByteArray(), out var topics, out var data);
-                var log = new JObject
-                {
-                    ["address"] = eventLog.Contract.ToHex(),
-                    ["topics"] = topics,
-                    ["data"] = data.ToHex(true),
-                    ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
-                    ["transactionHash"] = receipt.Hash.ToHex(),
-                    ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
-                    ["logIndex"] = 0,
-                    ["removed"] = false,
-                };
-                logs.Add(log);
-            }
-
-            var res = new JObject
-            {
-                ["transactionHash"] = receipt.Hash.ToHex(),
-                ["transactionIndex"] = receipt.IndexInBlock.ToHex(),
-                ["blockNumber"] = blockNumber ?? receipt.Block.ToHex(),
-                ["blockHash"] = blockHash ?? block?.Hash.ToHex(),
-                ["cumulativeGasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(), // TODO: plus previous
-                ["gasUsed"] = receipt.GasUsed.ToBytes().Reverse().ToHex(),
-                ["contractAddress"] = null,
-                ["logs"] = logs,
-                ["logsBloom"] =
-                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                ["status"] = receipt.Status.CompareTo(TransactionStatus.Executed) == 0 ? "0x1" : "0x0",
-                ["r"] = receipt.Signature.Encode().Take(32).ToHex(),
-                ["s"] = receipt.Signature.Encode().Skip(32).Take(32).ToHex(),
-                ["v"] = receipt.Signature.Encode().Skip(64).ToHex(),
-                ["gas"] = receipt.Transaction.GasLimit.ToHex(),
-                ["to"] = receipt.Transaction.To.ToHex(),
-                ["from"] = receipt.Transaction.From.ToHex(),
-            };
-            if (!isReceipt)
-            {
-                res["value"] = receipt.Transaction.Value.ToBytes().Reverse().SkipWhile(x => x == 0).ToHex();
-                res["nonce"] = receipt.Transaction.Nonce.ToHex();
-                res["input"] = receipt.Transaction.Invocation.ToHex();
-                res["hash"] = receipt.Hash.ToHex();
-                res["gasPrice"] = receipt.Transaction.GasPrice.ToHex();
-            }
-
-            return res;
+            // TODO: implement tx signing
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented yet");
         }
-
-        public static void ExtractDataAndTopics(byte[] eventData, out JArray topics, out byte[] data)
-        {
-            topics = new JArray();
-
-            if (eventData.Length < 32)
-            {
-                data = eventData;
-                return;
-            }
-
-            var eventId = eventData.Take(32).ToArray().ToUInt256();
-
-            if (eventData.Length / 32 == 4 &&
-                eventId.Equals(Encoding.ASCII.GetBytes(Lrc20Interface.EventTransfer).Keccak()))
-            {
-                for (var i = 0; i < 3; i++)
-                {
-                    topics.Add(eventData.Skip(i * 32).Take(32).ToArray().ToHex(true));
-                }
-
-                data = eventData.Skip(3 * 32).ToArray();
-                return;
-            }
-
-            data = eventData;
-        }
-
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot
         )
@@ -455,5 +492,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             return (OperatingError.Ok, invResult);
         }
+        
+        private ulong? GetBlockNumberByTag(string blockTag)
+        {
+            return blockTag switch
+            {
+                "latest" => _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(),
+                "earliest" => 0,
+                "pending" => null,
+                _ => blockTag.HexToUlong()
+            };
+        }
+
     }
 }

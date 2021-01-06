@@ -5,6 +5,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Crypto;
 using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
@@ -35,89 +36,42 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
-        private JObject? GetBlockByNumber(string blockHeight, bool fullTx)
+        private JObject? GetBlockByNumber(string blockTag, bool fullTx)
         {
-            var height = blockHeight == "latest" 
-                ? _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
-                : blockHeight.HexToUlong();
-            
-            var block = _blockManager.GetByHeight(height) ?? throw new InvalidOperationException("Block not found");
-
-            string parentHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
-            if (height > 0)
-            {
-                parentHash = _blockManager.GetByHeight(height - 1)!.Hash.ToHex();
-            }
-            ulong gasUsed = 0;
-            JArray txs;
-            {
-                txs = new JArray();
-                foreach (var txHash in block.TransactionHashes)
-                {
-                    var nativeTx = _transactionManager.GetByHash(txHash);
-                    if (nativeTx is null)
-                    {
-                        Logger.LogWarning($"Block {height} has tx {txHash.ToHex()}, but there is no such tx");
-                        continue;
-                    }
-
-                    gasUsed += nativeTx.GasUsed;
-                    if (fullTx)
-                    {
-                        txs.Add(TransactionServiceWeb3.ToEthTxFormat(
-                            _stateManager,
-                            nativeTx, 
-                            block.Hash.ToHex(), 
-                            block.Header.Index.ToHex()
-                            )
-                        );
-                    }
-                }
-            }
-            if (!fullTx)
-            {
-                txs = new JArray(block.TransactionHashes.Select(txHash => txHash.ToHex()));
-            }
-
-            return new JObject
-            {
-                ["author"] = "0x0300000000000000000000000000000000000000",
-                ["number"] = block.Header.Index.ToHex(),
-                ["hash"] = block.Hash.ToHex(),
-                ["parentHash"] = parentHash,
-                // ["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000",
-                ["nonce"] = block.Header.Nonce,
-                ["sha3Uncles"] = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                ["logsBloom"] =
-                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                ["transactionsRoot"] = block.Header.MerkleRoot.ToHex(),
-                ["stateRoot"] = block.Header.StateHash.ToHex(),
-                ["receiptsRoot"] = "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
-                ["miner"] = "0x0300000000000000000000000000000000000000",
-                ["difficulty"] = "0x0",
-                ["totalDifficulty"] = "0x0",
-                ["extraData"] = "0x0",
-                ["size"] = block.CalculateSize().ToHex(),
-                ["gasLimit"] = "0x174876e800",
-                ["gasUsed"] = gasUsed.ToHex(),
-                ["timestamp"] = (block.Timestamp / 1000).ToHex(),
-                ["transactions"] = txs,
-                ["uncles"] = new JArray()
-            };
+            var blockNumber =GetBlockNumberByTag(blockTag);
+            if (blockNumber == null) 
+                return null;
+            var block = _blockManager.GetByHeight((ulong)blockNumber);
+            if (block == null)
+                return null;
+            var txs = block!.TransactionHashes
+                .Select(hash => _transactionManager.GetByHash(hash)!)
+                .ToList();
+            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+            var txArray = fullTx ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index) : new JArray();
+            return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
         private JObject? GetBlockByHash(string blockHash)
         {
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
-            return block?.ToJson();
+            if (block == null)
+                return null;
+            var txs = block!.TransactionHashes
+                .Select(hash => _transactionManager.GetByHash(hash)!)
+                .ToList();
+            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+            var txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
         [JsonRpcMethod("eth_getTransactionsByBlockHash")]
         private JObject? GetTransactionsByBlockHash(string blockHash)
         {
-            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256()) ??
-                        throw new Exception($"No block with hash {blockHash}");
+            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
+            if (block is null)
+                return new JObject{["transactions"] = new JArray()};
             var txs = block.TransactionHashes
                 .Select(hash => _transactionManager.GetByHash(hash)?.ToJson())
                 .ToList();
@@ -128,30 +82,50 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
-        private string? GetBlockTransactionsCountByNumber(string blockHeight)
+        private string? GetBlockTransactionsCountByNumber(string blockTag)
         {
-            if (blockHeight == "pending")
-            {
-                var count = _transactionPool.Size();
-                return $"0x{count:X}";
-            }
-            var blockNumber = blockHeight.HexToUlong();
-            try
-            {
-                var block = _blockManager.GetByHeight(blockNumber) ?? throw new Exception();
-                var count = block.TransactionHashes.Count;
-                return $"0x{count:X}";
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            var blockNumber =GetBlockNumberByTag(blockTag);
+            if (blockNumber == null) 
+                return Web3DataFormatUtils.Web3Number(_transactionPool.Size());
+            var block = _blockManager.GetByHeight((ulong)blockNumber);
+            return block == null ? null : Web3DataFormatUtils.Web3Number((ulong) block!.TransactionHashes.Count);
+        }
+
+        [JsonRpcMethod("eth_getBlockTransactionCountByHash")]
+        private string? GetBlockTransactionsCountByHash(string blockHash)
+        {
+            var block = _blockManager.GetByHash(blockHash.HexToUInt256());
+            return block == null ? null : Web3DataFormatUtils.Web3Number((ulong) block!.TransactionHashes.Count);
         }
 
         [JsonRpcMethod("eth_blockNumber")]
         private string GetBlockNumber()
         {
-            return $"0x{_blockManager.GetHeight():X}";
+            return Web3DataFormatUtils.Web3Number(_blockManager.GetHeight());
+        }
+
+        [JsonRpcMethod("eth_getUncleCountByBlockHash")]
+        private ulong GetUncleCountByBlockHash(string blockHash)
+        {
+            return 0;
+        }
+
+        [JsonRpcMethod("eth_getUncleCountByBlockNumber")]
+        private ulong GetUncleCountByBlockNumber(string blockTag)
+        {
+            return 0;
+        }
+
+        [JsonRpcMethod("eth_getUncleByBlockHashAndIndex")]
+        private JObject? GetUncleByBlockHashAndIndex(string blockHash,  ulong index)
+        {
+            return null;
+        }
+
+        [JsonRpcMethod("eth_getUncleByBlockNumberAndIndex")]
+        private JObject? GetUncleByBlockNumberAndIndex(string blockTag,  ulong index)
+        {
+            return null;
         }
 
         [JsonRpcMethod("eth_getEventsByTransactionHash")]
@@ -191,12 +165,59 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return TransactionUtils.ChainId.ToHex();
         }
 
+        [JsonRpcMethod("net_version")]
+        private string NetVersion()
+        {
+            return TransactionUtils.ChainId.ToHex();
+        }
+
 
         [JsonRpcMethod("eth_getTransactionPoolByHash")]
         private JObject? GetTransactionPoolByHash(string txHash)
         {
             var transaction = _transactionPool.GetByHash(txHash.HexToUInt256());
             return transaction?.ToJson();
+        }
+
+        [JsonRpcMethod("eth_getStorageAt")]
+        private string GetStorageAt(string address, string position, string blockTag)
+        {
+            // TODO: get data at given address and position, blockTag is the same as in eth_getBalance
+            return Web3DataFormatUtils.Web3Data("".HexToBytes());
+            //throw new ApplicationException("Not implemented");
+        }
+
+        [JsonRpcMethod("eth_getWork")]
+        private JArray GetWork()
+        {
+            return new JArray(
+                Web3DataFormatUtils.Web3Data(new UInt256()),
+                Web3DataFormatUtils.Web3Data(new UInt256()),
+                Web3DataFormatUtils.Web3Data(new UInt256())
+                );
+        }
+
+        [JsonRpcMethod("eth_submitWork")]
+        private bool SubmitWork(string p1, string p2, string p3)
+        {
+            return false;
+        }
+
+        [JsonRpcMethod("eth_submitHashrate")]
+        private bool SubmitHashrate(string p1, string p2)
+        {
+            return false;
+        }
+        
+        private ulong? GetBlockNumberByTag(string blockTag)
+        {
+            return blockTag switch
+            {
+                "latest" => _blockManager.GetHeight(),
+                "earliest" => 0,
+                "pending" => null,
+                _ => blockTag.HexToUlong()
+            };
         }
     }
 }
