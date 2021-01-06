@@ -113,23 +113,86 @@ namespace Lachain.Core.CLI
                 .GetBalance(arguments[1].HexToUInt160());
         }
 
+        /*
+         * DeployContract
+         * contract, string, contract bytecode as a hexstring
+         * constructor params according to contract constructor
+         */
         public string DeployContract(string[] arguments)
         {
             var from = _keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var hash = from.ToBytes().Concat(nonce.ToBytes()).Keccak();
+            /* calculate contract hash */
+            var hash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            Console.WriteLine("Contract Hash: " + hash.ToHex());
             var byteCode = arguments[1].HexToBytes();
             if (!VirtualMachine.VerifyContract(byteCode)) return "Unable to validate smart-contract code";
-            Console.WriteLine("Contract Hash: " + hash.ToHex());
+            // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionSigner.Sign(tx, _keyPair);
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }
 
+        /*
+         * CallContract
+         * contractHash, UInt160
+         * sender, string
+         * methodSignature, string
+         * method args according its signature
+         */
         public string CallContract(string[] arguments)
         {
-            return ""; // TODO: implement it properly
+            var contractHash = arguments[1].HexToUInt160();
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            if (contract is null)
+                return $"Unable to find contract by hash {contractHash.ToHex()}";
+            var sender =  arguments[2];
+            var methodSignature = arguments[3];
+            var abi = ContractEncoder.Encode(methodSignature, 
+                ContractEncoder.RestoreTypesFromStrings(arguments.Skip(4)));
+            var result = _stateManager.SafeContext(() =>
+            {
+                var snapshot = _stateManager.NewSnapshot();
+                var invocationResult = VirtualMachine.InvokeWasmContract(contract,
+                    new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
+                    {
+                        // TODO: correctly fill in these fields
+                    }),
+                    abi,
+                    GasMetering.DefaultBlockGasLimit
+                );
+                _stateManager.Rollback();
+                return invocationResult;
+            });
+            return result.ReturnValue?.ToHex() ?? "0x";
+        }
+
+        /*
+         * SendContract
+         * contractHash, UInt160
+         * methodSignature, string
+         * method args according its signature
+         */
+        public string SendContract(string[] arguments)
+        {
+            var contractHash = arguments[1].HexToUInt160();
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            if (contract is null)
+                return $"Unable to find contract by hash {contractHash.ToHex()}";
+            var methodSignature = arguments[2];
+            // TODO: verify method exists and its signature is correct
+            var tx = _transactionBuilder.InvokeTransaction(
+                _keyPair.PublicKey.GetAddress(),
+                contractHash,
+                Money.Zero,
+                methodSignature,
+                ContractEncoder.RestoreTypesFromStrings(arguments.Skip(3)));
+            var signedTx = _transactionSigner.Sign(tx, _keyPair);
+            var error = _transactionPool.Add(signedTx);
+            return error != OperatingError.Ok
+                ? $"Error adding tx {signedTx.Hash.ToHex()} to pool: {error}"
+                : signedTx.Hash.ToHex();
         }
 
         public string Help(string[] arguments)

@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -47,11 +50,12 @@ namespace Lachain.Core.Blockchain.Operations
         public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
             var nonce = _transactionPool.GetNextNonceForAddress(from);
+            var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, byteCode);
             var tx = new Transaction
             {
-                Invocation = ByteString.CopyFrom(input ?? new byte[0]),
+                Invocation = ByteString.CopyFrom(abi),
                 From = from,
-                To = UInt160Utils.Empty, // transaction to empty address is deploy
+                To = ContractRegisterer.DeployContract, 
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = GasMetering.DefaultBlockGasLimit,
