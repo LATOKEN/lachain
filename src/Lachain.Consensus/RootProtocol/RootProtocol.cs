@@ -13,6 +13,7 @@ using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using NLog.Fluent;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
 namespace Lachain.Consensus.RootProtocol
@@ -48,6 +49,7 @@ namespace Lachain.Consensus.RootProtocol
         {
             if (envelope.External)
             {
+                Logger.LogTrace("External envelope");
                 var message = envelope.ExternalMessage ?? throw new Exception("impossible");
                 if (message.PayloadCase != ConsensusMessage.PayloadOneofCase.SignedHeaderMessage)
                 {
@@ -82,6 +84,7 @@ namespace Lachain.Consensus.RootProtocol
                 }
                 else
                 {
+                    Logger.LogTrace("Add signatures");
                     _signatures.Add(new Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>(
                             signedHeaderMessage.Header,
                             new MultiSig.Types.SignatureByValidator
@@ -101,10 +104,12 @@ namespace Lachain.Consensus.RootProtocol
             }
             else
             {
+                Logger.LogTrace("Internal envelop");
                 var message = envelope.InternalMessage;
                 switch (message)
                 {
                     case ProtocolRequest<RootProtocolId, IBlockProducer> request:
+                        Logger.LogTrace("request");
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
                         {
@@ -145,9 +150,11 @@ namespace Lachain.Consensus.RootProtocol
                         CheckSignatures();
                         break;
                     case ProtocolResult<RootProtocolId, object?> _:
+                        Logger.LogTrace("Terminate in switch");
                         Terminate();
                         break;
                     default:
+                        Logger.LogError("Invalid message");
                         throw new ArgumentOutOfRangeException(nameof(message));
                 }
             }
