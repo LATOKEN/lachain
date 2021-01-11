@@ -68,7 +68,16 @@ namespace Lachain.Core.Vault
 
         public void AddTpkePrivateKeyAfterBlock(ulong block, PrivateKey key)
         {
-            _tpkeKeys.Add(block, key);
+            if (_tpkeKeys.Contains(block))
+            {
+                _tpkeKeys.Update(block, key);
+                Logger.LogWarning($"TpkePrivateKey for block {block} is overwritten");
+            }
+            else
+            {
+                _tpkeKeys.Add(block, key);
+            }
+
             SaveWallet(_walletPath, _walletPassword);
         }
 
