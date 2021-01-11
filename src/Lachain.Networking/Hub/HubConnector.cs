@@ -74,7 +74,7 @@ namespace Lachain.Networking.Hub
                     {
                         try
                         {
-                            OnMessage?.Invoke(this, CompressUtils.DeflateDecompress(message).ToArray());                            
+                            OnMessage?.Invoke(this, CompressUtils.DeflateDecompress(message).ToArray());
                         }
                         catch (Exception e)
                         {
