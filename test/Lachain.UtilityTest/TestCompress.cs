@@ -10,7 +10,7 @@ namespace Lachain.UtilityTest
         [Test]
         public void Test_CompressDecompress()
         {
-            var data = Enumerable.Range(0, 100).SelectMany(_ => "0xdeadbeef".HexToBytes()).ToArray();
+            var data = Enumerable.Range(0, 10000).SelectMany(_ => "0xdeadbeef".HexToBytes()).ToArray();
             Console.WriteLine($"{data.Length}: {data.ToHex()}");
             var c = CompressUtils.DeflateCompress(data).ToArray();
             Console.WriteLine($"{c.Length}: {c.ToHex()}");

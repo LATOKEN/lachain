@@ -74,8 +74,7 @@ namespace Lachain.Networking.Hub
                     {
                         try
                         {
-                            //OnMessage?.Invoke(this, CompressUtils.DeflateDecompress(message).ToArray());
-                            OnMessage?.Invoke(this, message);
+                            OnMessage?.Invoke(this, CompressUtils.DeflateDecompress(message).ToArray());
                         }
                         catch (Exception e)
                         {
@@ -94,8 +93,7 @@ namespace Lachain.Networking.Hub
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(byte[] publicKey, byte[] message)
         {
-            //CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
-            CommunicationHub.Net.Hub.Send(publicKey, message);
+            CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
         public void Dispose()
