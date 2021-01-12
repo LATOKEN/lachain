@@ -70,6 +70,7 @@ namespace Lachain.Core.Blockchain.VM
             return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private static InvocationResult ExecuteFrame(IExecutionFrame frame)
         {
             var result = new InvocationResult();
