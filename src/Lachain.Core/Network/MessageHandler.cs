@@ -76,10 +76,10 @@ namespace Lachain.Core.Network
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
         {
-            Logger.LogTrace("Start processing PingReply");
+            //Logger.LogTrace("Start processing PingReply");
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, publicKey);
-            Logger.LogTrace("Finished processing PingReply");
+            //Logger.LogTrace("Finished processing PingReply");
         }
 
         private void OnSyncBlocksRequest(object sender,
