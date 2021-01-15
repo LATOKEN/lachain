@@ -26,12 +26,24 @@ namespace Lachain.Storage.Trie
 
         public static IHashTrieNode FromBytes(ReadOnlyMemory<byte> bytes)
         {
+            if (bytes.Length < 1)
+            {
+                throw new ArgumentException("Empty bytes to deserialize");
+            }
             var type = bytes.Span[0];
             switch (type)
             {
                 case 0:
+                    if (bytes.Length < 1 + 4)
+                    {
+                        throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
+                    }
                     var mask = bytes.Slice(1, 4).Span.ToUInt32();
                     var len = (int) BitsUtils.Popcount(mask);
+                    if (bytes.Length < 1 + 4 + 32 + len * 8)
+                    {
+                        throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
+                    }
                     var hash = bytes.Slice(1 + 4, 32).ToArray();
                     return new InternalNode(
                         mask,
@@ -40,6 +52,10 @@ namespace Lachain.Storage.Trie
                         hash
                     );
                 case 1:
+                    if (bytes.Length < 1 + 32)
+                    {
+                        throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
+                    }
                     return new LeafNode(bytes.Slice(1, 32).ToArray(), bytes.Slice(1 + 32).ToArray());
                 default:
                     throw new InvalidOperationException($"Type id {type} is not supported");
