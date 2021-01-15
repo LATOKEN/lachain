@@ -152,7 +152,9 @@ namespace Lachain.Core.Blockchain.Operations
                     Logger.LogError(
                         $"Cannot execute block {block.Hash.ToHex()} " +
                         $"with stateHash={block.Header.StateHash.ToHex()} specified in header," +
-                        $"since computed state hash is {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}");
+                        $"since computed state hash is {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}, " +
+                        $"stack trace is {new System.Diagnostics.StackTrace()}");
+                    
                     _stateManager.RollbackTo(snapshotBefore);
                     return OperatingError.InvalidStateHash;
                 }

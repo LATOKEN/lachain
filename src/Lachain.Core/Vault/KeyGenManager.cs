@@ -131,7 +131,8 @@ namespace Lachain.Core.Vault
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null)
                 {
-                    Logger.LogWarning($"Skipping call since there is no keygen running, block is {highestBlock}");
+                    Logger.LogWarning($"Skipping call since there is no keygen running, block is {highestBlock}, " + 
+                                      $"stack trace is {new System.Diagnostics.StackTrace()}");
                     return;
                 }
 
