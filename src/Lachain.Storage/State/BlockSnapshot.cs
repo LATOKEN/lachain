@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.State
 {
     public class BlockSnapshot : IBlockSnapshot
     {
         private readonly IStorageState _state;
+        private static readonly ILogger<BlockSnapshot> Logger = LoggerFactory.GetLoggerForClass<BlockSnapshot>();
 
         public BlockSnapshot(IStorageState state)
         {
@@ -64,7 +67,15 @@ namespace Lachain.Storage.State
             {
                 var block = GetBlockByHeight(i);
                 if (block is null)
+                {
+                    Logger.LogWarning($"No block for requested height {i}, current height is {GetTotalBlockHeight()}");
                     continue;
+                }
+                if (UInt256Utils.IsZero(block.Header.StateHash))
+                {
+                    Logger.LogError($"Requested block for height {i} has zero state hash, current height is {GetTotalBlockHeight()}");
+                    continue;
+                }
                 result.Add(block);
             }
 
