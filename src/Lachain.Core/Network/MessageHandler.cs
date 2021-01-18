@@ -114,10 +114,12 @@ namespace Lachain.Core.Network
         {
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
+            var len = reply.Blocks?.Count ?? 0;
             var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
                 .Where(x => x.Block?.Header?.Index != null)
                 .OrderBy(x => x.Block.Header.Index)
                 .ToArray();
+            Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
             Task.Factory.StartNew(() =>
             {
                 try
