@@ -50,14 +50,21 @@ namespace Lachain.Consensus.RootProtocol
             if (envelope.External)
             {
                 Logger.LogTrace("External envelope");
-                var message = envelope.ExternalMessage ?? throw new Exception("impossible");
+                var message = envelope.ExternalMessage;
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode external message";
+                    throw new Exception("impossible");
+                }
                 if (message.PayloadCase != ConsensusMessage.PayloadOneofCase.SignedHeaderMessage)
                 {
+                    _lastMessage = $"RootProtocol does not accept messages of type {message.PayloadCase}";
                     throw new InvalidOperationException(
                         $"RootProtocol does not accept messages of type {message.PayloadCase}"
                     );
                 }
 
+                _lastMessage = "SignedHeaderMessage";
                 var signedHeaderMessage = message.SignedHeaderMessage;
                 var idx = envelope.ValidatorIndex;
                 Logger.LogTrace(
@@ -78,6 +85,8 @@ namespace Lachain.Consensus.RootProtocol
                     Wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
                 ))
                 {
+                    _lastMessage =
+                        $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}";
                     Logger.LogWarning(
                         $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}"
                     );
@@ -85,6 +94,7 @@ namespace Lachain.Consensus.RootProtocol
                 else
                 {
                     Logger.LogTrace("Add signatures");
+                    _lastMessage = "Add signatures";
                     _signatures.Add(new Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>(
                             signedHeaderMessage.Header,
                             new MultiSig.Types.SignatureByValidator
@@ -110,6 +120,7 @@ namespace Lachain.Consensus.RootProtocol
                 {
                     case ProtocolRequest<RootProtocolId, IBlockProducer> request:
                         Logger.LogTrace("request");
+                        _lastMessage = "ProtocolRequest";
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
                         {
@@ -134,11 +145,13 @@ namespace Lachain.Consensus.RootProtocol
                     case ProtocolResult<CoinId, CoinResult> coinResult:
                         _nonce = GetNonceFromCoin(coinResult.Result);
                         Logger.LogTrace($"Received coin for block nonce: {_nonce}");
+                        _lastMessage = $"Received coin for block nonce: {_nonce}";
                         TrySignHeader();
                         CheckSignatures();
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
                         Logger.LogTrace($"Received shares {result.Result.Count} from HoneyBadger");
+                        _lastMessage = $"Received shares {result.Result.Count} from HoneyBadger";
 
                         _hashes = result.Result.ToArray()
                             .SelectMany(share => SplitShare(share.ToBytes()))
@@ -151,9 +164,11 @@ namespace Lachain.Consensus.RootProtocol
                         break;
                     case ProtocolResult<RootProtocolId, object?> _:
                         Logger.LogTrace("Terminate in switch");
+                        _lastMessage = "Terminate in switch";
                         Terminate();
                         break;
                     default:
+                        _lastMessage = "Invalid message";
                         Logger.LogError("Invalid message");
                         throw new ArgumentOutOfRangeException(nameof(message));
                 }
