@@ -65,6 +65,8 @@ namespace Lachain.Storage.State
             var result = new List<Block>();
             for (var i = height; i < height + count; i++)
             {
+                if (i > GetTotalBlockHeight())
+                    break;
                 var block = GetBlockByHeight(i);
                 if (block is null)
                 {
