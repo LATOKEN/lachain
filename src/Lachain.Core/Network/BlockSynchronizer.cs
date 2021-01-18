@@ -127,6 +127,7 @@ namespace Lachain.Core.Network
 
         public bool HandleBlockFromPeer(BlockInfo blockWithTransactions, ECDSAPublicKey publicKey)
         {
+            Logger.LogTrace("HandleBlockFromPeer");
             lock (_blocksLock)
             {
                 var block = blockWithTransactions.Block;

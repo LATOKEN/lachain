@@ -118,6 +118,7 @@ namespace Lachain.Core.Network
                 .Where(x => x.Block?.Header?.Index != null)
                 .OrderBy(x => x.Block.Header.Index)
                 .ToArray();
+            Logger.LogTrace($"Blocks received: {orderedBlocks.Length}");
             Task.Factory.StartNew(() =>
             {
                 try
