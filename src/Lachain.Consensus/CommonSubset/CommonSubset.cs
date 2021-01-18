@@ -41,10 +41,16 @@ namespace Lachain.Consensus.CommonSubset
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
-                if (message is null) throw new ArgumentNullException();
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode external message";
+                    throw new ArgumentNullException();
+                }
                 switch (message.PayloadCase)
                 {
                     default:
+                        _lastMessage =
+                            $"consensus message of type {message.PayloadCase} routed to CommonSubset protocol";
                         throw new ArgumentException(
                             $"consensus message of type {message.PayloadCase} routed to CommonSubset protocol"
                         );
@@ -56,18 +62,23 @@ namespace Lachain.Consensus.CommonSubset
                 switch (message)
                 {
                     case ProtocolRequest<CommonSubsetId, EncryptedShare> commonSubsetRequested:
+                        _lastMessage = "InputMessage";
                         HandleInputMessage(commonSubsetRequested);
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> _:
-                        Terminated = true;
+                        _lastMessage = "ProtocolResult";
+                        Terminate();
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
+                        _lastMessage = "ReliableBroadcast";
                         HandleReliableBroadcast(result);
                         break;
                     case ProtocolResult<BinaryAgreementId, bool> result:
+                        _lastMessage = "BinaryAgreementResult";
                         HandleBinaryAgreementResult(result);
                         break;
                     default:
+                        _lastMessage = "CommonSubset protocol failed to handle internal message";
                         throw new InvalidOperationException(
                             "CommonSubset protocol failed to handle internal message");
                 }

@@ -48,19 +48,28 @@ namespace Lachain.Consensus.ReliableBroadcast
         {
             if (envelope.External)
             {
-                var message = envelope.ExternalMessage ?? throw new InvalidOperationException();
+                var message = envelope.ExternalMessage;
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode external message";
+                    throw new InvalidOperationException();
+                }
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.ValMessage:
+                        _lastMessage = "ValMessage";
                         HandleValMessage(message.ValMessage, envelope.ValidatorIndex);
                         break;
                     case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                        _lastMessage = "EchoMessage";
                         HandleEchoMessage(message.EchoMessage, envelope.ValidatorIndex);
                         break;
                     case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                        _lastMessage = "ReadyMessage";
                         HandleReadyMessage(message.ReadyMessage, envelope.ValidatorIndex);
                         break;
                     default:
+                        _lastMessage = $"consensus message of type {message.PayloadCase} routed to ReliableBroadcast protocol";
                         throw new ArgumentException(
                             $"consensus message of type {message.PayloadCase} routed to ReliableBroadcast protocol"
                         );
@@ -68,16 +77,24 @@ namespace Lachain.Consensus.ReliableBroadcast
             }
             else
             {
-                var message = envelope.InternalMessage ?? throw new InvalidOperationException();
+                var message = envelope.InternalMessage;
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode internal message";
+                    throw new InvalidOperationException();
+                }
                 switch (message)
                 {
                     case ProtocolRequest<ReliableBroadcastId, EncryptedShare> broadcastRequested:
+                        _lastMessage = "broadcastRequested";
                         HandleInputMessage(broadcastRequested);
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> _:
+                        _lastMessage = "ProtocolResult";
                         Terminate();
                         break;
                     default:
+                        _lastMessage = $"RBC protocol does not handle message of type {message.GetType()}";
                         throw new InvalidOperationException(
                             $"RBC protocol does not handle message of type {message.GetType()}");
                 }
