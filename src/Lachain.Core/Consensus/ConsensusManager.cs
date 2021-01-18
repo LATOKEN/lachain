@@ -264,7 +264,7 @@ namespace Lachain.Core.Consensus
                                 break;
                             }
 
-                            Logger.LogTrace("Still waiting for root protocol to terminate...");
+                            Logger.LogTrace($"Still waiting for root protocol (era {CurrentEra}) to terminate...");
                         }
 
                         broadcaster.Terminate();
