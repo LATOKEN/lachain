@@ -93,7 +93,7 @@ namespace Lachain.Core.Network
                 Blocks =
                 {
                     _stateManager.LastApprovedSnapshot.Blocks
-                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight)
+                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                         .Select(block => new BlockInfo
                         {
                             Block = block,
