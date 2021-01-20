@@ -7,6 +7,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 using Signature = Lachain.Crypto.ThresholdSignature.Signature;
 
 namespace Lachain.Consensus.CommonCoin
@@ -74,8 +75,8 @@ namespace Lachain.Consensus.CommonCoin
                 var signatureShare = Signature.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
                 {
-                    _lastMessage = $"Faulty behaviour from player {message.Validator}: bad signature share";
-                    Logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
+                    _lastMessage = $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share";
+                    Logger.LogWarning($"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share");
                     return; // potential fault evidence
                 }
 

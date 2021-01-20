@@ -97,7 +97,7 @@ namespace Lachain.Consensus
                 {
                     while (_queue.IsEmpty && !Terminated)
                     {
-                        Monitor.Wait(_queueLock);
+                        Monitor.Wait(_queueLock, 1000);
                         if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
                         {
                             Logger.LogWarning($"Protocol {Id} is waiting for _queueLock too long, last message" + 
