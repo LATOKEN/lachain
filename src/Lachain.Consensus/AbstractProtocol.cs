@@ -97,7 +97,9 @@ namespace Lachain.Consensus
                 {
                     while (_queue.IsEmpty && !Terminated)
                     {
-                        Monitor.Wait(_queueLock, 1000);
+                        Monitor.Wait(_queueLock, 1000 * 60);
+                        if (Terminated)
+                            return;
                         if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
                         {
                             Logger.LogWarning($"Protocol {Id} is waiting for _queueLock too long, last message" + 
@@ -122,8 +124,8 @@ namespace Lachain.Consensus
                 catch (Exception e)
                 {
                     Logger.LogError($"{Id}: exception occured while processing message: {e}");
-                    // Terminated = true;
-                    // break;
+                    Terminated = true;
+                    break;
                 }
             }
         }
