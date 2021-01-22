@@ -322,6 +322,8 @@ namespace Lachain.Core.Consensus
 
         public bool WaitFinish(TimeSpan timeout)
         {
+            if (_terminated)
+                return true;
             return EnsureProtocol(new RootProtocolId(_era))?.WaitFinish(timeout) ?? true;
         }
     }
