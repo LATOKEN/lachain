@@ -46,6 +46,7 @@ namespace Lachain.Consensus.ReliableBroadcast
         [MethodImpl(MethodImplOptions.Synchronized)]
         public override void ProcessMessage(MessageEnvelope envelope)
         {
+            Logger.LogTrace($"RBC received msg: {envelope.ValidatorIndex}");
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
