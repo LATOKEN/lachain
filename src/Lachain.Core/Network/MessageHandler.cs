@@ -170,6 +170,7 @@ namespace Lachain.Core.Network
             var (message, publicKey) = @event;
             try
             {
+                
                 _consensusManager.Dispatch(message, publicKey);
             }
             catch (ConsensusStateNotPresentException)
