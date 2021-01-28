@@ -132,8 +132,11 @@ namespace Lachain.Consensus
 
         public void ReceiveMessage(MessageEnvelope message)
         {
+            Logger.LogTrace($"{Id}: ReceiveMessage");
             lock (_queueLock)
             {
+                if(Terminated)
+                    Logger.LogTrace($"{Id}: got message after termination");
                 _queue.Enqueue(message);
                 Monitor.Pulse(_queueLock);
             }

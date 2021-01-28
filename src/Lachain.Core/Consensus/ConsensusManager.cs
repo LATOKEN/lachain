@@ -148,6 +148,18 @@ namespace Lachain.Core.Consensus
                 }
 
                 var fromIndex = _validatorManager.GetValidatorIndex(from, era - 1);
+                switch (message.PayloadCase)
+                {
+                    case ConsensusMessage.PayloadOneofCase.ValMessage:
+                        Logger.LogTrace($"RBC.Val message is received,  era {era}, from {fromIndex}");
+                        break;
+                    case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                        Logger.LogTrace($"RBC.Echo message is received,  era {era}, from {fromIndex}");
+                        break;
+                    case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                        Logger.LogTrace($"RBC.Ready message is received, era {era}, from {fromIndex}");
+                        break;
+                }
                 EnsureEra(era)?.Dispatch(message, fromIndex);
             }
         }
