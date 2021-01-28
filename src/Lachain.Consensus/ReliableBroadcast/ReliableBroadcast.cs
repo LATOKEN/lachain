@@ -129,7 +129,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (_sentValMessage[validator])
             {
                 Logger.LogWarning($"{Id}: validator {validator} ({validatorPubKey}) tried to send VAL message twice");
-                //return;
+                return;
             }
 
             Logger.LogTrace(
@@ -146,7 +146,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (_echoMessages[validator] != null)
             {
                 Logger.LogWarning($"{Id} already received correct echo from {validator} ({validatorPubKey})");
-                //return;
+                return;
             }
 
             if (!CheckEchoMessage(echo, validator))
@@ -167,7 +167,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (_readyMessages[validator] != null)
             {
                 Logger.LogWarning($"{Id} received duplicate ready from validator {validator} ({validatorPubKey})");
-                //return;
+                return;
             }
 
             Logger.LogTrace($"Protocol {Id} got READY message from {validator} ({validatorPubKey})");
