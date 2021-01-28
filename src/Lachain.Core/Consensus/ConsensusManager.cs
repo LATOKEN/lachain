@@ -116,6 +116,18 @@ namespace Lachain.Core.Consensus
         public void Dispatch(ConsensusMessage message, ECDSAPublicKey from)
         {
             var era = message.Validator.Era;
+            switch (message.PayloadCase)
+            {
+                case ConsensusMessage.PayloadOneofCase.ValMessage:
+                    Logger.LogTrace($"RBC.Val message is received,  era {era}");
+                    break;
+                case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                    Logger.LogTrace($"RBC.Echo message is received,  era {era}");
+                    break;
+                case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                    Logger.LogTrace($"RBC.Ready message is received, era {era}");
+                    break;
+            }
             if (era < CurrentEra)
                 Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
             else if (era > CurrentEra)
