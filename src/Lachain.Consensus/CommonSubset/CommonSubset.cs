@@ -158,13 +158,16 @@ namespace Lachain.Consensus.CommonSubset
         {
             if (_result != null)
             {
-                // Logger.LogDebug("CheckCompletion(): result is null");
+                _lastMessage = $"CheckCompletion(): result is null, _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}";
+                Logger.LogDebug($"CheckCompletion(): result is null, _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}");
                 return;
             }
 
             if (_cntBinaryAgreementsCompleted < N)
             {
-                // Logger.LogDebug($"CheckCompletion(): _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}");
+                _lastMessage =
+                    $"CheckCompletion(): _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}";
+                Logger.LogDebug($"CheckCompletion(): _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}");
                 return;
             }
 
@@ -173,10 +176,14 @@ namespace Lachain.Consensus.CommonSubset
                 .Any(x => x)
             )
             {
-                // Logger.LogDebug($"CheckCompletion(): _binaryAgreementResult check failed");
+                _lastMessage =
+                    $"CheckCompletion(): _binaryAgreementResult check failed, _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}";
+                Logger.LogDebug($"CheckCompletion(): _binaryAgreementResult check failed, _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}");
                 return;
             }
 
+            _lastMessage =
+                $"CheckCompletion(): _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}";
             _result = _binaryAgreementResult
                 .Zip(_reliableBroadcastResult, (b, share) => (b, share))
                 .Where(x => x.b == true)
@@ -196,7 +203,7 @@ namespace Lachain.Consensus.CommonSubset
 
             _requested = ResultStatus.Sent;
             SetResult();
-            // Logger.LogDebug($"{GetMyId()} ACS terminated.");
+            Logger.LogDebug($"{GetMyId()} ACS terminated.");
             Broadcaster.InternalResponse(
                 new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>(_commonSubsetId, _result));
         }
