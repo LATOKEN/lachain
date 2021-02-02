@@ -133,13 +133,13 @@ namespace Lachain.Consensus.CommonSubset
 
         private void HandleBinaryAgreementResult(ProtocolResult<BinaryAgreementId, bool> result)
         {
-            // todo check for double send of result
-            ++_cntBinaryAgreementsCompleted;
+            if(_binaryAgreementResult[result.Id.AssociatedValidatorId] == null)
+                ++_cntBinaryAgreementsCompleted;
             _binaryAgreementResult[result.Id.AssociatedValidatorId] = result.Result;
 
             if (!_filledBinaryAgreements && _cntBinaryAgreementsCompleted >= N - F)
             {
-                // Logger.LogDebug($"Sending 0 to all remaining BA");
+                Logger.LogDebug($"Sending 0 to all remaining BA, _cntBinaryAgreementsCompleted: {_cntBinaryAgreementsCompleted}; N: {N}");
                 _filledBinaryAgreements = true;
                 for (var i = 0; i < N; ++i)
                 {
