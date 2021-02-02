@@ -76,10 +76,10 @@ namespace Lachain.Core.Network
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
         {
-            Logger.LogTrace("Start processing PingReply");
+            //Logger.LogTrace("Start processing PingReply");
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, publicKey);
-            Logger.LogTrace("Finished processing PingReply");
+            //Logger.LogTrace("Finished processing PingReply");
         }
 
         private void OnSyncBlocksRequest(object sender,
@@ -93,7 +93,7 @@ namespace Lachain.Core.Network
                 Blocks =
                 {
                     _stateManager.LastApprovedSnapshot.Blocks
-                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight)
+                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
                         .Select(block => new BlockInfo
                         {
                             Block = block,
@@ -114,10 +114,12 @@ namespace Lachain.Core.Network
         {
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
+            var len = reply.Blocks?.Count ?? 0;
             var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
                 .Where(x => x.Block?.Header?.Index != null)
                 .OrderBy(x => x.Block.Header.Index)
                 .ToArray();
+            Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
             Task.Factory.StartNew(() =>
             {
                 try

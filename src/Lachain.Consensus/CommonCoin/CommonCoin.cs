@@ -7,6 +7,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 using Signature = Lachain.Crypto.ThresholdSignature.Signature;
 
 namespace Lachain.Consensus.CommonCoin
@@ -46,35 +47,59 @@ namespace Lachain.Consensus.CommonCoin
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
-                if (message is null) throw new ArgumentNullException();
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode external message";
+                    throw new ArgumentNullException();
+                }
                 // These checks are somewhat redundant, but whatever
                 if (message.PayloadCase != ConsensusMessage.PayloadOneofCase.Coin)
+                {
+                    _lastMessage = $"consensus message of type {message.PayloadCase} routed to CommonCoin protocol";
                     throw new ArgumentException(
                         $"consensus message of type {message.PayloadCase} routed to CommonCoin protocol");
+                }
+
                 if (message.Validator.Era != _coinId.Era ||
                     message.Coin.Agreement != _coinId.Agreement ||
                     message.Coin.Epoch != _coinId.Epoch)
+                {
+                    _lastMessage = $"era, agreement or epoch of message mismatched: message({message.Validator.Era}, " 
+                                   + $"{message.Coin.Agreement}, {message.Coin.Epoch}), coin ({_coinId.Era}, "
+                                   + $"{_coinId.Agreement}, {_coinId.Epoch})";
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
+                }
 
                 Logger.LogTrace($"Received share from {envelope.ValidatorIndex}");
+                _lastMessage = $"Received share from {envelope.ValidatorIndex}";
                 var signatureShare = Signature.FromBytes(message.Coin.SignatureShare.ToByteArray());
                 if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
                 {
-                    Logger.LogWarning($"Faulty behaviour from player {message.Validator}: bad signature share");
+                    _lastMessage = $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share";
+                    Logger.LogWarning($"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share");
                     return; // potential fault evidence
                 }
 
-                if (signature == null) return;
+                if (signature == null)
+                {
+                    _lastMessage = "signature == null";
+                    return;
+                }
                 _result = new CoinResult(signature.RawSignature.ToBytes());
                 CheckResult();
             }
             else
             {
                 var message = envelope.InternalMessage;
-                if (message is null) throw new ArgumentNullException();
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode internal message";
+                    throw new ArgumentNullException();
+                }
                 switch (message)
                 {
                     case ProtocolRequest<CoinId, object?> _:
+                        _lastMessage = "ProtocolRequest";
                         var signatureShare = _thresholdSigner.Sign();
                         _requested = ResultStatus.Requested;
                         CheckResult();
@@ -82,9 +107,11 @@ namespace Lachain.Consensus.CommonCoin
                         Broadcaster.Broadcast(msg);
                         break;
                     case ProtocolResult<CoinId, CoinResult> _:
+                        _lastMessage = "ProtocolResult";
                         Terminate();
                         break;
                     default:
+                        _lastMessage = $"Binary broadcast protocol handles messages of type {message.GetType()}";
                         throw new InvalidOperationException(
                             $"Binary broadcast protocol handles messages of type {message.GetType()}");
                 }

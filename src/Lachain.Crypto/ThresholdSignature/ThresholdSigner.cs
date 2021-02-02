@@ -17,7 +17,7 @@ namespace Lachain.Crypto.ThresholdSignature
         private readonly byte[] _dataToSign;
         private readonly PrivateKeyShare _privateKeyShare;
         private readonly PublicKeySet _publicKeySet;
-        private readonly Signature[] _collectedShares;
+        private readonly Signature?[] _collectedShares;
         private Signature? _signature;
         private int _collectedSharesNumber;
 
@@ -54,7 +54,9 @@ namespace Lachain.Crypto.ThresholdSignature
             if (_collectedShares[idx] != null)
             {
                 Logger.LogWarning($"Signature share {idx} input twice");
-                return false;
+                if (sigShare != _collectedShares[idx])
+                    return false;
+                _collectedSharesNumber--; // to compensate increment later
             }
 
             if (!IsShareValid(pubKey, sigShare))
@@ -82,7 +84,7 @@ namespace Lachain.Crypto.ThresholdSignature
             _signature = signature;
             result = signature;
             return true;
-        }
+        }   
 
         private bool IsShareValid(PublicKey pubKey, Signature sigShare)
         {

@@ -37,7 +37,10 @@ namespace Lachain.Core.Blockchain.Operations
                 {
                     /* if signature invalid that skip it */
                     if (!_crypto.VerifySignatureHashed(hash.ToBytes(), sig, publicKey))
+                    {
+                        Logger.LogWarning($"Invalid Multisig signature: hash: {hash.ToHex()}, sig: {sig.ToHex()}, publicKey: {publicKey.ToHex()}");
                         continue;
+                    }
                     /* increment count of verified signatures */
                     ++verified;
                 }
@@ -48,6 +51,8 @@ namespace Lachain.Core.Blockchain.Operations
             }
 
             // if we have required amount of signatures that return ok
+            if (verified < multisig.Quorum)
+                Logger.LogWarning($"Quorum not reached: {verified} < {multisig.Quorum}");
             return verified >= multisig.Quorum ? OperatingError.Ok : OperatingError.QuorumNotReached;
         }
     }

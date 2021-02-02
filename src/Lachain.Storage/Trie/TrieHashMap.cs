@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -10,8 +12,10 @@ namespace Lachain.Storage.Trie
 {
     internal class TrieHashMap : ITrieMap
     {
-        private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new Dictionary<ulong, IHashTrieNode>();
+        private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
+        private SpinLock _dataLock = new SpinLock();
+        
 
         private readonly NodeRepository _repository;
         private readonly VersionFactory _versionFactory;
@@ -30,7 +34,16 @@ namespace Lachain.Storage.Trie
             foreach (var child in node.Children)
                 EnsurePersisted(child, batch);
             _repository.WriteNodeToBatch(root, node, batch);
-            _persistedNodes.Add(root);
+            var lockTaken = false;
+            _dataLock.Enter(ref lockTaken);
+            try
+            {
+                _persistedNodes.Add(root);
+            }
+            finally
+            {
+                if (lockTaken) _dataLock.Exit();
+            }
         }
 
         public void Checkpoint(ulong root, RocksDbAtomicWrite batch)
@@ -42,7 +55,16 @@ namespace Lachain.Storage.Trie
         public void ClearCaches()
         {
             _nodeCache.Clear();
-            _persistedNodes.Clear();
+            var lockTaken = false;
+            _dataLock.Enter(ref lockTaken);
+            try
+            {
+                _persistedNodes.Clear();
+            }
+            finally
+            {
+                if (lockTaken) _dataLock.Exit();
+            }
         }
 
         private static byte[] Hash(IEnumerable<byte> key)

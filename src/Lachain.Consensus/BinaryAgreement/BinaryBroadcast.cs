@@ -54,20 +54,34 @@ namespace Lachain.Consensus.BinaryAgreement
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
-                if (message is null) throw new ArgumentNullException();
-                if (message.Validator.Era != Id.Era) throw new ArgumentException("era mismatched");
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode external message";
+                    throw new ArgumentNullException();
+                }
+
+                if (message.Validator.Era != Id.Era)
+                {
+                    _lastMessage = $"Era mismatch: our era is {Id.Era}, message era is {message.Validator.Era}";
+                    throw new ArgumentException("era mismatched");
+                }
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:
+                        _lastMessage = "BValMessage";
                         HandleBValMessage(envelope.ValidatorIndex, message.Bval);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Aux:
+                        _lastMessage = "AuxMessage";
                         HandleAuxMessage(envelope.ValidatorIndex, message.Aux);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Conf:
+                        _lastMessage = "ConfMessage";
                         HandleConfMessage(envelope.ValidatorIndex, message.Conf);
                         return;
                     default:
+                        _lastMessage =
+                            $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol";
                         throw new ArgumentException(
                             $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol"
                         );
@@ -79,12 +93,15 @@ namespace Lachain.Consensus.BinaryAgreement
                 switch (message)
                 {
                     case ProtocolRequest<BinaryBroadcastId, bool> broadcastRequested:
+                        _lastMessage = "broadcastRequested";
                         HandleRequest(broadcastRequested);
                         break;
                     case ProtocolResult<BinaryBroadcastId, BoolSet> _:
+                        _lastMessage = "ProtocolResult";
                         Terminate();
                         break;
                     default:
+                        _lastMessage = "Binary broadcast protocol handles not any internal messages";
                         throw new InvalidOperationException(
                             "Binary broadcast protocol handles not any internal messages");
                 }

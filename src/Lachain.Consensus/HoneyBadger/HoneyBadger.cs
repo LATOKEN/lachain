@@ -49,13 +49,19 @@ namespace Lachain.Consensus.HoneyBadger
             if (envelope.External)
             {
                 var message = envelope.ExternalMessage;
-                if (message is null) throw new ArgumentNullException();
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode external message";
+                    throw new ArgumentNullException();
+                }
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Decrypted:
+                        _lastMessage = "Decrypted";
                         HandleDecryptedMessage(message.Decrypted);
                         break;
                     default:
+                        _lastMessage = $"consensus message of type {message.PayloadCase} routed to {GetType().Name} protocol";
                         throw new ArgumentException(
                             $"consensus message of type {message.PayloadCase} routed to {GetType().Name} protocol"
                         );
@@ -64,19 +70,28 @@ namespace Lachain.Consensus.HoneyBadger
             else
             {
                 var message = envelope.InternalMessage;
-                if (message is null) throw new ArgumentNullException();
+                if (message is null)
+                {
+                    _lastMessage = "Failed to decode internal message";
+                    throw new ArgumentNullException();
+                }
                 switch (message)
                 {
                     case ProtocolRequest<HoneyBadgerId, IRawShare> honeyBadgerRequested:
+                        _lastMessage = "honeyBadgerRequested";
                         HandleInputMessage(honeyBadgerRequested);
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> _:
+                        _lastMessage = "ProtocolResult";
                         Terminate();
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
+                        _lastMessage = "CommonSubset";
                         HandleCommonSubset(result);
                         break;
                     default:
+                        _lastMessage =
+                            $"protocol {GetType().Name} failed to handle internal message of type ${message.GetType()}";
                         throw new InvalidOperationException(
                             $"protocol {GetType().Name} failed to handle internal message of type ${message.GetType()}");
                 }

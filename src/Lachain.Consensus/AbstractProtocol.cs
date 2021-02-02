@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.Messages;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus
 {
@@ -22,6 +23,9 @@ namespace Lachain.Consensus
         protected int N => Wallet.N;
         protected int F => Wallet.F;
 
+        protected string _lastMessage = "";
+        private ulong _startTime = 0;
+        private const ulong _alertTime = 60 * 1000;
         protected AbstractProtocol(
             IPublicConsensusKeySet wallet,
             IProtocolIdentifier id,
@@ -85,6 +89,7 @@ namespace Lachain.Consensus
 
         public void Start()
         {
+            _startTime = TimeUtils.CurrentTimeMillis();
             while (!Terminated)
             {
                 MessageEnvelope msg;
@@ -92,7 +97,12 @@ namespace Lachain.Consensus
                 {
                     while (_queue.IsEmpty && !Terminated)
                     {
-                        Monitor.Wait(_queueLock);
+                        Monitor.Wait(_queueLock, 1000);
+                        if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
+                        {
+                            Logger.LogWarning($"Protocol {Id} is waiting for _queueLock too long, last message" + 
+                                              $" is [{_lastMessage}]");
+                        }
                     }
 
                     if (Terminated)
@@ -104,6 +114,10 @@ namespace Lachain.Consensus
                 try
                 {
                     ProcessMessage(msg);
+                    if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
+                    {
+                        Logger.LogWarning($"Protocol {Id} is too long, last message is [{_lastMessage}]");
+                    }
                 }
                 catch (Exception e)
                 {

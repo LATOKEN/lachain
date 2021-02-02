@@ -9,6 +9,7 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
+using Lachain.Logger;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json;
@@ -17,6 +18,8 @@ namespace Lachain.Core.Vault
 {
     class PrivateWallet : IPrivateWallet
     {
+        private static readonly ILogger<PrivateWallet> Logger = LoggerFactory.GetLoggerForClass<PrivateWallet>();
+
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private readonly ISortedDictionary<ulong, PrivateKeyShare> _tsKeys =
@@ -65,7 +68,16 @@ namespace Lachain.Core.Vault
 
         public void AddTpkePrivateKeyAfterBlock(ulong block, PrivateKey key)
         {
-            _tpkeKeys.Add(block, key);
+            if (_tpkeKeys.Contains(block))
+            {
+                _tpkeKeys.Update(block, key);
+                Logger.LogWarning($"TpkePrivateKey for block {block} is overwritten");
+            }
+            else
+            {
+                _tpkeKeys.Add(block, key);
+            }
+
             SaveWallet(_walletPath, _walletPassword);
         }
 
@@ -76,7 +88,16 @@ namespace Lachain.Core.Vault
 
         public void AddThresholdSignatureKeyAfterBlock(ulong block, PrivateKeyShare key)
         {
-            _tsKeys.Add(block, key);
+            if (_tsKeys.Contains(block))
+            {
+                _tsKeys.Update(block, key);
+                Logger.LogWarning($"ThresholdSignatureKey for block {block} is overwritten");
+            }
+            else
+            {
+                _tsKeys.Add(block, key);
+            }
+
             SaveWallet(_walletPath, _walletPassword);
         }
 

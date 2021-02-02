@@ -147,17 +147,24 @@ namespace Lachain.Consensus.BinaryAgreement
             if (envelope.External)
             {
                 Logger.LogError($"{_agreementId}: Binary agreement should not receive external messages");
+                _lastMessage = $"{_agreementId}: Binary agreement should not receive external messages";
                 throw new InvalidOperationException("Binary agreement should not receive external messages");
             }
 
             var message = envelope.InternalMessage;
-            if (message is null) throw new ArgumentNullException();
+            if (message is null)
+            {
+                Logger.LogError($"{_agreementId}: Failed to decode internal message");
+                _lastMessage = $"{_agreementId}: Failed to decode internal message";
+                throw new ArgumentNullException();
+            }
 
             switch (message)
             {
                 case ProtocolRequest<BinaryAgreementId, bool> agreementRequested:
                     if (_currentEpoch != 0 || _requested != ResultStatus.NotRequested)
                     {
+                        _lastMessage = $"{_agreementId}: Cannot propose value: protocol is already running";
                         break;
                         // TODO: fix back or add some logic to handle parents fault
                         // throw new InvalidOperationException("Cannot propose value: protocol is already running");
@@ -167,20 +174,24 @@ namespace Lachain.Consensus.BinaryAgreement
                     _estimate = agreementRequested.Input;
                     Logger.LogTrace(
                         $"{_agreementId}: started BA loop in epoch {_currentEpoch} with initial estimate {_estimate}");
+                    _lastMessage = $"{_agreementId}: started BA loop in epoch {_currentEpoch} with initial estimate {_estimate}";
                     TryProgressEpoch();
                     break;
                 case ProtocolResult<BinaryAgreementId, bool> _:
+                    _lastMessage = $"{_agreementId}: got result";
                     break;
                 case ProtocolResult<BinaryBroadcastId, BoolSet> broadcastCompleted:
                 {
                     Logger.LogTrace(
                         $"{_agreementId}: broadcast {broadcastCompleted.Id.Epoch} completed at era {Id.Era} with result {broadcastCompleted.Result}"
                     );
+                    _lastMessage = $"{_agreementId}: broadcast {broadcastCompleted.Id.Epoch} completed at era {Id.Era} with result {broadcastCompleted.Result}";
                     _binaryBroadcastsResults[broadcastCompleted.Id.Epoch] = broadcastCompleted.Result;
                     TryProgressEpoch();
                     return;
                 }
                 case ProtocolResult<CoinId, CoinResult> coinTossed:
+                    _lastMessage = $"{_agreementId}: coin tossed {coinTossed.Id}";
                     _coins[coinTossed.Id.Epoch] = coinTossed.Result.Parity();
                     if (F == 0)
                     {
@@ -192,6 +203,7 @@ namespace Lachain.Consensus.BinaryAgreement
                     TryProgressEpoch();
                     return;
                 default:
+                    _lastMessage = $"Cannot handle message of type {message.GetType()}";
                     throw new InvalidOperationException($"Cannot handle message of type {message.GetType()}");
             }
         }
