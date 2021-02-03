@@ -44,6 +44,7 @@ namespace Lachain.Consensus.CommonSubset
                 if (message is null)
                 {
                     _lastMessage = $"Failed to decode external message, {_cntBinaryAgreementsCompleted} BAs completed";
+                    Logger.LogTrace( $"Failed to decode external message, {_cntBinaryAgreementsCompleted} BAs completed");
                     throw new ArgumentNullException();
                 }
                 switch (message.PayloadCase)
@@ -51,6 +52,7 @@ namespace Lachain.Consensus.CommonSubset
                     default:
                         _lastMessage =
                             $"consensus message of type {message.PayloadCase} routed to CommonSubset protocol, {_cntBinaryAgreementsCompleted} BAs completed";
+                        Logger.LogTrace($"consensus message of type {message.PayloadCase} routed to CommonSubset protocol, {_cntBinaryAgreementsCompleted} BAs completed");
                         throw new ArgumentException(
                             $"consensus message of type {message.PayloadCase} routed to CommonSubset protocol, {_cntBinaryAgreementsCompleted} BAs completed"
                         );
@@ -63,22 +65,27 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     case ProtocolRequest<CommonSubsetId, EncryptedShare> commonSubsetRequested:
                         _lastMessage = $"InputMessage, {_cntBinaryAgreementsCompleted} BAs completed";
+                        Logger.LogTrace( _lastMessage);
                         HandleInputMessage(commonSubsetRequested);
                         break;
                     case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> _:
                         _lastMessage = $"ProtocolResult, {_cntBinaryAgreementsCompleted} BAs completed";
+                        Logger.LogTrace( _lastMessage);
                         Terminate();
                         break;
                     case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
                         _lastMessage = $"ReliableBroadcast, {_cntBinaryAgreementsCompleted} BAs completed";
+                        Logger.LogTrace( _lastMessage);
                         HandleReliableBroadcast(result);
                         break;
                     case ProtocolResult<BinaryAgreementId, bool> result:
                         _lastMessage = $"BinaryAgreementResult, {_cntBinaryAgreementsCompleted} BAs completed";
+                        Logger.LogTrace( _lastMessage);
                         HandleBinaryAgreementResult(result);
                         break;
                     default:
                         _lastMessage = $"CommonSubset protocol failed to handle internal message, {_cntBinaryAgreementsCompleted} BAs completed";
+                        Logger.LogTrace( _lastMessage);
                         throw new InvalidOperationException(
                             "CommonSubset protocol failed to handle internal message");
                 }

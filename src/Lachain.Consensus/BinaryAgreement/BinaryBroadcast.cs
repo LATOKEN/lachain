@@ -57,31 +57,37 @@ namespace Lachain.Consensus.BinaryAgreement
                 if (message is null)
                 {
                     _lastMessage = "Failed to decode external message";
+                    Logger.LogTrace( _lastMessage);
                     throw new ArgumentNullException();
                 }
 
                 if (message.Validator.Era != Id.Era)
                 {
                     _lastMessage = $"Era mismatch: our era is {Id.Era}, message era is {message.Validator.Era}";
+                    Logger.LogTrace( _lastMessage);
                     throw new ArgumentException("era mismatched");
                 }
                 switch (message.PayloadCase)
                 {
                     case ConsensusMessage.PayloadOneofCase.Bval:
                         _lastMessage = "BValMessage";
+                        Logger.LogTrace( _lastMessage);
                         HandleBValMessage(envelope.ValidatorIndex, message.Bval);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Aux:
                         _lastMessage = "AuxMessage";
+                        Logger.LogTrace( _lastMessage);
                         HandleAuxMessage(envelope.ValidatorIndex, message.Aux);
                         return;
                     case ConsensusMessage.PayloadOneofCase.Conf:
                         _lastMessage = "ConfMessage";
+                        Logger.LogTrace( _lastMessage);
                         HandleConfMessage(envelope.ValidatorIndex, message.Conf);
                         return;
                     default:
                         _lastMessage =
                             $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol";
+                        Logger.LogTrace( _lastMessage);
                         throw new ArgumentException(
                             $"consensus message of type {message.PayloadCase} routed to BinaryBroadcast protocol"
                         );
@@ -94,14 +100,17 @@ namespace Lachain.Consensus.BinaryAgreement
                 {
                     case ProtocolRequest<BinaryBroadcastId, bool> broadcastRequested:
                         _lastMessage = "broadcastRequested";
+                        Logger.LogTrace( _lastMessage);
                         HandleRequest(broadcastRequested);
                         break;
                     case ProtocolResult<BinaryBroadcastId, BoolSet> _:
                         _lastMessage = "ProtocolResult";
+                        Logger.LogTrace( _lastMessage);
                         Terminate();
                         break;
                     default:
                         _lastMessage = "Binary broadcast protocol handles not any internal messages";
+                        Logger.LogTrace( _lastMessage);
                         throw new InvalidOperationException(
                             "Binary broadcast protocol handles not any internal messages");
                 }
@@ -111,6 +120,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void HandleRequest(ProtocolRequest<BinaryBroadcastId, bool> broadcastRequested)
         {
+            Logger.LogTrace( $"{Id}:HandleRequest");
             _requested = ResultStatus.Requested;
             CheckResult();
             BroadcastBVal(broadcastRequested.Input);
@@ -118,6 +128,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
         private void BroadcastBVal(bool value)
         {
+            Logger.LogTrace( $"{Id}:BroadcastBVal({value})");
             var b = value ? 1 : 0;
             _wasBvalBroadcasted[b] = true;
             Broadcaster.Broadcast(CreateBValMessage(b));
@@ -126,6 +137,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void HandleBValMessage(int sender, BValMessage bval)
         {
+            Logger.LogTrace( $"{Id}:HandleBValMessage({sender}, {bval})");
             if (bval.Epoch != _broadcastId.Epoch || bval.Agreement != _broadcastId.Agreement)
                 throw new ArgumentException("era, agreement or epoch of message mismatched");
 
@@ -161,6 +173,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void HandleAuxMessage(int sender, AuxMessage aux)
         {
+            Logger.LogTrace( $"{Id}:HandleAuxMessage({sender}, {aux})");
             if (aux.Epoch != _broadcastId.Epoch || aux.Agreement != _broadcastId.Agreement)
                 throw new ArgumentException("era, agreement or epoch of message mismatched");
 
@@ -179,6 +192,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void HandleConfMessage(int sender, ConfMessage conf)
         {
+            Logger.LogTrace( $"{Id}:HandleConfMessage({sender}, {conf})");
             if (conf.Epoch != _broadcastId.Epoch || conf.Agreement != _broadcastId.Agreement)
                 throw new ArgumentException("era, agreement or epoch of message mismatched");
 
@@ -196,6 +210,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
         private BoolSet ChoseMinimalSet()
         {
+            Logger.LogTrace( $"{Id}:ChoseMinimalSet()");
             return _binValues;
             // TODO: investigate if choosing minimal set speed up execution. This should not break protocol integrity
             // if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F)
@@ -215,6 +230,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void RevisitConfMessages()
         {
+            Logger.LogTrace( $"{Id}:RevisitConfMessages()");
             // TODO: investigate relation between _confReceived, _binValues and _result
             var goodConfs = _confReceived.Count(set => _binValues.Contains(set));
             if (goodConfs < N - F) return;
@@ -230,6 +246,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void RevisitAuxMessages()
         {
+            Logger.LogTrace( $"{Id}:RevisitAuxMessages()");
             if (_confSent) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             Logger.LogTrace($"{_broadcastId}: conf message sent with set {_binValues}");
@@ -241,6 +258,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private ConsensusMessage CreateBValMessage(int value)
         {
+            Logger.LogTrace( $"{Id}:CreateBValMessage({value})");
             var message = new ConsensusMessage
             {
                 Bval = new BValMessage
@@ -256,6 +274,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private ConsensusMessage CreateAuxMessage(int value)
         {
+            Logger.LogTrace( $"{Id}:CreateAuxMessage({value})");
             var message = new ConsensusMessage
             {
                 Aux = new AuxMessage
@@ -271,6 +290,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private ConsensusMessage CreateConfMessage(BoolSet values)
         {
+            Logger.LogTrace( $"{Id}:CreateConfMessage({values})");
             var message = new ConsensusMessage
             {
                 Conf = new ConfMessage
@@ -286,6 +306,7 @@ namespace Lachain.Consensus.BinaryAgreement
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void CheckResult()
         {
+            Logger.LogTrace( $"{Id}:CheckResult()");
             if (!_result.HasValue) return;
             if (_requested != ResultStatus.Requested) return;
             Logger.LogTrace($"{_broadcastId}: made result {_result.Value.ToString()}");
