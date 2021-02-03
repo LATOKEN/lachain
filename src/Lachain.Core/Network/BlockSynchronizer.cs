@@ -387,9 +387,11 @@ namespace Lachain.Core.Network
                 SetRpcUrl();
                 var peerResult = _CallJsonRpcAPI("getRPCList", new JArray());
                 var peers = JArray.Parse(JsonConvert.SerializeObject(peerResult!["peers"]));
-                
+
                 SetRpcPeers(peers.ToObject<List<string>>()!);
                 SetRpcUrl();
+
+                Logger.LogDebug($"RPC URL = {_rpcURL}");
                 
                 var handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
                 var ready =  bool.Parse(handShakeResult!["ready"]!.ToString());
@@ -606,6 +608,8 @@ namespace Lachain.Core.Network
             _rpcPeers.AddRange(peers);
             _rpcPeers = _rpcPeers.ConvertAll(element =>
                 element = (element.Contains("http://") ? element : "http://" + element ));
+
+            Logger.LogDebug($"List of peers {_rpcPeers}");
         }
 
         private string GetLocalRpcAddress()
