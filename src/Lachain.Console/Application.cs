@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
@@ -14,8 +15,11 @@ using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Crypto.Misc;
 using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Networking;
+using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
@@ -32,7 +36,7 @@ namespace Lachain.Console
         {
             var logLevel = options.LogLevel ?? Environment.GetEnvironmentVariable("LOG_LEVEL");
             if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
-            if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
+            if (!new[] { "Trace", "Debug", "Info", "Warn", "Error", "Fatal" }.Contains(logLevel))
                 logLevel = "Info";
             LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
             LogManager.ReconfigExistingLoggers();
@@ -62,6 +66,9 @@ namespace Lachain.Console
             var rpcManager = _container.Resolve<IRpcManager>();
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
+            var rocksDbContext = _container.Resolve<IRocksDbContext>();
+            var storageManager = _container.Resolve<IStorageManager>();
+            var validationManager = _container.Resolve<IValidatorManager>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
@@ -92,15 +99,29 @@ namespace Lachain.Console
             commandManager.Start(wallet.EcdsaKeyPair);
             rpcManager.Start();
 
+            consensusManager.Start((long)blockManager.GetHeight() + 1);
+            validatorStatusManager.Start(false);
+
+            Thread.Sleep(10000);
+
+            if (blockManager.GetHeight() == 0)
+            {
+                blockSynchronizer.StartFastSync();    
+            }
+            
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
-                validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
+                validatorManager.GetValidatorsPublicKeys(0)
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
+            
+            // blockSynchronizer.SynchronizeWith(
+            //     validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
+            //         .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
+            // );
+            
             Logger.LogInformation("Block synchronization finished, starting consensus...");
-            consensusManager.Start((long) blockManager.GetHeight() + 1);
-            validatorStatusManager.Start(false);
 
             System.Console.CancelKeyPress += (sender, e) =>
             {

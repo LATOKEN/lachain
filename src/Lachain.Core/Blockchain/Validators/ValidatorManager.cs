@@ -5,6 +5,7 @@ using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
+using NLog.Fluent;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Blockchain.Validators
@@ -68,6 +69,11 @@ namespace Lachain.Core.Blockchain.Validators
 
         public bool IsValidatorForBlock(ECDSAPublicKey key, long block)
         {
+            var keys = GetValidatorsPublicKeys(block - 1);
+            foreach (var k in keys)
+            {
+                Logger.LogDebug($"Key - {k}");
+            }
             return GetValidatorsPublicKeys(block - 1).Contains(key);
         }
     }

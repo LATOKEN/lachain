@@ -4,7 +4,7 @@ namespace Lachain.Storage.State
 {
     public interface ISnapshot
     {
-        ulong Version { get; }
+        ulong Version { get; set;}
         void Commit();
         UInt256 Hash { get; }
     }

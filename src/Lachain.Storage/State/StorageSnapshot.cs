@@ -10,7 +10,18 @@ namespace Lachain.Storage.State
     {
         private readonly IStorageState _state;
 
-        public ulong Version => _state.CurrentVersion;
+        // public ulong Version => _state.CurrentVersion;
+        public ulong Version
+        {
+            get
+            {
+                return _state.CurrentVersion;
+            }
+            set
+            {
+                _state.CurrentVersion = value;
+            }
+        }
 
         public StorageSnapshot(IStorageState state)
         {

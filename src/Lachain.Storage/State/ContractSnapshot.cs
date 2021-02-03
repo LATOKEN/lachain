@@ -13,7 +13,18 @@ namespace Lachain.Storage.State
             _state = state;
         }
 
-        public ulong Version => _state.CurrentVersion;
+        // public ulong Version => _state.CurrentVersion;
+        public ulong Version
+        {
+            get
+            {
+                return _state.CurrentVersion;
+            }
+            set
+            {
+                _state.CurrentVersion = value;
+            }
+        }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()

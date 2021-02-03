@@ -31,7 +31,7 @@ namespace Lachain.Storage.State
         public IContractSnapshot Contracts { get; }
         public IStorageSnapshot Storage { get; }
         public ITransactionSnapshot Transactions { get; }
-        public IBlockSnapshot Blocks { get; }
+        public IBlockSnapshot Blocks { get; set; }
         public IEventSnapshot Events { get; }
         public IValidatorSnapshot Validators { get; }
 

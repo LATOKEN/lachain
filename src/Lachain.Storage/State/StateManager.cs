@@ -5,9 +5,20 @@ namespace Lachain.Storage.State
 {
     public class StateManager : IStateManager
     {
-        public IBlockchainSnapshot CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
+        // public IBlockchainSnapshot CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
+        public IBlockchainSnapshot CurrentSnapshot
+        {
+            get
+            {
+                return PendingSnapshot ?? LastApprovedSnapshot;
+            }
+            set
+            {
+                this.CurrentSnapshot = value;
+            }
+        }
 
-        public IBlockchainSnapshot LastApprovedSnapshot { get; private set; }
+        public IBlockchainSnapshot LastApprovedSnapshot { get; set; }
         public IBlockchainSnapshot? PendingSnapshot { get; private set; }
 
         private readonly ISnapshotManager<IBlockSnapshot> _blockManager;

@@ -13,9 +13,32 @@ namespace Lachain.Storage.State
 
         protected uint RepositoryId { get; }
 
-        public TSnapshotInterface CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
+        // public TSnapshotInterface CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
+        public TSnapshotInterface CurrentSnapshot
+        {
+            get
+            {
+                return PendingSnapshot ?? LastApprovedSnapshot;
+            }
+            set
+            {
+                this.CurrentSnapshot = value;
+            }
+        }
 
-        public TSnapshotInterface LastApprovedSnapshot => _lastApprovedSnapshot;
+        // public TSnapshotInterface LastApprovedSnapshot => _lastApprovedSnapshot;
+        public TSnapshotInterface LastApprovedSnapshot
+        {
+            get
+            {
+                return _lastApprovedSnapshot;
+            }
+            set
+            {
+                this.LastApprovedSnapshot = value;
+            }
+        }
+        
         public TSnapshotInterface? PendingSnapshot => _pendingSnapshot;
 
         private static TSnapshotType SnaphotFromState(IStorageState state)

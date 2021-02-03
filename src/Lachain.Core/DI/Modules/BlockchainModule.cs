@@ -1,11 +1,18 @@
+using Lachain.Consensus;
+using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
+using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.CLI;
 using Lachain.Core.Config;
+using Lachain.Core.Consensus;
+using Lachain.Core.RPC;
+using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 
 namespace Lachain.Core.DI.Modules
@@ -19,6 +26,13 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
             containerBuilder.RegisterSingleton<IMultisigVerifier, MultisigVerifier>();
             containerBuilder.RegisterSingleton<IPrivateWallet, PrivateWallet>();
+            /* consensus */
+            // containerBuilder.RegisterSingleton<IBlockProducer, BlockProducer>();
+            // containerBuilder.RegisterSingleton<IConsensusManager, ConsensusManager>();
+            // containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();	
+            // containerBuilder.RegisterSingleton<IPrivateWallet, PrivateWallet>();
+            // containerBuilder.RegisterSingleton<IKeyGenManager, KeyGenManager>();
+            // containerBuilder.RegisterSingleton<IValidatorStatusManager, ValidatorStatusManager>();
             /* genesis */
             containerBuilder.RegisterSingleton<IGenesisBuilder, GenesisBuilder>();
             /* operation manager */
@@ -28,6 +42,9 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
             containerBuilder.RegisterSingleton<IContractRegisterer, ContractRegisterer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
+            /* RPC */
+            // containerBuilder.RegisterSingleton<IBlockchainEventFilter, BlockchainEventFilter>();
+            // containerBuilder.RegisterSingleton<IRpcManager, RpcManager>();	
             /* VM */
             containerBuilder.RegisterSingleton<IVirtualMachine, VirtualMachine>();
             containerBuilder.RegisterSingleton<IContractInvoker, ContractInvoker>();

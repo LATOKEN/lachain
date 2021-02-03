@@ -10,6 +10,7 @@ using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
+using Lachain.Core.Network;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
@@ -28,6 +29,7 @@ namespace Lachain.Core.Consensus
         private readonly INetworkManager _networkManager;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockManager _blockManager;
+        private readonly IBlockSynchronizer _blockSynchronizer;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
         private readonly IKeyGenManager _keyGenManager;
@@ -47,6 +49,7 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
+            IBlockSynchronizer blockSynchronizer,
             IPrivateWallet privateWallet,
             IValidatorAttendanceRepository validatorAttendanceRepository,
             IConfigManager configManager,
@@ -58,6 +61,7 @@ namespace Lachain.Core.Consensus
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
             _blockManager = blockManager;
+            _blockSynchronizer = blockSynchronizer;
             _privateWallet = privateWallet;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _networkManager = networkManager;
@@ -86,13 +90,16 @@ namespace Lachain.Core.Consensus
                 throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
             }
 
-            Logger.LogTrace($"Advancing era from {CurrentEra} to {newEra}");
+            Logger.LogDebug($"Advancing era from {CurrentEra} to {newEra}");
 
+            var (flag, height) = _blockSynchronizer.GetFastSyncDetail();
+            
             for (var i = CurrentEra; i < newEra; ++i)
             {
+                if (flag && height < (ulong)newEra) continue;
                 if (!IsValidatorForEra(i)) continue;
                 var broadcaster = EnsureEra(i);
-                Logger.LogTrace($"Terminating era {i}");
+                Logger.LogDebug($"Terminating era {i}");
                 broadcaster?.Terminate();
                 _eras.Remove(i);
                 lock (_postponedMessages)
@@ -155,31 +162,32 @@ namespace Lachain.Core.Consensus
                 ulong lastBlock = 0;
                 ulong prevBlock = 0;
                 long delta = 0;
-                for (;; CurrentEra += 1)
+                for (; ; CurrentEra += 1)
                 {
                     _networkManager.AdvanceEra(CurrentEra);
                     Logger.LogTrace($"Advanced to era {CurrentEra}");
                     var now = TimeUtils.CurrentTimeMillis();
                     if (prevBlock > 0)
-                        delta += (long) (lastBlock - prevBlock) - (long) _targetBlockInterval;
-                    var waitTime = Math.Max(0, (long) _targetBlockInterval - delta);
+                        delta += (long)(lastBlock - prevBlock) - (long)_targetBlockInterval;
+                    var waitTime = Math.Max(0, (long)_targetBlockInterval - delta);
                     prevBlock = lastBlock;
-                    if (lastBlock + (ulong) waitTime > now)
+                    if (lastBlock + (ulong)waitTime > now)
                     {
                         Logger.LogTrace(
-                            $"Waiting {lastBlock + (ulong) waitTime - now}ms until launching Root protocol"
+                            $"Waiting {lastBlock + (ulong)waitTime - now}ms until launching Root protocol"
                         );
-                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong) waitTime - now));
+                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong)waitTime - now));
                     }
 
-                    for (var blockHeight = (long) _blockManager.GetHeight();
+                    for (var blockHeight = (long)_blockManager.GetHeight();
                         blockHeight != CurrentEra - 1;
-                        blockHeight = (long) _blockManager.GetHeight()
+                        blockHeight = (long)_blockManager.GetHeight()
                     )
                     {
-                        Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {CurrentEra}");
+                        Logger.LogDebug($"Block height is {blockHeight}, CurrentEra is {CurrentEra}");
                         if (blockHeight >= CurrentEra)
                         {
+                            // TODO: Comment while FAST SYNC
                             AdvanceEra(blockHeight + 1);
                             continue;
                         }
@@ -197,7 +205,7 @@ namespace Lachain.Core.Consensus
 
                     var haveKeys = _privateWallet.HasKeyForKeySet(
                         _validatorManager.GetValidators(CurrentEra - 1).ThresholdSignaturePublicKeySet,
-                        (ulong) CurrentEra
+                        (ulong)CurrentEra
                     );
 
                     if (weAreValidator && !haveKeys)
@@ -222,7 +230,7 @@ namespace Lachain.Core.Consensus
                     if (!weAreValidator || !haveKeys)
                     {
                         Logger.LogWarning($"We are not validator for era {CurrentEra} (or keys are missing), waiting");
-                        while ((long) _blockManager.GetHeight() < CurrentEra)
+                        while ((long)_blockManager.GetHeight() < CurrentEra)
                         {
                             lock (_blockPersistedLock)
                             {
@@ -258,7 +266,7 @@ namespace Lachain.Core.Consensus
 
                         while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
-                            if ((long) _blockManager.GetHeight() >= CurrentEra)
+                            if ((long)_blockManager.GetHeight() >= CurrentEra)
                             {
                                 Logger.LogTrace("Aborting root protocol since block is already persisted");
                                 break;

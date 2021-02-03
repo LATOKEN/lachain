@@ -2,7 +2,7 @@
 
 namespace Lachain.Storage.Trie
 {
-    internal class NodeRepository
+    public class NodeRepository
     {
         private readonly IRocksDbContext _rocksDbContext;
 

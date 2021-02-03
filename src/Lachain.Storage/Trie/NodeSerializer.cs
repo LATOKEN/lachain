@@ -5,7 +5,7 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.Trie
 {
-    internal static class NodeSerializer
+    public static class NodeSerializer
     {
         public static byte[] ToBytes(IHashTrieNode node)
         {

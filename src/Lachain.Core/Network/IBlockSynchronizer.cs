@@ -21,5 +21,12 @@ namespace Lachain.Core.Network
         void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers);
 
         void Start();
+        void StartFastSync();
+
+        (bool, ulong) GetFastSyncDetail();
+
+        List<string> GetRpcPeers();
+
+        void SetRpcPeers(List<string> peers);
     }
 }

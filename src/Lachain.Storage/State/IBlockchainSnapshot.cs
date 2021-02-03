@@ -9,7 +9,7 @@ namespace Lachain.Storage.State
         IContractSnapshot Contracts { get; }
         IStorageSnapshot Storage { get; }
         ITransactionSnapshot Transactions { get; }
-        IBlockSnapshot Blocks { get; }
+        IBlockSnapshot Blocks { get; set;}
         IEventSnapshot Events { get; }
         IValidatorSnapshot Validators { get; }
 

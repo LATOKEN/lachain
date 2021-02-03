@@ -17,15 +17,19 @@ WORKDIR /lachain
 COPY src/ /lachain/
 COPY wasm/ /wasm/
 WORKDIR /lachain/Lachain.Console
+EXPOSE 7070
 RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1.5-buster-slim
 RUN apt update && apt install -y libc6-dev
+EXPOSE 7070
 WORKDIR /lachain
 COPY --from=build-env /lachain/Lachain.Console/out .
 RUN rm -rf /lachain/wallet.json /lachain/config.json
-ARG CONFIG=src/Lachain.Console/config0.json
-ARG WALLET=src/Lachain.Console/wallet0.json
+ARG CONFIG
+ARG WALLET
+ARG PRVH
 COPY $CONFIG /lachain/config.json
 COPY $WALLET /lachain/wallet.json
+COPY $PRVH /lachain/ChainLachain/prv_h1.txt
 ENTRYPOINT ["dotnet", "/lachain/Lachain.Console.dll"]

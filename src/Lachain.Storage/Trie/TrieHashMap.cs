@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using RocksDbSharp;
 
 namespace Lachain.Storage.Trie
 {
-    internal class TrieHashMap : ITrieMap
+    public class TrieHashMap : ITrieMap
     {
-        private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
+        private static readonly ILogger<TrieHashMap> Logger = LoggerFactory.GetLoggerForClass<TrieHashMap>();
+        private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new Dictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
         private SpinLock _dataLock = new SpinLock();
         
@@ -118,7 +121,7 @@ namespace Lachain.Storage.Trie
             return GetNodeById(root)?.Hash?.ToUInt256() ?? UInt256Utils.Zero;
         }
 
-        private IEnumerable<byte[]> TraverseValues(ulong root)
+        public IEnumerable<byte[]> TraverseValues(ulong root)
         {
             if (root == 0)
                 yield break;
@@ -134,6 +137,56 @@ namespace Lachain.Storage.Trie
                     foreach (var child in node.Children)
                     foreach (var value in TraverseValues(child))
                         yield return value;
+                    break;
+            }
+        }
+
+        public IEnumerable<byte[]> GetSerializedNodes(ulong root)
+        {
+            if (root == 0)
+                yield break;
+
+            var node = GetNodeById(root);
+            if (node is null) throw new InvalidOperationException("corrupted trie");
+            if (node.Type.ToString() == "Internal")
+                yield return NodeSerializer.ToBytes(node);
+
+            switch (node)
+            {
+                case LeafNode leafNode:
+                    yield return NodeSerializer.ToBytes(leafNode);
+                    break;
+                default:
+                    foreach (var child in node.Children)
+                    foreach (var value in GetSerializedNodes(child))
+                    {
+                        yield return value;
+                    }
+                    break;
+            }
+        }
+
+        public IEnumerable<ulong> GetNodeIds(ulong root)
+        {
+            if (root == 0)
+                yield break;
+
+            var node = GetNodeById(root);
+            if (node is null) throw new InvalidOperationException("corrupted trie");
+            if (node.Type.ToString() == "Internal")
+                yield return root;
+
+            switch (node)
+            {
+                case LeafNode leafNode:
+                    yield return root;
+                    break;
+                default:
+                    foreach (var child in node.Children)
+                    foreach (var value in GetNodeIds(child))
+                    {
+                        yield return value;
+                    }
                     break;
             }
         }

@@ -1,0 +1,44 @@
+{
+  "network": {
+    "port": 5050,
+    "peers": [
+      "023f7d80bc1c1f2a93bca97e81b9f3073150e15cef78b8d37a7ec4c947993ad5e7"
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100,
+    "bootstrapAddresses": ["QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"]
+  },
+  "genesis": {
+    "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000",
+    "balances": {
+      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000",
+      "0xa4aee5f4599fa96cfca74f339c0544635e70d152": "1000000"
+    },
+    "validators": [
+      {
+        "ECDSAPublicKey": "023f7d80bc1c1f2a93bca97e81b9f3073150e15cef78b8d37a7ec4c947993ad5e7",
+        "thresholdSignaturePublicKey": "0xaf200dc267794e9578957f9f64a514bc674894b437e8541bf6e0798867a01754dd04496e6db3bd980398c1f471911695"
+      }
+    ]
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7070,
+    "apiKey": "asdasdasd"
+  },
+  "vault": {
+    "path": "wallet.json",
+    "password": "12345"
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainLachain"
+  },
+  "blockchain": {
+    "targetBlockTime": 5000
+  }
+}

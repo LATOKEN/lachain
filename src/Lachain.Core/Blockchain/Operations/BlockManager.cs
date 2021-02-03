@@ -172,6 +172,7 @@ namespace Lachain.Core.Blockchain.Operations
                         $"Since last block: " +
                         $"{block.Timestamp - _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index - 1)!.Timestamp} ms"
                     );
+
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;

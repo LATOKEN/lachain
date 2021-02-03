@@ -1,4 +1,5 @@
-﻿using AustinHarris.JsonRpc;
+﻿using System.Collections.Generic;
+using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.BlockchainFilter;
@@ -7,8 +8,10 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC.HTTP;
 using Lachain.Core.RPC.HTTP.FrontEnd;
 using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Storage;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -17,6 +20,7 @@ namespace Lachain.Core.RPC
 {
     public class RpcManager : IRpcManager
     {
+        private static readonly ILogger<RpcManager> Logger = LoggerFactory.GetLoggerForClass<RpcManager>();
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IBlockManager _blockManager;
@@ -33,7 +37,8 @@ namespace Lachain.Core.RPC
         private readonly ISystemContractReader _systemContractReader;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly ILocalTransactionRepository _localTransactionRepository;
-
+        private readonly IStorageManager _storageManager;
+        private readonly IRocksDbContext _rocksDbContext;
 
         public RpcManager(
             ITransactionManager transactionManager,
@@ -52,7 +57,9 @@ namespace Lachain.Core.RPC
             IPrivateWallet privateWallet,
             ITransactionBuilder transactionBuilder,
             IBlockchainEventFilter blockchainEventFilter,
-            INetworkManager networkManager
+            INetworkManager networkManager,
+            IStorageManager storageManager,
+            IRocksDbContext rocksDbContext
         )
         {
             _transactionManager = transactionManager;
@@ -71,6 +78,8 @@ namespace Lachain.Core.RPC
             _privateWallet = privateWallet;
             _blockchainEventFilter = blockchainEventFilter;
             _networkManager = networkManager;
+            _rocksDbContext = rocksDbContext;
+            _storageManager = storageManager;
         }
 
         private HttpService? _httpService;
@@ -91,7 +100,8 @@ namespace Lachain.Core.RPC
                     _transactionPool, _contractRegisterer, _privateWallet),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader,
                     _localTransactionRepository, _validatorStatusManager, _privateWallet),
-                new NodeService(_blockSynchronizer, _blockchainEventFilter, _networkManager)
+                new NodeService(_blockSynchronizer, _blockchainEventFilter, _networkManager),
+                new FastSyncService(_stateManager, _blockManager, _rocksDbContext, _blockSynchronizer, _configManager)
             };
 
             RpcConfig rpcConfig;
@@ -109,7 +119,7 @@ namespace Lachain.Core.RPC
                 };
             else
                 rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
-
+        
             _httpService = new HttpService();
             _httpService.Start(rpcConfig);
         }

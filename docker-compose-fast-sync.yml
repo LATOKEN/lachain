@@ -11,16 +11,14 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
-    # ports:
-    #   - "7070:7070"
-    #   - "5050:5050"
-    # ports:
-    #   - "5050:5050"
-    #   - "7071:7070"
+    ports:
+      - "7070:7070"
+      - "5050:5050"
+    #   - "41011:41011"
     network_mode: "host"
-    restart: "always"
+    restart: always
 
   node1:
     build:
@@ -33,13 +31,13 @@ services:
       dockerfile: Dockerfile
     stdin_open: true
     environment:
-      - LOG_LEVEL=Trace
+      - LOG_LEVEL=Debug
     tty: true
-    # ports:
-    #   - "5051:5051"
-    #   - "7071:7071"
+    ports:
+      - "5051:5050"
+      - "7071:7070"
     network_mode: "host"
-    restart: "always"
+    restart: always
 
 #   node2:
 #     build:

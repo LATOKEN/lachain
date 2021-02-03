@@ -31,5 +31,10 @@ namespace Lachain.Storage
         {
             _writeBatch.Dispose();
         }
+
+        public WriteBatch GetWriteBatch()
+        {
+           return _writeBatch;
+        }
     }
 }

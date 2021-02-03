@@ -8,7 +8,7 @@ using RocksDbSharp;
 
 namespace Lachain.Storage
 {
-    internal class StorageState : IStorageState
+    public class StorageState : IStorageState
     {
         private readonly RepositoryManager _repositoryManager;
         private readonly ITrieMap _trieMap;
@@ -33,7 +33,7 @@ namespace Lachain.Storage
             _initialVersion = repositoryManager.LatestVersion;
         }
 
-        public ulong CurrentVersion { get; private set; }
+        public ulong CurrentVersion { get; set; }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[]? Get(byte[] key)

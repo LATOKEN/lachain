@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Lachain.Core\Lachain.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="wallet.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="config.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="config.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="wallet.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+</Project>

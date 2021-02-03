@@ -530,8 +530,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             if (!MsgSender().Equals(ContractRegisterer.GovernanceContract))
                 return ExecutionStatus.ExecutionHalted;
-
-
+            
             Logger.LogDebug($"This cycle reward {totalReward.ToMoney()}");
 
             if (_context.Receipt.Block % CycleDuration != AttendanceDetectionDuration)

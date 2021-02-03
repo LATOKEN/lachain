@@ -15,16 +15,25 @@ namespace Lachain.Core.RPC
             },
             Port = 7070,
             ApiKey = new string(Enumerable.Repeat("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 16)
-                .Select(s => s[new Random().Next(s.Length)]).ToArray())
+                .Select(s => s[new Random().Next(s.Length)]).ToArray()),
+            Peers = new[]
+            {
+                "localhost"    
+            },
+
         };
         
         [JsonProperty("hosts")]
         public string[]? Hosts { get; set; }
-
+        
         [JsonProperty("port")]
         public ushort Port { get; set; }
 
         [JsonProperty("apiKey")]
         public string? ApiKey { get; set; }
+        
+        [JsonProperty("peers")]
+        public string[]? Peers { get; set; }
+
     }
 }

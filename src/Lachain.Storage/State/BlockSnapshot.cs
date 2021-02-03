@@ -19,7 +19,18 @@ namespace Lachain.Storage.State
             _state = state;
         }
 
-        public ulong Version => _state.CurrentVersion;
+        // public ulong Version => _state.CurrentVersion;
+        public ulong Version
+        {
+            get
+            {
+                return _state.CurrentVersion;
+            }
+            set
+            {
+                _state.CurrentVersion = value;
+            }
+        }
 
         public void Commit()
         {
@@ -78,6 +89,7 @@ namespace Lachain.Storage.State
                     Logger.LogError($"Requested block for height {i} has zero state hash, current height is {GetTotalBlockHeight()}");
                     continue;
                 }
+                    
                 result.Add(block);
             }
 

@@ -1,0 +1,53 @@
+{
+  "network": {
+    "port": 5052,
+    "peers": [
+      "021fc373ad89795bf4994486dc6a32c3c61d4e29f3dd12409b326722a7e9e6d02d",
+      "02bcd4cfcc9af82aea715f5fb7f7b5bc54e109ed1562032102bcb0f5b7c0243dff",
+      "027b7a2e7d1a41809e63fdab624cb2240b841ac0ce1ea4a3a37ec8e025c2a1d82b"
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100,
+    "bootstrapAddresses": [
+      "QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@127.0.0.1:41013"
+    ]
+  },
+  "genesis": {
+    "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000",
+    "balances": {
+      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000",
+      "0x74e74bca9839b9dfcd2924765bfd241067d2069a": "1000000",
+      "0xdfc6f3d8944734950ce80d9bc30643bcca45f7ba": "1000000",
+      "0xbcf53a9aedfb8eb22fb1fd374e507f92c9af9e53": "1000000"
+    },
+    "validators": [
+      {
+        "ECDSAPublicKey": "021fc373ad89795bf4994486dc6a32c3c61d4e29f3dd12409b326722a7e9e6d02d",
+        "thresholdSignaturePublicKey": "0x262d5c8f608939a41af62542f36eda03abbbe90466f86c061a647d2d79695455986305a4cde0e4cbc1ddbce743f31d8e"
+      }
+    ]
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7072,
+    "apiKey": "asdasdasd",
+    "peers": [
+      "192.168.65.3:7071"
+    ]
+  },
+  "vault": {
+    "path": "wallet.json",
+    "password": "12345"
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainLachain"
+  },
+  "blockchain": {
+    "targetBlockTime": 0
+  }
+}
