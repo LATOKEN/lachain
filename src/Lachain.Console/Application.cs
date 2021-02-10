@@ -109,8 +109,12 @@ namespace Lachain.Console
                 blockSynchronizer.StartFastSync();    
             }
             
+            // consensusManager.Start((long)blockManager.GetHeight() + 1);
+            // validatorStatusManager.Start(false);
+
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
+            
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys(0)
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
@@ -132,6 +136,91 @@ namespace Lachain.Console
 
             while (!_interrupt)
                 Thread.Sleep(1000);
+        }
+
+         private Block BuildNextBlock(IContainer container, TransactionReceipt[] receipts = null)
+        {
+            var _stateManager = container.Resolve<IStateManager>();
+            receipts ??= new TransactionReceipt[] { };
+
+            var merkleRoot = UInt256Utils.Zero;
+
+            if (receipts.Any())
+                merkleRoot = MerkleTree.ComputeRoot(receipts.Select(tx => tx.Hash).ToArray()) ??
+                             throw new InvalidOperationException();
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) =
+                BuildHeaderAndMultisig(container, merkleRoot, predecessor, _stateManager.LastApprovedSnapshot.StateHash);
+
+            return new Block
+            {
+                Header = header,
+                Hash = header.Keccak(),
+                Multisig = multisig,
+                TransactionHashes = {receipts.Select(tx => tx.Hash)},
+            };
+        }
+
+        private (BlockHeader, MultiSig) BuildHeaderAndMultisig(IContainer container, UInt256 merkleRoot, Block? predecessor,
+            UInt256 stateHash)
+        {
+            var blockIndex = predecessor!.Header.Index + 1;
+            var header = new BlockHeader
+            {
+                Index = blockIndex,
+                PrevBlockHash = predecessor!.Hash,
+                MerkleRoot = merkleRoot,
+                StateHash = stateHash,
+                Nonce = blockIndex
+            };
+
+            var _wallet = container.Resolve<IPrivateWallet>();
+            var keyPair = _wallet.EcdsaKeyPair;
+            var Crypto = CryptoProvider.GetCrypto();
+            var headerSignature = Crypto.SignHashed(
+                header.Keccak().ToBytes(),
+                keyPair.PrivateKey.Encode()
+            ).ToSignature();
+
+            var multisig = new MultiSig
+            {
+                Quorum = 1,
+                Validators = {_wallet.EcdsaKeyPair.PublicKey},
+                Signatures =
+                {
+                    new MultiSig.Types.SignatureByValidator
+                    {
+                        Key = _wallet.EcdsaKeyPair.PublicKey,
+                        Value = headerSignature,
+                    }
+                }
+            };
+            return (header, multisig);
+        }
+
+        private OperatingError ExecuteBlock(IContainer container, Block block, TransactionReceipt[] receipts = null)
+        {
+            var _stateManager = container.Resolve<IStateManager>();
+            var _blockManager = container.Resolve<IBlockManager>();
+
+            receipts ??= new TransactionReceipt[] { };
+
+            var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) = BuildHeaderAndMultisig(container, block.Header.MerkleRoot, predecessor, stateHash);
+
+            block.Header = header;
+            block.Multisig = multisig;
+            block.Hash = header.Keccak();
+
+            var status = _blockManager.Execute(block, receipts, true, true);
+            Logger.LogInformation($"Executed block: {block.Header.Index}");
+            return status;
         }
 
         private bool _interrupt;

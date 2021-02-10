@@ -387,6 +387,7 @@ namespace Lachain.Core.Network
                 SetRpcUrl();
                 var peerResult = _CallJsonRpcAPI("getRPCList", new JArray());
                 var peers = JArray.Parse(JsonConvert.SerializeObject(peerResult!["peers"]));
+                Logger.LogDebug($"tmp = {string.Join(", ", peers)}");
 
                 SetRpcPeers(peers.ToObject<List<string>>()!);
                 SetRpcUrl();
@@ -551,8 +552,8 @@ namespace Lachain.Core.Network
                     new SnapshotIndexRepository(_rocksDbContext, storageManager);
                 
                 snapshotIndexRepository.SaveSnapshotForBlock(_fastHeight, _stateManager.CurrentSnapshot);
-                
-                Logger.LogDebug($"Height = {_fastHeight}" +
+
+                Logger.LogDebug($"Height = {_fastHeight} " +
                                 $"Balances = {_stateManager.LastApprovedSnapshot.Balances.Hash} " +
                                 $"Contracts = {_stateManager.LastApprovedSnapshot.Contracts.Hash} " +
                                 $"Storage = {_stateManager.LastApprovedSnapshot.Storage.Hash} " +
@@ -572,18 +573,33 @@ namespace Lachain.Core.Network
                     $"Handshake Completed with {ready} ");
 
                 // Update my RPC Address to all available peers
-                string localRpcAdd = GetLocalRpcAddress();
-                foreach (var url in GetRpcPeers())
-                {
-                    _rpcURL = url;
-                    JArray param = new JArray(){localRpcAdd};
-                    _CallJsonRpcAPI("updateRPCList", param);    
-                }
+                // string localRpcAdd = GetLocalRpcAddress();
+                // foreach (var url in GetRpcPeers())
+                // {
+                //     _rpcURL = url;
+                //     JArray param = new JArray(){localRpcAdd};
+                //     _CallJsonRpcAPI("updateRPCList", param);    
+                // }
                 
-                _CallJsonRpcAPI("getLatestStatus", new JArray());
+                res = _CallJsonRpcAPI("getLatestStatus", new JArray());
+                Logger.LogDebug($"7071: {res}");
 
-                _rpcURL = localRpcAdd;
-                _CallJsonRpcAPI("getLatestStatus", new JArray());    
+                var tempBlock = (int)_fastHeight - 1;
+                Logger.LogDebug($"tempBlock: {tempBlock} ");
+
+                JArray p = JArray.Parse(@$"[{_fastHeight}]");
+                res = _CallJsonRpcAPI("getSnapShot", p);
+                Logger.LogDebug($"7071: {res}");
+
+                // _rpcURL = "http://127.0.0.1:7072";
+                // res  = _CallJsonRpcAPI("getLatestStatus", new JArray());    
+                // Logger.LogDebug($"7072: {res}");
+
+                // res = _CallJsonRpcAPI("getSnapShot", p);
+                // Logger.LogDebug($"7072: {res}");
+                IBlockchainSnapshot bs = snapshotIndexRepository.GetSnapshotForBlock(_fastHeight);
+                Logger.LogDebug($"StateHase for Block {_fastHeight} is {bs.StateHash.ToString()}");
+
                 
             }
             catch (Exception e)
@@ -609,41 +625,41 @@ namespace Lachain.Core.Network
             _rpcPeers = _rpcPeers.ConvertAll(element =>
                 element = (element.Contains("http://") ? element : "http://" + element ));
 
-            Logger.LogDebug($"List of peers {_rpcPeers}");
+            Logger.LogDebug($"List of peers {string.Join(",", _rpcPeers)}");
         }
 
-        private string GetLocalRpcAddress()
-        {
-            try
-            {
-                string hostName = Dns.GetHostName();
-                IPAddress[] ipaddress = Dns.GetHostAddresses(hostName);
+        // private string GetLocalRpcAddress()
+        // {
+        //     try
+        //     {
+        //         string hostName = Dns.GetHostName();
+        //         IPAddress[] ipaddress = Dns.GetHostAddresses(hostName);
 
-                var port = _configManager.GetConfig<RpcConfig>("rpc")!.Port;
-                string rpcIp = "";
+        //         var port = _configManager.GetConfig<RpcConfig>("rpc")!.Port;
+        //         string rpcIp = "";
 
-                foreach (IPAddress ip in ipaddress)
-                {
-                    if (ip.AddressFamily.ToString().Equals("InterNetwork"))
-                    {
-                        rpcIp = ip.ToString();
-                    }
-                }
+        //         foreach (IPAddress ip in ipaddress)
+        //         {
+        //             if (ip.AddressFamily.ToString().Equals("InterNetwork"))
+        //             {
+        //                 rpcIp = ip.ToString();
+        //             }
+        //         }
 
-                if (rpcIp.Length > 0)
-                {
-                    return string.Concat("http://", rpcIp, ":", port.ToString());
-                }
-                else
-                {
-                    throw new Exception("Something went wrong");
-                }
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-        }
+        //         if (rpcIp.Length > 0)
+        //         {
+        //             return string.Concat("http://", rpcIp, ":", port.ToString());
+        //         }
+        //         else
+        //         {
+        //             throw new Exception("Something went wrong");
+        //         }
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         throw e;
+        //     }
+        // }
 
         private void SetRpcUrl()
         {

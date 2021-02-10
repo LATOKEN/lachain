@@ -187,7 +187,6 @@ namespace Lachain.Core.Consensus
                         Logger.LogDebug($"Block height is {blockHeight}, CurrentEra is {CurrentEra}");
                         if (blockHeight >= CurrentEra)
                         {
-                            // TODO: Comment while FAST SYNC
                             AdvanceEra(blockHeight + 1);
                             continue;
                         }
@@ -208,7 +207,8 @@ namespace Lachain.Core.Consensus
                         (ulong)CurrentEra
                     );
 
-                    if (weAreValidator && !haveKeys)
+                    var (flag, height) = _blockSynchronizer.GetFastSyncDetail();
+                    if (weAreValidator && !haveKeys && !flag)
                     {
                         Logger.LogError(
                             $"No required keys for block {CurrentEra}, need to rescan latest cycle to generate keys");

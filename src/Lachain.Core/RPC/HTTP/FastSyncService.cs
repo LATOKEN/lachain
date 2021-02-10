@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Numerics;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using System.Collections.Generic;
@@ -326,7 +327,8 @@ namespace Lachain.Core.RPC.HTTP
                     ["Transaction_Version"] = _stateManager.CurrentSnapshot.Transactions.Version,
                     ["Block_Version"] = _stateManager.CurrentSnapshot.Blocks.Version,
                     ["Event_Version"] = _stateManager.CurrentSnapshot.Events.Version,
-                    ["Validator_Version"] = _stateManager.CurrentSnapshot.Validators.Version
+                    ["Validator_Version"] = _stateManager.CurrentSnapshot.Validators.Version,
+                    ["LastApprovedSS"] = _stateManager.LastApprovedSnapshot.StateHash.ToString()
                 };
             }
             catch (System.Exception exp)
@@ -350,7 +352,7 @@ namespace Lachain.Core.RPC.HTTP
 
                 if (_fastSyncStatus)
                 {
-                    Logger.LogDebug($"End: HandShake");
+                    Logger.LogDebug($"End: HandShake - 'false'");
                     returnObj = new JObject
                     {
                         ["success"] = "true",
@@ -360,7 +362,7 @@ namespace Lachain.Core.RPC.HTTP
                 else
                 {
                     _fastSyncStatus = true;
-                    Logger.LogDebug($"End: HandShake");
+                    Logger.LogDebug($"End: HandShake - 'true'");
                     
                     returnObj = new JObject
                     {
@@ -379,6 +381,32 @@ namespace Lachain.Core.RPC.HTTP
                     ["message"] = exp.Message
                 };
             }
+        }
+
+
+        [JsonRpcMethod("getSnapShot")]
+        private JObject? GetSnapShot(ulong blockNumber)
+        {
+            StorageManager storageManager = new StorageManager(_rocksDbContext);
+            SnapshotIndexRepository snapshotIndexRepository =
+                    new SnapshotIndexRepository(_rocksDbContext, storageManager);
+                
+            IBlockchainSnapshot bs = snapshotIndexRepository.GetSnapshotForBlock(blockNumber);
+            var res = bs.StateHash.ToString();
+
+            Block b = _blockManager.GetByHeight(blockNumber+1);
+            var b_hash = b.Header.StateHash.ToString();
+
+            
+
+            return new JObject
+            {
+                ["success"] = "true",
+                ["stateHash"] = res,
+                ["block"] = blockNumber,
+                ["b_hash"] = b_hash,
+                ["next_block"] = blockNumber + 1
+            };
         }
     }
 }
