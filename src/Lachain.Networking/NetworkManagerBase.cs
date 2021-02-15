@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
+using Lachain.Consensus;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
@@ -175,20 +176,7 @@ namespace Lachain.Networking
                 case NetworkMessage.MessageOneofCase.Ack:
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
-                    
-                    switch (message.ConsensusMessage.PayloadCase)
-                    {
-                        case ConsensusMessage.PayloadOneofCase.ValMessage:
-                            Logger.LogTrace("RBC.Val message is received");
-                            break;
-                        case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                            Logger.LogTrace("RBC.Echo message is received");
-                            break;
-                        case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                            Logger.LogTrace("RBC.Ready message is received");
-                            break;
-                    }
-
+                    Logger.LogTrace($"Message is received: {message.ConsensusMessage.PrettyTypeString()}");
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
                     break;
                 default:

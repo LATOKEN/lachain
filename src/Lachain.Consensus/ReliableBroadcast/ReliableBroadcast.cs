@@ -174,7 +174,6 @@ namespace Lachain.Consensus.ReliableBroadcast
             _readyMessages[validator] = readyMessage;
             TrySendReadyMessageFromReady();
             CheckResult();
-            // Logger.LogDebug($"{Id}: got ready message from {validator}");
         }
 
         private void TrySendReadyMessageFromEchos()

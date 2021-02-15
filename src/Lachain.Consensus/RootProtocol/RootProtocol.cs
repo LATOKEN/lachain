@@ -49,7 +49,7 @@ namespace Lachain.Consensus.RootProtocol
         {
             if (envelope.External)
             {
-                Logger.LogTrace("External envelope");
+                Logger.LogTrace($"{Id}: External envelope");
                 var message = envelope.ExternalMessage;
                 if (message is null)
                 {
@@ -68,13 +68,13 @@ namespace Lachain.Consensus.RootProtocol
                 var signedHeaderMessage = message.SignedHeaderMessage;
                 var idx = envelope.ValidatorIndex;
                 Logger.LogTrace(
-                    $"Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
+                    $"{Id}: Received signature of header {signedHeaderMessage.Header.Keccak().ToHex()} " +
                     $"from validator {idx}: " +
                     $"pubKey {Wallet.EcdsaPublicKeySet[idx].EncodeCompressed().ToHex()}"
                 );
                 if (!(_header is null) && !_header.Equals(signedHeaderMessage.Header))
                 {
-                    Logger.LogWarning($"Received incorrect block header from validator {idx}");
+                    Logger.LogWarning($"{Id}: Received incorrect block header from validator {idx}");
                     Logger.LogWarning($"Header we have {_header}");
                     Logger.LogWarning($"Header we received {signedHeaderMessage.Header}");
                 }
@@ -88,12 +88,12 @@ namespace Lachain.Consensus.RootProtocol
                     _lastMessage =
                         $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}";
                     Logger.LogWarning(
-                        $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}"
+                        $"{Id}: Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}"
                     );
                 }
                 else
                 {
-                    Logger.LogTrace("Add signatures");
+                    Logger.LogTrace($"{Id}: Add signatures");
                     _lastMessage = "Add signatures";
                     _signatures.Add(new Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>(
                             signedHeaderMessage.Header,
@@ -114,12 +114,12 @@ namespace Lachain.Consensus.RootProtocol
             }
             else
             {
-                Logger.LogTrace("Internal envelop");
+                Logger.LogTrace($"{Id}: Internal envelop");
                 var message = envelope.InternalMessage;
                 switch (message)
                 {
                     case ProtocolRequest<RootProtocolId, IBlockProducer> request:
-                        Logger.LogTrace("request");
+                        Logger.LogTrace($"{Id}: request");
                         _lastMessage = "ProtocolRequest";
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
@@ -144,13 +144,13 @@ namespace Lachain.Consensus.RootProtocol
                         break;
                     case ProtocolResult<CoinId, CoinResult> coinResult:
                         _nonce = GetNonceFromCoin(coinResult.Result);
-                        Logger.LogTrace($"Received coin for block nonce: {_nonce}");
+                        Logger.LogTrace($"{Id}: Received coin for block nonce: {_nonce}");
                         _lastMessage = $"Received coin for block nonce: {_nonce}";
                         TrySignHeader();
                         CheckSignatures();
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
-                        Logger.LogTrace($"Received shares {result.Result.Count} from HoneyBadger");
+                        Logger.LogTrace($"{Id}: Received shares {result.Result.Count} from HoneyBadger");
                         _lastMessage = $"Received shares {result.Result.Count} from HoneyBadger";
 
                         _hashes = result.Result.ToArray()
@@ -158,18 +158,18 @@ namespace Lachain.Consensus.RootProtocol
                             .Select(hash => hash.ToUInt256())
                             .Distinct()
                             .ToArray();
-                        Logger.LogTrace($"Collected {_hashes.Length} transactions in total");
+                        Logger.LogTrace($"{Id}: Collected {_hashes.Length} transactions in total");
                         TrySignHeader();
                         CheckSignatures();
                         break;
                     case ProtocolResult<RootProtocolId, object?> _:
-                        Logger.LogTrace("Terminate in switch");
+                        Logger.LogTrace($"{Id}: Terminate in switch");
                         _lastMessage = "Terminate in switch";
                         Terminate();
                         break;
                     default:
                         _lastMessage = "Invalid message";
-                        Logger.LogError("Invalid message");
+                        Logger.LogError($"{Id}: Invalid message");
                         throw new ArgumentOutOfRangeException(nameof(message));
                 }
             }
@@ -177,19 +177,29 @@ namespace Lachain.Consensus.RootProtocol
 
         private void TrySignHeader()
         {
-            if (_hashes is null || _nonce is null || _blockProducer is null) return;
-            if (!(_header is null)) return;
+            if (_hashes is null || _nonce is null || _blockProducer is null)
+            {
+                Logger.LogTrace($"{Id}, TrySignHeader: no hashes,  nonce or blockProducer");
+                return;
+            }
+
+            if (!(_header is null))
+            {
+                Logger.LogTrace($"{Id}, TrySignHeader: already has a header");
+                return;
+            }
             try
             {
                 _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);
                 if (_header == null)
                 {
+                    Logger.LogTrace($"{Id}, TrySignHeader: failed to create header");
                     return;
                 }
             }
             catch (Exception e)
             {
-                Logger.LogError($"Cannot sign header because of {e}");
+                Logger.LogError($"{Id}: Cannot sign header because of {e}");
                 Terminate();
                 Environment.Exit(1);
                 return;
@@ -200,14 +210,18 @@ namespace Lachain.Consensus.RootProtocol
                 _keyPair.PrivateKey.Encode()
             ).ToSignature();
             Logger.LogTrace(
-                $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}"
+                $"{Id}: Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}"
             );
             Broadcaster.Broadcast(CreateSignedHeaderMessage(_header, signature));
         }
 
         private void CheckSignatures()
         {
-            if (_header is null || _hashes is null || _blockProducer is null || _signatures.Count == 0) return;
+            if (_header is null || _hashes is null || _blockProducer is null || _signatures.Count == 0)
+            {
+                Logger.LogTrace($"{Id}, CheckSignatures: no header, hashes,  blockProducer or signatures");
+                return;
+            }
             var bestHeader = _signatures
                 .GroupBy(
                     tuple => tuple.Item1,
@@ -216,7 +230,7 @@ namespace Lachain.Consensus.RootProtocol
                 .Select(p => new KeyValuePair<BlockHeader, int>(p.Key, p.Count()))
                 .Aggregate((x, y) => x.Value > y.Value ? x : y);
             if (bestHeader.Value < Wallet.N - Wallet.F) return;
-            Logger.LogTrace($"Received {bestHeader.Value} signatures for block header");
+            Logger.LogTrace($"{Id}: Received {bestHeader.Value} signatures for block header");
             _multiSig = new MultiSig {Quorum = (uint) (Wallet.N - Wallet.F)};
             _multiSig.Validators.AddRange(Wallet.EcdsaPublicKeySet);
             foreach (var (header, signature) in _signatures)
@@ -227,7 +241,7 @@ namespace Lachain.Consensus.RootProtocol
                 }
                 else
                 {
-                    Logger.LogWarning($"Validator {signature.Key.ToHex()} signed wrong block header: {header}");
+                    Logger.LogWarning($"{Id}: Validator {signature.Key.ToHex()} signed wrong block header: {header}");
                 }
             }
 
@@ -237,7 +251,7 @@ namespace Lachain.Consensus.RootProtocol
             }
             catch (Exception e)
             {
-                Logger.LogError($"Cannot produce block because of {e}");
+                Logger.LogError($"{Id}: Cannot produce block because of {e}");
                 Terminate();
                 Environment.Exit(1);
                 return;
