@@ -78,6 +78,9 @@ namespace Lachain.Core.Network
             1, 4, 5, 6, 7, 9, 10
         };
 
+        Dictionary<ulong, List<ulong>> _blockVersion = new Dictionary<ulong, List<ulong>>();
+
+
         private int _totalRetryCount = 5;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
@@ -393,9 +396,9 @@ namespace Lachain.Core.Network
                 SetRpcUrl();
 
                 Logger.LogDebug($"RPC URL = {_rpcURL}");
-                
+
                 var handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
-                var ready =  bool.Parse(handShakeResult!["ready"]!.ToString());
+                var ready = bool.Parse(handShakeResult!["ready"]!.ToString());
 
                 for (var i = 0; i < _totalRetryCount; i++)
                 {
@@ -404,7 +407,7 @@ namespace Lachain.Core.Network
                         Thread.Sleep(10000);
                         SetRpcUrl();
                         handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
-                        ready =  bool.Parse(handShakeResult!["ready"]!.ToString());
+                        ready = bool.Parse(handShakeResult!["ready"]!.ToString());
                     }
                     else
                     {
@@ -417,18 +420,19 @@ namespace Lachain.Core.Network
                     Logger.LogError($"No peer is available for FastSync");
                     return;
                 }
-                
-                
+
+
                 var fastSyncStart = DateTime.Now.ToString("HH:mm:ss.ffff");
                 Logger.LogDebug($"Start: FastSync Start {fastSyncStart} ");
+
                 foreach (ulong repoType in _repoList)
                 {
                     ulong offset = 0;
                     bool success = true;
                     ulong totalNodes = 0;
-                
+
                     var startTime = DateTime.Now.ToString("HH:mm:ss.ffff");
-                    Logger.LogTrace($"Start Receiving Blocks for Repo {repoType} time {startTime}");
+                    Logger.LogDebug($"Start Receiving Blocks for Repo {repoType} time {startTime}");
                     do
                     {
                         JArray param = JArray.Parse(@$"[{repoType}, {offset}]");
@@ -440,10 +444,10 @@ namespace Lachain.Core.Network
                             {
                                 var ids = JArray.Parse(JsonConvert.SerializeObject(result!["ids"]!));
                                 var values = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
-                
+
                                 List<ulong>? lstIds = ids.ToObject<List<ulong>>();
                                 List<byte[]>? lstValues = values.ToObject<List<byte[]>>();
-                
+
                                 var t = Tuple.Create(lstIds, lstValues);
                                 _repoBlocks.Add(repoType, t!);
                             }
@@ -451,16 +455,16 @@ namespace Lachain.Core.Network
                             {
                                 List<ulong> oldIds = _repoBlocks[repoType].Item1;
                                 List<byte[]> oldValues = _repoBlocks[repoType].Item2;
-                
+
                                 var ids = JArray.Parse(JsonConvert.SerializeObject(result!["ids"]!));
                                 var values = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
-                
+
                                 List<ulong>? lstIds = ids.ToObject<List<ulong>>();
                                 List<byte[]>? lstValues = values.ToObject<List<byte[]>>();
-                
+
                                 oldIds.AddRange(lstIds!);
                                 oldValues.AddRange(lstValues!);
-                
+
                                 var t = Tuple.Create(oldIds, oldValues);
                                 _repoBlocks[repoType] = t;
                             }
@@ -469,39 +473,34 @@ namespace Lachain.Core.Network
                         totalNodes = ulong.Parse(result!["total_blocks"]!.ToString());
                         offset = ulong.Parse(result!["new_offset"]!.ToString());
                     } while (success && (totalNodes > offset));
-                
-                    Logger.LogTrace(
+
+                    Logger.LogDebug(
                         $"End Processing Repo {repoType} " +
                         $"Total Nodes {totalNodes} " +
                         $"Start Time: {startTime} - End Time: {DateTime.Now.ToString("HH:mm:ss.ffff")} ");
-                    
-                    Logger.LogTrace(
-                        $"Start Persisting Repo {repoType}");
+
+                    Logger.LogDebug($"Start Persisting Repo {repoType}");
+
                     if (_repoBlocks.ContainsKey(repoType))
                     {
                         List<ulong> blockIds = _repoBlocks[repoType].Item1;
                         List<byte[]> blockValues = _repoBlocks[repoType].Item2;
-                
+
                         using (Stream stream = new MemoryStream())
                         {
                             IFormatter formatter = new BinaryFormatter();
                             formatter.Serialize(stream, blockValues);
                         }
-                
+
                         for (var i = 0; i < blockIds.Count; i++)
                         {
                             nodeRepository.WriteNodeToBatch(blockIds[i], NodeSerializer.FromBytes(blockValues[i]),
                                 rocksDbAtomicWrite);
                         }
-                
+
                         var writeBatch2 = rocksDbAtomicWrite.GetWriteBatch();
                         nodeRepository.SaveBatch(writeBatch2);
-                
-                        var versionFactory =
-                            new VersionFactory(versionRepository.GetVersion(Convert.ToUInt32(repoType)));
-                        var repositoryManager = new RepositoryManager(Convert.ToUInt32(repoType), _rocksDbContext,
-                            versionFactory, versionRepository);
-                
+
                         switch (repoType)
                         {
                             case 1:
@@ -535,72 +534,53 @@ namespace Lachain.Core.Network
                             default:
                                 break;
                         }
+                        
                         _stateManager.Commit();
                     }
                 }
-                
+
                 var res = _CallJsonRpcAPI("getMetaVersion", new JArray());
                 versionRepository.SetVersion((uint) RepositoryType.MetaRepository, (ulong) res!["Meta"]!,
                     rocksDbAtomicWrite);
                 rocksDbAtomicWrite.Commit();
-                
+
                 _fastSyncFlag = true;
                 _fastHeight = _blockManager.GetHeight();
+
+                Logger.LogDebug($"Block Height: {_fastHeight}");
+
+                _SetBlockVersions(_fastHeight);
+                
+                var p = JArray.Parse(@$"[{_fastHeight}]");
+                res = _CallJsonRpcAPI("getSnapShot", p);
+                Logger.LogDebug($"7071: {res}");
+                
                 
                 StorageManager storageManager = new StorageManager(_rocksDbContext);
                 SnapshotIndexRepository snapshotIndexRepository =
                     new SnapshotIndexRepository(_rocksDbContext, storageManager);
-                
-                snapshotIndexRepository.SaveSnapshotForBlock(_fastHeight, _stateManager.CurrentSnapshot);
 
-                Logger.LogDebug($"Height = {_fastHeight} " +
-                                $"Balances = {_stateManager.LastApprovedSnapshot.Balances.Hash} " +
-                                $"Contracts = {_stateManager.LastApprovedSnapshot.Contracts.Hash} " +
-                                $"Storage = {_stateManager.LastApprovedSnapshot.Storage.Hash} " +
-                                $"Transactions = {_stateManager.LastApprovedSnapshot.Transactions.Hash} " +
-                                $"Blocks = {_stateManager.LastApprovedSnapshot.Blocks.Hash} " +
-                                $"Events = {_stateManager.LastApprovedSnapshot.Events.Hash} " +
-                                $"Validators {_stateManager.LastApprovedSnapshot.Validators.Hash} ");
+                IBlockchainSnapshot bs = snapshotIndexRepository.GetSnapshotForBlock(_fastHeight);
+
+                Logger.LogDebug($"7072");
+                Logger.LogDebug($"stateHash: {bs.StateHash.ToString()}");
+                Logger.LogDebug($"snapshot: {Convert.ToString(bs)}");
+                Logger.LogDebug($"Balance_Version: {bs.Balances.Version.ToString()}");
+                Logger.LogDebug($"Contract_Version: {bs.Contracts.Version.ToString()}");
+                Logger.LogDebug($"Storage_Version: {bs.Storage.Version.ToString()}");
+                Logger.LogDebug($"Transaction_Version: {bs.Transactions.Version.ToString()}");
+                Logger.LogDebug($"Block_Version: {bs.Blocks.Version.ToString()}");
+                Logger.LogDebug($"Event_Version: {bs.Events.Version.ToString()}");
+                Logger.LogDebug($"Validator_Version: {bs.Validators.Version.ToString()}");
+                Logger.LogDebug($"LastApprovedSS: {_stateManager.LastApprovedSnapshot.StateHash.ToString()}");
+
+                Logger.LogDebug($"Block Height: {_fastHeight}");
+                
+                _CallJsonRpcAPI("handShake", new JArray());
                 
                 Logger.LogDebug(
                     $"End: FastSync Start {fastSyncStart} End {DateTime.Now:HH:mm:ss.ffff}" +
                     $"With BlockHeight {_fastHeight} ");
-                
-                handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
-                ready =  bool.Parse(handShakeResult!["ready"]!.ToString());
-                
-                Logger.LogDebug(
-                    $"Handshake Completed with {ready} ");
-
-                // Update my RPC Address to all available peers
-                // string localRpcAdd = GetLocalRpcAddress();
-                // foreach (var url in GetRpcPeers())
-                // {
-                //     _rpcURL = url;
-                //     JArray param = new JArray(){localRpcAdd};
-                //     _CallJsonRpcAPI("updateRPCList", param);    
-                // }
-                
-                res = _CallJsonRpcAPI("getLatestStatus", new JArray());
-                Logger.LogDebug($"7071: {res}");
-
-                var tempBlock = (int)_fastHeight - 1;
-                Logger.LogDebug($"tempBlock: {tempBlock} ");
-
-                JArray p = JArray.Parse(@$"[{_fastHeight}]");
-                res = _CallJsonRpcAPI("getSnapShot", p);
-                Logger.LogDebug($"7071: {res}");
-
-                // _rpcURL = "http://127.0.0.1:7072";
-                // res  = _CallJsonRpcAPI("getLatestStatus", new JArray());    
-                // Logger.LogDebug($"7072: {res}");
-
-                // res = _CallJsonRpcAPI("getSnapShot", p);
-                // Logger.LogDebug($"7072: {res}");
-                IBlockchainSnapshot bs = snapshotIndexRepository.GetSnapshotForBlock(_fastHeight);
-                Logger.LogDebug($"StateHase for Block {_fastHeight} is {bs.StateHash.ToString()}");
-
-                
             }
             catch (Exception e)
             {
@@ -618,48 +598,15 @@ namespace Lachain.Core.Network
         {
             return _rpcPeers;
         }
-        
+
         public void SetRpcPeers(List<string> peers)
         {
             _rpcPeers.AddRange(peers);
             _rpcPeers = _rpcPeers.ConvertAll(element =>
-                element = (element.Contains("http://") ? element : "http://" + element ));
+                element = (element.Contains("http://") ? element : "http://" + element));
 
             Logger.LogDebug($"List of peers {string.Join(",", _rpcPeers)}");
         }
-
-        // private string GetLocalRpcAddress()
-        // {
-        //     try
-        //     {
-        //         string hostName = Dns.GetHostName();
-        //         IPAddress[] ipaddress = Dns.GetHostAddresses(hostName);
-
-        //         var port = _configManager.GetConfig<RpcConfig>("rpc")!.Port;
-        //         string rpcIp = "";
-
-        //         foreach (IPAddress ip in ipaddress)
-        //         {
-        //             if (ip.AddressFamily.ToString().Equals("InterNetwork"))
-        //             {
-        //                 rpcIp = ip.ToString();
-        //             }
-        //         }
-
-        //         if (rpcIp.Length > 0)
-        //         {
-        //             return string.Concat("http://", rpcIp, ":", port.ToString());
-        //         }
-        //         else
-        //         {
-        //             throw new Exception("Something went wrong");
-        //         }
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         throw e;
-        //     }
-        // }
 
         private void SetRpcUrl()
         {
@@ -674,9 +621,9 @@ namespace Lachain.Core.Network
             {
                 rpcList = GetRpcPeers();
             }
-            
+
             var random = new Random();
-            
+
             _rpcURL = rpcList[random.Next(rpcList.Count)];
             if (!_rpcURL.Contains("http"))
             {
@@ -684,11 +631,106 @@ namespace Lachain.Core.Network
             }
         }
 
+        private void _GetBlockVersions(ulong blockHeight)
+        {
+            var startTime = DateTime.Now.ToString("HH:mm:ss.ffff");
+            Logger.LogDebug($"Start Receiving Versions For The Blocks - StartTime: {startTime}");
+
+            foreach (var repo in _repoList)
+            {
+                ulong offset = 0;
+                
+                do
+                {
+                    Logger.LogDebug($"Start: Repo - {repo}");
+                    JArray param = JArray.Parse(@$"[{blockHeight}, {repo}, {offset}]");
+                    var result = _CallJsonRpcAPI("getBlockVersion", param);
+
+                    if (offset == 0)
+                    {
+                        var valuesArr = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
+                        List<ulong>? values = valuesArr.ToObject<List<ulong>>();
+
+                        _blockVersion.Add(repo, values!);
+                    }
+                    else
+                    {
+                        List<ulong> currentValues = _blockVersion[repo];
+
+                        var valuesArr = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
+                        List<ulong>? values = valuesArr.ToObject<List<ulong>>();
+
+                        currentValues.AddRange(values!);
+
+                        _blockVersion[repo] = currentValues;
+                    }
+
+                    offset = ulong.Parse(result!["new_offset"]!.ToString());
+                } while (blockHeight > offset);
+                
+                Logger.LogDebug($"End: Repo - {repo}");
+            }
+
+            Logger.LogDebug(
+                $"End Receiving Versions For The Blocks - StartTime: {startTime} - EndTime: {DateTime.Now:HH:mm:ss.ffff}");
+        }
+
+        private void _SetBlockVersions(ulong blockHeight)
+        {
+            _GetBlockVersions(blockHeight);
+
+            StorageManager storageManager = new StorageManager(_rocksDbContext);
+            SnapshotIndexRepository snapshotIndexRepository =
+                new SnapshotIndexRepository(_rocksDbContext, storageManager);
+
+            var startTime = DateTime.Now.ToString("HH:mm:ss.ffff");
+            Logger.LogDebug($"Start Setting Versions For The Blocks - StartTime: {startTime}");
+
+            for (ulong i = 0; i <= blockHeight; i++)
+            {
+                foreach (var repo in _repoList)
+                {
+                    List<ulong> currentValues = _blockVersion[repo];
+                    Logger.LogDebug($"Repo: {repo} Value: {currentValues[(int) i]}");
+                    snapshotIndexRepository.SetVersion((uint) repo, i, currentValues[(int) i]);
+
+                    IStorageState state = storageManager.GetLastState((uint) repo);
+                    state.Commit();
+                }
+            }
+            
+            // foreach (var repo in _repoList)
+            // {
+            //     //if (_repoBlocks.ContainsKey(repo))
+            //     //{
+            //     //    List<ulong> blockIds = _repoBlocks[repo].Item1;
+            //     //    snapshotIndexRepository.SetVersion((uint) repo, (ulong) blockHeight, blockIds[0]);
+            //     //}
+            //     //else
+            //     //{
+            //     //    snapshotIndexRepository.SetVersion((uint) repo, (ulong) blockHeight, 0);
+            //     //}
+            //     //
+            //     //
+            //     List<ulong> currentValues = _blockVersion[repo];
+            //
+            //     foreach (var (value, index) in currentValues.WithIndex())
+            //     {
+            //         Logger.LogDebug($"Repo: {repo} Value: {value}  Index: {index}");
+            //         snapshotIndexRepository.SetVersion((uint) repo, (ulong) index, value);
+            //     }
+            // }
+
+            Logger.LogDebug(
+                $"End Setting Versions For The Blocks - StartTime: {startTime} - EndTime: {DateTime.Now:HH:mm:ss.ffff}");
+        }
+
         private JToken? _CallJsonRpcAPI(string method, JArray param)
         {
             try
             {
-                Logger.LogTrace($"Calling Method: {method} with Address: {_rpcURL} and Params: {string.Join(", ", param)}");
+                Logger.LogTrace(
+                    $"Calling Method: {method} with Address: {_rpcURL} and Params: {string.Join(", ", param)}");
                 JObject options;
                 if (param.Count == 0)
                 {

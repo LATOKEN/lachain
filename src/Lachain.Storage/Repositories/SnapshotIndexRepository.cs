@@ -64,7 +64,7 @@ namespace Lachain.Storage.Repositories
             SetVersion((uint) RepositoryType.ValidatorRepository, block, snapshot.Validators.Version);
         }
 
-        private ulong GetVersion(uint repository, ulong block)
+        public ulong GetVersion(uint repository, ulong block)
         {
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
                 repository.ToBytes().Concat(block.ToBytes()).ToArray()
@@ -72,7 +72,7 @@ namespace Lachain.Storage.Repositories
             return rawVersion.AsReadOnlySpan().ToUInt64();
         }
 
-        private void SetVersion(uint repository, ulong block, ulong version)
+        public void SetVersion(uint repository, ulong block, ulong version)
         {
             _dbContext.Save(
                 EntryPrefix.SnapshotIndex.BuildPrefix(

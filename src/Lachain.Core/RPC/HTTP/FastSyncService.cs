@@ -31,6 +31,13 @@ namespace Lachain.Core.RPC.HTTP
         private Dictionary<ulong, Tuple<List<ulong>, List<byte[]>>> _repoBlocks =
             new Dictionary<ulong, Tuple<List<ulong>, List<byte[]>>>();
 
+        Dictionary<ulong, List<ulong>> _blockVersion = new Dictionary<ulong, List<ulong>>();
+
+        private List<ulong> _repoList = new List<ulong>()
+        {
+            1, 4, 5, 6, 7, 9, 10
+        };
+
         private bool _fastSyncStatus = false;
 
         public FastSyncService(
@@ -54,32 +61,32 @@ namespace Lachain.Core.RPC.HTTP
 
         private void GetSerializedNodesAndIds(ulong repoType)
         {
-            Logger.LogTrace($"Start: getSerializedNodesAndIds");
+            Logger.LogTrace($"Start: GetSerializedNodesAndIds");
 
-            ulong _version = 0;
+            ulong version = 0;
 
             switch (repoType)
             {
                 case 1:
-                    _version = _stateManager.CurrentSnapshot.Balances.Version;
+                    version = _stateManager.CurrentSnapshot.Balances.Version;
                     break;
                 case 4:
-                    _version = _stateManager.CurrentSnapshot.Contracts.Version;
+                    version = _stateManager.CurrentSnapshot.Contracts.Version;
                     break;
                 case 5:
-                    _version = _stateManager.CurrentSnapshot.Storage.Version;
+                    version = _stateManager.CurrentSnapshot.Storage.Version;
                     break;
                 case 6:
-                    _version = _stateManager.CurrentSnapshot.Transactions.Version;
+                    version = _stateManager.CurrentSnapshot.Transactions.Version;
                     break;
                 case 7:
-                    _version = _stateManager.CurrentSnapshot.Blocks.Version;
+                    version = _stateManager.CurrentSnapshot.Blocks.Version;
                     break;
                 case 9:
-                    _version = _stateManager.CurrentSnapshot.Events.Version;
+                    version = _stateManager.CurrentSnapshot.Events.Version;
                     break;
                 case 10:
-                    _version = _stateManager.CurrentSnapshot.Validators.Version;
+                    version = _stateManager.CurrentSnapshot.Validators.Version;
                     break;
                 default:
                     break;
@@ -88,12 +95,12 @@ namespace Lachain.Core.RPC.HTTP
             var versionFactory = new VersionFactory(_versionRepository.GetVersion(Convert.ToUInt32(repoType)));
             var trieHashMap = new TrieHashMap(_nodeRepository, versionFactory);
 
-            if (trieHashMap.GetNodeIds(_version).ToList().Count > 0)
+            if (trieHashMap.GetNodeIds(version).ToList().Count > 0)
             {
-                var t = Tuple.Create(trieHashMap.GetNodeIds(_version).ToList(),
-                    trieHashMap.GetSerializedNodes(_version).ToList());
+                var t = Tuple.Create(trieHashMap.GetNodeIds(version).ToList(),
+                    trieHashMap.GetSerializedNodes(version).ToList());
 
-                _repoBlocks.Add(repoType, t);    
+                _repoBlocks.Add(repoType, t);
             }
 
             Logger.LogTrace($"End: getSerializedNodesAndIds");
@@ -341,7 +348,7 @@ namespace Lachain.Core.RPC.HTTP
                 };
             }
         }
-        
+
         [JsonRpcMethod("handShake")]
         private JObject? HandShake()
         {
@@ -357,18 +364,18 @@ namespace Lachain.Core.RPC.HTTP
                     {
                         ["success"] = "true",
                         ["ready"] = "false"
-                    };    
+                    };
                 }
                 else
                 {
                     _fastSyncStatus = true;
                     Logger.LogDebug($"End: HandShake - 'true'");
-                    
+
                     returnObj = new JObject
                     {
                         ["success"] = "true",
                         ["ready"] = "true"
-                    }; 
+                    };
                 }
 
                 return returnObj;
@@ -383,29 +390,146 @@ namespace Lachain.Core.RPC.HTTP
             }
         }
 
+        private void BlockVersions(ulong blockHeight, ulong repoType)
+        {
+            Logger.LogDebug($"Start: BlockVersions with Repo {repoType}");
+            
+            StorageManager storageManager = new StorageManager(_rocksDbContext);
+            SnapshotIndexRepository snapshotIndexRepository =
+                new SnapshotIndexRepository(_rocksDbContext, storageManager);
+
+            List<ulong> versions = new List<ulong>();
+            for (ulong i = 0; i <= blockHeight; i++)
+            {
+                versions.Add(snapshotIndexRepository.GetVersion((uint) repoType, i));
+            }
+
+            _blockVersion.Add(repoType, versions);
+            
+            Logger.LogDebug($"End: BlockVersions with Repo {repoType}");
+        }
+
+        [JsonRpcMethod("getBlockVersion")]
+        private JObject? GetBlockVersion(ulong blockHeight, ulong repoType, int offset)
+        {
+            try
+            {
+                if (!_blockVersion.ContainsKey(repoType))
+                    BlockVersions(blockHeight, repoType);
+
+                if (_blockVersion.ContainsKey(repoType))
+                {
+                    if (_blockVersion[repoType].Count == 0)
+                    {
+                        return new JObject
+                        {
+                            ["success"] = "true",
+                            ["message"] = "no blocks to fetch",
+                            ["repoType"] = repoType,
+                            ["blockHeight"] = blockHeight,
+                            ["old_offset"] = offset,
+                            ["new_offset"] = offset,
+                            ["values"] = null
+                        };
+                    }
+
+                    if (offset > _blockVersion[repoType].Count)
+                    {
+                        return new JObject
+                        {
+                            ["success"] = "true",
+                            ["message"] = "offset is higher than the total values",
+                            ["repoType"] = repoType,
+                            ["blockHeight"] = blockHeight,
+                            ["old_offset"] = offset,
+                            ["new_offset"] = offset,
+                            ["values"] = null
+                        };
+                    }
+
+                    List<ulong> values;
+
+                    if ((_blockVersion[repoType].Count - offset) > 500)
+                    {
+                        values = _blockVersion[repoType].GetRange(offset, 500);
+                    }
+                    else
+                    {
+                        values = _blockVersion[repoType]
+                            .GetRange(offset, _blockVersion[repoType].Count - offset);
+                    }
+
+                    return new JObject
+                    {
+                        ["success"] = "true",
+                        ["message"] = "OK",
+                        ["repoType"] = repoType,
+                        ["blockHeight"] = blockHeight,
+                        ["old_offset"] = offset,
+                        ["new_offset"] = offset + 500,
+                        ["values"] = JArray.Parse(JsonConvert.SerializeObject(values))
+                    };
+                }
+                else
+                {
+                    Logger.LogTrace($"End: RetrieveValues - No Blocks for Repo");
+                    return new JObject
+                    {
+                        ["success"] = "true",
+                        ["message"] = "no blocks for repo",
+                        ["repoType"] = repoType,
+                        ["blockHeight"] = 0,
+                        ["old_offset"] = offset,
+                        ["new_offset"] = offset,
+                        ["values"] = null
+                    };
+                }
+            }
+            catch (Exception exp)
+            {
+                Logger.LogTrace($"End: RetrieveValues - Error {exp.Message}");
+                return new JObject
+                {
+                    ["success"] = "true",
+                    ["message"] = exp.Message,
+                    ["repoType"] = repoType,
+                    ["blockHeight"] = 0,
+                    ["old_offset"] = offset,
+                    ["new_offset"] = offset,
+                    ["values"] = null
+                };
+            }
+        }
 
         [JsonRpcMethod("getSnapShot")]
         private JObject? GetSnapShot(ulong blockNumber)
         {
             StorageManager storageManager = new StorageManager(_rocksDbContext);
             SnapshotIndexRepository snapshotIndexRepository =
-                    new SnapshotIndexRepository(_rocksDbContext, storageManager);
-                
+                new SnapshotIndexRepository(_rocksDbContext, storageManager);
+
             IBlockchainSnapshot bs = snapshotIndexRepository.GetSnapshotForBlock(blockNumber);
             var res = bs.StateHash.ToString();
 
-            Block b = _blockManager.GetByHeight(blockNumber+1);
-            var b_hash = b.Header.StateHash.ToString();
-
-            
+            // var b = _blockManager.GetByHeight(blockNumber+1);
+            // var b_hash = b.Header.StateHash.ToString();
 
             return new JObject
             {
                 ["success"] = "true",
                 ["stateHash"] = res,
                 ["block"] = blockNumber,
-                ["b_hash"] = b_hash,
-                ["next_block"] = blockNumber + 1
+                ["snapshot"] = Convert.ToString(bs),
+                ["Balance_Version"] = bs.Balances.Version.ToString(),
+                ["Contract_Version"] = bs.Contracts.Version.ToString(),
+                ["Storage_Version"] = bs.Storage.Version.ToString(),
+                ["Transaction_Version"] = bs.Transactions.Version.ToString(),
+                ["Block_Version"] = bs.Blocks.Version.ToString(),
+                ["Event_Version"] = bs.Events.Version.ToString(),
+                ["Validator_Version"] = bs.Validators.Version.ToString(),
+                ["LastApprovedSS"] = _stateManager.LastApprovedSnapshot.StateHash.ToString()
+                // ["b_hash"] = b_hash,
+                // ["next_block"] = blockNumber + 1
             };
         }
     }
