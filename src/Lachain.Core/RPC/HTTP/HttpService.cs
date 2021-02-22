@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Lachain.Logger;
@@ -15,24 +16,11 @@ namespace Lachain.Core.RPC.HTTP
         private static readonly ILogger<HttpService> Logger =
             LoggerFactory.GetLoggerForClass<HttpService>();
         
-        public void Start(RpcConfig rpcConfig)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    _Worker(rpcConfig);
-                }
-                catch (Exception e)
-                {
-                    Console.Error.WriteLine(e);
-                }
-            }, TaskCreationOptions.LongRunning);
-        }
-
         private HttpListener? _httpListener;
+        private Thread _listenerLoop;
+        private Thread[] _requestProcessors;
+        private BlockingCollection<HttpListenerContext> _messages;
         private string? _apiKey;
-        
         private readonly List<string> _privateMethods = new List<string>
         {
             "validator_start",
@@ -40,38 +28,87 @@ namespace Lachain.Core.RPC.HTTP
             "fe_sendTransaction",
         };
 
+        public void Start(RpcConfig rpcConfig)
+        {
+            Logger.LogTrace($"Start");
+            if (!HttpListener.IsSupported)
+                throw new Exception("Your platform doesn't support [HttpListener]");
+            
+            Logger.LogTrace($"Processor threads: {rpcConfig.Threads}");
+            _requestProcessors = new Thread[rpcConfig.Threads > 0 ? rpcConfig.Threads : 5];
+            _messages = new BlockingCollection<HttpListenerContext>();
+            _httpListener = new HttpListener();
+
+            _listenerLoop = new Thread(() =>  _Worker(rpcConfig));
+            foreach (var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
+                _httpListener?.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
+            _httpListener!.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
+            _apiKey = rpcConfig.ApiKey ?? throw new InvalidOperationException();
+            _httpListener.Start();
+            _listenerLoop.Start();
+            
+            for (int i = 0; i < _requestProcessors.Length; i++)
+            {
+                _requestProcessors[i] = new Thread(() => Processor());
+                _requestProcessors[i].Start();
+            }
+        }
+
         public void Stop()
         {
+            Logger.LogTrace($"Stop");
+            _messages.CompleteAdding();
+
+            foreach (Thread worker in _requestProcessors) worker.Join();
+
             _httpListener?.Stop();
+            _listenerLoop.Join();        
         }
 
         private void _Worker(RpcConfig rpcConfig)
         {
-            if (!HttpListener.IsSupported)
-                throw new Exception("Your platform doesn't support [HttpListener]");
-            _httpListener = new HttpListener();
-            foreach (var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
-                _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
-            _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
-            _apiKey = rpcConfig.ApiKey ?? throw new InvalidOperationException();
-            _httpListener.Start();
-            while (_httpListener.IsListening)
+            Logger.LogTrace($"_Worker");
+            try
             {
-                try
+                while (_httpListener!.IsListening)
                 {
-                    _Handle(_httpListener.GetContext());
-                }
-                catch (Exception e)
-                {
-                    Console.Error.WriteLine(e);
+                    try
+                    {
+                        _messages.Add(_httpListener.GetContext());
+                        //_Handle(_httpListener.GetContext());
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e.Message);
+                    }
                 }
             }
-
-            _httpListener.Stop();
+            catch (Exception e)
+            {
+                Logger.LogError(e.Message);
+            }
+        }
+        
+        private void Processor()
+        {
+            Logger.LogTrace($"Processor");
+            try
+            {
+                for (;;)
+                {
+                    HttpListenerContext context = _messages.Take();
+                    _Handle (context);
+                }
+            } 
+            catch (Exception e)
+            {
+                Logger.LogError(e.Message);
+            }
         }
 
         private bool _Handle(HttpListenerContext context)
         {
+            Logger.LogTrace($"_Handle");
             var request = context.Request;
             Logger.LogInformation($"{request.HttpMethod}");
             var response = context.Response;
