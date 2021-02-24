@@ -87,7 +87,7 @@ namespace Lachain.Consensus.ThresholdKeygen
         public ValueMessage HandleCommit(int sender, CommitMessage message)
         {
             if (message.EncryptedRows.Length != Players) throw new ArgumentException();
-            if (_keyGenStates[sender].Commitment != null)
+            if ((_keyGenStates[sender].Commitment != null) && (_keyGenStates[sender].Commitment != message.Commitment))
                 throw new ArgumentException($"Double commit from sender {sender}");
             _keyGenStates[sender].Commitment = message.Commitment;
             var myRowCommitted = message.Commitment.Evaluate(_myIdx + 1);
