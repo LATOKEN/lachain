@@ -38,8 +38,7 @@ namespace Lachain.Core.Blockchain.VM
                 return false;
             }
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        
         public static InvocationResult InvokeSystemContract(
             SystemContractCall systemContractCall, InvocationContext context, byte[] input, ulong gasLimit
         )
@@ -53,8 +52,7 @@ namespace Lachain.Core.Blockchain.VM
             );
             return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        
         public static InvocationResult InvokeWasmContract(
             Contract contract, InvocationContext context, byte[] input, ulong gasLimit
         )
@@ -71,6 +69,7 @@ namespace Lachain.Core.Blockchain.VM
             return status == ExecutionStatus.Ok ? ExecuteFrame(rootFrame) : InvocationResult.WithStatus(status);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private static InvocationResult ExecuteFrame(IExecutionFrame frame)
         {
             var result = new InvocationResult();
