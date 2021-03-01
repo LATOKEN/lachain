@@ -30,7 +30,10 @@
     "hosts": [
       "+"
     ],
-    "port": 7070
+    "port": 7070,
+    "peers": [
+      "127.0.0.1:7070"
+    ]
   },
   "vault": {
     "path": "wallet.json",

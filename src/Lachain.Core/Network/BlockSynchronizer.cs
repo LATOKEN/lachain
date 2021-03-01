@@ -379,7 +379,7 @@ namespace Lachain.Core.Network
          * StartFastSync
          * Method to initiate the FastSync for any newly joined peer in the network
          */
-        public void StartFastSync()
+        public void PerformFastSync()
         {
             try
             {
@@ -393,169 +393,36 @@ namespace Lachain.Core.Network
                 Logger.LogDebug($"tmp = {string.Join(", ", peers)}");
 
                 SetRpcPeers(peers.ToObject<List<string>>()!);
-                SetRpcUrl();
-
+                
                 Logger.LogDebug($"RPC URL = {_rpcURL}");
 
-                var handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
-                var ready = bool.Parse(handShakeResult!["ready"]!.ToString());
-
-                for (var i = 0; i < _totalRetryCount; i++)
-                {
-                    if (!ready)
-                    {
-                        Thread.Sleep(10000);
-                        SetRpcUrl();
-                        handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
-                        ready = bool.Parse(handShakeResult!["ready"]!.ToString());
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (!ready)
+                var handshakeSuccess = _HandShake();
+                if (!handshakeSuccess)
                 {
                     Logger.LogError($"No peer is available for FastSync");
                     return;
                 }
 
-
                 var fastSyncStart = DateTime.Now.ToString("HH:mm:ss.ffff");
                 Logger.LogDebug($"Start: FastSync Start {fastSyncStart} ");
 
-                foreach (ulong repoType in _repoList)
-                {
-                    ulong offset = 0;
-                    bool success = true;
-                    ulong totalNodes = 0;
-
-                    var startTime = DateTime.Now.ToString("HH:mm:ss.ffff");
-                    Logger.LogDebug($"Start Receiving Blocks for Repo {repoType} time {startTime}");
-                    do
-                    {
-                        JArray param = JArray.Parse(@$"[{repoType}, {offset}]");
-                        var result = _CallJsonRpcAPI("getBlocks", param);
-
-                        if (ulong.Parse(result!["total_blocks"]!.ToString()) > 0)
-                        {
-                            if (offset == 0)
-                            {
-                                var ids = JArray.Parse(JsonConvert.SerializeObject(result!["ids"]!));
-                                var values = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
-
-                                List<ulong>? lstIds = ids.ToObject<List<ulong>>();
-                                List<byte[]>? lstValues = values.ToObject<List<byte[]>>();
-
-                                var t = Tuple.Create(lstIds, lstValues);
-                                _repoBlocks.Add(repoType, t!);
-                            }
-                            else
-                            {
-                                List<ulong> oldIds = _repoBlocks[repoType].Item1;
-                                List<byte[]> oldValues = _repoBlocks[repoType].Item2;
-
-                                var ids = JArray.Parse(JsonConvert.SerializeObject(result!["ids"]!));
-                                var values = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
-
-                                List<ulong>? lstIds = ids.ToObject<List<ulong>>();
-                                List<byte[]>? lstValues = values.ToObject<List<byte[]>>();
-
-                                oldIds.AddRange(lstIds!);
-                                oldValues.AddRange(lstValues!);
-
-                                var t = Tuple.Create(oldIds, oldValues);
-                                _repoBlocks[repoType] = t;
-                            }
-                        }
-
-                        totalNodes = ulong.Parse(result!["total_blocks"]!.ToString());
-                        offset = ulong.Parse(result!["new_offset"]!.ToString());
-                    } while (success && (totalNodes > offset));
-
-                    Logger.LogDebug(
-                        $"End Processing Repo {repoType} " +
-                        $"Total Nodes {totalNodes} " +
-                        $"Start Time: {startTime} - End Time: {DateTime.Now.ToString("HH:mm:ss.ffff")} ");
-
-                    Logger.LogDebug($"Start Persisting Repo {repoType}");
-
-                    if (_repoBlocks.ContainsKey(repoType))
-                    {
-                        List<ulong> blockIds = _repoBlocks[repoType].Item1;
-                        List<byte[]> blockValues = _repoBlocks[repoType].Item2;
-
-                        using (Stream stream = new MemoryStream())
-                        {
-                            IFormatter formatter = new BinaryFormatter();
-                            formatter.Serialize(stream, blockValues);
-                        }
-
-                        for (var i = 0; i < blockIds.Count; i++)
-                        {
-                            nodeRepository.WriteNodeToBatch(blockIds[i], NodeSerializer.FromBytes(blockValues[i]),
-                                rocksDbAtomicWrite);
-                        }
-
-                        var writeBatch2 = rocksDbAtomicWrite.GetWriteBatch();
-                        nodeRepository.SaveBatch(writeBatch2);
-
-                        switch (repoType)
-                        {
-                            case 1:
-                                _stateManager.CurrentSnapshot.Balances.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Balances.Commit();
-                                break;
-                            case 4:
-                                _stateManager.CurrentSnapshot.Contracts.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Contracts.Commit();
-                                break;
-                            case 5:
-                                _stateManager.CurrentSnapshot.Storage.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Storage.Commit();
-                                break;
-                            case 6:
-                                _stateManager.CurrentSnapshot.Transactions.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Transactions.Commit();
-                                break;
-                            case 7:
-                                _stateManager.CurrentSnapshot.Blocks.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Blocks.Commit();
-                                break;
-                            case 9:
-                                _stateManager.CurrentSnapshot.Events.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Events.Commit();
-                                break;
-                            case 10:
-                                _stateManager.CurrentSnapshot.Validators.Version = blockIds[0];
-                                _stateManager.CurrentSnapshot.Validators.Commit();
-                                break;
-                            default:
-                                break;
-                        }
-                        
-                        _stateManager.Commit();
-                    }
-                }
-
-                var res = _CallJsonRpcAPI("getMetaVersion", new JArray());
-                versionRepository.SetVersion((uint) RepositoryType.MetaRepository, (ulong) res!["Meta"]!,
-                    rocksDbAtomicWrite);
-                rocksDbAtomicWrite.Commit();
-
+                _GetNodesForFastSync();
+                PersistNodesForFastSync(nodeRepository, rocksDbAtomicWrite);
+                var meta = GetMetaVersion();
+                SetMetaVersion(versionRepository, rocksDbAtomicWrite, meta);
+                
                 _fastSyncFlag = true;
                 _fastHeight = _blockManager.GetHeight();
-
+                
                 Logger.LogDebug($"Block Height: {_fastHeight}");
 
                 _SetBlockVersions(_fastHeight);
-                
+
                 var p = JArray.Parse(@$"[{_fastHeight}]");
-                res = _CallJsonRpcAPI("getSnapShot", p);
+                var res = _CallJsonRpcAPI("getSnapShot", p);
                 Logger.LogDebug($"7071: {res}");
-                
-                
+
+
                 StorageManager storageManager = new StorageManager(_rocksDbContext);
                 SnapshotIndexRepository snapshotIndexRepository =
                     new SnapshotIndexRepository(_rocksDbContext, storageManager);
@@ -575,9 +442,9 @@ namespace Lachain.Core.Network
                 Logger.LogDebug($"LastApprovedSS: {_stateManager.LastApprovedSnapshot.StateHash.ToString()}");
 
                 Logger.LogDebug($"Block Height: {_fastHeight}");
-                
+
                 _CallJsonRpcAPI("handShake", new JArray());
-                
+
                 Logger.LogDebug(
                     $"End: FastSync Start {fastSyncStart} End {DateTime.Now:HH:mm:ss.ffff}" +
                     $"With BlockHeight {_fastHeight} ");
@@ -639,7 +506,7 @@ namespace Lachain.Core.Network
             foreach (var repo in _repoList)
             {
                 ulong offset = 0;
-                
+
                 do
                 {
                     Logger.LogDebug($"Start: Repo - {repo}");
@@ -667,7 +534,7 @@ namespace Lachain.Core.Network
 
                     offset = ulong.Parse(result!["new_offset"]!.ToString());
                 } while (blockHeight > offset);
-                
+
                 Logger.LogDebug($"End: Repo - {repo}");
             }
 
@@ -698,7 +565,7 @@ namespace Lachain.Core.Network
                     state.Commit();
                 }
             }
-            
+
             // foreach (var repo in _repoList)
             // {
             //     //if (_repoBlocks.ContainsKey(repo))
@@ -723,6 +590,161 @@ namespace Lachain.Core.Network
 
             Logger.LogDebug(
                 $"End Setting Versions For The Blocks - StartTime: {startTime} - EndTime: {DateTime.Now:HH:mm:ss.ffff}");
+        }
+
+        private bool _HandShake()
+        {
+            var handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
+            var ready = bool.Parse(handShakeResult!["ready"]!.ToString());
+
+            for (var i = 0; i < _totalRetryCount; i++)
+            {
+                if (!ready)
+                {
+                    Thread.Sleep(10000);
+                    SetRpcUrl();
+                    handShakeResult = _CallJsonRpcAPI("handShake", new JArray());
+                    ready = bool.Parse(handShakeResult!["ready"]!.ToString());
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return ready;
+        }
+
+        private void _GetNodesForFastSync()
+        {
+            foreach (var repoType in _repoList)
+            {
+                ulong offset = 0;
+                ulong totalNodes = 0;
+
+                var startTime = DateTime.Now.ToString("HH:mm:ss.ffff");
+                Logger.LogDebug($"Start Receiving Blocks for Repo {repoType} time {startTime}");
+                do
+                {
+                    JArray param = JArray.Parse(@$"[{repoType}, {offset}]");
+                    var result = _CallJsonRpcAPI("getBlocks", param);
+
+                    if (ulong.Parse(result!["total_blocks"]!.ToString()) > 0)
+                    {
+                        if (offset == 0)
+                        {
+                            var ids = JArray.Parse(JsonConvert.SerializeObject(result!["ids"]!));
+                            var values = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
+
+                            List<ulong>? lstIds = ids.ToObject<List<ulong>>();
+                            List<byte[]>? lstValues = values.ToObject<List<byte[]>>();
+
+                            var t = Tuple.Create(lstIds, lstValues);
+                            _repoBlocks.Add(repoType, t!);
+                        }
+                        else
+                        {
+                            List<ulong> oldIds = _repoBlocks[repoType].Item1;
+                            List<byte[]> oldValues = _repoBlocks[repoType].Item2;
+
+                            var ids = JArray.Parse(JsonConvert.SerializeObject(result!["ids"]!));
+                            var values = JArray.Parse(JsonConvert.SerializeObject(result!["values"]!));
+
+                            List<ulong>? lstIds = ids.ToObject<List<ulong>>();
+                            List<byte[]>? lstValues = values.ToObject<List<byte[]>>();
+
+                            oldIds.AddRange(lstIds!);
+                            oldValues.AddRange(lstValues!);
+
+                            var t = Tuple.Create(oldIds, oldValues);
+                            _repoBlocks[repoType] = t;
+                        }
+                    }
+
+                    totalNodes = ulong.Parse(result!["total_blocks"]!.ToString());
+                    offset = ulong.Parse(result!["new_offset"]!.ToString());
+                } while (totalNodes > offset);
+            }
+        }
+
+        public void PersistNodesForFastSync(NodeRepository nodeRepository, RocksDbAtomicWrite rocksDbAtomicWrite)
+        {
+            foreach (ulong repoType in _repoList)
+            {
+                if (_repoBlocks.ContainsKey(repoType))
+                {
+                    List<ulong> blockIds = _repoBlocks[repoType].Item1;
+                    List<byte[]> blockValues = _repoBlocks[repoType].Item2;
+
+                    using (Stream stream = new MemoryStream())
+                    {
+                        IFormatter formatter = new BinaryFormatter();
+                        formatter.Serialize(stream, blockValues);
+                    }
+
+                    for (var i = 0; i < blockIds.Count; i++)
+                    {
+                        nodeRepository.WriteNodeToBatch(blockIds[i], NodeSerializer.FromBytes(blockValues[i]),
+                            rocksDbAtomicWrite);
+                    }
+
+                    var writeBatch2 = rocksDbAtomicWrite.GetWriteBatch();
+                    nodeRepository.SaveBatch(writeBatch2);
+
+                    switch (repoType)
+                    {
+                        case 1:
+                            _stateManager.CurrentSnapshot.Balances.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Balances.Commit();
+                            break;
+                        case 4:
+                            _stateManager.CurrentSnapshot.Contracts.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Contracts.Commit();
+                            break;
+                        case 5:
+                            _stateManager.CurrentSnapshot.Storage.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Storage.Commit();
+                            break;
+                        case 6:
+                            _stateManager.CurrentSnapshot.Transactions.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Transactions.Commit();
+                            break;
+                        case 7:
+                            _stateManager.CurrentSnapshot.Blocks.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Blocks.Commit();
+                            break;
+                        case 9:
+                            _stateManager.CurrentSnapshot.Events.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Events.Commit();
+                            break;
+                        case 10:
+                            _stateManager.CurrentSnapshot.Validators.Version = blockIds[0];
+                            _stateManager.CurrentSnapshot.Validators.Commit();
+                            break;
+                        default:
+                            break;
+                    }
+
+                    _stateManager.Commit();
+                }
+            }
+        }
+
+        public void SetNodeForPersist(Dictionary<ulong, Tuple<List<ulong>, List<byte[]>>> repoBlocks)
+        {
+            _repoBlocks = repoBlocks;
+        }
+        
+        public ulong GetMetaVersion()
+        {
+            var res = _CallJsonRpcAPI("getMetaVersion", new JArray());
+            return (ulong) res!["Meta"]!;
+        }
+
+        public void SetMetaVersion(VersionRepository versionRepository, RocksDbAtomicWrite rocksDbAtomicWrite, ulong meta)
+        {
+            versionRepository.SetVersion((uint) RepositoryType.MetaRepository, meta, rocksDbAtomicWrite);
+            rocksDbAtomicWrite.Commit();
         }
 
         private JToken? _CallJsonRpcAPI(string method, JArray param)
