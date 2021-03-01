@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Google.Protobuf;
 using Lachain.Consensus;
 using Lachain.Crypto;
@@ -124,14 +125,17 @@ namespace Lachain.Networking
             //     envelope.RemotePeer.AddMsgToQueue(_messageFactory.Ack(batch.MessageId));
             foreach (var message in content.Messages)
             {
-                try
+                Task.Factory.StartNew(() =>
                 {
-                    HandleMessageUnsafe(message, envelope);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError($"Unexpected error occurred: {e}");
-                }
+                    try
+                    {
+                        HandleMessageUnsafe(message, envelope);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError($"Unexpected error occurred: {e}");
+                    }
+                }, TaskCreationOptions.LongRunning);                
             }
         }
 
