@@ -2,8 +2,8 @@
 {
     public interface ISnapshotManager<T> where T: class
     {
-        T CurrentSnapshot { get; set; }
-        T LastApprovedSnapshot { get; set; }
+        T CurrentSnapshot { get; }
+        T LastApprovedSnapshot { get; }
         T? PendingSnapshot{ get; }
         
         T NewSnapshot();

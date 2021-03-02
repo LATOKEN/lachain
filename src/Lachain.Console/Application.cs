@@ -106,7 +106,7 @@ namespace Lachain.Console
 
             if (blockManager.GetHeight() == 0)
             {
-                blockSynchronizer.StartFastSync();    
+                blockSynchronizer.PerformFastSync();    
             }
             
             // consensusManager.Start((long)blockManager.GetHeight() + 1);
