@@ -39,7 +39,7 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips)
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, int v)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -131,7 +131,7 @@ namespace Lachain.Console
                     ForceIPv6 = false,
                     BootstrapAddresses = bootstraps
                 };
-                var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
+                    var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
                     Balances = new Dictionary<string, string>
                     {
@@ -139,7 +139,7 @@ namespace Lachain.Console
                             "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
                         }
                     },
-                    Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
+                    Validators = Enumerable.Range(0, v).Select(j => new ValidatorInfo(
                         ecdsaPublicKeys[j], pubShares[j]
                     )).ToList()
                 };

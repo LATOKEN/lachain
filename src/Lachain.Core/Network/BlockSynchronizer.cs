@@ -664,6 +664,8 @@ namespace Lachain.Core.Network
                     totalNodes = ulong.Parse(result!["total_blocks"]!.ToString());
                     offset = ulong.Parse(result!["new_offset"]!.ToString());
                 } while (totalNodes > offset);
+                
+                Logger.LogDebug($"End Receiving Blocks for Repo {repoType} time {DateTime.Now.ToString("HH:mm:ss.ffff")}");
             }
         }
 
@@ -671,6 +673,7 @@ namespace Lachain.Core.Network
         {
             foreach (ulong repoType in _repoList)
             {
+                Logger.LogDebug($"Start Persisting Blocks for Repo {repoType} time {DateTime.Now.ToString("HH:mm:ss.ffff")}");
                 if (_repoBlocks.ContainsKey(repoType))
                 {
                     List<ulong> blockIds = _repoBlocks[repoType].Item1;
@@ -727,6 +730,8 @@ namespace Lachain.Core.Network
 
                     _stateManager.Commit();
                 }
+                
+                Logger.LogDebug($"End Persisting Blocks for Repo {repoType} time {DateTime.Now.ToString("HH:mm:ss.ffff")}");
             }
         }
 

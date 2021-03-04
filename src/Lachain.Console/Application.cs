@@ -98,35 +98,39 @@ namespace Lachain.Console
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
             rpcManager.Start();
-
-            consensusManager.Start((long)blockManager.GetHeight() + 1);
-            validatorStatusManager.Start(false);
-
-            Thread.Sleep(10000);
-
-            if (blockManager.GetHeight() == 0)
+            
+            var startConsensusFlag = configManager.GetConfig<NetworkConfig>("network")?.ConsensusFlag ?? false;
+            Logger.LogInformation($"_startConsensusFlag = {startConsensusFlag.ToString()}");
+            
+            if (startConsensusFlag)
             {
-                blockSynchronizer.PerformFastSync();    
+                consensusManager.Start((long) blockManager.GetHeight() + 1);
+                validatorStatusManager.Start(false);
+                
+                blockSynchronizer.Start();
+                Logger.LogInformation("Synchronizing blocks...");
+                blockSynchronizer.SynchronizeWith(
+                    validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
+                        .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
+                );
+                Logger.LogInformation("Block synchronization finished, starting consensus...");
+            }
+            else
+            {
+                Thread.Sleep(5000);
+                
+                blockSynchronizer.PerformFastSync();
+                
+                Thread.Sleep(5000);
+                
+                blockSynchronizer.Start();
+                blockSynchronizer.SynchronizeWith(
+                    validatorManager.GetValidatorsPublicKeys(0)
+                        .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
+                );
+                Logger.LogInformation("Block synchronization finished, starting consensus...");
             }
             
-            // consensusManager.Start((long)blockManager.GetHeight() + 1);
-            // validatorStatusManager.Start(false);
-
-            blockSynchronizer.Start();
-            Logger.LogInformation("Synchronizing blocks...");
-            
-            blockSynchronizer.SynchronizeWith(
-                validatorManager.GetValidatorsPublicKeys(0)
-                    .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
-            );
-            
-            // blockSynchronizer.SynchronizeWith(
-            //     validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
-            //         .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
-            // );
-            
-            Logger.LogInformation("Block synchronization finished, starting consensus...");
-
             System.Console.CancelKeyPress += (sender, e) =>
             {
                 System.Console.WriteLine("Interrupt received. Exiting...");

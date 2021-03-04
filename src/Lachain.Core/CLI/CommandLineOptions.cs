@@ -35,6 +35,9 @@ namespace Lachain.Core.CLI
         
         [Option('f', "faulty", Required = true, HelpText = "Total number of faulty participants")]
         public int F { get; set; }
+        
+        [Option('v', "validators", Required = true, HelpText = "Total number of validators")]
+        public int V { get; set; }
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]
