@@ -32,5 +32,10 @@
         }
 
         public long Era { get; }
+
+        public override string ToString()
+        {
+            return $"HB (Er={Era})";
+        }
     }
 }
