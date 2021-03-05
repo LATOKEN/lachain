@@ -4,12 +4,22 @@ using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.Messages;
 using Lachain.Utility.Utils;
+using Prometheus;
 
 namespace Lachain.Consensus
 {
     public abstract class AbstractProtocol : IConsensusProtocol
     {
         private static readonly ILogger<AbstractProtocol> Logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+
+        private static readonly Counter MessageCounter = Metrics.CreateCounter(
+            "lachain_consensus_messages_processed",
+            "Number of messages processed by protocol and message type",
+            new CounterConfiguration
+            {
+                LabelNames = new[] {"protocol", "message_type"}
+            }
+        );
 
         private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
         private readonly object _queueLock = new object();
@@ -26,6 +36,7 @@ namespace Lachain.Consensus
         protected string _lastMessage = "";
         private ulong _startTime = 0;
         private const ulong _alertTime = 60 * 1000;
+
         protected AbstractProtocol(
             IPublicConsensusKeySet wallet,
             IProtocolIdentifier id,
@@ -102,7 +113,7 @@ namespace Lachain.Consensus
                             return;
                         if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
                         {
-                            Logger.LogWarning($"Protocol {Id} is waiting for _queueLock too long, last message" + 
+                            Logger.LogWarning($"Protocol {Id} is waiting for _queueLock too long, last message" +
                                               $" is [{_lastMessage}]");
                         }
                     }
@@ -116,6 +127,7 @@ namespace Lachain.Consensus
                 try
                 {
                     ProcessMessage(msg);
+                    MessageCounter.WithLabels($"{Id}".Split(' ')[0], msg.TypeString()).Inc();
                     if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
                     {
                         Logger.LogWarning($"Protocol {Id} is too long, last message is [{_lastMessage}]");
@@ -135,7 +147,7 @@ namespace Lachain.Consensus
             Logger.LogTrace($"{Id}: ReceiveMessage");
             lock (_queueLock)
             {
-                if(Terminated)
+                if (Terminated)
                     Logger.LogTrace($"{Id}: got message after termination");
                 _queue.Enqueue(message);
                 Monitor.Pulse(_queueLock);

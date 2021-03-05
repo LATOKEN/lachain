@@ -5,7 +5,7 @@ namespace Lachain.Consensus.Messages
     public class MessageEnvelope
     {
         public ConsensusMessage? ExternalMessage { get; }
-        
+
         public int ValidatorIndex { get; }
         public IInternalMessage? InternalMessage { get; }
 
@@ -24,5 +24,13 @@ namespace Lachain.Consensus.Messages
         }
 
         public bool External => !(ExternalMessage is null);
+
+        public string TypeString()
+        {
+            if (External) return ExternalMessage!.PayloadCase.ToString();
+            return InternalMessage!.GetType().GetGenericTypeDefinition().Name.Contains("Request")
+                ? "ProtocolRequest"
+                : "ProtocolResponse";
+        }
     }
 }

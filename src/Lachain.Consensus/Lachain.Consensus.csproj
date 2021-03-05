@@ -11,4 +11,7 @@
     <ProjectReference Include="..\Lachain.Logger\Lachain.Logger.csproj" />
     <ProjectReference Include="..\Lachain.Storage\Lachain.Storage.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="prometheus-net" Version="4.1.1" />
+  </ItemGroup>
 </Project>
