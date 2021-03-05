@@ -1,6 +1,7 @@
 using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Config;
 using Lachain.Core.RPC;
+using Lachain.Core.RPC.HTTP;
 
 namespace Lachain.Core.DI.Modules
 {
@@ -10,6 +11,7 @@ namespace Lachain.Core.DI.Modules
         {
             containerBuilder.RegisterSingleton<IBlockchainEventFilter, BlockchainEventFilter>();
             containerBuilder.RegisterSingleton<IRpcManager, RpcManager>();
+            containerBuilder.RegisterSingleton<IMetricsService, MetricsService>();
         }
     }
 }

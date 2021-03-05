@@ -38,7 +38,7 @@ namespace Lachain.Core.Blockchain.VM
                 return false;
             }
         }
-        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public static InvocationResult InvokeSystemContract(
             SystemContractCall systemContractCall, InvocationContext context, byte[] input, ulong gasLimit
         )

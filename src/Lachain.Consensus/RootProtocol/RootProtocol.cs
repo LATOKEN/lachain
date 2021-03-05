@@ -146,11 +146,13 @@ namespace Lachain.Consensus.RootProtocol
                         _nonce = GetNonceFromCoin(coinResult.Result);
                         Logger.LogTrace($"{Id}: Received coin for block nonce: {_nonce}");
                         _lastMessage = $"Received coin for block nonce: {_nonce}";
+                        _lastMessage = $"Received coin for block nonce: {_nonce}";
                         TrySignHeader();
                         CheckSignatures();
                         break;
                     case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
                         Logger.LogTrace($"{Id}: Received shares {result.Result.Count} from HoneyBadger");
+                        _lastMessage = $"Received shares {result.Result.Count} from HoneyBadger";
                         _lastMessage = $"Received shares {result.Result.Count} from HoneyBadger";
 
                         _hashes = result.Result.ToArray()

@@ -62,6 +62,7 @@ namespace Lachain.Console
             var rpcManager = _container.Resolve<IRpcManager>();
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
+            var metricsService = _container.Resolve<IMetricsService>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
@@ -87,6 +88,7 @@ namespace Lachain.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
+            metricsService.Start();
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
