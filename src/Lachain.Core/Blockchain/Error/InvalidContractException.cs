@@ -1,6 +1,8 @@
-﻿namespace Lachain.Core.Blockchain.Error
+﻿using System;
+
+namespace Lachain.Core.Blockchain.Error
 {
-    public class InvalidContractException : System.Exception
+    public class InvalidContractException : Exception
     {
         public InvalidContractException()
         {

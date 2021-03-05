@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Crypto;
@@ -44,7 +45,7 @@ namespace Lachain.Core.Blockchain.Operations
                     /* increment count of verified signatures */
                     ++verified;
                 }
-                catch (System.Exception)
+                catch (Exception)
                 {
                     // ignore
                 }

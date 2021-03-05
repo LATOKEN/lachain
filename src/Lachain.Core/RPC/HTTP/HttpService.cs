@@ -5,8 +5,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
-using Newtonsoft.Json.Linq;
 using Lachain.Logger;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP
 {

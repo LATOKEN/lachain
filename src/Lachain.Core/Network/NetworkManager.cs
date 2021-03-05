@@ -1,7 +1,6 @@
 using Lachain.Core.Config;
 using Lachain.Core.Vault;
 using Lachain.Networking;
-using Lachain.Storage.Repositories;
 
 namespace Lachain.Core.Network
 {

@@ -5,7 +5,7 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
-using Lachain.Core.DI.Modules;
+using Lachain.Core.DI;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;

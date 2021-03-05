@@ -9,7 +9,6 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
-using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;

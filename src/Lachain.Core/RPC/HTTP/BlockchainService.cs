@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using AustinHarris.JsonRpc;
-using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -10,6 +9,7 @@ using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP
 {

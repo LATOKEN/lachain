@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
 using Lachain.Core.DI;
-using Lachain.Core.DI.Modules;
-using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
@@ -19,16 +18,18 @@ using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NLog;
 
 namespace Lachain.Console
 {
-    public class Application : IBootstrapper, IDisposable
+    public class Application : IDisposable
     {
-        private readonly IContainer _container;
+        private readonly IHost _host;
         private static readonly ILogger<Application> Logger = LoggerFactory.GetLoggerForClass<Application>();
 
-        public Application(string configPath, RunOptions options)
+        public Application(string configPath, string[] args, RunOptions options)
         {
             var logLevel = options.LogLevel ?? Environment.GetEnvironmentVariable("LOG_LEVEL");
             if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
@@ -37,32 +38,40 @@ namespace Lachain.Console
             LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
             LogManager.ReconfigExistingLoggers();
 
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(configPath, options));
-            containerBuilder.RegisterModule<BlockchainModule>();
-            containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<ConsensusModule>();
-            containerBuilder.RegisterModule<NetworkModule>();
-            containerBuilder.RegisterModule<StorageModule>();
-            containerBuilder.RegisterModule<RpcModule>();
-            containerBuilder.RegisterModule<ConsoleModule>();
-            _container = containerBuilder.Build();
+            var configManager = new ConfigManager(configPath, options);
+            _host = CreateHostBuilder(args, configManager, options).Build();
         }
 
-        public void Start(RunOptions options)
+        private static IHostBuilder CreateHostBuilder(string[] args, IConfigManager configManager, RunOptions options)
         {
-            var configManager = _container.Resolve<IConfigManager>();
-            var blockManager = _container.Resolve<IBlockManager>();
-            var consensusManager = _container.Resolve<IConsensusManager>();
-            var validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
-            var transactionVerifier = _container.Resolve<ITransactionVerifier>();
-            var validatorManager = _container.Resolve<IValidatorManager>();
-            var blockSynchronizer = _container.Resolve<IBlockSynchronizer>();
-            var networkManager = _container.Resolve<INetworkManager>();
-            var commandManager = _container.Resolve<IConsoleManager>();
-            var rpcManager = _container.Resolve<IRpcManager>();
-            var stateManager = _container.Resolve<IStateManager>();
-            var wallet = _container.Resolve<IPrivateWallet>();
-            var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureServices((context, services) =>
+                {
+                    services.AddSingleton(_ => configManager);
+                    BlockchainModule.AddServices(services);
+                    ConsensusModule.AddServices(services);
+                    NetworkModule.AddServices(services);
+                    StorageModule.AddServices(services, configManager);
+                    RpcModule.AddServices(services);
+                    ConsoleModule.AddServices(services);
+                });
+        }
+
+        public Task Start(RunOptions options)
+        {
+            var configManager = _host.Services.GetService<IConfigManager>()!;
+            var blockManager = _host.Services.GetService<IBlockManager>()!;
+            var consensusManager = _host.Services.GetService<IConsensusManager>()!;
+            var validatorStatusManager = _host.Services.GetService<IValidatorStatusManager>()!;
+            var transactionVerifier = _host.Services.GetService<ITransactionVerifier>()!;
+            var validatorManager = _host.Services.GetService<IValidatorManager>()!;
+            var blockSynchronizer = _host.Services.GetService<IBlockSynchronizer>()!;
+            var networkManager = _host.Services.GetService<INetworkManager>()!;
+            var commandManager = _host.Services.GetService<IConsoleManager>()!;
+            var rpcManager = _host.Services.GetService<IRpcManager>()!;
+            var stateManager = _host.Services.GetService<IStateManager>()!;
+            var wallet = _host.Services.GetService<IPrivateWallet>()!;
+            var localTransactionRepository = _host.Services.GetService<ILocalTransactionRepository>()!;
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
@@ -109,15 +118,19 @@ namespace Lachain.Console
                 Dispose();
             };
 
+            var task = _host.RunAsync();
+
             while (!_interrupt)
                 Thread.Sleep(1000);
+
+            return task;
         }
 
         private bool _interrupt;
 
         public void Dispose()
         {
-            _container.Dispose();
+            _host.Dispose();
         }
     }
 }

@@ -4,7 +4,6 @@ using System.Linq;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
-using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Proto;
 using Lachain.Storage.State;

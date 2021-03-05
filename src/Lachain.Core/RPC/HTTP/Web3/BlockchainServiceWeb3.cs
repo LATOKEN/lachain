@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;

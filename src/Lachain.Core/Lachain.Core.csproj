@@ -9,6 +9,7 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="App.Metrics.Prometheus" Version="4.1.0" />
     <PackageReference Include="AustinHarris.JsonRpc" Version="1.2.2" />
     <PackageReference Include="C5" Version="3.0.0-beta" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />

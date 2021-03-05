@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using C5;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -46,8 +47,8 @@ namespace Lachain.Core.Blockchain.Pool
             _poolRepository = poolRepository;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
-            _transactionsQueue = new HashSet<TransactionReceipt>();
-            _relayQueue = new HashSet<TransactionReceipt>();
+            _transactionsQueue = new System.Collections.Generic.HashSet<TransactionReceipt>();
+            _relayQueue = new System.Collections.Generic.HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
             Restore();
@@ -156,8 +157,8 @@ namespace Lachain.Core.Blockchain.Pool
         {
             var wasRelayQueueSize = _relayQueue.Count;
             var wasTransactionsQueue = _transactionsQueue.Count;
-            _relayQueue = new HashSet<TransactionReceipt>(_relayQueue.Where(TxNonceValid));
-            _transactionsQueue = new HashSet<TransactionReceipt>(_transactionsQueue.Where(TxNonceValid));
+            _relayQueue = new System.Collections.Generic.HashSet<TransactionReceipt>(_relayQueue.Where(TxNonceValid));
+            _transactionsQueue = new System.Collections.Generic.HashSet<TransactionReceipt>(_transactionsQueue.Where(TxNonceValid));
             if (wasRelayQueueSize != _relayQueue.Count || wasTransactionsQueue != _transactionsQueue.Count)
             {
                 Logger.LogTrace(
@@ -182,10 +183,10 @@ namespace Lachain.Core.Blockchain.Pool
             Sanitize();
             var rnd = new Random();
             // First,  get governance txes from relay queue
-            var result = new HashSet<TransactionReceipt>(_relayQueue.Where(IsGovernanceTx));
+            var result = new System.Collections.Generic.HashSet<TransactionReceipt>(_relayQueue.Where(IsGovernanceTx));
             if (result.Count >= txsToTake)
             {
-                result = new HashSet<TransactionReceipt>(result
+                result = new System.Collections.Generic.HashSet<TransactionReceipt>(result
                     .Take(txsToTake)
                     .Where(tx => _transactions.TryRemove(tx.Hash, out _))
                     .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
@@ -196,7 +197,7 @@ namespace Lachain.Core.Blockchain.Pool
             result.UnionWith(_transactionsQueue.Where(IsGovernanceTx));
             if (result.Count >= txsToTake)
             {
-                result = new HashSet<TransactionReceipt>(result
+                result = new System.Collections.Generic.HashSet<TransactionReceipt>(result
                     .Take(txsToTake)
                     .Where(tx => _transactions.TryRemove(tx.Hash, out _))
                     .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
@@ -209,7 +210,7 @@ namespace Lachain.Core.Blockchain.Pool
             result.UnionWith(_relayQueue);
             if (result.Count >= txsToTake)
             {
-                result = new HashSet<TransactionReceipt>(result
+                result = new System.Collections.Generic.HashSet<TransactionReceipt>(result
                     .Take(txsToTake)
                     .Where(tx => _transactions.TryRemove(tx.Hash, out _))
                     .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
@@ -226,7 +227,7 @@ namespace Lachain.Core.Blockchain.Pool
                 .ToDictionary(receipts => receipts.Key, receipts => receipts.Reverse().ToList());
 
             // We maintain heap of current transaction for each sender
-            var heap = new C5.IntervalHeap<TransactionReceipt>(new GasPriceReceiptComparer());
+            var heap = new IntervalHeap<TransactionReceipt>(new GasPriceReceiptComparer());
             foreach (var txs in txsBySender.Values)
             {
                 heap.Add(txs.Last());
@@ -262,7 +263,7 @@ namespace Lachain.Core.Blockchain.Pool
                 if (txsFrom.Count == 0) txsBySender.Remove(key);
             }
 
-            result = new HashSet<TransactionReceipt>(result
+            result = new System.Collections.Generic.HashSet<TransactionReceipt>(result
                 .Where(tx => _transactions.TryRemove(tx.Hash, out _))
                 .Where(tx => _transactionManager.GetByHash(tx.Hash) is null));
             RemoveTxes(result);

@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto.ECDSA;
+using Lachain.Logger;
 using Lachain.Storage.State;
 
 namespace Lachain.Core.CLI

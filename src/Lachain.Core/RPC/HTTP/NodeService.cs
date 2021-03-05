@@ -1,12 +1,12 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using AustinHarris.JsonRpc;
 using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Network;
+using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Networking;
-using Newtonsoft.Json.Linq;
 using Lachain.Utility.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -96,19 +96,19 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("eth_newFilter")]
         private string SetFilter(JObject opt)
         {
-            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
+            return Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
         }
 
         [JsonRpcMethod("eth_newBlockFilter")]
         private string SetBlockFilter()
         {
-            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
+            return Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
         }
 
         [JsonRpcMethod("eth_newPendingTransactionFilter")]
         private string SetPendingTransactionFilter()
         {
-            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Transaction));
+            return Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Transaction));
         }
 
         [JsonRpcMethod("eth_uninstallFilter")]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.CommunicationHub.Net;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -340,7 +341,7 @@ namespace Lachain.Core.CLI
         /// <returns>pprof URL</returns>
         public string Pprof(string[] arguments)
         {
-            return $"http://localhost:{CommunicationHub.Net.Hub.GetProfilerPort()}/debug/pprof/";
+            return $"http://localhost:{Hub.GetProfilerPort()}/debug/pprof/";
         }
     }
 }

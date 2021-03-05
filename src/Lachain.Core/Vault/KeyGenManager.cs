@@ -1,7 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices.ComTypes;
 using Lachain.Consensus;
 using Lachain.Consensus.ThresholdKeygen;
 using Lachain.Consensus.ThresholdKeygen.Data;
@@ -132,7 +132,7 @@ namespace Lachain.Core.Vault
                 if (keygen is null)
                 {
                     Logger.LogWarning($"Skipping call since there is no keygen running, block is {highestBlock}, " + 
-                                      $"stack trace is {new System.Diagnostics.StackTrace()}");
+                                      $"stack trace is {new StackTrace()}");
                     return;
                 }
 
@@ -403,7 +403,7 @@ namespace Lachain.Core.Vault
                                  throw new Exception($"Cannot parse KeyGenConfirm tx {tx.Hash.ToHex()}");
 
                     var tsKeySet = new PublicKeySet(
-                        tsKeys.Select(x => Lachain.Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
+                        tsKeys.Select(x => Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
                         (tsKeys.Length - 1) / 3
                     );
                     var confirmedHash = tpkeKey.Concat(tsKeySet.ToBytes()).Keccak();

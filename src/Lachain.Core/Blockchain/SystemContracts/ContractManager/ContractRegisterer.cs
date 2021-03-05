@@ -42,7 +42,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             where T : ISystemContract
         {
             if (!_contracts.TryAdd(address, typeof(T)))
-                throw new System.Exception("Failed to register system contract at address (" + address.ToHex() + ")");
+                throw new Exception("Failed to register system contract at address (" + address.ToHex() + ")");
             var signatures = typeof(T)
                 .FindAttributes<ContractMethodAttribute>()
                 .ToList();

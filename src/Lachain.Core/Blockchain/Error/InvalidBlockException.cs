@@ -1,6 +1,8 @@
-﻿namespace Lachain.Core.Blockchain.Error
+﻿using System;
+
+namespace Lachain.Core.Blockchain.Error
 {
-    public class InvalidBlockException : System.Exception
+    public class InvalidBlockException : Exception
     {
         public OperatingError OperatingError;
         

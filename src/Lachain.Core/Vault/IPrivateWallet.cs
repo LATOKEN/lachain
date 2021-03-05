@@ -1,5 +1,6 @@
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
+using Lachain.Crypto.TPKE;
 
 namespace Lachain.Core.Vault
 {
@@ -7,13 +8,13 @@ namespace Lachain.Core.Vault
     {
         EcdsaKeyPair EcdsaKeyPair { get; }
 
-        Crypto.TPKE.PrivateKey? GetTpkePrivateKeyForBlock(ulong block);
+        PrivateKey? GetTpkePrivateKeyForBlock(ulong block);
         
-        void AddTpkePrivateKeyAfterBlock(ulong block, Crypto.TPKE.PrivateKey key);
+        void AddTpkePrivateKeyAfterBlock(ulong block, PrivateKey key);
 
-        Crypto.ThresholdSignature.PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block);
+        PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block);
         
-        void AddThresholdSignatureKeyAfterBlock(ulong block, Crypto.ThresholdSignature.PrivateKeyShare key);
+        void AddThresholdSignatureKeyAfterBlock(ulong block, PrivateKeyShare key);
 
         IPrivateWallet? GetWalletInstance();
 

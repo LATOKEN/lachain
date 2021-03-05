@@ -1,6 +1,8 @@
-﻿namespace Lachain.Core.Blockchain.Error
+﻿using System;
+
+namespace Lachain.Core.Blockchain.Error
 {
-    public class OperationNotSupportedException : System.Exception
+    public class OperationNotSupportedException : Exception
     {
         public OperationNotSupportedException()
         {

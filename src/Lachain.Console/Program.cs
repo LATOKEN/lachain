@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using CommandLine;
 using Lachain.Core.CLI;
 using Lachain.Crypto;
+using Microsoft.Extensions.Hosting;
 
 namespace Lachain.Console
 {
@@ -13,7 +15,7 @@ namespace Lachain.Console
         {
             Parser.Default
                 .ParseArguments<RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
-                .WithParsed<RunOptions>(RunNode)
+                .WithParsed<RunOptions>(options => RunNode(args, options))
                 .WithParsed<DecryptOptions>(DecryptWallet)
                 .WithParsed<EncryptOptions>(EncryptWallet)
                 .WithParsed<KeygenOptions>(RunKeygen)
@@ -25,13 +27,6 @@ namespace Lachain.Console
                         System.Console.Error.WriteLine(error);
                     }
                 });
-
-            // GenWallet(
-            //     "wallet.json", 
-            //     "d95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48", 
-            //     "0x000000000000000000000000000000000000000000000000000000000000000000000000",
-            //     "0xcb436d851f7d58773a36daf94350f25635b06fb970dc670059529f6b3797b668"
-            // );
         }
 
         private static void RunKeygen(KeygenOptions options)
@@ -67,9 +62,9 @@ namespace Lachain.Console
             System.Console.WriteLine(decryptedContent);
         }
 
-        private static void RunNode(RunOptions options)
+        private static void RunNode(string[] args, RunOptions options)
         {
-            using var app = new Application(options.ConfigPath, options);
+            using var app = new Application(options.ConfigPath, args, options);
             app.Start(options);
         }
     }

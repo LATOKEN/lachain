@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -153,7 +154,7 @@ namespace Lachain.Core.Blockchain.Operations
                         $"Cannot execute block {block.Hash.ToHex()} " +
                         $"with stateHash={block.Header.StateHash.ToHex()} specified in header," +
                         $"since computed state hash is {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}, " +
-                        $"stack trace is {new System.Diagnostics.StackTrace()}");
+                        $"stack trace is {new StackTrace()}");
                     
                     _stateManager.RollbackTo(snapshotBefore);
                     return OperatingError.InvalidStateHash;
