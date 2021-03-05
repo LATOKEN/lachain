@@ -1,14 +1,15 @@
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Proto;
+using SimpleInjector.Advanced;
 
 namespace Lachain.Core.Blockchain.VM
 {
     public class ContractInvoker : IContractInvoker
     {
         // TODO: this is hack
-        private static IContractRegisterer _contractRegisterer = null!;
-        
-        public ContractInvoker(IContractRegisterer contractRegisterer)
+        private static IContractRegisterer? _contractRegisterer = null;
+
+        public static void Init(IContractRegisterer contractRegisterer)
         {
             _contractRegisterer = contractRegisterer;
         }

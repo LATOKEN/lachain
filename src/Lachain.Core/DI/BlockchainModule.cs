@@ -26,8 +26,8 @@ namespace Lachain.Core.DI
                 .AddSingleton<IBlockManager, BlockManager>()
                 .AddSingleton<IContractRegisterer, ContractRegisterer>()
                 .AddSingleton<ITransactionPool, TransactionPool>()
-                .AddSingleton<IVirtualMachine, VirtualMachine>()
-                .AddSingleton<IContractInvoker, ContractInvoker>();
+                .AddSingleton<IVirtualMachine, VirtualMachine>();
+                // .AddSingleton<IContractInvoker, ContractInvoker>(); TODO: this should be in DI but it's static
         }
     }
 }

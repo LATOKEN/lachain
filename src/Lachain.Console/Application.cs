@@ -2,8 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using App.Metrics;
+using App.Metrics.AspNetCore;
+using App.Metrics.Formatters.Prometheus;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -18,15 +22,15 @@ using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NLog;
 
 namespace Lachain.Console
 {
     public class Application : IDisposable
     {
-        private readonly IHost _host;
+        private readonly IWebHost _host;
         private static readonly ILogger<Application> Logger = LoggerFactory.GetLoggerForClass<Application>();
 
         public Application(string configPath, string[] args, RunOptions options)
@@ -39,14 +43,32 @@ namespace Lachain.Console
             LogManager.ReconfigExistingLoggers();
 
             var configManager = new ConfigManager(configPath, options);
-            _host = CreateHostBuilder(args, configManager, options).Build();
+            _host = CreateHostBuilder(args, configManager).Build();
         }
 
-        private static IHostBuilder CreateHostBuilder(string[] args, IConfigManager configManager, RunOptions options)
+        private static IWebHostBuilder CreateHostBuilder(string[] args, IConfigManager configManager)
         {
-            return Host.CreateDefaultBuilder(args)
+            var metrics = new MetricsBuilder()
+                .OutputMetrics.AsPrometheusProtobuf()
+                .Build();
+            return new WebHostBuilder()
+                .UseKestrel()
+                .UseUrls("http://*:7070") 
+                .UseStartup<Startup>()
+                .ConfigureMetrics()
+                .UseMetrics(
+                    options =>
+                    {
+                        options.EndpointOptions = endpointsOptions =>
+                        {
+                            endpointsOptions.MetricsEndpointOutputFormatter = metrics.OutputMetricsFormatters
+                                .OfType<MetricsPrometheusProtobufOutputFormatter>().First();
+                        };
+                    }
+                )
                 .ConfigureServices((context, services) =>
                 {
+                    services.AddSingleton<IMetricsRoot>(_ => metrics);
                     services.AddSingleton(_ => configManager);
                     BlockchainModule.AddServices(services);
                     ConsensusModule.AddServices(services);
@@ -72,6 +94,8 @@ namespace Lachain.Console
             var stateManager = _host.Services.GetService<IStateManager>()!;
             var wallet = _host.Services.GetService<IPrivateWallet>()!;
             var localTransactionRepository = _host.Services.GetService<ILocalTransactionRepository>()!;
+            var contractRegisterer = _host.Services.GetService<IContractRegisterer>()!;
+            ContractInvoker.Init(contractRegisterer);
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
@@ -111,12 +135,12 @@ namespace Lachain.Console
             consensusManager.Start((long) blockManager.GetHeight() + 1);
             validatorStatusManager.Start(false);
 
-            System.Console.CancelKeyPress += (sender, e) =>
-            {
-                System.Console.WriteLine("Interrupt received. Exiting...");
-                _interrupt = true;
-                Dispose();
-            };
+            // System.Console.CancelKeyPress += (sender, e) =>
+            // {
+            //     System.Console.WriteLine("Interrupt received. Exiting...");
+            //     _interrupt = true;
+            //     Dispose();
+            // };
 
             var task = _host.RunAsync();
 
