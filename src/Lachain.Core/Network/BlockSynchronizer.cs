@@ -679,12 +679,6 @@ namespace Lachain.Core.Network
                     List<ulong> blockIds = _repoBlocks[repoType].Item1;
                     List<byte[]> blockValues = _repoBlocks[repoType].Item2;
 
-                    using (Stream stream = new MemoryStream())
-                    {
-                        IFormatter formatter = new BinaryFormatter();
-                        formatter.Serialize(stream, blockValues);
-                    }
-
                     for (var i = 0; i < blockIds.Count; i++)
                     {
                         nodeRepository.WriteNodeToBatch(blockIds[i], NodeSerializer.FromBytes(blockValues[i]),

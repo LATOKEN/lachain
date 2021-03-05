@@ -117,12 +117,12 @@ namespace Lachain.Console
             }
             else
             {
-                Thread.Sleep(5000);
+                Logger.LogInformation("Waiting...");
+                Thread.Sleep(10000);
                 
+                Logger.LogInformation("Start FastSync...");
                 blockSynchronizer.PerformFastSync();
-                
-                Thread.Sleep(5000);
-                
+
                 blockSynchronizer.Start();
                 blockSynchronizer.SynchronizeWith(
                     validatorManager.GetValidatorsPublicKeys(0)
