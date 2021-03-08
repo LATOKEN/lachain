@@ -19,6 +19,7 @@ using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Prometheus;
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -26,6 +27,32 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+
+        private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
+            "lachain_block_exec_count",
+            "Number of times that block execution was called",
+            "mode"
+        );
+
+        private static readonly Summary BlockExecTime = Metrics.CreateSummary(
+            "lachain_block_exec_duration_seconds",
+            "Duration of block execution for last 5 minutes",
+            new SummaryConfiguration
+            {
+                MaxAge = TimeSpan.FromMinutes(5),
+                LabelNames = new []{"mode"},
+                Objectives = new[]
+                {
+                    new QuantileEpsilonPair(0.95, 0.05),
+                    new QuantileEpsilonPair(0.5, 0.05)
+                }
+            }
+        );
+
+        private static readonly Gauge BlockHeight = Metrics.CreateGauge(
+            "lachain_latest_block",
+            "Index of latest block in blockchain"
+        );
 
         private readonly ITransactionManager _transactionManager;
         private readonly IGenesisBuilder _genesisBuilder;
@@ -126,6 +153,7 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockPersisted(Block block)
         {
+            BlockHeight.Set(block.Header.Index);            
             _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
             OnBlockPersisted?.Invoke(this, block);
         }
@@ -154,7 +182,7 @@ namespace Lachain.Core.Blockchain.Operations
                         $"with stateHash={block.Header.StateHash.ToHex()} specified in header," +
                         $"since computed state hash is {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}, " +
                         $"stack trace is {new System.Diagnostics.StackTrace()}");
-                    
+
                     _stateManager.RollbackTo(snapshotBefore);
                     return OperatingError.InvalidStateHash;
                 }
@@ -190,6 +218,9 @@ namespace Lachain.Core.Blockchain.Operations
             out Money totalFee
         )
         {
+            var mode = isEmulation ? "emulate" : "commit";
+            using var timer = BlockExecTime.WithLabels(mode).NewTimer();
+            BlockExecCounter.WithLabels(mode).Inc();
             totalFee = Money.Zero;
             gasUsed = 0;
 
