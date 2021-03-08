@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,12 +8,26 @@ using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Prometheus;
 
 namespace Lachain.Networking.Hub
 {
     public class ClientWorker : IDisposable
     {
         private static readonly ILogger<ClientWorker> Logger = LoggerFactory.GetLoggerForClass<ClientWorker>();
+
+        private static readonly Counter MessageCounter = Metrics.CreateCounter(
+            "lachain_hub_messages_sent_count",
+            "Number of outgoing messages through communication hub",
+            "peer", "message_type"
+        );
+
+        private static readonly Counter MessageBytesCounter = Metrics.CreateCounter(
+            "lachain_hub_messages_sent_bytes",
+            "Size of outgoing messages through communication hub",
+            "peer", "message_type"
+        );
+
         public byte[] PeerPublicKey { get; }
         private readonly IMessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
@@ -94,6 +107,16 @@ namespace Lachain.Networking.Hub
                             : m.ConsensusMessage.PrettyTypeString()
                     );
                     Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
+                    foreach (var message in toSend.Messages)
+                    {
+                        MessageCounter
+                            .WithLabels(PeerPublicKey.ToHex(), message.MessageCase.ToString())
+                            .Inc();
+                        MessageBytesCounter
+                            .WithLabels(PeerPublicKey.ToHex(), message.MessageCase.ToString())
+                            .Inc(message.CalculateSize());
+                    }
+
                     _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                     _eraMsgCounter += 1;
                 }

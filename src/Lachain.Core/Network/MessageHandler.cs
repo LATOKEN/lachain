@@ -13,6 +13,7 @@ using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Prometheus;
 
 namespace Lachain.Core.Network
 {
@@ -26,6 +27,21 @@ namespace Lachain.Core.Network
         private readonly IConsensusManager _consensusManager;
 
         private readonly INetworkManager _networkManager;
+        
+        private static readonly Summary IncomingMessageHandlingTime = Metrics.CreateSummary(
+            "lachain_message_handling_duration_seconds",
+            "Duration of incoming message handler execution for last 5 minutes",
+            new SummaryConfiguration
+            {
+                MaxAge = TimeSpan.FromMinutes(5),
+                LabelNames = new []{"message_type"},
+                Objectives = new[]
+                {
+                    new QuantileEpsilonPair(0.95, 0.05),
+                    new QuantileEpsilonPair(0.5, 0.05)
+                }
+            }
+        );
 
         /*
          * TODO: message queue is a hack. We should design additional layer for storing/persisting consensus messages
@@ -76,16 +92,16 @@ namespace Lachain.Core.Network
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
         {
-            //Logger.LogTrace("Start processing PingReply");
+            using var timer = IncomingMessageHandlingTime.WithLabels("PingReply").NewTimer();
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandlePeerHasBlocks(reply.BlockHeight, publicKey);
-            //Logger.LogTrace("Finished processing PingReply");
         }
 
         private void OnSyncBlocksRequest(object sender,
             (SyncBlocksRequest request, Action<SyncBlocksReply> callback) @event
         )
         {
+            using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksRequest").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
             var reply = new SyncBlocksReply
@@ -112,6 +128,7 @@ namespace Lachain.Core.Network
 
         private void OnSyncBlocksReply(object sender, (SyncBlocksReply reply, ECDSAPublicKey publicKey) @event)
         {
+            using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksReply").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
             var len = reply.Blocks?.Count ?? 0;
@@ -141,6 +158,7 @@ namespace Lachain.Core.Network
         private void OnSyncPoolRequest(object sender,
             (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
+            using var timer = IncomingMessageHandlingTime.WithLabels("SyncPoolRequest").NewTimer();
             var (request, callback) = @event;
             Logger.LogTrace($"Get request for {request.Hashes.Count} transactions");
             var txs = request.Hashes
@@ -156,6 +174,7 @@ namespace Lachain.Core.Network
 
         private void OnSyncPoolReply(object sender, (SyncPoolReply reply, ECDSAPublicKey publicKey) @event)
         {
+            using var timer = IncomingMessageHandlingTime.WithLabels("SyncPoolReply").NewTimer();
             Logger.LogTrace("Start processing SyncPoolReply");
             var (reply, publicKey) = @event;
             _blockSynchronizer.HandleTransactionsFromPeer(
@@ -167,6 +186,7 @@ namespace Lachain.Core.Network
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnConsensusMessage(object sender, (ConsensusMessage message, ECDSAPublicKey publicKey) @event)
         {
+            using var timer = IncomingMessageHandlingTime.WithLabels("ConsensusMessage").NewTimer();
             var (message, publicKey) = @event;
             try
             {
