@@ -23,7 +23,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class StakingContract : ISystemContract
     {
         public static readonly BigInteger ExpectedValidatorsCount = 22;
-        public const ulong CycleDuration = 100; // in blocks
+        public const ulong CycleDuration = 20; // in blocks
         public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
         public const ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
         
