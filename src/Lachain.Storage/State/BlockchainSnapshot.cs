@@ -3,11 +3,14 @@ using System.Numerics;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Lachain.Logger;
 
 namespace Lachain.Storage.State
 {
     public class BlockchainSnapshot : IBlockchainSnapshot
     {
+        private static readonly ILogger<BlockchainSnapshot> Logger = LoggerFactory.GetLoggerForClass<BlockchainSnapshot>();
+        
         public BlockchainSnapshot(
             IBalanceSnapshot balances,
             IContractSnapshot contracts,
@@ -56,6 +59,23 @@ namespace Lachain.Storage.State
                     .Flatten()
                     .Keccak();
             }
+        }
+
+        public void GetStateHash()
+        {
+            Logger.LogInformation($"== Balance = {Balances.Hash.ToBytes().Keccak()}");
+            Logger.LogInformation($"== Contracts = {Contracts.Hash.ToBytes().Keccak()}");
+            Logger.LogInformation($"== Storage = {Storage.Hash.ToBytes().Keccak()}");
+            Logger.LogInformation($"== Transactions = {Transactions.Hash.ToBytes().Keccak()}");
+            Logger.LogInformation($"== Events = {Events.Hash.ToBytes().Keccak()}");
+            Logger.LogInformation($"== Validators = {Validators.Hash.ToBytes().Keccak()}");
+            
+            // Logger.LogInformation($"== Balance = {Balances.Version}");
+            // Logger.LogInformation($"== Contracts = {Contracts.Version}");
+            // Logger.LogInformation($"== Storage = {Storage.Version}");
+            // Logger.LogInformation($"== Transactions = {Transactions.Version}");
+            // Logger.LogInformation($"== Events = {Events.Version}");
+            // Logger.LogInformation($"== Validators = {Validators.Version}");
         }
     }
 }

@@ -509,11 +509,30 @@ namespace Lachain.Core.RPC.HTTP
                 new SnapshotIndexRepository(_rocksDbContext, storageManager);
 
             IBlockchainSnapshot bs = snapshotIndexRepository.GetSnapshotForBlock(blockNumber);
+            
+            Logger.LogInformation($"=== Block = {blockNumber} ===");
+            bs.GetStateHash();
+            Logger.LogInformation("=====");
+            
+            var versionFactory = new VersionFactory(_versionRepository.GetVersion(1));
+            var trieHashMap = new TrieHashMap(_nodeRepository, versionFactory);
+
+            var keyList = trieHashMap.GetNodeIds(bs.Balances.Version).ToList();
+            var valueList = trieHashMap.GetSerializedNodes(bs.Balances.Version).ToList();
+            
+            Logger.LogInformation($"Length of Keys = {keyList.Count} ");
+            Logger.LogInformation($"Length of Values = {valueList.Count} ");
+            
+            var a = valueList[i]
+
+            for (int i = 0; i < keyList.Count; i++)
+            {
+                Logger.LogInformation($"Length of Keys = {keyList[i]} ");
+                Logger.LogInformation($"Length of Values = {BitConverter.ToString(valueList[i])} ");
+            }
+            
             var res = bs.StateHash.ToString();
-
-            // var b = _blockManager.GetByHeight(blockNumber+1);
-            // var b_hash = b.Header.StateHash.ToString();
-
+            
             return new JObject
             {
                 ["success"] = "true",
@@ -528,8 +547,6 @@ namespace Lachain.Core.RPC.HTTP
                 ["Event_Version"] = bs.Events.Version.ToString(),
                 ["Validator_Version"] = bs.Validators.Version.ToString(),
                 ["LastApprovedSS"] = _stateManager.LastApprovedSnapshot.StateHash.ToString()
-                // ["b_hash"] = b_hash,
-                // ["next_block"] = blockNumber + 1
             };
         }
     }

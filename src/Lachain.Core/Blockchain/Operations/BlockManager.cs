@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -19,6 +21,8 @@ using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -154,6 +158,57 @@ namespace Lachain.Core.Blockchain.Operations
                         $"with stateHash={block.Header.StateHash.ToHex()} specified in header," +
                         $"since computed state hash is {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}, " +
                         $"stack trace is {new System.Diagnostics.StackTrace()}");
+                    
+                    
+                    Logger.LogInformation("=====");
+                    Logger.LogInformation(block.Header.Index.ToString());
+                    // _stateManager.LastApprovedSnapshot.GetStateHash();
+                    
+                    var b = block.Header.Index - 1;
+                    Logger.LogInformation($"=== Block === {b}");
+                    
+                    var p = JArray.Parse(@$"[{b}]");
+                    var options = new JObject
+                    {
+                        ["method"] = "getSnapShot",
+                        ["params"] = p,
+                        ["jsonrpc"] = "2.0",
+                        ["id"] = "1"
+                    };
+                    
+                    
+                    List<string> ips = new List<string>();
+                    ips.Add("http://127.0.0.1:7071");
+                    ips.Add("http://127.0.0.1:7072");
+                    
+                    foreach (var ip in ips)
+                    {
+                        Logger.LogInformation($"ip: {ip}");
+                        var webRequest = (HttpWebRequest) WebRequest.Create(ip);
+                        webRequest.ContentType = "application/json";
+                        webRequest.Method = "POST";
+                        using (Stream dataStream = webRequest.GetRequestStream())
+                        {
+                            string payloadString = JsonConvert.SerializeObject(options);
+                            byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
+                            dataStream.Write(byteArray, 0, byteArray.Length);
+                        }
+                    
+                        WebResponse webResponse;
+                        JObject response;
+                        using (webResponse = webRequest.GetResponse())
+                        {
+                            using (Stream str = webResponse.GetResponseStream()!)
+                            {
+                                using (StreamReader sr = new StreamReader(str))
+                                {
+                                    response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
+                                }
+                            }
+                        }
+                        
+                        Logger.LogInformation("=====");
+                    }
                     
                     _stateManager.RollbackTo(snapshotBefore);
                     return OperatingError.InvalidStateHash;

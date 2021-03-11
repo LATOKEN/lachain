@@ -16,5 +16,7 @@ namespace Lachain.Storage.State
         BigInteger NetworkGasPrice { get; }
 
         UInt256 StateHash { get; }
+
+        void GetStateHash();
     }
 }

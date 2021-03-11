@@ -445,7 +445,7 @@ namespace Lachain.Core.Network
 
                 _CallJsonRpcAPI("handShake", new JArray());
 
-                Logger.LogDebug(
+                Logger.LogInformation(
                     $"End: FastSync Start {fastSyncStart} End {DateTime.Now:HH:mm:ss.ffff}" +
                     $"With BlockHeight {_fastHeight} ");
             }

@@ -118,7 +118,7 @@ namespace Lachain.Console
             else
             {
                 Logger.LogInformation("Waiting...");
-                Thread.Sleep(10000);
+                Thread.Sleep(5000);
                 
                 Logger.LogInformation("Start FastSync...");
                 blockSynchronizer.PerformFastSync();
