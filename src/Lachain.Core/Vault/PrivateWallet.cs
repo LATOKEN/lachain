@@ -163,6 +163,13 @@ namespace Lachain.Core.Vault
             }
         }
 
+        public void DeleteKeysAfterBlock(ulong block)
+        {
+            _tsKeys.RemoveRangeFrom(block + 1);
+            _tpkeKeys.RemoveRangeFrom(block + 1);
+            SaveWallet(_walletPath, _walletPassword);
+        }
+
         public bool Unlock(string password, long s)
         {
             if (password == _walletPassword)

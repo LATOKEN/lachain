@@ -65,12 +65,13 @@ namespace Lachain.Console
             var metricsService = _container.Resolve<IMetricsService>();
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
-            
+
             if (options.RollBackTo.HasValue)
             {
                 Logger.LogWarning($"Performing roll back to block {options.RollBackTo.Value}");
                 var snapshot = snapshotIndexRepository.GetSnapshotForBlock(options.RollBackTo.Value);
                 stateManager.RollbackTo(snapshot);
+                wallet.DeleteKeysAfterBlock(options.RollBackTo.Value);
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
             }
 
