@@ -40,7 +40,7 @@ namespace Lachain.Core.Blockchain.Operations
             new SummaryConfiguration
             {
                 MaxAge = TimeSpan.FromMinutes(5),
-                LabelNames = new []{"mode"},
+                LabelNames = new[] {"mode"},
                 Objectives = new[]
                 {
                     new QuantileEpsilonPair(0.95, 0.05),
@@ -51,7 +51,47 @@ namespace Lachain.Core.Blockchain.Operations
 
         private static readonly Gauge BlockHeight = Metrics.CreateGauge(
             "lachain_latest_block",
-            "Index of latest block in blockchain"
+            "Index of latest block in blockchain",
+            new GaugeConfiguration
+            {
+                SuppressInitialValue = true
+            }
+        );
+
+        private static readonly Summary BlockTime = Metrics.CreateSummary(
+            "lachain_block_time_seconds",
+            "Time between consecutive blocks",
+            new SummaryConfiguration
+            {
+                SuppressInitialValue = true
+            }
+        );
+        
+        private static readonly Summary BlockSize = Metrics.CreateSummary(
+            "lachain_block_size_bytes",
+            "Block size",
+            new SummaryConfiguration
+            {
+                SuppressInitialValue = true
+            }
+        );
+        
+        private static readonly Summary TxSize = Metrics.CreateSummary(
+            "lachain_tx_size_bytes",
+            "Transaction size",
+            new SummaryConfiguration
+            {
+                SuppressInitialValue = true
+            }
+        );
+        
+        private static readonly Summary TxInBlock = Metrics.CreateSummary(
+            "lachain_tx_in_block",
+            "Count of tx per block",
+            new SummaryConfiguration
+            {
+                SuppressInitialValue = true
+            }
         );
 
         private readonly ITransactionManager _transactionManager;
@@ -153,17 +193,17 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockPersisted(Block block)
         {
-            BlockHeight.Set(block.Header.Index);            
             _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
             OnBlockPersisted?.Invoke(this, block);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactions, bool checkStateHash,
+        public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactionsEnumerable, bool checkStateHash,
             bool commit)
         {
             var error = _stateManager.SafeContext(() =>
             {
+                var transactions = transactionsEnumerable.ToList();
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
                 var operatingError = _Execute(
@@ -193,13 +233,26 @@ namespace Lachain.Core.Blockchain.Operations
                 // TODO: this is hack to avoid concurrency issues, one more save will be done in BlockPersisted() call
                 _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
                 if (block.Header.Index > 0)
+                {
+                    var blockTime = block.Timestamp -
+                                    _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index - 1)!
+                                        .Timestamp;
+                    BlockTime.Observe(blockTime / 1000.0);
+                    BlockHeight.Set(block.Header.Index);
+                    BlockSize.Observe(block.CalculateSize());
+                    foreach (var transactionReceipt in transactions)
+                    {
+                        TxSize.Observe(transactionReceipt.Transaction.RlpWithSignature(transactionReceipt.Signature).Count());
+                    }
+                    TxInBlock.Observe(block.TransactionHashes.Count);
+
                     Logger.LogInformation(
                         $"New block {block.Header.Index} with hash {block.Hash.ToHex()}, " +
                         $"txs {block.TransactionHashes.Count} in {TimeUtils.CurrentTimeMillis() - startTime}ms, " +
                         $"gas used {gasUsed}, fee {totalFee}. " +
-                        $"Since last block: " +
-                        $"{block.Timestamp - _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index - 1)!.Timestamp} ms"
+                        $"Since last block: {blockTime} ms"
                     );
+                }
                 _stateManager.Commit();
                 BlockPersisted(block);
                 return OperatingError.Ok;
