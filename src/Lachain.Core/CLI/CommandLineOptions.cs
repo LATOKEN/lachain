@@ -60,5 +60,8 @@ namespace Lachain.Core.CLI
 
         [Option('a', "apikey", Required = false, HelpText = "Api key for RPC")]
         public string? RpcApiKey { get; set; }
+        
+        [Option('b', "rollbackto", Required = false, HelpText = "Rollback node to specific block on start")]
+        public ulong? RollBackTo { get; set; }
     }
 }

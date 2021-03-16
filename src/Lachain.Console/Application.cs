@@ -63,7 +63,16 @@ namespace Lachain.Console
             var stateManager = _container.Resolve<IStateManager>();
             var wallet = _container.Resolve<IPrivateWallet>();
             var metricsService = _container.Resolve<IMetricsService>();
+            var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
+            
+            if (options.RollBackTo.HasValue)
+            {
+                Logger.LogWarning($"Performing roll back to block {options.RollBackTo.Value}");
+                var snapshot = snapshotIndexRepository.GetSnapshotForBlock(options.RollBackTo.Value);
+                stateManager.RollbackTo(snapshot);
+                Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
+            }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
@@ -87,7 +96,7 @@ namespace Lachain.Console
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
-
+            
             metricsService.Start();
             networkManager.Start();
             transactionVerifier.Start();
