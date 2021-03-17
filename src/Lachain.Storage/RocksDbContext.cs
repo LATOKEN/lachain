@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Lachain.Utility.Utils;
 using RocksDbSharp;
 
 namespace Lachain.Storage
@@ -9,16 +11,27 @@ namespace Lachain.Storage
     {
         private readonly RocksDb _rocksDb;
         private readonly WriteOptions _writeOptions;
-
+        private readonly string _dbpath;
 
         public RocksDbContext(string path = "ChainLachain")
         {
+            _dbpath = path;
             _writeOptions = new WriteOptions();
             _writeOptions.DisableWal(0);
             _writeOptions.SetSync(true);
 
             var options = new DbOptions().SetCreateIfMissing();
-            _rocksDb = RocksDb.Open(options, path);
+            _rocksDb = RocksDb.Open(options, _dbpath);
+        }
+
+        public ulong EstimateNumberOfKeys()
+        {
+            return ulong.Parse(_rocksDb.GetProperty("rocksdb.estimate-num-keys"));
+        }
+
+        public ulong EstimateDirSize()
+        {
+            return (ulong) DirUtils.DirSize(new DirectoryInfo(_dbpath));
         }
 
         public byte[] Get(byte[] key)
