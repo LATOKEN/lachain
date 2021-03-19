@@ -94,7 +94,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public static bool SameCycle(ulong a, ulong b)
         {
-            return a / StakingContract.CycleDuration == b / StakingContract.CycleDuration;
+            return GetCycleByBlockNumber(a) == GetCycleByBlockNumber(b);
+        }
+
+        public static ulong GetCycleByBlockNumber(ulong a)
+        {
+            return a / StakingContract.CycleDuration;
         }
 
         [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
