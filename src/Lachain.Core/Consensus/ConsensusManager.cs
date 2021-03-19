@@ -10,6 +10,7 @@ using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
+using Lachain.Core.Network;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Networking;
@@ -47,6 +48,7 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
             IBlockManager blockManager,
+            IBlockSynchronizer blockSynchronizer,
             IPrivateWallet privateWallet,
             IValidatorAttendanceRepository validatorAttendanceRepository,
             IConfigManager configManager,
@@ -65,7 +67,13 @@ namespace Lachain.Core.Consensus
             _terminated = false;
 
             _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
+            blockSynchronizer.OnSignedBlockReceived += BlockSynchronizerOnOnSignedBlockReceived;
             _targetBlockInterval = configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetBlockTime ?? 5_000;
+        }
+
+        private void BlockSynchronizerOnOnSignedBlockReceived(object sender, ulong block)
+        {
+            AdvanceEra((long) block + 1);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

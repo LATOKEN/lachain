@@ -6,6 +6,8 @@ namespace Lachain.Core.Network
 {
     public interface IBlockSynchronizer : IDisposable
     {
+        event EventHandler<ulong> OnSignedBlockReceived;
+        
         uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout);
 
         uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey);
