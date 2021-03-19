@@ -11,5 +11,7 @@ namespace Lachain.Networking
         [JsonProperty("maxPeers")] public ushort MaxPeers { get; set; }
         
         [JsonProperty("bootstrapAddresses")] public string[]? BootstrapAddresses { get; set; }
+        
+        [JsonProperty("hubLogLevel")] public string? HubLogLevel { get; set; }
     }
 }
