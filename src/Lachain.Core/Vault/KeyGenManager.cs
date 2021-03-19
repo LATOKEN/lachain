@@ -64,18 +64,10 @@ namespace Lachain.Core.Vault
         {
             if (context.Receipt is null) return;
             var highestBlock = _blockSynchronizer.GetHighestBlock();
-            if (highestBlock.HasValue && highestBlock.Value > context.Receipt.Block)
-            {
-                if (!GovernanceContract.IsKeygenBlock(highestBlock.Value) ||
-                    !GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block))
-                {
-                    Logger.LogWarning(
-                        $"Skipping keygen event since blockchain is already at height {highestBlock.Value} " +
-                        $"and we are at {context.Receipt.Block}"
-                    );
-                    return;
-                }
-            }
+            var willParticipate =
+                !highestBlock.HasValue ||
+                GovernanceContract.IsKeygenBlock(highestBlock.Value) &&
+                GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block);
 
             var tx = context.Receipt.Transaction;
             if (
@@ -118,10 +110,13 @@ namespace Lachain.Core.Vault
                 keygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
                 var commitTx = MakeCommitTransaction(keygen.StartKeygen());
                 Logger.LogTrace($"Produced commit tx with hash: {commitTx.Hash.ToHex()}");
-                if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
-                    Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
-                else
-                    Logger.LogInformation($"KeyGen Commit transaction sent");
+                if (willParticipate)
+                {
+                    if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
+                        Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
+                    else
+                        Logger.LogInformation($"KeyGen Commit transaction sent");
+                }
 
                 _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
@@ -131,7 +126,7 @@ namespace Lachain.Core.Vault
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null)
                 {
-                    Logger.LogWarning($"Skipping call since there is no keygen running, block is {highestBlock}, " + 
+                    Logger.LogWarning($"Skipping call since there is no keygen running, block is {highestBlock}, " +
                                       $"stack trace is {new System.Diagnostics.StackTrace()}");
                     return;
                 }
@@ -152,10 +147,13 @@ namespace Lachain.Core.Vault
                         new CommitMessage {Commitment = commitment, EncryptedRows = encryptedRows}
                     )
                 );
-                if (_transactionPool.Add(sendValueTx) is var error && error != OperatingError.Ok)
-                    Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash.ToHex()}): {error}");
-                else
-                    Logger.LogInformation($"KeyGen Send value transaction sent");
+                if (willParticipate)
+                {
+                    if (_transactionPool.Add(sendValueTx) is var error && error != OperatingError.Ok)
+                        Logger.LogError($"Error creating send value transaction ({sendValueTx.Hash.ToHex()}): {error}");
+                    else
+                        Logger.LogInformation($"KeyGen Send value transaction sent");
+                }
 
                 _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
@@ -178,10 +176,14 @@ namespace Lachain.Core.Vault
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
                     var confirmTx = MakeConfirmTransaction(keys);
-                    if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
-                        Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
-                    else
-                        Logger.LogInformation($"KeyGen Confirm transaction sent");
+
+                    if (willParticipate)
+                    {
+                        if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
+                            Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
+                        else
+                            Logger.LogInformation($"KeyGen Confirm transaction sent");                        
+                    }
                 }
 
                 _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
