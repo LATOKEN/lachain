@@ -8,6 +8,7 @@ using Lachain.Logger;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Consensus;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -24,6 +25,7 @@ namespace Lachain.Core.Network
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly INetworkBroadcaster _networkBroadcaster;
+        private readonly IConsensusManager _consensusManager;
         private readonly INetworkManager _networkManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
@@ -44,6 +46,7 @@ namespace Lachain.Core.Network
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             INetworkBroadcaster networkBroadcaster,
+            IConsensusManager consensusManager,
             INetworkManager networkManager,
             ITransactionPool transactionPool,
             IStateManager stateManager
@@ -52,6 +55,7 @@ namespace Lachain.Core.Network
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _networkBroadcaster = networkBroadcaster;
+            _consensusManager = consensusManager;
             _networkManager = networkManager;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
@@ -150,6 +154,14 @@ namespace Lachain.Core.Network
                         $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
                     return false;
                 }
+
+                if (_blockManager.VerifySignatures(block) != OperatingError.Ok)
+                {
+                    Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig");
+                    return false;
+                }
+                // Tell consensus manager to terminate current era, since we trust given multisig
+                _consensusManager.AdvanceEra((long) block.Header.Index + 1);
 
                 var error = _stateManager.SafeContext(() =>
                 {
