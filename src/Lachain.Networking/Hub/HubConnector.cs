@@ -20,9 +20,10 @@ namespace Lachain.Networking.Hub
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string hubBootstrapAddresses, IMessageFactory messageFactory)
+        public HubConnector(string hubBootstrapAddresses, IMessageFactory messageFactory, string? logLevel)
         {
-            CommunicationHub.Net.Hub.SetLogLevel($"<root>={Logger.LowestLogLevel().Name.ToUpper()}");
+            logLevel ??= Logger.LowestLogLevel().Name;
+            CommunicationHub.Net.Hub.SetLogLevel($"<root>={logLevel.ToUpper()}");
             _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses));
             _messageFactory = messageFactory;
         }
