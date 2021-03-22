@@ -327,10 +327,10 @@ namespace Lachain.Core.Blockchain.Operations
                 receipt.GasUsed = GasMetering.DefaultTxCost;
                 receipt.IndexInBlock = indexInBlock;
                 var transaction = receipt.Transaction;
-                var snapshot = _stateManager.NewSnapshot();
 
                 try
                 {
+                    var snapshot = _stateManager.NewSnapshot();
                     var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
                     if (gasLimitCheck != OperatingError.Ok)
                     {
@@ -430,9 +430,9 @@ namespace Lachain.Core.Blockchain.Operations
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
 
             /* save block to repository */
-            var snapshotBlock = _stateManager.NewSnapshot();
             try
             {
+                var snapshotBlock = _stateManager.NewSnapshot();
                 snapshotBlock.Blocks.AddBlock(block);
                 _stateManager.Approve();
             }
