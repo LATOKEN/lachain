@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Proto;
@@ -31,6 +32,7 @@ namespace Lachain.Storage.State
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {
+            // Console.WriteLine($"Storage Commit: {_state.Hash}");
             _state.Commit();
         }
 

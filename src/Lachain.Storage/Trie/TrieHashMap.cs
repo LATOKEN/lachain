@@ -83,6 +83,9 @@ namespace Lachain.Storage.Trie
 
         public ulong AddOrUpdate(ulong root, byte[] key, byte[] value)
         {
+            Console.WriteLine($"root = {root} " +
+                              $"key = {String.Join(" ", key)} " +
+                              $"value = {String.Join(" ", value)} ");
             key = Hash(key);
             return AddInternal(root, 0, key, value, false);
         }
@@ -159,6 +162,31 @@ namespace Lachain.Storage.Trie
                 default:
                     foreach (var child in node.Children)
                     foreach (var value in GetSerializedNodes(child))
+                    {
+                        yield return value;
+                    }
+                    break;
+            }
+        }
+        
+        public IEnumerable<byte[]> GetNodeHash(ulong root)
+        {
+            if (root == 0)
+                yield break;
+
+            var node = GetNodeById(root);
+            if (node is null) throw new InvalidOperationException("corrupted trie");
+            if (node.Type.ToString() == "Internal")
+                yield return node.Hash;
+
+            switch (node)
+            {
+                case LeafNode leafNode:
+                    yield return leafNode.Hash;
+                    break;
+                default:
+                    foreach (var child in node.Children)
+                    foreach (var value in GetNodeHash(child))
                     {
                         yield return value;
                     }
@@ -274,13 +302,18 @@ namespace Lachain.Storage.Trie
         private ulong AddInternal(ulong root, int height, IReadOnlyList<byte> keyHash, byte[] value, bool check)
         {
             if (root == 0)
-                return NewLeafNode(keyHash, value);
+            {
+                Logger.LogInformation($"root = {root}");
+                Logger.LogInformation($"keyHash = {keyHash.ToString()}, value = { String.Join(" ", value) }");
+                return NewLeafNode(keyHash, value);   
+            }
 
             var rootNode = GetNodeById(root);
             if (rootNode is null) throw new InvalidOperationException();
             switch (rootNode)
             {
                 case InternalNode internalNode:
+                    Logger.LogInformation($"Internal Node");
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = AddInternal(to, height + 1, keyHash, value, check);
@@ -288,6 +321,7 @@ namespace Lachain.Storage.Trie
                         GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException()
                     );
                 case LeafNode leafNode:
+                    Logger.LogInformation($"Leaf Node");
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                         return SplitLeafNode(root, leafNode, height, keyHash, value);
                     if (check)

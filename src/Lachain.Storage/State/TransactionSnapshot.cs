@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.State
 {
@@ -32,6 +33,7 @@ namespace Lachain.Storage.State
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {
+            // Console.WriteLine($"Transaction Commit: {_state.Hash}");
             _state.Commit();
         }
 

@@ -52,6 +52,7 @@ namespace Lachain.Storage
         public ulong AddOrUpdate(byte[] key, byte[] value)
         {
             CurrentVersion = _trieMap.AddOrUpdate(CurrentVersion, key, value);
+            Console.WriteLine($"CurrentVersion = {CurrentVersion}");
             return CurrentVersion;
         }
 

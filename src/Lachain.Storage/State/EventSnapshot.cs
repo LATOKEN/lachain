@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
@@ -30,6 +31,7 @@ namespace Lachain.Storage.State
 
         public void Commit()
         {
+            // Console.WriteLine($"Contract Commit: {_state.Hash}");
             _state.Commit();
         }
 

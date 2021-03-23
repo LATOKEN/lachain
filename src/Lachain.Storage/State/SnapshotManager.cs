@@ -10,7 +10,7 @@ namespace Lachain.Storage.State
 
         private TSnapshotType _lastApprovedSnapshot;
         private TSnapshotType? _pendingSnapshot;
-
+        
         protected uint RepositoryId { get; }
 
         // public TSnapshotInterface CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
@@ -23,6 +23,7 @@ namespace Lachain.Storage.State
 
         private static TSnapshotType SnapshotFromState(IStorageState state)
         {
+            // Console.WriteLine($"** This is SnapshotFromState ** {state.Hash}");
             return (TSnapshotType) Activator.CreateInstance(typeof(TSnapshotType), state);
         }
 

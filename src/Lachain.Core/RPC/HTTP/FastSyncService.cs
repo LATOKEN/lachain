@@ -518,17 +518,15 @@ namespace Lachain.Core.RPC.HTTP
             var trieHashMap = new TrieHashMap(_nodeRepository, versionFactory);
 
             var keyList = trieHashMap.GetNodeIds(bs.Balances.Version).ToList();
-            var valueList = trieHashMap.GetSerializedNodes(bs.Balances.Version).ToList();
+            var valueList = trieHashMap.GetNodeHash(bs.Balances.Version).ToList();
             
             Logger.LogInformation($"Length of Keys = {keyList.Count} ");
             Logger.LogInformation($"Length of Values = {valueList.Count} ");
             
-            var a = valueList[i]
-
             for (int i = 0; i < keyList.Count; i++)
             {
-                Logger.LogInformation($"Length of Keys = {keyList[i]} ");
-                Logger.LogInformation($"Length of Values = {BitConverter.ToString(valueList[i])} ");
+                Logger.LogInformation($"Key = {keyList[i]} ");
+                Logger.LogInformation($"Value = {BitConverter.ToString(valueList[i])} ");
             }
             
             var res = bs.StateHash.ToString();

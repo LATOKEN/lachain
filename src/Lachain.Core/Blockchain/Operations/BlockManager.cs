@@ -160,57 +160,57 @@ namespace Lachain.Core.Blockchain.Operations
                         $"stack trace is {new System.Diagnostics.StackTrace()}");
                     
                     
-                    Logger.LogInformation("=====");
-                    Logger.LogInformation(block.Header.Index.ToString());
-                    // _stateManager.LastApprovedSnapshot.GetStateHash();
-                    
-                    var b = block.Header.Index - 1;
-                    Logger.LogInformation($"=== Block === {b}");
-                    
-                    var p = JArray.Parse(@$"[{b}]");
-                    var options = new JObject
-                    {
-                        ["method"] = "getSnapShot",
-                        ["params"] = p,
-                        ["jsonrpc"] = "2.0",
-                        ["id"] = "1"
-                    };
-                    
-                    
-                    List<string> ips = new List<string>();
-                    ips.Add("http://127.0.0.1:7071");
-                    ips.Add("http://127.0.0.1:7072");
-                    
-                    foreach (var ip in ips)
-                    {
-                        Logger.LogInformation($"ip: {ip}");
-                        var webRequest = (HttpWebRequest) WebRequest.Create(ip);
-                        webRequest.ContentType = "application/json";
-                        webRequest.Method = "POST";
-                        using (Stream dataStream = webRequest.GetRequestStream())
-                        {
-                            string payloadString = JsonConvert.SerializeObject(options);
-                            byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
-                            dataStream.Write(byteArray, 0, byteArray.Length);
-                        }
-                    
-                        WebResponse webResponse;
-                        JObject response;
-                        using (webResponse = webRequest.GetResponse())
-                        {
-                            using (Stream str = webResponse.GetResponseStream()!)
-                            {
-                                using (StreamReader sr = new StreamReader(str))
-                                {
-                                    response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
-                                }
-                            }
-                        }
-                        
-                        Logger.LogInformation("=====");
-                    }
-                    
-                    _stateManager.RollbackTo(snapshotBefore);
+                    // Logger.LogInformation("=====");
+                    // Logger.LogInformation(block.Header.Index.ToString());
+                    // // _stateManager.LastApprovedSnapshot.GetStateHash();
+                    //
+                    // var b = block.Header.Index - 1;
+                    // Logger.LogInformation($"=== Block === {b}");
+                    //
+                    // var p = JArray.Parse(@$"[{b}]");
+                    // var options = new JObject
+                    // {
+                    //     ["method"] = "getSnapShot",
+                    //     ["params"] = p,
+                    //     ["jsonrpc"] = "2.0",
+                    //     ["id"] = "1"
+                    // };
+                    //
+                    //
+                    // List<string> ips = new List<string>();
+                    // ips.Add("http://127.0.0.1:7071");
+                    // ips.Add("http://127.0.0.1:7072");
+                    //
+                    // foreach (var ip in ips)
+                    // {
+                    //     Logger.LogInformation($"ip: {ip}");
+                    //     var webRequest = (HttpWebRequest) WebRequest.Create(ip);
+                    //     webRequest.ContentType = "application/json";
+                    //     webRequest.Method = "POST";
+                    //     using (Stream dataStream = webRequest.GetRequestStream())
+                    //     {
+                    //         string payloadString = JsonConvert.SerializeObject(options);
+                    //         byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
+                    //         dataStream.Write(byteArray, 0, byteArray.Length);
+                    //     }
+                    //
+                    //     WebResponse webResponse;
+                    //     JObject response;
+                    //     using (webResponse = webRequest.GetResponse())
+                    //     {
+                    //         using (Stream str = webResponse.GetResponseStream()!)
+                    //         {
+                    //             using (StreamReader sr = new StreamReader(str))
+                    //             {
+                    //                 response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
+                    //             }
+                    //         }
+                    //     }
+                    //     
+                    //     Logger.LogInformation("=====");
+                    // }
+                    //
+                    // _stateManager.RollbackTo(snapshotBefore);
                     return OperatingError.InvalidStateHash;
                 }
 
@@ -290,8 +290,13 @@ namespace Lachain.Core.Blockchain.Operations
 
             /* execute transactions */
             ulong indexInBlock = 0;
+            
+            // Logger.LogInformation($"=== Transaction Hashes: {block.TransactionHashes.Count}");
+
+            var i = 0;
             foreach (var txHash in block.TransactionHashes)
             {
+                Logger.LogInformation($"Index: {i}");
                 Logger.LogTrace($"Trying to execute tx : {txHash.ToHex()}");
                 /* try to find transaction by hash */
                 var receipt = currentTransactions[txHash];
@@ -300,10 +305,11 @@ namespace Lachain.Core.Blockchain.Operations
                 receipt.IndexInBlock = indexInBlock;
                 var transaction = receipt.Transaction;
                 var snapshot = _stateManager.NewSnapshot();
-
+                
                 var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
                 if (gasLimitCheck != OperatingError.Ok)
                 {
+                    Logger.LogInformation($"==== @311 ===");
                     removeTransactions.Add(receipt);
                     _stateManager.Rollback();
                     Logger.LogWarning(
@@ -313,13 +319,16 @@ namespace Lachain.Core.Blockchain.Operations
                 }
 
                 /* try to execute transaction */
+                Logger.LogInformation($"==== @322 ===");
                 var result = _transactionManager.Execute(block, receipt, snapshot);
                 var txFailed = result != OperatingError.Ok;
                 if (txFailed)
                 {
+                    Logger.LogInformation($"==== @326 ===");
                     _stateManager.Rollback();
                     if (result == OperatingError.InvalidNonce)
                     {
+                        Logger.LogInformation($"==== @330 ===");
                         removeTransactions.Add(receipt);
                         Logger.LogWarning(
                             $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): invalid nonce"
@@ -328,6 +337,8 @@ namespace Lachain.Core.Blockchain.Operations
                     }
 
                     snapshot = _stateManager.NewSnapshot();
+                    // Logger.LogInformation($"=== @337 snapshot {snapshot.StateHash.ToHex()}");
+                    
                     snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
                     Logger.LogTrace($"Transaction {txHash.ToHex()} failed because of error: {result}");
                 }
@@ -336,6 +347,7 @@ namespace Lachain.Core.Blockchain.Operations
                 gasUsed += receipt.GasUsed;
                 if (gasUsed > GasMetering.DefaultBlockGasLimit)
                 {
+                    Logger.LogInformation($"==== @349 ===");
                     removeTransactions.Add(receipt);
                     relayTransactions.Add(receipt);
                     _stateManager.Rollback();
@@ -351,6 +363,7 @@ namespace Lachain.Core.Blockchain.Operations
                 result = _TakeTransactionFee(receipt, snapshot, out var fee);
                 if (result != OperatingError.Ok)
                 {
+                    Logger.LogInformation($"==== @365 ===");
                     removeTransactions.Add(receipt);
                     _stateManager.Rollback();
                     Logger.LogWarning(
@@ -364,11 +377,17 @@ namespace Lachain.Core.Blockchain.Operations
                 if (!txFailed)
                 {
                     /* mark transaction as executed */
+                    Logger.LogInformation($"==== @379 ===");
                     Logger.LogTrace($"Transaction executed {txHash.ToHex()}");
                     snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
+                    // Logger.LogInformation($"=== @377 snapshot {snapshot.StateHash.ToHex()}");
                 }
 
                 _stateManager.Approve();
+                
+                // Logger.LogInformation($"=== @382 snapshot CS {_stateManager.CurrentSnapshot.StateHash.ToHex()}");
+                // Logger.LogInformation($"=== @382 snapshot LAS {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}");
+                
                 indexInBlock++;
                 if (_contractTxJustExecuted != null && !isEmulation)
                 {
@@ -387,14 +406,21 @@ namespace Lachain.Core.Blockchain.Operations
                         _localTransactionRepository.TryAddTransaction(receipt);
                     }
                 }
+
+                i++;
             }
 
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
 
             /* save block to repository */
             var snapshotBlock = _stateManager.NewSnapshot();
+            // Logger.LogInformation($"=== @402 snapshotBlock {snapshotBlock.StateHash.ToHex()}");
+            
             snapshotBlock.Blocks.AddBlock(block);
             _stateManager.Approve();
+            
+            // Logger.LogInformation($"=== @405 CS {_stateManager.CurrentSnapshot.StateHash.ToHex()}");
+            // Logger.LogInformation($"=== @405 LAS {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}");
 
             return OperatingError.Ok;
         }

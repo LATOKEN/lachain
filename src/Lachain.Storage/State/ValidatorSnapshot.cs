@@ -33,6 +33,7 @@ namespace Lachain.Storage.State
 
         public void Commit()
         {
+            // Console.WriteLine($"Validator Commit: {_state.Hash}");
             _state.Commit();
         }
 

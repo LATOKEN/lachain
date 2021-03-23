@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -97,6 +98,7 @@ namespace Lachain.Storage.State
 
         public void Commit()
         {
+            // Console.WriteLine($"Balance Commit: {_state.Hash}");
             _state.Commit();
         }
 

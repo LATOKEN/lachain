@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Utility;
 
@@ -29,6 +30,7 @@ namespace Lachain.Storage.State
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {
+            // Console.WriteLine($"Contract Commit: {_state.Hash}");
             _state.Commit();
         }
 
