@@ -1,4 +1,5 @@
 using Lachain.Storage;
+using Lachain.Core.Config;
 using Prometheus;
 
 namespace Lachain.Core.RPC.HTTP
@@ -18,10 +19,11 @@ namespace Lachain.Core.RPC.HTTP
             "Size of database folder"
         );
 
-        public MetricsService(IRocksDbContext context)
+        public MetricsService(IRocksDbContext context, IConfigManager config)
         {
             _context = context;
-            _server = new MetricServer(hostname: "*", port: 7071);
+            var rpcConfig = config.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
+            _server = new MetricServer(hostname: "*", port: rpcConfig.MetricsPort);
         }
 
         public void Start()

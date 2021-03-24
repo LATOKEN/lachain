@@ -152,6 +152,7 @@ namespace Lachain.Console
                 {
                     Hosts = new[] {"+"},
                     Port = 7070,
+                    MetricsPort = 7071,
                     ApiKey = "asdasdasd",
                 };
                 var walletPath = "wallet.json";
