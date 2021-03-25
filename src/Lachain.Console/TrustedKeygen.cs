@@ -39,7 +39,7 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips)
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, int port, int metricsPort)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);

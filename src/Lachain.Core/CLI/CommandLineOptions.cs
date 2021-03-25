@@ -27,7 +27,7 @@ namespace Lachain.Core.CLI
     [Verb("keygen", HelpText = "Run trusted threshold keygen")]
     public class KeygenOptions
     {
-        [Option('i', "ips", Required = true, Separator = ' ', HelpText = "IP addresses for config generation")]
+        [Option('i', "ips", Required = false, Separator = ' ', HelpText = "IP addresses for config generation, local testnet with 127.0.0.1 address is used if missed")]
         public IEnumerable<string> IpAddresses { get; set; } = Enumerable.Empty<string>();
 
         [Option('n', "players", Required = true, HelpText = "Total number of participants")]
@@ -35,6 +35,12 @@ namespace Lachain.Core.CLI
         
         [Option('f', "faulty", Required = true, HelpText = "Total number of faulty participants")]
         public int F { get; set; }
+        
+        [Option('p', "port", Required = false, HelpText = "RPC port for nodes or base port for local installation, default is 7070")]
+        public int port { get; set; }
+        
+        [Option('m', "metrics", Required = false, HelpText = "Metrics server port for nodes or base port for local installation, default is 7071")]
+        public int metricsPort { get; set; }
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]
