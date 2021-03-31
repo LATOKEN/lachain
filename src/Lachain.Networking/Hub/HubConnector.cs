@@ -14,18 +14,20 @@ namespace Lachain.Networking.Hub
         private bool _started;
         private bool _running;
         private readonly IMessageFactory _messageFactory;
+        private readonly int _hubMetricsPort;
 
         private Thread? _readWorker;
         private readonly Thread _hubThread;
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string hubBootstrapAddresses, IMessageFactory messageFactory, string? logLevel)
+        public HubConnector(string hubBootstrapAddresses, int hubMetricsPort, IMessageFactory messageFactory, string? logLevel)
         {
             logLevel ??= Logger.LowestLogLevel().Name;
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={logLevel.ToUpper()}");
             _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses));
             _messageFactory = messageFactory;
+            _hubMetricsPort = hubMetricsPort;
         }
 
         private byte[] RequestHubId()
@@ -54,7 +56,7 @@ namespace Lachain.Networking.Hub
             var hubId = RequestHubId();
             Thread.Sleep(TimeSpan.FromMilliseconds(5_000));
             Logger.LogDebug("Sending init request to communication hub");
-            var reply = CommunicationHub.Net.Hub.Init(_messageFactory.SignCommunicationHubInit(hubId));
+            var reply = CommunicationHub.Net.Hub.Init(_messageFactory.SignCommunicationHubInit(hubId), _hubMetricsPort);
             Logger.LogDebug($"init result: {reply}");
             if (!reply) Logger.LogError("Failed to start hub"); 
             Thread.Sleep(TimeSpan.FromMilliseconds(5_000));

@@ -13,5 +13,7 @@ namespace Lachain.Networking
         [JsonProperty("bootstrapAddresses")] public string[]? BootstrapAddresses { get; set; }
         
         [JsonProperty("hubLogLevel")] public string? HubLogLevel { get; set; }
+        
+        [JsonProperty("hubMetricsPort")] public int? HubMetricsPort { get; set; }
     }
 }
