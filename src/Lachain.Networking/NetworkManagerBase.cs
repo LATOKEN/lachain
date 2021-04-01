@@ -45,6 +45,7 @@ namespace Lachain.Networking
             };
             _hubConnector = new HubConnector(
                 string.Join(",", networkConfig.BootstrapAddresses), 
+                networkConfig.HubPrivateKey ?? throw new Exception("No hub private key in settings"), 
                 networkConfig.HubMetricsPort ?? 7072, _messageFactory, networkConfig.HubLogLevel);
             _hubConnector.OnMessage += _HandleMessage;
 
