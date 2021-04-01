@@ -37,10 +37,7 @@ namespace Lachain.Core.CLI
         public int F { get; set; }
         
         [Option('p', "port", Required = false, HelpText = "RPC port for nodes or base port for local installation, default is 7070")]
-        public int port { get; set; }
-        
-        [Option('m', "metrics", Required = false, HelpText = "Metrics server port for nodes or base port for local installation, default is 7071")]
-        public int metricsPort { get; set; }
+        public ushort port { get; set; }
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]
