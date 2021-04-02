@@ -39,18 +39,18 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort)
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort);
+                CloudKeygen(n, f, ips, basePort, target);
             }
             else
             {
-                LocalKeygen(n, f, basePort);
+                LocalKeygen(n, f, basePort, target);
             }
         }
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort)
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -78,7 +78,7 @@ namespace Lachain.Console
             var serializedHubPrivateKeys = new string[n];
             for (var i = 0; i < n; ++i)
             {
-                var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
+                var keyInfo = Lachain.Networking.Hub.HubConnector.GenerateNewKey().Split(",");
                 if (keyInfo.Length != 2)
                     throw new Exception("Invalid hub key");
                 hubPublicKeys[i] = keyInfo[1];
@@ -139,7 +139,10 @@ namespace Lachain.Console
                     Path = "ChainLachain",
                     Provider = "RocksDB",
                 };
-                var blockchain = new BlockchainConfig();
+                var blockchain = new BlockchainConfig
+                {
+                    TargetBlockTime = target
+                };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
@@ -174,7 +177,7 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort)
+        public static void LocalKeygen(int n, int f, int basePort, ushort target)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -202,11 +205,15 @@ namespace Lachain.Console
             var serializedHubPrivateKeys = new string[n];
             for (var i = 0; i < n; ++i)
             {
-                var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
+                var keyStr = CommunicationHub.Net.Hub.GenerateNewHubKey();
+                System.Console.WriteLine($"key: {keyStr}");
+                var keyInfo = keyStr.Split(",");
                 if (keyInfo.Length != 2)
                     throw new Exception("Invalid hub key");
                 hubPublicKeys[i] = keyInfo[1];
+                System.Console.WriteLine($"Public key: {hubPublicKeys[i]}, len is {hubPublicKeys[i].Length}");
                 serializedHubPrivateKeys[i] = keyInfo[0];
+                System.Console.WriteLine($"Private key: {serializedHubPrivateKeys[i]}");
             }
             var ips = Enumerable.Repeat("127.0.0.1", n);
             var bootstraps = ips
@@ -263,7 +270,10 @@ namespace Lachain.Console
                     Path = "ChainLachain",
                     Provider = "RocksDB",
                 };
-                var blockchain = new BlockchainConfig();
+                var blockchain = new BlockchainConfig
+                {
+                    TargetBlockTime = target
+                };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(

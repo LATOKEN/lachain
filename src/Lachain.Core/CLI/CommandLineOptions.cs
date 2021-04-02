@@ -38,6 +38,9 @@ namespace Lachain.Core.CLI
         
         [Option('p', "port", Required = false, HelpText = "RPC port for nodes or base port for local installation, default is 7070")]
         public ushort port { get; set; }
+        
+        [Option('t', "target", Required = false, HelpText = "Block target time in ms, default is 5000 (5sec)")]
+        public ushort target { get; set; }
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]

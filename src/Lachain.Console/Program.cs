@@ -36,7 +36,7 @@ namespace Lachain.Console
 
         private static void RunKeygen(KeygenOptions options)
         {
-            TrustedKeygen.DoKeygen(options.N, options.F, options.IpAddresses, options.port);
+            TrustedKeygen.DoKeygen(options.N, options.F, options.IpAddresses, options.port, options.target);
         }
 
         private static void EncryptWallet(EncryptOptions options)
