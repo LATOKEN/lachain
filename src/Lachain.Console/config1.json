@@ -46,6 +46,7 @@
       "+"
     ],
     "port": 7070,
+    "metricsPort": 7071,
     "apiKey": "asdasdasd"
   },
   "vault": {
