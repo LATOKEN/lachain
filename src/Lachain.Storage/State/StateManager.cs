@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Threading;
+using Lachain.Logger;
 
 namespace Lachain.Storage.State
 {
     public class StateManager : IStateManager
     {
+        private static readonly ILogger<StateManager> Logger = LoggerFactory.GetLoggerForClass<StateManager>();
         public IBlockchainSnapshot CurrentSnapshot => PendingSnapshot ?? LastApprovedSnapshot;
 
         public IBlockchainSnapshot LastApprovedSnapshot { get; private set; }
@@ -88,6 +90,11 @@ namespace Lachain.Storage.State
 
         public void Release()
         {
+            if (PendingSnapshot != null)
+            {
+                Logger.LogError("Nonzero pending snapshot on exit from SafeContext");
+                Rollback();
+            }
             _globalMutex.ReleaseMutex();
         }
 

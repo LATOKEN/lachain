@@ -327,77 +327,87 @@ namespace Lachain.Core.Blockchain.Operations
                 receipt.GasUsed = GasMetering.DefaultTxCost;
                 receipt.IndexInBlock = indexInBlock;
                 var transaction = receipt.Transaction;
-                var snapshot = _stateManager.NewSnapshot();
 
-                var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
-                if (gasLimitCheck != OperatingError.Ok)
+                try
                 {
-                    removeTransactions.Add(receipt);
-                    _stateManager.Rollback();
-                    Logger.LogWarning(
-                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): not enough balance for gas"
-                    );
-                    continue;
-                }
-
-                /* try to execute transaction */
-                var result = _transactionManager.Execute(block, receipt, snapshot);
-                var txFailed = result != OperatingError.Ok;
-                if (txFailed)
-                {
-                    _stateManager.Rollback();
-                    if (result == OperatingError.InvalidNonce)
+                    var snapshot = _stateManager.NewSnapshot();
+                    var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
+                    if (gasLimitCheck != OperatingError.Ok)
                     {
                         removeTransactions.Add(receipt);
+                        _stateManager.Rollback();
                         Logger.LogWarning(
-                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): invalid nonce"
+                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): not enough balance for gas"
                         );
                         continue;
                     }
 
-                    snapshot = _stateManager.NewSnapshot();
-                    snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
-                    Logger.LogTrace($"Transaction {txHash.ToHex()} failed because of error: {result}");
-                }
+                    /* try to execute transaction */
+                    var result = _transactionManager.Execute(block, receipt, snapshot);
+                    var txFailed = result != OperatingError.Ok;
+                    if (txFailed)
+                    {
+                        _stateManager.Rollback();
+                        if (result == OperatingError.InvalidNonce)
+                        {
+                            removeTransactions.Add(receipt);
+                            Logger.LogWarning(
+                                $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}): invalid nonce"
+                            );
+                            continue;
+                        }
 
-                /* check block gas limit after execution */
-                gasUsed += receipt.GasUsed;
-                if (gasUsed > GasMetering.DefaultBlockGasLimit)
+                        snapshot = _stateManager.NewSnapshot();
+                        snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
+                        Logger.LogTrace($"Transaction {txHash.ToHex()} failed because of error: {result}");
+                    }
+
+                    /* check block gas limit after execution */
+                    gasUsed += receipt.GasUsed;
+                    if (gasUsed > GasMetering.DefaultBlockGasLimit)
+                    {
+                        removeTransactions.Add(receipt);
+                        relayTransactions.Add(receipt);
+                        _stateManager.Rollback();
+                        /* this should never happen cuz that mean that someone applied overflowed block */
+                        if (!isEmulation)
+                            throw new InvalidBlockException(OperatingError.BlockGasOverflow);
+                        Logger.LogWarning(
+                            $"Unable to take transaction {txHash.ToHex()} with gas {receipt.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
+                        continue;
+                    }
+
+                    /* try to take fee from sender */
+                    result = _TakeTransactionFee(receipt, snapshot, out var fee);
+                    if (result != OperatingError.Ok)
+                    {
+                        removeTransactions.Add(receipt);
+                        _stateManager.Rollback();
+                        Logger.LogWarning(
+                            $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}), cannot take fee due to {result}"
+                        );
+                        continue;
+                    }
+
+                    totalFee += fee;
+
+                    if (!txFailed)
+                    {
+                        /* mark transaction as executed */
+                        Logger.LogTrace($"Transaction executed {txHash.ToHex()}");
+                        snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
+                    }
+
+                    _stateManager.Approve();
+                    indexInBlock++;
+                }
+                catch (Exception ex)
                 {
-                    removeTransactions.Add(receipt);
-                    relayTransactions.Add(receipt);
-                    _stateManager.Rollback();
-                    /* this should never happen cuz that mean that someone applied overflowed block */
-                    if (!isEmulation)
-                        throw new InvalidBlockException(OperatingError.BlockGasOverflow);
-                    Logger.LogWarning(
-                        $"Unable to take transaction {txHash.ToHex()} with gas {receipt.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
-                    continue;
+                    Logger.LogWarning($"Exception [{ex.ToString()}] while executing tx {txHash.ToHex()}");
+                    if (_stateManager.PendingSnapshot != null)
+                        _stateManager.Rollback();
                 }
 
-                /* try to take fee from sender */
-                result = _TakeTransactionFee(receipt, snapshot, out var fee);
-                if (result != OperatingError.Ok)
-                {
-                    removeTransactions.Add(receipt);
-                    _stateManager.Rollback();
-                    Logger.LogWarning(
-                        $"Unable to execute transaction {txHash.ToHex()} with nonce ({transaction.Nonce}), cannot take fee due to {result}"
-                    );
-                    continue;
-                }
-
-                totalFee += fee;
-
-                if (!txFailed)
-                {
-                    /* mark transaction as executed */
-                    Logger.LogTrace($"Transaction executed {txHash.ToHex()}");
-                    snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
-                }
-
-                _stateManager.Approve();
-                indexInBlock++;
                 if (_contractTxJustExecuted != null && !isEmulation)
                 {
                     try
@@ -420,9 +430,19 @@ namespace Lachain.Core.Blockchain.Operations
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
 
             /* save block to repository */
-            var snapshotBlock = _stateManager.NewSnapshot();
-            snapshotBlock.Blocks.AddBlock(block);
-            _stateManager.Approve();
+            try
+            {
+                var snapshotBlock = _stateManager.NewSnapshot();
+                snapshotBlock.Blocks.AddBlock(block);
+                _stateManager.Approve();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Exception [{ex.ToString()}] while adding block tx");
+                if (_stateManager.PendingSnapshot != null)
+                    _stateManager.Rollback();
+            }
+
 
             return OperatingError.Ok;
         }
