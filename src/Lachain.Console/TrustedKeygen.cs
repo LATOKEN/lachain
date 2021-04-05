@@ -78,7 +78,7 @@ namespace Lachain.Console
             var serializedHubPrivateKeys = new string[n];
             for (var i = 0; i < n; ++i)
             {
-                var keyInfo = Lachain.Networking.Hub.HubConnector.GenerateNewKey().Split(",");
+                var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
                 if (keyInfo.Length != 2)
                     throw new Exception("Invalid hub key");
                 hubPublicKeys[i] = keyInfo[1];
@@ -205,15 +205,11 @@ namespace Lachain.Console
             var serializedHubPrivateKeys = new string[n];
             for (var i = 0; i < n; ++i)
             {
-                var keyStr = CommunicationHub.Net.Hub.GenerateNewHubKey();
-                System.Console.WriteLine($"key: {keyStr}");
-                var keyInfo = keyStr.Split(",");
+                var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
                 if (keyInfo.Length != 2)
                     throw new Exception("Invalid hub key");
                 hubPublicKeys[i] = keyInfo[1];
-                System.Console.WriteLine($"Public key: {hubPublicKeys[i]}, len is {hubPublicKeys[i].Length}");
                 serializedHubPrivateKeys[i] = keyInfo[0];
-                System.Console.WriteLine($"Private key: {serializedHubPrivateKeys[i]}");
             }
             var ips = Enumerable.Repeat("127.0.0.1", n);
             var bootstraps = ips

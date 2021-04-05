@@ -25,7 +25,7 @@ namespace Lachain.Networking.Hub
         {
             logLevel ??= Logger.LowestLogLevel().Name;
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={logLevel.ToUpper()}");
-            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses, hubPrivKeyHex));
+            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses, hubPrivKeyHex.HexToBytes()));
             _messageFactory = messageFactory;
             _hubMetricsPort = hubMetricsPort;
         }
