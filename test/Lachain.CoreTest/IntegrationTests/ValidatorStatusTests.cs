@@ -102,7 +102,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _blockManager.TryBuildGenesisBlock();
             GenerateBlocks(1);
 
-            var systemContractReader = _container.Resolve<ISystemContractReader>();
+            var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(systemContractReader.NodeAddress());
             var placeToStake = Money.Parse("2000.0");
             Assert.That(balance > placeToStake, "Not enough balance to make stake");
@@ -141,7 +141,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return _transactionPool.Peek(1000, 1000).ToArray();
         }
 
-        private Block BuildNextBlock(TransactionReceipt[] receipts = null)
+        private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
 
@@ -202,7 +202,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return (header, multisig);
         }
 
-        private OperatingError ExecuteBlock(Block block, TransactionReceipt[] receipts = null)
+        private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
 
@@ -222,7 +222,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return status;
         }
 
-        private OperatingError EmulateBlock(Block block, TransactionReceipt[] receipts = null)
+        private OperatingError EmulateBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
             var (status, _, _, _) = _blockManager.Emulate(block, receipts);

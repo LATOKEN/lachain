@@ -12,6 +12,7 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
@@ -26,6 +27,7 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
+using MCL.BLS12_381.Net;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest.IntegrationTests
@@ -35,6 +37,7 @@ namespace Lachain.CoreTest.IntegrationTests
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private static readonly ITransactionSigner Signer = new TransactionSigner();
+        private static readonly ulong CycleDuration = StakingContract.CycleDuration;
 
         private IBlockManager _blockManager = null!;
         private ITransactionBuilder _transactionBuilder = null!;
@@ -76,7 +79,7 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             _blockManager.TryBuildGenesisBlock();
 
-            for (var i = 0; i < 52; i++)
+            for (var i = 0; i < (int)(CycleDuration + 2); i++)
             {
                 GenerateBlocks(1);
                 var lastblock =
@@ -92,7 +95,7 @@ namespace Lachain.CoreTest.IntegrationTests
                                        ?? throw new Exception($"No event {j} in {tx.ToHex()}");
                         Assert.AreEqual(eventObj.TransactionHash, tx);
                         if (_eventData.TryGetValue(eventObj.TransactionHash, out var storedData))
-                            Assert.AreEqual(eventObj.Data, storedData);
+                            Assert.AreEqual(eventObj.Data.ToHex(), storedData.ToHex());
                     }
                 }
             }
@@ -104,7 +107,7 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 var txs = GetCurrentPoolTxs();
                 var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
-                if (height % 50 == 49) // next block is last in cycle
+                if (height % CycleDuration == CycleDuration - 1) // next block is last in cycle
                 {
                     var newTxs = new TransactionReceipt[txs.Length + 1];
                     txs.CopyTo(newTxs, 0);
@@ -113,7 +116,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Tx with a contract call, {txs.Length} txs");
                 }
 
-                if (height % 50 == 0)
+                if (height % CycleDuration == 0)
                 {
                     var newTxs = new TransactionReceipt[txs.Length + 1];
                     txs.CopyTo(newTxs, 0);
@@ -122,7 +125,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Tx with a contract call, {txs.Length} txs");
                 }
 
-                if (height % 50 == 1)
+                if (height % CycleDuration == 1)
                 {
                     var newTxs = new TransactionReceipt[txs.Length + 1];
                     txs.CopyTo(newTxs, 0);
@@ -205,7 +208,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return (header, multisig);
         }
 
-        private OperatingError ExecuteBlock(Block block, TransactionReceipt[] receipts = null)
+        private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
 
@@ -224,7 +227,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return status;
         }
 
-        private OperatingError EmulateBlock(Block block, TransactionReceipt[] receipts = null)
+        private OperatingError EmulateBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
             var (status, _, _, _) = _blockManager.Emulate(block, receipts);
@@ -234,11 +237,14 @@ namespace Lachain.CoreTest.IntegrationTests
         private TransactionReceipt MakeDistributeCycleRewardsAndPenaltiesTxReceipt()
         {
             var res = BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties);
+                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties); 
+            Assert.False(_eventData.ContainsKey(res.Hash));
+            // TODO: remove hardcoded block reward with value from settings
+            var totalReward = Money.Parse("5.0") * (int) StakingContract.CycleDuration;
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(
                     GovernanceInterface.EventDistributeCycleRewardsAndPenalties,
-                    Money.Parse("500.0").ToUInt256())));
+                    totalReward)));
             return res;
         }
 
@@ -255,6 +261,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 (pk)
             );
             var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventChangeValidators, (pk))));
             return res;
@@ -273,6 +280,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 proposer, (value)
             );
             var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenSendValue,
                     proposer, (value))));
@@ -283,6 +291,7 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             var res = BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
                 GovernanceInterface.MethodFinishCycle);
+            Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventFinishCycle)));
             return res;
@@ -304,6 +313,7 @@ namespace Lachain.CoreTest.IntegrationTests
             );
 
             var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenCommit,
                     commitment, new byte[][] {row})));

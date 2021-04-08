@@ -204,7 +204,7 @@ namespace Lachain.CoreTest.IntegrationTests
             Assert.AreEqual(OperatingError.InvalidMultisig, result);
         }
 
-        private Block BuildNextBlock(TransactionReceipt[] receipts = null)
+        private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
 
@@ -265,7 +265,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return (header, multisig);
         }
 
-        private OperatingError ExecuteBlock(Block block, TransactionReceipt[] receipts = null)
+        private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
 
@@ -285,7 +285,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return status;
         }
 
-        private OperatingError EmulateBlock(Block block, TransactionReceipt[] receipts = null)
+        private OperatingError EmulateBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
             var (status, _, _, _) = _blockManager.Emulate(block, receipts);
