@@ -163,7 +163,7 @@ namespace Lachain.Core.Consensus
                 ulong lastBlock = 0;
                 ulong prevBlock = 0;
                 long delta = 0;
-                for (;; CurrentEra += 1)
+                for (;;)
                 {
                     _networkManager.AdvanceEra(CurrentEra);
                     Logger.LogTrace($"Advanced to era {CurrentEra}");
@@ -280,6 +280,7 @@ namespace Lachain.Core.Consensus
                         _eras.Remove(CurrentEra);
                         Logger.LogTrace("Root protocol finished, waiting for new era");
                         lastBlock = TimeUtils.CurrentTimeMillis();
+                        CurrentEra += 1;
                     }
 
                     DefaultCrypto.ResetBenchmark();
