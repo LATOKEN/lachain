@@ -258,6 +258,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Money.Zero,
                 GovernanceInterface.MethodChangeValidators,
                 0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 (pk)
             );
             var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
@@ -277,6 +278,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Money.Zero,
                 GovernanceInterface.MethodKeygenSendValue,
                 0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 proposer, (value)
             );
             var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
@@ -308,6 +310,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Money.Zero,
                 GovernanceInterface.MethodKeygenCommit,
                 0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 commitment,
                 new byte[][] {row}
             );
@@ -327,7 +330,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 contractAddress,
                 Money.Zero,
                 mehodSignature,
-                0
+                0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))
             );
             return new TransactionReceipt
             {

@@ -74,6 +74,13 @@ namespace Lachain.Core.Vault
                 !tx.To.Equals(ContractRegisterer.GovernanceContract) &&
                 !tx.To.Equals(ContractRegisterer.StakingContract)
             ) return;
+            if ((context.Receipt.Block < _blockManager.GetHeight()) && 
+                !GovernanceContract.SameCycle(context.Receipt.Block, _blockManager.GetHeight()))
+            {
+                Logger.LogWarning(
+                    $"System contract invoked from outdated tx: {context.Receipt.Hash}, tx block {context.Receipt.Block}, our height is {_blockManager.GetHeight()}");
+                return;
+            }
             if (tx.Invocation.Length < 4) return;
 
             var signature = ContractEncoder.MethodSignatureAsInt(tx.Invocation);
@@ -239,6 +246,7 @@ namespace Lachain.Core.Vault
                 Money.Zero,
                 GovernanceInterface.MethodKeygenConfirm,
                 0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())),
                 keyring.TpkePublicKey.ToBytes(),
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
@@ -253,6 +261,7 @@ namespace Lachain.Core.Vault
                 Money.Zero,
                 GovernanceInterface.MethodKeygenSendValue,
                 0,
+                GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight()),
                 new BigInteger(valueMessage.Proposer).ToUInt256(),
                 valueMessage.EncryptedValues
             );
@@ -267,6 +276,7 @@ namespace Lachain.Core.Vault
                 Money.Zero,
                 GovernanceInterface.MethodKeygenCommit,
                 0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())),
                 commitMessage.Commitment.ToBytes(),
                 commitMessage.EncryptedRows
             );

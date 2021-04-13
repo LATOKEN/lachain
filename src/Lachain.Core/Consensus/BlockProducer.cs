@@ -28,6 +28,7 @@ namespace Lachain.Core.Consensus
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
+        private readonly ITransactionBuilder _transactionBuilder;
         private const int BatchSize = 1000; // TODO: calculate batch size
 
         public BlockProducer(
@@ -35,7 +36,8 @@ namespace Lachain.Core.Consensus
             IValidatorManager validatorManager,
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager,
-            IStateManager stateManager
+            IStateManager stateManager, 
+            ITransactionBuilder transactionBuilder
         )
         {
             _transactionPool = transactionPool;
@@ -43,6 +45,7 @@ namespace Lachain.Core.Consensus
             _blockSynchronizer = blockSynchronizer;
             _blockManager = blockManager;
             _stateManager = stateManager;
+            _transactionBuilder = transactionBuilder;
         }
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
@@ -195,8 +198,21 @@ namespace Lachain.Core.Consensus
 
         private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt()
         {
-            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                UInt160Utils.Zero,
+                ContractRegisterer.GovernanceContract,
+                Utility.Money.Zero,
+                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties,
+                0,
+                UInt256Utils.ToUInt256((GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())))
+            );
+            return new TransactionReceipt
+            {
+                Hash = tx.FullHash(SignatureUtils.Zero),
+                Status = TransactionStatus.Pool,
+                Transaction = tx,
+                Signature = SignatureUtils.Zero,
+            };
         }
 
         private TransactionReceipt FinishVrfLotteryTxReceipt()
@@ -207,8 +223,21 @@ namespace Lachain.Core.Consensus
 
         private TransactionReceipt FinishCycleTxReceipt()
         {
-            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract,
-                GovernanceInterface.MethodFinishCycle);
+            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
+                UInt160Utils.Zero,
+                ContractRegisterer.GovernanceContract,
+                Utility.Money.Zero,
+                GovernanceInterface.MethodFinishCycle,
+                0,
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight()))
+            );
+            return new TransactionReceipt
+            {
+                Hash = tx.FullHash(SignatureUtils.Zero),
+                Status = TransactionStatus.Pool,
+                Transaction = tx,
+                Signature = SignatureUtils.Zero,
+            };
         }
 
         private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
