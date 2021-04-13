@@ -74,10 +74,6 @@ namespace Lachain.Core.Consensus
         private void BlockSynchronizerOnOnSignedBlockReceived(object sender, ulong block)
         {
             AdvanceEra((long) block + 1);
-            lock (_blockPersistedLock)
-            {
-                Monitor.PulseAll(_blockPersistedLock);
-            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -233,10 +229,10 @@ namespace Lachain.Core.Consensus
 
                     if (!weAreValidator || !haveKeys)
                     {
-                        Logger.LogWarning($"We are not validator for era {CurrentEra} (or keys are missing), waiting");
-                        while ((long) _blockManager.GetHeight() < CurrentEra)
+                        Logger.LogWarning($"We are not validator for era {CurrentEra} (or keys are missing), waiting for block {CurrentEra}");
+                        var eraToWait = CurrentEra;
+                        while ((long) _blockManager.GetHeight() < eraToWait)
                         {
-                            Logger.LogWarning($"Our height = {_blockManager.GetHeight()} < CurrentEra = {CurrentEra}");
                             lock (_blockPersistedLock)
                             {
                                 Monitor.Wait(_blockPersistedLock, TimeSpan.FromMilliseconds(1_000));
