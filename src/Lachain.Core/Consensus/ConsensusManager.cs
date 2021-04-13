@@ -241,27 +241,28 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
-                        Logger.LogTrace("Starting new era and requesting root protocol");
-                        var broadcaster = EnsureEra(CurrentEra) ?? throw new InvalidOperationException();
-                        var rootId = new RootProtocolId(CurrentEra);
+                        var era = CurrentEra;
+                        Logger.LogTrace($"Starting new era {era} and requesting root protocol");
+                        var broadcaster = EnsureEra(era) ?? throw new InvalidOperationException();
+                        var rootId = new RootProtocolId(era);
                         broadcaster.InternalRequest(
                             new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId, _blockProducer)
                         );
 
                         lock (_postponedMessages)
                         {
-                            if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
+                            if (_postponedMessages.TryGetValue(era, out var savedMessages))
                             {
                                 Logger.LogDebug(
-                                    $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
+                                    $"Processing {savedMessages.Count} postponed messages for era {era}");
                                 foreach (var (message, from) in savedMessages)
                                 {
-                                    var fromIndex = _validatorManager.GetValidatorIndex(from, CurrentEra - 1);
+                                    var fromIndex = _validatorManager.GetValidatorIndex(from, era - 1);
                                     Logger.LogTrace($"Handling postponed message: {message.PrettyTypeString()}");
                                     broadcaster.Dispatch(message, fromIndex);
                                 }
 
-                                _postponedMessages.Remove(CurrentEra);
+                                _postponedMessages.Remove(era);
                             }
                         }
 
@@ -277,10 +278,10 @@ namespace Lachain.Core.Consensus
                         }
 
                         broadcaster.Terminate();
-                        _eras.Remove(CurrentEra);
+                        _eras.Remove(era);
                         Logger.LogTrace("Root protocol finished, waiting for new era");
                         lastBlock = TimeUtils.CurrentTimeMillis();
-                        CurrentEra += 1;
+                        CurrentEra = Math.Max(CurrentEra, era + 1);
                     }
 
                     DefaultCrypto.ResetBenchmark();
