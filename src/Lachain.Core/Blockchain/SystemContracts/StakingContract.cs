@@ -641,7 +641,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var changeValidatorsExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.GovernanceContract, ContractRegisterer.StakingContract,
-                GovernanceInterface.MethodChangeValidators, validators);
+                GovernanceInterface.MethodChangeValidators, 
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_context.Snapshot.Blocks.GetTotalBlockHeight())),
+                validators);
 
             if (changeValidatorsExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
