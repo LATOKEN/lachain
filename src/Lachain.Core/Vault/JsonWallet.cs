@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Lachain.CommunicationHub.Net;
 using Newtonsoft.Json;
 
 namespace Lachain.Core.Vault
@@ -8,11 +9,13 @@ namespace Lachain.Core.Vault
     {
         public JsonWallet(
             string ecdsaPrivateKey,
+            string hubPrivateKey,
             Dictionary<ulong, string> tpkePrivateKeys,
             Dictionary<ulong, string> thresholdSignatureKeys
         )
         {
             TpkePrivateKeys = tpkePrivateKeys;
+            HubPrivateKey = hubPrivateKey;
             ThresholdSignatureKeys = thresholdSignatureKeys;
             EcdsaPrivateKey = ecdsaPrivateKey;
         }
@@ -23,5 +26,7 @@ namespace Lachain.Core.Vault
         public Dictionary<ulong, string>? ThresholdSignatureKeys { get; set; }
 
         [JsonProperty("ecdsaPrivateKey")] public string? EcdsaPrivateKey { get; set; }
+
+        [JsonProperty("hubPrivateKey")] public string? HubPrivateKey { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Lachain.CommunicationHub.Net;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.RPC;
@@ -50,6 +51,7 @@ namespace Lachain.Console
                 LocalKeygen(n, f, basePort, target);
             }
         }
+
         public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -78,11 +80,7 @@ namespace Lachain.Console
             var serializedHubPrivateKeys = new string[n];
             for (var i = 0; i < n; ++i)
             {
-                var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
-                if (keyInfo.Length != 2)
-                    throw new Exception("Invalid hub key");
-                hubPublicKeys[i] = keyInfo[1];
-                serializedHubPrivateKeys[i] = keyInfo[0];
+                (serializedHubPrivateKeys[i], hubPublicKeys[i]) = PrivateWallet.GenerateHubKey();
             }
 
             var bootstraps = ips
@@ -101,8 +99,7 @@ namespace Lachain.Console
                     ForceIPv6 = false,
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
-                    HubMetricsPort = basePort + 2,
-                    HubPrivateKey = serializedHubPrivateKeys[i]
+                    HubMetricsPort = basePort + 2
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -125,7 +122,7 @@ namespace Lachain.Console
                 {
                     Hosts = new[] {"+"},
                     Port = basePort,
-                    MetricsPort = (ushort)(basePort + 1),
+                    MetricsPort = (ushort) (basePort + 1),
                     ApiKey = "asdasdasd",
                 };
                 var walletPath = "wallet.json";
@@ -148,6 +145,7 @@ namespace Lachain.Console
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
+                    serializedHubPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToHex(),
                     privShares[i].ToHex()
                 );
@@ -205,12 +203,9 @@ namespace Lachain.Console
             var serializedHubPrivateKeys = new string[n];
             for (var i = 0; i < n; ++i)
             {
-                var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
-                if (keyInfo.Length != 2)
-                    throw new Exception("Invalid hub key");
-                hubPublicKeys[i] = keyInfo[1];
-                serializedHubPrivateKeys[i] = keyInfo[0];
+                (serializedHubPrivateKeys[i], hubPublicKeys[i]) = PrivateWallet.GenerateHubKey();
             }
+
             var ips = Enumerable.Repeat("127.0.0.1", n);
             var bootstraps = ips
                 .Zip(hubPublicKeys, (ip, id) => $"{id}@{ip}")
@@ -229,7 +224,6 @@ namespace Lachain.Console
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2 * n + i,
-                    HubPrivateKey = serializedHubPrivateKeys[i]
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -251,8 +245,8 @@ namespace Lachain.Console
                 var rpc = new RpcConfig
                 {
                     Hosts = new[] {"+"},
-                    Port = (ushort)(basePort + i),
-                    MetricsPort = (ushort)(basePort + n + i),
+                    Port = (ushort) (basePort + i),
+                    MetricsPort = (ushort) (basePort + n + i),
                     ApiKey = "asdasdasd",
                 };
                 var walletPath = "wallet.json";
@@ -275,6 +269,7 @@ namespace Lachain.Console
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
+                    serializedHubPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToHex(),
                     privShares[i].ToHex()
                 );
@@ -304,10 +299,11 @@ namespace Lachain.Console
             );
         }
 
-        private static void GenWallet(string path, string ecdsaKey, string tpkeKey, string tsKey)
+        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tpkeKey, string tsKey)
         {
             var config = new JsonWallet(
                 ecdsaKey,
+                hubKey,
                 new Dictionary<ulong, string> {{0, tpkeKey}},
                 new Dictionary<ulong, string> {{0, tsKey}}
             );

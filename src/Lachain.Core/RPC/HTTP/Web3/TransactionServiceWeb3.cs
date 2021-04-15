@@ -296,8 +296,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     //throw new ApplicationException("Not implemented yet");
                 }
             }
-            
-            return Web3DataFormatUtils.Web3Data("".HexToBytes());
         }
         
         [JsonRpcMethod("eth_call")]

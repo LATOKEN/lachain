@@ -10,7 +10,11 @@ namespace Lachain.Core.Network
         public NetworkManager(
             IConfigManager configManager, IPrivateWallet privateWallet
         )
-            : base(configManager.GetConfig<NetworkConfig>("network")!, privateWallet.EcdsaKeyPair)
+            : base(
+                configManager.GetConfig<NetworkConfig>("network")!,
+                privateWallet.EcdsaKeyPair,
+                privateWallet.HubPrivateKey
+            )
         {
         }
     }
