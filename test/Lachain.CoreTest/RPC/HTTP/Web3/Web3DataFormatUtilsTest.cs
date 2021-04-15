@@ -81,18 +81,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         [Test]
         public void Test_Web3Block()
         {
-            Console.WriteLine(MerkleTree.ComputeRoot(new UInt256[]{})?.ToHex());
-            var block = new Block()
-            {
-                Header = new BlockHeader
-                {
-                    Index = 436,
-                    MerkleRoot = MerkleTree.ComputeRoot(new UInt256[] { }),
-
-                },
-                Timestamp = 1438271100,
-
-            };
+            // Console.WriteLine(MerkleTree.ComputeRoot(new UInt256[]{})?.ToHex());
+            // var block = new Block()
+            // {
+            //     Header = new BlockHeader
+            //     {
+            //         Index = 436,
+            //         MerkleRoot = MerkleTree.ComputeRoot(new UInt256[] { }),
+            //
+            //     },
+            //     Timestamp = 1438271100,
+            //
+            // };
             // {
             //     "difficulty": "0x0",
             //     "extraData": "0x",
