@@ -229,7 +229,8 @@ namespace Lachain.Core.Consensus
 
                     if (!weAreValidator || !haveKeys)
                     {
-                        Logger.LogWarning($"We are not validator for era {CurrentEra} (or keys are missing), waiting for block {CurrentEra}");
+                        var reason = haveKeys ? "(keys are missing)" : "";
+                        Logger.LogWarning($"We are not validator for era {CurrentEra} {reason}, waiting for block {CurrentEra}");
                         var eraToWait = CurrentEra;
                         while ((long) _blockManager.GetHeight() < eraToWait)
                         {
