@@ -218,7 +218,7 @@ namespace Lachain.Core.Consensus
 
             if (_callback.TryGetValue(result.From, out var senderId))
             {
-                if (!_registry.TryGetValue(result.From, out var cbProtocol))
+                if (!_registry.TryGetValue(senderId, out var cbProtocol))
                 {
                     Logger.LogWarning($"There is no protocol registered to get result from {senderId}");
                 }
