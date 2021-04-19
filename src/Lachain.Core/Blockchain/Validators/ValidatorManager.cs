@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Lachain.Consensus;
 using Lachain.Crypto.ThresholdSignature;
@@ -42,13 +43,21 @@ namespace Lachain.Core.Blockchain.Validators
             lock (_pubkeyCache)
             {
                 if (_pubkeyCache.ContainsKey(afterBlock)) return _pubkeyCache[afterBlock];
-                IReadOnlyCollection<ECDSAPublicKey> res = _snapshotIndexRepository.GetSnapshotForBlock((ulong)afterBlock).Validators
+                try
+                {
+                    IReadOnlyCollection<ECDSAPublicKey> res = _snapshotIndexRepository.GetSnapshotForBlock((ulong)afterBlock).Validators
                     .GetValidatorsPublicKeys()
                     .ToArray();
-                if (!res.Any())
-                    return res; // do not cache empty value,  it can change in future
-                _pubkeyCache.Add(afterBlock, res);
-                return _pubkeyCache[afterBlock];
+                    if (!res.Any())
+                        return res; // do not cache empty value,  it can change in future
+                    _pubkeyCache.Add(afterBlock, res);
+                    return _pubkeyCache[afterBlock];
+                }
+                catch (Exception e)
+                {
+                    Logger.LogWarning($"Failed to get validators for block {afterBlock},  error {e}");
+                    return new List<ECDSAPublicKey>();
+                }
             }
         }
 
