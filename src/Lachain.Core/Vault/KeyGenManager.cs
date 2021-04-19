@@ -70,8 +70,16 @@ namespace Lachain.Core.Vault
                 GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block);
             if (!willParticipate)
             {
-                Logger.LogInformation(
-                    $"Will not participate in keygen: highest block is {highestBlock.Value}, call block is {context.Receipt.Block}");
+                if (highestBlock != null)
+                {
+                    Logger.LogInformation(
+                        $"Will not participate in keygen: highest block is {highestBlock.Value}, call block is {context.Receipt.Block}");
+                }
+                else
+                {
+                    Logger.LogInformation(
+                        $"Will not participate in keygen: highest block is null, call block is {context.Receipt.Block}");
+                }
             }
 
             var tx = context.Receipt.Transaction;
