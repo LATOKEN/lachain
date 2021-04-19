@@ -218,13 +218,15 @@ namespace Lachain.Core.Consensus
 
             if (_callback.TryGetValue(result.From, out var senderId))
             {
-                if (_registry[senderId] == null)
+                if (!_registry.TryGetValue(result.From, out var cbProtocol))
                 {
                     Logger.LogWarning($"There is no protocol registered to get result from {senderId}");
                 }
-
-                _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-                Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
+                else
+                {
+                    cbProtocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
+                    Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
+                }
             }
 
             // message is also delivered to self
