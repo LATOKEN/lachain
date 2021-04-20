@@ -198,13 +198,11 @@ namespace Lachain.Core.Consensus
                         }
                     }
 
-                    var weAreValidator = _validatorManager
-                        .GetValidators(CurrentEra - 1)
-                        .EcdsaPublicKeySet
-                        .Contains(_privateWallet.EcdsaKeyPair.PublicKey);
+                    var validators = _validatorManager.GetValidators(CurrentEra - 1);
+                    var weAreValidator = validators != null && validators.EcdsaPublicKeySet.Contains(_privateWallet.EcdsaKeyPair.PublicKey);
 
-                    var haveKeys = _privateWallet.HasKeyForKeySet(
-                        _validatorManager.GetValidators(CurrentEra - 1).ThresholdSignaturePublicKeySet,
+                    var haveKeys = validators != null && _privateWallet.HasKeyForKeySet(
+                        validators.ThresholdSignaturePublicKeySet,
                         (ulong) CurrentEra
                     );
 
@@ -212,7 +210,7 @@ namespace Lachain.Core.Consensus
                     {
                         Logger.LogError(
                             $"No required keys for block {CurrentEra}, need to rescan latest cycle to generate keys");
-                        if (!_keyGenManager.RescanBlockChainForKeys(_validatorManager.GetValidators(CurrentEra - 1)))
+                        if (!_keyGenManager.RescanBlockChainForKeys(validators!))
                         {
                             Logger.LogError(
                                 $"Failed to find relevant keygen in blockchain, cannot restore my key, waiting...");
@@ -230,7 +228,8 @@ namespace Lachain.Core.Consensus
                     if (!weAreValidator || !haveKeys)
                     {
                         var reason = haveKeys ? "(keys are missing)" : "";
-                        Logger.LogWarning($"We are not validator for era {CurrentEra} {reason}, waiting for block {CurrentEra}");
+                        Logger.LogWarning(
+                            $"We are not validator for era {CurrentEra} {reason}, waiting for block {CurrentEra}");
                         var eraToWait = CurrentEra;
                         while ((long) _blockManager.GetHeight() < eraToWait)
                         {

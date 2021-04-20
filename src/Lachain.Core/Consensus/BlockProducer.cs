@@ -50,7 +50,7 @@ namespace Lachain.Core.Consensus
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
         {
-            var n = _validatorManager.GetValidators(era - 1).N;
+            var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
             var taken = _transactionPool.Peek(BatchSize, txNum);
             return taken;

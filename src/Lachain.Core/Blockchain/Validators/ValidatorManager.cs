@@ -6,6 +6,7 @@ using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
+using NLog.Fluent;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Blockchain.Validators
@@ -21,21 +22,33 @@ namespace Lachain.Core.Blockchain.Validators
             _snapshotIndexRepository = snapshotIndexRepository;
         }
 
-        public IPublicConsensusKeySet GetValidators(long afterBlock)
+        public IPublicConsensusKeySet? GetValidators(long afterBlock)
         {
-            var state = _snapshotIndexRepository.GetSnapshotForBlock((ulong) afterBlock).Validators.GetConsensusState();
-            var n = state.Validators.Length;
-            var f = (n - 1) / 3;
-            return new PublicConsensusKeySet(
-                n, f,
-                PublicKey.FromBytes(state.TpkePublicKey),
-                new PublicKeySet(
-                    state.Validators.Select(v =>
-                        Crypto.ThresholdSignature.PublicKey.FromBytes(v.ThresholdSignaturePublicKey)),
-                    f
-                ),
-                state.Validators.Select(v => v.PublicKey)
-            );
+            Logger.LogTrace($"Getting validators after block {afterBlock}");
+            try
+            {
+                var state = _snapshotIndexRepository.GetSnapshotForBlock((ulong) afterBlock).Validators
+                    .GetConsensusState();
+                var n = state.Validators.Length;
+                var f = (n - 1) / 3;
+                Logger.LogTrace($"Fetched {n} validators f={f}");
+                return new PublicConsensusKeySet(
+                    n, f,
+                    PublicKey.FromBytes(state.TpkePublicKey),
+                    new PublicKeySet(
+                        state.Validators.Select(v =>
+                            Crypto.ThresholdSignature.PublicKey.FromBytes(v.ThresholdSignaturePublicKey)),
+                        f
+                    ),
+                    state.Validators.Select(v => v.PublicKey)
+                );
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Failed to fetch validators after block {afterBlock}: {e}");
+            }
+
+            return null;
         }
 
         public IReadOnlyCollection<ECDSAPublicKey> GetValidatorsPublicKeys(long afterBlock)

@@ -271,6 +271,11 @@ namespace Lachain.Core.Consensus
             }
 
             var publicKeySet = _validatorManager.GetValidators(_era - 1);
+            if (publicKeySet is null)
+            {
+                Logger.LogError($"Protocol {id} not created since no validator set is known for block");
+                return null;
+            }
             switch (id)
             {
                 case BinaryBroadcastId bbId:
