@@ -342,8 +342,8 @@ namespace Lachain.Core.Vault
                         }
 
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
-                        var commitment = Commitment.FromBytes(args[0] as byte[] ?? throw new Exception());
-                        var encryptedRows = args[1] as byte[][] ?? throw new Exception();
+                        var commitment = Commitment.FromBytes(args[1] as byte[] ?? throw new Exception());
+                        var encryptedRows = args[2] as byte[][] ?? throw new Exception();
                         keygen.HandleCommit(
                             sender,
                             new CommitMessage {Commitment = commitment, EncryptedRows = encryptedRows}
@@ -362,8 +362,8 @@ namespace Lachain.Core.Vault
                         }
 
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
-                        var proposer = args[0] as UInt256 ?? throw new Exception();
-                        var encryptedValues = args[1] as byte[][] ?? throw new Exception();
+                        var proposer = args[1] as UInt256 ?? throw new Exception();
+                        var encryptedValues = args[2] as byte[][] ?? throw new Exception();
 
                         keygen.HandleSendValue(
                             sender,
@@ -383,7 +383,7 @@ namespace Lachain.Core.Vault
                         }
 
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
-                        var tpkePublicKey = PublicKey.FromBytes(args[0] as byte[] ?? throw new Exception());
+                        var tpkePublicKey = PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception());
                         var tsKeys = new PublicKeySet(
                             (args[1] as byte[][] ?? throw new Exception()).Select(x =>
                                 Crypto.ThresholdSignature.PublicKey.FromBytes(x)
