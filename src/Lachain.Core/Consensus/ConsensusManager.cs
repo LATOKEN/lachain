@@ -165,8 +165,9 @@ namespace Lachain.Core.Consensus
                 long delta = 0;
                 for (;;)
                 {
-                    _networkManager.AdvanceEra(CurrentEra);
-                    Logger.LogTrace($"Advanced to era {CurrentEra}");
+                    var era = CurrentEra; // because filed can be changed in another thread
+                    _networkManager.AdvanceEra(era);
+                    Logger.LogTrace($"Advanced to era {era}");
                     var now = TimeUtils.CurrentTimeMillis();
                     if (prevBlock > 0)
                         delta += (long) (lastBlock - prevBlock) - (long) _targetBlockInterval;
@@ -181,12 +182,12 @@ namespace Lachain.Core.Consensus
                     }
 
                     for (var blockHeight = (long) _blockManager.GetHeight();
-                        blockHeight != CurrentEra - 1;
+                        blockHeight != era - 1;
                         blockHeight = (long) _blockManager.GetHeight()
                     )
                     {
-                        Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {CurrentEra}");
-                        if (blockHeight >= CurrentEra)
+                        Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {era}");
+                        if (blockHeight >= era)
                         {
                             AdvanceEra(blockHeight + 1);
                             continue;
@@ -198,18 +199,18 @@ namespace Lachain.Core.Consensus
                         }
                     }
 
-                    var validators = _validatorManager.GetValidators(CurrentEra - 1);
+                    var validators = _validatorManager.GetValidators(era - 1);
                     var weAreValidator = validators != null && validators.EcdsaPublicKeySet.Contains(_privateWallet.EcdsaKeyPair.PublicKey);
 
                     var haveKeys = validators != null && _privateWallet.HasKeyForKeySet(
                         validators.ThresholdSignaturePublicKeySet,
-                        (ulong) CurrentEra
+                        (ulong) era
                     );
 
                     if (weAreValidator && !haveKeys)
                     {
                         Logger.LogError(
-                            $"No required keys for block {CurrentEra}, need to rescan latest cycle to generate keys");
+                            $"No required keys for block {era}, need to rescan latest cycle to generate keys");
                         if (!_keyGenManager.RescanBlockChainForKeys(validators!))
                         {
                             Logger.LogError(
@@ -229,8 +230,8 @@ namespace Lachain.Core.Consensus
                     {
                         var reason = haveKeys ? "(keys are missing)" : "";
                         Logger.LogWarning(
-                            $"We are not validator for era {CurrentEra} {reason}, waiting for block {CurrentEra}");
-                        var eraToWait = CurrentEra;
+                            $"We are not validator for era {era} {reason}, waiting for block {era}");
+                        var eraToWait = era;
                         while ((long) _blockManager.GetHeight() < eraToWait)
                         {
                             lock (_blockPersistedLock)
@@ -241,7 +242,6 @@ namespace Lachain.Core.Consensus
                     }
                     else
                     {
-                        var era = CurrentEra;
                         Logger.LogTrace($"Starting new era {era} and requesting root protocol");
                         var broadcaster = EnsureEra(era) ?? throw new InvalidOperationException();
                         var rootId = new RootProtocolId(era);
@@ -268,13 +268,13 @@ namespace Lachain.Core.Consensus
 
                         while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
-                            if ((long) _blockManager.GetHeight() >= CurrentEra)
+                            if ((long) _blockManager.GetHeight() >= era)
                             {
                                 Logger.LogTrace("Aborting root protocol since block is already persisted");
                                 break;
                             }
 
-                            Logger.LogTrace($"Still waiting for root protocol (era {CurrentEra}) to terminate...");
+                            Logger.LogTrace($"Still waiting for root protocol (E={era}) to terminate...");
                         }
 
                         broadcaster.Terminate();
