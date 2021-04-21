@@ -430,9 +430,9 @@ namespace Lachain.Core.Vault
                         .SequenceEqual(tx.Transaction.Invocation.Take(4))) continue;
                     var decoder = new ContractDecoder(tx.Transaction.Invocation.ToArray());
                     var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
-                    var tpkeKey = args[0] as byte[] ??
+                    var tpkeKey = args[1] as byte[] ??
                                   throw new Exception($"Cannot parse KeyGenConfirm tx {tx.Hash.ToHex()}");
-                    var tsKeys = args[1] as byte[][] ??
+                    var tsKeys = args[2] as byte[][] ??
                                  throw new Exception($"Cannot parse KeyGenConfirm tx {tx.Hash.ToHex()}");
 
                     var tsKeySet = new PublicKeySet(
