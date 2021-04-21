@@ -385,7 +385,7 @@ namespace Lachain.Core.Vault
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
                         var tpkePublicKey = PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception());
                         var tsKeys = new PublicKeySet(
-                            (args[1] as byte[][] ?? throw new Exception()).Select(x =>
+                            (args[2] as byte[][] ?? throw new Exception()).Select(x =>
                                 Crypto.ThresholdSignature.PublicKey.FromBytes(x)
                             ),
                             keygen.Faulty
