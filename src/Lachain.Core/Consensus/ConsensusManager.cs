@@ -108,7 +108,7 @@ namespace Lachain.Core.Consensus
                     _postponedMessages.Remove(i);
                 }
             }
-
+            
             CurrentEra = newEra;
             _networkManager.AdvanceEra(CurrentEra);
         }
@@ -189,7 +189,9 @@ namespace Lachain.Core.Consensus
                         Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {era}");
                         if (blockHeight >= era)
                         {
-                            AdvanceEra(blockHeight + 1);
+                            if(blockHeight + 1 > CurrentEra)
+                                AdvanceEra(blockHeight + 1);
+                            era = CurrentEra;
                             continue;
                         }
 
