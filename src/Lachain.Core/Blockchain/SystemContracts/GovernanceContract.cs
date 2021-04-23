@@ -287,6 +287,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
+            Logger.LogDebug($"KeygenConfirm: {votes + 1} collected for this keyset");
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
             _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
             SetPlayersCount(players);
