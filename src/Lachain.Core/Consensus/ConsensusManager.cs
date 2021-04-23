@@ -8,6 +8,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Network;
@@ -211,8 +212,7 @@ namespace Lachain.Core.Consensus
 
                     if (weAreValidator && !haveKeys)
                     {
-                        Logger.LogError(
-                            $"No required keys for block {era}, need to rescan latest cycle to generate keys");
+                        Logger.LogError($"No required keys for block {era}, need to rescan previous cycle to generate keys");
                         if (!_keyGenManager.RescanBlockChainForKeys(validators!))
                         {
                             Logger.LogError(

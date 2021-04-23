@@ -31,25 +31,28 @@ namespace Lachain.Consensus.ThresholdKeygen
 
         public int Faulty { get; }
         public int Players { get; }
+        public ulong Cycle { get; }
 
-        public TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f)
+        public TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle)
         {
             _keyPair = keyPair;
             _publicKeys = publicKeys.ToArray();
             Players = _publicKeys.Length;
             Faulty = f;
+            Cycle = cycle;
             _myIdx = _publicKeys.FirstIndexOf(keyPair.PublicKey);
             _keyGenStates = Enumerable.Range(0, Players).Select(_ => new State(Players)).ToArray();
             _confirmSent = false;
         }
 
-        private TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f,
+        private TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle,
             State[] states, IList<int> finished, IDictionary<UInt256, int> confirmations, bool confirmSent)
         {
             _keyPair = keyPair;
             _publicKeys = publicKeys.ToArray();
             Players = _publicKeys.Length;
             Faulty = f;
+            Cycle = cycle;
             _myIdx = _publicKeys.FirstIndexOf(keyPair.PublicKey);
             _keyGenStates = states;
             _finished = finished;
@@ -193,6 +196,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             using var stream = new MemoryStream();
             stream.Write(Players.ToBytes().ToArray());
             stream.Write(Faulty.ToBytes().ToArray());
+            stream.Write(Cycle.ToBytes().ToArray());
             foreach (var publicKey in _publicKeys)
                 stream.Write(publicKey.Buffer.ToArray());
             foreach (var keyGenState in _keyGenStates)
@@ -220,11 +224,12 @@ namespace Lachain.Consensus.ThresholdKeygen
         {
             var players = bytes.Slice(0, 4).Span.ToInt32();
             var faulty = bytes.Slice(4, 4).Span.ToInt32();
-            var ecdsaPublicKeys = bytes.Slice(8, CryptoUtils.PublicKeyLength * players)
+            var cycle = bytes.Slice(8, 8).Span.ToUInt64();
+            var ecdsaPublicKeys = bytes.Slice(16, CryptoUtils.PublicKeyLength * players)
                 .Batch(CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToPublicKey())
                 .ToArray();
-            var offset = 8 + CryptoUtils.PublicKeyLength * players;
+            var offset = 16 + CryptoUtils.PublicKeyLength * players;
             var states = new State[players];
             for (var i = 0; i < players; ++i)
             {
@@ -251,7 +256,7 @@ namespace Lachain.Consensus.ThresholdKeygen
                 ).ToDictionary(pair => pair.Key, pair => pair.Value);
             offset += (32 + 4) * confirmationCnt;
             var confirmSent = bytes.Slice(offset).Span[0] != 0;
-            return new TrustlessKeygen(keyPair, ecdsaPublicKeys, faulty, states, finished, confirmations, confirmSent);
+            return new TrustlessKeygen(keyPair, ecdsaPublicKeys, faulty, cycle, states, finished, confirmations, confirmSent);
         }
 
         public bool Equals(TrustlessKeygen? other)
@@ -266,7 +271,8 @@ namespace Lachain.Consensus.ThresholdKeygen
                    _confirmations.SequenceEqual(other._confirmations) &&
                    _confirmSent == other._confirmSent &&
                    Faulty == other.Faulty &&
-                   Players == other.Players;
+                   Players == other.Players &&
+                   Cycle == other.Cycle;
         }
 
         public override bool Equals(object? obj)
@@ -282,6 +288,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             var hashCode = new HashCode();
             hashCode.Add(Faulty);
             hashCode.Add(Players);
+            hashCode.Add(Cycle);
             hashCode.Add(_keyPair.PrivateKey);
             return hashCode.ToHashCode();
         }

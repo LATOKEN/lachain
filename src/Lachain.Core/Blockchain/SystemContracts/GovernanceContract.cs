@@ -31,7 +31,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
-        private readonly StorageVariable _consensusGeneration;
         private readonly StorageVariable _nextValidators;
         private readonly StorageMapping _confirmations;
         private readonly StorageVariable _blockReward;
@@ -39,15 +38,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
         private readonly StorageVariable _collectedFees;
+        private readonly StorageVariable _lastSuccessfulKeygenBlock;
 
         public GovernanceContract(InvocationContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _consensusGeneration = new StorageVariable(
-                ContractRegisterer.GovernanceContract,
-                context.Snapshot.Storage,
-                BigInteger.Zero.ToUInt256()
-            );
             _nextValidators = new StorageVariable(
                 ContractRegisterer.GovernanceContract,
                 context.Snapshot.Storage,
@@ -83,6 +78,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 context.Snapshot.Storage,
                 new BigInteger(7).ToUInt256()
             );
+            _lastSuccessfulKeygenBlock = new StorageVariable(
+                ContractRegisterer.GovernanceContract,
+                context.Snapshot.Storage,
+                new BigInteger(8).ToUInt256()
+            );
         }
 
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
@@ -102,15 +102,21 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return a / StakingContract.CycleDuration;
         }
 
+        public static ulong GetBlockNumberInCycle(ulong a)
+        {
+            return a % StakingContract.CycleDuration;
+        }
+
         [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
         public ExecutionStatus DistributeCycleRewardsAndPenalties(UInt256 cycle, SystemContractExecutionFrame frame)
         {
             Logger.LogDebug($"DistributeCycleRewardsAndPenalties({cycle})");
-            if (cycle.ToBigInteger() != GetConsensusGeneration())
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration()}");
-                return ExecutionStatus.Ok; 
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
             }
+
             if (!MsgSender().IsZero())
             {
                 Logger.LogError("!MsgSender().IsZero(): governance function called by non-zero address");
@@ -136,14 +142,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(GovernanceInterface.MethodChangeValidators)]
-        public ExecutionStatus ChangeValidators(UInt256 cycle, byte[][] newValidators, SystemContractExecutionFrame frame)
+        public ExecutionStatus ChangeValidators(UInt256 cycle, byte[][] newValidators,
+            SystemContractExecutionFrame frame)
         {
             Logger.LogDebug($"ChangeValidators([{string.Join(", ", newValidators.Select(x => x.ToHex()))})]");
-            if (cycle.ToBigInteger()!= GetConsensusGeneration())
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration()}");
-                return ExecutionStatus.Ok; 
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
             }
+
             if (!MsgSender().Equals(ContractRegisterer.StakingContract) && !MsgSender().IsZero())
             {
                 Logger.LogError("GovernanceContract is halted in ChangeValidators");
@@ -159,6 +167,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Logger.LogError("GovernanceContract is halted in ChangeValidators");
                     return ExecutionStatus.ExecutionHalted;
                 }
+
                 if (!Crypto.TryDecodePublicKey(publicKey, false, out _))
                 {
                     Logger.LogError("GovernanceContract is halted in ChangeValidators");
@@ -182,11 +191,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             Logger.LogDebug(
                 $"KeyGenCommit({commitment.ToHex()}, [{string.Join(", ", encryptedRows.Select(r => r.ToHex()))}])");
-            if (cycle.ToBigInteger() != GetConsensusGeneration())
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration()}");
-                return ExecutionStatus.Ok; 
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
             }
+
             try
             {
                 var c = Commitment.FromBytes(commitment);
@@ -214,11 +224,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
             Logger.LogDebug(
                 $"KeyGenSendValue({proposer.ToBytes().Reverse().ToHex()}, [{string.Join(", ", encryptedValues.Select(r => r.ToHex()))}])"
             );
-            if (cycle.ToBigInteger() != GetConsensusGeneration())
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration()}");
-                return ExecutionStatus.Ok; 
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
             }
+
             try
             {
                 var n = _nextValidators.Get().Length / CryptoUtils.PublicKeyLength;
@@ -244,11 +255,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             Logger.LogDebug(
                 $"KeyGenConfirm({tpkePublicKey.ToHex()}, [{string.Join(", ", thresholdSignaturePublicKeys.Select(s => s.ToHex()))}])");
-            if (cycle.ToBigInteger() != GetConsensusGeneration())
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration()}");
-                return ExecutionStatus.Ok; 
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
             }
+
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenConfirmCost);
             var players = thresholdSignaturePublicKeys.Length;
@@ -271,11 +283,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             }
 
-            var gen = GetConsensusGeneration();
+            var gen = GetConsensusGeneration(frame);
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
             SetTpkeKey(tpkePublicKey);
@@ -287,14 +300,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodFinishCycle)]
         public ExecutionStatus FinishCycle(UInt256 cycle, SystemContractExecutionFrame frame)
         {
+            var currentBlock = frame.InvocationContext.Receipt.Block;
             Logger.LogDebug("FinishCycle()");
-            if (cycle.ToBigInteger() != GetConsensusGeneration())
+            if (GetBlockNumberInCycle(currentBlock) != 0)
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration()}");
-                return ExecutionStatus.Ok; 
+                Logger.LogWarning($"FinishCycle called in block {currentBlock} which is not beginning of cycle {cycle.ToBigInteger()}");
+                return ExecutionStatus.ExecutionHalted;
             }
+
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame) - 1)
+            {
+                Logger.LogWarning($"Invalid cycle: {cycle}, just finished cycle number is {GetConsensusGeneration(frame) - 1}");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
             var players = GetPlayersCount();
-            var gen = GetConsensusGeneration();
+            var gen = GetConsensusGeneration(frame);
             if (players != null)
             {
                 var faulty = (players - 1) / 3;
@@ -307,12 +328,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Logger.LogError("GovernanceContract is halted in FinishCycle");
                     return ExecutionStatus.ExecutionHalted;
                 }
+
                 var ecdsaPublicKeys = _nextValidators.Get()
                     .Batch(CryptoUtils.PublicKeyLength)
                     .Select(x => x.ToArray().ToPublicKey())
                     .ToArray();
                 _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
-                
+
                 Emit(GovernanceInterface.EventFinishCycle);
                 Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
                 Logger.LogDebug(
@@ -334,26 +356,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
             SetCollectedFees(txFeesAmount);
-            SetConsensusGeneration(gen + 1); // this "clears" confirmations
             ClearPlayersCount();
             return ExecutionStatus.Ok;
         }
 
-        private ulong GetConsensusGeneration()
+        private static ulong GetConsensusGeneration(IExecutionFrame frame)
         {
-            var gen = _consensusGeneration.Get();
-            return gen.Length == 0 ? 0 : gen.AsReadOnlySpan().ToUInt64();
+            return GetCycleByBlockNumber(frame.InvocationContext.Receipt.Block);
         }
 
         private UInt256 GetBlockReward()
         {
             var reward = _blockReward.Get();
             return reward.ToUInt256();
-        }
-
-        private void SetConsensusGeneration(ulong generation)
-        {
-            _consensusGeneration.Set(generation.ToBytes().ToArray());
         }
 
         private void SetPlayersCount(int count)

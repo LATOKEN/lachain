@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
@@ -45,6 +47,18 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
                 throw new Exception("System contract failed");
             
             return result.ReturnValue!;
+        }
+
+        public ulong GetLastSuccessfulKeygenBlock()
+        {
+            var storageVariable = new StorageVariable(
+                ContractRegisterer.GovernanceContract,
+                _stateManager.LastApprovedSnapshot.Storage,
+                new BigInteger(8).ToUInt256()
+            );
+            var rawValue = storageVariable.Get();
+            if (rawValue.Length == 0) return 0;
+            return (ulong) rawValue.ToUInt256().ToBigInteger();
         }
 
         public UInt256 GetStake(UInt160? stakerAddress = null)
