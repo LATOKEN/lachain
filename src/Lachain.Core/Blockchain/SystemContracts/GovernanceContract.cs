@@ -289,6 +289,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             Logger.LogDebug($"KeygenConfirm: {votes + 1} collected for this keyset");
             if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            Logger.LogDebug($"KeygenConfirm: succeeded since collected {votes + 1} votes");
             _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
@@ -316,7 +317,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             var players = GetPlayersCount();
-            var gen = GetConsensusGeneration(frame);
+            var gen = GetConsensusGeneration(frame) - 1;
             if (players != null)
             {
                 var faulty = (players - 1) / 3;
@@ -326,7 +327,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var votes = GetConfirmations(keyringHash.ToBytes(), gen);
                 if (votes + 1 < players - faulty)
                 {
-                    Logger.LogError("GovernanceContract is halted in FinishCycle");
+                    Logger.LogError($"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}");
                     return ExecutionStatus.ExecutionHalted;
                 }
 
@@ -497,8 +498,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 TransactionHash = _context.Receipt.Hash
             };
             _context.Snapshot.Events.AddEvent(eventObj);
-            Logger.LogDebug($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
-            Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
+            Logger.LogTrace($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
         }
     }
 }

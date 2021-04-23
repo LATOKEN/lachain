@@ -219,7 +219,7 @@ namespace Lachain.Core.Vault
                     return;
                 }
                 
-                Logger.LogDebug($"Send value tx invocation: {tx.Invocation}, proposer = {proposer.ToHex()}");
+                Logger.LogTrace($"Send value tx invocation: {tx.Invocation.ToHex()}, proposer = {proposer.ToHex()}");
                 if (keygen.HandleSendValue(
                     sender,
                     new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
