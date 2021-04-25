@@ -132,7 +132,7 @@ namespace Lachain.Networking.Hub
             Stop();
         }
 
-        public int AdvanceEra(long era)
+        public int AdvanceEra(ulong era)
         {
             var sentBatches = _eraMsgCounter;
             _eraMsgCounter = 0;

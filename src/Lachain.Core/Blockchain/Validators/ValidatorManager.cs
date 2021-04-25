@@ -15,7 +15,9 @@ namespace Lachain.Core.Blockchain.Validators
     {
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private static readonly ILogger<ValidatorManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorManager>();
-        private readonly Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>> _pubkeyCache = new Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>>();
+
+        private readonly Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>> _pubkeyCache =
+            new Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>>();
 
         public ValidatorManager(ISnapshotIndexRepository snapshotIndexRepository)
         {
@@ -58,9 +60,10 @@ namespace Lachain.Core.Blockchain.Validators
                 if (_pubkeyCache.ContainsKey(afterBlock)) return _pubkeyCache[afterBlock];
                 try
                 {
-                    IReadOnlyCollection<ECDSAPublicKey> res = _snapshotIndexRepository.GetSnapshotForBlock((ulong)afterBlock).Validators
-                    .GetValidatorsPublicKeys()
-                    .ToArray();
+                    IReadOnlyCollection<ECDSAPublicKey> res = _snapshotIndexRepository
+                        .GetSnapshotForBlock((ulong) afterBlock).Validators
+                        .GetValidatorsPublicKeys()
+                        .ToArray();
                     if (!res.Any())
                         return res; // do not cache empty value,  it can change in future
                     _pubkeyCache.Add(afterBlock, res);
@@ -85,6 +88,7 @@ namespace Lachain.Core.Blockchain.Validators
                 .Select((key, index) => new {key, index})
                 .Where(arg => publicKey.Equals(arg.key))
                 .Select(arg => arg.index)
+                .DefaultIfEmpty(-1)
                 .First();
         }
 

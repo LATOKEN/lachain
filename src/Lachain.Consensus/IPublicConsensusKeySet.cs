@@ -12,5 +12,6 @@ namespace Lachain.Consensus
         PublicKey TpkePublicKey { get; }
         PublicKeySet ThresholdSignaturePublicKeySet { get; }
         IList<ECDSAPublicKey> EcdsaPublicKeySet { get; }
+        public int GetValidatorIndex(ECDSAPublicKey publicKey);
     }
 }
