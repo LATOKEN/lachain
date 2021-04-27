@@ -14,7 +14,7 @@ namespace Lachain.Consensus
         public PublicKeySet ThresholdSignaturePublicKeySet { get; }
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
         public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
-        
+
         public PublicConsensusKeySet(int n, int f,
             PublicKey tpkePublicKey,
             PublicKeySet thresholdSignaturePublicKeySet,
@@ -26,16 +26,6 @@ namespace Lachain.Consensus
             TpkePublicKey = tpkePublicKey;
             ThresholdSignaturePublicKeySet = thresholdSignaturePublicKeySet;
             _ecdsaPublicKeys = ecdsaPublicKeys.ToList();
-        }
-        
-        public int GetValidatorIndex(ECDSAPublicKey publicKey)
-        {
-            return EcdsaPublicKeySet
-                .Select((key, index) => new {key, index})
-                .Where(arg => publicKey.Equals(arg.key))
-                .Select(arg => arg.index)
-                .DefaultIfEmpty(-1)
-                .First();
         }
     }
 }

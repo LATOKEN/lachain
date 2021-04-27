@@ -54,7 +54,7 @@ namespace Lachain.Networking
             _broadcaster.Start();
         }
 
-        public void AdvanceEra(ulong era)
+        public void AdvanceEra(long era)
         {
             var totalBatchesCount = _clientWorkers.Values.Sum(clientWorker => clientWorker.AdvanceEra(era));
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");

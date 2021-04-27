@@ -12,6 +12,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -27,14 +28,13 @@ namespace Lachain.Core.Consensus
     {
         private static readonly ILogger<EraBroadcaster> Logger = LoggerFactory.GetLoggerForClass<EraBroadcaster>();
         
+        private readonly IValidatorManager _validatorManager;
         private readonly long _era;
         private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private bool _terminated;
-        private readonly int _myIdx;
-        private readonly IPublicConsensusKeySet _validators;
 
         /**
          * Registered callbacks, identifying that one protocol requires result from another
@@ -49,18 +49,17 @@ namespace Lachain.Core.Consensus
             new ConcurrentDictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         public EraBroadcaster(
-            long era, IPublicConsensusKeySet validators, IConsensusMessageDeliverer consensusMessageDeliverer,
+            long era, IConsensusMessageDeliverer consensusMessageDeliverer, IValidatorManager validatorManager,
             IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
             _messageFactory = new MessageFactory(wallet.EcdsaKeyPair);
+            _validatorManager = validatorManager;
             _wallet = wallet;
             _terminated = false;
             _era = era;
-            _validators = validators;
             _validatorAttendanceRepository = validatorAttendanceRepository;
-            _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -81,7 +80,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            foreach (var publicKey in _validators.EcdsaPublicKeySet)
+            foreach (var publicKey in _validatorManager.GetValidatorsPublicKeys(_era - 1))
             {
                 if (publicKey.Equals(_wallet.EcdsaKeyPair.PublicKey))
                 {
@@ -115,7 +114,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _consensusMessageDeliverer.SendTo(_validators.EcdsaPublicKeySet[index], payload);
+            _consensusMessageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era - 1), payload);
         }
 
         public void Dispatch(ConsensusMessage message, int from)
@@ -238,12 +237,7 @@ namespace Lachain.Core.Consensus
 
         public int GetMyId()
         {
-            return _myIdx;
-        }
-
-        public int GetIdByPublicKey(ECDSAPublicKey publicKey)
-        {
-            return _validators.GetValidatorIndex(publicKey);
+            return _validatorManager.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey, _era - 1);
         }
 
         public IConsensusProtocol? GetProtocolById(IProtocolIdentifier id)
@@ -276,15 +270,21 @@ namespace Lachain.Core.Consensus
                 return null;
             }
 
+            var publicKeySet = _validatorManager.GetValidators(_era - 1);
+            if (publicKeySet is null)
+            {
+                Logger.LogError($"Protocol {id} not created since no validator set is known for block");
+                return null;
+            }
             switch (id)
             {
                 case BinaryBroadcastId bbId:
-                    var bb = new BinaryBroadcast(bbId, _validators, this);
+                    var bb = new BinaryBroadcast(bbId, publicKeySet, this);
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
                     var coin = new CommonCoin(
-                        coinId, _validators,
+                        coinId, publicKeySet,
                         _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1) ??
                         throw new InvalidOperationException($"No TS keys present for era {_era}"),
                         this
@@ -292,20 +292,20 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    var rbc = new ReliableBroadcast(rbcId, _validators, this);
+                    var rbc = new ReliableBroadcast(rbcId, publicKeySet, this);
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:
-                    var ba = new BinaryAgreement(baId, _validators, this);
+                    var ba = new BinaryAgreement(baId, publicKeySet, this);
                     RegisterProtocols(new[] {ba});
                     return ba;
                 case CommonSubsetId acsId:
-                    var acs = new CommonSubset(acsId, _validators, this);
+                    var acs = new CommonSubset(acsId, publicKeySet, this);
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
                     var hb = new HoneyBadger(
-                        hbId, _validators,
+                        hbId, publicKeySet,
                         _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1)
                         ?? throw new InvalidOperationException($"No TPKE keys present for era {_era}"),
                         this
@@ -313,7 +313,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, _validators, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, StakingContract.CycleDuration);
+                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, StakingContract.CycleDuration);
                     RegisterProtocols(new[] {root});
                     return root;
                 default:

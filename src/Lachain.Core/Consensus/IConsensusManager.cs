@@ -4,8 +4,9 @@ namespace Lachain.Core.Consensus
 {
     public interface IConsensusManager
     {
+        void AdvanceEra(long newEra);
         void Dispatch(ConsensusMessage message, ECDSAPublicKey publicKey);
-        void Start(ulong startingEra);
+        void Start(long startingEra);
         void Terminate();
     }
 }

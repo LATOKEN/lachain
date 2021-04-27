@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus;
@@ -8,6 +8,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Network;
@@ -40,7 +41,6 @@ namespace Lachain.Core.Consensus
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
         private readonly object _blockPersistedLock = new object();
-        private ulong lastSignedHeaderReceived = 0;
 
         private readonly ulong _targetBlockInterval;
 
@@ -74,9 +74,10 @@ namespace Lachain.Core.Consensus
 
         private void BlockSynchronizerOnOnSignedBlockReceived(object sender, ulong block)
         {
-            lastSignedHeaderReceived = block;
+            AdvanceEra((long) block + 1);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
         {
             Logger.LogTrace($"Block {e.Header.Index} is persisted, notifying consensus which is on era {CurrentEra}");
@@ -86,6 +87,33 @@ namespace Lachain.Core.Consensus
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void AdvanceEra(long newEra)
+        {
+            if (newEra < CurrentEra)
+            {
+                throw new InvalidOperationException($"Cannot advance backwards from era {CurrentEra} to era {newEra}");
+            }
+
+            Logger.LogTrace($"Advancing era from {CurrentEra} to {newEra}");
+
+            for (var i = CurrentEra; i < newEra; ++i)
+            {
+                if (!IsValidatorForEra(i)) continue;
+                var broadcaster = EnsureEra(i);
+                Logger.LogTrace($"Terminating era {i}");
+                broadcaster?.Terminate();
+                _eras.Remove(i);
+                lock (_postponedMessages)
+                {
+                    _postponedMessages.Remove(i);
+                }
+            }
+            
+            CurrentEra = newEra;
+            _networkManager.AdvanceEra(CurrentEra);
+        }
+
         private bool IsValidatorForEra(long era)
         {
             if (era <= 0) return false;
@@ -93,191 +121,172 @@ namespace Lachain.Core.Consensus
         }
 
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Dispatch(ConsensusMessage message, ECDSAPublicKey from)
         {
-            lock (_eras)
+            var era = message.Validator.Era;
+            if (era < CurrentEra)
+                Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
+            else if (era > CurrentEra)
             {
-                var era = message.Validator.Era;
-                if (era < CurrentEra)
-                    Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
-                else if (era > CurrentEra)
+                lock (_postponedMessages)
                 {
-                    lock (_postponedMessages)
-                    {
-                        _postponedMessages
-                            .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
-                            .Add((message, from));
-                    }
+                    _postponedMessages
+                        .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
+                        .Add((message, from));
                 }
-                else
+            }
+            else
+            {
+                if (!IsValidatorForEra(era))
                 {
-                    var broadcaster = _eras[era];
-                    if (broadcaster.GetMyId() == -1)
-                    {
-                        Logger.LogWarning($"Skipped message for era {era} since we are not validator for this era");
-                        return;
-                    }
-                    var fromIndex = broadcaster.GetIdByPublicKey(from);
-                    if (fromIndex == -1)
-                    {
-                        Logger.LogWarning($"Skipped message for era {era} since we it came from {from.ToHex()} who is not validator for this era");
-                        return;
-                    }
-                    broadcaster.Dispatch(message, fromIndex);
+                    Logger.LogWarning($"Skipped message for era {era} since we are not validator for this era");
+                    return;
                 }
+
+                var fromIndex = _validatorManager.GetValidatorIndex(from, era - 1);
+                EnsureEra(era)?.Dispatch(message, fromIndex);
             }
         }
 
-        public void Start(ulong startingEra)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Start(long startingEra)
         {
-            _networkManager.AdvanceEra(startingEra);
-            new Thread(() => Run(startingEra)).Start();
+            CurrentEra = startingEra;
+            _networkManager.AdvanceEra(CurrentEra);
+            new Thread(Run).Start();
         }
 
-        private void FinishEra()
-        {
-            lock (_eras)
-            {
-                var broadcaster = _eras[CurrentEra];
-                lock (broadcaster)
-                {
-                    DefaultCrypto.ResetBenchmark();
-                    broadcaster.Terminate();
-                    _eras.Remove(CurrentEra);
-                    CurrentEra += 1;
-                }
-            }
-        }
-
-        private void Run(ulong startingEra)
+        private void Run()
         {
             try
             {
-                ulong lastEra = 0, lastEraStartTime = 0;
-                for (CurrentEra = (long) startingEra; !_terminated; FinishEra())
+                ulong lastBlock = 0;
+                ulong prevBlock = 0;
+                long delta = 0;
+                for (;;)
                 {
-                    Logger.LogDebug(
-                        $"Start processing era {CurrentEra}, waiting for block {CurrentEra - 1} to be persisted");
-                    var height = (long) _blockManager.GetHeight();
-                    IPublicConsensusKeySet? validators;
-                    for (;; height = (long) _blockManager.GetHeight())
+                    var era = CurrentEra; // because filed can be changed in another thread
+                    _networkManager.AdvanceEra(era);
+                    Logger.LogTrace($"Advanced to era {era}");
+                    var now = TimeUtils.CurrentTimeMillis();
+                    if (prevBlock > 0)
+                        delta += (long) (lastBlock - prevBlock) - (long) _targetBlockInterval;
+                    var waitTime = Math.Max(0, (long) _targetBlockInterval - delta);
+                    prevBlock = lastBlock;
+                    if (lastBlock + (ulong) waitTime > now)
                     {
-                        validators = _validatorManager.GetValidators(CurrentEra - 1);
-                        if (height >= CurrentEra - 1 && validators != null) break;
                         Logger.LogTrace(
-                            $"Block height is {height}, CurrentEra is {CurrentEra}, validators: {(validators == null ? "NO" : "OK")}, waiting");
-                        lock (_blockPersistedLock) Monitor.Wait(_blockPersistedLock);
+                            $"Waiting {lastBlock + (ulong) waitTime - now}ms until launching Root protocol"
+                        );
+                        Thread.Sleep(TimeSpan.FromMilliseconds(lastBlock + (ulong) waitTime - now));
                     }
 
-                    Logger.LogTrace(
-                        $"Block {CurrentEra - 1} persisted, {validators.N} validators: [{string.Join(", ", validators.EcdsaPublicKeySet.Select(k => k.ToHex()))}]"
-                    );
-
-                    var broadcaster = EnsureEra(CurrentEra, validators) ??
-                                      throw new Exception($"Can't create broadcaster for era {CurrentEra}");
-                    lock (broadcaster)
+                    for (var blockHeight = (long) _blockManager.GetHeight();
+                        blockHeight != era - 1;
+                        blockHeight = (long) _blockManager.GetHeight()
+                    )
                     {
-                        if (height >= CurrentEra)
+                        Logger.LogTrace($"Block height is {blockHeight}, CurrentEra is {era}");
+                        if (blockHeight >= era)
                         {
-                            Logger.LogTrace(
-                                $"Block {CurrentEra} is already present, block height is {height}, won't start protocols for this era");
+                            if(blockHeight + 1 > CurrentEra)
+                                AdvanceEra(blockHeight + 1);
+                            era = CurrentEra;
                             continue;
                         }
 
-                        var weAreValidator =
-                            validators.EcdsaPublicKeySet.Contains(_privateWallet.EcdsaKeyPair.PublicKey);
+                        lock (_blockPersistedLock)
+                        {
+                            Monitor.Wait(_blockPersistedLock);
+                        }
+                    }
 
-                        var haveKeys = _privateWallet.HasKeyForKeySet(
-                            validators.ThresholdSignaturePublicKeySet,
-                            (ulong) CurrentEra
-                        );
+                    var validators = _validatorManager.GetValidators(era - 1);
+                    var weAreValidator = validators != null && validators.EcdsaPublicKeySet.Contains(_privateWallet.EcdsaKeyPair.PublicKey);
 
-                        if (weAreValidator && !haveKeys)
+                    var haveKeys = validators != null && _privateWallet.HasKeyForKeySet(
+                        validators.ThresholdSignaturePublicKeySet,
+                        (ulong) era
+                    );
+
+                    if (weAreValidator && !haveKeys)
+                    {
+                        Logger.LogError($"No required keys for block {era}, need to rescan previous cycle to generate keys");
+                        if (!_keyGenManager.RescanBlockChainForKeys(validators!))
                         {
                             Logger.LogError(
-                                $"No required keys for block {CurrentEra}, need to rescan previous cycle to generate keys");
-                            if (!_keyGenManager.RescanBlockChainForKeys(validators!))
-                            {
-                                Logger.LogError(
-                                    $"Failed to find relevant keygen in blockchain, cannot restore my key, waiting...");
-                            }
-                            else
-                            {
-                                Logger.LogWarning(
-                                    "Keys were not present but were found. State of protocols might be inconsistent now. Killing node to reboot it!");
-                                Environment.Exit(0);
-                                // this is unreachable but for the sake of logic
-                                haveKeys = true;
-                            }
-
-                            if (!weAreValidator || !haveKeys)
-                            {
-                                var reason = haveKeys ? "(keys are missing)" : "";
-                                Logger.LogWarning(
-                                    $"We are not validator for era {CurrentEra} {reason}, waiting for block {CurrentEra}");
-                                while ((long) _blockManager.GetHeight() < CurrentEra)
-                                {
-                                    lock (_blockPersistedLock)
-                                    {
-                                        Monitor.Wait(_blockPersistedLock, TimeSpan.FromMilliseconds(1_000));
-                                    }
-                                }
-
-                                continue;
-                            }
+                                $"Failed to find relevant keygen in blockchain, cannot restore my key, waiting...");
                         }
-
-                        var now = TimeUtils.CurrentTimeMillis();
-                        Logger.LogTrace(
-                            $"Starting new era {CurrentEra}, last era in consensus {lastEra}, took {now - lastEraStartTime}ms");
-                        if (lastEra == (ulong) CurrentEra - 1 && now - lastEraStartTime < _targetBlockInterval)
+                        else
                         {
-                            var delta = _targetBlockInterval - (now - lastEraStartTime);
-                            Logger.LogTrace($"Waiting {delta}ms to start root protocol");
-                            Thread.Sleep(TimeSpan.FromMilliseconds(delta));
+                            Logger.LogWarning(
+                                "Keys were not present but were found. State of protocols might be inconsistent now. Killing node to reboot it!");
+                            Environment.Exit(0);
+                            // this is unreachable but for the sake of logic
+                            haveKeys = true;
                         }
+                    }
 
-                        lastEra = (ulong) CurrentEra;
-                        lastEraStartTime = TimeUtils.CurrentTimeMillis();
-                        Logger.LogTrace($"Requesting root protocol for era {CurrentEra}");
-                        var rootId = new RootProtocolId(CurrentEra);
+                    if (!weAreValidator || !haveKeys)
+                    {
+                        var reason = haveKeys ? "(keys are missing)" : "";
+                        Logger.LogWarning(
+                            $"We are not validator for era {era} {reason}, waiting for block {era}");
+                        var eraToWait = era;
+                        while ((long) _blockManager.GetHeight() < eraToWait)
+                        {
+                            lock (_blockPersistedLock)
+                            {
+                                Monitor.Wait(_blockPersistedLock, TimeSpan.FromMilliseconds(1_000));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogTrace($"Starting new era {era} and requesting root protocol");
+                        var broadcaster = EnsureEra(era) ?? throw new InvalidOperationException();
+                        var rootId = new RootProtocolId(era);
                         broadcaster.InternalRequest(
-                            new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId,
-                                _blockProducer)
+                            new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId, _blockProducer)
                         );
 
                         lock (_postponedMessages)
                         {
-                            if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
+                            if (_postponedMessages.TryGetValue(era, out var savedMessages))
                             {
                                 Logger.LogDebug(
-                                    $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
+                                    $"Processing {savedMessages.Count} postponed messages for era {era}");
                                 foreach (var (message, from) in savedMessages)
                                 {
-                                    var fromIndex = _validatorManager.GetValidatorIndex(@from, CurrentEra - 1);
-                                    Logger.LogTrace(
-                                        $"Handling postponed message: {message.PrettyTypeString()}");
+                                    var fromIndex = _validatorManager.GetValidatorIndex(from, era - 1);
+                                    Logger.LogTrace($"Handling postponed message: {message.PrettyTypeString()}");
                                     broadcaster.Dispatch(message, fromIndex);
                                 }
 
-                                _postponedMessages.Remove(CurrentEra);
+                                _postponedMessages.Remove(era);
                             }
                         }
-                    }
 
-                    while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
-                    {
-                        if ((long) lastSignedHeaderReceived >= CurrentEra ||
-                            (long) _blockManager.GetHeight() >= CurrentEra)
+                        while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
-                            Logger.LogTrace("Aborting root protocol since block is already persisted");
-                            break;
+                            if ((long) _blockManager.GetHeight() >= era)
+                            {
+                                Logger.LogTrace("Aborting root protocol since block is already persisted");
+                                break;
+                            }
+
+                            Logger.LogTrace($"Still waiting for root protocol (E={era}) to terminate...");
                         }
 
-                        Logger.LogTrace($"Still waiting for root protocol (E={CurrentEra}) to terminate...");
+                        broadcaster.Terminate();
+                        _eras.Remove(era);
+                        Logger.LogTrace("Root protocol finished, waiting for new era");
+                        lastBlock = TimeUtils.CurrentTimeMillis();
+                        CurrentEra = Math.Max(CurrentEra, era + 1);
                     }
 
-                    Logger.LogTrace("Root protocol finished, waiting for new era");
+                    DefaultCrypto.ResetBenchmark();
                 }
             }
             catch (Exception e)
@@ -287,6 +296,7 @@ namespace Lachain.Core.Consensus
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {
             _terminated = true;
@@ -295,22 +305,19 @@ namespace Lachain.Core.Consensus
         /**
          * Initialize consensus broadcaster for era if necessary. May throw if era is too far in the past or future
          */
-        private EraBroadcaster? EnsureEra(long era, IPublicConsensusKeySet validators)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private EraBroadcaster? EnsureEra(long era)
         {
             if (era <= 0) return null;
+            if (_eras.ContainsKey(era)) return _eras[era];
             if (_terminated)
             {
                 Logger.LogWarning($"Broadcaster for era {era} not created since consensus is terminated");
                 return null;
             }
 
-            lock (_eras)
-            {
-                return _eras.ComputeIfAbsent(era, e => new EraBroadcaster(
-                    e, validators, _consensusMessageDeliverer, _privateWallet,
-                    _validatorAttendanceRepository)
-                );
-            }
+            return _eras[era] = new EraBroadcaster(era, _consensusMessageDeliverer, _validatorManager, _privateWallet,
+                _validatorAttendanceRepository);
         }
     }
 }
