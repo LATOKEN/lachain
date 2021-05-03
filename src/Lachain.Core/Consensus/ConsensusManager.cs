@@ -198,6 +198,7 @@ namespace Lachain.Core.Consensus
                         broadcaster.SetValidatorKeySet(validators);
                     }
 
+                    bool weAreValidator;
                     lock (broadcaster)
                     {
                         if (height >= CurrentEra)
@@ -207,7 +208,7 @@ namespace Lachain.Core.Consensus
                             continue;
                         }
 
-                        var weAreValidator =
+                        weAreValidator =
                             validators.EcdsaPublicKeySet.Contains(_privateWallet.EcdsaKeyPair.PublicKey);
 
                         var haveKeys = _privateWallet.HasKeyForKeySet(
@@ -250,56 +251,62 @@ namespace Lachain.Core.Consensus
                             }
                         }
 
-                        var now = TimeUtils.CurrentTimeMillis();
-                        Logger.LogTrace(
-                            $"Starting new era {CurrentEra}, last era in consensus {lastEra}, took {now - lastEraStartTime}ms");
-                        if (lastEra == (ulong) CurrentEra - 1 && now - lastEraStartTime < _targetBlockInterval)
+                        if (weAreValidator)
                         {
-                            var delta = _targetBlockInterval - (now - lastEraStartTime);
-                            Logger.LogTrace($"Waiting {delta}ms to start root protocol");
-                            Thread.Sleep(TimeSpan.FromMilliseconds(delta));
-                        }
-
-                        lastEra = (ulong) CurrentEra;
-                        lastEraStartTime = TimeUtils.CurrentTimeMillis();
-                        Logger.LogTrace($"Requesting root protocol for era {CurrentEra}");
-                        var rootId = new RootProtocolId(CurrentEra);
-                        broadcaster.InternalRequest(
-                            new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId,
-                                _blockProducer)
-                        );
-
-                        lock (_postponedMessages)
-                        {
-                            if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
+                            var now = TimeUtils.CurrentTimeMillis();
+                            Logger.LogTrace(
+                                $"Starting new era {CurrentEra}, last era in consensus {lastEra}, took {now - lastEraStartTime}ms");
+                            if (lastEra == (ulong) CurrentEra - 1 && now - lastEraStartTime < _targetBlockInterval)
                             {
-                                Logger.LogDebug(
-                                    $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
-                                foreach (var (message, from) in savedMessages)
-                                {
-                                    var fromIndex = validators.GetValidatorIndex(from);
-                                    Logger.LogTrace(
-                                        $"Handling postponed message: {message.PrettyTypeString()}");
-                                    broadcaster.Dispatch(message, fromIndex);
-                                }
+                                var delta = _targetBlockInterval - (now - lastEraStartTime);
+                                Logger.LogTrace($"Waiting {delta}ms to start root protocol");
+                                Thread.Sleep(TimeSpan.FromMilliseconds(delta));
+                            }
 
-                                _postponedMessages.Remove(CurrentEra);
+                            lastEra = (ulong) CurrentEra;
+                            lastEraStartTime = TimeUtils.CurrentTimeMillis();
+                            Logger.LogTrace($"Requesting root protocol for era {CurrentEra}");
+                            var rootId = new RootProtocolId(CurrentEra);
+                            broadcaster.InternalRequest(
+                                new ProtocolRequest<RootProtocolId, IBlockProducer>(rootId, rootId,
+                                    _blockProducer)
+                            );
+
+                            lock (_postponedMessages)
+                            {
+                                if (_postponedMessages.TryGetValue(CurrentEra, out var savedMessages))
+                                {
+                                    Logger.LogDebug(
+                                        $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
+                                    foreach (var (message, from) in savedMessages)
+                                    {
+                                        var fromIndex = validators.GetValidatorIndex(from);
+                                        Logger.LogTrace(
+                                            $"Handling postponed message: {message.PrettyTypeString()}");
+                                        broadcaster.Dispatch(message, fromIndex);
+                                    }
+
+                                    _postponedMessages.Remove(CurrentEra);
+                                }
                             }
                         }
                     }
 
-                    while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
+                    if (weAreValidator)
                     {
-                        if ((long) lastSignedHeaderReceived >= CurrentEra ||
-                            (long) _blockManager.GetHeight() >= CurrentEra)
+                        while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
-                            Logger.LogTrace("Aborting root protocol since block is already persisted");
-                            break;
+                            if ((long) lastSignedHeaderReceived >= CurrentEra ||
+                                (long) _blockManager.GetHeight() >= CurrentEra)
+                            {
+                                Logger.LogTrace("Aborting root protocol since block is already persisted");
+                                break;
+                            }
+
+                            Logger.LogTrace($"Still waiting for root protocol (E={CurrentEra}) to terminate...");
                         }
-
-                        Logger.LogTrace($"Still waiting for root protocol (E={CurrentEra}) to terminate...");
                     }
-
+                    
                     Logger.LogTrace("Root protocol finished, waiting for new era");
                 }
             }

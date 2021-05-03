@@ -45,9 +45,9 @@ namespace Lachain.Core.Blockchain.Validators
                     state.Validators.Select(v => v.PublicKey)
                 );
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Logger.LogError($"Failed to fetch validators after block {afterBlock}: {e}");
+                // ignored
             }
 
             return null;
