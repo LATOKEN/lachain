@@ -99,17 +99,12 @@ namespace Lachain.Core.Consensus
             {
                 var era = message.Validator.Era;
                 if (era < CurrentEra)
-                    Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
-                else if (era > CurrentEra)
                 {
-                    lock (_postponedMessages)
-                    {
-                        _postponedMessages
-                            .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
-                            .Add((message, from));
-                    }
+                    Logger.LogTrace($"Skipped message for era {era} since we already advanced to {CurrentEra}");
+                    return;
                 }
-                else
+
+                if (era == CurrentEra && _eras[era].Ready)
                 {
                     var broadcaster = _eras[era];
                     if (broadcaster.GetMyId() == -1)
@@ -117,13 +112,25 @@ namespace Lachain.Core.Consensus
                         Logger.LogWarning($"Skipped message for era {era} since we are not validator for this era");
                         return;
                     }
+
                     var fromIndex = broadcaster.GetIdByPublicKey(from);
                     if (fromIndex == -1)
                     {
-                        Logger.LogWarning($"Skipped message for era {era} since we it came from {from.ToHex()} who is not validator for this era");
+                        Logger.LogWarning(
+                            $"Skipped message for era {era} since we it came from {from.ToHex()} who is not validator for this era");
                         return;
                     }
+
                     broadcaster.Dispatch(message, fromIndex);
+                }
+                else
+                {
+                    lock (_postponedMessages)
+                    {
+                        _postponedMessages
+                            .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
+                            .Add((message, from));
+                    }
                 }
             }
         }
@@ -145,16 +152,27 @@ namespace Lachain.Core.Consensus
                     broadcaster.Terminate();
                     _eras.Remove(CurrentEra);
                     CurrentEra += 1;
+                    _eras[CurrentEra] = new EraBroadcaster(
+                        CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
+                    );
                 }
             }
         }
 
         private void Run(ulong startingEra)
         {
+            CurrentEra = (long) startingEra;
+            lock (_eras)
+            {
+                _eras[CurrentEra] = new EraBroadcaster(
+                    CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
+                );
+            }
+
             try
             {
                 ulong lastEra = 0, lastEraStartTime = 0;
-                for (CurrentEra = (long) startingEra; !_terminated; FinishEra())
+                for (; !_terminated; FinishEra())
                 {
                     Logger.LogDebug(
                         $"Start processing era {CurrentEra}, waiting for block {CurrentEra - 1} to be persisted");
@@ -173,8 +191,13 @@ namespace Lachain.Core.Consensus
                         $"Block {CurrentEra - 1} persisted, {validators.N} validators: [{string.Join(", ", validators.EcdsaPublicKeySet.Select(k => k.ToHex()))}]"
                     );
 
-                    var broadcaster = EnsureEra(CurrentEra, validators) ??
-                                      throw new Exception($"Can't create broadcaster for era {CurrentEra}");
+                    EraBroadcaster? broadcaster;
+                    lock (_eras)
+                    {
+                        broadcaster = _eras[CurrentEra];
+                        broadcaster.SetValidatorKeySet(validators);
+                    }
+
                     lock (broadcaster)
                     {
                         if (height >= CurrentEra)
@@ -290,27 +313,6 @@ namespace Lachain.Core.Consensus
         public void Terminate()
         {
             _terminated = true;
-        }
-
-        /**
-         * Initialize consensus broadcaster for era if necessary. May throw if era is too far in the past or future
-         */
-        private EraBroadcaster? EnsureEra(long era, IPublicConsensusKeySet validators)
-        {
-            if (era <= 0) return null;
-            if (_terminated)
-            {
-                Logger.LogWarning($"Broadcaster for era {era} not created since consensus is terminated");
-                return null;
-            }
-
-            lock (_eras)
-            {
-                return _eras.ComputeIfAbsent(era, e => new EraBroadcaster(
-                    e, validators, _consensusMessageDeliverer, _privateWallet,
-                    _validatorAttendanceRepository)
-                );
-            }
         }
     }
 }

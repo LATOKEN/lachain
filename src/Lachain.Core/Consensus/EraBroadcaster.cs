@@ -33,8 +33,10 @@ namespace Lachain.Core.Consensus
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private bool _terminated;
-        private readonly int _myIdx;
-        private readonly IPublicConsensusKeySet _validators;
+        private int _myIdx;
+        private IPublicConsensusKeySet? _validators;
+
+        public bool Ready => _validators != null;
 
         /**
          * Registered callbacks, identifying that one protocol requires result from another
@@ -49,7 +51,7 @@ namespace Lachain.Core.Consensus
             new ConcurrentDictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         public EraBroadcaster(
-            long era, IPublicConsensusKeySet validators, IConsensusMessageDeliverer consensusMessageDeliverer,
+            long era, IConsensusMessageDeliverer consensusMessageDeliverer,
             IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
@@ -58,8 +60,13 @@ namespace Lachain.Core.Consensus
             _wallet = wallet;
             _terminated = false;
             _era = era;
-            _validators = validators;
+            _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
+
+        public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
+        {
+            _validators = keySet;
             _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
         }
 
