@@ -277,7 +277,7 @@ namespace Lachain.Core.Consensus
                                     $"Processing {savedMessages.Count} postponed messages for era {CurrentEra}");
                                 foreach (var (message, from) in savedMessages)
                                 {
-                                    var fromIndex = _validatorManager.GetValidatorIndex(@from, CurrentEra - 1);
+                                    var fromIndex = validators.GetValidatorIndex(from);
                                     Logger.LogTrace(
                                         $"Handling postponed message: {message.PrettyTypeString()}");
                                     broadcaster.Dispatch(message, fromIndex);
