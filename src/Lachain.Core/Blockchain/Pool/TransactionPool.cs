@@ -83,7 +83,7 @@ namespace Lachain.Core.Blockchain.Pool
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Add(Transaction transaction, Signature signature)
+        public OperatingError Add(Transaction transaction, Signature signature, bool notify = true)
         {
             var acceptedTx = new TransactionReceipt
             {
@@ -92,7 +92,7 @@ namespace Lachain.Core.Blockchain.Pool
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };
-            return Add(acceptedTx);
+            return Add(acceptedTx, notify);
         }
 
         private void UpdateNonceForAddress(UInt160 address, ulong nonce)
@@ -104,7 +104,7 @@ namespace Lachain.Core.Blockchain.Pool
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Add(TransactionReceipt receipt)
+        public OperatingError Add(TransactionReceipt receipt, bool notify = true)
         {
             if (receipt is null)
                 throw new ArgumentNullException(nameof(receipt));
@@ -138,7 +138,7 @@ namespace Lachain.Core.Blockchain.Pool
 
             UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-            TransactionAdded?.Invoke(this, receipt);
+            if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
 

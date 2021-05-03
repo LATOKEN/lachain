@@ -97,7 +97,7 @@ namespace Lachain.Console
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
-            
+
             metricsService.Start();
             networkManager.Start();
             transactionVerifier.Start();

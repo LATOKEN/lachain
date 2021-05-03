@@ -14,7 +14,7 @@ namespace Lachain.Consensus
         public PublicKeySet ThresholdSignaturePublicKeySet { get; }
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
         public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
-        
+
         public PublicConsensusKeySet(int n, int f,
             PublicKey tpkePublicKey,
             PublicKeySet thresholdSignaturePublicKeySet,

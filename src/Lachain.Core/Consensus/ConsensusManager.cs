@@ -40,7 +40,7 @@ namespace Lachain.Core.Consensus
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
         private readonly object _blockPersistedLock = new object();
-        private ulong lastSignedHeaderReceived = 0;
+        private ulong _lastSignedHeaderReceived = 0;
 
         private readonly ulong _targetBlockInterval;
 
@@ -74,7 +74,7 @@ namespace Lachain.Core.Consensus
 
         private void BlockSynchronizerOnOnSignedBlockReceived(object sender, ulong block)
         {
-            lastSignedHeaderReceived = block;
+            _lastSignedHeaderReceived = block;
         }
 
         private void BlockManagerOnOnBlockPersisted(object sender, Block e)
@@ -296,7 +296,7 @@ namespace Lachain.Core.Consensus
                     {
                         while (!broadcaster.WaitFinish(TimeSpan.FromMilliseconds(1_000)))
                         {
-                            if ((long) lastSignedHeaderReceived >= CurrentEra ||
+                            if ((long) _lastSignedHeaderReceived >= CurrentEra ||
                                 (long) _blockManager.GetHeight() >= CurrentEra)
                             {
                                 Logger.LogTrace("Aborting root protocol since block is already persisted");

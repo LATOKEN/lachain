@@ -102,7 +102,7 @@ namespace Lachain.Core.Network
                     if (tx.Signature.IsZero())
                     {
                         Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
-                        if (_transactionPool.Add(tx) == OperatingError.Ok)
+                        if (_transactionPool.Add(tx, false) == OperatingError.Ok)
                             persisted++;
                         continue;
                     }
@@ -114,7 +114,7 @@ namespace Lachain.Core.Network
                         continue;
                     }
 
-                    error = _transactionPool.Add(tx);
+                    error = _transactionPool.Add(tx, false);
                     if (error == OperatingError.Ok)
                         persisted++;
                     else

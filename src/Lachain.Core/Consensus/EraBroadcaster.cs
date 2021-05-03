@@ -12,6 +12,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
