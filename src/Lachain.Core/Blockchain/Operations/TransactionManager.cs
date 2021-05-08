@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -57,14 +58,13 @@ namespace Lachain.Core.Blockchain.Operations
             var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
             var cycle = block.Header.Index / StakingContract.CycleDuration;
 
-            var lastTxInBlockIndex = block.TransactionHashes.Count - 1;
             var canTransactionMissVerification =
                 block.Header.Index == 0 ||
                 cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration &&
-                (int) receipt.IndexInBlock == lastTxInBlockIndex ||
+                receipt.Transaction.To.Equals(ContractRegisterer.StakingContract) ||
                 indexInCycle == StakingContract.VrfSubmissionPhaseDuration &&
-                (int) receipt.IndexInBlock == lastTxInBlockIndex ||
-                cycle > 0 && indexInCycle == 0 && (int) receipt.IndexInBlock == lastTxInBlockIndex;
+                receipt.Transaction.To.Equals(ContractRegisterer.StakingContract) ||
+                cycle > 0 && indexInCycle == 0 && receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract);
 
             var verifyError = VerifyInternal(receipt, canTransactionMissVerification);
             if (verifyError != OperatingError.Ok)
