@@ -3,6 +3,7 @@ using System.Linq;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -13,6 +14,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class Web3DataFormatUtils
     {
+        private static readonly ILogger<Web3DataFormatUtils> Logger =
+            LoggerFactory.GetLoggerForClass<Web3DataFormatUtils>();
+        
         // Reference: https://eth.wiki/json-rpc/API
 
         /**
@@ -36,14 +40,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return bytes.ToHex();
         }
 
-        public static string Web3Data(UInt256 value)
+        public static string Web3Data(UInt256? value)
         {
-            return Web3Data(value.Buffer);
+            return value == null ? "0x" : Web3Data(value.Buffer);
         }
 
-        public static string Web3Data(UInt160 value)
+        public static string Web3Data(UInt160? value)
         {
-            return Web3Data(value.Buffer);
+            return value == null ? "0x" : Web3Data(value.Buffer);
         }
 
         public static string Web3Data(ulong nonce)
@@ -117,11 +121,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         public static JObject Web3Event(Event e, ulong? blockNumber = null)
         {
+            if (e.Contract is null || e.Data is null || e.TransactionHash is null || e.BlockHash is null)
+            {
+                Logger.LogWarning($"event lacks one of important fields: {e}");
+            }
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),
                 ["topics"] = new JArray(), // we don't support indexes
-                ["data"] = Web3Data(e.Data),
+                ["data"] = Web3Data(e.Data ?? Enumerable.Empty<byte>()),
                 ["blockNumber"] = Web3Number(blockNumber ?? 0),
                 ["transactionHash"] = Web3Data(e.TransactionHash),
                 ["blockHash"] = Web3Data(e.BlockHash),
