@@ -21,11 +21,11 @@ namespace Lachain.Networking.Hub
 
         public event EventHandler<byte[]>? OnMessage;
 
-        public HubConnector(string hubBootstrapAddresses, string hubPrivKeyHex, int hubMetricsPort, IMessageFactory messageFactory, string? logLevel)
+        public HubConnector(string hubBootstrapAddresses, byte[] hubPrivateKey, int hubMetricsPort, IMessageFactory messageFactory, string? logLevel)
         {
             logLevel ??= Logger.LowestLogLevel().Name;
             CommunicationHub.Net.Hub.SetLogLevel($"<root>={logLevel.ToUpper()}");
-            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses, hubPrivKeyHex.HexToBytes()));
+            _hubThread = new Thread(() => CommunicationHub.Net.Hub.Start(hubBootstrapAddresses, hubPrivateKey));
             _messageFactory = messageFactory;
             _hubMetricsPort = hubMetricsPort;
         }

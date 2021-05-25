@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
@@ -19,6 +20,7 @@ namespace Lachain.Storage.Repositories
             _storageManager = storageManager;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public IBlockchainSnapshot GetSnapshotForBlock(ulong block)
         {
             return new BlockchainSnapshot(
@@ -53,6 +55,7 @@ namespace Lachain.Storage.Repositories
             );
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SaveSnapshotForBlock(ulong block, IBlockchainSnapshot snapshot)
         {
             SetVersion((uint) RepositoryType.BalanceRepository, block, snapshot.Balances.Version);
@@ -64,6 +67,7 @@ namespace Lachain.Storage.Repositories
             SetVersion((uint) RepositoryType.ValidatorRepository, block, snapshot.Validators.Version);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private ulong GetVersion(uint repository, ulong block)
         {
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
@@ -72,8 +76,10 @@ namespace Lachain.Storage.Repositories
             return rawVersion.AsReadOnlySpan().ToUInt64();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void SetVersion(uint repository, ulong block, ulong version)
         {
+            Logger.LogTrace($"Saved version {version} for {(RepositoryType) repository}");
             _dbContext.Save(
                 EntryPrefix.SnapshotIndex.BuildPrefix(
                     repository.ToBytes().Concat(block.ToBytes()).ToArray()

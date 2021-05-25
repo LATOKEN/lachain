@@ -9,7 +9,9 @@
     ],
     "forceIPv6": false,
     "maxPeers": 100,
-    "bootstrapAddresses": ["QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"]
+    "bootstrapAddresses": ["QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"],
+    "hubMetricsPort": 7082,
+    "hubPrivateKey": "0803127930770201010420418b37d00747c53fe156f3dd11fb1c80fb7af0788731ed62fea37391b459ab19a00a06082a8648ce3d030107a14403420004c74df2fd6c159e4e3eaa6ca37e35ffc9e49b49e2669e755e0a1f5c5e47450821ce2a2901679d63ef362acbc856265b279f3c19d9031897bdc17b75af762f34de"
   },
   "genesis": {
     "TPKEPublicKey": "0x01000000a31c3d55d7ac753f2301ea06da56a8570bfb28b9c49e3c6e732815e265e348552736434b67e6381d939b37a62b64c796",

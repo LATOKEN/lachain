@@ -4,13 +4,13 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
 {
     public class GovernanceInterface : IContractInterface
     {
-        public const string MethodChangeValidators = "changeValidators(bytes[])";
-        public const string MethodKeygenCommit = "keygenCommit(bytes,bytes[])";
-        public const string MethodKeygenSendValue = "keygenSendValue(uint256,bytes[])";
-        public const string MethodKeygenConfirm = "keygenConfirm(bytes,bytes[])";
-        public const string MethodFinishCycle = "finishCycle()";
+        public const string MethodChangeValidators = "changeValidators(uint256,bytes[])";
+        public const string MethodKeygenCommit = "keygenCommit(uint256,bytes,bytes[])";
+        public const string MethodKeygenSendValue = "keygenSendValue(uint256,uint256,bytes[])";
+        public const string MethodKeygenConfirm = "keygenConfirm(uint256,bytes,bytes[])";
+        public const string MethodFinishCycle = "finishCycle(uint256)";
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
-        public const string MethodDistributeCycleRewardsAndPenalties = "distibuteCycleRewardsAndPenalties()";
+        public const string MethodDistributeCycleRewardsAndPenalties = "distibuteCycleRewardsAndPenalties(uint256)";
 
         public const string EventChangeValidators = "ChangeValidators(bytes[])";
         public const string EventKeygenCommit = "KeygenCommit(bytes,bytes[])";

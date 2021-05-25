@@ -15,9 +15,9 @@ namespace Lachain.Core.Blockchain.Pool
 
         void Restore();
 
-        OperatingError Add(Transaction transaction, Signature signature);
+        OperatingError Add(Transaction transaction, Signature signature, bool notify = true);
 
-        OperatingError Add(TransactionReceipt receipt);
+        OperatingError Add(TransactionReceipt receipt, bool notify = true);
 
         IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
 

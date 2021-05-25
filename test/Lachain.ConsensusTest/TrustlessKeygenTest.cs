@@ -52,7 +52,7 @@ namespace Lachain.ConsensusTest
                 .ToArray();
 
             var keyGens = Enumerable.Range(0, n)
-                .Select(i => new TrustlessKeygen(ecdsaKeys[i], ecdsaKeys.Select(x => x.PublicKey), f))
+                .Select(i => new TrustlessKeygen(ecdsaKeys[i], ecdsaKeys.Select(x => x.PublicKey), f, 0))
                 .ToArray();
 
 

@@ -9,7 +9,7 @@ namespace Lachain.Networking
         void SendTo(ECDSAPublicKey publicKey, NetworkMessage message);
         void Start();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
-        void AdvanceEra(long era);
+        void AdvanceEra(ulong era);
         Node LocalNode { get; }
 
         event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;

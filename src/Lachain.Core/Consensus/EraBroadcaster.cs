@@ -28,13 +28,16 @@ namespace Lachain.Core.Consensus
     {
         private static readonly ILogger<EraBroadcaster> Logger = LoggerFactory.GetLoggerForClass<EraBroadcaster>();
         
-        private readonly IValidatorManager _validatorManager;
         private readonly long _era;
         private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private bool _terminated;
+        private int _myIdx;
+        private IPublicConsensusKeySet? _validators;
+
+        public bool Ready => _validators != null;
 
         /**
          * Registered callbacks, identifying that one protocol requires result from another
@@ -49,17 +52,23 @@ namespace Lachain.Core.Consensus
             new ConcurrentDictionary<IProtocolIdentifier, IConsensusProtocol>();
 
         public EraBroadcaster(
-            long era, IConsensusMessageDeliverer consensusMessageDeliverer, IValidatorManager validatorManager,
+            long era, IConsensusMessageDeliverer consensusMessageDeliverer,
             IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
             _messageFactory = new MessageFactory(wallet.EcdsaKeyPair);
-            _validatorManager = validatorManager;
             _wallet = wallet;
             _terminated = false;
             _era = era;
+            _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+        }
+
+        public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
+        {
+            _validators = keySet;
+            _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -80,7 +89,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            foreach (var publicKey in _validatorManager.GetValidatorsPublicKeys(_era - 1))
+            foreach (var publicKey in _validators.EcdsaPublicKeySet)
             {
                 if (publicKey.Equals(_wallet.EcdsaKeyPair.PublicKey))
                 {
@@ -114,7 +123,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _consensusMessageDeliverer.SendTo(_validatorManager.GetPublicKey((uint) index, _era - 1), payload);
+            _consensusMessageDeliverer.SendTo(_validators.EcdsaPublicKeySet[index], payload);
         }
 
         public void Dispatch(ConsensusMessage message, int from)
@@ -218,13 +227,15 @@ namespace Lachain.Core.Consensus
 
             if (_callback.TryGetValue(result.From, out var senderId))
             {
-                if (_registry[senderId] == null)
+                if (!_registry.TryGetValue(senderId, out var cbProtocol))
                 {
                     Logger.LogWarning($"There is no protocol registered to get result from {senderId}");
                 }
-
-                _registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-                Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
+                else
+                {
+                    cbProtocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
+                    Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
+                }
             }
 
             // message is also delivered to self
@@ -235,7 +246,12 @@ namespace Lachain.Core.Consensus
 
         public int GetMyId()
         {
-            return _validatorManager.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey, _era - 1);
+            return _myIdx;
+        }
+
+        public int GetIdByPublicKey(ECDSAPublicKey publicKey)
+        {
+            return _validators.GetValidatorIndex(publicKey);
         }
 
         public IConsensusProtocol? GetProtocolById(IProtocolIdentifier id)
@@ -268,16 +284,15 @@ namespace Lachain.Core.Consensus
                 return null;
             }
 
-            var publicKeySet = _validatorManager.GetValidators(_era - 1);
             switch (id)
             {
                 case BinaryBroadcastId bbId:
-                    var bb = new BinaryBroadcast(bbId, publicKeySet, this);
+                    var bb = new BinaryBroadcast(bbId, _validators, this);
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
                     var coin = new CommonCoin(
-                        coinId, publicKeySet,
+                        coinId, _validators,
                         _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1) ??
                         throw new InvalidOperationException($"No TS keys present for era {_era}"),
                         this
@@ -285,20 +300,20 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    var rbc = new ReliableBroadcast(rbcId, publicKeySet, this);
+                    var rbc = new ReliableBroadcast(rbcId, _validators, this);
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:
-                    var ba = new BinaryAgreement(baId, publicKeySet, this);
+                    var ba = new BinaryAgreement(baId, _validators, this);
                     RegisterProtocols(new[] {ba});
                     return ba;
                 case CommonSubsetId acsId:
-                    var acs = new CommonSubset(acsId, publicKeySet, this);
+                    var acs = new CommonSubset(acsId, _validators, this);
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
                     var hb = new HoneyBadger(
-                        hbId, publicKeySet,
+                        hbId, _validators,
                         _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1)
                         ?? throw new InvalidOperationException($"No TPKE keys present for era {_era}"),
                         this
@@ -306,7 +321,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, publicKeySet, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, StakingContract.CycleDuration);
+                    var root = new RootProtocol(rootId, _validators, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, StakingContract.CycleDuration);
                     RegisterProtocols(new[] {root});
                     return root;
                 default:

@@ -16,7 +16,7 @@ using Newtonsoft.Json;
 
 namespace Lachain.Core.Vault
 {
-    class PrivateWallet : IPrivateWallet
+    public class PrivateWallet : IPrivateWallet
     {
         private static readonly ILogger<PrivateWallet> Logger = LoggerFactory.GetLoggerForClass<PrivateWallet>();
 
@@ -30,6 +30,9 @@ namespace Lachain.Core.Vault
         private readonly string _walletPath;
         private readonly string _walletPassword;
         private long _unlockEndTime;
+
+        public EcdsaKeyPair EcdsaKeyPair { get; }
+        public byte[] HubPrivateKey { get; }
 
         public PrivateWallet(IConfigManager configManager)
         {
@@ -48,11 +51,11 @@ namespace Lachain.Core.Vault
 
             _walletPassword = config.Password;
             _unlockEndTime = 0;
-            RestoreWallet(_walletPath, _walletPassword, out var keyPair);
+            var needsSave = RestoreWallet(_walletPath, _walletPassword, out var keyPair, out var hubKey);
             EcdsaKeyPair = keyPair;
+            HubPrivateKey = hubKey;
+            if (needsSave) SaveWallet(_walletPath, _walletPassword);
         }
-
-        public EcdsaKeyPair EcdsaKeyPair { get; }
 
         public PrivateKey? GetTpkePrivateKeyForBlock(ulong block)
         {
@@ -106,6 +109,7 @@ namespace Lachain.Core.Vault
             var wallet = new JsonWallet
             (
                 EcdsaKeyPair.PrivateKey.ToHex(),
+                HubPrivateKey.ToHex(),
                 new Dictionary<ulong, string>(
                     _tpkeKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
@@ -127,7 +131,15 @@ namespace Lachain.Core.Vault
             File.WriteAllBytes(path, encryptedContent);
         }
 
-        private void RestoreWallet(string path, string password, out EcdsaKeyPair keyPair)
+        public static (string PrivateKey, string PublicKey) GenerateHubKey()
+        {
+            var keyInfo = CommunicationHub.Net.Hub.GenerateNewHubKey().Split(",");
+            if (keyInfo.Length != 2)
+                throw new Exception("Invalid hub key");
+            return (keyInfo[0], keyInfo[1]);
+        }
+
+        private bool RestoreWallet(string path, string password, out EcdsaKeyPair keyPair, out byte[] hubKey)
         {
             var encryptedContent = File.ReadAllBytes(path);
             var key = Encoding.UTF8.GetBytes(password).KeccakBytes();
@@ -137,10 +149,18 @@ namespace Lachain.Core.Vault
             var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
             if (wallet.EcdsaPrivateKey is null)
                 throw new Exception("Decrypted wallet does not contain ECDSA key");
+            var needsSave = false;
+            if (wallet.HubPrivateKey is null)
+            {
+                wallet.HubPrivateKey = GenerateHubKey().PrivateKey;
+                needsSave = true;
+            }
+
             wallet.ThresholdSignatureKeys ??= new Dictionary<ulong, string>();
             wallet.TpkePrivateKeys ??= new Dictionary<ulong, string>();
 
             keyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
+            hubKey = wallet.HubPrivateKey.HexToBytes();
             _tpkeKeys.AddAll(wallet.TpkePrivateKeys
                 .Select(p =>
                     new C5.KeyValuePair<ulong, PrivateKey>(p.Key, PrivateKey.FromBytes(p.Value.HexToBytes()))));
@@ -148,8 +168,9 @@ namespace Lachain.Core.Vault
                 .Select(p =>
                     new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
                         PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
+            return needsSave;
         }
-        
+
         public bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet, ulong beforeBlock)
         {
             try
@@ -181,7 +202,7 @@ namespace Lachain.Core.Vault
 
             return false;
         }
-        
+
         public bool IsLocked()
         {
             return new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() > _unlockEndTime;

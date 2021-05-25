@@ -30,7 +30,7 @@ namespace Lachain.Networking
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
 
-        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair)
+        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey)
         {
             if (networkConfig.Peers is null) throw new ArgumentNullException();
             _messageFactory = new MessageFactory(keyPair);
@@ -44,18 +44,17 @@ namespace Lachain.Networking
                 Agent = "Lachain-v0.0-dev"
             };
             _hubConnector = new HubConnector(
-                string.Join(",", networkConfig.BootstrapAddresses), 
-                networkConfig.HubPrivateKey ?? throw new Exception("No hub private key in settings"), 
-                networkConfig.HubMetricsPort ?? 7072, _messageFactory, networkConfig.HubLogLevel);
+                string.Join(",", networkConfig.BootstrapAddresses),
+                hubPrivateKey,
+                networkConfig.HubMetricsPort ?? 7072, _messageFactory, networkConfig.HubLogLevel
+            );
             _hubConnector.OnMessage += _HandleMessage;
 
-            var zeroBytes = new byte[33];
-            Array.Clear(zeroBytes, 0, 33);
-            _broadcaster = new ClientWorker(zeroBytes, _messageFactory, _hubConnector);
+            _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
             _broadcaster.Start();
         }
 
-        public void AdvanceEra(long era)
+        public void AdvanceEra(ulong era)
         {
             var totalBatchesCount = _clientWorkers.Values.Sum(clientWorker => clientWorker.AdvanceEra(era));
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");

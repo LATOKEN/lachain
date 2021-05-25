@@ -33,5 +33,7 @@ namespace Lachain.Core.Blockchain.Interface
         UInt160 NodeAddress();
 
         byte[] NodePublicKey();
+
+        ulong GetLastSuccessfulKeygenBlock();
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices.ComTypes;
 using Lachain.Consensus;
 using Lachain.Consensus.ThresholdKeygen;
 using Lachain.Consensus.ThresholdKeygen.Data;
@@ -30,6 +29,7 @@ namespace Lachain.Core.Vault
         private static readonly ILogger<KeyGenManager> Logger = LoggerFactory.GetLoggerForClass<KeyGenManager>();
 
         private readonly IBlockManager _blockManager;
+        private readonly ISystemContractReader _systemContractReader;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly IPrivateWallet _privateWallet;
@@ -46,7 +46,8 @@ namespace Lachain.Core.Vault
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
             IKeyGenRepository keyGenRepository,
-            IBlockSynchronizer blockSynchronizer
+            IBlockSynchronizer blockSynchronizer,
+            ISystemContractReader systemContractReader
         )
         {
             _blockManager = blockManager;
@@ -57,6 +58,7 @@ namespace Lachain.Core.Vault
             _transactionSigner = transactionSigner;
             _keyGenRepository = keyGenRepository;
             _blockSynchronizer = blockSynchronizer;
+            _systemContractReader = systemContractReader;
             _blockManager.OnSystemContractInvoked += BlockManagerOnSystemContractInvoked;
         }
 
@@ -66,14 +68,30 @@ namespace Lachain.Core.Vault
             var highestBlock = _blockSynchronizer.GetHighestBlock();
             var willParticipate =
                 !highestBlock.HasValue ||
-                GovernanceContract.IsKeygenBlock(highestBlock.Value) &&
+                GovernanceContract.IsKeygenBlock(context.Receipt.Block) &&
                 GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block);
+            if (!willParticipate)
+            {
+                Logger.LogInformation(
+                    highestBlock != null
+                        ? $"Will not participate in keygen: highest block is {highestBlock.Value}, call block is {context.Receipt.Block}"
+                        : $"Will not participate in keygen: highest block is null, call block is {context.Receipt.Block}"
+                );
+            }
 
             var tx = context.Receipt.Transaction;
             if (
                 !tx.To.Equals(ContractRegisterer.GovernanceContract) &&
                 !tx.To.Equals(ContractRegisterer.StakingContract)
             ) return;
+            if (context.Receipt.Block < _blockManager.GetHeight() &&
+                !GovernanceContract.SameCycle(context.Receipt.Block, _blockManager.GetHeight()))
+            {
+                Logger.LogWarning(
+                    $"System contract invoked from outdated tx: {context.Receipt.Hash}, tx block {context.Receipt.Block}, our height is {_blockManager.GetHeight()}");
+                return;
+            }
+
             if (tx.Invocation.Length < 4) return;
 
             var signature = ContractEncoder.MethodSignatureAsInt(tx.Invocation);
@@ -88,14 +106,15 @@ namespace Lachain.Core.Vault
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(StakingInterface.MethodFinishVrfLottery))
             {
-                Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodChangeValidators}");
+                Logger.LogDebug($"Detected call of StakingInterface.{StakingInterface.MethodFinishVrfLottery}");
+                var cycle = GovernanceContract.GetCycleByBlockNumber(context.Receipt.Block);
                 var data = new GovernanceContract(context).GetNextValidators();
                 var publicKeys =
                     (data ?? throw new ArgumentException("Cannot parse method args"))
                     .Select(x => x.ToPublicKey())
                     .ToArray();
-                Logger.LogTrace(
-                    $"Keygen is started for validator set: {string.Join(",", publicKeys.Select(x => x.ToHex()))}"
+                Logger.LogDebug(
+                    $"Keygen is started in cycle={cycle}, block={context.Receipt.Block} for validator set: {string.Join(",", publicKeys.Select(x => x.ToHex()))}"
                 );
                 if (!publicKeys.Contains(_privateWallet.EcdsaKeyPair.PublicKey))
                 {
@@ -104,20 +123,32 @@ namespace Lachain.Core.Vault
                 }
 
                 var keygen = GetCurrentKeyGen();
-                if (keygen != null)
+                if (keygen != null && keygen.Cycle == cycle)
+                {
                     throw new ArgumentException("Cannot start keygen, since one is already running");
+                }
+
+                if (keygen != null)
+                {
+                    Logger.LogWarning($"Aborted keygen for cycle {keygen.Cycle} to start keygen for cycle {cycle}");
+                }
+
+                _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
+
                 var faulty = (publicKeys.Length - 1) / 3;
-                keygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty);
-                var commitTx = MakeCommitTransaction(keygen.StartKeygen());
+                keygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeys, faulty, cycle);
+                var commitTx = MakeCommitTransaction(keygen.StartKeygen(), cycle);
                 Logger.LogTrace($"Produced commit tx with hash: {commitTx.Hash.ToHex()}");
                 if (willParticipate)
                 {
+                    Logger.LogInformation($"Try to send KeyGen Commit transaction");
                     if (_transactionPool.Add(commitTx) is var error && error != OperatingError.Ok)
                         Logger.LogError($"Error creating commit transaction ({commitTx.Hash.ToHex()}): {error}");
                     else
                         Logger.LogInformation($"KeyGen Commit transaction sent");
                 }
 
+                Logger.LogDebug($"Saving keygen {keygen.ToBytes().ToHex()}");
                 _keyGenRepository.SaveKeyGenState(keygen.ToBytes());
             }
             else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenCommit))
@@ -139,9 +170,21 @@ namespace Lachain.Core.Vault
                 }
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
-                var commitment = Commitment.FromBytes(args[0] as byte[] ?? throw new Exception());
-                var encryptedRows = args[1] as byte[][] ?? throw new Exception();
+                var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle for SendValue transaction");
+                var commitment = Commitment.FromBytes(args[1] as byte[] ??
+                                                      throw new Exception(
+                                                          "Failed to get commitment for SendValue transaction"));
+                var encryptedRows = args[2] as byte[][] ??
+                                    throw new Exception("Failed to get encryptedRows for SendValue transaction");
+                
+                if (cycle.ToBigInteger() != keygen.Cycle)
+                {
+                    Logger.LogError($"Got KeygenCommit for cycle {cycle.ToBigInteger()} while doing keygen for {keygen.Cycle}");
+                    return;
+                }
+                
                 var sendValueTx = MakeSendValueTransaction(
+                    cycle,
                     keygen.HandleCommit(
                         sender,
                         new CommitMessage {Commitment = commitment, EncryptedRows = encryptedRows}
@@ -165,24 +208,32 @@ namespace Lachain.Core.Vault
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
                 if (sender < 0) return;
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
-                var proposer = args[0] as UInt256 ?? throw new Exception();
-                var encryptedValues = args[1] as byte[][] ?? throw new Exception();
-
-                Logger.LogDebug($"Send value tx invocation: {tx.Invocation}, proposer = {proposer.ToHex()}");
+                var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle for Confirm transaction");
+                var proposer = args[1] as UInt256 ??
+                               throw new Exception("Failed to get proposer for Confirm transaction");
+                var encryptedValues = args[2] as byte[][] ??
+                                      throw new Exception("Failed to get encryptedValues for Confirm transaction");
+                if (cycle.ToBigInteger() != keygen.Cycle)
+                {
+                    Logger.LogError($"Got KeygenSendValue for cycle {cycle.ToBigInteger()} while doing keygen for {keygen.Cycle}");
+                    return;
+                }
+                
+                Logger.LogTrace($"Send value tx invocation: {tx.Invocation.ToHex()}, proposer = {proposer.ToHex()}");
                 if (keygen.HandleSendValue(
                     sender,
                     new ValueMessage {Proposer = (int) proposer.ToBigInteger(), EncryptedValues = encryptedValues}
                 ))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
-                    var confirmTx = MakeConfirmTransaction(keys);
+                    var confirmTx = MakeConfirmTransaction(cycle, keys);
 
                     if (willParticipate)
                     {
                         if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
                             Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
                         else
-                            Logger.LogInformation($"KeyGen Confirm transaction sent");                        
+                            Logger.LogInformation($"KeyGen Confirm transaction sent");
                     }
                 }
 
@@ -197,13 +248,20 @@ namespace Lachain.Core.Vault
                 if (sender < 0) return;
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
-                var tpkePublicKey = PublicKey.FromBytes(args[0] as byte[] ?? throw new Exception());
+                var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle");
+                var tpkePublicKey =
+                    PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception("Failed to get tpkePublicKey"));
                 var tsKeys = new PublicKeySet(
-                    (args[1] as byte[][] ?? throw new Exception()).Select(x =>
+                    (args[2] as byte[][] ?? throw new Exception()).Select(x =>
                         Crypto.ThresholdSignature.PublicKey.FromBytes(x)
                     ),
                     keygen.Faulty
                 );
+                if (cycle.ToBigInteger() != keygen.Cycle)
+                {
+                    Logger.LogError($"Got KeygenConfirm for cycle {cycle.ToBigInteger()} while doing keygen for {keygen.Cycle}");
+                    return;
+                }
 
                 if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
                 {
@@ -231,42 +289,48 @@ namespace Lachain.Core.Vault
             }
         }
 
-        private TransactionReceipt MakeConfirmTransaction(ThresholdKeyring keyring)
+        private TransactionReceipt MakeConfirmTransaction(UInt256 cycle, ThresholdKeyring keyring)
         {
+            Logger.LogTrace("MakeConfirmTransaction");
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenConfirm,
                 0,
+                cycle,
                 keyring.TpkePublicKey.ToBytes(),
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
         }
 
-        private TransactionReceipt MakeSendValueTransaction(ValueMessage valueMessage)
+        private TransactionReceipt MakeSendValueTransaction(UInt256 cycle, ValueMessage valueMessage)
         {
+            Logger.LogTrace("MakeSendValueTransaction");
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenSendValue,
                 0,
+                cycle,
                 new BigInteger(valueMessage.Proposer).ToUInt256(),
                 valueMessage.EncryptedValues
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
         }
 
-        private TransactionReceipt MakeCommitTransaction(CommitMessage commitMessage)
+        private TransactionReceipt MakeCommitTransaction(CommitMessage commitMessage, ulong cycle)
         {
+            Logger.LogTrace("MakeCommitTransaction");
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
                 Money.Zero,
                 GovernanceInterface.MethodKeygenCommit,
                 0,
+                new BigInteger(cycle).ToUInt256(),
                 commitMessage.Commitment.ToBytes(),
                 commitMessage.EncryptedRows
             );
@@ -282,12 +346,14 @@ namespace Lachain.Core.Vault
 
         public bool RescanBlockChainForKeys(IPublicConsensusKeySet publicKeysToSearch)
         {
-            var keyRingHash = publicKeysToSearch.TpkePublicKey.ToBytes()
-                .Concat(publicKeysToSearch.ThresholdSignaturePublicKeySet.ToBytes())
-                .Keccak();
-            var (from, to) = GetBlockRangeToRescanForKeys(keyRingHash);
-            var keygen = new TrustlessKeygen(_privateWallet.EcdsaKeyPair, publicKeysToSearch.EcdsaPublicKeySet,
-                publicKeysToSearch.F);
+            var (from, to) = GetBlockRangeToRescanForKeys();
+            var keygen = new TrustlessKeygen(
+                _privateWallet.EcdsaKeyPair,
+                publicKeysToSearch.EcdsaPublicKeySet,
+                publicKeysToSearch.F,
+                0
+            );
+            Logger.LogDebug($"Searching for keygen transactions in blocks [{from}; {to}]");
             for (var i = from; i <= to; ++i)
             {
                 var block = _blockManager.GetByHeight(i) ??
@@ -311,8 +377,8 @@ namespace Lachain.Core.Vault
                         }
 
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenCommit);
-                        var commitment = Commitment.FromBytes(args[0] as byte[] ?? throw new Exception());
-                        var encryptedRows = args[1] as byte[][] ?? throw new Exception();
+                        var commitment = Commitment.FromBytes(args[1] as byte[] ?? throw new Exception());
+                        var encryptedRows = args[2] as byte[][] ?? throw new Exception();
                         keygen.HandleCommit(
                             sender,
                             new CommitMessage {Commitment = commitment, EncryptedRows = encryptedRows}
@@ -331,8 +397,8 @@ namespace Lachain.Core.Vault
                         }
 
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
-                        var proposer = args[0] as UInt256 ?? throw new Exception();
-                        var encryptedValues = args[1] as byte[][] ?? throw new Exception();
+                        var proposer = args[1] as UInt256 ?? throw new Exception();
+                        var encryptedValues = args[2] as byte[][] ?? throw new Exception();
 
                         keygen.HandleSendValue(
                             sender,
@@ -352,9 +418,9 @@ namespace Lachain.Core.Vault
                         }
 
                         var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
-                        var tpkePublicKey = PublicKey.FromBytes(args[0] as byte[] ?? throw new Exception());
+                        var tpkePublicKey = PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception());
                         var tsKeys = new PublicKeySet(
-                            (args[1] as byte[][] ?? throw new Exception()).Select(x =>
+                            (args[2] as byte[][] ?? throw new Exception()).Select(x =>
                                 Crypto.ThresholdSignature.PublicKey.FromBytes(x)
                             ),
                             keygen.Faulty
@@ -384,40 +450,17 @@ namespace Lachain.Core.Vault
             return false;
         }
 
-        private (ulong, ulong) GetBlockRangeToRescanForKeys(UInt256 keyRingHash)
+        private (ulong, ulong) GetBlockRangeToRescanForKeys()
         {
-            for (var i = _blockManager.GetHeight(); i > 0; --i)
+            var end = _systemContractReader.GetLastSuccessfulKeygenBlock();
+            var start = end;
+            while (GovernanceContract.SameCycle(start, end))
             {
-                var block = _blockManager.GetByHeight(i) ??
-                            throw new Exception($"No block {i} found but height is {_blockManager.GetHeight()}");
-                foreach (var txHash in block.TransactionHashes)
-                {
-                    var tx = _transactionManager.GetByHash(txHash) ??
-                             throw new Exception($"Cannot find tx {txHash.ToHex()} included in block {i}");
-                    if (!tx.Transaction.To.Equals(ContractRegisterer.GovernanceContract)) continue;
-                    if (!ContractEncoder.MethodSignature(GovernanceInterface.MethodKeygenConfirm).Take(4)
-                        .SequenceEqual(tx.Transaction.Invocation.Take(4))) continue;
-                    var decoder = new ContractDecoder(tx.Transaction.Invocation.ToArray());
-                    var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
-                    var tpkeKey = args[0] as byte[] ??
-                                  throw new Exception($"Cannot parse KeyGenConfirm tx {tx.Hash.ToHex()}");
-                    var tsKeys = args[1] as byte[][] ??
-                                 throw new Exception($"Cannot parse KeyGenConfirm tx {tx.Hash.ToHex()}");
-
-                    var tsKeySet = new PublicKeySet(
-                        tsKeys.Select(x => Lachain.Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
-                        (tsKeys.Length - 1) / 3
-                    );
-                    var confirmedHash = tpkeKey.Concat(tsKeySet.ToBytes()).Keccak();
-                    if (!keyRingHash.Equals(confirmedHash)) continue;
-                    Logger.LogDebug($"Found keygen confirmation in block {i} tx {tx.Hash.ToHex()}");
-                    var start = i;
-                    while (GovernanceContract.SameCycle(start, i)) --start;
-                    return (start + 1, i);
-                }
+                if (start == 0) return (0, end);
+                --start;
             }
 
-            return (1, 0);
+            return (start + 1, end);
         }
     }
 }

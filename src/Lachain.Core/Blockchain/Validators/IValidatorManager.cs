@@ -6,7 +6,7 @@ namespace Lachain.Core.Blockchain.Validators
 {
     public interface IValidatorManager
     {
-        IPublicConsensusKeySet GetValidators(long afterBlock);
+        IPublicConsensusKeySet? GetValidators(long afterBlock);
         IReadOnlyCollection<ECDSAPublicKey> GetValidatorsPublicKeys(long afterBlock);
         int GetValidatorIndex(ECDSAPublicKey publicKey, long afterBlock);
         ECDSAPublicKey GetPublicKey(uint validatorIndex, long afterBlock);
