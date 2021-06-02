@@ -276,6 +276,54 @@ namespace Lachain.CoreTest.IntegrationTests
 
                     Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
+                {
+                    /* burn */
+                    Console.WriteLine($"\nERC-20: burn({to.ToHex()},{Money.FromDecimal(30)})");
+                    var input = ContractEncoder.Encode("burn(address,uint256)", to, Money.FromDecimal(30));
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    /* ERC-20: totalSupply */
+                    Console.WriteLine("\nERC-20: totalSupply()");
+                    var input = ContractEncoder.Encode("totalSupply()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    /* ERC-20: balanceOf */
+                    Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
+                    var input = ContractEncoder.Encode("balanceOf(address)", to);
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
 
                 stateManager.Approve();
             exit_mark:
