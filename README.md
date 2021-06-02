@@ -1,1 +1,1 @@
-[![Build Status](https://travis-ci.org/LAToken/lachain.svg?branch=dev)](https://travis-ci.org/LAToken/lachain)
+[![Build Status](https://travis-ci.com/LAToken/lachain.svg?branch=dev)](https://travis-ci.com/LAToken/lachain)
