@@ -340,6 +340,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     .Batch(CryptoUtils.PublicKeyLength)
                     .Select(x => x.ToArray().ToPublicKey())
                     .ToArray();
+                foreach (var k in ecdsaPublicKeys)
+                {
+                    Logger.LogWarning(k.ToHex());
+                }
+                foreach (var k in tsKeys.Keys)
+                {
+                    Logger.LogWarning(k.ToHex());
+                }
                 _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
 
                 Emit(GovernanceInterface.EventFinishCycle);
