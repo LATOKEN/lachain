@@ -312,7 +312,7 @@ namespace Lachain.Core.Blockchain.VM
         public static void Handler_Env_GetAddress(int resultOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call KECCAK256 outside wasm frame");
+                        ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
             var result = (frame.CurrentAddress).ToBytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
