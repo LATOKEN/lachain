@@ -316,6 +316,14 @@ namespace Lachain.Core.Blockchain.VM
             var result = (frame.CurrentAddress).ToBytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
+        
+        public static void Handler_Env_GetMsgValue(int resultOffset)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
+            var result = (frame.InvocationContext.Value).ToBytes();
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
@@ -352,6 +360,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 {EnvModule, "get_address", CreateImport(nameof(Handler_Env_GetAddress))},
+                {EnvModule, "get_msgvalue", CreateImport(nameof(Handler_Env_GetMsgValue))},
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
