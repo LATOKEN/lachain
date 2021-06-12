@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Lachain.Crypto;
@@ -30,7 +31,8 @@ namespace Lachain.Networking
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
 
-        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey)
+        protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
+            int version, int minPeerVersion)
         {
             if (networkConfig.Peers is null) throw new ArgumentNullException();
             _messageFactory = new MessageFactory(keyPair);
@@ -45,7 +47,7 @@ namespace Lachain.Networking
             };
             _hubConnector = new HubConnector(
                 string.Join(",", networkConfig.BootstrapAddresses),
-                hubPrivateKey,
+                hubPrivateKey, networkConfig.NetworkName ?? "devnet", version, minPeerVersion,
                 networkConfig.HubMetricsPort ?? 7072, _messageFactory, networkConfig.HubLogLevel
             );
             _hubConnector.OnMessage += _HandleMessage;
