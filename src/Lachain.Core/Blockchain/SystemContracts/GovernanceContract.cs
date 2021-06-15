@@ -311,13 +311,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var currentBlock = frame.InvocationContext.Receipt.Block;
             if (GetBlockNumberInCycle(currentBlock) != 0)
             {
-                Logger.LogWarning($"FinishCycle called in block {currentBlock} which is not beginning of cycle {cycle.ToBigInteger()}");
+                Logger.LogWarning(
+                    $"FinishCycle called in block {currentBlock} which is not beginning of cycle {cycle.ToBigInteger()}");
                 return ExecutionStatus.ExecutionHalted;
             }
 
             if (cycle.ToBigInteger() != GetConsensusGeneration(frame) - 1)
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, just finished cycle number is {GetConsensusGeneration(frame) - 1}");
+                Logger.LogWarning(
+                    $"Invalid cycle: {cycle}, just finished cycle number is {GetConsensusGeneration(frame) - 1}");
                 return ExecutionStatus.ExecutionHalted;
             }
 
@@ -332,7 +334,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var votes = GetConfirmations(keyringHash.ToBytes(), gen);
                 if (votes + 1 < players - faulty)
                 {
-                    Logger.LogError($"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}");
+                    Logger.LogError(
+                        $"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}");
                     return ExecutionStatus.ExecutionHalted;
                 }
 
@@ -340,14 +343,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     .Batch(CryptoUtils.PublicKeyLength)
                     .Select(x => x.ToArray().ToPublicKey())
                     .ToArray();
+
                 foreach (var k in ecdsaPublicKeys)
                 {
                     Logger.LogWarning(k.ToHex());
                 }
+
                 foreach (var k in tsKeys.Keys)
                 {
                     Logger.LogWarning(k.ToHex());
                 }
+
                 _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
 
                 Emit(GovernanceInterface.EventFinishCycle);
