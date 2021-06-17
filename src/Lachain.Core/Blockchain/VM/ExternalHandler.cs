@@ -340,7 +340,9 @@ namespace Lachain.Core.Blockchain.VM
             {
                 {EnvModule, "get_call_value", CreateImport(nameof(Handler_Env_GetCallValue))},
                 {EnvModule, "get_call_size", CreateImport(nameof(Handler_Env_GetCallSize))},
+                {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetCallSize))},
                 {EnvModule, "copy_call_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
+                {EnvModule, "copy_return_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
                 {EnvModule, "write_log", CreateImport(nameof(Handler_Env_WriteLog))},
                 {EnvModule, "load_storage", CreateImport(nameof(Handler_Env_LoadStorage))},
