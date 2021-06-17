@@ -30,7 +30,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(DeployInterface.MethodDeploy)]
         public ExecutionStatus Deploy(byte[] byteCode, SystemContractExecutionFrame frame)
         {
-            frame.ReturnValue = new byte[] { };
+            frame.ReturnValue = Array.Empty<byte>();
             frame.UseGas(checked(GasMetering.DeployCost + GasMetering.DeployCostPerByte * (ulong) byteCode.Length));
             var receipt = _context.Receipt ?? throw new InvalidOperationException();
             /* calculate contract hash and register it */

@@ -104,8 +104,7 @@ namespace Lachain.Core.Blockchain.VM
         }
 
         public static int Handler_Env_InvokeContract(
-            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset,
-            int returnValueOffset)
+            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call INVOKECONTRACT outside wasm frame");
@@ -136,9 +135,28 @@ namespace Lachain.Core.Blockchain.VM
             if (callResult.Status != ExecutionStatus.Ok)
                 throw new InvalidContractException("Cannot invoke call: " + callResult.Status);
             frame.UseGas(callResult.GasUsed);
-            if (!SafeCopyToMemory(frame.Memory, callResult.ReturnValue ?? Array.Empty<byte>(), returnValueOffset))
-                throw new InvalidContractException("Cannot invoke call: cannot pass return value");
+            frame.LastChildReturnValue = callResult.ReturnValue ?? Array.Empty<byte>();
             return 0;
+        }
+
+        public static int Handler_Env_GetReturnSize()
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call LOADSTORAGE outside wasm frame");
+            frame.UseGas(GasMetering.GetReturnSizeGasCost);
+            return frame.LastChildReturnValue.Length;
+        }
+
+        public static void Handler_Env_CopyReturnValue(int resultOffset, int dataOffset, int length)
+        {
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetReturnValue outside wasm frame");
+            frame.UseGas(GasMetering.GetReturnValueGasCost);
+            if (dataOffset < 0 || length < 0 || dataOffset + length >= frame.LastChildReturnValue.Length)
+                throw new InvalidContractException("Bad getreturnvalue call");
+            var result = new byte[length];
+            Array.Copy(frame.LastChildReturnValue, dataOffset, result, 0, length);
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 
         public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
@@ -342,6 +360,8 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_call_size", CreateImport(nameof(Handler_Env_GetCallSize))},
                 {EnvModule, "copy_call_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
+                {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetReturnSize))},
+                {EnvModule, "copy_return_value", CreateImport(nameof(Handler_Env_CopyReturnValue))},
                 {EnvModule, "write_log", CreateImport(nameof(Handler_Env_WriteLog))},
                 {EnvModule, "load_storage", CreateImport(nameof(Handler_Env_LoadStorage))},
                 {EnvModule, "save_storage", CreateImport(nameof(Handler_Env_SaveStorage))},
