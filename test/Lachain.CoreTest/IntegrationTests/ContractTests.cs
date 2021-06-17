@@ -150,6 +150,58 @@ namespace Lachain.CoreTest.IntegrationTests
             // Invocation result is not stored in TransactionReceipt now, can't verify it
         }
 
+        [Test]
+        public void Test_ContractFromContractInvoke()
+        {
+            var keyPair = _wallet.EcdsaKeyPair;
+            GenerateBlocks(1);
+            
+            // Deploy callee contract 
+            var byteCode = File.ReadAllBytes("Deployed.wasm");
+            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate callee code");
+            var from = keyPair.PublicKey.GetAddress();
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            var signedTx = Signer.Sign(tx, keyPair);
+            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
+            GenerateBlocks(1);
+            
+            // check contract is deployed
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed callee contract");
+            
+            // Deploy caller contract 
+            byteCode = File.ReadAllBytes("Existing.wasm");
+            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate caller code");
+            nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            signedTx = Signer.Sign(tx, keyPair);
+            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
+            GenerateBlocks(1);
+            
+            // check contract is deployed
+            contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed caller contract");
+            
+            // invoke caller contract 
+            var abi = ContractEncoder.Encode("get()");
+            var invocationResult = VirtualMachine.InvokeWasmContract(
+                contract!,
+                new InvocationContext(from, _stateManager.LastApprovedSnapshot, new TransactionReceipt
+                {
+                    // TODO: correctly fill these fields
+                    Block = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(),
+                }),
+                abi,
+                GasMetering.DefaultBlockGasLimit
+            );
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke deployed contract");
+            Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
+            Assert.That(invocationResult.ReturnValue!.ToHex() == "0x2a", "Invalid invocation return value");
+        }
+
         private void GenerateBlocks(int blockNum)
         {
             for (var i = 0; i < blockNum; i++)
