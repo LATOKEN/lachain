@@ -228,7 +228,11 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_SystemHalt(int haltCode)
         {
-            throw new HaltException(haltCode);
+            // added for ethereum solang compiler compatibility.
+            // it calls system_halt(0) together with set_return
+            // for normal execution completion
+            if (haltCode != 0)
+                throw new HaltException(haltCode);
         }
 
         public static void Handler_Env_CryptoKeccak256(int dataOffset, int dataLength, int resultOffset)
