@@ -196,13 +196,13 @@ namespace Lachain.CoreTest.IntegrationTests
             
             // invoke caller contract 
             var abi = ContractEncoder.Encode("getA()");
+            var transactionReceipt = new TransactionReceipt();
+            transactionReceipt.Transaction = new Transaction();
+            transactionReceipt.Transaction.Value = 0.ToUInt256();
+            transactionReceipt.Block = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var invocationResult = VirtualMachine.InvokeWasmContract(
                 contract!,
-                new InvocationContext(from, _stateManager.LastApprovedSnapshot, new TransactionReceipt
-                {
-                    // TODO: correctly fill these fields
-                    Block = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(),
-                }),
+                new InvocationContext(from, _stateManager.LastApprovedSnapshot, transactionReceipt),
                 abi,
                 GasMetering.DefaultBlockGasLimit
             );

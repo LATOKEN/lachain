@@ -140,7 +140,10 @@ namespace Lachain.Core.Blockchain.VM
                 gasLimit = frame.GasLimit - frame.GasUsed;
             var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, msgValue);
             if (callResult.Status != ExecutionStatus.Ok)
-                throw new InvalidContractException("Cannot invoke call: " + callResult.Status);
+            {
+                throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}" );
+            }
+
             frame.UseGas(callResult.GasUsed);
             frame.LastChildReturnValue = callResult.ReturnValue ?? Array.Empty<byte>();
             return 0;
