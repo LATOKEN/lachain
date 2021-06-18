@@ -153,11 +153,17 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_ContractFromContractInvoke()
         {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceA = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.A.wasm");
+            var resourceB = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.B.wasm");
             var keyPair = _wallet.EcdsaKeyPair;
             GenerateBlocks(1);
             
             // Deploy callee contract 
-            var byteCode = File.ReadAllBytes("Deployed.wasm");
+            if(resourceB is null)
+                Assert.Fail("Failed t read script from resources");
+            var byteCode = new byte[resourceB!.Length];
+            resourceB!.Read(byteCode, 0, (int)resourceB!.Length);
             Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate callee code");
             var from = keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
@@ -172,7 +178,10 @@ namespace Lachain.CoreTest.IntegrationTests
             Assert.That(contract != null, "Failed to find deployed callee contract");
             
             // Deploy caller contract 
-            byteCode = File.ReadAllBytes("Existing.wasm");
+            if(resourceA is null)
+                Assert.Fail("Failed t read script from resources");
+            byteCode = new byte[resourceA!.Length];
+            resourceA!.Read(byteCode, 0, (int)resourceA!.Length);
             Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate caller code");
             nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
@@ -186,7 +195,7 @@ namespace Lachain.CoreTest.IntegrationTests
             Assert.That(contract != null, "Failed to find deployed caller contract");
             
             // invoke caller contract 
-            var abi = ContractEncoder.Encode("get()");
+            var abi = ContractEncoder.Encode("getA()");
             var invocationResult = VirtualMachine.InvokeWasmContract(
                 contract!,
                 new InvocationContext(from, _stateManager.LastApprovedSnapshot, new TransactionReceipt
@@ -197,7 +206,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 abi,
                 GasMetering.DefaultBlockGasLimit
             );
-            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke deployed contract");
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke caller contract");
             Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
             Assert.That(invocationResult.ReturnValue!.ToHex() == "0x2a", "Invalid invocation return value");
         }
