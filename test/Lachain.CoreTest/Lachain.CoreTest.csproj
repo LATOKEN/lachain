@@ -33,4 +33,8 @@
     <ProjectReference Include="..\..\src\Lachain.Core\Lachain.Core.csproj" />
     <ProjectReference Include="..\Lachain.UtilityTest\Lachain.UtilityTest.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\A.wasm" />
+    <EmbeddedResource Include="Resources\B.wasm" />
+  </ItemGroup>
 </Project>
