@@ -168,7 +168,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetReturnValue outside wasm frame");
             frame.UseGas(GasMetering.GetReturnValueGasCost);
-            if (dataOffset < 0 || length < 0 || dataOffset + length >= frame.LastChildReturnValue.Length)
+            if (dataOffset < 0 || length < 0 || dataOffset + length > frame.LastChildReturnValue.Length)
                 throw new InvalidContractException("Bad getreturnvalue call");
             var result = new byte[length];
             Array.Copy(frame.LastChildReturnValue, dataOffset, result, 0, length);
@@ -242,11 +242,7 @@ namespace Lachain.Core.Blockchain.VM
         public static void Handler_Env_SystemHalt(int haltCode)
         {
             Logger.LogInformation($"Handler_Env_SystemHalt({haltCode})");
-            // added for ethereum solang compiler compatibility.
-            // it calls system_halt(0) together with set_return
-            // for normal execution completion
-            if (haltCode != 0)
-                throw new HaltException(haltCode);
+            throw new HaltException(haltCode);
         }
 
         public static void Handler_Env_CryptoKeccak256(int dataOffset, int dataLength, int resultOffset)
@@ -392,9 +388,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 {EnvModule, "get_call_value", CreateImport(nameof(Handler_Env_GetCallValue))},
                 {EnvModule, "get_call_size", CreateImport(nameof(Handler_Env_GetCallSize))},
-                {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetCallSize))},
                 {EnvModule, "copy_call_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
-                {EnvModule, "copy_return_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
                 {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetReturnSize))},
                 {EnvModule, "copy_return_value", CreateImport(nameof(Handler_Env_CopyReturnValue))},
