@@ -9,6 +9,7 @@
     ],
     "forceIPv6": false,
     "maxPeers": 100,
+    "networkName": "devnet",
     "bootstrapAddresses": ["QmaAV3KD9vWhDfrWutZGXy8hMoVU2FtCMirPEPpUPHszAZ@95.217.215.141:41013"],
     "hubMetricsPort": 7081,
     "hubPrivateKey": "08031279307702010104205544b32738628ccf8d8f6ceb4e85d26e3c4e5ec69309a2e3c49da80333c75ab7a00a06082a8648ce3d030107a1440342000405cff2268115e9d7e1c38983d7cc148d1c0ba98df3ebf964013229ccd5a8208e95ddd43e681d1f32502353f6580247cb32c95b09dc4fe8812647469a428441fd"

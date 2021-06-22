@@ -26,7 +26,8 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
             InvocationContext = invocationContext;
             CurrentAddress = currentAddress;
             Input = input;
-            ReturnValue = new byte[] { };
+            ReturnValue = Array.Empty<byte>();
+            LastChildReturnValue = Array.Empty<byte>();
             GasLimit = gasLimit;
         }
 
@@ -53,6 +54,9 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         public UInt160 CurrentAddress { get; }
 
         public byte[] ReturnValue { get; set; }
+        
+        public byte[] LastChildReturnValue { get; set; }
+
         public UInt256[]? Logs { get; set; }
         public byte[] Input { get; }
 

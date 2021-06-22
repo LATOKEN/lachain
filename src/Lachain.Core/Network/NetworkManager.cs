@@ -7,13 +7,17 @@ namespace Lachain.Core.Network
 {
     public class NetworkManager : NetworkManagerBase
     {
+        public const int MyVersion = 1;
+        public const int MinCompatiblePeerVersion = 1;
+        
         public NetworkManager(
             IConfigManager configManager, IPrivateWallet privateWallet
         )
             : base(
                 configManager.GetConfig<NetworkConfig>("network")!,
                 privateWallet.EcdsaKeyPair,
-                privateWallet.HubPrivateKey
+                privateWallet.HubPrivateKey, 
+                MyVersion, MinCompatiblePeerVersion
             )
         {
         }

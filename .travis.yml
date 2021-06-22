@@ -18,9 +18,9 @@ script:
   - dotnet test test/Lachain.CoreTest
 
 before_deploy:
-  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true -p:TrimUnusedDependencies=true -p:IncludeNativeLibrariesForSelfExtract=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
-  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true -p:TrimUnusedDependencies=true -p:IncludeNativeLibrariesForSelfExtract=true --runtime win-x64 src/Lachain.Console/Lachain.Console.csproj
-  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true -p:TrimUnusedDependencies=true -p:IncludeNativeLibrariesForSelfExtract=true --runtime osx-x64 src/Lachain.Console/Lachain.Console.csproj
+  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true -p:TrimUnusedDependencies=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true --runtime linux-x64 src/Lachain.Console/Lachain.Console.csproj
+  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true -p:TrimUnusedDependencies=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true --runtime win-x64 src/Lachain.Console/Lachain.Console.csproj
+  - dotnet publish -p:Configuration=Release -p:PublishTrimmed=true -p:SelfContained=true -p:PublishSingleFile=true -p:TrimUnusedDependencies=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true --runtime osx-x64 src/Lachain.Console/Lachain.Console.csproj
   - mkdir build
   - cp src/Lachain.Console/bin/Release/net5.0/linux-x64/publish/Lachain.Console build/lachain-linux-x64
   - cp src/Lachain.Console/bin/Release/net5.0/osx-x64/publish/Lachain.Console build/lachain-osx-x64
