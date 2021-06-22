@@ -154,8 +154,8 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_ContractFromContractInvoke()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceA = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.A.wasm");
-            var resourceB = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.B.wasm");
+            var resourceA = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.A.wasm");
+            var resourceB = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.B.wasm");
             var keyPair = _wallet.EcdsaKeyPair;
             GenerateBlocks(1);
             

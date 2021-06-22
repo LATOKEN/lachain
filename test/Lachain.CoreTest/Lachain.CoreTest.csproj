@@ -25,6 +25,13 @@
     </ContentWithTargetPath>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\scripts\A.wasm" />
+    <EmbeddedResource Include="Resources\scripts\B.wasm" />
+    <EmbeddedResource Include="Resources\scripts\A.abi" />
+    <EmbeddedResource Include="Resources\scripts\B.abi" />
+    <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
@@ -32,9 +39,5 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lachain.Core\Lachain.Core.csproj" />
     <ProjectReference Include="..\Lachain.UtilityTest\Lachain.UtilityTest.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\A.wasm" />
-    <EmbeddedResource Include="Resources\B.wasm" />
   </ItemGroup>
 </Project>
