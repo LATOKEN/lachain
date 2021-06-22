@@ -18,7 +18,7 @@ namespace Lachain.CoreTest.IntegrationTests
 {
     public class VirtualMachineTest
     {
-        private readonly IContainer _container;
+        private IContainer? _container;
 
         public VirtualMachineTest()
         {
@@ -37,20 +37,33 @@ namespace Lachain.CoreTest.IntegrationTests
         [SetUp]
         public void Setup()
         {
+            _container?.Dispose();
             TestUtils.DeleteTestChainData();
+
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+
+            _container = containerBuilder.Build();
         }
 
         [TearDown]
         public void Teardown()
         {
+            _container?.Dispose();
             TestUtils.DeleteTestChainData();
-            _container.Dispose();
+         //   _container.Dispose();
         }
 
         [Test]
         public void Test_VirtualMachine_InvokeContract()
         {
-            var stateManager = _container.Resolve<IStateManager>();
+            var stateManager = _container?.Resolve<IStateManager>();
             var tx = new TransactionReceipt();
             
             var sender = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
