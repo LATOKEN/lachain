@@ -10,7 +10,6 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
 
-
 namespace Lachain.UtilityTest
 {
     public class TestUtils
