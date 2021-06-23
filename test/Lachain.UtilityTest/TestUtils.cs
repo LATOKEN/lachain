@@ -9,7 +9,6 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
-using System.Diagnostics;
 
 
 namespace Lachain.UtilityTest
@@ -39,7 +38,7 @@ namespace Lachain.UtilityTest
         public static void DeleteTestChainData()
         {
             var chainTest = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ChainTest");
-            if (Directory.Exists(chainTest))  Directory.Delete(chainTest, true);
+            if (Directory.Exists(chainTest)) Directory.Delete(chainTest, true);
             Directory.CreateDirectory(chainTest);
             var chainTest2 = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ChainTest2");
             if (Directory.Exists(chainTest2)) Directory.Delete(chainTest2, true);
