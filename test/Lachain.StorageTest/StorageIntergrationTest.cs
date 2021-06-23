@@ -15,7 +15,7 @@ namespace Lachain.StorageTest
 {
     public class StorageTest
     {
-        private readonly IContainer _container;
+        private IContainer _container;
 
         public StorageTest()
         {
@@ -36,12 +36,25 @@ namespace Lachain.StorageTest
         [SetUp]
         public void Setup()
         {
+            _container.Dispose();
             TestUtils.DeleteTestChainData();
+
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+
+            _container = containerBuilder.Build();
         }
 
         [TearDown]
         public void Teardown()
         {
+            _container.Dispose();
             TestUtils.DeleteTestChainData();
         }
 
