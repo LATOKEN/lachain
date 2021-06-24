@@ -30,19 +30,27 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(DeployInterface.MethodDeploy)]
         public ExecutionStatus Deploy(byte[] byteCode, SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation($"Deploy({byteCode.ToHex()})");
             frame.ReturnValue = new byte[] { };
             frame.UseGas(checked(GasMetering.DeployCost + GasMetering.DeployCostPerByte * (ulong) byteCode.Length));
             var receipt = _context.Receipt ?? throw new InvalidOperationException();
             /* calculate contract hash and register it */
-            var hash = receipt.Transaction.From.ToBytes()
-                .Concat(receipt.Transaction.Nonce.ToBytes())
-                .Ripemd();
-
+            var hash = UInt160Utils.Zero.ToBytes().Ripemd();
+            if (receipt.Transaction?.From != null)
+            {
+                hash = receipt.Transaction.From.ToBytes()
+                    .Concat(receipt.Transaction.Nonce.ToBytes())
+                    .Ripemd();
+            }
+            
             // TODO: this is fake, we have to think of what happens if someone tries to get current address during deploy
             var contract = new Contract(hash, byteCode);
 
             if (!VirtualMachine.VerifyContract(contract.ByteCode))
+            {
+                Logger.LogInformation("Failed to verify contract");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             try
             {
@@ -61,6 +69,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
             catch (OutOfGasException e)
             {
+                Logger.LogInformation("Out of gas");
                 frame.UseGas(e.GasUsed);
                 return ExecutionStatus.GasOverflow;
             }
