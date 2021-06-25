@@ -25,11 +25,13 @@ namespace Lachain.Core.Blockchain.VM
             UInt160 caller,
             UInt160 address,
             byte[] input,
-            ulong gasLimit)
+            ulong gasLimit,
+            UInt256 msgValue)
         {
             Logger.LogInformation($"DoInternalCall({caller.ToHex()}, {address.ToHex()}, {input.ToHex()}, {gasLimit})");
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
             var context = currentFrame.InvocationContext.NextContext(caller);
+            context.MsgValue = msgValue;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
         }
 
@@ -126,6 +128,8 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Bad call to call function");
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256().ToMoney();
+            var msgValue = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256();
+            
             if (value is null)
                 throw new InvalidContractException("Bad call to call function");
             if (value > Money.Zero)
@@ -142,7 +146,7 @@ namespace Lachain.Core.Blockchain.VM
             var gasLimit = gasBuffer.AsReadOnlySpan().ToUInt64();
             if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
                 gasLimit = frame.GasLimit - frame.GasUsed;
-            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit);
+            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, msgValue);
             if (callResult.Status != ExecutionStatus.Ok)
             {
                 throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}" );
@@ -364,6 +368,17 @@ namespace Lachain.Core.Blockchain.VM
             var result = (frame.CurrentAddress).ToBytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
+        
+        public static void Handler_Env_GetMsgValue(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetMsgValue({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+            var data = (frame.InvocationContext.MsgValue ?? frame.InvocationContext.Value).ToBytes();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_msg_value)");
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
@@ -402,6 +417,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 {EnvModule, "get_address", CreateImport(nameof(Handler_Env_GetAddress))},
+                {EnvModule, "get_msgvalue", CreateImport(nameof(Handler_Env_GetMsgValue))},
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
