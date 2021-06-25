@@ -6,6 +6,7 @@ using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
@@ -16,6 +17,8 @@ namespace Lachain.Core.Blockchain.VM
 {
     public class ExternalHandler : IExternalHandler
     {
+        private static readonly ILogger<ExternalHandler> Logger = LoggerFactory.GetLoggerForClass<ExternalHandler>();
+        
         private const string EnvModule = "env";
 
         private static InvocationResult DoInternalCall(
@@ -323,10 +326,13 @@ namespace Lachain.Core.Blockchain.VM
         
         public static void Handler_Env_GetMsgValue(int dataOffset)
         {
+            Logger.LogInformation($"Handler_Env_GetMsgValue({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
-            var result = (frame.InvocationContext.MsgValue).ToBytes();
-            SafeCopyToMemory(frame.Memory, result, dataOffset);
+                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+            var data = (frame.InvocationContext.MsgValue ?? frame.InvocationContext.Value).ToBytes();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_msg_value)");
         }
 
         private static FunctionImport CreateImport(string methodName)
