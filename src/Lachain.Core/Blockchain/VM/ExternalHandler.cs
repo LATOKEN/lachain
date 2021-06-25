@@ -321,12 +321,12 @@ namespace Lachain.Core.Blockchain.VM
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
         
-        public static void Handler_Env_GetMsgValue(int resultOffset)
+        public static void Handler_Env_GetMsgValue(int dataOffset)
         {
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
             var result = (frame.InvocationContext.MsgValue).ToBytes();
-            SafeCopyToMemory(frame.Memory, result, resultOffset);
+            SafeCopyToMemory(frame.Memory, result, dataOffset);
         }
 
         private static FunctionImport CreateImport(string methodName)
