@@ -171,7 +171,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetReturnValue outside wasm frame");
             frame.UseGas(GasMetering.GetReturnValueGasCost);
-            if (dataOffset < 0 || length < 0 || dataOffset + length >= frame.LastChildReturnValue.Length)
+            if (dataOffset < 0 || length < 0 || dataOffset + length > frame.LastChildReturnValue.Length)
                 throw new InvalidContractException("Bad getreturnvalue call");
             var result = new byte[length];
             Array.Copy(frame.LastChildReturnValue, dataOffset, result, 0, length);
