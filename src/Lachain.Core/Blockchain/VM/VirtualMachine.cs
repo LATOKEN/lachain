@@ -90,7 +90,7 @@ namespace Lachain.Core.Blockchain.VM
             catch (HaltException e)
             {
                 result.Status = e.HaltCode == 0 ? ExecutionStatus.Ok : ExecutionStatus.ExecutionHalted;
-                result.ReturnValue = new[] {(byte) e.HaltCode};
+                result.ReturnValue = e.HaltCode == 0 ? frame.ReturnValue : new[] {(byte) e.HaltCode};
                 result.GasUsed = frame.GasUsed;
             }
             catch (Exception e)

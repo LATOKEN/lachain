@@ -212,10 +212,10 @@ namespace Lachain.CoreTest.IntegrationTests
                 abi,
                 GasMetering.DefaultBlockGasLimit
             );
-            // TODO: now it doesn't work, direct call is working correctly in VirtualMachineTest
-            // Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke caller contract");
-            // Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
-            // Assert.That(invocationResult.ReturnValue!.ToHex() == "0x2a", "Invalid invocation return value");
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke caller contract");
+            Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
+            Assert.AreEqual(invocationResult.ReturnValue!.ToHex(), "0x0000000000000000000000000000000000000000000000000000000000000000", 
+                "Invalid invocation return value");
         }
 
         private void GenerateBlocks(int blockNum)
