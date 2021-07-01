@@ -14,6 +14,8 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
 
         public byte[] ReturnValue { get; set; }
 
+        public byte[] LastChildReturnValue { get; set; }
+
         public UInt256[]? Logs { get; set; }
         public byte[] Input { get; }
 
