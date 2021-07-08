@@ -378,6 +378,39 @@ namespace Lachain.Core.Blockchain.VM
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_msg_value)");
         }
+        
+        public static void Handler_Env_GetBlockGasLimit(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+            const ulong defaultBlockGasLimit = 100_000_000_000;
+            var ret = SafeCopyToMemory(frame.Memory, defaultBlockGasLimit.ToBytes().ToArray(), dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_gas_limit)");
+        }
+        
+        public static void Handler_Env_GetBlockCoinbase(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockCoinbase({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+            UInt160 coinbase = "0x0000000000000000000000000000000000000000".HexToUInt160();
+            var ret = SafeCopyToMemory(frame.Memory, coinbase.ToBytes().ToArray(), dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_coinbase_address)");
+        }
+        
+        public static void Handler_Env_GetBlockDifficulty(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockDifficulty({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+            var difficulty = 0;
+            var ret = SafeCopyToMemory(frame.Memory, difficulty.ToBytes().ToArray(), dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_difficulty)");
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
@@ -417,6 +450,10 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 {EnvModule, "get_address", CreateImport(nameof(Handler_Env_GetAddress))},
                 {EnvModule, "get_msgvalue", CreateImport(nameof(Handler_Env_GetMsgValue))},
+                {EnvModule, "get_block_gas_limit", CreateImport(nameof(Handler_Env_GetBlockGasLimit))},
+                {EnvModule, "get_block_coinbase_address", CreateImport(nameof(Handler_Env_GetBlockCoinbase))},
+                {EnvModule, "get_block_difficulty", CreateImport(nameof(Handler_Env_GetBlockDifficulty))},
+                
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
