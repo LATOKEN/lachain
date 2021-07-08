@@ -157,6 +157,153 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        public void Test_VirtualMachine_InvokeAllFeaturesContract()
+        {
+            var stateManager = _container.Resolve<IStateManager>();
+
+            var address = UInt160Utils.Zero;
+            var contract = new Contract
+            (
+                address,
+                "0061736D01000000011C0660017F006000017F60037F7F7F0060027F7F0060000060017F017F02EA010B03656E760C6765745F6D736776616C7565000003656E760D6765745F63616C6C5F73697A65000103656E760F636F70795F63616C6C5F76616C7565000203656E76126765745F626C6F636B5F636F696E62617365000003656E760A7365745F72657475726E000303656E760B73797374656D5F68616C74000003656E760C6765745F6761735F6C656674000003656E76146765745F626C6F636B5F646966666963756C7479000003656E76106765745F74785F6761735F7072696365000003656E760D6765745F74785F6F726967696E000003656E76106765745F626C6F636B5F6E756D6265720000030504040502040405017001010105030100020608017F01418080040B071202066D656D6F72790200057374617274000E0AD909042E004100410036028080044100410036028480044100410036028C800441003F0041107441F0FF7B6A36028880040BA60101047F418080042101024003400240200128020C0D002001280208220220004F0D020B200128020022010D000B41002101410028020821020B02402002200041076A41787122036B22024118490D00200120036A41106A22002001280200220436020002402004450D00200420003602040B2000200241706A3602082000410036020C2000200136020420012000360200200120033602080B2001410136020C200141106A0B2D002001411F6A21010340200120002D00003A00002001417F6A2101200041016A21002002417F6A22020D000B0BD10701037F23004190026B2200240020001000024002400240024002400240024002402000290300200041106A29030084200041086A290300200041186A29030084844200520D00100B41001001220136020441002001100C22023602084100200120021002024002400240024002400240200141034D0D004100200228020022013602000240200141E38AF8A27D4A0D00200141B7F4F48978460D05200141B0A9EBCC78460D02200141A4E9FBDA78470D01200041F0016A10032000200041F8016A290300370348200020002903F001370340200020004180026A3502003E02504100450D0941004100100441011005000B0240200141E8E1A1EF064A0D00200141E48AF8A27D460D03200141CACC857B470D01200041F0016A1006200041C8016A4200370300200042003703C001200042003703B801200020002903F0013703B0014100450D0D41004100100441011005000B200141E9E1A1EF06460D0520014187C6B89207460D030B41004100100441011005000B200041F0016A1007200041206A41186A200041F0016A41186A290300370300200020004180026A2903003703302000200041F8016A290300370328200020002903F0013703204100450D0541004100100441011005000B200041F0016A1008200041D8006A41186A200041F0016A41186A290300370300200020004180026A2903003703682000200041F8016A290300370360200020002903F0013703584100450D0641004100100441011005000B200041F0016A1007200041F8006A41186A200041F0016A41186A290300370300200020004180026A290300370388012000200041F8016A29030037038001200020002903F0013703784100450D0641004100100441011005000B200041F0016A10092000200041F8016A2903003703A001200020002903F00137039801200020004180026A3502003E02A8014100450D0641004100100441011005000B200041F0016A100A200041E8016A4200370300200042003703E001200042003703D801200020002903F0013703D0014100450D0741004100100441011005000B41004100100441011005000B200041206A4120100C22004120100D20004120100441001005000B200041C0006A4120100C22004114100D20004120100441001005000B200041D8006A4120100C22004120100D20004120100441001005000B200041F8006A4120100C22004120100D20004120100441001005000B20004198016A4120100C22004114100D20004120100441001005000B200041B0016A4120100C22004120100D20004120100441001005000B200041D0016A4120100C22004120100D20004120100441001005000B00740970726F647563657273010C70726F6365737365642D62790105636C616E675431302E302E3120286769743A2F2F6769746875622E636F6D2F6C6C766D2F6C6C766D2D70726F6A65637420623661313733343336373838653638333239636335653965653066363531623630336136333765332900E601046E616D6501DE010F000C6765745F6D736776616C7565010D6765745F63616C6C5F73697A65020F636F70795F63616C6C5F76616C756503126765745F626C6F636B5F636F696E62617365040A7365745F72657475726E050B73797374656D5F68616C74060C6765745F6761735F6C65667407146765745F626C6F636B5F646966666963756C747908106765745F74785F6761735F7072696365090D6765745F74785F6F726967696E0A106765745F626C6F636B5F6E756D6265720B0B5F5F696E69745F686561700C085F5F6D616C6C6F630D0B5F5F6C654E746F626533320E057374617274"
+                    .HexToBytes()
+            );
+            if (!VirtualMachine.VerifyContract(contract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
+            var snapshot = stateManager.NewSnapshot();
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, contract);
+            stateManager.Approve();
+
+            for (var i = 0; i < 1; ++i)
+            {
+                var currentTime = TimeUtils.CurrentTimeMillis();
+                var currentSnapshot = stateManager.NewSnapshot();
+
+                var sender = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
+
+                currentSnapshot.Balances.AddBalance(sender, 100.ToUInt256().ToMoney());
+
+                var transactionReceipt = new TransactionReceipt();
+                transactionReceipt.Transaction = new Transaction();
+                transactionReceipt.Transaction.Value = 0.ToUInt256();
+                transactionReceipt.Transaction.GasPrice = 100;
+                var context = new InvocationContext(sender, currentSnapshot, transactionReceipt);
+
+                {
+                    Console.WriteLine($"\nAllFeatures: testGas()");
+                    var input = ContractEncoder.Encode("testGas()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nAllFeatures: testTxGasprice()");
+                    var input = ContractEncoder.Encode("testTxGasprice()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nAllFeatures: testTxOrigin()");
+                    var input = ContractEncoder.Encode("testTxOrigin()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nAllFeatures: testBlockCoinbase()");
+                    var input = ContractEncoder.Encode("testBlockCoinbase()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nAllFeatures: testBlockDifficulty()");
+                    var input = ContractEncoder.Encode("testBlockDifficulty()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nAllFeatures: testBlockGaslimit()");
+                    var input = ContractEncoder.Encode("testBlockGaslimit()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nAllFeatures: testBlockNumber()");
+                    var input = ContractEncoder.Encode("testBlockNumber()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+
+                stateManager.Approve();
+            exit_mark:
+                var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+                Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
+            }
+        }
+
+        [Test]
         public void Test_VirtualMachine_InvokeContractWithValue()
         {
             var stateManager = _container.Resolve<IStateManager>();
