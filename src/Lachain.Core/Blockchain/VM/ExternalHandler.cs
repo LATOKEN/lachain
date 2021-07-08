@@ -383,7 +383,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+                        ?? throw new InvalidOperationException("Cannot call GetBlockGasLimit outside wasm frame");
             const ulong defaultBlockGasLimit = 100_000_000_000;
             var ret = SafeCopyToMemory(frame.Memory, defaultBlockGasLimit.ToBytes().ToArray(), dataOffset);
             if (!ret)
@@ -394,7 +394,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_GetBlockCoinbase({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+                        ?? throw new InvalidOperationException("Cannot call GetBlockCoinbase outside wasm frame");
             UInt160 coinbase = "0x0000000000000000000000000000000000000000".HexToUInt160();
             var ret = SafeCopyToMemory(frame.Memory, coinbase.ToBytes().ToArray(), dataOffset);
             if (!ret)
@@ -405,7 +405,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_GetBlockDifficulty({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+                        ?? throw new InvalidOperationException("Cannot call GetBlockDifficulty outside wasm frame");
             var difficulty = 0;
             var ret = SafeCopyToMemory(frame.Memory, difficulty.ToBytes().ToArray(), dataOffset);
             if (!ret)
