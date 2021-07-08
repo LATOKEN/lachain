@@ -383,7 +383,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_GetExternalBalance({addressOffset}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+                        ?? throw new InvalidOperationException("Cannot call GetExternalBalance outside wasm frame");
             
             // Get the address from the given memory offset
             var snapshot = frame.InvocationContext.Snapshot;
@@ -406,7 +406,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_GetBlockTimestamp()");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+                        ?? throw new InvalidOperationException("Cannot call GetBlockTimestamp outside wasm frame");
 
             // Get the TotalBlockHeight at the given Snapshot
             var snapshot = frame.InvocationContext.Snapshot;
