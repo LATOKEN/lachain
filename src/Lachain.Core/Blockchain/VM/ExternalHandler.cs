@@ -378,6 +378,29 @@ namespace Lachain.Core.Blockchain.VM
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_msg_value)");
         }
+        
+        public static void Handler_Env_GetExternalBalance(int addressOffset, int resultOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetExternalBalance({addressOffset}, {resultOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
+            
+            // Get the address from the given memory offset
+            var snapshot = frame.InvocationContext.Snapshot;
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
+            if (addressBuffer is null)
+                throw new InvalidContractException("Bad call to call function");
+            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            
+            // Get balance at the given addres
+            var balance = snapshot.Balances.GetBalance(address);
+            
+            // Load balance at the given resultOffset
+            var result = SafeCopyToMemory(frame.Memory, balance.ToUInt256().ToBytes(), resultOffset);
+
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_external_balance)");
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
@@ -417,6 +440,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 {EnvModule, "get_address", CreateImport(nameof(Handler_Env_GetAddress))},
                 {EnvModule, "get_msgvalue", CreateImport(nameof(Handler_Env_GetMsgValue))},
+                {EnvModule, "get_external_balance", CreateImport(nameof(Handler_Env_GetExternalBalance))},
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
