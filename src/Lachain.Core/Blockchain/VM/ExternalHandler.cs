@@ -25,12 +25,12 @@ namespace Lachain.Core.Blockchain.VM
             UInt160 address,
             byte[] input,
             ulong gasLimit,
-            UInt256 msgValue)
+            InvocationMessage message)
         {
             Logger.LogInformation($"DoInternalCall({caller.ToHex()}, {address.ToHex()}, {input.ToHex()}, {gasLimit})");
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
             var context = currentFrame.InvocationContext.NextContext(caller);
-            context.MsgValue = msgValue;
+            context.Message = message;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
         }
 
@@ -145,7 +145,13 @@ namespace Lachain.Core.Blockchain.VM
             var gasLimit = gasBuffer.AsReadOnlySpan().ToUInt64();
             if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
                 gasLimit = frame.GasLimit - frame.GasUsed;
-            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, msgValue);
+            
+            var invocationMessage = new InvocationMessage {
+                Sender = frame.CurrentAddress,
+                Value = msgValue,
+            };
+            
+            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, invocationMessage);
             if (callResult.Status != ExecutionStatus.Ok)
             {
                 throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}" );
@@ -236,7 +242,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetSender({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETSENDER outside wasm frame");
-            var data = frame.InvocationContext.Sender.ToBytes();
+            var data = (frame.InvocationContext.Message?.Sender ?? frame.InvocationContext.Sender).ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to GETSENDER");
@@ -417,12 +423,12 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetMsgValue({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
-            var data = (frame.InvocationContext.MsgValue ?? frame.InvocationContext.Value).ToBytes();
+            var data = (frame.InvocationContext.Message?.Value ?? frame.InvocationContext.Value).ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
-                throw new InvalidContractException("Bad call to (get_msg_value)");
+                throw new InvalidContractException("Bad call to (get_msgvalue)");
         }
-        
+
         public static void Handler_Env_GetBlockGasLimit(int dataOffset)
         {
             Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");

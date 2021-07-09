@@ -17,7 +17,7 @@ namespace Lachain.Core.Blockchain.VM
 
         public IBlockchainSnapshot Snapshot { get; }
         
-        public UInt256 MsgValue { get; set;  }
+        public InvocationMessage? Message { get; set; }
 
         public InvocationContext(UInt160 sender, IBlockchainSnapshot snapshot, TransactionReceipt receipt)
         {
