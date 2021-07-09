@@ -389,7 +389,7 @@ namespace Lachain.Core.Blockchain.VM
             var snapshot = frame.InvocationContext.Snapshot;
             var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
             if (addressBuffer is null)
-                throw new InvalidContractException("Bad call to call function");
+                throw new InvalidContractException("Bad call to (get_block_timestamp)");
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
             
             // Get balance at the given addres
@@ -417,7 +417,7 @@ namespace Lachain.Core.Blockchain.VM
             
             // Get block's timestamp
             if (block is null)
-                throw new InvalidContractException("Bad call to call function");
+                throw new InvalidContractException("Bad call to (get_block_timestamp)");
             var timeStamp = block.Timestamp;
             
             // Load timestamp at the given dataOffset
