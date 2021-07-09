@@ -11,7 +11,7 @@ namespace Lachain.Benchmark
         {
             if (args.Length == 0)
             {
-                args = new[] { "blockchain" };
+                args = new[] { "storage" };
 //                Console.WriteLine("Usage: dotnet Lachain.Benchmark.dll <storage/blockchain/virtualmachine>");
 //                return;
             }

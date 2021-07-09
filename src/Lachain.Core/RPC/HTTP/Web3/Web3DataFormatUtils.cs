@@ -161,11 +161,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["to"] = receipt.Transaction.To.Buffer.IsEmpty ? null : Web3Data(receipt.Transaction.To),
                 ["cumulativeGasUsed"] = Web3Number(cumulativeGasUsed),
                 ["gasUsed"] = Web3Number(receipt.GasUsed),
-                ["contractAddress"] = null, // TODO: contract address
+                ["contractAddress"] = GetContractAddress(receipt),
                 ["logs"] = logs,
                 ["logsBloom"] = Web3Data(Enumerable.Repeat<byte>(0, 256)), // empty bloom filter
                 ["status"] = Web3Number(receipt.Status == TransactionStatus.Executed ? 1ul : 0ul),
             };
         }
+
+        private static string? GetContractAddress(TransactionReceipt receipt)
+        {
+            if (!receipt.Transaction.To.Buffer.IsEmpty && !receipt.Transaction.To.IsZero())
+                return null;
+            return Web3Data(receipt.Transaction.From.ToBytes().Concat(receipt.Transaction.Nonce.ToBytes()).Ripemd());
+        }
     }
 }
+

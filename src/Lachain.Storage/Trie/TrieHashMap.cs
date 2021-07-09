@@ -150,8 +150,14 @@ namespace Lachain.Storage.Trie
             {
                 // we have to handle case when one of two children is deleted and internal node is folded to leaf
                 var secondChild = node.Children.First(child => child != node.GetChildByHash(h));
-                return secondChild;
+                // fold only if secondChild is also a leaf 
+                if (GetNodeById(secondChild).Type == NodeType.Leaf)
+                {
+                    return secondChild;
+                }
             }
+
+            if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count()==1 && GetNodeById(value).Type == NodeType.Leaf ) return value ;
 
             var modified = InternalNode.ModifyChildren(
                 node, h, value,

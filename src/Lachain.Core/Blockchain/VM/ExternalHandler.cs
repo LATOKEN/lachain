@@ -422,6 +422,53 @@ namespace Lachain.Core.Blockchain.VM
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_msg_value)");
         }
+        
+        public static void Handler_Env_GetExternalBalance(int addressOffset, int resultOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetExternalBalance({addressOffset}, {resultOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetExternalBalance outside wasm frame");
+            
+            // Get the address from the given memory offset
+            var snapshot = frame.InvocationContext.Snapshot;
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
+            if (addressBuffer is null)
+                throw new InvalidContractException("Bad call to (get_external_balance)");
+            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            
+            // Get balance at the given addres
+            var balance = snapshot.Balances.GetBalance(address);
+            
+            // Load balance at the given resultOffset
+            var result = SafeCopyToMemory(frame.Memory, balance.ToUInt256().ToBytes(), resultOffset);
+
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_external_balance)");
+        }
+        
+        public static void Handler_Env_GetBlockTimestamp(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockTimestamp()");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetBlockTimestamp outside wasm frame");
+
+            // Get the TotalBlockHeight at the given Snapshot
+            var snapshot = frame.InvocationContext.Snapshot;
+            var blockHeight = snapshot.Blocks.GetTotalBlockHeight();
+            
+            // Get block at the given height
+            var block = snapshot.Blocks.GetBlockByHeight(blockHeight);
+            
+            // Get block's timestamp
+            if (block is null)
+                throw new InvalidContractException("Bad call to (get_block_timestamp)");
+            var timeStamp = block.Timestamp;
+            
+            // Load timestamp at the given dataOffset
+            var result = SafeCopyToMemory(frame.Memory, timeStamp.ToBytes().ToArray(), dataOffset);
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_block_timestamp)");
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
@@ -465,6 +512,8 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 {EnvModule, "get_address", CreateImport(nameof(Handler_Env_GetAddress))},
                 {EnvModule, "get_msgvalue", CreateImport(nameof(Handler_Env_GetMsgValue))},
+                {EnvModule, "get_external_balance", CreateImport(nameof(Handler_Env_GetExternalBalance))},
+                {EnvModule, "get_block_timestamp", CreateImport(nameof(Handler_Env_GetBlockTimestamp))},
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
