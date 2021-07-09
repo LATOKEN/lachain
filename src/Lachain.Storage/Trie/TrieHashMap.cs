@@ -157,6 +157,8 @@ namespace Lachain.Storage.Trie
                 }
             }
 
+            if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count()==1 && GetNodeById(value).Type == NodeType.Leaf ) return value ;
+
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
                 node.Children.Select(id => GetNodeById(id)?.Hash ?? throw new InvalidOperationException()),
