@@ -384,7 +384,9 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockGasLimit outside wasm frame");
-            const ulong defaultBlockGasLimit = 100_000_000_000;
+            const ulong defaultBlockGasLimit = GasMetering.DefaultBlockGasLimit;
+            
+            // Load `default block gasLimit` at given memory offset
             var ret = SafeCopyToMemory(frame.Memory, defaultBlockGasLimit.ToBytes().ToArray(), dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_block_gas_limit)");
@@ -395,7 +397,9 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetBlockCoinbase({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockCoinbase outside wasm frame");
-            UInt160 coinbase = "0x0000000000000000000000000000000000000000".HexToUInt160();
+            UInt160 coinbase = UInt160Utils.Zero;
+            
+            // Load `zero address` at given memory offset
             var ret = SafeCopyToMemory(frame.Memory, coinbase.ToBytes().ToArray(), dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_block_coinbase_address)");
@@ -407,6 +411,8 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockDifficulty outside wasm frame");
             var difficulty = 0;
+            
+            // Load `zero difficulty` at given memory offset
             var ret = SafeCopyToMemory(frame.Memory, difficulty.ToBytes().ToArray(), dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_block_difficulty)");
