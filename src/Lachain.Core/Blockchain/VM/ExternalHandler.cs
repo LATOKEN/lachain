@@ -389,7 +389,7 @@ namespace Lachain.Core.Blockchain.VM
             var snapshot = frame.InvocationContext.Snapshot;
             var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
             if (addressBuffer is null)
-                throw new InvalidContractException("Bad call to (get_block_timestamp)");
+                throw new InvalidContractException("Bad call to (get_external_balance)");
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
             
             // Get balance at the given addres
