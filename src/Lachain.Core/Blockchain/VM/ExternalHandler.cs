@@ -423,6 +423,45 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Bad call to (get_msg_value)");
         }
         
+        public static void Handler_Env_GetBlockGasLimit(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetBlockGasLimit outside wasm frame");
+            const ulong defaultBlockGasLimit = GasMetering.DefaultBlockGasLimit;
+            
+            // Load `default block gasLimit` at given memory offset
+            var ret = SafeCopyToMemory(frame.Memory, defaultBlockGasLimit.ToBytes().ToArray(), dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_gas_limit)");
+        }
+        
+        public static void Handler_Env_GetBlockCoinbase(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockCoinbase({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetBlockCoinbase outside wasm frame");
+            UInt160 coinbase = UInt160Utils.Zero;
+            
+            // Load `zero address` at given memory offset
+            var ret = SafeCopyToMemory(frame.Memory, coinbase.ToBytes().ToArray(), dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_coinbase_address)");
+        }
+        
+        public static void Handler_Env_GetBlockDifficulty(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockDifficulty({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetBlockDifficulty outside wasm frame");
+            var difficulty = 0;
+            
+            // Load `zero difficulty` at given memory offset
+            var ret = SafeCopyToMemory(frame.Memory, difficulty.ToBytes().ToArray(), dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_difficulty)");
+        }
+
         public static void Handler_Env_GetExternalBalance(int addressOffset, int resultOffset)
         {
             Logger.LogInformation($"Handler_Env_GetExternalBalance({addressOffset}, {resultOffset})");
@@ -512,6 +551,9 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "write_event", CreateImport(nameof(Handle_Env_WriteEvent))},
                 {EnvModule, "get_address", CreateImport(nameof(Handler_Env_GetAddress))},
                 {EnvModule, "get_msgvalue", CreateImport(nameof(Handler_Env_GetMsgValue))},
+                {EnvModule, "get_block_gas_limit", CreateImport(nameof(Handler_Env_GetBlockGasLimit))},
+                {EnvModule, "get_block_coinbase_address", CreateImport(nameof(Handler_Env_GetBlockCoinbase))},
+                {EnvModule, "get_block_difficulty", CreateImport(nameof(Handler_Env_GetBlockDifficulty))},
                 {EnvModule, "get_external_balance", CreateImport(nameof(Handler_Env_GetExternalBalance))},
                 {EnvModule, "get_block_timestamp", CreateImport(nameof(Handler_Env_GetBlockTimestamp))},
                 // /* crypto hash bindings */
