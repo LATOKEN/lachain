@@ -464,6 +464,20 @@ namespace Lachain.Core.Blockchain.VM
             if (!result)
                 throw new InvalidContractException("Bad call to (get_block_timestamp)");
         }
+        
+        public static void Handler_Env_GetChainId(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetChainId()");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetChainId outside wasm frame");
+
+            var chainId = TransactionUtils.ChainId;
+            
+            // Load chainId at the given dataOffset
+            var result = SafeCopyToMemory(frame.Memory, chainId.ToBytes().ToArray(), dataOffset);
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_chain_id)");
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
@@ -508,6 +522,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_block_difficulty", CreateImport(nameof(Handler_Env_GetBlockDifficulty))},
                 {EnvModule, "get_external_balance", CreateImport(nameof(Handler_Env_GetExternalBalance))},
                 {EnvModule, "get_block_timestamp", CreateImport(nameof(Handler_Env_GetBlockTimestamp))},
+                {EnvModule, "get_chain_id", CreateImport(nameof(Handler_Env_GetChainId))},
                 // /* crypto hash bindings */
                 {EnvModule, "crypto_keccak256", CreateImport(nameof(Handler_Env_CryptoKeccak256))},
                 {EnvModule, "crypto_sha256", CreateImport(nameof(Handler_Env_CryptoSha256))},
