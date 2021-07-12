@@ -25,12 +25,12 @@ namespace Lachain.Core.Blockchain.VM
             UInt160 address,
             byte[] input,
             ulong gasLimit,
-            UInt256 msgValue)
+            InvocationMessage message)
         {
             Logger.LogInformation($"DoInternalCall({caller.ToHex()}, {address.ToHex()}, {input.ToHex()}, {gasLimit})");
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
             var context = currentFrame.InvocationContext.NextContext(caller);
-            context.MsgValue = msgValue;
+            context.Message = message;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
         }
 
@@ -145,7 +145,13 @@ namespace Lachain.Core.Blockchain.VM
             var gasLimit = gasBuffer.AsReadOnlySpan().ToUInt64();
             if (gasLimit == 0 || gasLimit > frame.GasLimit - frame.GasUsed)
                 gasLimit = frame.GasLimit - frame.GasUsed;
-            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, msgValue);
+            
+            var invocationMessage = new InvocationMessage {
+                Sender = frame.CurrentAddress,
+                Value = msgValue,
+            };
+            
+            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, invocationMessage);
             if (callResult.Status != ExecutionStatus.Ok)
             {
                 throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}" );
@@ -236,10 +242,54 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetSender({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETSENDER outside wasm frame");
-            var data = frame.InvocationContext.Sender.ToBytes();
+            var data = (frame.InvocationContext.Message?.Sender ?? frame.InvocationContext.Sender).ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to GETSENDER");
+        }
+
+        public static void Handler_Env_GetGasLeft(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetGasLeft({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETGASLEFT outside wasm frame");
+            var data = (frame.GasLimit - frame.GasUsed).ToBytes().ToArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_gas_left)");
+        }
+
+        public static void Handler_Env_GetTxOrigin(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetTxOrigin({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETTXORIGIN outside wasm frame");
+            var data = frame.InvocationContext.Sender.ToBytes();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_tx_origin)");
+        }
+
+        public static void Handler_Env_GetTxGasPrice(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetTxGasPrice({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETTXGASPRICE outside wasm frame");
+            var data = frame.InvocationContext.Receipt.Transaction.GasPrice.ToBytes().ToArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_tx_gas_price)");
+        }
+
+        public static void Handler_Env_GetBlockNumber(int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockNumber({dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETBLOCKNUMBER outside wasm frame");
+            var data = frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight().ToBytes().ToArray();
+            var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
+            if (!ret)
+                throw new InvalidContractException("Bad call to (get_block_number)");
         }
 
         public static void Handler_Env_SystemHalt(int haltCode)
@@ -373,12 +423,12 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetMsgValue({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
-            var data = (frame.InvocationContext.MsgValue ?? frame.InvocationContext.Value).ToBytes();
+            var data = (frame.InvocationContext.Message?.Value ?? frame.InvocationContext.Value).ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
-                throw new InvalidContractException("Bad call to (get_msg_value)");
+                throw new InvalidContractException("Bad call to (get_msgvalue)");
         }
-        
+
         public static void Handler_Env_GetBlockGasLimit(int dataOffset)
         {
             Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");
@@ -497,6 +547,10 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "save_storage", CreateImport(nameof(Handler_Env_SaveStorage))},
                 {EnvModule, "set_return", CreateImport(nameof(Handler_Env_SetReturn))},
                 {EnvModule, "get_sender", CreateImport(nameof(Handler_Env_GetSender))},
+                {EnvModule, "get_gas_left", CreateImport(nameof(Handler_Env_GetGasLeft))},
+                {EnvModule, "get_tx_origin", CreateImport(nameof(Handler_Env_GetTxOrigin))},
+                {EnvModule, "get_tx_gas_price", CreateImport(nameof(Handler_Env_GetTxGasPrice))},
+                {EnvModule, "get_block_number", CreateImport(nameof(Handler_Env_GetBlockNumber))},
                 {EnvModule, "system_halt", CreateImport(nameof(Handler_Env_SystemHalt))},
                 {EnvModule, "get_transferred_funds", CreateImport(nameof(Handler_Env_GetTransferredFunds))},
                 {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
