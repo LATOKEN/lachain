@@ -12,10 +12,13 @@ namespace Lachain.Storage.Trie
 {
     internal class TrieHashMap : ITrieMap
     {
+
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
         private SpinLock _dataLock = new SpinLock();
-        
+        const int Capacity = 100000;
+        private LRUCache _lruCache = new LRUCache(Capacity);
+
 
         private readonly NodeRepository _repository;
         private readonly VersionFactory _versionFactory;
@@ -132,8 +135,8 @@ namespace Lachain.Storage.Trie
                     break;
                 default:
                     foreach (var child in node.Children)
-                    foreach (var value in TraverseValues(child))
-                        yield return value;
+                        foreach (var value in TraverseValues(child))
+                            yield return value;
                     break;
             }
         }
@@ -141,7 +144,14 @@ namespace Lachain.Storage.Trie
         private IHashTrieNode? GetNodeById(ulong id)
         {
             if (id == 0) return null;
-            return _nodeCache.TryGetValue(id, out var node) ? node : _repository.GetNode(id);
+            if (_nodeCache.TryGetValue(id, out var node)) return node;
+            var _node = _lruCache.Get(id);
+            if (_node == null)
+            {
+                _node = _repository.GetNode(id);
+                _lruCache.Add(id, _node);
+            }
+            return _node;
         }
 
         private ulong ModifyInternalNode(InternalNode node, byte h, ulong value, byte[]? valueHash)
@@ -156,8 +166,6 @@ namespace Lachain.Storage.Trie
                     return secondChild;
                 }
             }
-
-            if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count()==1 && GetNodeById(value).Type == NodeType.Leaf ) return value ;
 
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
@@ -186,11 +194,11 @@ namespace Lachain.Storage.Trie
         {
             var bitOffset = 5 * n;
             if (bitOffset % 8 <= 3)
-                return (byte) ((hash[bitOffset / 8] >> (bitOffset % 8)) & 0x1F);
+                return (byte)((hash[bitOffset / 8] >> (bitOffset % 8)) & 0x1F);
             var fromFirst = 8 - bitOffset % 8;
-            var first = (uint) (hash[bitOffset / 8] >> (bitOffset % 8));
+            var first = (uint)(hash[bitOffset / 8] >> (bitOffset % 8));
             var second = hash[bitOffset / 8 + 1] & ((1u << (5 - fromFirst)) - 1);
-            return (byte) ((second << fromFirst) | first);
+            return (byte)((second << fromFirst) | first);
         }
 
         private ulong SplitLeafNode(
@@ -207,9 +215,9 @@ namespace Lachain.Storage.Trie
 
                 var newId = _versionFactory.NewVersion();
                 _nodeCache[newId] = InternalNode.WithChildren(
-                    new[] {id, secondSon},
-                    new[] {firstFragment, secondFragment},
-                    new[] {leafNode.Hash, secondSonHash}
+                    new[] { id, secondSon },
+                    new[] { firstFragment, secondFragment },
+                    new[] { leafNode.Hash, secondSonHash }
                 );
                 return newId;
             }
@@ -219,7 +227,7 @@ namespace Lachain.Storage.Trie
                 var sonHash = GetNodeById(son)?.Hash;
                 if (sonHash is null) throw new InvalidOperationException();
                 var newId = _versionFactory.NewVersion();
-                _nodeCache[newId] = InternalNode.WithChildren(new[] {son}, new[] {firstFragment}, new[] {sonHash});
+                _nodeCache[newId] = InternalNode.WithChildren(new[] { son }, new[] { firstFragment }, new[] { sonHash });
                 return newId;
             }
         }
@@ -306,7 +314,7 @@ namespace Lachain.Storage.Trie
 
         private byte[]? FindInternal(ulong root, IReadOnlyList<byte> keyHash)
         {
-            for (var height = 0;; ++height)
+            for (var height = 0; ; ++height)
             {
                 if (root == 0) return null;
                 var rootNode = GetNodeById(root);
@@ -326,3 +334,4 @@ namespace Lachain.Storage.Trie
         }
     }
 }
+
