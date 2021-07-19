@@ -15,6 +15,7 @@ using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
@@ -22,6 +23,7 @@ using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
+using LibVRF.Net;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest.Blockchain.SystemContracts
@@ -57,12 +59,14 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             TestUtils.DeleteTestChainData();
             _container.Dispose();
         }
-        
+
         [Test]
         public void Test_OneNodeCycle()
         {
             var stateManager = _container.Resolve<IStateManager>();
             var contractRegisterer = _container.Resolve<IContractRegisterer>();
+            var systemContractReader = _container.Resolve<ISystemContractReader>();
+            var privateWallet = _container.Resolve<IPrivateWallet>();
             var tx = new TransactionReceipt();
             var sender = new BigInteger(0).ToUInt160();
             var context = new InvocationContext(sender, stateManager.LastApprovedSnapshot, tx);
@@ -71,10 +75,48 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 .HexToBytes().ToPrivateKey());
             byte[] pubKey = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
             ECDSAPublicKey[] allKeys = {keyPair.PublicKey};
-            var keygen = new TrustlessKeygen(keyPair, allKeys, 0, 0);
-            var cycle = 0.ToUInt256();
-            ValueMessage value;
+
+            {
+                var stake = systemContractReader.GetStake().ToBigInteger();
+                
+                var seed = systemContractReader.GetVrfSeed();
+                var rolls = stake / StakingContract.TokenUnitsInRoll;
+                var totalRolls = systemContractReader.GetTotalStake().ToBigInteger() / StakingContract.TokenUnitsInRoll;
+                var (proof, value, j) = Vrf.Evaluate(privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,
+                    StakingContract.Role, StakingContract.ExpectedValidatorsCount, rolls, totalRolls);
+                
+                
+                var input = ContractEncoder.Encode(StakingInterface.MethodSubmitVrf, pubKey, proof);
+                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SubmitVrf(pubKey, proof, frame));
+            }
             
+            {
+                var input = ContractEncoder.Encode(StakingInterface.MethodGetVrfSeed);
+                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.GetVrfSeed(frame));
+            }
+            
+            {
+                var staker = systemContractReader.NodePublicKey().ToUInt160();
+                var input = ContractEncoder.Encode(StakingInterface.MethodIsAbleToBeValidator, staker);
+                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.IsAbleToBeValidator(staker, frame));
+            }
+            
+            {
+                var input = ContractEncoder.Encode(StakingInterface.MethodIsNextValidator, pubKey);
+                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.IsNextValidator(pubKey, frame));
+            }
         }
     }
 }
