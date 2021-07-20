@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -8,6 +9,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Core.CLI;
@@ -20,18 +22,21 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using LibVRF.Net;
+using Nethereum.ABI.Util;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest.Blockchain.SystemContracts
+
 {
     public class StakingContractTest
     {
-        private readonly IContainer _container;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private readonly IContainer _container;
 
         public StakingContractTest()
         {
@@ -46,7 +51,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             _container = containerBuilder.Build();
         }
-        
+
         [SetUp]
         public void Setup()
         {
@@ -68,54 +73,87 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             var systemContractReader = _container.Resolve<ISystemContractReader>();
             var privateWallet = _container.Resolve<IPrivateWallet>();
             var tx = new TransactionReceipt();
-            var sender = new BigInteger(0).ToUInt160();
-            var context = new InvocationContext(sender, stateManager.LastApprovedSnapshot, tx);
-            var contract = new StakingContract(context);
+
             var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
                 .HexToBytes().ToPrivateKey());
-            byte[] pubKey = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
-            ECDSAPublicKey[] allKeys = {keyPair.PublicKey};
+            byte[] publicKey = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
+            var sender = keyPair.PublicKey.GetAddress();
+            
+            var context = new InvocationContext(sender, stateManager.LastApprovedSnapshot, tx);
+            var contract = new StakingContract(context);
 
+            var stakeAmount = BigInteger.Pow(10, 21);
+
+            // Set balance for the staker
             {
-                var stake = systemContractReader.GetStake().ToBigInteger();
-                
-                var seed = systemContractReader.GetVrfSeed();
-                var rolls = stake / StakingContract.TokenUnitsInRoll;
-                var totalRolls = systemContractReader.GetTotalStake().ToBigInteger() / StakingContract.TokenUnitsInRoll;
-                var (proof, value, j) = Vrf.Evaluate(privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,
-                    StakingContract.Role, StakingContract.ExpectedValidatorsCount, rolls, totalRolls);
-                
-                
-                var input = ContractEncoder.Encode(StakingInterface.MethodSubmitVrf, pubKey, proof);
+                context.Snapshot.Balances.SetBalance(sender, Money.Parse("1000"));
+                Assert.AreEqual(Money.Parse("1000"),context.Snapshot.Balances.GetBalance(sender));
+            }
+            
+            // Become staker
+            {
+                var input = ContractEncoder.Encode(StakingInterface.MethodBecomeStaker, publicKey, stakeAmount.ToUInt256());
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.SubmitVrf(pubKey, proof, frame));
+                Assert.AreEqual(ExecutionStatus.Ok, contract.BecomeStaker(publicKey, stakeAmount.ToUInt256(), frame));
+            }
+
+            // Get stake
+            {
+                var input = ContractEncoder.Encode(StakingInterface.MethodGetStake, sender);
+                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.GetStake(sender, frame));
+                Assert.AreEqual(Money.Parse("1000"),frame.ReturnValue.ToUInt256().ToMoney());
             }
             
+            // Get Vrf Seed
             {
                 var input = ContractEncoder.Encode(StakingInterface.MethodGetVrfSeed);
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 Assert.AreEqual(ExecutionStatus.Ok, contract.GetVrfSeed(frame));
+                Assert.AreEqual(0, frame.ReturnValue.ToUInt256().ToBigInteger());
             }
             
+            // Able to validator
             {
-                var staker = systemContractReader.NodePublicKey().ToUInt160();
-                var input = ContractEncoder.Encode(StakingInterface.MethodIsAbleToBeValidator, staker);
+                var input = ContractEncoder.Encode(StakingInterface.MethodIsAbleToBeValidator, sender);
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.IsAbleToBeValidator(staker, frame));
+                Assert.AreEqual(ExecutionStatus.Ok, contract.IsAbleToBeValidator(sender, frame));
+                Assert.AreEqual(1, BitConverter.ToInt32(frame.ReturnValue, 0));
             }
-            
+
             {
-                var input = ContractEncoder.Encode(StakingInterface.MethodIsNextValidator, pubKey);
-                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
-                Assert.IsNotNull(call);
-                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.IsNextValidator(pubKey, frame));
+                var tokenUnitsInRoll = BigInteger.Pow(10, 21);
+                
+                var seed = systemContractReader.GetVrfSeed();
+                Console.WriteLine(seed.Length);
+                
+                var rolls = stakeAmount / tokenUnitsInRoll;
+                Console.WriteLine(rolls);
+                
+                var totalRolls = systemContractReader.GetTotalStake().ToBigInteger() / tokenUnitsInRoll;
+                Console.WriteLine(totalRolls);
+                
+                // var (proof, value, j) = Vrf.Evaluate(privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,
+                //     StakingContract.Role, StakingContract.ExpectedValidatorsCount, rolls, totalRolls);
+                //
+                // var input = ContractEncoder.Encode(StakingInterface.MethodSubmitVrf, publicKey, proof);
+                // var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                // Assert.IsNotNull(call);
+                //
+                // var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                //
+                // var res = contract.SubmitVrf(publicKey, proof, frame);
+                
+                // Console.WriteLine(res);
+                // Assert.AreEqual(ExecutionStatus.Ok, contract.SubmitVrf(publicKey, proof, frame));
             }
         }
     }
