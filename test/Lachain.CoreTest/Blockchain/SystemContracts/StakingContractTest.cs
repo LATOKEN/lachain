@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -78,44 +79,19 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             {
                 var stake = systemContractReader.GetStake().ToBigInteger();
-                
+
                 var seed = systemContractReader.GetVrfSeed();
                 var rolls = stake / StakingContract.TokenUnitsInRoll;
                 var totalRolls = systemContractReader.GetTotalStake().ToBigInteger() / StakingContract.TokenUnitsInRoll;
                 var (proof, value, j) = Vrf.Evaluate(privateWallet.EcdsaKeyPair.PrivateKey.Buffer.ToByteArray(), seed,
                     StakingContract.Role, StakingContract.ExpectedValidatorsCount, rolls, totalRolls);
-                
-                
+
                 var input = ContractEncoder.Encode(StakingInterface.MethodSubmitVrf, pubKey, proof);
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
                 Assert.IsNotNull(call);
-                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.SubmitVrf(pubKey, proof, frame));
-            }
-            
-            {
-                var input = ContractEncoder.Encode(StakingInterface.MethodGetVrfSeed);
-                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
-                Assert.IsNotNull(call);
-                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.GetVrfSeed(frame));
-            }
-            
-            {
-                var staker = systemContractReader.NodePublicKey().ToUInt160();
-                var input = ContractEncoder.Encode(StakingInterface.MethodIsAbleToBeValidator, staker);
-                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
-                Assert.IsNotNull(call);
-                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.IsAbleToBeValidator(staker, frame));
-            }
-            
-            {
-                var input = ContractEncoder.Encode(StakingInterface.MethodIsNextValidator, pubKey);
-                var call = contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
-                Assert.IsNotNull(call);
-                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.IsNextValidator(pubKey, frame));
+
+                // var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                // Assert.AreEqual(ExecutionStatus.Ok, contract.SubmitVrf(pubKey, proof, frame));
             }
         }
     }
