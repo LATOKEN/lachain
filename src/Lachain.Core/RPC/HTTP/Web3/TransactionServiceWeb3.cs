@@ -189,6 +189,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
+        [JsonRpcMethod("fe_sendRawTransactionBatch")] 
+        private List<string> SendRawTransactionBatch(List<string> rawTxs)
+        {
+            List<string> txIds = new List<string>();
+            foreach(string rawTx in rawTxs) {
+                txIds.Add(SendRawTransaction(rawTx));
+            }
+            return txIds;
+        }
+
         [JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
