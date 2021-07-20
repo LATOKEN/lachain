@@ -189,7 +189,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
-        [JsonRpcMethod("fe_sendRawTransactionBatch")] 
+        [JsonRpcMethod("la_sendRawTransactionBatch")] 
         private List<string> SendRawTransactionBatch(List<string> rawTxs)
         {
             List<string> txIds = new List<string>();
