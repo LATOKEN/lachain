@@ -35,11 +35,15 @@ namespace Lachain.Storage.Trie
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Add(ulong key, IHashTrieNode value)
         {
+            if(cacheMap.TryGetValue(key, out var oldNode)) 
+            {
+                _lruList.Remove(oldNode);
+                cacheMap.Remove(key); 
+            }
             if (cacheMap.Count >= Capacity)
             {
                 RemoveFirst();
             }
-
             LRUCacheItem cacheItem = new LRUCacheItem(key, value);
             LinkedListNode<LRUCacheItem> node = new LinkedListNode<LRUCacheItem>(cacheItem);
             _lruList.AddLast(node);
