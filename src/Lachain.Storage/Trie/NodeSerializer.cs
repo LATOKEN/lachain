@@ -51,43 +51,39 @@ namespace Lachain.Storage.Trie
             throw new InvalidOperationException($"Type {node.GetType()} is not supported");
         }
 
-        public static IHashTrieNode FromBytes(byte[] bytes)
+        public static IHashTrieNode FromBytes(ReadOnlyMemory<byte> bytes)
         {
             if (bytes.Length < 1)
             {
                 throw new ArgumentException("Empty bytes to deserialize");
             }
-            var type = bytes[0];
+            var type = bytes.Span[0]; 
             switch (type)
             {
                 case 0:
-                    if (bytes.Length < 1 + 4)
+                    if (bytes.Length < 1 + 4 + 32)
                     {
                         throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
                     }
-                    UInt32 mask = 0;
-                    UInt32 mul = 1;
-                    for (var i = 1; i <= 4; i++)
-                    {
-                        mask += mul * bytes[i];
-                        if (i < 4) mul = mul * 256;
-                    }
+                    var mask = bytes.Slice(1, 4).Span.ToUInt32();
                     var len = (int)BitsUtils.Popcount(mask);
-                    byte[] hash = new byte[32];
-                    for (var i = 0; i < 32; i++)
-                    {
-                        hash[i] = bytes[i + 5];
-                    }
+                    var hash = bytes.Slice(1 + 4, 32).ToArray();
+
                     ulong[] _children = new ulong[len];
                     var pos = 32 + 5;
+
                     for (var i = 0; i < len; i++)
                     {
-                        byte sz = bytes[pos];
+                        if (pos >= bytes.Length) throw new ArgumentException("does not hold all the childen");
+                        byte sz = bytes.Span[pos];
+                        
+                        if(pos + sz >= bytes.Length) throw new ArgumentException("not enough bytes to deserialize the children id"); 
+                        
                         ulong m = 1;
                         ulong res = 0;
                         for (int j = pos + 1; j <= pos + sz; j++)
                         {
-                            res = res + m * bytes[j];
+                            res = res + m * bytes.Span[j];
                             m = m * 256;
                         }
                         _children[i] = res;
@@ -99,14 +95,8 @@ namespace Lachain.Storage.Trie
                     {
                         throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
                     }
-                    byte[] key = new byte[32];
-                    byte[] value = new byte[32];
-                    for (var i = 1; i <= 32; i++)
-                    {
-                        key[i - 1] = bytes[i];
-                        value[i - 1] = bytes[i + 32];
-                    }
-                    return new LeafNode(key, value);
+                    return new LeafNode(bytes.Slice(1, 32).ToArray(), bytes.Slice(1 + 32).ToArray());
+
                 default:
                     throw new InvalidOperationException($"Type id {type} is not supported");
             }
