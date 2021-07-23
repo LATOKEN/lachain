@@ -12,11 +12,38 @@ namespace Lachain.Storage.Trie
             switch (node)
             {
                 case InternalNode internalNode:
-                    return new byte[] {0}
+                    byte[] nodeByte = new byte[] {0}
                         .Concat(internalNode.ChildrenMask.ToBytes())
                         .Concat(internalNode.Hash)
-                        .Concat(internalNode.Children.Select(x => x.ToBytes()).Flatten())
                         .ToArray();
+                    var _children = internalNode.Children.ToArray();
+                    uint sz = 0;
+                    for (int i = 0; i < _children.Length; i++)
+                    {
+                        ulong childId = _children[i];
+                        sz++;
+                        while (childId > 0)
+                        {
+                            childId >>= 8;
+                            sz++;
+                        }
+                    }
+                    byte[] childByte = new byte[sz];
+                    uint idx = 0;
+                    for (int i = 0; i < _children.Length; i++)
+                    {
+                        ulong childId = _children[i];
+                        byte curSize = 0;
+                        while (childId > 0)
+                        {
+                            curSize++;
+                            childByte[idx + curSize] = (byte)(childId & 255);
+                            childId >>= 8;
+                        }
+                        childByte[idx] = curSize;
+                        idx += (uint)(curSize + 1);
+                    }
+                    return nodeByte.Concat(childByte).ToArray();
                 case LeafNode leafNode:
                     return new byte[] {1}.Concat(leafNode.KeyHash).Concat(leafNode.Value).ToArray();
             }
@@ -34,23 +61,35 @@ namespace Lachain.Storage.Trie
             switch (type)
             {
                 case 0:
-                    if (bytes.Length < 1 + 4)
+                    if (bytes.Length < 1 + 4 + 32)
                     {
                         throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
                     }
                     var mask = bytes.Slice(1, 4).Span.ToUInt32();
                     var len = (int) BitsUtils.Popcount(mask);
-                    if (bytes.Length < 1 + 4 + 32 + len * 8)
-                    {
-                        throw new ArgumentException($"Not enough bytes to deserialize: {bytes.Length}");
-                    }
                     var hash = bytes.Slice(1 + 4, 32).ToArray();
-                    return new InternalNode(
-                        mask,
-                        Enumerable.Range(0, len)
-                            .Select(i => bytes.Slice(1 + 4 + 32 + i * 8, 8).Span.ToUInt64()),
-                        hash
-                    );
+
+                    ulong[] _children = new ulong[len];
+                    var pos = 32 + 5;
+
+                    for (var i = 0; i < len; i++)
+                    {
+                        if (pos >= bytes.Length) throw new ArgumentException("does not hold all the childen");
+                        byte sz = bytes.Span[pos];
+                        
+                        if(pos + sz >= bytes.Length) throw new ArgumentException("not enough bytes to deserialize the children id"); 
+                        
+                        ulong m = 1;
+                        ulong res = 0;
+                        for (int j = pos + 1; j <= pos + sz; j++)
+                        {
+                            res = res + m * bytes.Span[j];
+                            m = m * 256;
+                        }
+                        _children[i] = res;
+                        pos += sz + 1;
+                    }
+                    return new InternalNode(mask, _children, hash);
                 case 1:
                     if (bytes.Length < 1 + 32)
                     {
