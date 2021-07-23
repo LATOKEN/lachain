@@ -14,6 +14,8 @@ namespace Lachain.Storage.Trie
     {
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
+        const int Capacity = 100000;
+        private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
         
 
@@ -141,7 +143,14 @@ namespace Lachain.Storage.Trie
         private IHashTrieNode? GetNodeById(ulong id)
         {
             if (id == 0) return null;
-            return _nodeCache.TryGetValue(id, out var node) ? node : _repository.GetNode(id);
+            if (_nodeCache.TryGetValue(id, out var node)) return node;
+            var _node = _lruCache.Get(id);
+            if (_node == null)
+            {
+                _node = _repository.GetNode(id);
+                _lruCache.Add(id, _node);
+            }
+            return _node;
         }
 
         private ulong ModifyInternalNode(InternalNode node, byte h, ulong value, byte[]? valueHash)
