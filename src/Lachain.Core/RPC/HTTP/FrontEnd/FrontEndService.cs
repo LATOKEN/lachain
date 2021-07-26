@@ -162,6 +162,12 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             return _privateWallet.Unlock(password, s) ? "unlocked" : "incorrect_password";
         }
 
+        [JsonRpcMethod("fe_changePassword")]
+        private string ChangePassword(string currentPassword, string newPassword)
+        {
+            return _privateWallet.ChangePassword(currentPassword, newPassword) ? "password_changed" : "incorrect_current_password";
+        }
+        
         [JsonRpcMethod("fe_isLocked")]
         private string IsWalletLocked()
         {

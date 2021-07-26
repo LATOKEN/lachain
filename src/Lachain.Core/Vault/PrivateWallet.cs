@@ -213,5 +213,12 @@ namespace Lachain.Core.Vault
             var now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
             return now < _unlockEndTime ? this : null;
         }
+        
+        public bool ChangePassword(string currentPassword, string newPassword)
+        {
+            if (currentPassword != _walletPassword) return false;
+            SaveWallet(this._walletPath, newPassword);
+            return true;
+        }
     }
 }
