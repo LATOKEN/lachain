@@ -157,13 +157,13 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         }
 
         [JsonRpcMethod("fe_unlock")]
-        private string UnlockWallet(string password, long s)
+        public string UnlockWallet(string password, long s)
         {
             return _privateWallet.Unlock(password, s) ? "unlocked" : "incorrect_password";
         }
 
         [JsonRpcMethod("fe_changePassword")]
-        private string ChangePassword(string currentPassword, string newPassword)
+        public string ChangePassword(string currentPassword, string newPassword)
         {
             return _privateWallet.ChangePassword(currentPassword, newPassword) ? "password_changed" : "incorrect_current_password";
         }
