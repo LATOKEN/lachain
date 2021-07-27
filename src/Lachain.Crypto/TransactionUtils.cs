@@ -22,7 +22,7 @@ namespace Lachain.Crypto
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 t.To.ToBytes(), // this may be empty, same as passing null
                 t.Value.ToBytes(true).Reverse().ToArray().TrimLeadingZeros(),
-                t.Invocation.ToArray().TrimLeadingZeros(),
+                t.Invocation.ToArray(),
                 new BigInteger(ChainId).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 Array.Empty<byte>(),
                 Array.Empty<byte>(),
@@ -43,7 +43,7 @@ namespace Lachain.Crypto
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 t.To.ToBytes(), // this may be empty, same as passing null
                 t.Value.ToBytes(true).Reverse().ToArray().TrimLeadingZeros(),
-                t.Invocation.ToArray().TrimLeadingZeros(),
+                t.Invocation.ToArray(),
                 new BigInteger(ChainId).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 sig.Slice(0, 32).ToArray().TrimLeadingZeros(),
                 sig.Slice(32, 32).ToArray().TrimLeadingZeros(),

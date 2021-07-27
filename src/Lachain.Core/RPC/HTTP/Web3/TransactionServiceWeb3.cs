@@ -62,7 +62,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return new Transaction
             {
                 // this is special case where empty uint160 is allowed
-                To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
+                To = ethTx.ReceiveAddress?.ToUInt160() ?? UInt160Utils.Empty,
                 Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
                 From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
