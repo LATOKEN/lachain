@@ -94,6 +94,11 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Bad call to call function");
             if (value > Money.Zero)
             {
+                if (frame.InvocationContext.Message?.Type == InvocationType.Static)
+                {
+                    throw new InvalidOperationException("Cannot call call with non-zero value in STATICCALL");
+                }
+
                 frame.UseGas(GasMetering.TransferFundsGasCost);
                 var result = snapshot.Balances.TransferBalance(frame.CurrentAddress, address, value);
                 if (!result)
@@ -108,11 +113,12 @@ namespace Lachain.Core.Blockchain.VM
                 gasLimit = frame.GasLimit - frame.GasUsed;
 
             InvocationMessage invocationMessage = new InvocationMessage {
-                Type = invocationType,
+                Type = (frame.InvocationContext.Message?.Type == InvocationType.Static ? InvocationType.Static : invocationType),
             };
 
             switch (invocationType)
             {
+                case InvocationType.Static:
                 case InvocationType.Regular:
                     invocationMessage.Sender = frame.CurrentAddress;
                     invocationMessage.Value = msgValue;
@@ -169,9 +175,15 @@ namespace Lachain.Core.Blockchain.VM
 
         public static void Handler_Env_WriteLog(int offset, int length)
         {
-            Logger.LogInformation($"Handler_Env_WriteLog({offset}? {length})");
+            Logger.LogInformation($"Handler_Env_WriteLog({offset}, {length})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call WRITELOG outside wasm frame");
+
+            if (frame.InvocationContext.Message?.Type == InvocationType.Static)
+            {
+                throw new InvalidOperationException("Cannot call WRITELOG in STATICCALL");
+            }
+
             var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
             if (buffer == null)
                 throw new InvalidContractException("Bad call to WRITELOG");
@@ -189,6 +201,13 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_InvokeDelegateContract({callSignatureOffset}, {inputLength}, {inputOffset}, {valueOffset}, {gasOffset})");
             return InvokeContract(callSignatureOffset, inputLength, inputOffset, valueOffset, gasOffset, InvocationType.Delegate);
+        }
+
+        public static int Handler_Env_InvokeStaticContract(
+            int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset)
+        {
+            Logger.LogInformation($"Handler_Env_InvokeStaticContract({callSignatureOffset}, {inputLength}, {inputOffset}, {valueOffset}, {gasOffset})");
+            return InvokeContract(callSignatureOffset, inputLength, inputOffset, valueOffset, gasOffset, InvocationType.Static);
         }
 
         public static int Handler_Env_GetReturnSize()
@@ -233,6 +252,12 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_SaveStorage({keyOffset}, {valueOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call SAVESTORAGE outside wasm frame");
+
+            if (frame.InvocationContext.Message?.Type == InvocationType.Static)
+            {
+                throw new InvalidOperationException("Cannot call SAVESTORAGE in STATICCALL");
+            }
+
             frame.UseGas(GasMetering.SaveStorageGasCost);
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
@@ -584,6 +609,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "copy_call_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
                 {EnvModule, "invoke_delegate_contract", CreateImport(nameof(Handler_Env_InvokeDelegateContract))},
+                {EnvModule, "invoke_static_contract", CreateImport(nameof(Handler_Env_InvokeStaticContract))},
                 {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetReturnSize))},
                 {EnvModule, "copy_return_value", CreateImport(nameof(Handler_Env_CopyReturnValue))},
                 {EnvModule, "write_log", CreateImport(nameof(Handler_Env_WriteLog))},
