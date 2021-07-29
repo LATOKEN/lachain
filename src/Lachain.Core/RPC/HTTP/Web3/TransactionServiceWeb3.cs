@@ -62,7 +62,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return new Transaction
             {
                 // this is special case where empty uint160 is allowed
-                To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
+                To = ethTx.ReceiveAddress?.ToUInt160() ?? UInt160Utils.Empty,
                 Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
                 From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
@@ -229,8 +229,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     contractByHash,
                     new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
                     {
-                        // TODO: correctly fill these fields
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        Transaction = new Transaction{Value = 0.ToUInt256()}
                     }),
                     input.HexToBytes(),
                     gasLimit
@@ -340,8 +340,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         contract,
                         new InvocationContext(source, snapshot, new TransactionReceipt
                         {
-                            // TODO: correctly fill these fields
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
                         }),
                         invocation,
                         100_000_000
@@ -419,9 +419,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         var snapshot = _stateManager.NewSnapshot();
                         var context = new InvocationContext(source, snapshot, new TransactionReceipt
                         {
-                            // TODO: correctly fill these fields
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
-                            Transaction = new Transaction()
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
                         });
                         var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, invocation);
                         var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.DeployContract, abi);
@@ -457,8 +456,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                             contract,
                             new InvocationContext(source, snapshot, new TransactionReceipt
                             {
-                                // TODO: correctly fill these fields
                                 Block = snapshot.Blocks.GetTotalBlockHeight(),
+                                Transaction = new Transaction{Value = 0.ToUInt256()}
                             }),
                             invocation,
                             100_000_000
@@ -476,6 +475,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
                     {
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        Transaction = new Transaction{Value = 0.ToUInt256()}
                     });
                     var invocationResult =
                         ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
@@ -517,8 +517,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var context = new InvocationContext(from, snapshot, new TransactionReceipt
                 {
-                    // TODO: correctly fill these fields
                     Block = snapshot.Blocks.GetTotalBlockHeight(),
+                    Transaction = new Transaction{Value = 0.ToUInt256()}
                 });
                 var call = _contractRegisterer.DecodeContract(context, address, invocation);
                 if (call is null) return (OperatingError.ContractFailed, null);
