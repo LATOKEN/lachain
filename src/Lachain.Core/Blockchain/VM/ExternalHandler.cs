@@ -388,19 +388,26 @@ namespace Lachain.Core.Blockchain.VM
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 
-        public static void Handler_Env_CryptoRecover(int messageOffset, int messageLength, int signatureOffset,
+        public static void Handler_Env_CryptoRecover(int hashOffset, int v, int rOffset, int sOffset,
             int resultOffset)
         {
-            Logger.LogInformation($"Handler_Env_CryptoRecover({messageOffset}, {messageLength}, {signatureOffset}, {resultOffset})");
+            Logger.LogInformation($"Handler_Env_CryptoRecover({hashOffset}, {v}, {rOffset}, {sOffset}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call ECRECOVER outside wasm frame");
             frame.UseGas(GasMetering.RecoverGasCost);
-            var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength) ??
+            var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
                           throw new InvalidOperationException();
-            var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length) ??
+            var sig = new byte[SignatureUtils.Length];
+            var r = SafeCopyFromMemory(frame.Memory, rOffset, 32) ??
                       throw new InvalidOperationException();
-            var publicKey = VirtualMachine.Crypto.RecoverSignature(message, sig);
-            SafeCopyToMemory(frame.Memory, publicKey, resultOffset);
+            Array.Copy(r.Reverse().ToArray(), 0, sig, 0, r.Length);
+            var s = SafeCopyFromMemory(frame.Memory, sOffset, 32) ??
+                      throw new InvalidOperationException();
+            Array.Copy(s.Reverse().ToArray(), 0, sig, r.Length, s.Length);
+            sig[64] = (byte) v;
+            var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig);
+            var address = VirtualMachine.Crypto.ComputeAddress(publicKey);
+            SafeCopyToMemory(frame.Memory, address, resultOffset);
         }
 
         public static void Handler_Env_CryptoVerify(int messageOffset, int messageLength, int signatureOffset,
