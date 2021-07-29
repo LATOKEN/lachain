@@ -9,6 +9,7 @@ using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Utility;
+using Lachain.Utility.Utils;
 using WebAssembly.Runtime;
 
 namespace Lachain.Core.Blockchain.VM
@@ -28,13 +29,15 @@ namespace Lachain.Core.Blockchain.VM
         {
             try
             {
+                Logger.LogInformation($"Contract code: [{contractCode.ToHex()}]");
                 var config = new CompilerConfiguration();
                 using var stream = new MemoryStream(contractCode);
                 Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.LogInformation($"Failed to verify contract: {ex}");
                 return false;
             }
         }
