@@ -249,12 +249,6 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         //     }
         //     // // check no validators in storage again
         //     // // Assert.Throws<ConsensusStateNotPresentException>(()=>context.Snapshot.Validators.GetValidatorsPublicKeys());
-        //     // Assert.IsNull(context.Snapshot.Validators.GetValidatorsPublicKeys());
-        //     // Assert.Null(()=>context.Snapshot.Validators.GetValidatorsPublicKeys());
-        //     var a = context.Snapshot.Validators.GetValidatorsPublicKeys();
-        //     Console.WriteLine("----");
-        //     Console.WriteLine(a.Count());
-        //
         // }
 
         private class QueueItem
