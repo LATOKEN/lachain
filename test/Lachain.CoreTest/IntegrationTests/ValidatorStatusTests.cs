@@ -38,9 +38,24 @@ namespace Lachain.CoreTest.IntegrationTests
         private IValidatorStatusManager _validatorStatusManager = null!;
         private IContainer? _container;
 
+        public ValidatorStatusTest()
+        {
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+
+            _container = containerBuilder.Build();
+        }
+
         [SetUp]
         public void Setup()
         {
+            _container?.Dispose();
             TestUtils.DeleteTestChainData();
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
@@ -64,8 +79,8 @@ namespace Lachain.CoreTest.IntegrationTests
         [TearDown]
         public void Teardown()
         {
-            TestUtils.DeleteTestChainData();
             _container?.Dispose();
+            TestUtils.DeleteTestChainData();
         }
         
         // TODO: this is not working since we have only 1 validator

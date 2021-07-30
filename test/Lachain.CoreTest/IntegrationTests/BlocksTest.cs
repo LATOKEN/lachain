@@ -40,9 +40,26 @@ namespace Lachain.CoreTest.IntegrationTests
         private IPrivateWallet _wallet = null!;
         private IContainer? _container;
 
+        public BlocksTest()
+        {
+           var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+
+            _container = containerBuilder.Build();
+
+        } 
+
         [SetUp]
         public void Setup()
         {
+            _container?.Dispose() ;
+            TestUtils.DeleteTestChainData();
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
                 new RunOptions()
@@ -55,14 +72,14 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
-            TestUtils.DeleteTestChainData();
+
         }
 
         [TearDown]
         public void Teardown()
         {
-            TestUtils.DeleteTestChainData();
             _container?.Dispose();
+            TestUtils.DeleteTestChainData();
         }
 
         [Test]

@@ -1,6 +1,7 @@
 ﻿using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility;
 
 namespace Lachain.Core.Blockchain.VM
 {
@@ -15,6 +16,8 @@ namespace Lachain.Core.Blockchain.VM
         public readonly TransactionReceipt Receipt;
 
         public IBlockchainSnapshot Snapshot { get; }
+        
+        public InvocationMessage? Message { get; set; }
 
         public InvocationContext(UInt160 sender, IBlockchainSnapshot snapshot, TransactionReceipt receipt)
         {

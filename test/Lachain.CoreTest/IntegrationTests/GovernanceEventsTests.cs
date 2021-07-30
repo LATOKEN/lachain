@@ -47,9 +47,25 @@ namespace Lachain.CoreTest.IntegrationTests
         private IContainer? _container;
         private Dictionary<UInt256, ByteString> _eventData = null!;
 
+        public GovernanceEventsTest()
+        {
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+
+            _container = containerBuilder.Build();
+
+        } 
+
         [SetUp]
         public void Setup()
         {
+            _container?.Dispose();
             TestUtils.DeleteTestChainData();
             _eventData = new Dictionary<UInt256, ByteString>();
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
@@ -70,8 +86,8 @@ namespace Lachain.CoreTest.IntegrationTests
         [TearDown]
         public void Teardown()
         {
-            TestUtils.DeleteTestChainData();
             _container?.Dispose();
+            TestUtils.DeleteTestChainData();
         }
 
         [Test]

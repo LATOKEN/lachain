@@ -28,7 +28,7 @@ namespace Lachain.Core.Vault
         private readonly ISortedDictionary<ulong, PrivateKey> _tpkeKeys = new TreeDictionary<ulong, PrivateKey>();
 
         private readonly string _walletPath;
-        private readonly string _walletPassword;
+        private string _walletPassword;
         private long _unlockEndTime;
 
         public EcdsaKeyPair EcdsaKeyPair { get; }
@@ -212,6 +212,15 @@ namespace Lachain.Core.Vault
         {
             var now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
             return now < _unlockEndTime ? this : null;
+        }
+        
+        public bool ChangePassword(string currentPassword, string newPassword)
+        {
+            if (currentPassword != _walletPassword) return false;
+            SaveWallet(_walletPath, newPassword);
+            _walletPassword = newPassword;
+
+            return true;
         }
     }
 }

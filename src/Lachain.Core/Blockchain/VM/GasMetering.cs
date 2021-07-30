@@ -10,6 +10,8 @@
         public const ulong CopyToMemoryGasPerByte = 10;
         public const ulong GetCallValueGasCost = 100;
         public const ulong GetCallSizeGasCost = 10;
+        public const ulong GetReturnValueGasCost = 100;
+        public const ulong GetReturnSizeGasCost = 10;
         public const ulong TransferFundsGasCost = 3_000_000;
         public const ulong LoadStorageGasCost = 500_000;
         public const ulong SaveStorageGasCost = 3_000_000;

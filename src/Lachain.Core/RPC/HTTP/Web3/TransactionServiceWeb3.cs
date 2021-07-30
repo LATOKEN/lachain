@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Vault;
@@ -61,7 +62,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return new Transaction
             {
                 // this is special case where empty uint160 is allowed
-                To = ethTx.ReceiveAddress?.ToUInt160() ?? new UInt160 {Buffer = ByteString.Empty},
+                To = ethTx.ReceiveAddress?.ToUInt160() ?? UInt160Utils.Empty,
                 Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
                 From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
@@ -188,6 +189,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
+        [JsonRpcMethod("la_sendRawTransactionBatch")] 
+        private List<string> SendRawTransactionBatch(List<string> rawTxs)
+        {
+            List<string> txIds = new List<string>();
+            foreach(string rawTx in rawTxs) {
+                txIds.Add(SendRawTransaction(rawTx));
+            }
+            return txIds;
+        }
+
         [JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
@@ -218,8 +229,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     contractByHash,
                     new InvocationContext(sender.HexToUInt160(), snapshot, new TransactionReceipt
                     {
-                        // TODO: correctly fill these fields
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        Transaction = new Transaction{Value = 0.ToUInt256()}
                     }),
                     input.HexToBytes(),
                     gasLimit
@@ -266,7 +277,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var byteCode = ((string) data!).HexToBytes();
                 if (!VirtualMachine.VerifyContract(byteCode)) 
                     throw new ArgumentException("Unable to validate smart-contract code");
-                var fromAddress = ((string) from!).HexToUInt160();
+                var fromAddress = from is null ? keyPair.PublicKey.GetAddress() : ((string) from!).HexToUInt160();
                 var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
                 var contractHash = fromAddress.ToBytes().Concat(nonceToUse.ToBytes()).Ripemd();
                 Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
@@ -329,8 +340,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         contract,
                         new InvocationContext(source, snapshot, new TransactionReceipt
                         {
-                            // TODO: correctly fill these fields
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
                         }),
                         invocation,
                         100_000_000
@@ -384,66 +395,104 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_estimateGas")]
         private string? EstimateGas(JObject opts)
         {
-            var gasUsed = GasMetering.DefaultTxCost;
-            var from = opts["from"];
-            var to = opts["to"];
-            var data = opts["data"];
-
-            if (to is null && data is null) return null;
-
-            var invocation = ((string) data!).HexToBytes();
-            var destination = ((string) to!).HexToUInt160();
-            var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
-            gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
-
-
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
-            var systemContract = _contractRegisterer.GetContractByAddress(destination);
-
-            if (contract is null && systemContract is null)
+            Logger.LogInformation($"eth_estimateGas({opts})");
+            try
             {
-                return Web3DataFormatUtils.Web3Number(gasUsed);
-            }
+                var gasUsed = GasMetering.DefaultTxCost;
+                var from = opts["from"];
+                var to = opts["to"];
+                var data = opts["data"];
 
-            if (!(contract is null))
-            {
-                InvocationResult invRes = _stateManager.SafeContext(() =>
+                if (to is null && data is null) return null;
+
+                var invocation = ((string) data!).HexToBytes();
+                var destination = to is null ? UInt160Utils.Zero : ((string) to!).HexToUInt160();
+                var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
+                gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
+
+                if (to is null) // deploy contract
+                {
+                    if (!VirtualMachine.VerifyContract(invocation)) 
+                        throw new ArgumentException("Unable to validate smart-contract code");
+                    InvocationResult invRes = _stateManager.SafeContext(() =>
+                    {
+                        var snapshot = _stateManager.NewSnapshot();
+                        var context = new InvocationContext(source, snapshot, new TransactionReceipt
+                        {
+                            Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
+                        });
+                        var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, invocation);
+                        var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.DeployContract, abi);
+                        if (call is null)
+                            throw new Exception("Failed to create system call");
+                        var res = VirtualMachine.InvokeSystemContract(
+                            call,
+                            context,
+                            invocation,
+                            100_000_000
+                        );
+                        _stateManager.Rollback();
+                        return res;
+                    });
+                    return invRes.Status == ExecutionStatus.Ok ? 
+                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+                }
+                
+                var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
+                var systemContract = _contractRegisterer.GetContractByAddress(destination);
+
+                if (contract is null && systemContract is null)
+                {
+                    return Web3DataFormatUtils.Web3Number(gasUsed);
+                }
+
+                if (!(contract is null))
+                {
+                    InvocationResult invRes = _stateManager.SafeContext(() =>
+                    {
+                        var snapshot = _stateManager.NewSnapshot();
+                        var res = VirtualMachine.InvokeWasmContract(
+                            contract,
+                            new InvocationContext(source, snapshot, new TransactionReceipt
+                            {
+                                Block = snapshot.Blocks.GetTotalBlockHeight(),
+                                Transaction = new Transaction{Value = 0.ToUInt256()}
+                            }),
+                            invocation,
+                            100_000_000
+                        );
+                        _stateManager.Rollback();
+                        return res;
+                    });
+                    return invRes.Status == ExecutionStatus.Ok ? 
+                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+                }
+
+                InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
                 {
                     var snapshot = _stateManager.NewSnapshot();
-                    var res = VirtualMachine.InvokeWasmContract(
-                        contract,
-                        new InvocationContext(source, snapshot, new TransactionReceipt
-                        {
-                            // TODO: correctly fill these fields
-                            Block = snapshot.Blocks.GetTotalBlockHeight(),
-                        }),
-                        invocation,
-                        100_000_000
-                    );
+                    var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
+                    {
+                        Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        Transaction = new Transaction{Value = 0.ToUInt256()}
+                    });
+                    var invocationResult =
+                        ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
                     _stateManager.Rollback();
-                    return res;
+
+                    return invocationResult;
                 });
-                return invRes.Status == ExecutionStatus.Ok ? 
-                    Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+
+                return systemContractInvRes.Status == ExecutionStatus.Ok
+                    ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
+                    : "0x";
             }
-
-
-            InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
+            catch (Exception e)
             {
-                var snapshot = _stateManager.NewSnapshot();
-                var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
-                {
-                    Block = snapshot.Blocks.GetTotalBlockHeight(),
-                });
-                var invocationResult =
-                    ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
-                _stateManager.Rollback();
-
-                return invocationResult;
-            });
-            return systemContractInvRes.Status == ExecutionStatus.Ok
-                ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
-                : "0x";
+                Logger.LogInformation($"Error in eth_estimateGas: {e}");
+            }
+            return "0x";
         }
 
         [JsonRpcMethod("eth_gasPrice")]
@@ -468,8 +517,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var context = new InvocationContext(from, snapshot, new TransactionReceipt
                 {
-                    // TODO: correctly fill these fields
                     Block = snapshot.Blocks.GetTotalBlockHeight(),
+                    Transaction = new Transaction{Value = 0.ToUInt256()}
                 });
                 var call = _contractRegisterer.DecodeContract(context, address, invocation);
                 if (call is null) return (OperatingError.ContractFailed, null);

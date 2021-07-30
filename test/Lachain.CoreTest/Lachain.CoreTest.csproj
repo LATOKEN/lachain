@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
@@ -23,6 +23,13 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>wallet2.json</TargetPath>
     </ContentWithTargetPath>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\scripts\A.wasm" />
+    <EmbeddedResource Include="Resources\scripts\B.wasm" />
+    <EmbeddedResource Include="Resources\scripts\A.abi" />
+    <EmbeddedResource Include="Resources\scripts\B.abi" />
+    <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />

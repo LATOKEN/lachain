@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Lachain.Utility</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MCL.BLS12_381.Net" Version="0.0.3" />
+    <PackageReference Include="MCL.BLS12_381.Net" Version="0.0.4" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Nethereum.RLP" Version="3.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />

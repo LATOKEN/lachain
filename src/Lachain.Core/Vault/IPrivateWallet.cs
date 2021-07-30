@@ -24,5 +24,7 @@ namespace Lachain.Core.Vault
         bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet, ulong beforeBlock);
 
         void DeleteKeysAfterBlock(ulong block);
+        
+        bool ChangePassword(string currentPassword, string newPassword);
     }
 }
