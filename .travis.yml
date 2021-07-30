@@ -1,7 +1,7 @@
 language: csharp
 mono: none
 dist: bionic
-dotnet: 3.1
+dotnet: 5.0
 env:
   global:
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
