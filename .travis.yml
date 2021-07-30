@@ -5,7 +5,7 @@ dotnet: 5.0
 addons:
   apt:
     packages:
-      - dotnet-sdk-3.0
+      - dotnet-sdk-3.1
 env:
   global:
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
