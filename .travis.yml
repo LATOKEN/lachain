@@ -2,6 +2,10 @@ language: csharp
 mono: none
 dist: bionic
 dotnet: 5.0
+addons:
+  apt:
+    packages:
+      - dotnet-sdk-3.0
 env:
   global:
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
