@@ -42,6 +42,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public GovernanceContract(InvocationContext context)
         {
+            Logger.LogDebug("ctor");
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _nextValidators = new StorageVariable(
                 ContractRegisterer.GovernanceContract,
@@ -89,21 +90,25 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public static bool IsKeygenBlock(ulong block)
         {
+            Logger.LogDebug($"IsKeygenBlock({block})");
             return block % StakingContract.CycleDuration >= StakingContract.VrfSubmissionPhaseDuration;
         }
 
         public static bool SameCycle(ulong a, ulong b)
         {
+            Logger.LogDebug($"SameCycle({a}, {b})");
             return GetCycleByBlockNumber(a) == GetCycleByBlockNumber(b);
         }
 
         public static ulong GetCycleByBlockNumber(ulong a)
         {
+            Logger.LogDebug($"GetCycleByBlockNumber({a})");
             return a / StakingContract.CycleDuration;
         }
 
         public static ulong GetBlockNumberInCycle(ulong a)
         {
+            Logger.LogDebug($"GetBlockNumberInCycle({a})");
             return a % StakingContract.CycleDuration;
         }
 
@@ -154,7 +159,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             if (!MsgSender().Equals(ContractRegisterer.StakingContract) && !MsgSender().IsZero())
             {
-                Logger.LogError("GovernanceContract is halted in ChangeValidators");
+                Logger.LogError("GovernanceContract is halted in ChangeValidators: Invalid sender");
                 return ExecutionStatus.ExecutionHalted;
             }
 
@@ -164,13 +169,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 if (publicKey.Length != CryptoUtils.PublicKeyLength)
                 {
-                    Logger.LogError("GovernanceContract is halted in ChangeValidators");
+                    Logger.LogError("GovernanceContract is halted in ChangeValidators: Invalid public key length");
                     return ExecutionStatus.ExecutionHalted;
                 }
 
                 if (!Crypto.TryDecodePublicKey(publicKey, false, out _))
                 {
-                    Logger.LogError("GovernanceContract is halted in ChangeValidators");
+                    Logger.LogError("GovernanceContract is halted in ChangeValidators: failed to decode public key");
                     return ExecutionStatus.ExecutionHalted;
                 }
             }
@@ -302,17 +307,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodFinishCycle)]
         public ExecutionStatus FinishCycle(UInt256 cycle, SystemContractExecutionFrame frame)
         {
-            var currentBlock = frame.InvocationContext.Receipt.Block;
             Logger.LogDebug("FinishCycle()");
+            var currentBlock = frame.InvocationContext.Receipt.Block;
             if (GetBlockNumberInCycle(currentBlock) != 0)
             {
-                Logger.LogWarning($"FinishCycle called in block {currentBlock} which is not beginning of cycle {cycle.ToBigInteger()}");
+                Logger.LogWarning(
+                    $"FinishCycle called in block {currentBlock} which is not beginning of cycle {cycle.ToBigInteger()}");
                 return ExecutionStatus.ExecutionHalted;
             }
 
             if (cycle.ToBigInteger() != GetConsensusGeneration(frame) - 1)
             {
-                Logger.LogWarning($"Invalid cycle: {cycle}, just finished cycle number is {GetConsensusGeneration(frame) - 1}");
+                Logger.LogWarning(
+                    $"Invalid cycle: {cycle}, just finished cycle number is {GetConsensusGeneration(frame) - 1}");
                 return ExecutionStatus.ExecutionHalted;
             }
 
@@ -327,7 +334,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var votes = GetConfirmations(keyringHash.ToBytes(), gen);
                 if (votes + 1 < players - faulty)
                 {
-                    Logger.LogError($"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}");
+                    Logger.LogError(
+                        $"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}");
                     return ExecutionStatus.ExecutionHalted;
                 }
 
@@ -335,6 +343,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     .Batch(CryptoUtils.PublicKeyLength)
                     .Select(x => x.ToArray().ToPublicKey())
                     .ToArray();
+
+                foreach (var k in ecdsaPublicKeys)
+                {
+                    Logger.LogWarning(k.ToHex());
+                }
+
+                foreach (var k in tsKeys.Keys)
+                {
+                    Logger.LogWarning(k.ToHex());
+                }
+
                 _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
 
                 Emit(GovernanceInterface.EventFinishCycle);
@@ -447,6 +466,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(GovernanceInterface.MethodIsNextValidator)]
         public ExecutionStatus IsNextValidator(byte[] publicKey, SystemContractExecutionFrame frame)
         {
+            Logger.LogDebug($"IsNextValidator({publicKey.ToHex()})");
             frame.UseGas(GasMetering.GovernanceIsNextValidatorCost);
             var result = false;
             var validators = _nextValidators.Get();
@@ -466,6 +486,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public byte[][] GetNextValidators()
         {
+            Logger.LogDebug($"GetNextValidators()");
             return _nextValidators.Get().Batch(CryptoUtils.PublicKeyLength)
                 .Select(x => x.ToArray())
                 .ToArray();
