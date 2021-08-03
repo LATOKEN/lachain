@@ -33,8 +33,9 @@ namespace Lachain.Core.Blockchain.VM
                 Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.LogInformation($"Failed to verify: {ex}");
                 return false;
             }
         }

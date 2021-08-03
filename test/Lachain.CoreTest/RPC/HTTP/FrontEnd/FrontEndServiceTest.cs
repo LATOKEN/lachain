@@ -70,6 +70,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             _container?.Dispose();
         }
 
+        /*
         [Test]
         public void Test_PasswordChange()
         {
@@ -89,5 +90,6 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             Thread.Sleep(10000);
             Assert.AreEqual("0x1", _fes?.IsWalletLocked());
         }
+    */
     }
 }
