@@ -36,11 +36,11 @@ namespace Lachain.Core.Blockchain.VM
 
         private static byte[]? SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)
         {
-            Logger.LogInformation($"SafeCopyFromMemory({offset}, {length})");
+            Logger.LogInformation($"SafeCopyFromMemory({memory.Size}, {offset}, {length})");
             var frame = VirtualMachine.ExecutionFrames.Peek();
             if (length < 0 || offset < 0)
                 return null;
-            if (offset + length > memory.Size)
+            if (offset + length > memory.Size) 
                 return null;
             frame.UseGas(GasMetering.CopyFromMemoryGasPerByte * (ulong) length);
             var buffer = new byte[length];
@@ -58,7 +58,7 @@ namespace Lachain.Core.Blockchain.VM
 
         private static bool SafeCopyToMemory(UnmanagedMemory memory, byte[] data, int offset)
         {
-            Logger.LogInformation($"SafeCopyToMemory({data.ToHex()}, {offset})");
+            Logger.LogInformation($"SafeCopyToMemory({memory.Size}, {data.ToHex()}, {offset})");
             var frame = VirtualMachine.ExecutionFrames.Peek();
             if (offset < 0 || offset + data.Length > memory.Size)
                 return false;
@@ -86,7 +86,7 @@ namespace Lachain.Core.Blockchain.VM
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
             if (addressBuffer is null || inputBuffer is null)
                 throw new InvalidContractException("Bad call to call function");
-            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            var address = addressBuffer.Take(20).Reverse().ToArray().ToUInt160();
             var msgValue = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256();
             var value = msgValue!.ToMoney();
 

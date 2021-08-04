@@ -146,7 +146,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             // encode uint160 as 32 byte zero padded
             _staticBinaryWriter.Write(new byte[12]);
-            _staticBinaryWriter.Write(value.ToBytes().Reverse().ToArray());
+            _staticBinaryWriter.Write(value.ToBytes().ToArray());
             return this;
         }
 
