@@ -154,16 +154,16 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_ContractFromContractInvoke()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceA = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.A.wasm");
-            var resourceB = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.B.wasm");
+            var resourceC = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.C.wasm");
+            var resourceD = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.D.wasm");
             var keyPair = _wallet.EcdsaKeyPair;
             GenerateBlocks(1);
             
             // Deploy callee contract 
-            if(resourceB is null)
+            if(resourceD is null)
                 Assert.Fail("Failed t read script from resources");
-            var byteCode = new byte[resourceB!.Length];
-            resourceB!.Read(byteCode, 0, (int)resourceB!.Length);
+            var byteCode = new byte[resourceD!.Length];
+            resourceD!.Read(byteCode, 0, (int)resourceD!.Length);
             Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate callee code");
             var from = keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
@@ -179,10 +179,10 @@ namespace Lachain.CoreTest.IntegrationTests
             var calleeAddress = contractHash;
             
             // Deploy caller contract 
-            if(resourceA is null)
+            if(resourceC is null)
                 Assert.Fail("Failed t read script from resources");
-            byteCode = new byte[resourceA!.Length];
-            resourceA!.Read(byteCode, 0, (int)resourceA!.Length);
+            byteCode = new byte[resourceC!.Length];
+            resourceC!.Read(byteCode, 0, (int)resourceC!.Length);
             Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate caller code");
             nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
