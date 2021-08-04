@@ -193,6 +193,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.ChangeValidators(cycle, validators, frame));
             }
+            
             // call commit
             {
                 var commitMessage = keygen.StartKeygen();
@@ -206,6 +207,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 // set keygen state
                 value = keygen.HandleCommit(0, commitMessage);
             }
+            
             // send value
             {
                 var proposer = new BigInteger(0).ToUInt256();
@@ -218,6 +220,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsTrue(keygen.HandleSendValue(0, value));
                 Assert.IsTrue(keygen.Finished());
             }
+            
             // confirm
             {
                 ThresholdKeyring? keyring = keygen.TryGetKeys();
@@ -234,8 +237,10 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsTrue(keygen.HandleConfirm(keyring!.Value.TpkePublicKey,  
                     keyring!.Value.ThresholdSignaturePublicKeySet));
             }
+            
             // check no validators in storage
             Assert.Throws<ConsensusStateNotPresentException>(()=>context.Snapshot.Validators.GetValidatorsPublicKeys());
+            
             // finish cycle
             {
                 var input = ContractEncoder.Encode(GovernanceInterface.MethodFinishCycle, cycle);
@@ -246,6 +251,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 frame.InvocationContext.Receipt.Block = 20;
                 Assert.AreEqual(ExecutionStatus.Ok, contract.FinishCycle(cycle, frame));
             }
+            
             // check no validators in storage again
             Assert.IsEmpty(context.Snapshot.Validators.GetValidatorsPublicKeys());
         }
