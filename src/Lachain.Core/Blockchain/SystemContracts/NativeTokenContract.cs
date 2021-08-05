@@ -155,7 +155,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if(!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
                 return ExecutionStatus.ExecutionHalted;
             
-            if(_allowedSupply + amount > _maxSupply)
+            if(amount > _maxSupply)
+                return ExecutionStatus.ExecutionHalted;
+            
+            if(amount <= _allowedSupply)
                 return ExecutionStatus.ExecutionHalted;
             
             _allowedSupply = amount;
@@ -178,10 +181,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if(!frame.InvocationContext.Sender.Equals(_minterAdd))
                 return ExecutionStatus.ExecutionHalted;
             
-            var currentBalance =  _context.Snapshot?.Balances.GetBalance(address);
-            if (currentBalance is null) return ExecutionStatus.ExecutionHalted;
-            
-            if(currentBalance + amount > _maxSupply || currentBalance + amount > _allowedSupply)
+            var totalSupply =  _context.Snapshot.Balances.GetSupply();
+
+            if(totalSupply + amount > _maxSupply || totalSupply + amount > _allowedSupply)
                 return ExecutionStatus.ExecutionHalted;
 
             var newBalance = _context.Snapshot?.Balances.AddBalance(address, amount);
