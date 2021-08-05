@@ -123,9 +123,8 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             // mint tokens to address
             {
-                context = new InvocationContext(_minterAdd, _stateManager.LastApprovedSnapshot, tx);
-                contract = new NativeTokenContract(context);
-                
+                context.Sender = _minterAdd;
+
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("100"));
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
