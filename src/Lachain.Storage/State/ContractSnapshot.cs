@@ -13,6 +13,11 @@ namespace Lachain.Storage.State
             _state = state;
         }
 
+        public IStorageState GetState()
+        {
+            return _state ;
+        }
+
         public ulong Version => _state.CurrentVersion;
         
         [MethodImpl(MethodImplOptions.Synchronized)]

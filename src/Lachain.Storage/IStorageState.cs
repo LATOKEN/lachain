@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Lachain.Proto;
+using Lachain.Storage.Trie;
 
 namespace Lachain.Storage
 {
@@ -14,6 +15,8 @@ namespace Lachain.Storage
         ulong Delete(byte[] key, out byte[]? value);
         ulong TryDelete(byte[] key, out byte[]? value);
         
+        IDictionary<ulong,IHashTrieNode> GetAllNodes();
+
         IEnumerable<byte[]> Values { get; }
         
         UInt256 Hash { get; }

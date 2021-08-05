@@ -17,6 +17,11 @@ namespace Lachain.Storage.State
             _state = state;
         }
 
+        public IStorageState GetState()
+        {
+            return _state ;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {

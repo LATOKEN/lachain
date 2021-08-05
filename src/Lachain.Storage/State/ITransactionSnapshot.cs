@@ -9,5 +9,7 @@ namespace Lachain.Storage.State
         TransactionReceipt? GetTransactionByHash(UInt256 transactionHash);
         
         void AddTransaction(TransactionReceipt receipt, TransactionStatus status);
+
+        IStorageState GetState() ;
     }
 }

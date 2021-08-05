@@ -28,6 +28,7 @@ namespace Lachain.Storage.Trie
         {
             if (bytes.Length < 1)
             {
+                return new InternalNode() ;
                 throw new ArgumentException("Empty bytes to deserialize");
             }
             var type = bytes.Span[0];

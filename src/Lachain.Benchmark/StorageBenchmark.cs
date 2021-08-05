@@ -74,6 +74,10 @@ namespace Lachain.Benchmark
             for (var it = 0u; it < batches; ++it)
             {
                 Console.WriteLine($"commit number {it}");
+                if( it%10 == 0 ){
+                    Console.WriteLine("Please enter anything to continue: ") ;
+                    String temp = Console.ReadLine() ;
+                }
                 var snapshot = stateManager.NewSnapshot();
                 var start = TimeUtils.CurrentTimeMillis();
                 for (var i = 0u; i < T; ++i)

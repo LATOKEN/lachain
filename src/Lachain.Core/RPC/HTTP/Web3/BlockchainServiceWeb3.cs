@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
@@ -6,10 +6,12 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -21,18 +23,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
-        private readonly ITransactionPool _transactionPool;
-
+        private readonly ITransactionPool _transactionPool; 
+        private readonly ISnapshotIndexRepository _snapshotIndexer;
         public BlockchainServiceWeb3(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             ITransactionPool transactionPool,
-            IStateManager stateManager)
+            IStateManager stateManager,
+            ISnapshotIndexRepository snapshotIndexer)
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _stateManager = stateManager;
+            _snapshotIndexer = snapshotIndexer;
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
@@ -50,6 +54,52 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
             var txArray = fullTx ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index) : new JArray();
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
+        }
+
+        [JsonRpcMethod("la_getStateByNumber")]
+        private JObject? GetStateByNumber(string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag) ;
+            Console.WriteLine(blockNumber) ;
+            if(blockNumber == null) return null ;
+        //    return Web3DataFormatUtils.Web3Number((ulong)blockNumber) ;
+            IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
+
+            var jobject = new JObject{} ;
+            jobject["Balances"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Balances.GetState().GetAllNodes()  ) ;
+            jobject["Contracts"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Contracts.GetState().GetAllNodes()  ) ;
+            jobject["Storage"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Storage.GetState().GetAllNodes()  ) ;
+            jobject["Transactions"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Transactions.GetState().GetAllNodes()  ) ;
+            jobject["Events"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Events.GetState().GetAllNodes()  ) ;
+            jobject["Validators"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Validators.GetState().GetAllNodes()  ) ;
+
+            jobject["BalancesRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Balances.GetState().CurrentVersion  ) ;
+            jobject["ContractsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Contracts.GetState().CurrentVersion  ) ;
+            jobject["StorageRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Storage.GetState().CurrentVersion  ) ;
+            jobject["TransactionsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Transactions.GetState().CurrentVersion  ) ;
+            jobject["EventsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Events.GetState().CurrentVersion  ) ;
+            jobject["Validators"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Validators.GetState().CurrentVersion  ) ;
+
+            return jobject ;
+/*            List<byte[]> l = new List<byte[]>() ;
+            var temp = blockchainSnapshot.Balances.Hash.ToBytes() ;
+            l.Add(blockchainSnapshot.Balances.GetState().Hash.ToBytes()) ;
+           // return Web3DataFormatUtils.Web3Number((ulong)blockNumber) ;
+
+            temp.Concat( blockchainSnapshot.Contracts.Hash.ToBytes() ) ;
+            l.Add(blockchainSnapshot.Contracts.GetState().Hash.ToBytes()) ;
+            temp.Concat( blockchainSnapshot.Storage.Hash.ToBytes() ) ;
+            l.Add(blockchainSnapshot.Storage.GetState().Hash.ToBytes()) ;
+            temp.Concat( blockchainSnapshot.Transactions.Hash.ToBytes() ) ;
+            l.Add(blockchainSnapshot.Transactions.GetState().Hash.ToBytes()) ;
+            temp.Concat( blockchainSnapshot.Events.Hash.ToBytes() ) ;
+            l.Add(blockchainSnapshot.Events.GetState().Hash.ToBytes()) ;
+            temp.Concat( blockchainSnapshot.Validators.Hash.ToBytes() ) ;
+            l.Add(blockchainSnapshot.Validators.GetState().Hash.ToBytes()) ;
+
+            var stateHash = temp.Keccak() ;
+            return Web3DataFormatUtils.Web3Data( l.Flatten().Keccak() ) ;s
+*/
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]

@@ -6,7 +6,7 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.Trie
 {
-    internal class InternalNode : IHashTrieNode
+    public class InternalNode : IHashTrieNode
     {
         public uint ChildrenMask { get; private set; }
 
@@ -22,7 +22,7 @@ namespace Lachain.Storage.Trie
 
         public IEnumerable<ulong> Children => _children;
 
-        private InternalNode()
+        public InternalNode()
         {
             ChildrenMask = 0;
             _children = new ulong[0];

@@ -17,6 +17,7 @@ namespace Lachain.Storage.Trie
         private SpinLock _dataLock = new SpinLock();
         
         private ConcurrentQueue<ReplacedNode> replacedNodeQueue = new ConcurrentQueue<ReplacedNode>() ;
+        ulong totalDeletedNode = 0 , totalByteCreated=0, totalByteDeleted=0 , cnt = 0 ;
 
         private readonly NodeRepository _repository;
         private readonly VersionFactory _versionFactory;
@@ -47,6 +48,15 @@ namespace Lachain.Storage.Trie
             }
         }
 
+        ulong NodeSizeInByte(IHashTrieNode node)
+        {
+            if( node.Type == NodeType.Leaf ) return 65;
+            else{
+                if( node.Children.Count() == 0 ) return 0 ;
+                return 1+4+32+ 8*(ulong)node.Children.Count() ;
+            }
+        }
+
         bool OldEnoughToDelete(ReplacedNode node)
         {
             const int K = 100000 ;
@@ -58,9 +68,16 @@ namespace Lachain.Storage.Trie
         {
             EnsurePersisted(root, batch);
             while( replacedNodeQueue.TryPeek(out var node) && OldEnoughToDelete(node)  ){
+                
+                totalDeletedNode++ ;
+                totalByteDeleted += NodeSizeInByte( GetNodeById( node.NodeId ) ) ;
                 replacedNodeQueue.TryDequeue(out node) ;
                 _repository.DeleteNodeToBatch(node.NodeId,batch) ;
+                
             }
+            cnt++ ;
+            Console.WriteLine(_versionFactory.CurrentVersion+" "+totalDeletedNode+" "+cnt) ;
+            Console.WriteLine("Byte-> "+totalByteCreated/(1024*1024)+" "+totalByteDeleted/(1024*1024)) ;
             ClearCaches();
         }
 
@@ -125,6 +142,13 @@ namespace Lachain.Storage.Trie
             return TraverseValues(root);
         }
 
+        public IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root)
+        {
+            IDictionary<ulong,IHashTrieNode> dict = new ConcurrentDictionary<ulong, IHashTrieNode>();
+            TraverseNodes(root,dict) ;
+            return dict ;
+        }
+
         public UInt256 GetHash(ulong root)
         {
             return GetNodeById(root)?.Hash?.ToUInt256() ?? UInt256Utils.Zero;
@@ -148,6 +172,25 @@ namespace Lachain.Storage.Trie
                         yield return value;
                     break;
             }
+        }
+
+        private void TraverseNodes(ulong root, IDictionary<ulong,IHashTrieNode> dict)
+        {
+            if(root == 0) return ;
+            var node = GetNodeById(root) ;
+            if (node is null) throw new InvalidOperationException("corrupted trie");
+            dict[root] = node ;
+            
+            switch (node)
+            {
+                case LeafNode leafNode:
+                    break ;
+                default:
+                    foreach (var child in node.Children)
+                        TraverseNodes(child,dict) ;
+                    break;
+            }
+            return ;
         }
 
         private IHashTrieNode? GetNodeById(ulong id)
@@ -180,6 +223,7 @@ namespace Lachain.Storage.Trie
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = modified;
             replacedNodeQueue.Enqueue( new ReplacedNode(id,newId) ) ;
+            totalByteCreated += NodeSizeInByte(modified) ;
             return newId;
         }
 
@@ -187,6 +231,7 @@ namespace Lachain.Storage.Trie
         {
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = new LeafNode(key, value);
+            totalByteCreated += 65 ;
             return newId;
         }
 
