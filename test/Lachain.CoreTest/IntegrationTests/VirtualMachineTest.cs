@@ -60,7 +60,7 @@ namespace Lachain.CoreTest.IntegrationTests
          //   _container.Dispose();
         }
 
-        /*
+        
         [Test]
         public void Test_VirtualMachine_InvokeContract()
         {
@@ -606,6 +606,81 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        public void Test_VirtualMachine_InvokeStringContract()
+        {
+            var stateManager = _container.Resolve<IStateManager>();
+
+            // A
+            var aCode = "0061736D0100000001230760017F006000017F60037F7F7F0060027F7F0060017F017F60037F7F7F017F60000002D9010A03656E760C6765745F6D736776616C7565000003656E760D6765745F63616C6C5F73697A65000103656E760F636F70795F63616C6C5F76616C7565000203656E760C6C6F61645F73746F72616765000303656E760A7365745F72657475726E000303656E760B73797374656D5F68616C74000003656E76176765745F73746F726167655F737472696E675F73697A65000403656E76136C6F61645F73746F726167655F737472696E67000303656E7613736176655F73746F726167655F737472696E67000203656E760C736176655F73746F726167650003030807020302050406060405017001010105030100020608017F01418080040B071202066D656D6F7279020005737461727400100AAE0C072E0002402002450D000340200020012D00003A0000200041016A2100200141016A21012002417F6A22020D000B0B0B240002402001450D00034020004200370300200041086A21002001417F6A22010D000B0B0B2D002001411F6A21010340200120002D00003A00002001417F6A2101200041016A21002002417F6A22020D000B0B7E01017F200120006C220141086A100E2203200036020420032000360200200341086A2100024002402002417F460D002001450D010340200020022D00003A0000200041016A2100200241016A21022001417F6A22010D000C020B0B2001450D000340200041003A0000200041016A21002001417F6A22010D000B0B20030BA60101047F418080042101024003400240200128020C0D002001280208220220004F0D020B200128020022010D000B41002101410028020821020B02402002200041076A41787122036B22024118490D00200120036A41106A22002001280200220436020002402004450D00200420003602040B2000200241706A3602082000410036020C2000200136020420012000360200200120033602080B2001410136020C200141106A0B2E004100410036028080044100410036028480044100410036028C800441003F0041107441F0FF7B6A36028880040BD30801057F230041D0016B22002400200041086A10000240024002400240024002402000290308200041186A29030084200041106A290300200041206A29030084844200520D00100F41001001220136024041002001100E22023602444100200120021002200141034D0D0541002002280200220136023C02400240024002402001419FACCAAA054A0D00200141CFCAE650460D02200141B0E684DA03460D010C090B200141A0ACCAAA05460D02200141DDE688FD07470D08200041B0016A41186A4200370300200042003703C001200042003703B801200042013703B001200041B0016A20004190016A1003200041286A41186A20004190016A41186A2903003703002000200041A0016A290300370338200020004198016A29030037033020002000290390013703284100450D0441004100100441011005000B200041C8016A4200370300200042003703C001200042003703B801200042003703B001200041B0016A1006220241086A100E22012002360200200141046A2002360200200041B0016A200141086A10072000200136024C4100450D0441004100100441011005000B20004190016A41186A4200370300200042003703A0012000420037039801200042003703900120004190016A410041301008200041B0016A41186A4200370300200041F0006A41186A4200370300200042003703C001200042003703B801200042043703B00120004200370380012000420037037820004201370370200041F0006A200041B0016A10092000410941014130100D3602584100450D0441004100100441011005000B200041C8016A4200370300200042003703C001200042003703B801200042003703B001200041B0016A1006220241086A100E22012002360200200141046A2002360200200041B0016A200141086A1007200020013602644100450D0441004100100441011005000B41004100100441011005000B4120100E22014104100B200041286A20014120100C20014120100441001005000B200028024C2201280200410020011B413F6A41607141206A2202100E22012002410376100B20004120360250200041D0006A20014104100C2000200028024C2203280200410020031B2204360254200041D4006A200141206A4104100C200141C0006A200341086A2004100A20012002100441001005000B20002802582201280200410020011B413F6A41607141206A2202100E22012002410376100B2000412036025C200041DC006A20014104100C200020002802582203280200410020031B2204360260200041E0006A200141206A4104100C200141C0006A200341086A2004100A20012002100441001005000B20002802642201280200410020011B413F6A41607141206A2202100E22012002410376100B20004120360268200041E8006A20014104100C200020002802642203280200410020031B220436026C200041EC006A200141206A4104100C200141C0006A200341086A2004100A20012002100441001005000B41004100100441011005000B0B3F010041000B3961616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161736473616473616400740970726F647563657273010C70726F6365737365642D62790105636C616E675431312E302E3120286769743A2F2F6769746875622E636F6D2F6C6C766D2F6C6C766D2D70726F6A65637420313365343336396337333335356136633561333166633161313131356663376336393734336164612900FA01046E616D6501F20111000C6765745F6D736776616C7565010D6765745F63616C6C5F73697A65020F636F70795F63616C6C5F76616C7565030C6C6F61645F73746F72616765040A7365745F72657475726E050B73797374656D5F68616C7406176765745F73746F726167655F737472696E675F73697A6507136C6F61645F73746F726167655F737472696E670813736176655F73746F726167655F737472696E67090C736176655F73746F726167650A085F5F6D656D6370790B085F5F627A65726F380C0B5F5F6C654E746F626533320D0A766563746F725F6E65770E085F5F6D616C6C6F630F0B5F5F696E69745F6865617010057374617274"
+                    .HexToBytes();
+
+            var aAddress = "0xfd893ce89186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
+            var aContract = new Contract
+            (
+                aAddress,
+                aCode
+            );
+            if (!VirtualMachine.VerifyContract(aContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
+            var snapshot = stateManager.NewSnapshot();
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, aContract);
+            stateManager.Approve();
+
+            for (var i = 0; i < 1; ++i)
+            {
+                var currentTime = TimeUtils.CurrentTimeMillis();
+                var currentSnapshot = stateManager.NewSnapshot();
+
+                var sender = UInt160Utils.Zero;
+
+                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.AddBalance(aAddress, 100.ToUInt256().ToMoney());
+
+                var transactionReceipt = new TransactionReceipt();
+                transactionReceipt.Transaction = new Transaction();
+                transactionReceipt.Transaction.Value = 0.ToUInt256();
+                var context = new InvocationContext(sender, currentSnapshot, transactionReceipt);
+
+                {
+                    Console.WriteLine("\nA: setValue()");
+                    var input = ContractEncoder.Encode("setValue()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(aContract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine("\nA: getValue()");
+                    var input = ContractEncoder.Encode("getValue()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(aContract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+
+                stateManager.Approve();
+            exit_mark:
+                var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+                Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
+            }
+        }
+
+        [Test]
         public void Test_VirtualMachine_InvokeDelegateContract()
         {
             var stateManager = _container.Resolve<IStateManager>();
@@ -874,7 +949,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 var context = new InvocationContext(sender, currentSnapshot, transactionReceipt);
 
                 {
-                    /* ERC-20: name #1#
+                    /* ERC-20: name */
                     Console.WriteLine("\nERC-20: name()");
                     var input = ContractEncoder.Encode("name()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -890,7 +965,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {"LAtoken"}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: symbol #1#
+                    /* ERC-20: symbol */
                     Console.WriteLine("\nERC-20: symbol()");
                     var input = ContractEncoder.Encode("symbol()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -906,7 +981,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {"LA"}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: decimals #1#
+                    /* ERC-20: decimals */
                     Console.WriteLine("\nERC-20: decimals()");
                     var input = ContractEncoder.Encode("decimals()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -922,7 +997,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {18}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: totalSupply #1#
+                    /* ERC-20: totalSupply */
                     Console.WriteLine("\nERC-20: totalSupply()");
                     var input = ContractEncoder.Encode("totalSupply()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -938,7 +1013,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {0}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* mint #1#
+                    /* mint */
                     Console.WriteLine($"\nERC-20: mint({sender.ToHex()},{Money.FromDecimal(100)})");
                     var input = ContractEncoder.Encode("mint(address,uint256)", sender, Money.FromDecimal(100));
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -954,7 +1029,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: totalSupply #1#
+                    /* ERC-20: totalSupply */
                     Console.WriteLine("\nERC-20: totalSupply()");
                     var input = ContractEncoder.Encode("totalSupply()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -970,7 +1045,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {100}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf #1#
+                    /* ERC-20: balanceOf */
                     Console.WriteLine($"\nERC-20: balanceOf({sender.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", sender);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -986,7 +1061,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {100}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: transfer #1#
+                    /* ERC-20: transfer */
                     Console.WriteLine($"\nERC-20: transfer({to.ToHex()},{Money.FromDecimal(50)})");
                     var input = ContractEncoder.Encode("transfer(address,uint256)", to, Money.FromDecimal(50));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1002,7 +1077,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf #1#
+                    /* ERC-20: balanceOf */
                     Console.WriteLine($"\nERC-20: balanceOf({sender.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", sender);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1018,7 +1093,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf #1#
+                    /* ERC-20: balanceOf */
                     Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", to);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1034,7 +1109,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: approve #1#
+                    /* ERC-20: approve */
                     Console.WriteLine($"\nERC-20: approve({to.ToHex()},{Money.FromDecimal(50)})");
                     var input = ContractEncoder.Encode("approve(address,uint256)", to, Money.FromDecimal(50));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1050,7 +1125,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: allowance #1#
+                    /* ERC-20: allowance */
                     Console.WriteLine($"\nERC-20: allowance({sender.ToHex()},{to.ToHex()})");
                     var input = ContractEncoder.Encode("allowance(address,address)", sender, to);
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1066,7 +1141,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: increaseAllowance #1#
+                    /* ERC-20: increaseAllowance */
                     Console.WriteLine($"\nERC-20: increaseAllowance({to.ToHex()},{Money.FromDecimal(10)})");
                     var input = ContractEncoder.Encode("increaseAllowance(address,uint256)", to, Money.FromDecimal(10));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1082,7 +1157,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: allowance #1#
+                    /* ERC-20: allowance */
                     Console.WriteLine($"\nERC-20: allowance({sender.ToHex()},{to.ToHex()})");
                     var input = ContractEncoder.Encode("allowance(address,address)", sender, to);
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1098,7 +1173,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {60}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: decreaseAllowance #1#
+                    /* ERC-20: decreaseAllowance */
                     Console.WriteLine($"\nERC-20: decreaseAllowance({to.ToHex()},{Money.FromDecimal(10)})");
                     var input = ContractEncoder.Encode("decreaseAllowance(address,uint256)", to, Money.FromDecimal(10));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1114,7 +1189,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: allowance #1#
+                    /* ERC-20: allowance */
                     Console.WriteLine($"\nERC-20: allowance({sender.ToHex()},{to.ToHex()})");
                     var input = ContractEncoder.Encode("allowance(address,address)", sender, to);
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1130,7 +1205,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: transferFrom #1#
+                    /* ERC-20: transferFrom */
                     Console.WriteLine($"\nERC-20: transferFrom({sender.ToHex()},{to.ToHex()},{Money.FromDecimal(50)})");
                     var input = ContractEncoder.Encode("transferFrom(address,address,uint256)", sender, to,
                         Money.FromDecimal(50));
@@ -1151,7 +1226,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf #1#
+                    /* ERC-20: balanceOf */
                     Console.WriteLine($"\nERC-20: balanceOf({sender.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", sender);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1167,7 +1242,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {0}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf #1#
+                    /* ERC-20: balanceOf */
                     Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", to);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1183,7 +1258,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {100}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* burn #1#
+                    /* burn */
                     Console.WriteLine($"\nERC-20: burn({to.ToHex()},{Money.FromDecimal(30)})");
                     var input = ContractEncoder.Encode("burn(address,uint256)", to, Money.FromDecimal(30));
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1199,7 +1274,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: totalSupply #1#
+                    /* ERC-20: totalSupply */
                     Console.WriteLine("\nERC-20: totalSupply()");
                     var input = ContractEncoder.Encode("totalSupply()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1215,7 +1290,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {70}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf #1#
+                    /* ERC-20: balanceOf */
                     Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", to);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1321,6 +1396,5 @@ namespace Lachain.CoreTest.IntegrationTests
                 Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
             }
         }
-    */
     }
 }
