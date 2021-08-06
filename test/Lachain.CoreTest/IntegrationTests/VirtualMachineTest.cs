@@ -61,7 +61,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         
-        [Test]
+        /*[Test]
         public void Test_VirtualMachine_InvokeContract()
         {
             var stateManager = _container.Resolve<IStateManager>();
@@ -1395,6 +1395,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
                 Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
             }
-        }
+        }*/
     }
 }
