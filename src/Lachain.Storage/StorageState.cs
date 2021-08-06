@@ -48,6 +48,11 @@ namespace Lachain.Storage
             return _trieMap.GetAllNodes(CurrentVersion) ;
         }
 
+        public byte[] RecalculateHash(ulong root)
+        {
+            return _trieMap.RecalculateHash(root) ;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Add(byte[] key, byte[] value)
         {

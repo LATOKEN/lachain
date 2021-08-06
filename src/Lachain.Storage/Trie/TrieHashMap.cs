@@ -174,6 +174,26 @@ namespace Lachain.Storage.Trie
             }
         }
 
+        public byte[] RecalculateHash( ulong root )
+        {
+            var node = GetNodeById(root) ;
+            if(node is null) return new byte[] {} ;
+
+            switch(node)
+            {
+                case InternalNode internalNode:
+                    List<byte[]>  childrenHashes = new List<byte[]>() ;
+                    foreach(var child in internalNode.Children ) childrenHashes.Add( GetNodeById(child).Hash ) ;
+
+                    return childrenHashes
+                    .Zip( InternalNode.GetChildrenLabels(internalNode.ChildrenMask) , (bytes, i) => new[] {i}.Concat(bytes))
+                    .SelectMany(bytes => bytes)
+                    .KeccakBytes();
+
+             }
+            return new byte[] {} ; 
+        }
+
         private void TraverseNodes(ulong root, IDictionary<ulong,IHashTrieNode> dict)
         {
             if(root == 0) return ;
@@ -201,7 +221,7 @@ namespace Lachain.Storage.Trie
 
         private ulong ModifyInternalNode(ulong id, InternalNode node, byte h, ulong value, byte[]? valueHash)
         {
-            if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
+        /*    if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
             {
                 // we have to handle case when one of two children is deleted and internal node is folded to leaf
                 var secondChild = node.Children.First(child => child != node.GetChildByHash(h));
@@ -213,7 +233,7 @@ namespace Lachain.Storage.Trie
             }
 
             if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count()==1 && GetNodeById(value).Type == NodeType.Leaf ) return value ;
-
+*/
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
                 node.Children.Select(id => GetNodeById(id)?.Hash ?? throw new InvalidOperationException()),

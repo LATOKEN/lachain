@@ -66,19 +66,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
 
             var jobject = new JObject{} ;
-            jobject["Balances"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Balances.GetState().GetAllNodes()  ) ;
-            jobject["Contracts"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Contracts.GetState().GetAllNodes()  ) ;
-            jobject["Storage"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Storage.GetState().GetAllNodes()  ) ;
-            jobject["Transactions"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Transactions.GetState().GetAllNodes()  ) ;
-            jobject["Events"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Events.GetState().GetAllNodes()  ) ;
-            jobject["Validators"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Validators.GetState().GetAllNodes()  ) ;
+            jobject["Balances"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Balances.GetState()  ) ;
+            jobject["Contracts"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Contracts.GetState()  ) ;
+            jobject["Storage"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Storage.GetState()  ) ;
+            jobject["Transactions"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Transactions.GetState()  ) ;
+            jobject["Events"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Events.GetState()  ) ;
+            jobject["Validators"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Validators.GetState() ) ;
 
             jobject["BalancesRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Balances.GetState().CurrentVersion  ) ;
             jobject["ContractsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Contracts.GetState().CurrentVersion  ) ;
             jobject["StorageRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Storage.GetState().CurrentVersion  ) ;
             jobject["TransactionsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Transactions.GetState().CurrentVersion  ) ;
             jobject["EventsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Events.GetState().CurrentVersion  ) ;
-            jobject["Validators"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Validators.GetState().CurrentVersion  ) ;
+            jobject["ValidatosRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Validators.GetState().CurrentVersion  ) ;
 
             return jobject ;
 /*            List<byte[]> l = new List<byte[]>() ;

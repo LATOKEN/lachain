@@ -16,6 +16,7 @@ namespace Lachain.Storage
         ulong TryDelete(byte[] key, out byte[]? value);
         
         IDictionary<ulong,IHashTrieNode> GetAllNodes();
+        public byte[] RecalculateHash(ulong root);
 
         IEnumerable<byte[]> Values { get; }
         

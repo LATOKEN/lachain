@@ -10,6 +10,7 @@ using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
 using Lachain.Storage.Trie;
+using Lachain.Storage;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -82,18 +83,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
-        public static JObject Web3Trie( IDictionary<ulong,IHashTrieNode> dict )
+        public static JObject Web3Trie( IStorageState _state )
         {
+            IDictionary<ulong,IHashTrieNode> dict = _state.GetAllNodes() ;
+
             var jobject = new JObject{} ;
 
             foreach(var item in dict)
             {
-                jobject[ item.Key.ToString() ] = Web3DataFormatUtils.Web3Node(item.Value) ;
+                jobject[ item.Key.ToString() ] = Web3DataFormatUtils.Web3Node(item.Value,_state, item.Key) ;
             }
             return jobject ;
         }
 
-        public static JObject Web3Node(IHashTrieNode node)
+        public static JObject Web3Node(IHashTrieNode node, IStorageState _state, ulong root)
         {
             switch (node)
             {
@@ -105,6 +108,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         ["Hash"] = Web3Data( internalNode.Hash.ToUInt256() ),
                         ["ChildrenMask"] = Web3Number((ulong)internalNode.ChildrenMask),
                         ["Children"] = jArray,
+                        ["RecalculatedHash"] = Web3Data(_state.RecalculateHash(root).ToUInt256()),
                     };     
 
 

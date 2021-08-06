@@ -16,6 +16,7 @@ namespace Lachain.Storage.Trie
         byte[]? Find(ulong root, byte[] key);
         IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root);
         IEnumerable<byte[]> GetValues(ulong root);
+        public byte[] RecalculateHash( ulong root );
         UInt256 GetHash(ulong root);
     }
 }

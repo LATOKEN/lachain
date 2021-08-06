@@ -45,7 +45,7 @@ namespace Lachain.Storage.Trie
             Hash = hash.ToArray();
         }
 
-        private static IEnumerable<byte> GetChildrenLabels(uint mask)
+        public static IEnumerable<byte> GetChildrenLabels(uint mask)
         {
             return Enumerable.Range(0, 32).Where(i => ((mask >> i) & 1) != 0).Select(i => (byte) i);
         }
