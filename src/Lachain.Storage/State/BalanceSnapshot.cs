@@ -83,6 +83,22 @@ namespace Lachain.Storage.State
             AddBalance(to, value);
             return true;
         }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public Money GetAllowedSupply()
+        {
+            var key = EntryPrefix.AllowedSupply.BuildPrefix();
+            var value = _state.Get(key);
+            var supply = value?.ToUInt256() ?? UInt256Utils.Zero;
+            return new Money(supply);
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SetAllowedSupply(Money value)
+        {
+            var key = EntryPrefix.AllowedSupply.BuildPrefix();
+            _state.AddOrUpdate(key, value.ToUInt256().ToBytes());
+        }
 
         public void Commit()
         {

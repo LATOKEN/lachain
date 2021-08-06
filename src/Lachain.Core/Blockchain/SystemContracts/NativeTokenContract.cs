@@ -33,16 +33,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private static EcdsaKeyPair _minterKeyPair =
             new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes()
                 .ToPrivateKey());
+
         private static byte[] _minterPubKey = CryptoUtils.EncodeCompressed(_minterKeyPair.PublicKey);
         private static UInt160 _minterAdd = Crypto.ComputeAddress(_minterPubKey).ToUInt160();
 
         private static EcdsaKeyPair _mintCntrlKeyPair =
             new EcdsaKeyPair("0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75".HexToBytes()
                 .ToPrivateKey());
+
         private static byte[] _mintCntrlPubKey = CryptoUtils.EncodeCompressed(_mintCntrlKeyPair.PublicKey);
         private static UInt160 _mintCntrlAdd = Crypto.ComputeAddress(_mintCntrlPubKey).ToUInt160();
 
-        private Money _allowedSupply = Money.Zero;
         private readonly Money _maxSupply = Money.Parse("1000000000");
 
         public NativeTokenContract(InvocationContext context)
@@ -147,43 +148,45 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.ReturnValue = 1.ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
-        
+
         [ContractMethod(Lrc20Interface.MethodSetAllowedSupply)]
         public ExecutionStatus SetAllowedSupply(Money amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            if(!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
+            if (!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
                 return ExecutionStatus.ExecutionHalted;
-            
-            if(amount > _maxSupply)
+
+            if (amount > _maxSupply)
                 return ExecutionStatus.ExecutionHalted;
-            
-            if(amount <= _allowedSupply)
+
+            if (amount <= _context.Snapshot.Balances.GetSupply())
                 return ExecutionStatus.ExecutionHalted;
-            
-            _allowedSupply = amount;
-            frame.ReturnValue = _allowedSupply.ToUInt256().ToBytes();
+
+            _context.Snapshot.Balances.SetAllowedSupply(amount);
+
+            frame.ReturnValue = _context.Snapshot.Balances.GetAllowedSupply().ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
-        
+
         [ContractMethod(Lrc20Interface.MethodGetAllowedSupply)]
         public ExecutionStatus GetAllowedSupply(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            frame.ReturnValue = _allowedSupply.ToUInt256().ToBytes();
+            frame.ReturnValue = _context.Snapshot.Balances.GetAllowedSupply().ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
         }
-        
+
         [ContractMethod(Lrc20Interface.MethodMint)]
         public ExecutionStatus Mint(UInt160 address, Money amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            if(!frame.InvocationContext.Sender.Equals(_minterAdd))
+            if (!frame.InvocationContext.Sender.Equals(_minterAdd))
                 return ExecutionStatus.ExecutionHalted;
-            
-            var totalSupply =  _context.Snapshot.Balances.GetSupply();
 
-            if(totalSupply + amount > _maxSupply || totalSupply + amount > _allowedSupply)
+            var totalSupply = _context.Snapshot.Balances.GetSupply();
+
+            if (totalSupply + amount > _maxSupply ||
+                totalSupply + amount > _context.Snapshot.Balances.GetAllowedSupply())
                 return ExecutionStatus.ExecutionHalted;
 
             var newBalance = _context.Snapshot?.Balances.AddBalance(address, amount);
