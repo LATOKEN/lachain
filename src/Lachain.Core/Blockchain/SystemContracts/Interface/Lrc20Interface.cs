@@ -13,6 +13,9 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodName = "name()";
         public const string MethodDecimals = "decimals()";
         public const string MethodSymbol = "symbol()";
+        public const string MethodMint = "mint(address,uint256)";
+        public const string MethodSetAllowedSupply = "setAllowedSupply(uint256)";
+        public const string MethodGetAllowedSupply = "getAllowedSupply()";
 
         public const string EventTransfer = "Transfer(address,address,uint256)";
         public const string EventApproval = "Approval(address,address,uint256)";
@@ -24,7 +27,10 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodTransfer,
             MethodTransferFrom,
             MethodApprove,
-            MethodAllowance
+            MethodAllowance,
+            MethodMint,
+            MethodSetAllowedSupply,
+            MethodGetAllowedSupply
         };
 
         public string[] Properties { get; } =
