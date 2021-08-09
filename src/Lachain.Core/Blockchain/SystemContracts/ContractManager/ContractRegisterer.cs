@@ -25,6 +25,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
         public static readonly UInt160 LatokenContract = new BigInteger(1).ToUInt160();
         public static readonly UInt160 GovernanceContract = new BigInteger(2).ToUInt160();
         public static readonly UInt160 StakingContract = new BigInteger(3).ToUInt160();
+        public static readonly UInt160 NativeTokenContract = new BigInteger(4).ToUInt160();
 
         public ContractRegisterer()
         {
@@ -36,6 +37,8 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             RegisterContract<GovernanceContract>(GovernanceContract);
             /* address <<0x3>> references Staking contract */
             RegisterContract<StakingContract>(StakingContract);
+            /* address <<0x4>> references Staking contract */
+            RegisterContract<NativeTokenContract>(NativeTokenContract);
         }
 
         private void RegisterContract<T>(UInt160 address)
