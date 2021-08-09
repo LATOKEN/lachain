@@ -233,11 +233,20 @@ namespace Lachain.Storage.Trie
                 if (secondSonHash is null) throw new InvalidOperationException();
 
                 var newId = _versionFactory.NewVersion();
-                _nodeCache[newId] = InternalNode.WithChildren(
-                    new[] {id, secondSon},
-                    new[] {firstFragment, secondFragment},
-                    new[] {leafNode.Hash, secondSonHash}
-                );
+                if( firstFragment < secondFragment ){
+                    _nodeCache[newId] = InternalNode.WithChildren(
+                        new[] {id, secondSon},
+                        new[] {firstFragment, secondFragment},
+                        new[] {leafNode.Hash, secondSonHash}
+                    );
+                }
+                else{
+                    _nodeCache[newId] = InternalNode.WithChildren(
+                        new[] {secondSon,id},
+                        new[] {secondFragment,firstFragment},
+                        new[] {secondSonHash, leafNode.Hash} 
+                    );
+                }
                 return newId;
             }
             else
