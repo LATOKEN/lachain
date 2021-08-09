@@ -23,12 +23,6 @@ namespace Lachain.Storage.Trie
             return new WriteBatch();
         }
 
-        public void DeleteNodeToBatch(ulong id, RocksDbAtomicWrite tx)
-        {
-            var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            tx.Delete(prefix) ;
-        }
-
         public void WriteNodeToBatch(ulong id, IHashTrieNode node, RocksDbAtomicWrite tx)
         {
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);

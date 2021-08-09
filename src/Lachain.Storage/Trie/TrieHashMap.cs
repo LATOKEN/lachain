@@ -18,7 +18,6 @@ namespace Lachain.Storage.Trie
         private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
         
-        private ConcurrentQueue<ReplacedNode> replacedNodeQueue = new ConcurrentQueue<ReplacedNode>() ;
 
         private readonly NodeRepository _repository;
         private readonly VersionFactory _versionFactory;
@@ -49,20 +48,9 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        bool OldEnoughToDelete(ReplacedNode node)
-        {
-            const int K = 100000 ;
-            if( _versionFactory.CurrentVersion-node.ReplacerId > K ) return true ;
-            else return false ;
-        }
-
         public void Checkpoint(ulong root, RocksDbAtomicWrite batch)
         {
             EnsurePersisted(root, batch);
-            while( replacedNodeQueue.TryPeek(out var node) && OldEnoughToDelete(node)  ){
-                replacedNodeQueue.TryDequeue(out node) ;
-                _repository.DeleteNodeToBatch(node.NodeId,batch) ;
-            }
             ClearCaches();
         }
 
@@ -165,7 +153,7 @@ namespace Lachain.Storage.Trie
             return _node;
         }
 
-        private ulong ModifyInternalNode(ulong id, InternalNode node, byte h, ulong value, byte[]? valueHash)
+        private ulong ModifyInternalNode(InternalNode node, byte h, ulong value, byte[]? valueHash)
         {
             if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
             {
@@ -188,7 +176,6 @@ namespace Lachain.Storage.Trie
             if (modified == null) return 0u;
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = modified;
-            replacedNodeQueue.Enqueue( new ReplacedNode(id,newId) ) ;
             return newId;
         }
 
@@ -201,12 +188,7 @@ namespace Lachain.Storage.Trie
 
         private ulong UpdateLeafNode(ulong id, LeafNode node, byte[] value)
         {
-            if( node.Value.SequenceEqual(value) ) return id ;
-            else{
-                var newId = NewLeafNode(node.KeyHash, value) ;
-                replacedNodeQueue.Enqueue( new ReplacedNode(id,newId) ) ;
-                return newId ;
-            }
+            return node.Value.SequenceEqual(value) ? id : NewLeafNode(node.KeyHash, value);
         }
 
         private static byte HashFragment(IReadOnlyList<byte> hash, int n)
@@ -273,7 +255,7 @@ namespace Lachain.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = AddInternal(to, height + 1, keyHash, value, check);
-                    return ModifyInternalNode(root, internalNode, h, updatedTo,
+                    return ModifyInternalNode(internalNode, h, updatedTo,
                         GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException()
                     );
                 case LeafNode leafNode:
@@ -303,7 +285,7 @@ namespace Lachain.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = DeleteInternal(to, height + 1, keyHash, out value, check);
-                    return ModifyInternalNode(root, internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash);
+                    return ModifyInternalNode(internalNode, h, updatedTo, GetNodeById(updatedTo)?.Hash);
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
                     {
@@ -329,7 +311,7 @@ namespace Lachain.Storage.Trie
                     var h = HashFragment(keyHash, height);
                     var to = internalNode.GetChildByHash(h);
                     var updatedTo = UpdateInternal(to, height + 1, keyHash, value);
-                    return ModifyInternalNode(root, internalNode, h, updatedTo,
+                    return ModifyInternalNode(internalNode, h, updatedTo,
                         GetNodeById(updatedTo)?.Hash ?? throw new InvalidOperationException());
                 case LeafNode leafNode:
                     if (!leafNode.KeyHash.SequenceEqual(keyHash))
