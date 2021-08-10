@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
+using Lachain.Storage.Trie;
+using System.Collections.Generic;
 
 namespace Lachain.Storage.State
 {
@@ -17,9 +19,14 @@ namespace Lachain.Storage.State
         {
             _state = state;
         }
-        public IStorageState GetState()
+        public IDictionary<ulong,IHashTrieNode> GetState()
         {
-            return _state ;
+            return _state.GetAllNodes() ;
+        }
+
+        public bool IsTrieNodeHashesOk()
+        {
+            return _state.IsNodeHashesOk() ;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

@@ -6,6 +6,7 @@ using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Lachain.Storage.Trie;
 
 namespace Lachain.Storage.State
 {
@@ -33,7 +34,17 @@ namespace Lachain.Storage.State
             var raw = _state.Get(EntryPrefix.BlockHeight.BuildPrefix());
             return raw?.AsReadOnlySpan().ToUInt64() ?? 0u;
         }
-
+      
+        public IDictionary<ulong,IHashTrieNode> GetState()
+        {
+            return _state.GetAllNodes() ;
+        }
+    
+        public bool IsTrieNodeHashesOk()
+        {
+            return _state.IsNodeHashesOk() ;
+        }
+    
         public Block? GetBlockByHeight(ulong blockHeight)
         {
             var raw = _state.Get(EntryPrefix.BlockHashByHeight.BuildPrefix(blockHeight));

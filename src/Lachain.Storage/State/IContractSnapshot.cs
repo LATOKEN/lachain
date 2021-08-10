@@ -27,7 +27,5 @@ namespace Lachain.Storage.State
         /// <returns></returns>
         void DeleteContractByHash(UInt160 contractHash);
 
-        IStorageState GetState() ;
-
     }
 }

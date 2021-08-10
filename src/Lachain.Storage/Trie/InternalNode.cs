@@ -66,13 +66,17 @@ namespace Lachain.Storage.Trie
             if (labels.Distinct().Count() != labels.Count)
                 throw new ArgumentException("Trying to create internal trie node with equal children labels");
             var mask = (uint) labels.Sum(x => 1u << x);
+            var hashes = childrenHashes.ToList();
             return new InternalNode(
                 mask,
                 labels
                     .Zip(ids, (label, id) => new KeyValuePair<ulong, byte>(id, label))
                     .OrderBy(pair => pair.Value)
                     .Select(pair => pair.Key),
-                childrenHashes
+                labels
+                    .Zip(hashes, (label, hash) => new KeyValuePair<byte[], byte>(hash,label))
+                    .OrderBy(pair => pair.Value)
+                    .Select(pair => pair.Key)
             );
         }
 

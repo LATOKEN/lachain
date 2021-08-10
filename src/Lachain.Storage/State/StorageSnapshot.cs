@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Lachain.Storage.Trie;
 
 namespace Lachain.Storage.State
 {
@@ -17,9 +18,14 @@ namespace Lachain.Storage.State
             _state = state;
         }
 
-        public IStorageState GetState()
+        public IDictionary<ulong,IHashTrieNode> GetState()
         {
-            return _state ;
+            return _state.GetAllNodes() ;
+        }
+        
+        public bool IsTrieNodeHashesOk()
+        {
+            return _state.IsNodeHashesOk() ;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

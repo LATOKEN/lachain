@@ -142,6 +142,16 @@ namespace Lachain.Storage.Trie
             return TraverseValues(root);
         }
 
+        public bool CheckAllNodeHashes(ulong root)
+        {
+            IDictionary<ulong,IHashTrieNode> dict = GetAllNodes(root) ;
+            foreach(var node in dict)
+            {
+                if( !(node.Value.Hash.SequenceEqual( RecalculateHash(node.Key) ) )  ) return false ;
+            }
+            return true ;
+        }
+
         public IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root)
         {
             IDictionary<ulong,IHashTrieNode> dict = new ConcurrentDictionary<ulong, IHashTrieNode>();
@@ -221,7 +231,7 @@ namespace Lachain.Storage.Trie
 
         private ulong ModifyInternalNode(ulong id, InternalNode node, byte h, ulong value, byte[]? valueHash)
         {
-        /*    if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
+            if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
             {
                 // we have to handle case when one of two children is deleted and internal node is folded to leaf
                 var secondChild = node.Children.First(child => child != node.GetChildByHash(h));
@@ -233,7 +243,7 @@ namespace Lachain.Storage.Trie
             }
 
             if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count()==1 && GetNodeById(value).Type == NodeType.Leaf ) return value ;
-*/
+
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
                 node.Children.Select(id => GetNodeById(id)?.Hash ?? throw new InvalidOperationException()),
@@ -288,11 +298,11 @@ namespace Lachain.Storage.Trie
                 var secondSonHash = GetNodeById(secondSon)?.Hash;
                 if (secondSonHash is null) throw new InvalidOperationException();
 
-                var newId = _versionFactory.NewVersion();
+                var newId = _versionFactory.NewVersion() ;
                 _nodeCache[newId] = InternalNode.WithChildren(
-                    new[] {id, secondSon},
-                    new[] {firstFragment, secondFragment},
-                    new[] {leafNode.Hash, secondSonHash}
+                        new[] {id, secondSon},
+                        new[] {firstFragment, secondFragment},
+                        new[] {leafNode.Hash, secondSonHash}
                 );
                 return newId;
             }

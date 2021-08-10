@@ -48,9 +48,9 @@ namespace Lachain.Storage
             return _trieMap.GetAllNodes(CurrentVersion) ;
         }
 
-        public byte[] RecalculateHash(ulong root)
+        public bool IsNodeHashesOk()
         {
-            return _trieMap.RecalculateHash(root) ;
+            return _trieMap.CheckAllNodeHashes(CurrentVersion) ;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

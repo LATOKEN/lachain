@@ -6,6 +6,7 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
+using Lachain.Storage.Trie;
 
 namespace Lachain.Storage.State
 {
@@ -18,11 +19,16 @@ namespace Lachain.Storage.State
             _state = state;
         }
 
-        public IStorageState GetState()
+        public IDictionary<ulong,IHashTrieNode> GetState()
         {
-            return _state ;
+            return _state.GetAllNodes() ;
         }
 
+        public bool IsTrieNodeHashesOk()
+        {
+            return _state.IsNodeHashesOk() ;
+        }
+        
         public ulong Version => _state.CurrentVersion;
 
         public void Commit()
