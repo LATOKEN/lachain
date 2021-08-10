@@ -6,6 +6,7 @@ using System.Threading;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Lachain.Utility.Serialization;
 using RocksDbSharp;
 
 namespace Lachain.Storage.Trie
@@ -201,6 +202,8 @@ namespace Lachain.Storage.Trie
                     .Zip( InternalNode.GetChildrenLabels(internalNode.ChildrenMask) , (bytes, i) => new[] {i}.Concat(bytes))
                     .SelectMany(bytes => bytes)
                     .KeccakBytes();
+                case LeafNode leafNode:
+                    return leafNode.KeyHash.Length.ToBytes().Concat(leafNode.KeyHash).Concat(leafNode.Value).KeccakBytes();
 
              }
             return new byte[] {} ; 
