@@ -2,11 +2,14 @@ language: csharp
 mono: none
 dist: focal
 dotnet: 5.0
+addons:
+  apt:
+    packages:
+      - dotnet-sdk-3.1
 env:
   global:
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
     - DOTNET_CLI_TELEMETRY_OPTOUT=1
-if: tag IS present
 install:
   - dotnet restore
   - dotnet build -c Release

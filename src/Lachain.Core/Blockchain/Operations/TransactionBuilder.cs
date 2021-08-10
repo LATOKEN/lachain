@@ -50,12 +50,11 @@ namespace Lachain.Core.Blockchain.Operations
         public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
             var nonce = _transactionPool.GetNextNonceForAddress(from);
-            var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, byteCode);
             var tx = new Transaction
             {
-                Invocation = ByteString.CopyFrom(abi),
+                Invocation = ByteString.CopyFrom(byteCode.ToArray()),
                 From = from,
-                To = ContractRegisterer.DeployContract, 
+                To = UInt160Utils.Empty, 
                 GasPrice = _CalcEstimatedBlockFee(),
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = GasMetering.DefaultBlockGasLimit,

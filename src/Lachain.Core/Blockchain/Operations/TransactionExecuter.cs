@@ -40,7 +40,7 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.Ok;
             }
 
-            if (receipt.Transaction.To.Buffer.IsEmpty) // this is deploy transaction
+            if (receipt.Transaction.To.Buffer.IsEmpty || receipt.Transaction.To.IsZero()) // this is deploy transaction
             {
                 var invocation = ContractEncoder.Encode("deploy(bytes)", transaction.Invocation.ToArray());
                 return _InvokeContract(ContractRegisterer.DeployContract, invocation, receipt, snapshot, true);

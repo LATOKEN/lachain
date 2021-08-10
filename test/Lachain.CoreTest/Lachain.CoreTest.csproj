@@ -30,6 +30,14 @@
     <EmbeddedResource Include="Resources\scripts\A.abi" />
     <EmbeddedResource Include="Resources\scripts\B.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
+    <None Remove="Resources\scripts\C.abi" />
+    <EmbeddedResource Include="Resources\scripts\C.abi" />
+    <None Remove="Resources\scripts\C.wasm" />
+    <EmbeddedResource Include="Resources\scripts\C.wasm" />
+    <None Remove="Resources\scripts\D.abi" />
+    <EmbeddedResource Include="Resources\scripts\D.abi" />
+    <None Remove="Resources\scripts\D.wasm" />
+    <EmbeddedResource Include="Resources\scripts\D.wasm" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />
