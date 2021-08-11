@@ -45,12 +45,12 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IDictionary<ulong,IHashTrieNode> GetAllNodes()
         {
-            return _trieMap.GetAllNodes(CurrentVersion) ;
+            return _trieMap.GetAllNodes(CurrentVersion);
         }
 
         public bool IsNodeHashesOk()
         {
-            return _trieMap.CheckAllNodeHashes(CurrentVersion) ;
+            return _trieMap.CheckAllNodeHashes(CurrentVersion);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

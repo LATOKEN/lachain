@@ -19,9 +19,6 @@ namespace Lachain.Storage.Trie
         private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
         
-        private ConcurrentQueue<ReplacedNode> replacedNodeQueue = new ConcurrentQueue<ReplacedNode>() ;
-        ulong totalDeletedNode = 0 , totalByteCreated=0, totalByteDeleted=0 , cnt = 0 ;
-
         private readonly NodeRepository _repository;
         private readonly VersionFactory _versionFactory;
 
@@ -51,36 +48,9 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        ulong NodeSizeInByte(IHashTrieNode node)
-        {
-            if( node.Type == NodeType.Leaf ) return 65;
-            else{
-                if( node.Children.Count() == 0 ) return 0 ;
-                return 1+4+32+ 8*(ulong)node.Children.Count() ;
-            }
-        }
-
-        bool OldEnoughToDelete(ReplacedNode node)
-        {
-            const int K = 100000 ;
-            if( _versionFactory.CurrentVersion-node.ReplacerId > K ) return true ;
-            else return false ;
-        }
-
         public void Checkpoint(ulong root, RocksDbAtomicWrite batch)
         {
             EnsurePersisted(root, batch);
-            while( replacedNodeQueue.TryPeek(out var node) && OldEnoughToDelete(node)  ){
-                
-                totalDeletedNode++ ;
-                totalByteDeleted += NodeSizeInByte( GetNodeById( node.NodeId ) ) ;
-                replacedNodeQueue.TryDequeue(out node) ;
-                _repository.DeleteNodeToBatch(node.NodeId,batch) ;
-                
-            }
-            cnt++ ;
-            Console.WriteLine(_versionFactory.CurrentVersion+" "+totalDeletedNode+" "+cnt) ;
-            Console.WriteLine("Byte-> "+totalByteCreated/(1024*1024)+" "+totalByteDeleted/(1024*1024)) ;
             ClearCaches();
         }
 
@@ -147,10 +117,10 @@ namespace Lachain.Storage.Trie
 
         public bool CheckAllNodeHashes(ulong root)
         {
-            IDictionary<ulong,IHashTrieNode> dict = GetAllNodes(root) ;
+            IDictionary<ulong,IHashTrieNode> dict = GetAllNodes(root);
             foreach(var node in dict)
             {
-                if( !(node.Value.Hash.SequenceEqual( RecalculateHash(node.Key) ) )  ) return false ;
+                if( !(node.Value.Hash.SequenceEqual(RecalculateHash(node.Key)))) return false ;
             }
             return true ;
         }
@@ -158,8 +128,8 @@ namespace Lachain.Storage.Trie
         public IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root)
         {
             IDictionary<ulong,IHashTrieNode> dict = new ConcurrentDictionary<ulong, IHashTrieNode>();
-            TraverseNodes(root,dict) ;
-            return dict ;
+            TraverseNodes(root,dict);
+            return dict;
         }
 
         public UInt256 GetHash(ulong root)
@@ -189,14 +159,14 @@ namespace Lachain.Storage.Trie
 
         public byte[] RecalculateHash( ulong root )
         {
-            var node = GetNodeById(root) ;
-            if(node is null) return new byte[] {} ;
+            var node = GetNodeById(root);
+            if(node is null) return new byte[] {};
 
             switch(node)
             {
                 case InternalNode internalNode:
-                    List<byte[]>  childrenHashes = new List<byte[]>() ;
-                    foreach(var child in internalNode.Children ) childrenHashes.Add( GetNodeById(child).Hash ) ;
+                    List<byte[]>  childrenHashes = new List<byte[]>();
+                    foreach(var child in internalNode.Children ) childrenHashes.Add( GetNodeById(child).Hash );
 
                     return childrenHashes
                     .Zip( InternalNode.GetChildrenLabels(internalNode.ChildrenMask) , (bytes, i) => new[] {i}.Concat(bytes))
@@ -206,15 +176,15 @@ namespace Lachain.Storage.Trie
                     return leafNode.KeyHash.Length.ToBytes().Concat(leafNode.KeyHash).Concat(leafNode.Value).KeccakBytes();
 
              }
-            return new byte[] {} ; 
+            return new byte[] {}; 
         }
 
         private void TraverseNodes(ulong root, IDictionary<ulong,IHashTrieNode> dict)
         {
-            if(root == 0) return ;
-            var node = GetNodeById(root) ;
+            if(root == 0) return;
+            var node = GetNodeById(root);
             if (node is null) throw new InvalidOperationException("corrupted trie");
-            dict[root] = node ;
+            dict[root] = node;
             
             switch (node)
             {
@@ -222,10 +192,10 @@ namespace Lachain.Storage.Trie
                     break ;
                 default:
                     foreach (var child in node.Children)
-                        TraverseNodes(child,dict) ;
+                        TraverseNodes(child,dict);
                     break;
             }
-            return ;
+            return;
         }
 
         private IHashTrieNode? GetNodeById(ulong id)
@@ -254,7 +224,7 @@ namespace Lachain.Storage.Trie
                 }
             }
 
-            if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count()==1 && GetNodeById(value).Type == NodeType.Leaf ) return value ;
+            if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 1 && GetNodeById(value).Type == NodeType.Leaf) return value ;
 
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
@@ -264,8 +234,6 @@ namespace Lachain.Storage.Trie
             if (modified == null) return 0u;
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = modified;
-            replacedNodeQueue.Enqueue( new ReplacedNode(id,newId) ) ;
-            totalByteCreated += NodeSizeInByte(modified) ;
             return newId;
         }
 
@@ -273,7 +241,6 @@ namespace Lachain.Storage.Trie
         {
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = new LeafNode(key, value);
-            totalByteCreated += 65 ;
             return newId;
         }
 
@@ -282,7 +249,6 @@ namespace Lachain.Storage.Trie
             if( node.Value.SequenceEqual(value) ) return id ;
             else{
                 var newId = NewLeafNode(node.KeyHash, value) ;
-                replacedNodeQueue.Enqueue( new ReplacedNode(id,newId) ) ;
                 return newId ;
             }
         }

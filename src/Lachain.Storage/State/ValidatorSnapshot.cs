@@ -21,12 +21,12 @@ namespace Lachain.Storage.State
 
         public IDictionary<ulong,IHashTrieNode> GetState()
         {
-            return _state.GetAllNodes() ;
+            return _state.GetAllNodes();
         }
 
         public bool IsTrieNodeHashesOk()
         {
-            return _state.IsNodeHashesOk() ;
+            return _state.IsNodeHashesOk();
         }
         
         public ulong Version => _state.CurrentVersion;
