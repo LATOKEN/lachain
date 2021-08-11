@@ -6,7 +6,7 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.Trie
 {
-    internal class InternalNode : IHashTrieNode
+    public class InternalNode : IHashTrieNode
     {
         public uint ChildrenMask { get; private set; }
 
@@ -22,7 +22,7 @@ namespace Lachain.Storage.Trie
 
         public IEnumerable<ulong> Children => _children;
 
-        private InternalNode()
+        public InternalNode()
         {
             ChildrenMask = 0;
             _children = new ulong[0];
@@ -45,7 +45,7 @@ namespace Lachain.Storage.Trie
             Hash = hash.ToArray();
         }
 
-        private static IEnumerable<byte> GetChildrenLabels(uint mask)
+        public static IEnumerable<byte> GetChildrenLabels(uint mask)
         {
             return Enumerable.Range(0, 32).Where(i => ((mask >> i) & 1) != 0).Select(i => (byte) i);
         }
@@ -66,13 +66,17 @@ namespace Lachain.Storage.Trie
             if (labels.Distinct().Count() != labels.Count)
                 throw new ArgumentException("Trying to create internal trie node with equal children labels");
             var mask = (uint) labels.Sum(x => 1u << x);
+            var hashes = childrenHashes.ToList();
             return new InternalNode(
                 mask,
                 labels
                     .Zip(ids, (label, id) => new KeyValuePair<ulong, byte>(id, label))
                     .OrderBy(pair => pair.Value)
                     .Select(pair => pair.Key),
-                childrenHashes
+                labels
+                    .Zip(hashes, (label, hash) => new KeyValuePair<byte[], byte>(hash,label))
+                    .OrderBy(pair => pair.Value)
+                    .Select(pair => pair.Key)
             );
         }
 
