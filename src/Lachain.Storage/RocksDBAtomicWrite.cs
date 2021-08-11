@@ -22,7 +22,7 @@ namespace Lachain.Storage
 
         public void Delete(byte[] key)
         {
-            _writeBatch.Delete(key) ;
+            _writeBatch.Delete(key);
         }
 
         public void Commit()

@@ -15,7 +15,7 @@ namespace Lachain.Storage.Trie
     {
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
-        const int Capacity = 100000;
+        private const int Capacity = 100000;
         private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
         
@@ -120,9 +120,9 @@ namespace Lachain.Storage.Trie
             IDictionary<ulong,IHashTrieNode> dict = GetAllNodes(root);
             foreach(var node in dict)
             {
-                if( !(node.Value.Hash.SequenceEqual(RecalculateHash(node.Key)))) return false ;
+                if( !(node.Value.Hash.SequenceEqual(RecalculateHash(node.Key)))) return false;
             }
-            return true ;
+            return true;
         }
 
         public IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root)
@@ -189,7 +189,7 @@ namespace Lachain.Storage.Trie
             switch (node)
             {
                 case LeafNode leafNode:
-                    break ;
+                    break;
                 default:
                     foreach (var child in node.Children)
                         TraverseNodes(child,dict);
@@ -218,13 +218,10 @@ namespace Lachain.Storage.Trie
                 // we have to handle case when one of two children is deleted and internal node is folded to leaf
                 var secondChild = node.Children.First(child => child != node.GetChildByHash(h));
                 // fold only if secondChild is also a leaf 
-                if (GetNodeById(secondChild).Type == NodeType.Leaf)
-                {
-                    return secondChild;
-                }
+                if (GetNodeById(secondChild).Type == NodeType.Leaf) return secondChild;
             }
 
-            if(value!=0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 1 && GetNodeById(value).Type == NodeType.Leaf) return value ;
+            if(value != 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 1 && GetNodeById(value).Type == NodeType.Leaf) return value;
 
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
@@ -275,7 +272,7 @@ namespace Lachain.Storage.Trie
                 var secondSon = NewLeafNode(keyHash, value);
                 var secondSonHash = GetNodeById(secondSon)?.Hash;
                 if (secondSonHash is null) throw new InvalidOperationException();
-                var newId = _versionFactory.NewVersion() ;
+                var newId = _versionFactory.NewVersion();
                 _nodeCache[newId] = InternalNode.WithChildren(
                         new[] {id, secondSon},
                         new[] {firstFragment, secondFragment},

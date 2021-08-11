@@ -64,21 +64,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             var jobject = new JObject{} ;
             var temp = blockchainSnapshot.Balances.GetState() ;
-            jobject["Balances"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Balances.GetState()  ) ;
-            jobject["Contracts"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Contracts.GetState()  ) ;
-            jobject["Storage"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Storage.GetState()  ) ;
-            jobject["Transactions"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Transactions.GetState()  ) ;
-            jobject["Blocks"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Blocks.GetState()  ) ;
-            jobject["Events"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Events.GetState()  ) ;
-            jobject["Validators"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Validators.GetState() ) ;
+            jobject["Balances"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Balances.GetState());
+            jobject["Contracts"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Contracts.GetState());
+            jobject["Storage"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Storage.GetState()) ;
+            jobject["Transactions"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Transactions.GetState());
+            jobject["Blocks"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Blocks.GetState());
+            jobject["Events"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Events.GetState()) ;
+            jobject["Validators"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Validators.GetState());
 
-            jobject["BalancesRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Balances.Version  ) ;
-            jobject["ContractsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Contracts.Version  ) ;
-            jobject["StorageRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Storage.Version  ) ;
-            jobject["TransactionsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Transactions.Version  ) ;
-            jobject["BlocksRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Blocks.Version  ) ;
-            jobject["EventsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Events.Version  ) ;
-            jobject["ValidatorsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Validators.Version  ) ;
+            jobject["BalancesRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Balances.Version);
+            jobject["ContractsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Contracts.Version);
+            jobject["StorageRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Storage.Version) ;
+            jobject["TransactionsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Transactions.Version);
+            jobject["BlocksRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Blocks.Version);
+            jobject["EventsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Events.Version);
+            jobject["ValidatorsRoot"] = Web3DataFormatUtils.Web3Number(blockchainSnapshot.Validators.Version);
 
             return jobject ;
         }
@@ -89,14 +89,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var blockNumber = GetBlockNumberByTag(blockTag) ;
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             bool res = true ;
-            res &= blockchainSnapshot.Balances.IsTrieNodeHashesOk() ;
-            res &= blockchainSnapshot.Contracts.IsTrieNodeHashesOk() ;
-            res &= blockchainSnapshot.Storage.IsTrieNodeHashesOk() ;
-            res &= blockchainSnapshot.Transactions.IsTrieNodeHashesOk() ;
-            res &= blockchainSnapshot.Blocks.IsTrieNodeHashesOk() ;
-            res &= blockchainSnapshot.Events.IsTrieNodeHashesOk() ;
-            res &= blockchainSnapshot.Validators.IsTrieNodeHashesOk() ;
-            return Web3DataFormatUtils.Web3Number( Convert.ToUInt64(res) ) ;
+            res &= blockchainSnapshot.Balances.IsTrieNodeHashesOk();
+            res &= blockchainSnapshot.Contracts.IsTrieNodeHashesOk();
+            res &= blockchainSnapshot.Storage.IsTrieNodeHashesOk();
+            res &= blockchainSnapshot.Transactions.IsTrieNodeHashesOk();
+            res &= blockchainSnapshot.Blocks.IsTrieNodeHashesOk();
+            res &= blockchainSnapshot.Events.IsTrieNodeHashesOk();
+            res &= blockchainSnapshot.Validators.IsTrieNodeHashesOk();
+            return Web3DataFormatUtils.Web3Number(Convert.ToUInt64(res));
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
