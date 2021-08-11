@@ -16,6 +16,8 @@ namespace Lachain.Storage.State
         
         Money GetAllowedSupply();
         void SetAllowedSupply(Money value);
+        UInt160 GetMinter();
+        void SetMinter(UInt160 minter);
 
     }
 }

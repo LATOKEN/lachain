@@ -58,10 +58,10 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             _stateManager = _container.Resolve<IStateManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
 
-            _minterKeyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
-                .HexToBytes().ToPrivateKey());
-            _minterPubKey = CryptoUtils.EncodeCompressed(_minterKeyPair.PublicKey);
-            _minterAdd = _minterKeyPair.PublicKey.GetAddress();
+            // _minterKeyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
+            //     .HexToBytes().ToPrivateKey());
+            // _minterPubKey = CryptoUtils.EncodeCompressed(_minterKeyPair.PublicKey);
+            // _minterAdd = _minterKeyPair.PublicKey.GetAddress();
 
             _mintCntrlKeyPair = new EcdsaKeyPair("0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75".HexToBytes()
                 .ToPrivateKey());
@@ -123,7 +123,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             // mint tokens to address
             {
-                context.Sender = _minterAdd;
+                context.Sender = context.Snapshot.Balances.GetMinter();
 
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("100"));
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
@@ -139,7 +139,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         {
             var tx = new TransactionReceipt();
 
-            var context = new InvocationContext(_minterAdd, _stateManager.LastApprovedSnapshot, tx);
+            var context = new InvocationContext(_stateManager.LastApprovedSnapshot.Balances.GetMinter(), _stateManager.LastApprovedSnapshot, tx);
             var contract = new NativeTokenContract(context);
             
             // set the allowedSupply
@@ -238,7 +238,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             // mint tokens to address
             {
-                context = new InvocationContext(_minterAdd, _stateManager.LastApprovedSnapshot, tx);
+                context = new InvocationContext(_stateManager.LastApprovedSnapshot.Balances.GetMinter(), _stateManager.LastApprovedSnapshot, tx);
                 contract = new NativeTokenContract(context);
                 
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("1000000000"));

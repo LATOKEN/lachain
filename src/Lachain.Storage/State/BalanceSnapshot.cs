@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -8,6 +9,7 @@ namespace Lachain.Storage.State
     public class BalanceSnapshot : IBalanceSnapshot
     {
         private readonly IStorageState _state;
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public BalanceSnapshot(IStorageState state)
         {
@@ -97,6 +99,26 @@ namespace Lachain.Storage.State
         public void SetAllowedSupply(Money value)
         {
             var key = EntryPrefix.AllowedSupply.BuildPrefix();
+            _state.AddOrUpdate(key, value.ToUInt256().ToBytes());
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public UInt160 GetMinter()
+        {
+            var key = EntryPrefix.MinterAddress.BuildPrefix();
+            var value = _state.Get(key);
+        
+            if (value!.Length == 0)
+                return UInt160Utils.Zero;
+            
+            var address = value!.ToUInt160();
+            return address;
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SetMinter(UInt160 value)
+        {
+            var key = EntryPrefix.MinterAddress.BuildPrefix();
             _state.AddOrUpdate(key, value.ToUInt256().ToBytes());
         }
 
