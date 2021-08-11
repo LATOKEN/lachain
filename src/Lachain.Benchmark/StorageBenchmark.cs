@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Core.CLI;
@@ -65,7 +65,7 @@ namespace Lachain.Benchmark
             var stateManager = _container.Resolve<IStateManager>();
             
             const uint T = 100000;
-            const uint batches = 100;
+            const uint batches = 10;
             IDictionary<UInt256, UInt256> blocks = new Dictionary<UInt256, UInt256>();
 
             var contract = UInt160Utils.Zero;

@@ -297,5 +297,57 @@ namespace Lachain.StorageTest
             }
 
         }
+
+        [Test]
+        public void Test_HashConsistency()
+        {
+            IDictionary<UInt256, UInt256> blocks = new Dictionary<UInt256, UInt256>();
+            List<UInt256> keyList = new List<UInt256>();
+
+            const uint K = 21;
+            for (var it = 0u; it < K; it++)
+            {
+                UInt256 key = RandUInt256();
+                keyList.Add(key);
+            }
+
+
+            for (var it = 0u; it < batches; ++it)
+            {
+                var snapshot = _stateManager.NewSnapshot();
+                Assert.IsTrue(snapshot.Storage.IsTrieNodeHashesOk());
+
+                for (var i = 0u; i < T; ++i)
+                {
+                    var op = Rand() % 3;
+                    var key = keyList[(int)(Rand() % keyList.Count)];
+
+                    if (op == 0)
+                    {
+                        var value = RandUInt256();
+                        blocks[key] = value;
+                        snapshot.Storage.SetValue(contract, key, value);
+                    }
+                    else if (op == 1)
+                    {
+                        var actualValue = blocks.ContainsKey(key) ? blocks[key] : UInt256Utils.Zero;
+                        var gotValue = snapshot.Storage.GetValue(contract, key);
+                        Assert.IsTrue(actualValue.Equals(gotValue));
+                    }
+                    else
+                    {
+                        var actualValue = blocks.ContainsKey(key) ? blocks[key] : UInt256Utils.Zero;
+                        if (blocks.ContainsKey(key)) blocks.Remove(key);
+                        snapshot.Storage.DeleteValue(contract, key, out var gotValue);
+                        Assert.IsTrue(actualValue.Equals(gotValue));
+                    }
+                }
+
+                _stateManager.Approve();
+                _stateManager.Commit();
+            }
+
+        }
+
     }
 }

@@ -3,6 +3,9 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.Storage.Trie;
+using System.Collections.Generic;
+
 
 namespace Lachain.Storage.State
 {
@@ -14,6 +17,16 @@ namespace Lachain.Storage.State
         public BalanceSnapshot(IStorageState state)
         {
             _state = state;
+        }
+        
+        public IDictionary<ulong,IHashTrieNode> GetState()
+        {
+            return _state.GetAllNodes();
+        }
+
+        public bool IsTrieNodeHashesOk()
+        {
+            return _state.IsNodeHashesOk();
         }
 
         public ulong Version => _state.CurrentVersion;

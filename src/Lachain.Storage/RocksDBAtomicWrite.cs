@@ -20,6 +20,11 @@ namespace Lachain.Storage
             _writeBatch.Put(key, value);
         }
 
+        public void Delete(byte[] key)
+        {
+            _writeBatch.Delete(key);
+        }
+
         public void Commit()
         {
             if (_committed) throw new Exception("Tried to commit already committed write");

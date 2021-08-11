@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Proto;
@@ -39,6 +40,17 @@ namespace Lachain.Storage
         public byte[]? Get(byte[] key)
         {
             return _trieMap.Find(CurrentVersion, key);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public IDictionary<ulong,IHashTrieNode> GetAllNodes()
+        {
+            return _trieMap.GetAllNodes(CurrentVersion);
+        }
+
+        public bool IsNodeHashesOk()
+        {
+            return _trieMap.CheckAllNodeHashes(CurrentVersion);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
