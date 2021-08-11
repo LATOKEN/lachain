@@ -83,15 +83,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
-        public static JObject Web3Trie( IDictionary<ulong,IHashTrieNode> dict )
+        public static JObject Web3Trie(IDictionary<ulong,IHashTrieNode> dict)
         {
-            var jobject = new JObject{} ;
+            var jobject = new JObject{};
 
             foreach(var item in dict)
             {
-                jobject[ item.Key.ToString() ] = Web3DataFormatUtils.Web3Node(item.Value, item.Key) ;
+                jobject[ item.Key.ToString() ] = Web3DataFormatUtils.Web3Node(item.Value, item.Key);
             }
-            return jobject ;
+            return jobject;
         }
 
         public static JObject Web3Node(IHashTrieNode node, ulong root)
@@ -99,11 +99,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             switch (node)
             {
                 case InternalNode internalNode:
-                    var jArray = new JArray() ;
-                    foreach(var item in node.Children) jArray.Add( Web3Number(item) ) ;
+                    var jArray = new JArray();
+                    foreach(var item in node.Children) jArray.Add(Web3Number(item));
                     return new JObject{
                         ["NodeType"] = Web3Number(1),
-                        ["Hash"] = Web3Data( internalNode.Hash.ToUInt256() ),
+                        ["Hash"] = Web3Data(internalNode.Hash.ToUInt256()),
                         ["ChildrenMask"] = Web3Number((ulong)internalNode.ChildrenMask),
                         ["Children"] = jArray,
                     };     
@@ -112,8 +112,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 case LeafNode leafNode:
                     return new JObject{
                         ["NodeType"] = Web3Number(2),
-                        ["Hash"] = Web3Data( leafNode.Hash.ToUInt256() ),
-                        ["KeyHash"] = Web3Data( leafNode.KeyHash.ToUInt256() ),
+                        ["Hash"] = Web3Data(leafNode.Hash.ToUInt256()),
+                        ["KeyHash"] = Web3Data(leafNode.KeyHash.ToUInt256()),
                         ["Value"] = Web3Data(leafNode.Value),
                     };
             }

@@ -9,7 +9,7 @@ namespace Lachain.Storage.State
         ulong Version { get; }
         void Commit();
         UInt256 Hash { get; }
-        IDictionary<ulong,IHashTrieNode> GetState() ;
+        IDictionary<ulong,IHashTrieNode> GetState();
         bool IsTrieNodeHashesOk();
     }
 }

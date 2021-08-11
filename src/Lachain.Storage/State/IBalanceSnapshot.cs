@@ -16,5 +16,6 @@ namespace Lachain.Storage.State
         
         Money GetAllowedSupply();
         void SetAllowedSupply(Money value);
+        
     }
 }

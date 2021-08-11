@@ -26,6 +26,5 @@ namespace Lachain.Storage.State
         /// <param name="contractHash"></param>
         /// <returns></returns>
         void DeleteContractByHash(UInt160 contractHash);
-
     }
 }
