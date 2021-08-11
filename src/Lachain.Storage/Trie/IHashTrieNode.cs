@@ -2,7 +2,7 @@
 
 namespace Lachain.Storage.Trie
 {
-    internal interface IHashTrieNode
+    public interface IHashTrieNode
     {
         NodeType Type { get; }
 

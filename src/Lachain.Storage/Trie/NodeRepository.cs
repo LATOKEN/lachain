@@ -1,4 +1,5 @@
 ﻿using RocksDbSharp;
+using System;
 
 namespace Lachain.Storage.Trie
 {
@@ -13,6 +14,7 @@ namespace Lachain.Storage.Trie
 
         public IHashTrieNode GetNode(ulong id)
         {
+            if(id==0) Console.WriteLine("0000000000000") ;
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
             var raw = _rocksDbContext.Get(prefix);
             return NodeSerializer.FromBytes(raw);
@@ -21,6 +23,12 @@ namespace Lachain.Storage.Trie
         public WriteBatch CreateBatch()
         {
             return new WriteBatch();
+        }
+
+        public void DeleteNodeToBatch(ulong id, RocksDbAtomicWrite tx)
+        {
+            var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+            tx.Delete(prefix);
         }
 
         public void WriteNodeToBatch(ulong id, IHashTrieNode node, RocksDbAtomicWrite tx)

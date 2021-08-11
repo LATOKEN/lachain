@@ -5,7 +5,7 @@ using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.Trie
 {
-    internal class LeafNode : IHashTrieNode
+    public class LeafNode : IHashTrieNode
     {
         public readonly byte[] KeyHash;
         public readonly byte[] Value;

@@ -1,4 +1,6 @@
 ﻿using Lachain.Proto;
+using Lachain.Storage.Trie;
+using System.Collections.Generic;
 
 namespace Lachain.Storage.State
 {
@@ -7,5 +9,7 @@ namespace Lachain.Storage.State
         ulong Version { get; }
         void Commit();
         UInt256 Hash { get; }
+        IDictionary<ulong,IHashTrieNode> GetState();
+        bool IsTrieNodeHashesOk();
     }
 }
