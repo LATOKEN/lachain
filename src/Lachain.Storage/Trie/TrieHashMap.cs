@@ -157,7 +157,7 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        public byte[] RecalculateHash( ulong root )
+        public byte[] RecalculateHash(ulong root)
         {
             var node = GetNodeById(root);
             if(node is null) return new byte[] {};
