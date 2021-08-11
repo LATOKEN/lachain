@@ -30,17 +30,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private readonly StorageMapping _allowance;
 
-        private static EcdsaKeyPair _minterKeyPair =
-            new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes()
-                .ToPrivateKey());
-
-        private static byte[] _minterPubKey = CryptoUtils.EncodeCompressed(_minterKeyPair.PublicKey);
-        private static UInt160 _minterAdd = Crypto.ComputeAddress(_minterPubKey).ToUInt160();
+        // private static EcdsaKeyPair _minterKeyPair =
+        //     new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes()
+        //         .ToPrivateKey());
+        // private static byte[] _minterPubKey = CryptoUtils.EncodeCompressed(_minterKeyPair.PublicKey);
+        // private static UInt160 _minterAdd = Crypto.ComputeAddress(_minterPubKey).ToUInt160();
 
         private static EcdsaKeyPair _mintCntrlKeyPair =
             new EcdsaKeyPair("0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75".HexToBytes()
                 .ToPrivateKey());
-
         private static byte[] _mintCntrlPubKey = CryptoUtils.EncodeCompressed(_mintCntrlKeyPair.PublicKey);
         private static UInt160 _mintCntrlAdd = Crypto.ComputeAddress(_mintCntrlPubKey).ToUInt160();
 
@@ -180,7 +178,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Mint(UInt160 address, Money amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            if (!frame.InvocationContext.Sender.Equals(_minterAdd))
+            if (!frame.InvocationContext.Sender.Equals(_context.Snapshot.Balances.GetMinter()))
                 return ExecutionStatus.ExecutionHalted;
 
             var totalSupply = _context.Snapshot.Balances.GetSupply();
@@ -191,7 +189,28 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var newBalance = _context.Snapshot?.Balances.AddBalance(address, amount);
             if (newBalance is null) return ExecutionStatus.ExecutionHalted;
+            Emit(Lrc20Interface.EventMinted, address, amount);
             frame.ReturnValue = newBalance.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
+        }
+        
+        [ContractMethod(Lrc20Interface.MethodSetMinter)]
+        public ExecutionStatus SetMinter(UInt160 minterAddress, SystemContractExecutionFrame frame)
+        {
+            frame.UseGas(GasMetering.NativeTokenApproveCost);
+            if (!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
+                return ExecutionStatus.ExecutionHalted;
+            
+            _context.Snapshot.Balances.SetMinter(minterAddress);
+            frame.ReturnValue = _context.Snapshot.Balances.GetMinter().ToBytes();
+            return ExecutionStatus.Ok;
+        }
+        
+        [ContractMethod(Lrc20Interface.MethodGetMinter)]
+        public ExecutionStatus GetMinter(SystemContractExecutionFrame frame)
+        {
+            frame.UseGas(GasMetering.NativeTokenApproveCost);
+            frame.ReturnValue = _context.Snapshot.Balances.GetMinter().ToBytes();
             return ExecutionStatus.Ok;
         }
 

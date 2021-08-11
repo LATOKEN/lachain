@@ -86,7 +86,6 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             var keyPair = new EcdsaKeyPair("0x4433d156e8c53bf5b50af07aa95a29436f29a94e0ccc5d58df8e57bdc8583c32"
                 .HexToBytes().ToPrivateKey());
-            byte[] publicKey1 = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
             var address = keyPair.PublicKey.GetAddress();
 
             // set the wallet to mint the tokens
@@ -121,10 +120,20 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(Money.Parse("10000"), frame.ReturnValue.ToUInt256().ToMoney());
             }
             
+            // set minter
+            {
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodSetMinter, _minterAdd);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SetMinter(_minterAdd, frame));
+                Assert.AreEqual(_minterAdd, frame.ReturnValue.ToUInt160());
+            }
+            
             // mint tokens to address
             {
-                context.Sender = _minterAdd;
-
+                context.Sender = context.Snapshot.Balances.GetMinter();
+                
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("100"));
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
@@ -138,12 +147,25 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         public void Test_InvalidMintController()
         {
             var tx = new TransactionReceipt();
-
-            var context = new InvocationContext(_minterAdd, _stateManager.LastApprovedSnapshot, tx);
+            var context = new InvocationContext(_mintCntrlAdd, _stateManager.LastApprovedSnapshot, tx);
             var contract = new NativeTokenContract(context);
+            
+            // set minter
+            {
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodSetMinter, _minterAdd);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SetMinter(_minterAdd, frame));
+                Assert.AreEqual(_minterAdd, frame.ReturnValue.ToUInt160());
+            }
+            
             
             // set the allowedSupply
             {
+                context = new InvocationContext(_stateManager.LastApprovedSnapshot.Balances.GetMinter(), _stateManager.LastApprovedSnapshot, tx);
+                contract = new NativeTokenContract(context);
+                
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodSetAllowedSupply, Money.Parse("10000"));
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
@@ -172,7 +194,6 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             var keyPair = new EcdsaKeyPair("0x4433d156e8c53bf5b50af07aa95a29436f29a94e0ccc5d58df8e57bdc8583c32"
                 .HexToBytes().ToPrivateKey());
-            byte[] publicKey1 = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
             var address = keyPair.PublicKey.GetAddress();
             
             // set the allowedSupply
@@ -205,7 +226,6 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             var keyPair = new EcdsaKeyPair("0x4433d156e8c53bf5b50af07aa95a29436f29a94e0ccc5d58df8e57bdc8583c32"
                 .HexToBytes().ToPrivateKey());
-            byte[] publicKey1 = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
             var address = keyPair.PublicKey.GetAddress();
             
             // set the allowedSupply
@@ -238,7 +258,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             // mint tokens to address
             {
-                context = new InvocationContext(_minterAdd, _stateManager.LastApprovedSnapshot, tx);
+                context = new InvocationContext(_stateManager.LastApprovedSnapshot.Balances.GetMinter(), _stateManager.LastApprovedSnapshot, tx);
                 contract = new NativeTokenContract(context);
                 
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("1000000000"));
@@ -246,6 +266,57 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.Mint(address, Money.Parse("1000000000"), frame));
+            }
+        }
+
+        [Test]
+        public void Test_SetMinter()
+        {
+            var tx = new TransactionReceipt();
+
+            var context = new InvocationContext(_mintCntrlAdd, _stateManager.LastApprovedSnapshot, tx);
+            var contract = new NativeTokenContract(context);
+
+            // set the minter
+            {
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodSetMinter, _minterAdd);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SetMinter(_minterAdd, frame));
+                Assert.AreEqual(_minterAdd, frame.ReturnValue.ToUInt160());
+            }
+            
+            // get the minter
+            {
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodGetMinter);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.GetMinter(frame));
+                Assert.AreEqual(_minterAdd, frame.ReturnValue.ToUInt160());
+            }
+        }
+        
+        [Test]
+        public void Test_SetMinterInvalidMintCtlr()
+        {
+            var keyPair = new EcdsaKeyPair("0x4433d156e8c53bf5b50af07aa95a29436f29a94e0ccc5d58df8e57bdc8583c32"
+                .HexToBytes().ToPrivateKey());
+            var address = keyPair.PublicKey.GetAddress();
+            
+            var tx = new TransactionReceipt();
+
+            var context = new InvocationContext(address, _stateManager.LastApprovedSnapshot, tx);
+            var contract = new NativeTokenContract(context);
+            
+            // set the minter
+            {
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodSetMinter, _minterAdd);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetMinter(_minterAdd, frame));
             }
         }
     }
