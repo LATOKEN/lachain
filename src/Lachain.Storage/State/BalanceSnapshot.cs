@@ -108,10 +108,10 @@ namespace Lachain.Storage.State
             var key = EntryPrefix.MinterAddress.BuildPrefix();
             var value = _state.Get(key);
         
-            if (value!.Length == 0)
+            if (value == null)
                 return UInt160Utils.Zero;
             
-            var address = value!.ToUInt160();
+            var address = value?.ToUInt160() ?? UInt160Utils.Zero;
             return address;
         }
         
@@ -119,7 +119,7 @@ namespace Lachain.Storage.State
         public void SetMinter(UInt160 value)
         {
             var key = EntryPrefix.MinterAddress.BuildPrefix();
-            _state.AddOrUpdate(key, value.ToUInt256().ToBytes());
+            _state.AddOrUpdate(key, value.ToBytes());
         }
 
         public void Commit()
