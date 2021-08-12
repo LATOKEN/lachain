@@ -99,6 +99,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Number(Convert.ToUInt64(res));
         }
 
+        [JsonRpcMethod("la_getStateHashFromTrieRoots")]
+        private string GetStateHashFromTrieRoots(string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag) ;
+            IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
+            List<byte[]> list = new List<byte[]>() ;
+            list.Add(blockchainSnapshot.Balances.Hash.ToBytes()) ;
+            list.Add(blockchainSnapshot.Contracts.Hash.ToBytes()) ;
+            list.Add(blockchainSnapshot.Storage.Hash.ToBytes()) ;
+            list.Add(blockchainSnapshot.Transactions.Hash.ToBytes()) ;
+            list.Add(blockchainSnapshot.Events.Hash.ToBytes()) ;
+            list.Add(blockchainSnapshot.Validators.Hash.ToBytes()) ;
+            return Web3DataFormatUtils.Web3Data( list.Flatten().Keccak() ) ; 
+        }
+
         [JsonRpcMethod("eth_getBlockByHash")]
         private JObject? GetBlockByHash(string blockHash)
         {
