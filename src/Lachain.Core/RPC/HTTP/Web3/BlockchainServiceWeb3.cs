@@ -60,10 +60,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private JObject? GetStateByNumber(string blockTag)
         {
             var blockNumber = GetBlockNumberByTag(blockTag) ;
-            if(blockNumber == null) return null ;
+            if(blockNumber == null) return null;
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
-            var jobject = new JObject{} ;
-            var temp = blockchainSnapshot.Balances.GetState() ;
+            var jobject = new JObject{};
             jobject["Balances"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Balances.GetState());
             jobject["Contracts"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Contracts.GetState());
             jobject["Storage"] = Web3DataFormatUtils.Web3Trie(blockchainSnapshot.Storage.GetState()) ;
@@ -86,9 +85,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("la_checkNodeHashes")]
         private string CheckNodeHashes(string blockTag)
         {
-            var blockNumber = GetBlockNumberByTag(blockTag) ;
+            var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
-            bool res = true ;
+            bool res = true;
             res &= blockchainSnapshot.Balances.IsTrieNodeHashesOk();
             res &= blockchainSnapshot.Contracts.IsTrieNodeHashesOk();
             res &= blockchainSnapshot.Storage.IsTrieNodeHashesOk();
@@ -97,6 +96,39 @@ namespace Lachain.Core.RPC.HTTP.Web3
             res &= blockchainSnapshot.Events.IsTrieNodeHashesOk();
             res &= blockchainSnapshot.Validators.IsTrieNodeHashesOk();
             return Web3DataFormatUtils.Web3Number(Convert.ToUInt64(res));
+        }
+
+        [JsonRpcMethod("la_getStateHashFromTrieRootsRange")]
+        private JObject? GetStateHashFromTrieRootsRange(string startBlockTag, string endBlockTag)
+        {
+            ulong l = startBlockTag.HexToUlong(), r = endBlockTag.HexToUlong();
+            var jobject = new JObject{};
+            for(ulong i=l; i<=r; i++){
+                jobject[ i.ToHex(false) ] = Web3DataFormatUtils.Web3Data(SingleNodeHashFromRoot(i.ToHex(false)));
+            }
+            return jobject;
+        }
+
+        [JsonRpcMethod("la_getStateHashFromTrieRoots")]
+        private string GetStateHashFromTrieRoots(string blockTag)
+        {
+            return Web3DataFormatUtils.Web3Data(SingleNodeHashFromRoot(blockTag)); 
+        }
+
+        [JsonRpcMethod("la_getAllTriesHash")]
+        private JObject? GetAllTrieRootsHash(string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag) ;
+            IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
+            var jobject = new JObject{};
+            jobject["BalancesHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Balances.Hash);
+            jobject["ContractsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Contracts.Hash);
+            jobject["StorageHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Storage.Hash) ;
+            jobject["TransactionsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Transactions.Hash);
+            jobject["BlocksHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Blocks.Hash);
+            jobject["EventsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Events.Hash) ;
+            jobject["ValidatorsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Validators.Hash);
+            return jobject ;
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
@@ -266,5 +298,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 _ => blockTag.HexToUlong()
             };
         }
+
+        private UInt256 SingleNodeHashFromRoot(string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag) ;
+            IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
+            List<byte[]> list = new List<byte[]>();
+            list.Add(blockchainSnapshot.Balances.Hash.ToBytes());
+            list.Add(blockchainSnapshot.Contracts.Hash.ToBytes());
+            list.Add(blockchainSnapshot.Storage.Hash.ToBytes());
+            list.Add(blockchainSnapshot.Transactions.Hash.ToBytes());
+            list.Add(blockchainSnapshot.Events.Hash.ToBytes());
+            list.Add(blockchainSnapshot.Validators.Hash.ToBytes());
+            return list.Flatten().Keccak(); 
+        }
+
     }
 }
