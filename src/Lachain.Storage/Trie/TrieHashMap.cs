@@ -14,7 +14,7 @@ namespace Lachain.Storage.Trie
     {
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
-        const int Capacity = 100000;
+        private const int Capacity = 100000;
         private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
         
