@@ -68,7 +68,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Decimals(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenDecimalsCost);
-            frame.ReturnValue = 18.ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, 18.ToUInt256());
             return ExecutionStatus.Ok;
         }
 
@@ -96,7 +96,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
             var balance = _context.Snapshot?.Balances.GetBalance(address);
             if (balance is null) return ExecutionStatus.ExecutionHalted;
-            frame.ReturnValue = balance.ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, balance);
             return ExecutionStatus.Ok;
         }
 
@@ -104,7 +104,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus Allowance(UInt160 owner, UInt160 spender, SystemContractExecutionFrame frame)
         {
             var allowance = GetAllowance(owner, spender);
-            frame.ReturnValue = allowance.ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, allowance);
             return ExecutionStatus.Ok;
         }
 
@@ -119,7 +119,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 value.ToMoney()
             );
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
-            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
             return ExecutionStatus.Ok;
         }
 
@@ -133,7 +133,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferBalance(from, recipient, value.ToMoney());
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
-            frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
             return ExecutionStatus.Ok;
         }
 
@@ -143,7 +143,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.NativeTokenApproveCost);
             SetAllowance(Sender(), spender, amount);
             Emit(Lrc20Interface.EventApproval, Sender(), spender, amount);
-            frame.ReturnValue = 1.ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, 1.ToUInt256());
             return ExecutionStatus.Ok;
         }
 
@@ -163,7 +163,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             _context.Snapshot.Balances.SetAllowedSupply(amountMoney);
 
-            frame.ReturnValue = _context.Snapshot.Balances.GetAllowedSupply().ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, _context.Snapshot.Balances.GetAllowedSupply());
             return ExecutionStatus.Ok;
         }
 
@@ -192,7 +192,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney);
             if (newBalance is null) return ExecutionStatus.ExecutionHalted;
             Emit(Lrc20Interface.EventMinted, address, amount);
-            frame.ReturnValue = newBalance.ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, newBalance);
             return ExecutionStatus.Ok;
         }
         
