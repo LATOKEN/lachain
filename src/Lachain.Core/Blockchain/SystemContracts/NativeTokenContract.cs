@@ -86,7 +86,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.UseGas(GasMetering.NativeTokenTotalSupplyCost);
             var supply = _context.Snapshot?.Balances.GetSupply();
             if (supply is null) return ExecutionStatus.ExecutionHalted;
-            frame.ReturnValue = supply.ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, supply);
             return ExecutionStatus.Ok;
         }
 
