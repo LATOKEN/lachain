@@ -204,7 +204,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             
             _context.Snapshot.Balances.SetMinter(minterAddress);
-            frame.ReturnValue = _context.Snapshot.Balances.GetMinter().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, _context.Snapshot.Balances.GetMinter().ToUInt256());
             return ExecutionStatus.Ok;
         }
         
@@ -212,7 +212,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus GetMinter(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            frame.ReturnValue = _context.Snapshot.Balances.GetMinter().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, _context.Snapshot.Balances.GetMinter().ToUInt256());
             return ExecutionStatus.Ok;
         }
 
