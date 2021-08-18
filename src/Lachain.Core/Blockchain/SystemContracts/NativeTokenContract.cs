@@ -148,19 +148,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(Lrc20Interface.MethodSetAllowedSupply)]
-        public ExecutionStatus SetAllowedSupply(Money amount, SystemContractExecutionFrame frame)
+        public ExecutionStatus SetAllowedSupply(UInt256 amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
             if (!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
                 return ExecutionStatus.ExecutionHalted;
 
-            if (amount > _maxSupply)
+            var amountMoney = amount.ToMoney();
+            if (amountMoney > _maxSupply)
                 return ExecutionStatus.ExecutionHalted;
 
-            if (amount <= _context.Snapshot.Balances.GetSupply())
+            if (amountMoney <= _context.Snapshot.Balances.GetSupply())
                 return ExecutionStatus.ExecutionHalted;
 
-            _context.Snapshot.Balances.SetAllowedSupply(amount);
+            _context.Snapshot.Balances.SetAllowedSupply(amountMoney);
 
             frame.ReturnValue = _context.Snapshot.Balances.GetAllowedSupply().ToUInt256().ToBytes();
             return ExecutionStatus.Ok;
@@ -170,12 +171,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus GetAllowedSupply(SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
-            frame.ReturnValue = _context.Snapshot.Balances.GetAllowedSupply().ToUInt256().ToBytes();
+            frame.ReturnValue = ContractEncoder.Encode(null, _context.Snapshot.Balances.GetAllowedSupply());
             return ExecutionStatus.Ok;
         }
 
         [ContractMethod(Lrc20Interface.MethodMint)]
-        public ExecutionStatus Mint(UInt160 address, Money amount, SystemContractExecutionFrame frame)
+        public ExecutionStatus Mint(UInt160 address, UInt256 amount, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.NativeTokenApproveCost);
             if (!frame.InvocationContext.Sender.Equals(_context.Snapshot.Balances.GetMinter()))
@@ -183,11 +184,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var totalSupply = _context.Snapshot.Balances.GetSupply();
 
-            if (totalSupply + amount > _maxSupply ||
-                totalSupply + amount > _context.Snapshot.Balances.GetAllowedSupply())
+            var amountMoney = amount.ToMoney();
+            if (totalSupply + amountMoney > _maxSupply ||
+                totalSupply + amountMoney > _context.Snapshot.Balances.GetAllowedSupply())
                 return ExecutionStatus.ExecutionHalted;
 
-            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amount);
+            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney);
             if (newBalance is null) return ExecutionStatus.ExecutionHalted;
             Emit(Lrc20Interface.EventMinted, address, amount);
             frame.ReturnValue = newBalance.ToUInt256().ToBytes();

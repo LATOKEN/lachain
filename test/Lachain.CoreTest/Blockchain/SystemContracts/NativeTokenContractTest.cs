@@ -116,7 +116,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.SetAllowedSupply(Money.Parse("10000"), frame));
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SetAllowedSupply(Money.Parse("10000").ToUInt256(), frame));
                 Assert.AreEqual(Money.Parse("10000"), frame.ReturnValue.ToUInt256().ToMoney());
             }
             
@@ -138,7 +138,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.Mint(address, Money.Parse("100"), frame));
+                Assert.AreEqual(ExecutionStatus.Ok, contract.Mint(address, Money.Parse("100").ToUInt256(), frame));
                 Assert.AreEqual(Money.Parse("1100"), frame.ReturnValue.ToUInt256().ToMoney());
             }
         }
@@ -170,7 +170,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetAllowedSupply(Money.Parse("10000"), frame));
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetAllowedSupply(Money.Parse("10000").ToUInt256(), frame));
             }
             
             // verify allowedSupply
@@ -202,16 +202,16 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.SetAllowedSupply(Money.Parse("10000"), frame));
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SetAllowedSupply(Money.Parse("10000").ToUInt256(), frame));
             }
             
             // mint tokens to address
             {
-                var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("100"));
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("100").ToUInt256());
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.Mint(address, Money.Parse("100"), frame));
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.Mint(address, Money.Parse("100").ToUInt256(), frame));
                 Assert.AreEqual(Money.Parse("0"), context.Snapshot.Balances.GetBalance(address));
             }
         }
@@ -234,7 +234,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.SetAllowedSupply(Money.Parse("10000"), frame));
+                Assert.AreEqual(ExecutionStatus.Ok, contract.SetAllowedSupply(Money.Parse("10000").ToUInt256(), frame));
             }
             
             // set the allowedSupply > maxLimit
@@ -243,7 +243,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetAllowedSupply(Money.Parse("1000000001"), frame));
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetAllowedSupply(Money.Parse("1000000001").ToUInt256(), frame));
             }
             
             // verify allowedSupply
@@ -265,7 +265,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.Mint(address, Money.Parse("1000000000"), frame));
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.Mint(address, Money.Parse("1000000000").ToUInt256(), frame));
             }
         }
 
