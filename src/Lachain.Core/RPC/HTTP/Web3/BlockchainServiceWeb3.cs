@@ -135,21 +135,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             jobject["ValidatorsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Validators.Hash);
             return jobject ;
         }
-
-        [JsonRpcMethod("la_stopNetwork")]
-        private void StopNetwork()
-        {
-            _networkManager.Stop();
-            return;
-        }
-
-        [JsonRpcMethod("la_startNetwork")]
-        private void StartNetwork()
-        {
-            _networkManager.Start();
-            return;
-        }
-
+        
         [JsonRpcMethod("eth_getBlockByHash")]
         private JObject? GetBlockByHash(string blockHash)
         {

@@ -24,6 +24,7 @@ using Lachain.Utility.Utils;
 using NLog;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.IO ;
 
 namespace Lachain.Console
 {
@@ -85,7 +86,8 @@ namespace Lachain.Console
                 Logger.LogWarning($"Performing set state to block {blockNumber}");
                 var snapshot = stateManager.NewSnapshot();
                 
-                JObject receivedInfo = new JObject{};
+                string path = Path.Combine(Directory.GetCurrentDirectory(), "state.json"); 
+                JObject receivedInfo = JObject.Parse(File.ReadAllText(@path));
                 //read data from json file in disk
                 string[] trieNames = new string[]{"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
                 ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
