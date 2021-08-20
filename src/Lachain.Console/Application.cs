@@ -6,6 +6,7 @@ using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
+using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
@@ -18,8 +19,11 @@ using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using NLog;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace Lachain.Console
 {
@@ -73,6 +77,42 @@ namespace Lachain.Console
                 stateManager.RollbackTo(snapshot);
                 wallet.DeleteKeysAfterBlock(options.RollBackTo.Value);
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
+            }
+
+            if (options.SetStateTo.HasValue)
+            {
+                ulong blockNumber = options.SetStateTo.Value;
+                Logger.LogWarning($"Performing set state to block {blockNumber}");
+                var snapshot = stateManager.NewSnapshot();
+                
+                JObject receivedInfo = new JObject{};
+                //read data from json file in disk
+                string[] trieNames = new string[]{"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
+                ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
+                                                        snapshot.Contracts,
+                                                        snapshot.Storage,
+                                                        snapshot.Transactions,
+                                                        snapshot.Blocks,
+                                                        snapshot.Events,
+                                                        snapshot.Validators}; 
+
+                for(int i = 0; i < trieNames.Length; i++)
+                {
+                    var stateStringName = trieNames[i];
+                    var stateStringRootName = stateStringName + "Root";
+                    JObject currentTrie = (JObject)receivedInfo[stateStringName];
+
+                    IDictionary<ulong, IHashTrieNode> trieNodes = Web3DataFormatUtils.TrieFromJson(currentTrie);
+
+                    string currentTrieRoot = (string)receivedInfo[stateStringRootName];
+
+                    snapshots[i].SetState( Web3DataFormatUtils.GetUInt64FromHex(currentTrieRoot), trieNodes);
+                }
+
+                stateManager.Commit();
+                snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);
+                Logger.LogWarning($"Set state to block {blockNumber} complete");
+     
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());

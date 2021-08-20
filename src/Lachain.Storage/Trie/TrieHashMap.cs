@@ -8,6 +8,7 @@ using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 using RocksDbSharp;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Storage.Trie
 {
@@ -115,9 +116,42 @@ namespace Lachain.Storage.Trie
             return TraverseValues(root);
         }
 
+        public ulong InsertAllNodes(ulong root, IDictionary<ulong,IHashTrieNode> allTrieNodes)
+        {
+            if(allTrieNodes.TryGetValue(root, out var node))
+            {
+                switch(node)
+                {
+                    case InternalNode internalNode:
+
+                        List<byte[]> childrenHash = new List<byte[]>();
+                        List<ulong> children = new List<ulong>();
+                        var childrenMask = internalNode.ChildrenMask;
+                        
+                        foreach(var child in internalNode.Children)
+                        {
+                            ulong childRoot = InsertAllNodes(child, allTrieNodes);
+                            var childNode = GetNodeById(childRoot);
+                            children.Add(childRoot);
+                            childrenHash.Add(childNode.Hash);
+                        }
+                        var newInternalNodeId = _versionFactory.NewVersion();
+                        _nodeCache[newInternalNodeId] = new InternalNode(childrenMask,children,childrenHash);
+                        return newInternalNodeId;
+
+                    case LeafNode leafNode:
+                        var newLeafNodeId = _versionFactory.NewVersion();
+                        _nodeCache[newLeafNodeId] = leafNode;
+                        return newLeafNodeId;
+                }
+            }
+            else throw new InvalidOperationException();
+            return 0;
+        }
+
         public bool CheckAllNodeHashes(ulong root)
         {
-            IDictionary<ulong,IHashTrieNode> dict = GetAllNodes(root);
+            IDictionary<ulong, IHashTrieNode> dict = GetAllNodes(root);
             foreach(var node in dict)
             {
                 if( !(node.Value.Hash.SequenceEqual(RecalculateHash(node.Key)))) return false;
@@ -127,7 +161,7 @@ namespace Lachain.Storage.Trie
 
         public IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root)
         {
-            IDictionary<ulong,IHashTrieNode> dict = new ConcurrentDictionary<ulong, IHashTrieNode>();
+            IDictionary<ulong, IHashTrieNode> dict = new ConcurrentDictionary<ulong, IHashTrieNode>();
             TraverseNodes(root,dict);
             return dict;
         }

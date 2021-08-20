@@ -6,12 +6,14 @@ using Lachain.Core.Blockchain.Pool;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -25,18 +27,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly IStateManager _stateManager;
         private readonly ITransactionPool _transactionPool; 
         private readonly ISnapshotIndexRepository _snapshotIndexer;
+        private readonly INetworkManager _networkManager;
         public BlockchainServiceWeb3(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             ITransactionPool transactionPool,
             IStateManager stateManager,
-            ISnapshotIndexRepository snapshotIndexer)
+            ISnapshotIndexRepository snapshotIndexer,
+            INetworkManager networkManager)
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _stateManager = stateManager;
             _snapshotIndexer = snapshotIndexer;
+            _networkManager = networkManager;
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
@@ -129,6 +134,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
             jobject["EventsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Events.Hash) ;
             jobject["ValidatorsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Validators.Hash);
             return jobject ;
+        }
+
+        [JsonRpcMethod("la_stopNetwork")]
+        private void StopNetwork()
+        {
+            _networkManager.Stop();
+            return;
+        }
+
+        [JsonRpcMethod("la_startNetwork")]
+        private void StartNetwork()
+        {
+            _networkManager.Start();
+            return;
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
@@ -287,7 +306,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             return false;
         }
-        
+
         private ulong? GetBlockNumberByTag(string blockTag)
         {
             return blockTag switch

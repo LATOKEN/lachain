@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -118,6 +119,44 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     };
             }
             return new JObject{};
+        }
+
+        public static UInt64 GetUInt64FromHex(string hex)
+        { 
+            return Convert.ToUInt64(hex, 16);
+        }
+
+        public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject trieJson)
+        {
+            IDictionary<ulong, IHashTrieNode> allNodes = new Dictionary<ulong, IHashTrieNode>();
+            foreach(var item in trieJson)
+            {
+                allNodes[ Convert.ToUInt64( ((string)item.Key), 16) ] = NodeFromJsonObject( (JObject)item.Value);
+            }
+            return allNodes;
+        }
+
+        public static IHashTrieNode NodeFromJsonObject(JObject nodeJson)
+        {
+            if (((string)nodeJson["NodeType"]).Equals("0x1") == true)
+            {
+                uint mask = Convert.ToUInt32((string)nodeJson["ChildrenMask"], 16);
+                byte[] hash = HexUtils.HexToBytes((string)nodeJson["Hash"]);
+                var childrenJson = nodeJson["Children"];
+
+                List<ulong> children = new List<ulong>();
+                foreach(var childJson in childrenJson)
+                {
+                    children.Add(Convert.ToUInt64((string)childJson, 16));
+                }
+
+                return new InternalNode(mask, children, hash);
+            }
+            else{
+                byte[] keyHash = HexUtils.HexToBytes((string)nodeJson["KeyHash"]);
+                byte[] value = HexUtils.HexToBytes((string)nodeJson["Value"]);
+                return new LeafNode(keyHash, value);
+            }
         }
 
         public static JObject Web3Transaction(
