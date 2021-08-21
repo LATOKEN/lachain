@@ -90,7 +90,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             foreach(var item in dict)
             {
-                jobject[ item.Key.ToString() ] = Web3DataFormatUtils.Web3Node(item.Value, item.Key);
+                jobject[Web3Number(item.Key)] = Web3DataFormatUtils.Web3Node(item.Value, item.Key);
             }
             return jobject;
         }
@@ -131,7 +131,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             IDictionary<ulong, IHashTrieNode> allNodes = new Dictionary<ulong, IHashTrieNode>();
             foreach(var item in trieJson)
             {
-                allNodes[ Convert.ToUInt64( ((string)item.Key), 16) ] = NodeFromJsonObject( (JObject)item.Value);
+                ulong version = Convert.ToUInt64( ((string)item.Key), 16);
+                allNodes[version] = NodeFromJsonObject( (JObject)item.Value);
             }
             return allNodes;
         }
@@ -142,7 +143,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 uint mask = Convert.ToUInt32((string)nodeJson["ChildrenMask"], 16);
                 byte[] hash = HexUtils.HexToBytes((string)nodeJson["Hash"]);
-                var childrenJson = nodeJson["Children"];
+                var childrenJson = (JArray)nodeJson["Children"];
 
                 List<ulong> children = new List<ulong>();
                 foreach(var childJson in childrenJson)

@@ -118,6 +118,7 @@ namespace Lachain.Storage.Trie
 
         public ulong InsertAllNodes(ulong root, IDictionary<ulong,IHashTrieNode> allTrieNodes)
         {
+            if(root == 0) return 0;
             if(allTrieNodes.TryGetValue(root, out var node))
             {
                 switch(node)

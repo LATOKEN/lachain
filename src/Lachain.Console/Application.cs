@@ -24,7 +24,7 @@ using Lachain.Utility.Utils;
 using NLog;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-using System.IO ;
+using System.IO;
 
 namespace Lachain.Console
 {
@@ -86,7 +86,8 @@ namespace Lachain.Console
                 Logger.LogWarning($"Performing set state to block {blockNumber}");
                 var snapshot = stateManager.NewSnapshot();
                 
-                string path = Path.Combine(Directory.GetCurrentDirectory(), "state.json"); 
+                string path = Path.Combine(Directory.GetCurrentDirectory(), "state.json");
+                Logger.LogInformation($"Reading state in json format");
                 JObject receivedInfo = JObject.Parse(File.ReadAllText(@path));
                 //read data from json file in disk
                 string[] trieNames = new string[]{"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
@@ -101,20 +102,20 @@ namespace Lachain.Console
                 for(int i = 0; i < trieNames.Length; i++)
                 {
                     var stateStringName = trieNames[i];
+                    Logger.LogInformation($"Updating {stateStringName} Trie");
                     var stateStringRootName = stateStringName + "Root";
                     JObject currentTrie = (JObject)receivedInfo[stateStringName];
-
-                    IDictionary<ulong, IHashTrieNode> trieNodes = Web3DataFormatUtils.TrieFromJson(currentTrie);
-
                     string currentTrieRoot = (string)receivedInfo[stateStringRootName];
-
-                    snapshots[i].SetState( Web3DataFormatUtils.GetUInt64FromHex(currentTrieRoot), trieNodes);
+                    ulong root = Convert.ToUInt64(currentTrieRoot, 16);
+                    IDictionary<ulong, IHashTrieNode> trieNodes = Web3DataFormatUtils.TrieFromJson(currentTrie);
+                    snapshots[i].SetState(root, trieNodes);
+                    Logger.LogInformation($"{stateStringName} update done");
                 }
 
+                stateManager.Approve();
                 stateManager.Commit();
                 snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);
                 Logger.LogWarning($"Set state to block {blockNumber} complete");
-     
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
