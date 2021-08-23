@@ -119,9 +119,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingBecomeStakerCost);
 
-            var ok = IsPublicKeyOwner(publicKey, MsgSender());
-            if (!ok)
-                return ExecutionStatus.ExecutionHalted;
+            // Removed validation to enable the delegation 
+            // var ok = IsPublicKeyOwner(publicKey, MsgSender());
+            // if (!ok)
+            //     return ExecutionStatus.ExecutionHalted;
 
             if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
@@ -974,7 +975,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _userToPubKey.Delete(key);
         }
 
-        private void SetWithdrawRequestCycle(UInt160 staker, int cycle)
+        public void SetWithdrawRequestCycle(UInt160 staker, int cycle)
         {
             var key = staker.ToBytes();
             if (cycle == 0)
