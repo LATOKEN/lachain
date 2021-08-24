@@ -88,36 +88,6 @@ namespace Lachain.Console
             {
                 string peerURL = options.SetStateTo;
                 FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL);
-
-                /*
-                StateDownloader stateDownloader = new StateDownloader(peerURL);
-                var blockNumber = stateDownloader.DownloadBlockNumber(); 
-                Logger.LogWarning($"Performing set state to block {blockNumber}");
-                var snapshot = stateManager.NewSnapshot();
-                
-                string[] trieNames = new string[]{"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
-                ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
-                                                        snapshot.Contracts,
-                                                        snapshot.Storage,
-                                                        snapshot.Transactions,
-                                                        snapshot.Blocks,
-                                                        snapshot.Events,
-                                                        snapshot.Validators}; 
-
-                for(int i = 0; i < trieNames.Length; i++)
-                {
-                    string trieName = trieNames[i];
-                    ulong curTrieRoot = stateDownloader.DownloadRoot(trieName);
-                    IDictionary<ulong, IHashTrieNode> curTrie = stateDownloader.DownloadTrie(trieName);
-                    snapshots[i].SetState(curTrieRoot, curTrie);
-                    Logger.LogInformation($"{trieName} update done");
-                }
-
-                stateManager.Approve();
-                stateManager.Commit();
-                snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);
-                Logger.LogWarning($"Set state to block {blockNumber} complete");
-                */
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
@@ -168,39 +138,6 @@ namespace Lachain.Console
 
             while (!_interrupt)
                 Thread.Sleep(1000);
-        }
-        private JToken? _CallJsonRPCAPI(string method, JArray param, string _rpcURL)
-        {
-            JObject options = new JObject{
-                ["method"] = method,
-                ["jsonrpc"] = "2.0",
-                ["id"] = "1"
-            };
-            if (param.Count != 0) options["params"] = param;
-            var webRequest = (HttpWebRequest) WebRequest.Create(_rpcURL);
-            webRequest.ContentType = "application/json";
-            webRequest.Method = "POST";
-            using (Stream dataStream = webRequest.GetRequestStream())
-            {
-                string payloadString = JsonConvert.SerializeObject(options);
-                byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
-                dataStream.Write(byteArray, 0, byteArray.Length);
-            }
-
-            WebResponse webResponse;
-            JObject response;
-            using (webResponse = webRequest.GetResponse())
-            {
-                using (Stream str = webResponse.GetResponseStream()!)
-                {
-                    using (StreamReader sr = new StreamReader(str))
-                    {
-                        response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
-                    }
-                }
-            }
-            var result = response["result"];
-            return result;
         }
         private bool _interrupt;
 
