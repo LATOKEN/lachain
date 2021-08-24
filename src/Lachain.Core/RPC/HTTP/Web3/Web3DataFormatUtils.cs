@@ -87,7 +87,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public static JObject Web3Trie(IDictionary<ulong,IHashTrieNode> dict)
         {
             var jobject = new JObject{};
-
             foreach(var item in dict)
             {
                 jobject[Web3Number(item.Key)] = Web3DataFormatUtils.Web3Node(item.Value, item.Key);
@@ -109,7 +108,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         ["Children"] = jArray,
                     };     
 
-
                 case LeafNode leafNode:
                     return new JObject{
                         ["NodeType"] = Web3Number(2),
@@ -119,11 +117,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     };
             }
             return new JObject{};
-        }
-
-        public static UInt64 GetUInt64FromHex(string hex)
-        { 
-            return Convert.ToUInt64(hex, 16);
         }
 
         public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject trieJson)
@@ -144,13 +137,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 uint mask = Convert.ToUInt32((string)nodeJson["ChildrenMask"], 16);
                 byte[] hash = HexUtils.HexToBytes((string)nodeJson["Hash"]);
                 var childrenJson = (JArray)nodeJson["Children"];
-
                 List<ulong> children = new List<ulong>();
                 foreach(var childJson in childrenJson)
                 {
                     children.Add(Convert.ToUInt64((string)childJson, 16));
                 }
-
                 return new InternalNode(mask, children, hash);
             }
             else{

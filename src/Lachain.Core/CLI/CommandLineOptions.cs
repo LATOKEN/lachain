@@ -71,6 +71,6 @@ namespace Lachain.Core.CLI
         public ulong? RollBackTo { get; set; }
 
         [Option('s', "setstateto", Required = false, HelpText = "Set state node to a specific block on start")]
-        public ulong? SetStateTo { get; set; }
+        public string? SetStateTo { get; set; }
     }
 }

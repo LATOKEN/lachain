@@ -22,9 +22,12 @@ using Lachain.Storage.State;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using NLog;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Text;
 
 namespace Lachain.Console
 {
@@ -80,16 +83,15 @@ namespace Lachain.Console
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
             }
 
-            if (options.SetStateTo.HasValue)
+            if (!(options.SetStateTo is null))
             {
-                ulong blockNumber = options.SetStateTo.Value;
+                string _rpcURL = options.SetStateTo;
+                ulong blockNumber = Convert.ToUInt64((string)_CallJsonRPCAPI("eth_blockNumber", new JArray{}, _rpcURL), 16);
                 Logger.LogWarning($"Performing set state to block {blockNumber}");
                 var snapshot = stateManager.NewSnapshot();
                 
-                string path = Path.Combine(Directory.GetCurrentDirectory(), "state.json");
                 Logger.LogInformation($"Reading state in json format");
-                JObject receivedInfo = JObject.Parse(File.ReadAllText(@path));
-                //read data from json file in disk
+                JObject? receivedInfo = (JObject?)_CallJsonRPCAPI("la_getStateByNumber", new JArray{Web3DataFormatUtils.Web3Number(blockNumber)}, _rpcURL);
                 string[] trieNames = new string[]{"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
                 ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
                                                         snapshot.Contracts,
@@ -167,7 +169,39 @@ namespace Lachain.Console
             while (!_interrupt)
                 Thread.Sleep(1000);
         }
+        private JToken? _CallJsonRPCAPI(string method, JArray param, string _rpcURL)
+        {
+            JObject options = new JObject{
+                ["method"] = method,
+                ["jsonrpc"] = "2.0",
+                ["id"] = "1"
+            };
+            if (param.Count != 0) options["params"] = param;
+            var webRequest = (HttpWebRequest) WebRequest.Create(_rpcURL);
+            webRequest.ContentType = "application/json";
+            webRequest.Method = "POST";
+            using (Stream dataStream = webRequest.GetRequestStream())
+            {
+                string payloadString = JsonConvert.SerializeObject(options);
+                byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
+                dataStream.Write(byteArray, 0, byteArray.Length);
+            }
 
+            WebResponse webResponse;
+            JObject response;
+            using (webResponse = webRequest.GetResponse())
+            {
+                using (Stream str = webResponse.GetResponseStream()!)
+                {
+                    using (StreamReader sr = new StreamReader(str))
+                    {
+                        response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
+                    }
+                }
+            }
+            var result = response["result"];
+            return result;
+        }
         private bool _interrupt;
 
         public void Dispose()
