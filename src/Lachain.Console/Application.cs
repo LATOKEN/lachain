@@ -14,6 +14,7 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
+using Lachain.Core.Network;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
@@ -85,13 +86,15 @@ namespace Lachain.Console
 
             if (!(options.SetStateTo is null))
             {
-                string _rpcURL = options.SetStateTo;
-                ulong blockNumber = Convert.ToUInt64((string)_CallJsonRPCAPI("eth_blockNumber", new JArray{}, _rpcURL), 16);
+                string peerURL = options.SetStateTo;
+                FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL);
+
+                /*
+                StateDownloader stateDownloader = new StateDownloader(peerURL);
+                var blockNumber = stateDownloader.DownloadBlockNumber(); 
                 Logger.LogWarning($"Performing set state to block {blockNumber}");
                 var snapshot = stateManager.NewSnapshot();
                 
-                Logger.LogInformation($"Reading state in json format");
-                JObject? receivedInfo = (JObject?)_CallJsonRPCAPI("la_getStateByNumber", new JArray{Web3DataFormatUtils.Web3Number(blockNumber)}, _rpcURL);
                 string[] trieNames = new string[]{"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
                 ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
                                                         snapshot.Contracts,
@@ -103,21 +106,18 @@ namespace Lachain.Console
 
                 for(int i = 0; i < trieNames.Length; i++)
                 {
-                    var stateStringName = trieNames[i];
-                    Logger.LogInformation($"Updating {stateStringName} Trie");
-                    var stateStringRootName = stateStringName + "Root";
-                    JObject currentTrie = (JObject)receivedInfo[stateStringName];
-                    string currentTrieRoot = (string)receivedInfo[stateStringRootName];
-                    ulong root = Convert.ToUInt64(currentTrieRoot, 16);
-                    IDictionary<ulong, IHashTrieNode> trieNodes = Web3DataFormatUtils.TrieFromJson(currentTrie);
-                    snapshots[i].SetState(root, trieNodes);
-                    Logger.LogInformation($"{stateStringName} update done");
+                    string trieName = trieNames[i];
+                    ulong curTrieRoot = stateDownloader.DownloadRoot(trieName);
+                    IDictionary<ulong, IHashTrieNode> curTrie = stateDownloader.DownloadTrie(trieName);
+                    snapshots[i].SetState(curTrieRoot, curTrie);
+                    Logger.LogInformation($"{trieName} update done");
                 }
 
                 stateManager.Approve();
                 stateManager.Commit();
                 snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);
                 Logger.LogWarning($"Set state to block {blockNumber} complete");
+                */
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
