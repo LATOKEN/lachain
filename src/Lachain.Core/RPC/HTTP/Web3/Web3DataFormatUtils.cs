@@ -86,13 +86,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         public static JObject Web3Trie(IDictionary<ulong, IHashTrieNode> trie)
         {
-<<<<<<< HEAD
             var jsonTrie = new JObject{};
             foreach(var item in trie)
-=======
-            var jobject = new JObject{};
-            foreach(var item in dict)
->>>>>>> la_getState
             {
                 var version = item.Key;
                 var node = item.Value;
@@ -126,11 +121,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return new JObject{};
         }
 
-<<<<<<< HEAD
         public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject jsonTrie)
-=======
-        public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject trieJson)
->>>>>>> la_getState
         {
             IDictionary<ulong, IHashTrieNode> trie = new Dictionary<ulong, IHashTrieNode>();
             foreach(var item in jsonTrie)
@@ -145,16 +136,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             if (((string)jsonNode["NodeType"]).Equals("0x1") == true)
             {
-<<<<<<< HEAD
                 uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
                 byte[] hash = HexUtils.HexToBytes((string)jsonNode["Hash"]);
                 var jsonChildren = (JArray)jsonNode["Children"];
 
-=======
-                uint mask = Convert.ToUInt32((string)nodeJson["ChildrenMask"], 16);
-                byte[] hash = HexUtils.HexToBytes((string)nodeJson["Hash"]);
-                var childrenJson = (JArray)nodeJson["Children"];
->>>>>>> la_getState
                 List<ulong> children = new List<ulong>();
                 foreach(var jsonChild in jsonChildren)
                 {
