@@ -60,6 +60,108 @@ namespace Lachain.CoreTest.IntegrationTests
          //   _container.Dispose();
         }
 
+        [Test]
+        public void Test_VirtualMachine_InvokeUniswapContract()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            
+            var resourceERC20 = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.ERC20.wasm");
+            if(resourceERC20 is null)
+                Assert.Fail("Failed to read script from resources");
+            var erc20Code = new byte[resourceERC20!.Length];
+            resourceERC20!.Read(erc20Code, 0, (int)resourceERC20!.Length);
+
+            var resourceFactory = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.UniswapV3Factory.wasm");
+            if(resourceFactory is null)
+                Assert.Fail("Failed to read script from resources");
+            var factoryCode = new byte[resourceFactory!.Length];
+            resourceFactory!.Read(factoryCode, 0, (int)resourceFactory!.Length);
+            
+            var stateManager = _container.Resolve<IStateManager>();
+            
+            // ERC20 First
+            var erc20FirstAddress = "0xfd893ce89186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
+            var erc20FirstContract = new Contract
+            (
+                erc20FirstAddress,
+                erc20Code
+            );
+            if (!VirtualMachine.VerifyContract(erc20FirstContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
+            // ERC20 Second
+            var erc20SecondAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
+            var erc20SecondContract = new Contract
+            (
+                erc20SecondAddress,
+                erc20Code
+            );
+            if (!VirtualMachine.VerifyContract(erc20SecondContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
+            // Factory
+            var factoryAddress = "0x6bc32575adc8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
+            var factoryContract = new Contract
+            (
+                factoryAddress,
+                factoryCode
+            );
+            if (!VirtualMachine.VerifyContract(factoryContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+            
+            var snapshot = stateManager.NewSnapshot();
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, erc20FirstContract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, erc20SecondContract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, factoryContract);
+            stateManager.Approve();
+
+            for (var i = 0; i < 1; ++i)
+            {
+                var currentTime = TimeUtils.CurrentTimeMillis();
+                var currentSnapshot = stateManager.NewSnapshot();
+                var sender = factoryAddress;
+                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                var transactionReceipt = new TransactionReceipt();
+                transactionReceipt.Transaction = new Transaction();
+                transactionReceipt.Transaction.Value = 0.ToUInt256();
+                var context = new InvocationContext(sender, currentSnapshot, transactionReceipt);
+                
+                {
+                    Console.WriteLine($"\nFactory: init()");
+                    var input = ContractEncoder.Encode("init()");
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(factoryContract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nFactory: createPool({erc20FirstAddress.ToHex()},{erc20SecondAddress.ToHex()},{500})");
+                    var input = ContractEncoder.Encode("createPool(address,address,uint24)", erc20FirstAddress, erc20SecondAddress, 500.ToUInt256());
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(factoryContract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+
+                stateManager.Approve();
+            exit_mark:
+                var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+                Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
+            }
+        }
+
         
         [Test]
         public void Test_VirtualMachine_InvokeContract()

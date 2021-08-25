@@ -27,8 +27,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\scripts\A.wasm" />
     <EmbeddedResource Include="Resources\scripts\B.wasm" />
+    <EmbeddedResource Include="Resources\scripts\ERC20.wasm" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3Factory.wasm" />
     <EmbeddedResource Include="Resources\scripts\A.abi" />
     <EmbeddedResource Include="Resources\scripts\B.abi" />
+    <EmbeddedResource Include="Resources\scripts\ERC20.abi" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3Factory.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
     <None Remove="Resources\scripts\C.abi" />
     <EmbeddedResource Include="Resources\scripts\C.abi" />
