@@ -14,6 +14,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -138,6 +139,38 @@ namespace Lachain.CoreTest.IntegrationTests
             // and it can't withdraw its stake. 
             //    GenerateBlocks(50);
             //    Assert.That(!_validatorStatusManager.IsStarted(), "Manager is not stopped");
+        }
+        
+        [Test]
+        public void Test_StakeDelegation()
+        {
+            var validatorKeyPair = new EcdsaKeyPair(
+                "0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75".HexToBytes()
+                    .ToPrivateKey());
+            byte[] validatorPublicKey = CryptoUtils.EncodeCompressed(validatorKeyPair.PublicKey);
+            var validator = validatorKeyPair.PublicKey.GetAddress();
+            
+            _blockManager.TryBuildGenesisBlock();
+            GenerateBlocks(1);
+            
+            var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
+            var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(systemContractReader.NodeAddress());
+            var placeToStake = Money.Parse("2000.0");
+            Assert.That(balance > placeToStake, "Not enough balance to make stake");
+            _validatorStatusManager.StartWithStake(placeToStake.ToUInt256(), validatorPublicKey);
+            Assert.That(_validatorStatusManager.IsStarted(), "Manager is not started");
+            Assert.That(!_validatorStatusManager.IsWithdrawTriggered(), "Withdraw was triggered from the beggining");
+            
+            GenerateBlocks(50);
+            
+            var stake = new Money(systemContractReader.GetStake());
+            Assert.That(stake == placeToStake, $"Stake is not as intended: {stake} != {placeToStake}");
+            
+            _validatorStatusManager.WithdrawStakeAndStop();
+            Assert.That(_validatorStatusManager.IsStarted(), "Manager is stopped right after withdraw request");
+            Assert.That(_validatorStatusManager.IsWithdrawTriggered(), "Withdraw is not triggered");
+            
+            
         }
 
         private void GenerateBlocks(int blockNum)

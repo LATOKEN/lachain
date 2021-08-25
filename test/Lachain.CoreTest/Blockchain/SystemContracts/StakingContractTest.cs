@@ -142,7 +142,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 "0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75".HexToBytes()
                     .ToPrivateKey());
             byte[] validatorPublicKey = CryptoUtils.EncodeCompressed(validatorKeyPair.PublicKey);
-            var validator = stakerKeyPair.PublicKey.GetAddress();
+            var validator = validatorKeyPair.PublicKey.GetAddress();
 
             var context = new InvocationContext(staker, _stateManager.LastApprovedSnapshot, tx);
             var contract = new StakingContract(context);

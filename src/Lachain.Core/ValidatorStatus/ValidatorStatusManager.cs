@@ -39,6 +39,7 @@ namespace Lachain.Core.ValidatorStatus
         private readonly ISystemContractReader _systemContractReader;
         private UInt256? _sendingTxHash;
         private BigInteger? _stakeSize;
+        private byte[] _nodePublicKey = null!;
 
         public ValidatorStatusManager(
             ITransactionPool transactionPool,
@@ -64,14 +65,15 @@ namespace Lachain.Core.ValidatorStatus
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void StartWithStake(UInt256 stake)
+        public void StartWithStake(UInt256 stake, byte[] publicKey)
         {
             if (_started)
             {
                 Logger.LogInformation("ValidatorStatusManager already started");
                 return;
             }
-
+            
+            _nodePublicKey = publicKey;
             _stakeSize = new Money(stake).ToWei();
             Start(false);
         }
@@ -313,7 +315,7 @@ namespace Lachain.Core.ValidatorStatus
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodBecomeStaker,
-                _systemContractReader.NodePublicKey(),
+                _nodePublicKey ?? _systemContractReader.NodePublicKey(),
                 (object) stakeAmount.ToUInt256()
             );
 

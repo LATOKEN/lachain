@@ -7,7 +7,7 @@ namespace Lachain.Core.ValidatorStatus
     {
         void Start(bool isWithdrawTriggered);
 
-        void StartWithStake(UInt256 stake);
+        void StartWithStake(UInt256 stake, byte[] address = null!);
     
         bool IsStarted();
     
