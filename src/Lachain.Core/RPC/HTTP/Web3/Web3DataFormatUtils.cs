@@ -84,28 +84,30 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
-        public static JObject Web3Trie(IDictionary<ulong,IHashTrieNode> dict)
+        public static JObject Web3Trie(IDictionary<ulong, IHashTrieNode> trie)
         {
-            var jobject = new JObject{};
-            foreach(var item in dict)
+            var jsonTrie = new JObject{};
+            foreach(var item in trie)
             {
-                jobject[Web3Number(item.Key)] = Web3DataFormatUtils.Web3Node(item.Value, item.Key);
+                var version = item.Key;
+                var node = item.Value;
+                jsonTrie[Web3Number(version)] = Web3DataFormatUtils.Web3Node(node);
             }
-            return jobject;
+            return jsonTrie;
         }
 
-        public static JObject Web3Node(IHashTrieNode node, ulong root)
+        public static JObject Web3Node(IHashTrieNode node)
         {
             switch (node)
             {
                 case InternalNode internalNode:
-                    var jArray = new JArray();
-                    foreach(var item in node.Children) jArray.Add(Web3Number(item));
-                    return new JObject{
+                    var jsonChildren = new JArray();
+                    foreach(var item in node.Children) jsonChildren.Add(Web3Number(item));
+                    return new JObject {
                         ["NodeType"] = Web3Number(1),
                         ["Hash"] = Web3Data(internalNode.Hash.ToUInt256()),
                         ["ChildrenMask"] = Web3Number((ulong)internalNode.ChildrenMask),
-                        ["Children"] = jArray,
+                        ["Children"] = jsonChildren,
                     };     
 
                 case LeafNode leafNode:
@@ -119,34 +121,35 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return new JObject{};
         }
 
-        public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject trieJson)
+        public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject jsonTrie)
         {
-            IDictionary<ulong, IHashTrieNode> allNodes = new Dictionary<ulong, IHashTrieNode>();
-            foreach(var item in trieJson)
+            IDictionary<ulong, IHashTrieNode> trie = new Dictionary<ulong, IHashTrieNode>();
+            foreach(var item in jsonTrie)
             {
-                ulong version = Convert.ToUInt64( ((string)item.Key), 16);
-                allNodes[version] = NodeFromJsonObject( (JObject)item.Value);
+                ulong version = Convert.ToUInt64(((string)item.Key), 16);
+                trie[version] = NodeFromJson((JObject)item.Value);
             }
-            return allNodes;
+            return trie;
         }
 
-        public static IHashTrieNode NodeFromJsonObject(JObject nodeJson)
+        public static IHashTrieNode NodeFromJson(JObject jsonNode)
         {
-            if (((string)nodeJson["NodeType"]).Equals("0x1") == true)
+            if (((string)jsonNode["NodeType"]).Equals("0x1") == true)
             {
-                uint mask = Convert.ToUInt32((string)nodeJson["ChildrenMask"], 16);
-                byte[] hash = HexUtils.HexToBytes((string)nodeJson["Hash"]);
-                var childrenJson = (JArray)nodeJson["Children"];
+                uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
+                byte[] hash = HexUtils.HexToBytes((string)jsonNode["Hash"]);
+                var jsonChildren = (JArray)jsonNode["Children"];
+
                 List<ulong> children = new List<ulong>();
-                foreach(var childJson in childrenJson)
+                foreach(var jsonChild in jsonChildren)
                 {
-                    children.Add(Convert.ToUInt64((string)childJson, 16));
+                    children.Add(Convert.ToUInt64((string)jsonChild, 16));
                 }
                 return new InternalNode(mask, children, hash);
             }
             else{
-                byte[] keyHash = HexUtils.HexToBytes((string)nodeJson["KeyHash"]);
-                byte[] value = HexUtils.HexToBytes((string)nodeJson["Value"]);
+                byte[] keyHash = HexUtils.HexToBytes((string)jsonNode["KeyHash"]);
+                byte[] value = HexUtils.HexToBytes((string)jsonNode["Value"]);
                 return new LeafNode(keyHash, value);
             }
         }

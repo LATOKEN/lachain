@@ -197,7 +197,7 @@ namespace Lachain.Networking
             _broadcaster.AddMsgToQueue(networkMessage);
         }
 
-        public void Stop()
+        private void Stop()
         {
             foreach (var client in _clientWorkers.Values)
             {
