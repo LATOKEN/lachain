@@ -269,7 +269,7 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.TransferFundsGasCost);
             snapshot.Balances.TransferBalance(frame.CurrentAddress, hash, value);
 
-            SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
+            SafeCopyToMemory(frame.Memory, hash.ToBytes().ToArray().Reverse().ToArray(), resultOffset);
 
             return 0;
         }
