@@ -234,9 +234,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var toBlock = opts["toBlock"];
             var address = opts["address"];
             var topics = opts["topics"];
-            var blockhash = opts["blockhash"];
+            var blockhash = opts["blockHash"];
             if (!(topics is null))
-                throw new Exception("Topics filter is not implemented yet");
+            {
+                if(!((string)topics!).ToLower().Equals("null"))
+                    throw new Exception("Topics filter is not implemented yet");
+            }
+
             if (!(fromBlock is null) && !(toBlock is null) && !(blockhash is null))
                 throw new Exception("If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
             
