@@ -16,6 +16,7 @@
         BalanceByOwnerAndAsset = 0x0501,
         TotalSupply = 0x0502,
         AllowedSupply = 0x0503,
+        MinterAddress = 0x0504,
 
         /* storage version & index by height */
         StorageVersionIndex = 0x0601,

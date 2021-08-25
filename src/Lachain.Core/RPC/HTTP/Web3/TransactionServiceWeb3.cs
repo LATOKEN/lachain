@@ -57,7 +57,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _privateWallet = privateWallet;
         }
 
-        private Transaction MakeTransaction(SignedTransactionBase ethTx)
+        public Transaction MakeTransaction(SignedTransactionBase ethTx)
         {
             return new Transaction
             {
@@ -160,7 +160,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_sendRawTransaction")]
-        private string SendRawTransaction(string rawTx)
+        public string SendRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
 

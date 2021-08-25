@@ -23,10 +23,13 @@ namespace Lachain.Core.Blockchain.VM
         public object[] Decode(string signature)
         {
             var parts = signature.Split('(');
-            if (parts.Length != 2)
-                throw new ContractAbiException("Unable to parse ABI method signature (" + signature.Length + ")");
-            if (_binaryReaderStatic.ReadUInt32() != ContractEncoder.MethodSignatureAsInt(signature))
-                throw new ContractAbiException("Decoded ABI does not match method signature");
+           if (parts.Length == 1)
+                return DecodeSimpleTypes(signature);
+            if (parts.Length == 2)
+            {
+                if (_binaryReaderStatic.ReadUInt32() != ContractEncoder.MethodSignatureAsInt(signature))
+                    throw new ContractAbiException("Decoded ABI does not match method signature");
+            }
             parts[1] = parts[1].TrimEnd(')');
             if (parts[1] == "")
             {
@@ -38,6 +41,34 @@ namespace Lachain.Core.Blockchain.VM
             var dynamicInput = _inputData.Skip(4 + staticInput.Length).ToArray();
             _binaryReaderStatic = new BinaryReader(new MemoryStream(staticInput));
             _binaryReaderDynamic = new BinaryReader(new MemoryStream(dynamicInput));
+            result.AddRange(types.Select(type => type switch
+            {
+                "uint256" => (object) DecodeUInt256(),
+                "uint256[]" => DecodeUInt256List(),
+                "uint" => DecodeUInt256(),
+                "uint[]" => DecodeUInt256List(),
+                "address" => DecodeUInt160(),
+                "uint160" => DecodeUInt160(),
+                "address[]" => DecodeUInt160List(),
+                "uint160[]" => DecodeUInt160List(),
+                "bytes[]" => DecodeBytesList(),
+                "bytes" => DecodeBytes(),
+                _ => throw new ContractAbiException("Unsupported type in method signature (" + type + ")")
+            }));
+
+            return result.ToArray();
+        }
+        
+        private object[] DecodeSimpleTypes(string signature)
+        {
+            if (signature == "")
+            {
+                return new object[]{};
+            }
+            var types = signature.Split(',');
+            var result = new List<object>(types.Length);
+            var staticInput = _inputData.Take(types.Length * 32).ToArray();
+            _binaryReaderStatic = new BinaryReader(new MemoryStream(staticInput));
             result.AddRange(types.Select(type => type switch
             {
                 "uint256" => (object) DecodeUInt256(),
