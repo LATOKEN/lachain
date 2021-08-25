@@ -13,6 +13,8 @@ using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Globalization;
+using NLog.Fluent;
 
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -223,9 +225,100 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     (uint) i);
                 if (ev is null)
                     continue;
-                jArray.Add(ev.ToJson());
+                jArray.Add(Web3DataFormatUtils.Web3Event(ev));
             }
 
+            return jArray;
+        }
+        
+        [JsonRpcMethod("eth_getLogs")]
+        private JArray GetLogs(JObject opts)
+        {
+            var fromBlock = opts["fromBlock"];
+            var toBlock = opts["toBlock"];
+            var address = opts["address"];
+            var topics = opts["topics"];
+            var blockhash = opts["blockhash"];
+            if (!(topics is null))
+                throw new Exception("Topics filter is not implemented yet");
+            if (!(fromBlock is null) && !(toBlock is null) && !(blockhash is null))
+                throw new Exception("If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
+            
+            var start = (ulong)0;
+            if (!(fromBlock is null))
+            {
+                if (((string)fromBlock!).StartsWith("0x"))
+                {
+                    start = UInt64.Parse(((string)fromBlock!).Substring(2), NumberStyles.HexNumber);
+                }
+                else
+                {
+                    start = (ulong)fromBlock!;
+                }
+            }
+            var finish = _blockManager.GetHeight();
+            if (!(toBlock is null))
+            {
+                if (((string)toBlock!).StartsWith("0x"))
+                {
+                    finish = UInt64.Parse(((string)toBlock!).Substring(2), NumberStyles.HexNumber);
+                }
+                else
+                {
+                    finish = (ulong)toBlock!;
+                }
+            }
+            if (!(blockhash is null))
+            {
+                var hash = ((string)blockhash!).HexToBytes().ToUInt256();
+                var block = _blockManager.GetByHash(hash);
+                if (block is null)
+                    return new JArray();
+                start = block!.Header.Index;
+                finish = block!.Header.Index;
+            }
+            Logger.LogInformation($"Check blocks from {start} to {finish}");
+            
+            var addresses = new List<UInt160>();
+            if (!(address is null))
+            {
+                foreach (var a in address)
+                {
+                    var addressString = (a is null) ? null : (string)a!;
+                    var addressBuffer = addressString?.HexToUInt160();
+                    if (!(addressBuffer is null))
+                        addresses.Add(addressBuffer);
+                }
+            }
+
+            var jArray = new JArray();
+            for(var blockNumber = start; blockNumber <= finish; blockNumber++)
+            {
+                var block = _blockManager.GetByHeight((ulong)blockNumber);
+                if (block == null)
+                    continue;
+                var txs = block!.TransactionHashes;
+                foreach (var tx in txs)
+                {
+                    if (addresses.Count > 0)
+                    {
+                        var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
+                        if (receipt is null)
+                            continue;
+                        if (!addresses.Any(a => receipt.Transaction.From.Equals(a)))
+                            continue;
+                    }
+                    var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(tx);
+                    for (var i = 0; i < txEvents; i++)
+                    {
+                        var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
+                            (uint) i);
+                        if (ev is null)
+                            continue;
+                        jArray.Add(Web3DataFormatUtils.Web3Event(ev, blockNumber));
+                    }
+                }
+            }
             return jArray;
         }
 

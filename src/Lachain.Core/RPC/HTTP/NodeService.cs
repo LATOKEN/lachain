@@ -134,13 +134,6 @@ namespace Lachain.Core.RPC.HTTP
         {
             return new JArray();
         }
-
-        [JsonRpcMethod("eth_getLogs")]
-        private JArray GetLogs(JObject opts)
-        {
-            return new JArray();
-        }
-
         [JsonRpcMethod("eth_hashrate")]
         private string GetHashrate()
         {

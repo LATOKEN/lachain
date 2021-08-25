@@ -17,16 +17,18 @@ namespace Lachain.Core.Blockchain.VM
         private readonly BinaryWriter _dynamicBinaryWriter;
         private readonly dynamic[] _values;
 
-        public ContractEncoder(string methodSignature, dynamic[] values)
+        public ContractEncoder(string? methodSignature, dynamic[] values)
         {
             _values = values;
             _staticBinaryWriter = new BinaryWriter(new MemoryStream());
             _dynamicBinaryWriter = new BinaryWriter(new MemoryStream());
+            if (methodSignature is null)
+                return;
             var signature = MethodSignatureAsInt(methodSignature);
             _staticBinaryWriter.Write(signature);
         }
 
-        public static byte[] Encode(string methodSignature, params dynamic[] values)
+        public static byte[] Encode(string? methodSignature, params dynamic[] values)
         {
             var encoder = new ContractEncoder(methodSignature, values);
             if (values.GetType() == typeof(byte[][]))

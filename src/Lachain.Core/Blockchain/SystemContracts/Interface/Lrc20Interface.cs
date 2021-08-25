@@ -16,9 +16,12 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodMint = "mint(address,uint256)";
         public const string MethodSetAllowedSupply = "setAllowedSupply(uint256)";
         public const string MethodGetAllowedSupply = "getAllowedSupply()";
+        public const string MethodSetMinter = "setMinter(address)";
+        public const string MethodGetMinter = "getMinter()";
 
         public const string EventTransfer = "Transfer(address,address,uint256)";
         public const string EventApproval = "Approval(address,address,uint256)";
+        public const string EventMinted = "Minted(address,uint256)";
 
         public string[] Methods { get; } =
         {
@@ -30,7 +33,9 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodAllowance,
             MethodMint,
             MethodSetAllowedSupply,
-            MethodGetAllowedSupply
+            MethodGetAllowedSupply,
+            MethodSetMinter,
+            MethodGetMinter
         };
 
         public string[] Properties { get; } =
@@ -43,7 +48,8 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public string[] Events { get; } =
         {
             EventTransfer,
-            EventApproval
+            EventApproval,
+            EventMinted
         };
     }
 }

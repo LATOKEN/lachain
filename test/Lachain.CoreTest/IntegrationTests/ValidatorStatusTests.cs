@@ -110,7 +110,7 @@ namespace Lachain.CoreTest.IntegrationTests
         //     //GenerateBlocks(50);
         //     //Assert.IsFalse(_validatorStatusManager.IsStarted());
         // }
-
+        
         [Test]
         public void Test_StakeSize()
         {
