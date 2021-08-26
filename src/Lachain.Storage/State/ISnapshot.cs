@@ -11,5 +11,7 @@ namespace Lachain.Storage.State
         UInt256 Hash { get; }
         IDictionary<ulong,IHashTrieNode> GetState();
         bool IsTrieNodeHashesOk();
+
+        ulong SetState(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
     }
 }

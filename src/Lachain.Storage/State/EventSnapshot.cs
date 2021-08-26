@@ -26,6 +26,11 @@ namespace Lachain.Storage.State
         {
             return _state.IsNodeHashesOk();
         }
+        
+        public ulong SetState(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes)
+        {
+            return _state.InsertAllNodes(root, allTrieNodes);
+        }
 
         public ulong Version => _state.CurrentVersion;
 

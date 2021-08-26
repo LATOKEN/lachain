@@ -44,7 +44,12 @@ namespace Lachain.Storage.State
         {
             return _state.IsNodeHashesOk();
         }
-    
+        
+        public ulong SetState(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes)
+        {
+            return _state.InsertAllNodes(root, allTrieNodes);
+        }
+
         public Block? GetBlockByHeight(ulong blockHeight)
         {
             var raw = _state.Get(EntryPrefix.BlockHashByHeight.BuildPrefix(blockHeight));

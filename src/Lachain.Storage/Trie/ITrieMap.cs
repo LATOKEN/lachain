@@ -14,9 +14,10 @@ namespace Lachain.Storage.Trie
         ulong Delete(ulong root, byte[] key, out byte[]? value);
         ulong TryDelete(ulong root, byte[] key, out byte[]? value);
         byte[]? Find(ulong root, byte[] key);
-        IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong root);
+        IDictionary<ulong, IHashTrieNode> GetAllNodes(ulong root);
         IEnumerable<byte[]> GetValues(ulong root);
         public bool CheckAllNodeHashes(ulong root);
+        public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
         UInt256 GetHash(ulong root);
     }
 }

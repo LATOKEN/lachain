@@ -6,6 +6,7 @@ using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
+using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
@@ -13,13 +14,21 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
+using Lachain.Core.Network;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using NLog;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Text;
 
 namespace Lachain.Console
 {
@@ -65,6 +74,7 @@ namespace Lachain.Console
             var metricsService = _container.Resolve<IMetricsService>();
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
+            var NodeRetrieval = _container.Resolve<INodeRetrieval>();
 
             if (options.RollBackTo.HasValue)
             {
@@ -73,6 +83,19 @@ namespace Lachain.Console
                 stateManager.RollbackTo(snapshot);
                 wallet.DeleteKeysAfterBlock(options.RollBackTo.Value);
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
+            }
+
+            if (options.SetStateTo.Any())
+            {
+                List<string> args = options.SetStateTo.ToList();
+                System.Console.WriteLine(args);
+                string peerURL = args[0];
+                ulong blockNumber = 0;
+                if(args.Count > 1)
+                {
+                    blockNumber = Convert.ToUInt64(args[1]);
+                }
+                FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
@@ -124,7 +147,6 @@ namespace Lachain.Console
             while (!_interrupt)
                 Thread.Sleep(1000);
         }
-
         private bool _interrupt;
 
         public void Dispose()

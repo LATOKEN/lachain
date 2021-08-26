@@ -15,13 +15,15 @@ namespace Lachain.Storage
         ulong Delete(byte[] key, out byte[]? value);
         ulong TryDelete(byte[] key, out byte[]? value);
         
-        IDictionary<ulong,IHashTrieNode> GetAllNodes();
+        IDictionary<ulong, IHashTrieNode> GetAllNodes();
         public bool IsNodeHashesOk();
 
         IEnumerable<byte[]> Values { get; }
         
         UInt256 Hash { get; }
         
+        public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
+
         ulong Commit();
         ulong Cancel();
     }

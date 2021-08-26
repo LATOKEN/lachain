@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -83,31 +84,31 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
-        public static JObject Web3Trie(IDictionary<ulong,IHashTrieNode> dict)
+        public static JObject Web3Trie(IDictionary<ulong, IHashTrieNode> trie)
         {
-            var jobject = new JObject{};
-
-            foreach(var item in dict)
+            var jsonTrie = new JObject{};
+            foreach(var item in trie)
             {
-                jobject[ item.Key.ToString() ] = Web3DataFormatUtils.Web3Node(item.Value, item.Key);
+                var version = item.Key;
+                var node = item.Value;
+                jsonTrie[Web3Number(version)] = Web3DataFormatUtils.Web3Node(node);
             }
-            return jobject;
+            return jsonTrie;
         }
 
-        public static JObject Web3Node(IHashTrieNode node, ulong root)
+        public static JObject Web3Node(IHashTrieNode node)
         {
             switch (node)
             {
                 case InternalNode internalNode:
-                    var jArray = new JArray();
-                    foreach(var item in node.Children) jArray.Add(Web3Number(item));
-                    return new JObject{
+                    var jsonChildren = new JArray();
+                    foreach(var item in node.Children) jsonChildren.Add(Web3Number(item));
+                    return new JObject {
                         ["NodeType"] = Web3Number(1),
                         ["Hash"] = Web3Data(internalNode.Hash.ToUInt256()),
                         ["ChildrenMask"] = Web3Number((ulong)internalNode.ChildrenMask),
-                        ["Children"] = jArray,
+                        ["Children"] = jsonChildren,
                     };     
-
 
                 case LeafNode leafNode:
                     return new JObject{
@@ -118,6 +119,39 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     };
             }
             return new JObject{};
+        }
+
+        public static IDictionary<ulong, IHashTrieNode> TrieFromJson(JObject jsonTrie)
+        {
+            IDictionary<ulong, IHashTrieNode> trie = new Dictionary<ulong, IHashTrieNode>();
+            foreach(var item in jsonTrie)
+            {
+                ulong version = Convert.ToUInt64(((string)item.Key), 16);
+                trie[version] = NodeFromJson((JObject)item.Value);
+            }
+            return trie;
+        }
+
+        public static IHashTrieNode NodeFromJson(JObject jsonNode)
+        {
+            if (((string)jsonNode["NodeType"]).Equals("0x1") == true)
+            {
+                uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
+                byte[] hash = HexUtils.HexToBytes((string)jsonNode["Hash"]);
+                var jsonChildren = (JArray)jsonNode["Children"];
+
+                List<ulong> children = new List<ulong>();
+                foreach(var jsonChild in jsonChildren)
+                {
+                    children.Add(Convert.ToUInt64((string)jsonChild, 16));
+                }
+                return new InternalNode(mask, children, hash);
+            }
+            else{
+                byte[] keyHash = HexUtils.HexToBytes((string)jsonNode["KeyHash"]);
+                byte[] value = HexUtils.HexToBytes((string)jsonNode["Value"]);
+                return new LeafNode(keyHash, value);
+            }
         }
 
         public static JObject Web3Transaction(

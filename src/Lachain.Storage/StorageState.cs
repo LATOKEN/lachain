@@ -53,6 +53,12 @@ namespace Lachain.Storage
             return _trieMap.CheckAllNodeHashes(CurrentVersion);
         }
 
+        public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes)
+        {
+            CurrentVersion = _trieMap.InsertAllNodes(root, allTrieNodes);
+            return CurrentVersion;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Add(byte[] key, byte[] value)
         {

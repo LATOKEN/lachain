@@ -3,6 +3,7 @@ using System.IO;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Storage.Trie;
 
 namespace Lachain.Core.DI.Modules
 {
@@ -29,6 +30,9 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IKeyGenRepository, KeyGenRepository>();
             containerBuilder.RegisterSingleton<IValidatorAttendanceRepository, ValidatorAttendanceRepository>();
             containerBuilder.RegisterSingleton<ILocalTransactionRepository, LocalTransactionRepository>();
+
+            /* database query */ 
+            containerBuilder.RegisterSingleton<INodeRetrieval, NodeRetrieval>();
         }
     }
 }
