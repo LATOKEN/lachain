@@ -14,7 +14,7 @@ using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Globalization;
-using NLog.Fluent;
+using Lachain.Storage.Trie;
 
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -30,13 +30,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionPool _transactionPool; 
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly INetworkManager _networkManager;
+        private readonly INodeRetrieval _nodeRetrieval; 
         public BlockchainServiceWeb3(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             ITransactionPool transactionPool,
             IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexer,
-            INetworkManager networkManager)
+            INetworkManager networkManager,
+            INodeRetrieval nodeRetrieval)
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
@@ -44,12 +46,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _stateManager = stateManager;
             _snapshotIndexer = snapshotIndexer;
             _networkManager = networkManager;
+            _nodeRetrieval = nodeRetrieval;
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
         private JObject? GetBlockByNumber(string blockTag, bool fullTx)
         {
-            var blockNumber =GetBlockNumberByTag(blockTag);
+            var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) 
                 return null;
             var block = _blockManager.GetByHeight((ulong)blockNumber);
@@ -136,7 +139,90 @@ namespace Lachain.Core.RPC.HTTP.Web3
             trieRootsHash["ValidatorsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Validators.Hash);
             return trieRootsHash;
         }
-        
+
+
+        [JsonRpcMethod("la_getNodeByVersion")]
+        private JObject? GetNodeByVersion(string versionTag)
+        {
+            var version = GetBlockNumberByTag(versionTag);
+            if (version == null || version == 0) return null;
+            // to do : handle if the database does not have the node
+            return Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode((ulong)version));
+        }
+
+        [JsonRpcMethod("la_getChildByVersion")]
+        private JObject? GetChildByVersion(string versionTag)
+        {
+            var version = GetBlockNumberByTag(versionTag);
+            JObject children = new JObject {};
+            if (version == null || version == 0) return new JObject { };
+            var node = _nodeRetrieval.TryGetNode((ulong)version);
+            switch (node)
+            {
+                case InternalNode internalNode:
+                    foreach (var item in node.Children) children[Web3DataFormatUtils.Web3Number(item)] =
+                            Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode(item));
+                    
+                    return children;
+
+                case LeafNode leafNode:
+                    return children;
+            }
+            return children;
+        }
+
+        [JsonRpcMethod("la_getChildByVersionBatch")]
+        private JObject? GetChildByVersionBatch(List<string> versionTags)
+        {
+            JObject childsBatch = new JObject { };
+            foreach (var versionTag in versionTags)
+            {
+                JObject childs = new JObject { };
+                var version = GetBlockNumberByTag(versionTag);
+                if (version == null || version == 0) return new JObject { };
+                var node = _nodeRetrieval.TryGetNode((ulong)version);
+                switch (node)
+                {
+                    case InternalNode internalNode:
+                        foreach (var item in node.Children) childs[Web3DataFormatUtils.Web3Number(item)] =
+                                Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode(item));
+                        break;
+                    case LeafNode leafNode:
+                        return childs;
+                }
+                childsBatch[Web3DataFormatUtils.Web3Number((ulong)version)] = childs;
+            }
+            return childsBatch;
+        }
+
+
+        [JsonRpcMethod("la_getRootVersionByTrieName")]
+        private string? GetRootVersionByTrieName(string trieName, string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag);
+            if (blockNumber == null) return null;
+            IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
+            string[] trieNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
+            ISnapshot[] snapshots = new ISnapshot[]{blockchainSnapshot.Balances,
+                                                    blockchainSnapshot.Contracts,
+                                                    blockchainSnapshot.Storage,
+                                                    blockchainSnapshot.Transactions,
+                                                    blockchainSnapshot.Blocks,
+                                                    blockchainSnapshot.Events,
+                                                    blockchainSnapshot.Validators};
+
+            for (var i = 0; i < trieNames.Length; i++)
+            {
+                if(trieNames[i] == trieName)
+                {
+                    return Web3DataFormatUtils.Web3Number(snapshots[i].Version);
+                }
+            }
+            return null;
+        }
+
+
+
         [JsonRpcMethod("eth_getBlockByHash")]
         private JObject? GetBlockByHash(string blockHash)
         {

@@ -18,28 +18,18 @@ namespace Lachain.Core.Network
 
         private static readonly ILogger<StateDownloader> Logger = LoggerFactory.GetLoggerForClass<StateDownloader>();
 
-        private IDictionary<string, IDictionary<ulong, IHashTrieNode>> _trieNodes = new Dictionary<string, IDictionary<ulong, IHashTrieNode>>();
-        private IDictionary<string, ulong> _trieRootVersions = new Dictionary<string, ulong>();
         private ulong _blockNumber;
         private string _peerURL;
 
-        public StateDownloader(string peerURL)
+        public StateDownloader(string peerURL, ulong blockNumber)
         {
-            Logger.LogWarning($"Starting to download state from {peerURL}");
             _peerURL = peerURL;
-            _blockNumber = Convert.ToUInt64((string)_CallJsonRPCAPI("eth_blockNumber", new JArray {}, peerURL), 16);
-            JObject? receivedInfo = (JObject?)_CallJsonRPCAPI("la_getStateByNumber", new JArray {Web3DataFormatUtils.Web3Number(_blockNumber)}, peerURL);
-            string[] trieNames = new string[] {"Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators"};
-            
-            foreach(var trieName in trieNames)
+            if(blockNumber == 0)
             {
-                JObject currentTrie = (JObject)receivedInfo[trieName];
-                string currentTrieRoot = (string)receivedInfo[trieName + "Root"];
-                _trieRootVersions[trieName] = Convert.ToUInt64(currentTrieRoot, 16);
-                _trieNodes[trieName] = Web3DataFormatUtils.TrieFromJson(currentTrie);
+                blockNumber = Convert.ToUInt64((string)_CallJsonRPCAPI("eth_blockNumber", new JArray { }, peerURL), 16);
             }
-
-            Logger.LogWarning($"Completed downloading state from {peerURL}");
+            _blockNumber = blockNumber;
+            Logger.LogWarning($"initiated State Downloader from {_peerURL} at block number {_blockNumber}");
         }
 
         public ulong DownloadBlockNumber()
@@ -49,12 +39,62 @@ namespace Lachain.Core.Network
 
         public ulong DownloadRoot(string trieName)
         {
-            return _trieRootVersions[trieName];
+            Logger.LogWarning($"downloading root version of {trieName} trie");
+            ulong root = Convert.ToUInt64((string)_CallJsonRPCAPI("la_getRootVersionByTrieName",
+                new JArray { trieName, Web3DataFormatUtils.Web3Number(_blockNumber) }, _peerURL), 16);
+            
+            Logger.LogWarning($"Completed downloading root version of {trieName} trie, root = {root}");
+            return root;
         }
 
         public IDictionary<ulong, IHashTrieNode> DownloadTrie(string trieName)
         {
-            return _trieNodes[trieName];
+            Logger.LogWarning($"downloading {trieName} trie");
+            IDictionary<ulong, IHashTrieNode> trie = new Dictionary<ulong, IHashTrieNode>();
+            Queue<ulong> queue = new Queue<ulong>();
+            ulong root = DownloadRoot(trieName);
+            if(root > 0)
+            {
+                trie[root] = DownloadNode(root);
+
+                if (trie[root].Type == NodeType.Internal) queue.Enqueue(root);
+
+                while (queue.Count > 0)
+                {
+                    ulong cur = queue.Dequeue();
+                    IDictionary<ulong, IHashTrieNode> childs = DownloadChild(cur);
+                    foreach (var item in childs)
+                    {
+                        ulong version = item.Key;
+                        IHashTrieNode child = item.Value;
+                        trie[version] = child;
+                        if (child.Type == NodeType.Internal)
+                        {
+                            queue.Enqueue(version);
+                        }
+                    }
+                }
+            }
+            Logger.LogWarning($"{trieName} download done");
+            return trie;
+        }
+
+        private IHashTrieNode DownloadNode(ulong version)
+        {
+            Logger.LogWarning($"downloding node with version {version}");
+            JObject? receivedInfo = (JObject?)_CallJsonRPCAPI("la_getNodeByVersion", new JArray { Web3DataFormatUtils.Web3Number(version) }, _peerURL);
+            IHashTrieNode node = Web3DataFormatUtils.NodeFromJson(receivedInfo);
+            Logger.LogWarning($"Completed downloding node with version {version}");
+            return node; 
+        }
+
+        IDictionary<ulong, IHashTrieNode> DownloadChild(ulong version)
+        {
+            Logger.LogWarning($"downloding childs with of node with version {version}");
+            JObject? receivedInfo = (JObject?)_CallJsonRPCAPI("la_getChildByVersion", new JArray { Web3DataFormatUtils.Web3Number(version) }, _peerURL);
+            IDictionary<ulong, IHashTrieNode> childs = Web3DataFormatUtils.TrieFromJson(receivedInfo);
+            Logger.LogWarning($"Completed downloding childs with of node with version {version}");
+            return childs;
         }
 
         private JToken? _CallJsonRPCAPI(string method, JArray param, string _rpcURL)

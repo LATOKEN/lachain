@@ -74,6 +74,7 @@ namespace Lachain.Console
             var metricsService = _container.Resolve<IMetricsService>();
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
+            var NodeRetrieval = _container.Resolve<INodeRetrieval>();
 
             if (options.RollBackTo.HasValue)
             {
@@ -84,10 +85,17 @@ namespace Lachain.Console
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
             }
 
-            if (!(options.SetStateTo is null))
+            if (options.SetStateTo.Any())
             {
-                string peerURL = options.SetStateTo;
-                FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL);
+                List<string> args = options.SetStateTo.ToList();
+                System.Console.WriteLine(args);
+                string peerURL = args[0];
+                ulong blockNumber = 0;
+                if(args.Count > 1)
+                {
+                    blockNumber = Convert.ToUInt64(args[1]);
+                }
+                FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());

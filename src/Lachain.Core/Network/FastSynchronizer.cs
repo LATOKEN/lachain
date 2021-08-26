@@ -10,10 +10,10 @@ namespace Lachain.Core.Network
     {
         private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
 
-        public static void FastSync(IStateManager stateManager, ISnapshotIndexRepository snapshotIndexRepository, string peerURL)
+        public static void FastSync(IStateManager stateManager, ISnapshotIndexRepository snapshotIndexRepository, string peerURL, ulong blockNumber)
         {
-            StateDownloader stateDownloader = new StateDownloader(peerURL);
-            var blockNumber = stateDownloader.DownloadBlockNumber();
+            StateDownloader stateDownloader = new StateDownloader(peerURL, blockNumber);
+            blockNumber = stateDownloader.DownloadBlockNumber();
             Logger.LogWarning($"Performing set state to block {blockNumber}");
             var snapshot = stateManager.NewSnapshot();
 
