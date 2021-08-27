@@ -82,6 +82,18 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.Fail("Failed to read script from resources");
             var swapCode = new byte[resourceSwap!.Length];
             resourceSwap!.Read(swapCode, 0, (int)resourceSwap!.Length);
+
+            var resourceTickMath = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.TickMath.wasm");
+            if(resourceTickMath is null)
+                Assert.Fail("Failed to read script from resources");
+            var tickMathCode = new byte[resourceTickMath!.Length];
+            resourceTickMath!.Read(tickMathCode, 0, (int)resourceTickMath!.Length);
+
+            var resourceSwapMath = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.SwapMath.wasm");
+            if(resourceSwapMath is null)
+                Assert.Fail("Failed to read script from resources");
+            var swapMathCode = new byte[resourceSwapMath!.Length];
+            resourceSwapMath!.Read(swapMathCode, 0, (int)resourceSwapMath!.Length);
             
             var stateManager = _container.Resolve<IStateManager>();
             
@@ -122,7 +134,27 @@ namespace Lachain.CoreTest.IntegrationTests
                 swapAddress,
                 swapCode
             );
-            if (!VirtualMachine.VerifyContract(factoryContract.ByteCode))
+            if (!VirtualMachine.VerifyContract(swapContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
+            // TickMath
+            var tickMathAddress = "0x9531d91b4bc58a2c5c14bc864875c8ad6425c36b".HexToBytes().ToUInt160();
+            var tickMathContract = new Contract
+            (
+                tickMathAddress,
+                tickMathCode
+            );
+            if (!VirtualMachine.VerifyContract(tickMathContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
+            // SwapMath
+            var swapMathAddress = "0x9531d91b4bc58a4d5c14bc864875c8ad6425c36b".HexToBytes().ToUInt160();
+            var swapMathContract = new Contract
+            (
+                swapMathAddress,
+                swapMathCode
+            );
+            if (!VirtualMachine.VerifyContract(swapMathContract.ByteCode))
                 throw new Exception("Unable to validate smart-contract code");
 
             var recipientAddress = "0xfdcd3ce89186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
@@ -132,6 +164,9 @@ namespace Lachain.CoreTest.IntegrationTests
             snapshot.Contracts.AddContract(UInt160Utils.Zero, erc20FirstContract);
             snapshot.Contracts.AddContract(UInt160Utils.Zero, erc20SecondContract);
             snapshot.Contracts.AddContract(UInt160Utils.Zero, factoryContract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, swapContract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, tickMathContract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, swapMathContract);
             stateManager.Approve();
 
             for (var i = 0; i < 1; ++i)
@@ -143,6 +178,13 @@ namespace Lachain.CoreTest.IntegrationTests
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
                 transactionReceipt.Transaction.Value = 0.ToUInt256();
+                
+                var block = new Block();
+                block.Header = new BlockHeader();
+                block.Header.Index = 0;
+                block.Hash = 0.ToUInt256();
+                block.Timestamp = (ulong) DateTimeOffset.Now.ToUnixTimeSeconds();
+                currentSnapshot.Blocks.AddBlock(block);
                 var context = new InvocationContext(sender, currentSnapshot, transactionReceipt);
                 
                 {
@@ -160,8 +202,8 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    Console.WriteLine($"\nFactory: createPool({erc20FirstAddress.ToHex()},{erc20SecondAddress.ToHex()},{500})");
-                    var input = ContractEncoder.Encode("createPool(address,address,uint24)", erc20FirstAddress, erc20SecondAddress, 500.ToUInt256());
+                    Console.WriteLine($"\nFactory: createPool({erc20FirstAddress.ToHex()},{erc20SecondAddress.ToHex()},{3000})");
+                    var input = ContractEncoder.Encode("createPool(address,address,uint24)", erc20FirstAddress, erc20SecondAddress, 3000.ToUInt256());
                     Console.WriteLine("ABI: " + input.ToHex());
                     var status = VirtualMachine.InvokeWasmContract(factoryContract, context, input, 100_000_000_000_000UL);
                     if (status.Status != ExecutionStatus.Ok)
@@ -174,8 +216,8 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    Console.WriteLine($"\nSwap: init({poolAddress.ToHex()})");
-                    var input = ContractEncoder.Encode("init(address)", poolAddress);
+                    Console.WriteLine($"\nSwap: init({poolAddress.ToHex()},{4295128739})");
+                    var input = ContractEncoder.Encode("init(address,uint160)", poolAddress, 4295128739.ToUInt256());
                     Console.WriteLine("ABI: " + input.ToHex());
                     var status = VirtualMachine.InvokeWasmContract(swapContract, context, input, 100_000_000_000_000UL);
                     if (status.Status != ExecutionStatus.Ok)
@@ -189,7 +231,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 }
                 {
                     Console.WriteLine($"\nSwap: swap(address,bool,int256,uint160,bytes)");
-                    var input = ContractEncoder.Encode("swap(address,bool,int256,uint160,bytes)", recipientAddress, 0.ToUInt256(), 10.ToUInt256(), 0.ToUInt256(), new byte[0]);
+                    var input = ContractEncoder.Encode("swap(address,bool,int256,uint160,bytes)", recipientAddress, 0.ToUInt256(), 10.ToUInt256(), 4295128740.ToUInt256(), new byte[0]);
                     Console.WriteLine("ABI: " + input.ToHex());
                     var status = VirtualMachine.InvokeWasmContract(swapContract, context, input, 100_000_000_000_000UL);
                     if (status.Status != ExecutionStatus.Ok)

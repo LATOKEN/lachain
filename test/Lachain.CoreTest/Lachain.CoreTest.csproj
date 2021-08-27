@@ -34,6 +34,10 @@
     <EmbeddedResource Include="Resources\scripts\B.abi" />
     <EmbeddedResource Include="Resources\scripts\ERC20.abi" />
     <EmbeddedResource Include="Resources\scripts\UniswapV3Factory.abi" />
+    <EmbeddedResource Include="Resources\scripts\TickMath.abi" />
+    <EmbeddedResource Include="Resources\scripts\TickMath.wasm" />
+    <EmbeddedResource Include="Resources\scripts\SwapMath.abi" />
+    <EmbeddedResource Include="Resources\scripts\SwapMath.wasm" />
     <EmbeddedResource Include="Resources\scripts\Swap.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
     <None Remove="Resources\scripts\C.abi" />
