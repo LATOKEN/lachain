@@ -323,13 +323,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var fromBlock = opts["fromBlock"];
             var toBlock = opts["toBlock"];
             var address = opts["address"];
-            var topics = opts["topics"];
+            var topicsJson = opts["topics"];
             var blockhash = opts["blockHash"];
-            if (!(topics is null))
-            {
-                if(!((string)topics!).ToLower().Equals("null"))
-                    throw new Exception("Topics filter is not implemented yet");
-            }
 
             if (!(fromBlock is null) && !(toBlock is null) && !(blockhash is null))
                 throw new Exception("If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
@@ -369,6 +364,29 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
             Logger.LogInformation($"Check blocks from {start} to {finish}");
             
+            var topics = new List<UInt256>();
+            if (!(topicsJson is null))
+            {
+                foreach (var t_sig in topicsJson)
+                {
+                    if (t_sig is null)
+                        break;
+                    foreach (var t in t_sig)
+                    {
+                        var tString = (t is null) ? null : (string)t!;
+                        var topicBuffer = tString?.HexToUInt256();
+                        if (!(topicBuffer is null))
+                        {
+                            Logger.LogInformation($"Use topic [{topicBuffer.ToHex()}]");
+                            topics.Add(topicBuffer);
+                        }
+                    }
+
+                    break; // we check event signatures only,  no indexed parameters support
+                    // TODO: Throw an error if there are topics for indexed parameters
+                }
+            }
+
             var addresses = new List<UInt160>();
             if (!(address is null))
             {
@@ -405,6 +423,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
                             (uint) i);
                         if (ev is null)
                             continue;
+                        if (topics.Count > 0)
+                        {
+                            if (!topics.Any(t => ev.SignatureHash.Equals(t)))
+                            {
+                                Logger.LogInformation($"Skip event with signature [{ev.SignatureHash.ToHex()}]");
+                                continue;
+                            }
+                        }
+
+                        if (ev.BlockHash is null)
+                        {
+                            ev.BlockHash = block.Hash;
+                        }
+                        if (ev.BlockHash.IsZero())
+                        {
+                            ev.BlockHash = block.Hash;
+                        }
                         jArray.Add(Web3DataFormatUtils.Web3Event(ev, blockNumber));
                     }
                 }

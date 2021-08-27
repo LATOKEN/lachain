@@ -198,17 +198,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 Logger.LogWarning($"event lacks one of important fields: {e}");
             }
+
+            var topics = new JArray();
+            topics.Add(Web3Number(e.SignatureHash));
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),
-                ["topics"] = new JArray(), // we don't support indexes
+                ["topics"] = topics, 
                 ["data"] = Web3Data(e.Data ?? Enumerable.Empty<byte>()),
                 ["blockNumber"] = Web3Number(blockNumber ?? 0),
                 ["transactionHash"] = Web3Data(e.TransactionHash),
                 ["blockHash"] = Web3Data(e.BlockHash),
                 ["logIndex"] = Web3Number(e.Index),
                 ["transactionIndex"] = Web3Number(0),
-                ["removed"] = "false",
+                ["removed"] = false,
             };
         }
 
