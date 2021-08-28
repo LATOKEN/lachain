@@ -255,7 +255,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void Emit(string eventSignature, params dynamic[] values)
         {
-            var eventData = ContractEncoder.Encode(eventSignature, values);
+            var eventData = ContractEncoder.Encode(null, values);
             var eventObj = new Event
             {
                 Contract = ContractRegisterer.LatokenContract,
