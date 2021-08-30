@@ -65,7 +65,7 @@ namespace Lachain.Core.ValidatorStatus
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void StartWithStake(UInt256 stake, byte[] publicKey)
+        public void StartWithStake(UInt256 stake, byte[] publicKey = null!)
         {
             if (_started)
             {
@@ -73,7 +73,15 @@ namespace Lachain.Core.ValidatorStatus
                 return;
             }
             
-            _nodePublicKey = publicKey;
+            if (publicKey == null)
+            { 
+                _nodePublicKey = _systemContractReader.NodePublicKey();
+            }
+            else
+            {
+                _nodePublicKey = publicKey;
+            }
+            
             _stakeSize = new Money(stake).ToWei();
             Start(false);
         }
