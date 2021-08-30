@@ -25,6 +25,8 @@
         /* node */
         PersistentHashMap = 0x0603,
 
+        VersionByHash = 0x0604,
+
         /* contract */
         ContractByHash = 0x0801,
 

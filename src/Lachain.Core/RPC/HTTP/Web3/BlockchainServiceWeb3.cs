@@ -140,6 +140,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return trieRootsHash;
         }
 
+        [JsonRpcMethod("la_getNodeByHash")]
+        private JObject? GetNodeByHash(string nodeHash)
+        {
+            byte[] nodeHashBytes= HexUtils.HexToBytes(nodeHash);
+            IHashTrieNode? node = _nodeRetrieval.TryGetNode(nodeHashBytes, out var childrenHash);
+            return Web3DataFormatUtils.Web3NodeWithChildrenHash(node,childrenHash);
+        }
 
         [JsonRpcMethod("la_getNodeByVersion")]
         private JObject? GetNodeByVersion(string versionTag)
