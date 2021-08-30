@@ -28,6 +28,8 @@
     <EmbeddedResource Include="Resources\scripts\A.wasm" />
     <EmbeddedResource Include="Resources\scripts\B.wasm" />
     <EmbeddedResource Include="Resources\scripts\ERC20.wasm" />
+    <EmbeddedResource Include="Resources\scripts\LRC20_1.wasm" />
+    <EmbeddedResource Include="Resources\scripts\LRC20_2.wasm" />
     <EmbeddedResource Include="Resources\scripts\UniswapV3Factory.wasm" />
     <EmbeddedResource Include="Resources\scripts\Swap.wasm" />
     <EmbeddedResource Include="Resources\scripts\A.abi" />
