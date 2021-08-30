@@ -39,6 +39,8 @@
     <EmbeddedResource Include="Resources\scripts\SwapMath.abi" />
     <EmbeddedResource Include="Resources\scripts\SwapMath.wasm" />
     <EmbeddedResource Include="Resources\scripts\Swap.abi" />
+    <EmbeddedResource Include="Resources\scripts\FullMath.wasm" />
+    <EmbeddedResource Include="Resources\scripts\FullMath.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
     <None Remove="Resources\scripts\C.abi" />
     <EmbeddedResource Include="Resources\scripts\C.abi" />
