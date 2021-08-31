@@ -340,5 +340,40 @@ namespace Lachain.CoreTest.IntegrationTests
             };
             return Signer.Sign(tx, _wallet.EcdsaKeyPair);
         }
+		[Test]
+        public void Test_Block_Generation_Stress()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            int tot = 1;
+            for (var iter = 1; iter <= tot; iter++)
+            {
+                var startTime = TimeUtils.CurrentTimeMillis();
+                var topUpReceipts = new List<TransactionReceipt>();
+                var randomReceipts = new List<TransactionReceipt>();
+                var txCount = 10000;
+
+                var coverTxFeeAmount = Money.Parse("10.0");
+                for (var i = 0; i < txCount; i++)
+                {
+                    var tx = TestUtils.GetRandomTransaction();
+                    randomReceipts.Add(tx);
+                    topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
+                        (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
+                }
+
+                var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+                var topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+                Assert.AreEqual(topUpResult, OperatingError.Ok);
+
+                var randomBlock = BuildNextBlock(randomReceipts.ToArray());
+                var result = ExecuteBlock(randomBlock, randomReceipts.ToArray());
+                Assert.AreEqual(result, OperatingError.Ok);
+
+                var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(topUpBlock.Header.Index);
+                Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
+                var endTime = TimeUtils.CurrentTimeMillis();
+                System.Console.WriteLine("Block {0} takes: {1} sec", iter, (endTime - startTime) / 1000.0);
+            }
+        }
     }
 }
