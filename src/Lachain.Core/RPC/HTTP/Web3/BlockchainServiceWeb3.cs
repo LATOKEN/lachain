@@ -250,9 +250,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_validator_info")]
-        private JObject GetValidatorInfo(byte[] publicKey)
+        private JObject GetValidatorInfo(string publicKey)
         {
-            var addressUint160 = Crypto.ComputeAddress(publicKey).ToUInt160();
+            var pubKeyBytes = publicKey.HexToBytes();
+            var addressUint160 = Crypto.ComputeAddress(pubKeyBytes).ToUInt160();
 
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(addressUint160);
 
@@ -260,16 +261,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         StakingContract.TokenUnitsInRoll;
             var penalty = _systemContractReader.GetPenalty(addressUint160).ToMoney();
 
-            var isNextValidator = _systemContractReader.IsNextValidator(publicKey);
+            var isNextValidator = _systemContractReader.IsNextValidator(pubKeyBytes);
             var isAbleToBeValidator = _systemContractReader.IsAbleToBeValidator(addressUint160);
-            var isPreviousValidator = _systemContractReader.IsPreviousValidator(publicKey);
+            var isPreviousValidator = _systemContractReader.IsPreviousValidator(pubKeyBytes);
             var isCurrentValidator = _stateManager.CurrentSnapshot.Validators
                 .GetValidatorsPublicKeys().Any(pk =>
-                    pk.Buffer.ToByteArray().SequenceEqual(publicKey));
-            
-            
-            
-            
+                    pk.Buffer.ToByteArray().SequenceEqual(pubKeyBytes));
+
             var isAbleToBeStaker = balance.ToWei() > StakingContract.TokenUnitsInRoll;
             var isStaker = !_systemContractReader.GetStake(addressUint160).IsZero();
 
