@@ -75,14 +75,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var state = new JObject{};
 
             string[] trieNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
-            ISnapshot[] snapshots = new ISnapshot[]{blockchainSnapshot.Balances,
-                                                    blockchainSnapshot.Contracts,
-                                                    blockchainSnapshot.Storage,
-                                                    blockchainSnapshot.Transactions,
-                                                    blockchainSnapshot.Blocks,
-                                                    blockchainSnapshot.Events,
-                                                    blockchainSnapshot.Validators};
-
+            ISnapshot[] snapshots = blockchainSnapshot.GetAllSnapshot();
             for(var i = 0; i < trieNames.Length; i++)
             {
                 state[trieNames[i]] = Web3DataFormatUtils.Web3Trie(snapshots[i].GetState());
@@ -97,13 +90,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             bool res = true;
-            res &= blockchainSnapshot.Balances.IsTrieNodeHashesOk();
-            res &= blockchainSnapshot.Contracts.IsTrieNodeHashesOk();
-            res &= blockchainSnapshot.Storage.IsTrieNodeHashesOk();
-            res &= blockchainSnapshot.Transactions.IsTrieNodeHashesOk();
-            res &= blockchainSnapshot.Blocks.IsTrieNodeHashesOk();
-            res &= blockchainSnapshot.Events.IsTrieNodeHashesOk();
-            res &= blockchainSnapshot.Validators.IsTrieNodeHashesOk();
+            ISnapshot[] snapshots = blockchainSnapshot.GetAllSnapshot();
+            foreach(var snapshot in snapshots) res &= snapshot.IsTrieNodeHashesOk();
             return Web3DataFormatUtils.Web3Number(Convert.ToUInt64(res));
         }
 
@@ -130,24 +118,64 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             var trieRootsHash = new JObject{};
-            trieRootsHash["BalancesHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Balances.Hash);
-            trieRootsHash["ContractsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Contracts.Hash);
-            trieRootsHash["StorageHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Storage.Hash);
-            trieRootsHash["TransactionsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Transactions.Hash);
-            trieRootsHash["BlocksHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Blocks.Hash);
-            trieRootsHash["EventsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Events.Hash);
-            trieRootsHash["ValidatorsHash"] = Web3DataFormatUtils.Web3Data(blockchainSnapshot.Validators.Hash);
+            ISnapshot[] snapshots = blockchainSnapshot.GetAllSnapshot();
+            string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
+            for(int i = 0; i<snapshots.Length; i++)
+            {
+                trieRootsHash[snapshots[i]+"Hash"] = Web3DataFormatUtils.Web3Data(snapshots[i].Hash);
+            }
             return trieRootsHash;
         }
 
         [JsonRpcMethod("la_getNodeByHash")]
         private JObject? GetNodeByHash(string nodeHash)
         {
-            byte[] nodeHashBytes= HexUtils.HexToBytes(nodeHash);
-            IHashTrieNode? node = _nodeRetrieval.TryGetNode(nodeHashBytes, out var childrenHash);
-            return Web3DataFormatUtils.Web3NodeWithChildrenHash(node,childrenHash);
+            IHashTrieNode? node = _nodeRetrieval.TryGetNode(HexUtils.HexToBytes(nodeHash), out var childrenHash);
+            return Web3DataFormatUtils.Web3NodeWithChildrenHash(node, childrenHash);
         }
 
+        [JsonRpcMethod("la_getNodeByHashBatch")]
+        private JArray? GetNodeByHashBatch(List<string> nodeHashList)
+        {
+            JArray nodeList = new JArray{};
+            foreach(var nodeHash in nodeHashList)
+            {
+                nodeList.Add(GetNodeByHash(nodeHash));
+            }
+            return nodeList;
+        }
+
+        [JsonRpcMethod("la_getChildrenByHash")]
+        private JArray? GetChildrenByHash(string nodeHash)
+        {
+            IHashTrieNode? node = _nodeRetrieval.TryGetNode(HexUtils.HexToBytes(nodeHash), out var childrenHash);
+
+            JArray children = new JArray {};
+            foreach(var childHash in childrenHash)
+            {
+                children.Add(GetNodeByHash(Web3DataFormatUtils.Web3Data(childHash)));
+            }
+            return children;
+        }
+
+        [JsonRpcMethod("la_getChildByHashBatch")]
+        private JArray? GetChildByHashBatch(List<string> nodeHashList)
+        {
+            JArray childrenList = new JArray{};
+            foreach(var nodeHash in nodeHashList)
+            {
+                childrenList.Add(GetChildrenByHash(nodeHash));
+            }
+            return childrenList;
+        }
+        [JsonRpcMethod("la_getRootHashByTrieName")]
+        private string? GetRootHashByTrieName(string trieName, string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag);
+            if (blockNumber == null) return null;
+            IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
+            return Web3DataFormatUtils.Web3Data(blockchainSnapshot.GetSnapshot(trieName)?.Hash);
+        }
         [JsonRpcMethod("la_getNodeByVersion")]
         private JObject? GetNodeByVersion(string versionTag)
         {
@@ -156,7 +184,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             // to do : handle if the database does not have the node
             return Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode((ulong)version));
         }
-
         [JsonRpcMethod("la_getChildByVersion")]
         private JObject? GetChildByVersion(string versionTag)
         {
@@ -202,33 +229,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return childsBatch;
         }
 
-
         [JsonRpcMethod("la_getRootVersionByTrieName")]
         private string? GetRootVersionByTrieName(string trieName, string blockTag)
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) return null;
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
-            string[] trieNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
-            ISnapshot[] snapshots = new ISnapshot[]{blockchainSnapshot.Balances,
-                                                    blockchainSnapshot.Contracts,
-                                                    blockchainSnapshot.Storage,
-                                                    blockchainSnapshot.Transactions,
-                                                    blockchainSnapshot.Blocks,
-                                                    blockchainSnapshot.Events,
-                                                    blockchainSnapshot.Validators};
-
-            for (var i = 0; i < trieNames.Length; i++)
-            {
-                if(trieNames[i] == trieName)
-                {
-                    return Web3DataFormatUtils.Web3Number(snapshots[i].Version);
-                }
-            }
-            return null;
+            ISnapshot? snapshot =  blockchainSnapshot.GetSnapshot(trieName);
+            if(snapshot is null) return null;
+            else return Web3DataFormatUtils.Web3Number(snapshot.Version);
         }
-
-
 
         [JsonRpcMethod("eth_getBlockByHash")]
         private JObject? GetBlockByHash(string blockHash)

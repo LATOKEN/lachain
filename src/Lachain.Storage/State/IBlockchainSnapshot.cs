@@ -12,6 +12,10 @@ namespace Lachain.Storage.State
         IBlockSnapshot Blocks { get; }
         IEventSnapshot Events { get; }
         IValidatorSnapshot Validators { get; }
+        
+        public ISnapshot? GetSnapshot(string snapshotName);
+
+        public ISnapshot[] GetAllSnapshot();
 
         BigInteger NetworkGasPrice { get; }
 
