@@ -34,6 +34,25 @@ namespace Lachain.UtilityTest
             return signer.Sign(tx, keyPair);
         }
 
+        public static TransactionReceipt GetRandomTransactionWithValue(string value)
+        {
+            var signer = new TransactionSigner();
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+            var keyPair = new EcdsaKeyPair(random.ToPrivateKey());
+            var tx = new Transaction
+            {
+                To = random.Slice(0, 20).ToUInt160(),
+                From = keyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
+                GasLimit = 100000000,
+                Nonce = 0,
+                Value = Money.Parse(value).ToUInt256()
+            };
+            return signer.Sign(tx, keyPair);
+        }
+
         public static void DeleteTestChainData()
         {
             var chainTest = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ChainTest");

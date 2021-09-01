@@ -340,40 +340,76 @@ namespace Lachain.CoreTest.IntegrationTests
             };
             return Signer.Sign(tx, _wallet.EcdsaKeyPair);
         }
-		[Test]
+
+
+
+
+        private TransactionReceipt TopUpBalanceTxWithGasPrice(UInt160 to, UInt256 value, int nonceInc, string gasPrice)
+        {
+            var tx = new Transaction
+            {
+                To = to,
+                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong)Money.Parse(gasPrice).ToWei(),
+                GasLimit = 4_000_000,
+                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                        (ulong)nonceInc,
+                Value = value
+            };
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+        }
+
+        [Test]
+        //[Repeat(2)]
         public void Test_Block_Generation_Stress()
         {
             _blockManager.TryBuildGenesisBlock();
-            int tot = 1;
-            for (var iter = 1; iter <= tot; iter++)
+
+            int noOfBlocks = 50;
+            ulong totalTime = 0;
+            var topUpReceipts = new List<TransactionReceipt>();
+            var randomReceipts = new List<TransactionReceipt>();
+            var txCount = 10000;
+
+            var coverTxFeeAmount = Money.Parse("1.0");
+            for (var i = 0; i < txCount; i++)
             {
-                var startTime = TimeUtils.CurrentTimeMillis();
-                var topUpReceipts = new List<TransactionReceipt>();
-                var randomReceipts = new List<TransactionReceipt>();
-                var txCount = 10000;
-
-                var coverTxFeeAmount = Money.Parse("10.0");
-                for (var i = 0; i < txCount; i++)
+                var tx = TestUtils.GetRandomTransactionWithValue("0.00000001");
+                randomReceipts.Add(tx);
+                var moneyForTx = tx.Transaction.Value.ToMoney() + coverTxFeeAmount;
+                Money totalMoney = Money.Parse("0.0");
+                for(int j = 0; j < noOfBlocks; j++)
                 {
-                    var tx = TestUtils.GetRandomTransaction();
-                    randomReceipts.Add(tx);
-                    topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
-                        (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
+                    totalMoney += moneyForTx;
                 }
+                topUpReceipts.Add(TopUpBalanceTxWithGasPrice(tx.Transaction.From,
+                    totalMoney.ToUInt256(), i , "0.0000000000001"));
+            }
 
-                var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
-                var topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
-                Assert.AreEqual(topUpResult, OperatingError.Ok);
-
+            var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+            var topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+            Assert.AreEqual(topUpResult, OperatingError.Ok);
+            System.Console.WriteLine("Sent money to random receipts");
+            for (var iter = 1; iter <= noOfBlocks; iter++)
+            {
+                for (int i = 0; i < txCount; i++)
+                {
+                    var tx = randomReceipts[i];
+                    tx.Transaction.Nonce = _transactionPool.GetNextNonceForAddress(tx.Transaction.From);
+                    randomReceipts[i] = tx;
+                }
+                var startTime = TimeUtils.CurrentTimeMillis();
                 var randomBlock = BuildNextBlock(randomReceipts.ToArray());
                 var result = ExecuteBlock(randomBlock, randomReceipts.ToArray());
                 Assert.AreEqual(result, OperatingError.Ok);
 
-                var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(topUpBlock.Header.Index);
+                var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
                 Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
                 var endTime = TimeUtils.CurrentTimeMillis();
-                System.Console.WriteLine("Block {0} takes: {1} sec", iter, (endTime - startTime) / 1000.0);
+                totalTime += endTime - startTime;
+                System.Console.WriteLine("Time taken: {0} sec", (endTime - startTime) / 1000.0);
             }
+            System.Console.WriteLine("Average Block time: {0} sec", totalTime / (1000.0 * noOfBlocks));
         }
     }
 }
