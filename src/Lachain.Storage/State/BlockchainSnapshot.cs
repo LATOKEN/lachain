@@ -47,6 +47,22 @@ namespace Lachain.Storage.State
             }
         }
 
+        public ISnapshot? GetSnapshot(string snapshotName)
+        {
+            string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
+            ISnapshot[] snapshots = new ISnapshot[]{Balances, Contracts, Storage, Transactions, Blocks, Events, Validators};
+            for(int i = 0; i < snapshotNames.Length; i++)
+            {
+                if(snapshotNames[i] == snapshotName) return snapshots[i];
+            }
+            return null;
+        }
+
+        public ISnapshot[] GetAllSnapshot()
+        {
+            return new ISnapshot[]{Balances, Contracts, Storage, Transactions, Blocks, Events, Validators};
+        }
+
         public UInt256 StateHash
         {
             get

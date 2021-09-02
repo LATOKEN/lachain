@@ -1,5 +1,6 @@
 ﻿using RocksDbSharp;
 using System;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.Trie
 {
@@ -35,6 +36,8 @@ namespace Lachain.Storage.Trie
         {
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
             tx.Put(prefix, NodeSerializer.ToBytes(node));
+            var hashPrefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
+            tx.Put(hashPrefix, UInt64Utils.ToBytes(id));
         }
 
         public void SaveBatch(WriteBatch batch)

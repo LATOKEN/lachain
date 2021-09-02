@@ -98,6 +98,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         public static JObject Web3Node(IHashTrieNode node)
         {
+            if(node is null) return new JObject{};
             switch (node)
             {
                 case InternalNode internalNode:
@@ -108,6 +109,32 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         ["Hash"] = Web3Data(internalNode.Hash.ToUInt256()),
                         ["ChildrenMask"] = Web3Number((ulong)internalNode.ChildrenMask),
                         ["Children"] = jsonChildren,
+                    };     
+
+                case LeafNode leafNode:
+                    return new JObject{
+                        ["NodeType"] = Web3Number(2),
+                        ["Hash"] = Web3Data(leafNode.Hash.ToUInt256()),
+                        ["KeyHash"] = Web3Data(leafNode.KeyHash.ToUInt256()),
+                        ["Value"] = Web3Data(leafNode.Value),
+                    };
+            }
+            return new JObject{};
+        }
+
+        public static JObject Web3NodeWithChildrenHash(IHashTrieNode node, List<byte[]> childrenHash)
+        {
+            if(node is null) return new JObject{};
+            switch (node)
+            {
+                case InternalNode internalNode:
+                    var childrenHashJArray = new JArray();
+                    foreach(var childHash in childrenHash) childrenHashJArray.Add(Web3Data(childHash));
+                    return new JObject {
+                        ["NodeType"] = Web3Number(1),
+                        ["Hash"] = Web3Data(internalNode.Hash.ToUInt256()),
+                        ["ChildrenMask"] = Web3Number((ulong)internalNode.ChildrenMask),
+                        ["ChildrenHash"] = childrenHashJArray,
                     };     
 
                 case LeafNode leafNode:

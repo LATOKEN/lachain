@@ -9,5 +9,6 @@ namespace Lachain.Storage.Trie
     public interface INodeRetrieval
     {
         public IHashTrieNode? TryGetNode(ulong id);
+        public IHashTrieNode? TryGetNode(byte[] nodeHash, out List<byte[]> childrenHash);
     }
 }
