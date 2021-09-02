@@ -255,15 +255,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void Emit(string eventSignature, params dynamic[] values)
         {
-            var eventData = ContractEncoder.Encode(eventSignature, values);
+            var eventData = ContractEncoder.Encode(null, values);
             var eventObj = new Event
             {
                 Contract = ContractRegisterer.LatokenContract,
                 Data = ByteString.CopyFrom(eventData),
-                TransactionHash = _context.Receipt.Hash
+                TransactionHash = _context.Receipt.Hash,
+                SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
             };
             _context.Snapshot.Events.AddEvent(eventObj);
-            Logger.LogDebug($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
+            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
             Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
         }
     }

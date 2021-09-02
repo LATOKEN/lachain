@@ -511,12 +511,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void Emit(string eventSignature, params dynamic[] values)
         {
-            var eventData = ContractEncoder.Encode(eventSignature, values);
+            var eventData = ContractEncoder.Encode(null, values);
             var eventObj = new Event
             {
                 Contract = ContractRegisterer.GovernanceContract,
                 Data = ByteString.CopyFrom(eventData),
-                TransactionHash = _context.Receipt.Hash
+                TransactionHash = _context.Receipt.Hash,
+                SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
             };
             _context.Snapshot.Events.AddEvent(eventObj);
             Logger.LogTrace($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
