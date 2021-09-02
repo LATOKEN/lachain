@@ -128,115 +128,120 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getNodeByHash")]
-        private JObject? GetNodeByHash(string nodeHash)
+        private JObject GetNodeByHash(string nodeHash)
         {
             IHashTrieNode? node = _nodeRetrieval.TryGetNode(HexUtils.HexToBytes(nodeHash), out var childrenHash);
+            if (node == null) return new JObject { };
             return Web3DataFormatUtils.Web3NodeWithChildrenHash(node, childrenHash);
         }
 
         [JsonRpcMethod("la_getNodeByHashBatch")]
-        private JArray? GetNodeByHashBatch(List<string> nodeHashList)
+        private JArray GetNodeByHashBatch(List<string> nodeHashList)
         {
             JArray nodeList = new JArray{};
             foreach(var nodeHash in nodeHashList)
             {
-                nodeList.Add(GetNodeByHash(nodeHash));
+                JObject node = GetNodeByHash(nodeHash);
+                nodeList.Add(node);
             }
             return nodeList;
         }
 
         [JsonRpcMethod("la_getChildrenByHash")]
-        private JArray? GetChildrenByHash(string nodeHash)
+        private JObject GetChildrenByHash(string nodeHash)
         {
             IHashTrieNode? node = _nodeRetrieval.TryGetNode(HexUtils.HexToBytes(nodeHash), out var childrenHash);
+            if (node == null) return new JObject { };
 
-            JArray children = new JArray {};
+            JArray children = new JArray { };
             foreach(var childHash in childrenHash)
             {
-                children.Add(GetNodeByHash(Web3DataFormatUtils.Web3Data(childHash)));
+                JObject child = GetNodeByHash(Web3DataFormatUtils.Web3Data(childHash));
+                if (child.Count == 0) return new JObject { };
+                children.Add(child);
             }
-            return children;
+
+            JObject nodeHashWithChildren = new JObject { };
+            nodeHashWithChildren[Web3DataFormatUtils.Web3Data(node.Hash)] = children;
+            return nodeHashWithChildren;
         }
 
-        [JsonRpcMethod("la_getChildByHashBatch")]
-        private JArray? GetChildByHashBatch(List<string> nodeHashList)
+        [JsonRpcMethod("la_getChildrenByHashBatch")]
+        private JArray GetChildrenByHashBatch(List<string> nodeHashList)
         {
             JArray childrenList = new JArray{};
             foreach(var nodeHash in nodeHashList)
             {
-                childrenList.Add(GetChildrenByHash(nodeHash));
+                JObject nodeHashWithChildren = GetChildrenByHash(nodeHash);
+                childrenList.Add(nodeHashWithChildren);
             }
             return childrenList;
         }
+
         [JsonRpcMethod("la_getRootHashByTrieName")]
-        private string? GetRootHashByTrieName(string trieName, string blockTag)
+        private string GetRootHashByTrieName(string trieName, string blockTag)
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
-            if (blockNumber == null) return null;
+            if (blockNumber == null) return "0x";
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
-            return Web3DataFormatUtils.Web3Data(blockchainSnapshot.GetSnapshot(trieName)?.Hash);
+            var snapshot = blockchainSnapshot.GetSnapshot(trieName);
+            if (snapshot == null) return "0x";
+            return Web3DataFormatUtils.Web3Data(snapshot.Hash);
         }
+
         [JsonRpcMethod("la_getNodeByVersion")]
-        private JObject? GetNodeByVersion(string versionTag)
+        private JObject GetNodeByVersion(string versionTag)
         {
-            var version = GetBlockNumberByTag(versionTag);
-            if (version == null || version == 0) return null;
-            // to do : handle if the database does not have the node
-            return Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode((ulong)version));
-        }
-        [JsonRpcMethod("la_getChildByVersion")]
-        private JObject? GetChildByVersion(string versionTag)
-        {
-            var version = GetBlockNumberByTag(versionTag);
-            JObject children = new JObject {};
-            if (version == null || version == 0) return new JObject { };
+            var version = GetVersionNumberByTag(versionTag);
+            if (version == null) return new JObject { };
             var node = _nodeRetrieval.TryGetNode((ulong)version);
-            switch (node)
-            {
-                case InternalNode internalNode:
-                    foreach (var item in node.Children) children[Web3DataFormatUtils.Web3Number(item)] =
-                            Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode(item));
-                    
-                    return children;
+            if (node == null) return new JObject { };
+            return Web3DataFormatUtils.Web3Node(node);
+        }
+        [JsonRpcMethod("la_getChildrenByVersion")]
+        private JObject GetChildrenByVersion(string versionTag)
+        {
+            var version = GetVersionNumberByTag(versionTag);
+            if (version == null) return new JObject { };
+            var node = _nodeRetrieval.TryGetNode((ulong)version);
+            if (node == null) return new JObject { };
 
-                case LeafNode leafNode:
-                    return children;
+            JArray children = new JArray { };
+
+            if (node.Type == NodeType.Internal)
+            {
+                foreach (var childId in node.Children)
+                {
+                    var child = _nodeRetrieval.TryGetNode(childId);
+                    if (child == null) return new JObject { };
+                    children.Add(Web3DataFormatUtils.Web3Node(child));
+                }
             }
-            return children;
+            JObject nodeWithChildren = new JObject { };
+            nodeWithChildren[Web3DataFormatUtils.Web3Number((ulong)version)] = children;
+            return nodeWithChildren;
         }
 
-        [JsonRpcMethod("la_getChildByVersionBatch")]
-        private JObject? GetChildByVersionBatch(List<string> versionTags)
+        [JsonRpcMethod("la_getChildrenByVersionBatch")]
+        private JArray GetChildrenByVersionBatch(List<string> versionTags)
         {
-            JObject childsBatch = new JObject { };
+            JArray childrenBatch = new JArray {};
             foreach (var versionTag in versionTags)
             {
-                JObject childs = new JObject { };
-                var version = GetBlockNumberByTag(versionTag);
-                if (version == null || version == 0) return new JObject { };
-                var node = _nodeRetrieval.TryGetNode((ulong)version);
-                switch (node)
-                {
-                    case InternalNode internalNode:
-                        foreach (var item in node.Children) childs[Web3DataFormatUtils.Web3Number(item)] =
-                                Web3DataFormatUtils.Web3Node(_nodeRetrieval.TryGetNode(item));
-                        break;
-                    case LeafNode leafNode:
-                        return childs;
-                }
-                childsBatch[Web3DataFormatUtils.Web3Number((ulong)version)] = childs;
+                var children = GetChildrenByVersion(versionTag);
+                childrenBatch.Add(children);
             }
-            return childsBatch;
+            return childrenBatch;
         }
 
         [JsonRpcMethod("la_getRootVersionByTrieName")]
-        private string? GetRootVersionByTrieName(string trieName, string blockTag)
+        private string GetRootVersionByTrieName(string trieName, string blockTag)
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
-            if (blockNumber == null) return null;
+            if (blockNumber == null) return "0x";
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             ISnapshot? snapshot =  blockchainSnapshot.GetSnapshot(trieName);
-            if(snapshot is null) return null;
+            if (snapshot is null) return "0x";
             else return Web3DataFormatUtils.Web3Number(snapshot.Version);
         }
 
@@ -272,7 +277,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
         private string? GetBlockTransactionsCountByNumber(string blockTag)
         {
-            var blockNumber =GetBlockNumberByTag(blockTag);
+            var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) 
                 return Web3DataFormatUtils.Web3Number(_transactionPool.Size());
             var block = _blockManager.GetByHeight((ulong)blockNumber);
@@ -501,6 +506,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 "pending" => null,
                 _ => blockTag.HexToUlong()
             };
+        }
+
+        private ulong? GetVersionNumberByTag(string versionTag)
+        {
+            return versionTag.HexToUlong();
         }
 
         private UInt256 SingleNodeHashFromRoot(string blockTag)

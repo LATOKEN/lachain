@@ -20,7 +20,7 @@ namespace Lachain.Storage.Trie
         {
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
             var raw = _rocksDbContext.Get(prefix);
-            if (prefix == null) return null;
+            if (raw == null) return null;
             return NodeSerializer.FromBytes(raw);
         }
 
@@ -28,13 +28,20 @@ namespace Lachain.Storage.Trie
         {
             childrenHash = new List<byte[]>();
             var prefix = EntryPrefix.VersionByHash.BuildPrefix(nodeHash);
-            ulong id = UInt64Utils.FromBytes(_rocksDbContext.Get(prefix));
-            if (prefix == null) return null;
+            var idByte = _rocksDbContext.Get(prefix);
+            if (idByte == null) return null;
+            ulong id = UInt64Utils.FromBytes(idByte);
             IHashTrieNode? node = TryGetNode(id);
+            if (node == null) return null;
 
-            if(node?.Type==NodeType.Internal){
-                InternalNode internalNode = (InternalNode)node;
-                foreach(var child in node.Children) childrenHash.Add(TryGetNode(child).Hash);
+            if(node.Type == NodeType.Internal)
+            {
+                foreach (var childId in node.Children)
+                {
+                    var child = TryGetNode(childId);
+                    if (child == null) return null;
+                    childrenHash.Add(child.Hash);
+                }
             }
             return node;
         }
