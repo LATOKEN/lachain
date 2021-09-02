@@ -124,19 +124,21 @@ namespace Lachain.CoreTest.IntegrationTests
                 var result = txPool.Add(tx);
                 Assert.AreEqual(OperatingError.Ok, result);
                 var endTimeForTx = TimeUtils.CurrentTimeMillis();
-                System.Console.WriteLine("Tx {0}: Time taken: {1} sec", iter, (endTimeForTx - startTimeForTx) / 1000.0);
+                //System.Console.WriteLine("Tx {0}: Time taken: {1} sec", iter, (endTimeForTx - startTimeForTx) / 1000.0);
             }
             var endTime = TimeUtils.CurrentTimeMillis();
             System.Console.WriteLine("Average time: {0} sec", (endTime - startTime)/(1000.0*noOfTx));
             startTime = TimeUtils.CurrentTimeMillis();
-            int txToLook = 10000, txToTake = 10000;
-            var collection = txPool.Peek(txToLook, txToTake);
-            endTime = TimeUtils.CurrentTimeMillis();
-            System.Console.WriteLine("Time to peek: {0} sec", (endTime - startTime) / 1000.0);
-            foreach(var item in collection)
+            int txToLook = 1000, txToTake = 1000 , cycle = 10;
+            for (int i = 0; i < cycle; i++)
             {
-                System.Console.WriteLine(item);
+                var startTimeForCycle = TimeUtils.CurrentTimeMillis();
+                var collection = txPool.Peek(txToLook, txToTake);
+                var endTimeForCycle = TimeUtils.CurrentTimeMillis();
+                System.Console.WriteLine("Time to peek: {0} sec", (endTimeForCycle - startTimeForCycle) / 1000.0);
             }
+            endTime = TimeUtils.CurrentTimeMillis();
+            System.Console.WriteLine("Time to peek: {0} sec and average time per cycle: {1}", (endTime - startTime) / 1000.0 , (endTime - startTime) / (1000.0 * cycle));
         }
     }
 }
