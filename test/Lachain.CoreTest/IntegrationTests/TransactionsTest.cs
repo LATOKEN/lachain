@@ -100,5 +100,43 @@ namespace Lachain.CoreTest.IntegrationTests
             result = txPool.Add(tx3);
             Assert.AreEqual(OperatingError.Ok, result);
         }
+
+
+        [Test]
+        public void Test_Tx_Pool_Adding_Stress()
+        {            
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+            using var container = containerBuilder.Build();
+
+            var txPool = container.Resolve<ITransactionPool>();
+            var startTime = TimeUtils.CurrentTimeMillis();
+            int noOfTx = 10000;
+            for(int iter = 1; iter <= noOfTx; iter++)
+            {
+                var startTimeForTx = TimeUtils.CurrentTimeMillis();
+                var tx = TestUtils.GetRandomTransaction();
+                var result = txPool.Add(tx);
+                Assert.AreEqual(OperatingError.Ok, result);
+                var endTimeForTx = TimeUtils.CurrentTimeMillis();
+                System.Console.WriteLine("Tx {0}: Time taken: {1} sec", iter, (endTimeForTx - startTimeForTx) / 1000.0);
+            }
+            var endTime = TimeUtils.CurrentTimeMillis();
+            System.Console.WriteLine("Average time: {0} sec", (endTime - startTime)/(1000.0*noOfTx));
+            startTime = TimeUtils.CurrentTimeMillis();
+            int txToLook = 10000, txToTake = 10000;
+            var collection = txPool.Peek(txToLook, txToTake);
+            endTime = TimeUtils.CurrentTimeMillis();
+            System.Console.WriteLine("Time to peek: {0} sec", (endTime - startTime) / 1000.0);
+            foreach(var item in collection)
+            {
+                System.Console.WriteLine(item);
+            }
+        }
     }
 }
