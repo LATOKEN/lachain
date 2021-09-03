@@ -123,6 +123,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             // var ok = IsPublicKeyOwner(publicKey, MsgSender());
             // if (!ok)
             //     return ExecutionStatus.ExecutionHalted;
+            
+            _context.Snapshot.Validators.SetStakerAddress(MsgSender());
 
             if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;

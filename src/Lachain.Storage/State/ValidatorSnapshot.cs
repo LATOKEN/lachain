@@ -13,6 +13,7 @@ namespace Lachain.Storage.State
     public class ValidatorSnapshot : IValidatorSnapshot
     {
         private readonly IStorageState _state;
+        private UInt160 _stakerAddress;
 
         public ValidatorSnapshot(IStorageState state)
         {
@@ -67,6 +68,16 @@ namespace Lachain.Storage.State
                     .ToArray()
             );
             SetConsensusState(state);
+        }
+
+        public void SetStakerAddress(UInt160 address)
+        {
+            _stakerAddress = address;
+        }
+        
+        public UInt160 GetStakerAddress()
+        {
+            return _stakerAddress;
         }
     }
 
