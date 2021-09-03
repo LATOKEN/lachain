@@ -535,6 +535,76 @@ namespace Lachain.CoreTest.IntegrationTests
                     }
                     Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                 }
+                {
+                    Console.WriteLine($"\nSwap: swapExact1For0({poolAddress.ToHex()},{5},{recipientAddress.ToHex()},1461446703485210103287273052203988822378723970341");
+                    var input = ContractEncoder.Encode("swapExact1For0(address,uint256,address,uint160)", poolAddress, 5.ToUInt256(), recipientAddress, "0xFFFD8963EFD1FC6A506488495D951D5263988D25".HexToBytes().ToUInt256(true));
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(swapContract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nLRC20_1: balanceOf({recipientAddress.ToHex()})");
+                    var input = ContractEncoder.Encode("balanceOf(address)", recipientAddress);
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(lrc20_1Contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nLRC20_1: balanceOf({poolAddress.ToHex()})");
+                    var input = ContractEncoder.Encode("balanceOf(address)", poolAddress);
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(lrc20_1Contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nLRC20_2: balanceOf({recipientAddress.ToHex()})");
+                    var input = ContractEncoder.Encode("balanceOf(address)", recipientAddress);
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(lrc20_2Contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
+                {
+                    Console.WriteLine($"\nLRC20_2: balanceOf({poolAddress.ToHex()})");
+                    var input = ContractEncoder.Encode("balanceOf(address)", poolAddress);
+                    Console.WriteLine("ABI: " + input.ToHex());
+                    var status = VirtualMachine.InvokeWasmContract(lrc20_2Contract, context, input, 100_000_000_000_000UL);
+                    if (status.Status != ExecutionStatus.Ok)
+                    {
+                        stateManager.Rollback();
+                        Console.WriteLine("Contract execution failed: " + status.Status);
+                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        goto exit_mark;
+                    }
+                    Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
+                }
 
                 stateManager.Approve();
             exit_mark:
