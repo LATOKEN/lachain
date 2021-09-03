@@ -159,7 +159,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 // should fail due to the invalid block
                 Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.FinishCycle(cycle, frame));
                 // set next cycle block number in frame:
-                frame.InvocationContext.Receipt.Block = 20;
+                frame.InvocationContext.Receipt.Block = StakingContract.CycleDuration;
                 Assert.AreEqual(ExecutionStatus.Ok, contract.FinishCycle(cycle, frame));
             }
             // check new validators in storage
@@ -248,7 +248,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 // set next cycle block number in frame:
-                frame.InvocationContext.Receipt.Block = 20;
+                frame.InvocationContext.Receipt.Block = StakingContract.CycleDuration;
                 Assert.AreEqual(ExecutionStatus.Ok, contract.FinishCycle(cycle, frame));
             }
             
@@ -384,7 +384,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 // set next cycle block number in frame:
-                frame.InvocationContext.Receipt.Block = 20;
+                frame.InvocationContext.Receipt.Block = StakingContract.CycleDuration;
                 Assert.AreEqual(ExecutionStatus.Ok, contract.FinishCycle(cycle, frame));
             }
         }
