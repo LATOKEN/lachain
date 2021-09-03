@@ -311,6 +311,55 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Number(_blockManager.GetHeight());
         }
 
+        [JsonRpcMethod("la_validator_info")]
+        private JObject GetValidatorInfo(string publicKeyStr)
+        {
+            var publicKey = publicKeyStr.HexToBytes();
+            var addressUint160 = Crypto.ComputeAddress(publicKey).ToUInt160();
+
+            var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(addressUint160);
+
+            var stake = _systemContractReader.GetStake(addressUint160).ToMoney().ToWei();
+            var penalty = _systemContractReader.GetPenalty(addressUint160).ToMoney();
+
+            var isNextValidator = _systemContractReader.IsNextValidator(publicKey);
+            var isAbleToBeValidator = _systemContractReader.IsAbleToBeValidator(addressUint160);
+            var isPreviousValidator = _systemContractReader.IsPreviousValidator(publicKey);
+            var isCurrentValidator = _stateManager.CurrentSnapshot.Validators
+                .GetValidatorsPublicKeys().Any(pk =>
+                    pk.Buffer.ToByteArray().SequenceEqual(publicKey));
+            
+            var isAbleToBeStaker = balance.ToWei() > StakingContract.TokenUnitsInRoll;
+            var isStaker = !_systemContractReader.GetStake(addressUint160).IsZero();
+
+            bool stakeDelegated = !isStaker && isCurrentValidator;
+
+            string state;
+            if (isCurrentValidator)
+                state = "Validator";
+            else if (isNextValidator)
+                state = "NextValidator";
+            else if (isAbleToBeValidator)
+                state = "AbleToBeValidator";
+            else if (isPreviousValidator)
+                state = "PreviousValidator";
+            else if (isAbleToBeStaker)
+                state = "AbleToBeStaker";
+            else state = "Newbie";
+
+            return new JObject
+            {
+                ["address"] = addressUint160.ToString(),
+                ["publicKey"] = publicKey,
+                ["balance"] = balance.ToString(),
+                ["stake"] = stake.ToString(),
+                ["penalty"] = penalty.ToString(),
+                ["state"] = state,
+                ["stakeDelegated"] = stakeDelegated.ToString(),
+                ["staker"] = isStaker
+            };
+        }
+
         [JsonRpcMethod("eth_getUncleCountByBlockHash")]
         private ulong GetUncleCountByBlockHash(string blockHash)
         {
