@@ -63,7 +63,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 // this is special case where empty uint160 is allowed
                 To = ethTx.ReceiveAddress?.ToUInt160() ?? UInt160Utils.Empty,
-                Value = ethTx.Value.Reverse().ToArray().ToUInt256(true),
+                Value = ethTx.Value.ToUInt256(true),
                 From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
                 Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
                 GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),

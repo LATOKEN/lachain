@@ -227,9 +227,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             var topics = new JArray();
-            // temporally reverse hash binary data
-            // TODO: renove reverse after the fix!!!
-            topics.Add(Web3Number(e.SignatureHash.ToBytes().Reverse().ToArray().ToUInt256()));
+            topics.Add(Web3Number(e.SignatureHash));
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),

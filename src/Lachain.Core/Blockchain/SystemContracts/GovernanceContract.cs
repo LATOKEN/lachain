@@ -227,7 +227,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SystemContractExecutionFrame frame)
         {
             Logger.LogDebug(
-                $"KeyGenSendValue({proposer.ToBytes().Reverse().ToHex()}, [{string.Join(", ", encryptedValues.Select(r => r.ToHex()))}])"
+                $"KeyGenSendValue({proposer.ToHex()}, [{string.Join(", ", encryptedValues.Select(r => r.ToHex()))}])"
             );
             if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
@@ -501,7 +501,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             return param switch
             {
-                UInt256 x => x.ToBytes().Reverse().ToHex(),
+                UInt256 x => x.ToBytes().ToHex(),
                 UInt160 x => x.ToBytes().ToHex(),
                 byte[] b => b.ToHex(),
                 byte[][] s => string.Join(", ", s.Select(t => t.ToHex())),

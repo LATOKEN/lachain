@@ -461,10 +461,10 @@ namespace Lachain.Core.Blockchain.VM
             var sig = new byte[SignatureUtils.Length];
             var r = SafeCopyFromMemory(frame.Memory, rOffset, 32) ??
                       throw new InvalidOperationException();
-            Array.Copy(r.Reverse().ToArray(), 0, sig, 0, r.Length);
+            Array.Copy(r, 0, sig, 0, r.Length);
             var s = SafeCopyFromMemory(frame.Memory, sOffset, 32) ??
                       throw new InvalidOperationException();
-            Array.Copy(s.Reverse().ToArray(), 0, sig, r.Length, s.Length);
+            Array.Copy(s, 0, sig, r.Length, s.Length);
             sig[64] = (byte) v;
             var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig);
             var address = VirtualMachine.Crypto.ComputeAddress(publicKey);

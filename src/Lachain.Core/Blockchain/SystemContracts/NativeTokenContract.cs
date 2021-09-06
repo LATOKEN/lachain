@@ -245,7 +245,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             return param switch
             {
-                UInt256 x => x.ToBytes().Reverse().ToHex(),
+                UInt256 x => x.ToBytes().ToHex(),
                 UInt160 x => x.ToBytes().ToHex(),
                 byte[] b => b.ToHex(),
                 byte[][] s => string.Join(", ", s.Select(t => t.ToHex())),
