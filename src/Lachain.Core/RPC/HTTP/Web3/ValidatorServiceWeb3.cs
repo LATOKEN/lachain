@@ -3,6 +3,7 @@ using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Logger;
 using Lachain.Utility;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -37,7 +38,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("validator_start_with_stake")]
-        private string StartValidatorWithStake(string stake)
+        private string StartValidatorWithStake(string stake, string pubKey = null!)
         {
             if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
 
@@ -45,7 +46,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (_validatorStatusManager.IsStarted())
                 return "withdraw previous stake first";
 
-            _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256());
+            if (pubKey == null)
+            {
+                _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256());
+            }
+            else
+            {
+                _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256(), pubKey.HexToBytes());
+                return "validator_started with publicKey";
+            }
 
             return "validator_started";
         }

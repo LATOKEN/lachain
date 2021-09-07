@@ -340,9 +340,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var blockInCycle = blockNumber % CycleDuration;
             if (blockInCycle >= VrfSubmissionPhaseDuration)
                 return ExecutionStatus.ExecutionHalted;
-
-            var ok = IsPublicKeyOwner(publicKey, MsgSender());
-            if (!ok) return ExecutionStatus.ExecutionHalted;
+            
+            // Removed validation to enable the delegation 
+            // var ok = IsPublicKeyOwner(publicKey, MsgSender());
+            // if (!ok) return ExecutionStatus.ExecutionHalted;
 
             var isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,

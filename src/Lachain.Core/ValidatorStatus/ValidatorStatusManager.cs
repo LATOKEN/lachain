@@ -340,7 +340,7 @@ namespace Lachain.Core.ValidatorStatus
                 ContractRegisterer.StakingContract,
                 Money.Zero,
                 StakingInterface.MethodSubmitVrf,
-                _systemContractReader.NodePublicKey(),
+                _nodePublicKey ?? _systemContractReader.NodePublicKey(),
                 (object) proof
             );
 
