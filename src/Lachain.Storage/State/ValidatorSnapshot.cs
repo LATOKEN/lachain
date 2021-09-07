@@ -73,6 +73,10 @@ namespace Lachain.Storage.State
             );
             SetConsensusState(state);
         }
+        public void SetCurrentVersion(ulong root)
+        {
+            _state.SetCurrentVersion(root);
+        }
     }
 
     public class ConsensusStateNotPresentException : Exception

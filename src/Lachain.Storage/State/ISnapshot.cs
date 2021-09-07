@@ -13,5 +13,7 @@ namespace Lachain.Storage.State
         bool IsTrieNodeHashesOk();
 
         ulong SetState(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
+
+        void SetCurrentVersion(ulong root);
     }
 }

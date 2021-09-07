@@ -14,7 +14,7 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
-using Lachain.Core.Network;
+using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using Lachain.Storage;
 
 namespace Lachain.Console
 {
@@ -75,6 +76,8 @@ namespace Lachain.Console
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
             var NodeRetrieval = _container.Resolve<INodeRetrieval>();
+            var dbContext = _container.Resolve<IRocksDbContext>();
+            var storageManager = _container.Resolve<IStorageManager>();
 
             if (options.RollBackTo.HasValue)
             {
@@ -95,7 +98,9 @@ namespace Lachain.Console
                 {
                     blockNumber = Convert.ToUInt64(args[1]);
                 }
-                FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
+                //FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
+                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
+                                                storageManager.GetVersionFactory(), peerURL, blockNumber);
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
