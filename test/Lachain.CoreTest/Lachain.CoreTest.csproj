@@ -45,6 +45,8 @@
     <EmbeddedResource Include="Resources\scripts\FullMath.abi" />
     <EmbeddedResource Include="Resources\scripts\NewtonRaphson.wasm" />
     <EmbeddedResource Include="Resources\scripts\NewtonRaphson.abi" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3PoolActions.wasm" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3PoolActions.abi" />
     <EmbeddedResource Include="Resources\scripts\Mulmod.wasm" />
     <EmbeddedResource Include="Resources\scripts\Mulmod.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />

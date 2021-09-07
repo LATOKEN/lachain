@@ -196,6 +196,12 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.Fail("Failed to read script from resources");
             var newtonRaphsonCode = new byte[resourceNewtonRaphson!.Length];
             resourceNewtonRaphson!.Read(newtonRaphsonCode, 0, (int)resourceNewtonRaphson!.Length);
+
+            var resourceUniswapV3PoolActions = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.UniswapV3PoolActions.wasm");
+            if(resourceUniswapV3PoolActions is null)
+                Assert.Fail("Failed to read script from resources");
+            var uniswapV3PoolActionsCode = new byte[resourceUniswapV3PoolActions!.Length];
+            resourceUniswapV3PoolActions!.Read(uniswapV3PoolActionsCode, 0, (int)resourceUniswapV3PoolActions!.Length);
             
             var stateManager = _container.Resolve<IStateManager>();
             
@@ -279,6 +285,16 @@ namespace Lachain.CoreTest.IntegrationTests
             if (!VirtualMachine.VerifyContract(newtonRaphsonContract.ByteCode))
                 throw new Exception("Unable to validate smart-contract code");
 
+            // UniswapV3PoolActions
+            var uniswapV3PoolActionsAddress = "0x9531d91b4bc58a4ddc11bc864875f8ff6425c36b".HexToBytes().ToUInt160();
+            var uniswapV3PoolActionsContract = new Contract
+            (
+                uniswapV3PoolActionsAddress,
+                uniswapV3PoolActionsCode
+            );
+            if (!VirtualMachine.VerifyContract(uniswapV3PoolActionsContract.ByteCode))
+                throw new Exception("Unable to validate smart-contract code");
+
             var recipientAddress = "0xfdcd3ce43186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
             //"0x65eb3de2f223f7050bb2097c05a904ca4abd005c"
             var poolAddress = "0x5c00bd4aca04a9057c09b20b05f723f2e23deb65".HexToBytes().ToUInt160();
@@ -292,6 +308,7 @@ namespace Lachain.CoreTest.IntegrationTests
             snapshot.Contracts.AddContract(UInt160Utils.Zero, swapMathContract);
             snapshot.Contracts.AddContract(UInt160Utils.Zero, fullMathContract);
             snapshot.Contracts.AddContract(UInt160Utils.Zero, newtonRaphsonContract);
+            snapshot.Contracts.AddContract(UInt160Utils.Zero, uniswapV3PoolActionsContract);
             stateManager.Approve();
 
             for (var i = 0; i < 1; ++i)
