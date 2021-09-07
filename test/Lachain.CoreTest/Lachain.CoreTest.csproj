@@ -38,6 +38,12 @@
     <EmbeddedResource Include="Resources\scripts\D.abi" />
     <None Remove="Resources\scripts\D.wasm" />
     <EmbeddedResource Include="Resources\scripts\D.wasm" />
+    <None Remove="Resources\scripts\test.abi" />
+    <EmbeddedResource Include="Resources\scripts\test.abi" />
+    <None Remove="Resources\scripts\test.sol" />
+    <EmbeddedResource Include="Resources\scripts\test.sol" />
+    <None Remove="Resources\scripts\test.wasm" />
+    <EmbeddedResource Include="Resources\scripts\test.wasm" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />

@@ -102,8 +102,8 @@ namespace Lachain.Core.Blockchain.VM
         private UInt256 DecodeUInt256(bool readFromDynamic = false)
         {
             return readFromDynamic
-                ? _binaryReaderDynamic.ReadBytes(32).ToArray().ToUInt256()
-                : _binaryReaderStatic.ReadBytes(32).ToArray().ToUInt256();
+                ? _binaryReaderDynamic.ReadBytes(32).ToUInt256()
+                : _binaryReaderStatic.ReadBytes(32).ToUInt256();
         }
 
         private UInt160 DecodeUInt160(bool readFromDynamic = false)

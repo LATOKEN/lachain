@@ -35,6 +35,8 @@ namespace Lachain.Utility.Utils
             var bytes = value.ToByteArray().Reverse().ToArray();
             if (bytes.Length > 33 || bytes.Length == 33 && bytes[0] != 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
+            if (bytes.Length == 33)
+                bytes = bytes.Skip(1).ToArray();
             var paddedBytes = (new byte[Math.Max(32 - bytes.Length, 0)]).Concat(bytes).ToArray();
             return paddedBytes.ToUInt256();
         }

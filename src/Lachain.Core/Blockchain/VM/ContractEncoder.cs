@@ -134,13 +134,13 @@ namespace Lachain.Core.Blockchain.VM
 
         public ContractEncoder Write(UInt256 value)
         {
-            _staticBinaryWriter.Write(value.ToBytes().ToArray());
+            _staticBinaryWriter.Write(value.ToBytes());
             return this;
         }
 
         public ContractEncoder WriteDynamic(UInt256 value)
         {
-            _dynamicBinaryWriter.Write(value.ToBytes().ToArray());
+            _dynamicBinaryWriter.Write(value.ToBytes());
             return this;
         }
 
@@ -148,7 +148,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             // encode uint160 as 32 byte zero padded
             _staticBinaryWriter.Write(new byte[12]);
-            _staticBinaryWriter.Write(value.ToBytes().ToArray());
+            _staticBinaryWriter.Write(value.ToBytes());
             return this;
         }
 

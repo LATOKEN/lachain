@@ -13,6 +13,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using NUnit.Framework;
+using Org.BouncyCastle.Math;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
@@ -103,11 +104,11 @@ namespace Lachain.CoreTest.IntegrationTests
                     {
                         stateManager.Rollback();
                         Console.WriteLine("Contract execution failed: " + status.Status);
-                        Console.WriteLine($"Result: {status.ReturnValue?.ToHex()}");
+                        Console.WriteLine($"Result: {status.ReturnValue!.ToHex()}");
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {"LAtoken"}, {status.ReturnValue!.ToHex()}");
+                    Console.WriteLine($"Result: {"LAtoken"}, {System.Text.Encoding.Default.GetString(status.ReturnValue!)}");
                 }
                 {
                     // ERC-20: symbol #1#
@@ -123,7 +124,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {"LA"}, {status.ReturnValue!.ToHex()}");
+                    Console.WriteLine($"Result: {"LA"}, {System.Text.Encoding.Default.GetString(status.ReturnValue!)}");
                 }
                 {
                     // ERC-20: decimals #1#
@@ -139,7 +140,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         goto exit_mark;
                     }
 
-                    Console.WriteLine($"Result: {18}, {status.ReturnValue!.ToHex()}");
+                    Console.WriteLine($"Result: {18}, {new BigInteger(status.ReturnValue!)}");
                 }
                 {
                     // ERC-20: totalSupply #1#

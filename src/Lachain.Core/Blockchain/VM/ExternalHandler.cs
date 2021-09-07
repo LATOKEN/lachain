@@ -47,6 +47,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 Marshal.Copy(IntPtr.Add(memory.Start, offset), buffer, 0, length);
+                Logger.LogInformation($"Result: {buffer.ToHex()}");
             }
             catch (ArgumentNullException)
             {
@@ -86,9 +87,11 @@ namespace Lachain.Core.Blockchain.VM
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
             if (addressBuffer is null || inputBuffer is null)
                 throw new InvalidContractException("Bad call to call function");
-            var address = addressBuffer.Take(20).Reverse().ToArray().ToUInt160();
+            var address = addressBuffer.ToUInt160();
+            Logger.LogInformation($"Address: {address.ToHex()}");
             var msgValue = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256();
             var value = msgValue!.ToMoney();
+            Logger.LogInformation($"Value: {value}");
 
             if (value is null)
                 throw new InvalidContractException("Bad call to call function");
@@ -132,7 +135,7 @@ namespace Lachain.Core.Blockchain.VM
 
                     break;
             }
-
+            Logger.LogInformation($"invocationMessage.Sender: {invocationMessage.Sender.ToHex()}");
             var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, invocationMessage);
             if (callResult.Status != ExecutionStatus.Ok)
             {
@@ -347,6 +350,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call SETRETURN outside wasm frame");
             var ret = SafeCopyFromMemory(frame.Memory, offset, length);
+            Logger.LogInformation($"ret: {ret.ToHex()}");
             if (ret is null)
                 throw new InvalidContractException("Bad call to SETRETURN");
             frame.ReturnValue = ret;
@@ -358,6 +362,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETSENDER outside wasm frame");
             var data = (frame.InvocationContext.Message?.Sender ?? frame.InvocationContext.Sender).ToBytes();
+            Logger.LogInformation($"Data: {data.ToHex()}");
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to GETSENDER");
