@@ -88,7 +88,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryGetNode(string nodeHash, out JObject node)
         {
-            return _nodeStorage.TryGetValue(nodeHash, out node);
+            var id = GetIdByHash(nodeHash);
+            var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
+            node = null;
+            if (rawNode == null) return false; 
+            IHashTrieNode trieNode = NodeSerializer.FromBytes(rawNode);
+            node = Web3DataFormatUtils.Web3Node(trieNode);
+            return true; 
         }
 
         public bool IsConsistent(JObject node)

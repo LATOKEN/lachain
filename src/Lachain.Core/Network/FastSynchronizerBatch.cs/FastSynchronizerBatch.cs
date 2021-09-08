@@ -72,7 +72,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");
             }
 
-            blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(),16);
+            blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(), 16);
             stateManager.Approve();
             stateManager.Commit();
             snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);

@@ -101,6 +101,7 @@ namespace Lachain.Console
                 //FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
                 FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
                                                 storageManager.GetVersionFactory(), peerURL, blockNumber);
+
             }
 
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());

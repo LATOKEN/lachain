@@ -57,6 +57,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Console.WriteLine("GetTrie after TryGetHashBatch........");
                 HandleRequest(peer, hashBatch);
             }
+            if(!rootHash.Equals(EmptyHash))
+            {
+                bool flag = _requestManager.CheckConsistency(rootHash);
+                System.Console.WriteLine(trieName + " : consistency: " + flag);
+            }
             return rootHash;
         }
 

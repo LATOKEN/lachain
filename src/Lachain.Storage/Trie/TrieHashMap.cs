@@ -235,6 +235,7 @@ namespace Lachain.Storage.Trie
 
         private IHashTrieNode? GetNodeById(ulong id)
         {
+            System.Console.WriteLine($"id: {id}");
             if (id == 0) return null;
             if (_nodeCache.TryGetValue(id, out var node)) return node;
             var _node = _lruCache.Get(id);

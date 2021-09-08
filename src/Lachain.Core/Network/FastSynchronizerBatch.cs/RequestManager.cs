@@ -44,6 +44,36 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return _queue.Count == 0 && _pending.Count == 0;
         }
 
+        public bool CheckConsistency(string rootHash)
+        {
+            Queue<string> queue = new Queue<string>();
+            queue.Enqueue(rootHash);
+            while(queue.Count > 0)
+            {
+                string cur = queue.Dequeue();
+                System.Console.WriteLine("hash: " + cur);
+                System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
+                if(_nodeStorage.TryGetNode(cur, out var node))
+                {
+                }
+                else
+                {
+                    var nodeType = (string)node["NodeType"];
+                    if (nodeType == null) return false; 
+
+                    if (nodeType.Equals("0x1")) // internal node 
+                    {
+                        var jsonChildren = (JArray)node["ChildrenHash"];
+                        foreach (var jsonChild in jsonChildren)
+                        {
+                            queue.Enqueue((string)jsonChild);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
         public void HandleResponse(List<string> hashBatch, JArray response)
         {
 
