@@ -55,8 +55,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //    System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
                 if(_nodeStorage.TryGetNode(cur, out var node))
                 {
-                    Console.WriteLine("printing Node");
-                    Console.WriteLine(node);
+                //    Console.WriteLine("printing Node");
+                //    Console.WriteLine(node);
                     var nodeType = (string)node["NodeType"];
             //        if (nodeType == null) return false; 
 
@@ -81,13 +81,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void HandleResponse(List<string> hashBatch, JArray response)
         {
-
+/*
             Console.WriteLine("hashes in hashBatch printing started");
             foreach(var hash in hashBatch){
                 Console.WriteLine(hash);
             }
             Console.WriteLine("response printing");
-            Console.WriteLine(response);
+            Console.WriteLine(response); 
+*/
 
             List<string> successfulHashes = new List<string>();
             
@@ -116,14 +117,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                 }
             }
-            Console.WriteLine("success Hash");
+/*            Console.WriteLine("success Hash");
             foreach(var hash in successfulHashes){
                 Console.WriteLine(hash);
             }
             Console.WriteLine("Failed Hash");
             foreach(var hash in failedHashes){
                 Console.WriteLine(hash);
-            }
+            } */
             lock (this)
             {
                 foreach (var hash in failedHashes)
@@ -151,11 +152,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     else
                     {
                         bool res = _nodeStorage.TryAddNode(node);
-                        Console.WriteLine(res + ": "+ hash);
-/*                        if (!_nodeStorage.TryAddNode(node))
-                        {
-                            throw new Exception("Could not add node to the database.");
-                        }*/
                         _pending.Remove(hash);
 
                         var nodeType = (string)node["NodeType"];

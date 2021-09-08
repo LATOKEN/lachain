@@ -21,7 +21,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             List<string> devnetNodes = new List<string>
             {
-                 "http://157.245.160.201:7070",
+                "http://157.245.160.201:7070",
                 "http://95.217.6.171:7070",
                 "http://88.99.190.191:7070",
                 "http://94.130.78.183:7070",
@@ -43,11 +43,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 "http://127.0.0.1:7072"
             };
 
-            List<string> urls = localnetNodes;
+            List<string> urls = devnetNodes;
             PeerManager peerManager = new PeerManager(urls);
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
             RequestManager requestManager = new RequestManager(nodeStorage);
-            Downloader downloader = new Downloader(peerManager, requestManager);
+            Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
 
             string[] trieNames = new string[]
             {

@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
 using System.IO;
+using Lachain.Core.RPC.HTTP.Web3;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -29,6 +30,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             System.Console.WriteLine("blocknumber: " + _blockNumber);
         }
 
+        public Downloader(PeerManager peerManager, RequestManager requestManager, ulong blockNumber)
+        {
+            _peerManager = peerManager;
+            _requestManager = requestManager;
+            if(blockNumber == 0) _blockNumber = DownloadLatestBlockNumber();
+            else _blockNumber = Web3DataFormatUtils.Web3Number(blockNumber);
+
+            System.Console.WriteLine("blocknumber: " + _blockNumber);
+        }
+
         public string GetBlockNumber()
         {
             return _blockNumber;
@@ -37,30 +48,30 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public string GetTrie(string trieName, NodeStorage _nodeStorage)
         {
             string rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
-            System.Console.WriteLine("rootHash: " + rootHash);
+            System.Console.WriteLine("Inside Get Trie. rootHash: " + rootHash);
             if (!rootHash.Equals(EmptyHash)) _requestManager.AddHash(rootHash);
             while(!_requestManager.Done())
             {
-                Console.WriteLine("GetTrie........");
+            //    Console.WriteLine("GetTrie........");
                 if(!_peerManager.TryGetPeer(out var peer))
                 {
                     Thread.Sleep(100);
                     continue;
                 }
-                Console.WriteLine("GetTrie after TryGetPeer........");
+            //    Console.WriteLine("GetTrie after TryGetPeer........");
                 if(!_requestManager.TryGetHashBatch(out var hashBatch))
                 {
                     _peerManager.TryFreePeer(peer);
                     Thread.Sleep(100);
                     continue;
                 }
-                Console.WriteLine("GetTrie after TryGetHashBatch........");
+            //    Console.WriteLine("GetTrie after TryGetHashBatch........");
                 HandleRequest(peer, hashBatch);
             }
             if(!rootHash.Equals(EmptyHash))
             {
-                bool flag = _requestManager.CheckConsistency(_nodeStorage.GetIdByHash(rootHash));
-                System.Console.WriteLine(trieName + " : consistency: " + flag);
+            //    bool flag = _requestManager.CheckConsistency(_nodeStorage.GetIdByHash(rootHash));
+            //    System.Console.WriteLine(trieName + " : consistency: " + flag);
             }
             return rootHash;
         }

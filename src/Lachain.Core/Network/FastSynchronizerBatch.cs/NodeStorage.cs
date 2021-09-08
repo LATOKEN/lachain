@@ -59,14 +59,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     trieNode = new LeafNode(keyHash, value);
                 }
                 _dbContext.Save(EntryPrefix.PersistentHashMap.BuildPrefix(id), NodeSerializer.ToBytes(trieNode));
-                var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
+                Console.WriteLine("Inserted node: "+ id);
+/*                var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
                 IHashTrieNode node = NodeSerializer.FromBytes(rawNode);
 
 
                 Console.WriteLine("Node from DB: "+ id);
                 Console.WriteLine(Web3DataFormatUtils.Web3Node(node));
                 Console.WriteLine("Node used");
-                Console.WriteLine(jsonNode);
+                Console.WriteLine(jsonNode); */
 
                 return true;
             }
