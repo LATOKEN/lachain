@@ -44,31 +44,36 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return _queue.Count == 0 && _pending.Count == 0;
         }
 
-        public bool CheckConsistency(string rootHash)
+        public bool CheckConsistency(ulong rootId)
         {
-            Queue<string> queue = new Queue<string>();
-            queue.Enqueue(rootHash);
+            Queue<ulong> queue = new Queue<ulong>();
+            queue.Enqueue(rootId);
             while(queue.Count > 0)
             {
-                string cur = queue.Dequeue();
-                System.Console.WriteLine("hash: " + cur);
-                System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
+                ulong cur = queue.Dequeue();
+                System.Console.WriteLine("id: " + cur);
+            //    System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
                 if(_nodeStorage.TryGetNode(cur, out var node))
                 {
-                }
-                else
-                {
+                    Console.WriteLine("printing Node");
+                    Console.WriteLine(node);
                     var nodeType = (string)node["NodeType"];
-                    if (nodeType == null) return false; 
+            //        if (nodeType == null) return false; 
 
                     if (nodeType.Equals("0x1")) // internal node 
                     {
-                        var jsonChildren = (JArray)node["ChildrenHash"];
+                        var jsonChildren = (JArray)node["Children"];
                         foreach (var jsonChild in jsonChildren)
                         {
-                            queue.Enqueue((string)jsonChild);
+                            ulong childId = Convert.ToUInt64((string)jsonChild,16);
+                            Console.WriteLine("Enqueueing child: "+ childId);
+                            queue.Enqueue(childId);
                         }
                     }
+                }
+                else
+                {
+                    Console.WriteLine("Not Found: " + cur);
                 }
             }
             return true;

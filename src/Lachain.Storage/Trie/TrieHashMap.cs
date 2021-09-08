@@ -235,7 +235,7 @@ namespace Lachain.Storage.Trie
 
         private IHashTrieNode? GetNodeById(ulong id)
         {
-            System.Console.WriteLine($"id: {id}");
+            System.Console.WriteLine($"Get Node By id: {id}");
             if (id == 0) return null;
             if (_nodeCache.TryGetValue(id, out var node)) return node;
             var _node = _lruCache.Get(id);
@@ -244,6 +244,7 @@ namespace Lachain.Storage.Trie
                 _node = _repository.GetNode(id);
                 _lruCache.Add(id, _node);
             }
+            if(_node is null) System.Console.WriteLine($"Get Node By id: {id} not found");
             return _node;
         }
 

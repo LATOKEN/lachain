@@ -66,7 +66,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             for(int i = 0; i < trieNames.Length; i++)
             {
                 Logger.LogWarning($"Starting trie {trieNames[i]}");
-                string rootHash = downloader.GetTrie(trieNames[i]);
+                string rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
                 ulong curTrieRoot = nodeStorage.GetIdByHash(rootHash);
                 snapshots[i].SetCurrentVersion(curTrieRoot);
                 Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");

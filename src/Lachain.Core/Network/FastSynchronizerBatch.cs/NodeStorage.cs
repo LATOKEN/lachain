@@ -17,7 +17,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private IDictionary<string, JObject> _nodeStorage = new Dictionary<string, JObject>();
         private IRocksDbContext _dbContext;
         private VersionFactory _versionFactory;
-        
+        private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
         private NodeRetrieval nodeRetrieval;
         public NodeStorage(IRocksDbContext dbContext, VersionFactory versionFactory)
         {
@@ -62,7 +62,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
                 IHashTrieNode node = NodeSerializer.FromBytes(rawNode);
 
-                Console.WriteLine("Node from DB");
+
+                Console.WriteLine("Node from DB: "+ id);
                 Console.WriteLine(Web3DataFormatUtils.Web3Node(node));
                 Console.WriteLine("Node used");
                 Console.WriteLine(jsonNode);
@@ -82,6 +83,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
         public ulong GetIdByHash(string nodeHash)
         {
+            if(nodeHash.Equals(EmptyHash)) return 0;
             return GetIdByHash(HexUtils.HexToBytes(nodeHash));
         }
 
@@ -96,7 +98,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             node = Web3DataFormatUtils.Web3Node(trieNode);
             return true; 
         }
-
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryGetNode(ulong id, out JObject node)
+        {
+            var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
+            node = null;
+            if (rawNode == null) return false; 
+            IHashTrieNode trieNode = NodeSerializer.FromBytes(rawNode);
+            node = Web3DataFormatUtils.Web3Node(trieNode);
+            return true; 
+        }
         public bool IsConsistent(JObject node)
         {
             return node != null && node.Count > 0;

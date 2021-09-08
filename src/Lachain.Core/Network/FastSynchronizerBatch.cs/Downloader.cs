@@ -34,7 +34,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return _blockNumber;
         }
 
-        public string GetTrie(string trieName)
+        public string GetTrie(string trieName, NodeStorage _nodeStorage)
         {
             string rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
             System.Console.WriteLine("rootHash: " + rootHash);
@@ -59,7 +59,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             if(!rootHash.Equals(EmptyHash))
             {
-                bool flag = _requestManager.CheckConsistency(rootHash);
+                bool flag = _requestManager.CheckConsistency(_nodeStorage.GetIdByHash(rootHash));
                 System.Console.WriteLine(trieName + " : consistency: " + flag);
             }
             return rootHash;
