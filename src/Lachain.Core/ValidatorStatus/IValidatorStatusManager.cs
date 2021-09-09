@@ -16,5 +16,7 @@ namespace Lachain.Core.ValidatorStatus
         void WithdrawStakeAndStop();
 
         void Stop();
+
+        void StakeDelegation(UInt256 stakeAmount, UInt160 stakerAddress, byte[] validatorPubKey);
     }
 }

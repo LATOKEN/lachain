@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -158,10 +159,11 @@ namespace Lachain.Core.ValidatorStatus
                     var stake = _systemContractReader.GetStake().ToBigInteger();
                     var isStaker = !stake.IsZero;
 
+                    Logger.LogInformation($"Validators: {_stateManager.CurrentSnapshot.Validators.GetValidatorsPublicKeys().ToArray()}");
+
                     if (!isStaker)
                     {
                         var temp = _stateManager.CurrentSnapshot.Validators.GetStakerAddress();
-                        Logger.LogInformation($"==== Staker address {temp} ");
                         
                         var coverFeesAmount = new BigInteger(10) * BigInteger.Pow(10, 18);
                         Logger.LogInformation($"Trying to become staker");
@@ -328,6 +330,20 @@ namespace Lachain.Core.ValidatorStatus
                 StakingInterface.MethodBecomeStaker,
                 _nodePublicKey ?? _systemContractReader.NodePublicKey(),
                 (object) stakeAmount.ToUInt256()
+            );
+
+            AddTxToPool(tx);
+        }
+
+        public void StakeDelegation(UInt256 stakeAmount, UInt160 stakerAddress, byte[] validatorPubKey)
+        {
+            var tx = _transactionBuilder.InvokeTransaction(
+                stakerAddress,
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodBecomeStaker,
+                validatorPubKey,
+                (object) stakeAmount
             );
 
             AddTxToPool(tx);
