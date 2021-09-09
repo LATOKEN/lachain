@@ -246,7 +246,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // TickMath
-            var tickMathAddress = "0x9531d91b4bc58a2c5c14bc864875c8ad6425c36b".HexToBytes().ToUInt160();
+            var tickMathAddress = "0x6bc32564adc8754886bc145c2c8ac54b1bd93195".HexToBytes().ToUInt160();
             var tickMathContract = new Contract
             (
                 tickMathAddress,
@@ -484,7 +484,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 }
                 {
                     Console.WriteLine($"\nSwap: mint({poolAddress.ToHex()},{recipientAddress.ToHex()},{-100}, {100}, {2000})");
-                    var input = "0x7b4f532700000000000000000000000065eb3de2f223f7050bb2097c05a904ca4abd005c000000000000000000000000f3dae35854d7b56acb39d36168fc8631e43ccdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9c000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000007d0".HexToBytes();//ContractEncoder.Encode("mint(address,address,int24,int24,uint128)", poolAddress, recipientAddress, 100.ToUInt256(), 100.ToUInt256(), 2000.ToUInt256());
+                    var input = "0x7b4f53270000000000000000000000005c00bd4aca04a9057c09b20b05f723f2e23deb65000000000000000000000000f3dae35854d7b56acb39d36168fc8631e43ccdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9c000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000007d0".HexToBytes();//ContractEncoder.Encode("mint(address,address,int24,int24,uint128)", poolAddress, recipientAddress, 100.ToUInt256(), 100.ToUInt256(), 2000.ToUInt256());
                     Console.WriteLine("ABI: " + input.ToHex());
                     var status = VirtualMachine.InvokeWasmContract(swapContract, context, input, 100_000_000_000_000UL);
                     if (status.Status != ExecutionStatus.Ok)
