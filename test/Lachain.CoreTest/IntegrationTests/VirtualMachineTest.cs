@@ -256,7 +256,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // SwapMath
-            var swapMathAddress = "0x9531d91b4bc58a4d5c14bc864875c8ad6425c36b".HexToBytes().ToUInt160();
+            var swapMathAddress = "0x6bc32564adc8754886bc145c4d8ac54b1bd93195".HexToBytes().ToUInt160();
             var swapMathContract = new Contract
             (
                 swapMathAddress,
@@ -266,7 +266,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // FullMath
-            var fullMathAddress = "0x9531d91b4bc58a4ddc11bc864875c8ad6425c36b".HexToBytes().ToUInt160();
+            var fullMathAddress = "0x6bc32564adc8754886bc11dc4d8ac54b1bd93195".HexToBytes().ToUInt160();
             var fullMathContract = new Contract
             (
                 fullMathAddress,
