@@ -6,19 +6,26 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Lachain.Storage.Trie;
+using Lachain.Utility.Utils;
+using Lachain.Core.RPC.HTTP.Web3;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     class RequestManager
     {
-        private Queue<string> _queue = new Queue<string>();
+ //       private Queue<string> _queue = new Queue<string>();
         private HashSet<string> _pending = new HashSet<string>();
         private NodeStorage _nodeStorage;
         private uint _batchSize = 20;
 
-        public RequestManager(NodeStorage nodeStorage)
+        HybridQueue _hybridQueue;
+        public int maxQueueSize = 0;
+
+        public RequestManager(NodeStorage nodeStorage, HybridQueue hybridQueue)
         {
             _nodeStorage = nodeStorage;
+            _hybridQueue = hybridQueue;
         }
 
         public bool TryGetHashBatch(out List<string> hashBatch)
@@ -26,9 +33,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             hashBatch = new List<string>();
             lock(this)
             {
-                while(_queue.Count > 0 && hashBatch.Count < _batchSize)
+                while(_hybridQueue.Count > 0 && hashBatch.Count < _batchSize)
                 {
-                    var hash = _queue.Dequeue();
+                    var hash = _hybridQueue.Dequeue();
                     hashBatch.Add(hash);
                     _pending.Add(hash);
                 }
@@ -41,7 +48,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Done()
         {
-            return _queue.Count == 0 && _pending.Count == 0;
+            return _hybridQueue.Count == 0 && _pending.Count == 0;
         }
 
         public bool CheckConsistency(ulong rootId)
@@ -53,8 +60,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 ulong cur = queue.Dequeue();
                 System.Console.WriteLine("id: " + cur);
             //    System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
-                if(_nodeStorage.TryGetNode(cur, out var node))
+                if(_nodeStorage.TryGetNode(cur, out IHashTrieNode? trieNode))
                 {
+                    JObject node = Web3DataFormatUtils.Web3Node(trieNode);
                 //    Console.WriteLine("printing Node");
                 //    Console.WriteLine(node);
                     var nodeType = (string)node["NodeType"];
@@ -74,6 +82,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 else
                 {
                     Console.WriteLine("Not Found: " + cur);
+                    return false;
                 }
             }
             return true;
@@ -136,7 +145,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     else
                     {
                         _pending.Remove(hash);
-                        _queue.Enqueue(hash);
+                        _hybridQueue.Enqueue(hash);
                     }
                 }
 
@@ -162,8 +171,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             var jsonChildren = (JArray)node["ChildrenHash"];
                             foreach (var jsonChild in jsonChildren)
                             {
-                                _queue.Enqueue((string)jsonChild);
+                                _hybridQueue.Enqueue((string)jsonChild);
                             }
+                            if(_hybridQueue.Count>maxQueueSize)
+                                maxQueueSize = _hybridQueue.Count;
                         }
                     }
                 }
@@ -171,9 +182,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
         public void AddHash(string hash)
         {
-            lock(_queue)
+            lock(_hybridQueue)
             {
-                _queue.Enqueue(hash);
+                _hybridQueue.Enqueue(hash);
             }
         }
     }

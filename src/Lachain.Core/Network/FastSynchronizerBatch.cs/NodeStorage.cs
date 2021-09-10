@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Lachain.Storage;
 using Lachain.Storage.Trie;
@@ -14,7 +15,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     class NodeStorage
     {
-        private IDictionary<string, JObject> _nodeStorage = new Dictionary<string, JObject>();
+        private IDictionary<string, ulong> _idCache = new ConcurrentDictionary<string, ulong>();
+        private uint _idCacheCapacity = 100000;
+
+        private IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
+        private uint _nodeCacheCapacity = 5000;
         private IRocksDbContext _dbContext;
         private VersionFactory _versionFactory;
         private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -32,86 +37,99 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             string nodeHash = (string)jsonNode["Hash"];
             if (nodeHash == null) return false;
             byte[] nodeHashBytes = HexUtils.HexToBytes(nodeHash);
-            ulong id = GetIdByHash(nodeHashBytes);
-            IHashTrieNode? trieNode = nodeRetrieval.TryGetNode(id);
-            if(trieNode is null)
+            bool foundId = GetIdByHash(nodeHash, out ulong id);
+            IHashTrieNode? trieNode;
+            if(foundId)
             {
-                if(((string)jsonNode["NodeType"]).Equals("0x1") == true)
-                {
-                    var jsonChildrenHash = (JArray)jsonNode["ChildrenHash"];
-                    List<byte[]> childrenHash = new List<byte[]>();
-                    foreach(var jsonChildHash in jsonChildrenHash)
-                    {
-                        childrenHash.Add(HexUtils.HexToBytes((string)jsonChildHash));
-                    }
-                    uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
-                    List<ulong> children = new List<ulong>();
-                    foreach(var childHash in childrenHash)
-                    {
-                        children.Add(GetIdByHash(childHash));
-                    }
-                    trieNode = new InternalNode(mask, children, childrenHash);
-                }
-                else
-                {
-                    byte[] keyHash = HexUtils.HexToBytes((string)jsonNode["KeyHash"]);
-                    byte[] value = HexUtils.HexToBytes((string)jsonNode["Value"]);
-                    trieNode = new LeafNode(keyHash, value);
-                }
-                _dbContext.Save(EntryPrefix.PersistentHashMap.BuildPrefix(id), NodeSerializer.ToBytes(trieNode));
-                Console.WriteLine("Inserted node: "+ id);
-/*                var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
-                IHashTrieNode node = NodeSerializer.FromBytes(rawNode);
-
-
-                Console.WriteLine("Node from DB: "+ id);
-                Console.WriteLine(Web3DataFormatUtils.Web3Node(node));
-                Console.WriteLine("Node used");
-                Console.WriteLine(jsonNode); */
-
-                return true;
+                bool foundNode = TryGetNode(id, out trieNode);
+                if(!foundNode) trieNode = BuildHashTrieNode(jsonNode);
             }
+            else trieNode = BuildHashTrieNode(jsonNode);
+            _nodeCache[id] = trieNode;
+            if(_nodeCache.Count>=_nodeCacheCapacity) CommitNodes();
             return false;
         }
 
-        public ulong GetIdByHash(byte[] nodeHashBytes)
+        public bool GetIdByHash(string nodeHash, out ulong id)
         {
-            var idByte = _dbContext.Get(EntryPrefix.VersionByHash.BuildPrefix(nodeHashBytes));
-            if(!(idByte is null)) return UInt64Utils.FromBytes(idByte);
-            ulong id = _versionFactory.NewVersion();
-            _dbContext.Save(EntryPrefix.VersionByHash.BuildPrefix(nodeHashBytes), UInt64Utils.ToBytes(id));
-            return id;
-        }
-        public ulong GetIdByHash(string nodeHash)
-        {
-            if(nodeHash.Equals(EmptyHash)) return 0;
-            return GetIdByHash(HexUtils.HexToBytes(nodeHash));
+            id = 0;
+            if(nodeHash.Equals(EmptyHash)) return true;
+            if(_idCache.TryGetValue(nodeHash, out id)) return true;
+            var idByte = _dbContext.Get(EntryPrefix.VersionByHash.BuildPrefix(HexUtils.HexToBytes(nodeHash)));
+            if(!(idByte is null)){
+                id = UInt64Utils.FromBytes(idByte);
+                return true;
+            }
+            id = _versionFactory.NewVersion();
+            _idCache[nodeHash] = id;
+            if(_idCache.Count>=_idCacheCapacity) CommitIds();
+        //    Console.WriteLine("Id generated: "+id +"  for hash: "+nodeHash);
+            return false;
         }
 
+
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetNode(string nodeHash, out JObject node)
+        public bool TryGetNode(ulong id, out IHashTrieNode? trieNode)
         {
-            var id = GetIdByHash(nodeHash);
+            if(_nodeCache.TryGetValue(id, out trieNode)) return true;
             var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
-            node = null;
+            trieNode = null;
             if (rawNode == null) return false; 
-            IHashTrieNode trieNode = NodeSerializer.FromBytes(rawNode);
-            node = Web3DataFormatUtils.Web3Node(trieNode);
-            return true; 
-        }
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetNode(ulong id, out JObject node)
-        {
-            var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
-            node = null;
-            if (rawNode == null) return false; 
-            IHashTrieNode trieNode = NodeSerializer.FromBytes(rawNode);
-            node = Web3DataFormatUtils.Web3Node(trieNode);
+            trieNode = NodeSerializer.FromBytes(rawNode);
             return true; 
         }
         public bool IsConsistent(JObject node)
         {
             return node != null && node.Count > 0;
+        }
+
+        public IHashTrieNode BuildHashTrieNode(JObject jsonNode)
+        {
+            IHashTrieNode? trieNode;
+            if(((string)jsonNode["NodeType"]).Equals("0x1") == true)
+            {
+                var jsonChildrenHash = (JArray)jsonNode["ChildrenHash"];
+                List<byte[]> childrenHash = new List<byte[]>();
+                List<ulong> children = new List<ulong>();
+                foreach(var jsonChildHash in jsonChildrenHash)
+                {
+                    string childHash = (string)jsonChildHash;
+                    childrenHash.Add(HexUtils.HexToBytes(childHash));
+                    bool foundId = GetIdByHash(childHash, out ulong childId);
+                    children.Add(childId);
+                }
+                uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
+                trieNode = new InternalNode(mask, children, childrenHash);
+            }
+            else
+            {
+                byte[] keyHash = HexUtils.HexToBytes((string)jsonNode["KeyHash"]);
+                byte[] value = HexUtils.HexToBytes((string)jsonNode["Value"]);
+                trieNode = new LeafNode(keyHash, value);
+            }
+            return trieNode;
+        }
+
+        public void CommitNodes()
+        {
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
+            foreach(var item in _nodeCache)
+            {
+                tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix(item.Key), NodeSerializer.ToBytes(item.Value));
+                Console.WriteLine("Adding node to DB : "+item.Key);
+            }
+            tx.Commit();
+            _nodeCache.Clear();
+        }
+        public void CommitIds()
+        {
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
+            foreach(var item in _idCache)
+            {
+                tx.Put(EntryPrefix.VersionByHash.BuildPrefix(HexUtils.HexToBytes(item.Key)), UInt64Utils.ToBytes(item.Value));
+            }
+            tx.Commit();
+            _idCache.Clear();
         }
     }
 }

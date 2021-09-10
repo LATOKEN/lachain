@@ -27,6 +27,8 @@
 
         VersionByHash = 0x0604,
 
+        QueueBatch = 0x0605,
+
         /* contract */
         ContractByHash = 0x0801,
 

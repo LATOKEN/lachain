@@ -44,10 +44,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             };
 
             List<string> urls = devnetNodes;
+            HybridQueue hybridQueue = new HybridQueue(dbContext);
             PeerManager peerManager = new PeerManager(urls);
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
-            RequestManager requestManager = new RequestManager(nodeStorage);
+            RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
             Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
+            
 
             string[] trieNames = new string[]
             {
@@ -67,9 +69,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 Logger.LogWarning($"Starting trie {trieNames[i]}");
                 string rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
-                ulong curTrieRoot = nodeStorage.GetIdByHash(rootHash);
+                bool foundRoot = nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
                 snapshots[i].SetCurrentVersion(curTrieRoot);
                 Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");
+                Logger.LogWarning($"Max Queue Size {requestManager.maxQueueSize}");
             }
 
             blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(), 16);

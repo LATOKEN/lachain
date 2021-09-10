@@ -68,17 +68,20 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //    Console.WriteLine("GetTrie after TryGetHashBatch........");
                 HandleRequest(peer, hashBatch);
             }
+            _nodeStorage.CommitIds();
+            _nodeStorage.CommitNodes();
             if(!rootHash.Equals(EmptyHash))
             {
-            //    bool flag = _requestManager.CheckConsistency(_nodeStorage.GetIdByHash(rootHash));
-            //    System.Console.WriteLine(trieName + " : consistency: " + flag);
+    //            bool res =_nodeStorage.GetIdByHash(rootHash,out ulong id);
+    //            bool flag = _requestManager.CheckConsistency(id);
+    //            System.Console.WriteLine(trieName + " : consistency: " + flag);
             }
             return rootHash;
         }
 
         private void HandleRequest(Peer peer, List<string> hashBatch)
         {
-            System.Console.WriteLine(peer._url);
+        //    System.Console.WriteLine(peer._url);
             JArray hashBatchJson = new JArray { };
             foreach (var hash in hashBatch) hashBatchJson.Add(hash);
 
