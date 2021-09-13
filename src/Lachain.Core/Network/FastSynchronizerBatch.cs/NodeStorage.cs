@@ -141,6 +141,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix(item.Key), NodeSerializer.ToBytes(item.Value));
                 Console.WriteLine("Adding node to DB : "+item.Key);
             }
+            ulong nodesCnt = UInt64Utils.FromBytes(_dbContext.Get(EntryPrefix.NodesDownloadedTillNow.BuildPrefix()));
+            nodesCnt += (ulong)_nodeCache.Count;
+            tx.Put(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(nodesCnt));
             tx.Commit();
             _nodeCache.Clear();
         }

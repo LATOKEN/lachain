@@ -10,5 +10,7 @@ namespace Lachain.Storage.Trie
     {
         public IHashTrieNode? TryGetNode(ulong id);
         public IHashTrieNode? TryGetNode(byte[] nodeHash, out List<byte[]> childrenHash);
+
+        public ulong GetDownloadedNodeCount();
     }
 }

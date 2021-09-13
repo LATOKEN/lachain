@@ -79,6 +79,8 @@ namespace Lachain.Console
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
 
+            rpcManager.Start();
+            
             if (options.RollBackTo.HasValue)
             {
                 Logger.LogWarning($"Performing roll back to block {options.RollBackTo.Value}");
@@ -100,10 +102,12 @@ namespace Lachain.Console
                 }
                 //FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
                 FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), peerURL, blockNumber);
+                                                storageManager.GetVersionFactory(), blockNumber);
 
             }
-
+            if(blockManager.GetHeight()==0)
+                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
+                                                storageManager.GetVersionFactory(), 0);
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
 
             if (blockManager.TryBuildGenesisBlock())
@@ -131,7 +135,7 @@ namespace Lachain.Console
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
-            rpcManager.Start();
+            
 
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
