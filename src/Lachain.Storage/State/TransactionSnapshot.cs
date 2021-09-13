@@ -71,5 +71,10 @@ namespace Lachain.Storage.State
                 (expectedNonce + 1).ToBytes().ToArray()
             );
         }
+
+        public void SetCurrentVersion(ulong root)
+        {
+            _state.SetCurrentVersion(root);
+        }
     }
 }

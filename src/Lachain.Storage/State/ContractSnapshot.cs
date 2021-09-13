@@ -58,5 +58,9 @@ namespace Lachain.Storage.State
         {
             _state.Delete(EntryPrefix.ContractByHash.BuildPrefix(contractHash), out _);
         }
+        public void SetCurrentVersion(ulong root)
+        {
+            _state.SetCurrentVersion(root);
+        }
     }
 }

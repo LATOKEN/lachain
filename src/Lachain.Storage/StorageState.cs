@@ -36,6 +36,11 @@ namespace Lachain.Storage
 
         public ulong CurrentVersion { get; private set; }
 
+        public void SetCurrentVersion(ulong root)
+        {
+            CurrentVersion = root;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[]? Get(byte[] key)
         {

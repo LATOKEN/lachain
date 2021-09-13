@@ -108,5 +108,10 @@ namespace Lachain.Storage.State
                 return block is null ? Enumerable.Empty<Block>() : new[] {block};
             });
         }
+        
+        public void SetCurrentVersion(ulong root)
+        {
+            _state.SetCurrentVersion(root);
+        }
     }
 }

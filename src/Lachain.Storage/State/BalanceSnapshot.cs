@@ -144,7 +144,10 @@ namespace Lachain.Storage.State
         {
             _state.Commit();
         }
-
+        public void SetCurrentVersion(ulong root)
+        {
+            _state.SetCurrentVersion(root);
+        }
         public UInt256 Hash => _state.Hash;
     }
 }

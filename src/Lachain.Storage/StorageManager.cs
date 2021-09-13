@@ -12,15 +12,15 @@ namespace Lachain.Storage
     {
         private readonly IDictionary<uint, RepositoryManager> _repositoryManagers =
             new ConcurrentDictionary<uint, RepositoryManager>();
-        
+        private VersionFactory _versionFactory;
         public StorageManager(IRocksDbContext rocksDbContext)
         {
             var versionIndexer = new VersionRepository(rocksDbContext);
-            var versionFactory = new VersionFactory(versionIndexer.GetVersion(0));
+            _versionFactory = new VersionFactory(versionIndexer.GetVersion(0));
             foreach (var repository in Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>())
             {
                 _repositoryManagers[(uint) repository] = new RepositoryManager(
-                    (uint) repository, rocksDbContext, versionFactory, versionIndexer
+                    (uint) repository, rocksDbContext, _versionFactory, versionIndexer
                 );
             }
         }
@@ -47,6 +47,11 @@ namespace Lachain.Storage
         public IStorageState GetState(uint repository, ulong version)
         {
             return _repositoryManagers[repository].GetState(version);
+        }
+
+        public VersionFactory GetVersionFactory()
+        {
+            return _versionFactory;
         }
     }
 }

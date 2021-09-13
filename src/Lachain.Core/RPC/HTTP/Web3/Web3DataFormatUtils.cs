@@ -96,7 +96,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return jsonTrie;
         }
 
-        public static JObject Web3Node(IHashTrieNode node)
+        public static JObject Web3Node(IHashTrieNode? node)
         {
             if(node is null) return new JObject{};
             switch (node)

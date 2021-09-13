@@ -65,5 +65,10 @@ namespace Lachain.Storage.State
             var raw = _state.Get(EntryPrefix.EventCountByTransactionHash.BuildPrefix(transactionHash));
             return raw?.AsReadOnlySpan().ToUInt32() ?? 0u;
         }
+        
+        public void SetCurrentVersion(ulong root)
+        {
+            _state.SetCurrentVersion(root);
+        }
     }
 }
