@@ -110,7 +110,7 @@ namespace Lachain.Console
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j]
+                        ecdsaPublicKeys[j], pubShares[j], addresses[j], "10000"
                     )).ToList()
                 };
                 for (var j = 0; j < n; ++j)
@@ -234,7 +234,7 @@ namespace Lachain.Console
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j]
+                        ecdsaPublicKeys[j], pubShares[j], addresses[j], "10000"
                     )).ToList()
                 };
                 for (var j = 0; j < n; ++j)

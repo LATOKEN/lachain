@@ -10,7 +10,6 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
-using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
@@ -102,7 +101,6 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly IConfigManager _configManager;
         private readonly ILocalTransactionRepository _localTransactionRepository;
-        private readonly IValidatorStatusManager _validatorStatusManager;
         private InvocationContext? _contractTxJustExecuted;
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
@@ -114,8 +112,7 @@ namespace Lachain.Core.Blockchain.Operations
             IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexRepository,
             IConfigManager configManager,
-            ILocalTransactionRepository localTransactionRepository,
-            IValidatorStatusManager validatorStatusManager
+            ILocalTransactionRepository localTransactionRepository
         )
         {
             _transactionManager = transactionManager;
@@ -125,7 +122,6 @@ namespace Lachain.Core.Blockchain.Operations
             _snapshotIndexRepository = snapshotIndexRepository;
             _configManager = configManager;
             _localTransactionRepository = localTransactionRepository;
-            _validatorStatusManager = validatorStatusManager;
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
         }
 
@@ -637,18 +633,34 @@ namespace Lachain.Core.Blockchain.Operations
             if (error != OperatingError.Ok) throw new InvalidBlockException(error);
             _stateManager.Commit();
             BlockPersisted(genesisBlock.Block);
-
-            var balances = genesisConfig!.Balances
-                .OrderBy(x => x.Key)
-                .ToArray();
             
-            var sender = balances[0].Key.HexToUInt160();
-            var firstNode = genesisConfig.Validators.First();
-            var firstNodePubKey = firstNode.EcdsaPublicKey.HexToBytes();
-            var stakeValue = 1000.ToUInt256();
+            var stakeLoc = new BigInteger(3).ToUInt256();
+            var validatorLoc = new BigInteger(2).ToUInt256();
             
-            _validatorStatusManager.StakeDelegation(stakeValue, sender, firstNodePubKey);
+            foreach (var validator in genesisConfig.Validators)
+            {
+                var staker = validator.StakerAddress.HexToUInt160();
+                var stake = Money.Parse(validator.StakeAmount).ToUInt256();
 
+                if (stake.IsZero())
+                {
+                    Logger.LogCritical($"Nothing to stake");
+                    Environment.Exit(1);
+                }
+                
+                var key = staker.ToBytes();
+                var value = stake.ToBytes();
+                
+                _stateManager.LastApprovedSnapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
+                    stakeLoc.Buffer.Concat(key), 
+                    value);
+                
+                _stateManager.LastApprovedSnapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
+                    validatorLoc.Buffer.Concat(key), 
+                    validator.EcdsaPublicKey.HexToBytes());
+            }
+            
+            snapshot.Validators.SetConsensusState(initialConsensusState);
             return true;
         }
     }
