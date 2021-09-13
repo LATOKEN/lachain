@@ -246,7 +246,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // TickMath
-            var tickMathAddress = "0x6bc32564adc8754886bc145c2c8ac54b1bd93195".HexToBytes().ToUInt160();
+            var tickMathAddress = "0x9531d91b4bc58a2c5c14bc864875c8ad6425c36b".HexToBytes().ToUInt160();
             var tickMathContract = new Contract
             (
                 tickMathAddress,
@@ -256,7 +256,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // SwapMath
-            var swapMathAddress = "0x6bc32564adc8754886bc145c4d8ac54b1bd93195".HexToBytes().ToUInt160();
+            var swapMathAddress = "0x9531d91b4bc58a4d5c14bc864875c8ad6425c36b".HexToBytes().ToUInt160();
             var swapMathContract = new Contract
             (
                 swapMathAddress,
@@ -266,7 +266,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // FullMath
-            var fullMathAddress = "0x6bc32564adc8754886bc11dc4d8ac54b1bd93195".HexToBytes().ToUInt160();
+            var fullMathAddress = "0x9531d91b4bc58a4ddc11bc864875c8ad6425c36b".HexToBytes().ToUInt160();
             var fullMathContract = new Contract
             (
                 fullMathAddress,
@@ -286,7 +286,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             // UniswapV3PoolActions
-            var uniswapV3PoolActionsAddress = "0x9531d91b4bc58a4ddc11bc864875f8ff6425c36b".HexToBytes().ToUInt160();
+            var uniswapV3PoolActionsAddress = "0x6bc32564fff8754886bc11dc4d8ac54b1bd93195".HexToBytes().ToUInt160();
             var uniswapV3PoolActionsContract = new Contract
             (
                 uniswapV3PoolActionsAddress,
@@ -296,7 +296,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 throw new Exception("Unable to validate smart-contract code");
 
             var recipientAddress = "0xfdcd3ce43186fc6861d339cb6ab5d75458e3daf3".HexToBytes().ToUInt160();
-            //"0x65eb3de2f223f7050bb2097c05a904ca4abd005c"
             var poolAddress = "0x5c00bd4aca04a9057c09b20b05f723f2e23deb65".HexToBytes().ToUInt160();
             
             var snapshot = stateManager.NewSnapshot();
