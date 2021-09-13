@@ -73,6 +73,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 snapshots[i].SetCurrentVersion(curTrieRoot);
                 Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");
                 Logger.LogWarning($"Max Queue Size {requestManager.maxQueueSize}");
+                Logger.LogWarning($"Total Nodes downloaded: {versionFactory.CurrentVersion}");
             }
 
             blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(), 16);

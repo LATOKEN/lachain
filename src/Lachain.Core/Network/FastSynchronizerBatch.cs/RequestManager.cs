@@ -90,15 +90,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void HandleResponse(List<string> hashBatch, JArray response)
         {
-/*
-            Console.WriteLine("hashes in hashBatch printing started");
-            foreach(var hash in hashBatch){
-                Console.WriteLine(hash);
-            }
-            Console.WriteLine("response printing");
-            Console.WriteLine(response); 
-*/
-
             List<string> successfulHashes = new List<string>();
             
             List<string> failedHashes = new List<string>();
@@ -126,14 +117,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                 }
             }
-/*            Console.WriteLine("success Hash");
-            foreach(var hash in successfulHashes){
-                Console.WriteLine(hash);
-            }
-            Console.WriteLine("Failed Hash");
-            foreach(var hash in failedHashes){
-                Console.WriteLine(hash);
-            } */
             lock (this)
             {
                 foreach (var hash in failedHashes)

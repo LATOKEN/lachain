@@ -10,6 +10,8 @@ using Lachain.Storage;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Crypto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -63,7 +65,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             id = _versionFactory.NewVersion();
             _idCache[nodeHash] = id;
             if(_idCache.Count>=_idCacheCapacity) CommitIds();
-        //    Console.WriteLine("Id generated: "+id +"  for hash: "+nodeHash);
             return false;
         }
 
@@ -80,7 +81,29 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
         public bool IsConsistent(JObject node)
         {
-            return node != null && node.Count > 0;
+            if(node is null || node.Count==0) return false;
+            if(((string)node["NodeType"]).Equals("0x1"))
+            {
+                uint mask = Convert.ToUInt32((string)node["ChildrenMask"], 16);
+                List<byte[]> childrenHashes = new List<byte[]>();
+                var jsonChildrenHash = (JArray)node["ChildrenHash"];
+                foreach(var jsonChildHash in jsonChildrenHash)
+                {
+                    string childHash = (string)jsonChildHash;
+                    childrenHashes.Add(HexUtils.HexToBytes(childHash));
+                }
+                byte[] hash = childrenHashes
+                .Zip(InternalNode.GetChildrenLabels(mask), (bytes, i) => new[] {i}.Concat(bytes))
+                .SelectMany(bytes => bytes)
+                .KeccakBytes();
+                return ((string)node["Hash"]).Equals(HexUtils.ToHex(hash));
+            }
+            else{
+                byte[] keyHash = HexUtils.HexToBytes(((string)node["KeyHash"]));
+                byte[] value = HexUtils.HexToBytes(((string)node["Value"]));
+                byte[] hash = keyHash.Length.ToBytes().Concat(keyHash).Concat(value).KeccakBytes(); 
+                return ((string)node["Hash"]).Equals(HexUtils.ToHex(hash));
+            }
         }
 
         public IHashTrieNode BuildHashTrieNode(JObject jsonNode)
