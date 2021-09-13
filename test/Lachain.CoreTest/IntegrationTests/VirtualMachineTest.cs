@@ -1089,7 +1089,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
             // A
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceA = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.A.wasm");
+            var resourceA = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.CreateContract.wasm");
             var aCode = new byte[resourceA!.Length];
             resourceA!.Read(aCode, 0, (int)resourceA!.Length);
 

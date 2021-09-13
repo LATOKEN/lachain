@@ -49,6 +49,8 @@
     <EmbeddedResource Include="Resources\scripts\UniswapV3PoolActions.abi" />
     <EmbeddedResource Include="Resources\scripts\Mulmod.wasm" />
     <EmbeddedResource Include="Resources\scripts\Mulmod.abi" />
+    <EmbeddedResource Include="Resources\scripts\CreateContract.wasm" />
+    <EmbeddedResource Include="Resources\scripts\CreateContract.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
     <None Remove="Resources\scripts\C.abi" />
     <EmbeddedResource Include="Resources\scripts\C.abi" />
