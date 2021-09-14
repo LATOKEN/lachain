@@ -107,8 +107,8 @@ namespace Lachain.Console
             }
         /*    if(blockManager.GetHeight()==0)
                 FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), 0);
-            localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress()); */
+                                                storageManager.GetVersionFactory(), 0); */
+            localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress()); 
 
             if (blockManager.TryBuildGenesisBlock())
                 Logger.LogInformation("Generated genesis block");
