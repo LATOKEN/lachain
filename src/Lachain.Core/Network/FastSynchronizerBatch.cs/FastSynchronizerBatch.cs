@@ -5,6 +5,7 @@ using Lachain.Storage.State;
 using Lachain.Storage;
 using Lachain.Storage.Trie;
 using Lachain.Storage.Repositories;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -16,9 +17,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                                      IRocksDbContext dbContext,
                                      ISnapshotIndexRepository snapshotIndexRepository,
                                      VersionFactory versionFactory,
-                                     string peerURL,
                                      ulong blockNumber)
         {
+            dbContext.Save(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(0));
             List<string> devnetNodes = new List<string>
             {
                 "http://157.245.160.201:7070",

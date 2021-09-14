@@ -311,6 +311,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Number(_blockManager.GetHeight());
         }
 
+        [JsonRpcMethod("la_getDownloadedNodesTillNow")]
+        private string GetDownloadedNodesTillNow()
+        {
+            return Web3DataFormatUtils.Web3Number(_nodeRetrieval.GetDownloadedNodeCount());
+        }
+
         [JsonRpcMethod("la_validator_info")]
         private JObject GetValidatorInfo(string publicKeyStr)
         {
