@@ -619,20 +619,6 @@ namespace Lachain.Core.Blockchain.Operations
                 new BigInteger(8).ToUInt256().Buffer,
                 initialBasicGasPrice
             );
-
-            _stateManager.Approve();
-            var (error, removeTransactions, stateHash, relayTransactions) =
-                Emulate(genesisBlock.Block, genesisBlock.Transactions);
-            if (error != OperatingError.Ok) throw new InvalidBlockException(error);
-            if (removeTransactions.Count != 0) throw new InvalidBlockException(OperatingError.InvalidTransaction);
-            if (relayTransactions.Count != 0) throw new InvalidBlockException(OperatingError.InvalidTransaction);
-            genesisBlock.Block.Header.StateHash = stateHash;
-            genesisBlock.Block.Hash = genesisBlock.Block.Header.Keccak();
-
-            error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: true);
-            if (error != OperatingError.Ok) throw new InvalidBlockException(error);
-            _stateManager.Commit();
-            BlockPersisted(genesisBlock.Block);
             
             var stakeLoc = new BigInteger(3).ToUInt256();
             var validatorLoc = new BigInteger(2).ToUInt256();
@@ -651,15 +637,29 @@ namespace Lachain.Core.Blockchain.Operations
                 var key = staker.ToBytes();
                 var value = stake.ToBytes();
                 
-                _stateManager.LastApprovedSnapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
+                snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
                     stakeLoc.Buffer.Concat(key), 
                     value);
                 
-                _stateManager.LastApprovedSnapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
+                snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
                     validatorLoc.Buffer.Concat(key), 
                     validator.EcdsaPublicKey.HexToBytes());
             }
-            
+
+            _stateManager.Approve();
+            var (error, removeTransactions, stateHash, relayTransactions) =
+                Emulate(genesisBlock.Block, genesisBlock.Transactions);
+            if (error != OperatingError.Ok) throw new InvalidBlockException(error);
+            if (removeTransactions.Count != 0) throw new InvalidBlockException(OperatingError.InvalidTransaction);
+            if (relayTransactions.Count != 0) throw new InvalidBlockException(OperatingError.InvalidTransaction);
+            genesisBlock.Block.Header.StateHash = stateHash;
+            genesisBlock.Block.Hash = genesisBlock.Block.Header.Keccak();
+
+            error = Execute(genesisBlock.Block, genesisBlock.Transactions, commit: true, checkStateHash: true);
+            if (error != OperatingError.Ok) throw new InvalidBlockException(error);
+            _stateManager.Commit();
+            BlockPersisted(genesisBlock.Block);
+
             snapshot.Validators.SetConsensusState(initialConsensusState);
             return true;
         }
