@@ -105,10 +105,10 @@ namespace Lachain.Console
                                                 storageManager.GetVersionFactory(), blockNumber);
 
             }
-            if(blockManager.GetHeight()==0)
+        /*    if(blockManager.GetHeight()==0)
                 FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
                                                 storageManager.GetVersionFactory(), 0);
-            localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress());
+            localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress()); */
 
             if (blockManager.TryBuildGenesisBlock())
                 Logger.LogInformation("Generated genesis block");
