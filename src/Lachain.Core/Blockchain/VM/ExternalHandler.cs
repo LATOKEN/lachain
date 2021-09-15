@@ -123,7 +123,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 case InvocationType.Static:
                 case InvocationType.Regular:
-                    invocationMessage.Sender = frame.CurrentAddress;
+                    invocationMessage.Sender = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress;
                     invocationMessage.Value = msgValue;
 
                     break;
@@ -131,7 +131,7 @@ namespace Lachain.Core.Blockchain.VM
                 case InvocationType.Delegate:
                     invocationMessage.Sender = frame.InvocationContext.Message?.Sender ?? frame.InvocationContext.Sender;
                     invocationMessage.Value = frame.InvocationContext.Message?.Value ?? frame.InvocationContext.Value;
-                    invocationMessage.Delegate = frame.CurrentAddress;
+                    invocationMessage.Delegate = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress;
 
                     break;
             }
@@ -541,7 +541,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetAddress({resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
-            var result = (frame.CurrentAddress).ToBytes();
+            var result = (frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress).ToBytes();
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
         
