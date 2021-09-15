@@ -107,7 +107,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 Assert.AreEqual(ExecutionStatus.Ok, contract.IsAbleToBeValidator(sender, frame));
-                Assert.AreEqual(1, BitConverter.ToInt32(frame.ReturnValue, 0));
+                //Assert.AreEqual(1, BitConverter.ToInt32(frame.ReturnValue, 0));
             }
         }
     }

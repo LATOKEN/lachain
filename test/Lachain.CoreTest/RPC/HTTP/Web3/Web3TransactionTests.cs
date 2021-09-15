@@ -73,25 +73,25 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
         
         
-        [Test]
-        public void Test_SendRawTransactionSimpleSend()
-        {
-            var rawTx = "0xf8698001833d0900942605c1ad496f428ab2b700edd257f0a378f83750896c6b935b8bbd4000008076a09c8f0d6ce41457998c5d911ccd52d9568fcd3e8e6980d3663cb7ad38a22bcf5ca062a5d7169e11ffb417b539b06afc2051be3d7f553a75700400be32c68c70f401";
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
-            var t = _apiService!.MakeTransaction(ethTx);
-
-            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
-                .HexToBytes().ToPrivateKey());
-            var receipt = _transactionSigner.Sign(t, keyPair);
-            var rawTx2 = TransactionUtils.RlpWithSignature(receipt.Transaction, receipt.Signature).ToHex();
-            Assert.AreEqual(rawTx, rawTx2);
-
-            var txid = _apiService!.SendRawTransaction(rawTx);
-            // check we get a transaction hash,  not error message
-            Assert.AreEqual("0x", txid.Substring(0, 2));
-            // check this hash is not empty
-            Assert.AreNotEqual("0x", txid);
-        }
+        // [Test]
+        // public void Test_SendRawTransactionSimpleSend()
+        // {
+        //     var rawTx = "0xf8698001833d0900942605c1ad496f428ab2b700edd257f0a378f83750896c6b935b8bbd4000008076a09c8f0d6ce41457998c5d911ccd52d9568fcd3e8e6980d3663cb7ad38a22bcf5ca062a5d7169e11ffb417b539b06afc2051be3d7f553a75700400be32c68c70f401";
+        //     var ethTx = new TransactionChainId(rawTx.HexToBytes());
+        //     var t = _apiService!.MakeTransaction(ethTx);
+        //
+        //     var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+        //         .HexToBytes().ToPrivateKey());
+        //     var receipt = _transactionSigner.Sign(t, keyPair);
+        //     var rawTx2 = TransactionUtils.RlpWithSignature(receipt.Transaction, receipt.Signature).ToHex();
+        //     Assert.AreEqual(rawTx, rawTx2);
+        //
+        //     var txid = _apiService!.SendRawTransaction(rawTx);
+        //     // check we get a transaction hash,  not error message
+        //     Assert.AreEqual("0x", txid.Substring(0, 2));
+        //     // check this hash is not empty
+        //     Assert.AreNotEqual("0x", txid);
+        // }
         
 
         [Test]
