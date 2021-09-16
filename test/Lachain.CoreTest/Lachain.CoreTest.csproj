@@ -27,8 +27,30 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\scripts\A.wasm" />
     <EmbeddedResource Include="Resources\scripts\B.wasm" />
+    <EmbeddedResource Include="Resources\scripts\ERC20.wasm" />
+    <EmbeddedResource Include="Resources\scripts\LRC20_1.wasm" />
+    <EmbeddedResource Include="Resources\scripts\LRC20_2.wasm" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3Factory.wasm" />
+    <EmbeddedResource Include="Resources\scripts\Swap.wasm" />
     <EmbeddedResource Include="Resources\scripts\A.abi" />
     <EmbeddedResource Include="Resources\scripts\B.abi" />
+    <EmbeddedResource Include="Resources\scripts\ERC20.abi" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3Factory.abi" />
+    <EmbeddedResource Include="Resources\scripts\TickMath.abi" />
+    <EmbeddedResource Include="Resources\scripts\TickMath.wasm" />
+    <EmbeddedResource Include="Resources\scripts\SwapMath.abi" />
+    <EmbeddedResource Include="Resources\scripts\SwapMath.wasm" />
+    <EmbeddedResource Include="Resources\scripts\Swap.abi" />
+    <EmbeddedResource Include="Resources\scripts\FullMath.wasm" />
+    <EmbeddedResource Include="Resources\scripts\FullMath.abi" />
+    <EmbeddedResource Include="Resources\scripts\NewtonRaphson.wasm" />
+    <EmbeddedResource Include="Resources\scripts\NewtonRaphson.abi" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3PoolActions.wasm" />
+    <EmbeddedResource Include="Resources\scripts\UniswapV3PoolActions.abi" />
+    <EmbeddedResource Include="Resources\scripts\Mulmod.wasm" />
+    <EmbeddedResource Include="Resources\scripts\Mulmod.abi" />
+    <EmbeddedResource Include="Resources\scripts\CreateContract.wasm" />
+    <EmbeddedResource Include="Resources\scripts\CreateContract.abi" />
     <EmbeddedResource Include="Resources\scripts\simple_call_contract.sol" />
     <None Remove="Resources\scripts\C.abi" />
     <EmbeddedResource Include="Resources\scripts\C.abi" />
@@ -44,10 +66,6 @@
     <EmbeddedResource Include="Resources\scripts\test.sol" />
     <None Remove="Resources\scripts\test.wasm" />
     <EmbeddedResource Include="Resources\scripts\test.wasm" />
-    <None Remove="Resources\scripts\ERC20.abi" />
-    <EmbeddedResource Include="Resources\scripts\ERC20.abi" />
-    <None Remove="Resources\scripts\ERC20.wasm" />
-    <EmbeddedResource Include="Resources\scripts\ERC20.wasm" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />

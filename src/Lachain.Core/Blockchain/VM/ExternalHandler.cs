@@ -335,6 +335,102 @@ namespace Lachain.Core.Blockchain.VM
             );
         }
 
+        public static void Handler_Env_LoadStorageString(int keyOffset, int resultOffset)
+        {
+            Logger.LogInformation($"Handler_Env_LoadStorageString({keyOffset}, {resultOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call LOADSTORAGESTRING outside wasm frame");
+            
+            // load key
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            if (key is null)
+                throw new InvalidContractException("Bad call to LOADSTORAGESTRING");
+            if (key.Length < 32)
+                key = _AlignTo32(key);
+
+            var storageAddress = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress;
+            var valueLength = (int) frame.InvocationContext.Snapshot.Storage.GetValue(storageAddress, key.ToUInt256()).ToBigInteger();
+
+            // calculate number of blocks
+            var blocks = valueLength / 32 + (valueLength % 32 == 0 ? 0 : 1);
+            frame.UseGas(GasMetering.LoadStorageGasCost * (ulong) (blocks + 1));
+
+            // load string from the storage block by block
+            var slot = key.ToUInt256().ToBigInteger();
+            var value = new byte[valueLength];
+
+            for (int block = 0; block < blocks; block++)
+            {
+                slot = slot + 1.ToUInt256().ToBigInteger();
+
+                var valueBlock = frame.InvocationContext.Snapshot.Storage.GetValue(storageAddress, slot.ToUInt256()).ToBytes();
+                Array.Copy(valueBlock, 0, value, block * 32, Math.Min(32, valueLength - block * 32));
+            }
+
+            if (!SafeCopyToMemory(frame.Memory, value, resultOffset))
+                throw new InvalidContractException("Cannot copy LOADSTORAGESTRING result to memory");
+        }
+
+        public static void Handler_Env_SaveStorageString(int keyOffset, int valueOffset, int valueLength)
+        {
+            Logger.LogInformation($"Handler_Env_SaveStorageString({keyOffset}, {valueOffset}, {valueLength})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call SAVESTORAGESTRING outside wasm frame");
+
+            if (frame.InvocationContext.Message?.Type == InvocationType.Static)
+            {
+                throw new InvalidOperationException("Cannot call SAVESTORAGESTRING in STATICCALL");
+            }
+
+            // calculate number of blocks
+            var blocks = valueLength / 32 + (valueLength % 32 == 0 ? 0 : 1);
+            frame.UseGas(GasMetering.SaveStorageGasCost * (ulong) (blocks + 1));
+            
+            // load key and value
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            if (key is null)
+                throw new InvalidContractException("Bad call to SAVESTORAGESTRING");
+            if (key.Length < 32)
+                key = _AlignTo32(key);
+            var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength);
+            if (value is null) throw new InvalidContractException("Bad call to SAVESTORAGESTRING");
+            
+            // save string to the storage block by block
+            var slot = key.ToUInt256().ToBigInteger();
+            var storageAddress = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress;
+
+            frame.InvocationContext.Snapshot.Storage.SetValue(
+                storageAddress, slot.ToUInt256(), valueLength.ToUInt256()
+            );
+
+            for (int block = 0; block < blocks; block++)
+            {
+                slot = slot + 1.ToUInt256().ToBigInteger();
+
+                frame.InvocationContext.Snapshot.Storage.SetValue(
+                    storageAddress, slot.ToUInt256(), value.Skip(block * 32).Take(32).ToArray().ToUInt256(true)
+                );
+            }
+        }
+
+        public static int Handler_Env_GetStorageStringSize(int keyOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetStorageStringSize({keyOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GETSTORAGESTRINGSIZE outside wasm frame");
+            frame.UseGas(GasMetering.GetReturnSizeGasCost);
+            
+            var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
+            if (key is null)
+                throw new InvalidContractException("Bad call to GETSTORAGESTRINGSIZE");
+            if (key.Length < 32)
+                key = _AlignTo32(key);
+
+            var valueLength = (int) frame.InvocationContext.Snapshot.Storage.GetValue(frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress, key.ToUInt256()).ToBigInteger();
+
+            return valueLength;
+        }
+
         private static byte[] _AlignTo32(byte[] buffer)
         {
             if (buffer.Length == 32)
@@ -689,6 +785,9 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "write_log", CreateImport(nameof(Handler_Env_WriteLog))},
                 {EnvModule, "load_storage", CreateImport(nameof(Handler_Env_LoadStorage))},
                 {EnvModule, "save_storage", CreateImport(nameof(Handler_Env_SaveStorage))},
+                {EnvModule, "load_storage_string", CreateImport(nameof(Handler_Env_LoadStorageString))},
+                {EnvModule, "save_storage_string", CreateImport(nameof(Handler_Env_SaveStorageString))},
+                {EnvModule, "get_storage_string_size", CreateImport(nameof(Handler_Env_GetStorageStringSize))},
                 {EnvModule, "set_return", CreateImport(nameof(Handler_Env_SetReturn))},
                 {EnvModule, "get_sender", CreateImport(nameof(Handler_Env_GetSender))},
                 {EnvModule, "get_gas_left", CreateImport(nameof(Handler_Env_GetGasLeft))},

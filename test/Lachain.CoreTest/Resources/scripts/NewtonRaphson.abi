@@ -1,0 +1,1 @@
+[{"name":"iter","type":"function","inputs":[{"name":"denominator","type":"uint256","internalType":"uint256"},{"name":"inv","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"result","type":"uint256","internalType":"uint256"}],"stateMutability":"pure"}]
