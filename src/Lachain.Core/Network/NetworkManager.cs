@@ -7,8 +7,8 @@ namespace Lachain.Core.Network
 {
     public class NetworkManager : NetworkManagerBase
     {
-        public const int MyVersion = 8;
-        public const int MinCompatiblePeerVersion = 8;
+        public const int MyVersion = 9;
+        public const int MinCompatiblePeerVersion = 9;
         
         public NetworkManager(
             IConfigManager configManager, IPrivateWallet privateWallet
