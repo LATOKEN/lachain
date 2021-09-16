@@ -30,9 +30,9 @@ namespace Lachain.Core.Blockchain.VM
         )
         {
             var call = _contractRegisterer.DecodeContract(context, address, input);
-            return call is null
-                ? InvocationResult.WithStatus(ExecutionStatus.ExecutionHalted)
-                : VirtualMachine.InvokeSystemContract(call, context, input, gasLimit);
+            if (call is null)
+                return InvocationResult.WithStatus(ExecutionStatus.ExecutionHalted);
+            return VirtualMachine.InvokeSystemContract(call, context, input, gasLimit);
         }
     }
 }

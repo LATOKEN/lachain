@@ -25,7 +25,7 @@ namespace Lachain.Utility.Utils
         public static UInt256 ToUInt256(this UInt160 value)
         {
             var buffer = new byte[32];
-            Array.Copy(value.ToBytes(), 0, buffer, 0, 20);
+            Array.Copy(value.ToBytes(), 0, buffer, 12, 20);
             return buffer.ToUInt256();
         }
 
@@ -42,10 +42,12 @@ namespace Lachain.Utility.Utils
         public static UInt160 ToUInt160(this BigInteger value)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            var bytes = value.ToByteArray();
-            if (bytes.Length > 21 || bytes.Length == 20 && bytes[20] != 0)
+            var bytes = value.ToByteArray().Reverse().ToArray();
+            if (bytes.Length > 21 || bytes.Length == 21 && bytes[0] != 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
-            return bytes.Take(20).Concat(new byte[20 - bytes.Length]).ToArray().ToUInt160();
+            if (bytes.Length == 21)
+                bytes = bytes.Skip(1).ToArray();
+            return (new byte[20 - bytes.Length]).Concat(bytes).ToArray().ToUInt160();
         }
     }
 }

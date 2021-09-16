@@ -85,7 +85,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTotalSupplyCost);
             var supply = _context.Snapshot?.Balances.GetSupply();
-            if (supply is null) return ExecutionStatus.ExecutionHalted;
+            if (supply is null) 
+                return ExecutionStatus.ExecutionHalted;
             frame.ReturnValue = ContractEncoder.Encode(null, supply);
             return ExecutionStatus.Ok;
         }
@@ -95,7 +96,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenBalanceOfCost);
             var balance = _context.Snapshot?.Balances.GetBalance(address);
-            if (balance is null) return ExecutionStatus.ExecutionHalted;
+            if (balance is null) 
+                return ExecutionStatus.ExecutionHalted;
             frame.ReturnValue = ContractEncoder.Encode(null, balance);
             return ExecutionStatus.Ok;
         }
@@ -190,7 +192,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
 
             var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney);
-            if (newBalance is null) return ExecutionStatus.ExecutionHalted;
+            if (newBalance is null) 
+                return ExecutionStatus.ExecutionHalted;
             Emit(Lrc20Interface.EventMinted, address, amount);
             frame.ReturnValue = ContractEncoder.Encode(null, newBalance);
             return ExecutionStatus.Ok;
@@ -245,7 +248,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             return param switch
             {
-                UInt256 x => x.ToBytes().Reverse().ToHex(),
+                UInt256 x => x.ToBytes().ToHex(),
                 UInt160 x => x.ToBytes().ToHex(),
                 byte[] b => b.ToHex(),
                 byte[][] s => string.Join(", ", s.Select(t => t.ToHex())),

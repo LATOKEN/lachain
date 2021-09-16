@@ -20,7 +20,7 @@ namespace Lachain.Utility.Utils
 
         public static BigInteger ToBigInteger(this UInt256 value)
         {
-            return new BigInteger(value.ToBytes().Concat(new byte[] {0}).ToArray());
+            return new BigInteger(value.ToBytes().Reverse().Concat(new byte[] {0}).ToArray());
         }
 
         public static UInt256 ToUInt256(this int value)
@@ -32,10 +32,12 @@ namespace Lachain.Utility.Utils
         public static UInt256 ToUInt256(this BigInteger value)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            var bytes = value.ToByteArray();
-            if (bytes.Length > 33 || bytes.Length == 33 && bytes[32] != 0)
+            var bytes = value.ToByteArray().Reverse().ToArray();
+            if (bytes.Length > 33 || bytes.Length == 33 && bytes[0] != 0)
                 throw new ArgumentOutOfRangeException(nameof(value));
-            var paddedBytes = bytes.Take(32).Concat(new byte[Math.Max(32 - bytes.Length, 0)]).ToArray();
+            if (bytes.Length == 33)
+                bytes = bytes.Skip(1).ToArray();
+            var paddedBytes = (new byte[Math.Max(32 - bytes.Length, 0)]).Concat(bytes).ToArray();
             return paddedBytes.ToUInt256();
         }
 
@@ -62,14 +64,14 @@ namespace Lachain.Utility.Utils
             }
         }
 
-        public static UInt256 ToUInt256(this byte[] buffer, bool addTrailingZeros = false)
+        public static UInt256 ToUInt256(this byte[] buffer, bool addLeadingZeros = false)
         {
             if (buffer.Length == 0) buffer = Zero.ToBytes();
 
-            if (!addTrailingZeros && buffer.Length != 32 || buffer.Length > 32)
+            if (!addLeadingZeros && buffer.Length != 32 || buffer.Length > 32)
                 throw new ArgumentOutOfRangeException(nameof(buffer));
 
-            var padded = addTrailingZeros ? buffer.Concat(Enumerable.Repeat((byte) 0, 32 - buffer.Length)) : buffer;
+            var padded = addLeadingZeros ? Enumerable.Repeat((byte) 0, 32 - buffer.Length).Concat(buffer) : buffer;
             return new UInt256 {Buffer = ByteString.CopyFrom(padded.ToArray())};
         }
     }

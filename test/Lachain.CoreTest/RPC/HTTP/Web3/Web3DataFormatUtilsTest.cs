@@ -64,11 +64,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 Web3DataFormatUtils.Web3Data(new byte[] {0xc0}.Keccak())
             );
             Assert.AreEqual(
-                "0x0100000000000000000000000000000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 Web3DataFormatUtils.Web3Data(BigInteger.One.ToUInt256())
             );
             Assert.AreEqual(
-                "0x0300000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000003",
                 Web3DataFormatUtils.Web3Data(ContractRegisterer.StakingContract)
             );
             var address = "023f7d80bc1c1f2a93bca97e81b9f3073150e15cef78b8d37a7ec4c947993ad5e7"

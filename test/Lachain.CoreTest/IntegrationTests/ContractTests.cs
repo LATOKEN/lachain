@@ -180,7 +180,7 @@ namespace Lachain.CoreTest.IntegrationTests
             
             // Deploy caller contract 
             if(resourceC is null)
-                Assert.Fail("Failed t read script from resources");
+                Assert.Fail("Failed to read script from resources");
             byteCode = new byte[resourceC!.Length];
             resourceC!.Read(byteCode, 0, (int)resourceC!.Length);
             Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate caller code");

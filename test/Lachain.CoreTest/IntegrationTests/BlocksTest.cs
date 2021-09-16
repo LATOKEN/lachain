@@ -110,8 +110,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 genesis.Header.PrevBlockHash
             );
             Assert.AreEqual(
-                "0x146314448e2095b57806dd6d7fdb47578487b67b17dc4461048b4308e533de13".HexToUInt256(),
-                genesis.Header.StateHash
+                "0xf0155c2e8107f6d2b29657a1d856f0b0fec6a64568c5ec2f2fdb7d2f074d6f69",
+                genesis.Header.StateHash.ToHex()
             );
             Assert.AreEqual(0, genesis.GasPrice);
             Assert.AreEqual(null, genesis.Multisig);

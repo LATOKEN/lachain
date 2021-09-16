@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract B {
+contract D {
     uint256 public a;
 
     function setA(uint256 _a) public {
@@ -13,13 +13,19 @@ contract B {
     }
 }
 
-contract A {
-    B b;
+contract C {
+    D b;
 
     uint256 public value;
 
     function init(address _b) public {
-        b = B(_b);
+        b = D(_b);
+    }
+
+    function getADirect(address _b) public view returns (uint256) {
+        D temp;
+        temp = D(_b);
+        return temp.getA();
     }
 
     function getA() public view returns (uint256) {
