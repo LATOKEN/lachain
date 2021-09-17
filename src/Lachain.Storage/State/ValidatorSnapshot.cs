@@ -69,16 +69,6 @@ namespace Lachain.Storage.State
             );
             SetConsensusState(state);
         }
-
-        public void SetStakerAddress(UInt160 address)
-        {
-            _stakerAddress = address;
-        }
-        
-        public UInt160 GetStakerAddress()
-        {
-            return _stakerAddress;
-        }
     }
 
     public class ConsensusStateNotPresentException : Exception

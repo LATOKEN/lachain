@@ -124,8 +124,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             // if (!ok)
             //     return ExecutionStatus.ExecutionHalted;
             
-            _context.Snapshot.Validators.SetStakerAddress(MsgSender());
-
             if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
@@ -761,7 +759,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 var stakerPublicKey = stakers.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 var stakerAddress = Hepler.PublicKeyToAddress(stakerPublicKey);
-                Logger.LogInformation($"=== staker is here {stakerPublicKey}");
                 
                 var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,

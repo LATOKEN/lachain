@@ -68,12 +68,16 @@ namespace Lachain.Console
             var ecdsaPrivateKeys = new string[n];
             var ecdsaPublicKeys = new string[n];
             var addresses = new string[n];
+            var stakerPubKeys = new string[n];
             var crypto = CryptoProvider.GetCrypto();
             for (var i = 0; i < n; ++i)
             {
                 ecdsaPrivateKeys[i] = crypto.GenerateRandomBytes(32).ToHex(false);
                 ecdsaPublicKeys[i] = crypto.ComputePublicKey(ecdsaPrivateKeys[i].HexToBytes(), true).ToHex(false);
                 addresses[i] = ecdsaPrivateKeys[i].HexToBytes().ToPrivateKey().GetPublicKey().GetAddress().ToHex();
+                
+                var stakerPriKey = crypto.GenerateRandomBytes(32).ToHex(false);
+                stakerPubKeys[i] = stakerPriKey.HexToBytes().ToPrivateKey().GetPublicKey().ToHex();
             }
 
             var hubPublicKeys = new string[n];
@@ -110,7 +114,7 @@ namespace Lachain.Console
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j], addresses[j], "10000"
+                        ecdsaPublicKeys[j], pubShares[j], stakerPubKeys[j], "10000"
                     )).ToList()
                 };
                 for (var j = 0; j < n; ++j)
@@ -191,12 +195,16 @@ namespace Lachain.Console
             var ecdsaPrivateKeys = new string[n];
             var ecdsaPublicKeys = new string[n];
             var addresses = new string[n];
+            var stakerPubKeys = new string[n];
             var crypto = CryptoProvider.GetCrypto();
             for (var i = 0; i < n; ++i)
             {
                 ecdsaPrivateKeys[i] = crypto.GenerateRandomBytes(32).ToHex(false);
                 ecdsaPublicKeys[i] = crypto.ComputePublicKey(ecdsaPrivateKeys[i].HexToBytes(), true).ToHex(false);
                 addresses[i] = ecdsaPrivateKeys[i].HexToBytes().ToPrivateKey().GetPublicKey().GetAddress().ToHex();
+                
+                var stakerPriKey = crypto.GenerateRandomBytes(32).ToHex(false);
+                stakerPubKeys[i] = stakerPriKey.HexToBytes().ToPrivateKey().GetPublicKey().ToHex();
             }
 
             var hubPublicKeys = new string[n];
@@ -234,7 +242,7 @@ namespace Lachain.Console
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j], addresses[j], "10000"
+                        ecdsaPublicKeys[j], pubShares[j], stakerPubKeys[j], "1000000"
                     )).ToList()
                 };
                 for (var j = 0; j < n; ++j)

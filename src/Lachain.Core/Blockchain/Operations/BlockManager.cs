@@ -8,6 +8,8 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Config;
 using Lachain.Crypto;
@@ -20,6 +22,7 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Prometheus;
+using WebAssembly.Runtime;
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -620,14 +623,29 @@ namespace Lachain.Core.Blockchain.Operations
                 initialBasicGasPrice
             );
             
-            var stakeLoc = new BigInteger(3).ToUInt256();
-            var validatorLoc = new BigInteger(2).ToUInt256();
+            var _stake = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                _stateManager.LastApprovedSnapshot.Storage,
+                new BigInteger(3).ToUInt256()
+            );
+            
+            var _validators = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                _stateManager.LastApprovedSnapshot.Storage,
+                new BigInteger(2).ToUInt256()
+            );
+
+            var _stakers = new StorageVariable(
+                ContractRegisterer.StakingContract,
+                _stateManager.LastApprovedSnapshot.Storage,
+                new BigInteger(6).ToUInt256()
+            );
             
             foreach (var validator in genesisConfig.Validators)
             {
-                var staker = validator.StakerAddress.HexToUInt160();
+                var staker = Hepler.PublicKeyToAddress(validator.StakerAddress.HexToBytes());
                 var stake = Money.Parse(validator.StakeAmount).ToUInt256();
-
+            
                 if (stake.IsZero())
                 {
                     Logger.LogCritical($"Nothing to stake");
@@ -637,13 +655,11 @@ namespace Lachain.Core.Blockchain.Operations
                 var key = staker.ToBytes();
                 var value = stake.ToBytes();
                 
-                snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
-                    stakeLoc.Buffer.Concat(key), 
-                    value);
+                _stake.SetValue(key, value);
+                _validators.SetValue(key, validator.EcdsaPublicKey.HexToBytes());
                 
-                snapshot.Storage.SetRawValue(ContractRegisterer.StakingContract, 
-                    validatorLoc.Buffer.Concat(key), 
-                    validator.EcdsaPublicKey.HexToBytes());
+                var stakers = _stakers.Get();
+                _stakers.Set(stakers.Concat(validator.StakerAddress.HexToBytes()).ToArray());
             }
 
             _stateManager.Approve();

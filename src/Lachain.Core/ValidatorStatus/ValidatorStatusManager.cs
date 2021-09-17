@@ -163,8 +163,6 @@ namespace Lachain.Core.ValidatorStatus
 
                     if (!isStaker)
                     {
-                        var temp = _stateManager.CurrentSnapshot.Validators.GetStakerAddress();
-                        
                         var coverFeesAmount = new BigInteger(10) * BigInteger.Pow(10, 18);
                         Logger.LogInformation($"Trying to become staker");
                         var balance =
