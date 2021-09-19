@@ -600,6 +600,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             return false;
         }
+        
+        [JsonRpcMethod("la_getLatestValidators")]
+        private JArray GetCurrentValidators()
+        {
+            var allValidators = _stateManager.CurrentSnapshot.Validators.GetValidatorsPublicKeys().ToArray();
+            JArray validators = new JArray { };
+            foreach (var validator in allValidators)
+            {
+                validators.Add(Web3DataFormatUtils.Web3Data(validator.Buffer.ToByteArray()));
+            }
+            return validators;
+        }
+
+
 
         private ulong? GetBlockNumberByTag(string blockTag)
         {
