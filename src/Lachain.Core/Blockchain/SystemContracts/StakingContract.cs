@@ -43,6 +43,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageMapping _userToStartCycle;
         private readonly StorageMapping _userToWithdrawRequestCycle;
         private readonly StorageMapping _attendanceVotes;
+        private readonly StorageMapping _pubKeyToStaker; // maps public key of the validator to staker address
+
 
         private static readonly ILogger<StakingContract> Logger =
             LoggerFactory.GetLoggerForClass<StakingContract>();
@@ -110,6 +112,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 contractContext.Snapshot.Storage,
                 new BigInteger(11).ToUInt256()
             );
+            _pubKeyToStaker = new StorageMapping(
+              ContractRegisterer.StakingContract,
+              contractContext.Snapshot.Storage,
+              new BigInteger(12).ToUInt256()
+            );
         }
 
         public ContractStandard ContractStandard => ContractStandard.StakingContract;
@@ -119,16 +126,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingBecomeStakerCost);
 
+            // address should also be able to stake for other validator
+
+            /*
             var ok = IsPublicKeyOwner(publicKey, MsgSender());
             if (!ok)
                 return ExecutionStatus.ExecutionHalted;
+            */
 
             if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
+            // check if any address (this validator address itself or some other address) has already got some stake for the validator.
+
             var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
-                MsgSender());
+                Hepler.PublicKeyToAddress(publicKey));
+
 
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -136,6 +150,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var stake = getStakeExecutionResult.ReturnValue!.ToUInt256();
             if (!stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
+
+            // check MsgSender = Staker's balance 
 
             var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodBalanceOf,
@@ -148,6 +164,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             if (balance.CompareTo(amount.ToMoney()) == -1)
                 return ExecutionStatus.ExecutionHalted;
+
+            // transfer amount from staker's address to staking contract 
 
             var transferExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, MsgSender(), Lrc20Interface.MethodTransfer,
@@ -168,11 +186,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 startingCycle--;
             }
 
-            SetStake(MsgSender(), amount);
+            SetStake(Hepler.PublicKeyToAddress(publicKey), amount); // store the stake amount to the address of the validator
 
             SetStakerPublicKey(MsgSender(), publicKey);
 
-            SetStartCycle(MsgSender(), startingCycle);
+            SetStartCycle(Hepler.PublicKeyToAddress(publicKey), startingCycle);
 
             return ExecutionStatus.Ok;
         }
@@ -182,8 +200,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingRequestStakeWithdrawalCost);
 
-            var ok = IsPublicKeyOwner(publicKey, MsgSender());
-            if (!ok) return ExecutionStatus.ExecutionHalted;
+            // check the address trying to withdraw is indeed the address which staked before
+            var staker = GetStaker(publicKey);
+            if (staker == null || staker!.Equals(MsgSender()) == false) return ExecutionStatus.ExecutionHalted;
 
             var isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
@@ -196,9 +215,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (isNextValidator)
                 return ExecutionStatus.ExecutionHalted;
 
+            // get the amount that was staked for this validator
             var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
-                MsgSender());
+                Hepler.PublicKeyToAddress(publicKey));
 
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -210,7 +230,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
-                StakingInterface.MethodGetWithdrawRequestCycle, MsgSender());
+                StakingInterface.MethodGetWithdrawRequestCycle, Hepler.PublicKeyToAddress(publicKey));
 
             if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -220,7 +240,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (withdrawRequestCycleBytes!.Length != 0)
                 return ExecutionStatus.ExecutionHalted;
 
-            SetWithdrawRequestCycle(MsgSender(), GetCurrentCycle());
+            SetWithdrawRequestCycle(Hepler.PublicKeyToAddress(publicKey), GetCurrentCycle());
 
             return ExecutionStatus.Ok;
         }
@@ -289,12 +309,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 stake = (stake.ToMoney() - penalty.ToMoney()).ToUInt256();
             }
 
+            // give back the tokens to the staker 
             var transferStakeExecutionResult = Hepler.CallSystemContract(
                 frame,
                 ContractRegisterer.LatokenContract, 
                 ContractRegisterer.StakingContract, 
                 Lrc20Interface.MethodTransfer,
-                MsgSender(), 
+                GetStaker(publicKey)!, 
                 stake
             );
 
@@ -951,10 +972,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void SetStakerPublicKey(UInt160 staker, byte[] publicKey)
         {
-            var key = staker.ToBytes();
-
             AddStaker(publicKey);
-            _userToPubKey.SetValue(key, publicKey);
+            _userToPubKey.SetValue(Hepler.PublicKeyToAddress(publicKey).ToBytes(), publicKey);
+            _pubKeyToStaker.SetValue(publicKey, staker.ToBytes());
         }
 
         private void DeleteStakerPublicKey(UInt160 staker)
@@ -971,6 +991,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             _stakers.Set(stakers);
+            _pubKeyToStaker.Delete(_userToPubKey.GetValue(key));
             _userToPubKey.Delete(key);
         }
 
@@ -1019,6 +1040,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var stakers = _stakers.Get();
             _stakers.Set(stakers.Concat(publicKey).ToArray());
+        }
+
+        private UInt160? GetStaker(byte[] publicKey)
+        {
+            if (publicKey == null) return null;
+            byte[] stakerByte = _pubKeyToStaker.GetValue(publicKey);
+            if (stakerByte == null || stakerByte.Length == 0) return null;
+            return stakerByte.ToUInt160();
         }
 
         private BigInteger GetNextVrfSeedNum()
