@@ -37,6 +37,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 "http://88.99.87.58:7070",
                 "http://95.217.6.234:7070"
             };
+//            List <string> onlyonenode = new List<string>
             List<string> localnetNodes = new List<string>
             { 
                 "http://127.0.0.1:7070",
@@ -44,28 +45,30 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 "http://127.0.0.1:7072"
             };
 
+            var snapshot = stateManager.NewSnapshot();
+            ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
+                                                        snapshot.Contracts,
+                                                        snapshot.Storage,
+                                                        snapshot.Transactions,
+                                                        snapshot.Events,
+                                                        snapshot.Validators,
+                                                        };
+
             List<string> urls = devnetNodes;
             HybridQueue hybridQueue = new HybridQueue(dbContext);
             PeerManager peerManager = new PeerManager(urls);
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
             RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
             Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
-            
 
             string[] trieNames = new string[]
             {
-                "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators", 
+                "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
             };
 
-            var snapshot = stateManager.NewSnapshot();
-            ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
-                                                        snapshot.Contracts,
-                                                        snapshot.Storage,
-                                                        snapshot.Transactions,
-                                                        snapshot.Blocks,
-                                                        snapshot.Events,
-                                                        snapshot.Validators};
             
+            downloader.DownloadBlocks(nodeStorage, snapshot.Blocks);
+
             for(int i = 0; i < trieNames.Length; i++)
             {
                 Logger.LogWarning($"Starting trie {trieNames[i]}");

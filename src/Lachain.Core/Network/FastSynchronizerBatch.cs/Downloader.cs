@@ -9,6 +9,9 @@ using Newtonsoft.Json.Linq;
 using System.Net;
 using System.IO;
 using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Storage.State;
+using Lachain.Utility.Utils;
+using Google.Protobuf;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -20,14 +23,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private RequestManager _requestManager;
         private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
         private const int DefaultTimeout = 10 * 1000; // 10 sec 
-
+        private BlockRequestManager _blockRequestManager; 
         public Downloader(PeerManager peerManager, RequestManager requestManager)
         {
             _peerManager = peerManager;
             _requestManager = requestManager;
             _blockNumber = DownloadLatestBlockNumber();
 
-            System.Console.WriteLine("blocknumber: " + _blockNumber);
+            System.Console.WriteLine("blocknumber: " + Convert.ToUInt64(_blockNumber,16));
         }
 
         public Downloader(PeerManager peerManager, RequestManager requestManager, ulong blockNumber)
@@ -37,7 +40,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             if(blockNumber == 0) _blockNumber = DownloadLatestBlockNumber();
             else _blockNumber = Web3DataFormatUtils.Web3Number(blockNumber);
 
-            System.Console.WriteLine("blocknumber: " + _blockNumber);
+            System.Console.WriteLine("blocknumber: " + Convert.ToUInt64(_blockNumber,16));
         }
 
         public string GetBlockNumber()
@@ -66,7 +69,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     continue;
                 }
             //    Console.WriteLine("GetTrie after TryGetHashBatch........");
-                HandleRequest(peer, hashBatch);
+                HandleRequest(peer, hashBatch, 1);
             }
             _nodeStorage.CommitIds();
             _nodeStorage.CommitNodes();
@@ -79,20 +82,20 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return rootHash;
         }
 
-        private void HandleRequest(Peer peer, List<string> hashBatch)
+        private void HandleRequest(Peer peer, List<string> batch, uint type)
         {
         //    System.Console.WriteLine(peer._url);
-            JArray hashBatchJson = new JArray { };
-            foreach (var hash in hashBatch) hashBatchJson.Add(hash);
+            JArray batchJson = new JArray { };
+            foreach (var item in batch) batchJson.Add(item);
 
             JObject options = new JObject
             {
-                ["method"] = "la_getNodeByHashBatch",
                 ["jsonrpc"] = "2.0",
                 ["id"] = "1",
-                ["params"] = new JArray { hashBatchJson }
+                ["params"] = new JArray { batchJson }
             };
-
+            if(type==1) options["method"] = "la_getNodeByHashBatch";
+            else options["method"] = "la_getBlockRawByNumberBatch";
             try
             {
                 HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(peer._url);
@@ -107,8 +110,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
                 RequestState myRequestState = new RequestState();
                 myRequestState.request = myHttpWebRequest;
-                myRequestState.hashBatch = hashBatch;
+                myRequestState.batch = batch;
                 myRequestState.peer = peer;
+                myRequestState.type = type;
                 
                 IAsyncResult result =
                     (IAsyncResult)myHttpWebRequest.BeginGetResponse(new AsyncCallback(RespCallback), myRequestState);
@@ -120,7 +124,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Console.WriteLine("\nMain Exception raised!");
                 Console.WriteLine("Source :{0} ", e.Source);
                 Console.WriteLine("Message :{0} ", e.Message);
-                _requestManager.HandleResponse(hashBatch, new JArray { });
+                if(type==1) _requestManager.HandleResponse(batch, new JArray { });
+                if(type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
                 _peerManager.TryFreePeer(peer);
             }
         }
@@ -138,9 +143,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     request.request.Abort();
                     var peer = request.peer;
-                    var hashBatch = request.hashBatch;
+                    var batch = request.batch;
                     Console.WriteLine($"timed out from peer {peer._url}");
-                    _requestManager.HandleResponse(hashBatch, new JArray { });
+                    if(request.type==1) _requestManager.HandleResponse(batch, new JArray { });
+                    if(request.type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
                     _peerManager.TryFreePeer(peer);
                 }
             }
@@ -150,8 +156,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             RequestState myRequestState = (RequestState)asynchronousResult.AsyncState;
             var peer = myRequestState.peer;
-            var hashBatch = myRequestState.hashBatch;
-            JArray nodeBatch = new JArray { };
+            var batch = myRequestState.batch;
+            JArray result = new JArray { };
 
             try
             {
@@ -171,14 +177,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         }
                     }
                 }
-                nodeBatch = (JArray)response["result"];
+                result = (JArray)response["result"];
             }
             catch (Exception e)
             {
                 Console.WriteLine("\nRespCallback Exception raised!");
                 Console.WriteLine("\nMessage:{0}", e.Message);
             }
-            _requestManager.HandleResponse(hashBatch, nodeBatch);
+            if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
+            if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
             _peerManager.TryFreePeer(peer);
         }
 
@@ -193,23 +200,28 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     throw new Exception("No available peers");
                 }
-
-                try
-                {
-                    blockNumber = (string)SyncRPCApi("eth_blockNumber", new JArray { }, peer._url);
-                    if (blockNumber != null && _blockNumber != "0x") // block number is null
-                    {
-                        _peerManager.TryFreePeer(peer);
-                        return blockNumber;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"failed in downloading latest Block Number from peer: {peer._url}");
-                }
+                blockNumber = DownloadLatestBlockNumber(peer);
 
                 _peerManager.TryFreePeer(peer);
+
+                if(blockNumber != "0x") return blockNumber;  
             }
+        }
+
+        private string DownloadLatestBlockNumber(Peer peer)
+        {
+            string blockNumber = "0x";
+            try
+            {
+                blockNumber = (string)SyncRPCApi("eth_blockNumber", new JArray { }, peer._url);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"failed in downloading latest Block Number from peer: {peer._url}");
+                Console.WriteLine("\nMessage:{0}", e.Message);
+            }
+            if(blockNumber is null) blockNumber = "0x";
+            return blockNumber;
         }
 
         private string DownloadRootHashByTrieName(string trieName, string blockNumber)
@@ -243,6 +255,28 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _peerManager.TryFreePeer(peer);
             }
         }
+
+        public void DownloadBlocks(NodeStorage nodeStorage, IBlockSnapshot blockSnapshot)
+        {
+            _blockRequestManager = new BlockRequestManager(blockSnapshot, Convert.ToUInt64(_blockNumber,16), nodeStorage);
+
+            while (!_blockRequestManager.Done())
+            {
+                if(!_peerManager.TryGetPeer(out var peer))
+                {
+                    Thread.Sleep(100);
+                    continue;
+                }
+                if(!_blockRequestManager.TryGetBatch(out var batch))
+                {
+                    _peerManager.TryFreePeer(peer);
+                    Thread.Sleep(100);
+                    continue;
+                }
+                HandleRequest(peer, batch, 2);
+            }
+        }
+
 
         private JToken SyncRPCApi(string method, JArray param, string _rpcURL)
         {
