@@ -54,7 +54,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                                                         snapshot.Validators,
                                                         };
 
-            List<string> urls = localnetNodes;
+            List<string> urls = devnetNodes;
             HybridQueue hybridQueue = new HybridQueue(dbContext);
             PeerManager peerManager = new PeerManager(urls);
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
