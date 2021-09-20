@@ -19,7 +19,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private HashSet<ulong> _pending = new HashSet<ulong>();
         private SortedSet<ulong> nextBlocksToDownload = new SortedSet<ulong>();
         private IDictionary<ulong, string> downloaded = new Dictionary<ulong,string>();
-        private uint _batchSize = 3;
+        private uint _batchSize = 40;
         ulong _done = 0;
         ulong _maxBlock;
 
@@ -62,9 +62,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void HandleResponse(List<string> batch, JArray response)
         {
-            Console.WriteLine("Received response for batch......"+ response.Count());
-            foreach(var blocks in batch) Console.Write(Convert.ToUInt64(blocks,16)+" ");
-            Console.WriteLine("\n");
             if(batch.Count != response.Count)
             {
                 lock(this)
@@ -96,10 +93,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             while(downloaded.TryGetValue(_done+1,out var blockRawHex))
             {
-                Console.WriteLine(blockRawHex);
                 _nodeStorage.AddBlock(_blockSnapshot, blockRawHex);
                 _done++;
-                Console.WriteLine("Adding to db: "+_done);
             }
         }
     }

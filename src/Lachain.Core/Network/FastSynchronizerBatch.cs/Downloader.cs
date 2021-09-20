@@ -184,9 +184,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Console.WriteLine("\nRespCallback Exception raised!");
                 Console.WriteLine("\nMessage:{0}", e.Message);
             }
-            foreach(var item in batch) Console.Write(item + " ");
-            Console.WriteLine("\n");
-            foreach(var res in result) Console.WriteLine(res);
             if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
             if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
             _peerManager.TryFreePeer(peer);
@@ -265,49 +262,21 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
             while (!_blockRequestManager.Done())
             {
-                Console.WriteLine("In block downloader.....");
                 if(!_peerManager.TryGetPeer(out var peer))
                 {
                     Thread.Sleep(100);
                     continue;
                 }
-                Console.WriteLine("Got peer........"+ peer._url);
                 if(!_blockRequestManager.TryGetBatch(out var batch))
                 {
                     _peerManager.TryFreePeer(peer);
                     Thread.Sleep(100);
                     continue;
                 }
-                Console.WriteLine("Requesting blocks to peer: "+peer._url);
-                foreach(var blocks in batch) Console.Write(Convert.ToUInt64(blocks,16)+" ");
-                Console.WriteLine("\n");
                 HandleRequest(peer, batch, 2);
             }
         }
 
-        public void DownloadBlocks1(NodeStorage nodeStorage, IBlockSnapshot blockSnapshot)
-        {
-            while (true)
-            {
-                if (!_peerManager.TryGetPeer(out var peer))
-                {
-                    throw new Exception("No available peers");
-                }
-                string blockNumberHex = _blockNumber;
-
-                _peerManager.TryFreePeer(peer);
-
-                ulong blockNumber = Convert.ToUInt64(blockNumberHex,16);
-
-                for(ulong i=1; i<=blockNumber; i++)
-                {
-                    string rawHex = (string)SyncRPCApi("la_getBlockRawByNumber", new JArray{HexUtils.ToHex(i)}, peer._url);
-                    Console.WriteLine(rawHex);
-                    nodeStorage.AddBlock(blockSnapshot, rawHex);
-                }
-                break;
-            }
-        }
 
         private JToken SyncRPCApi(string method, JArray param, string _rpcURL)
         {

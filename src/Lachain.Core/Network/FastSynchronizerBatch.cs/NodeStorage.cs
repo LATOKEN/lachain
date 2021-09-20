@@ -140,8 +140,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             byte[] raw = HexUtils.HexToBytes(blockRawHex);
             Block block = Block.Parser.ParseFrom(raw);
-            Console.WriteLine("DB inertion. block index: "+block.Header.Index);
             blockSnapshot.AddBlock(block);
+            Console.WriteLine("Added BlockHeader: "+ block.Header.Index);
         }
 
         public void CommitNodes()

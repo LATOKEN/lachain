@@ -70,7 +70,7 @@ namespace Lachain.Core.CLI
         [Option('b', "rollbackto", Required = false, HelpText = "Rollback node to specific block on start")]
         public ulong? RollBackTo { get; set; }
 
-        [Option('s', "setstateto", Required = false, Separator = ' ', HelpText = "Set state node to a specific block on start")]
+        [Option('s', "fastsync", Required = false, Separator = ' ', HelpText = "Set state node to a specific block on start")]
         public IEnumerable<string> SetStateTo { get; set; } = Enumerable.Empty<string>();
     }
 }

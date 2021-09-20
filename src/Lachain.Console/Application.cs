@@ -90,9 +90,7 @@ namespace Lachain.Console
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
             }
 
-        /*    if(blockManager.GetHeight()==0)
-                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), 0); */
+        
             localTransactionRepository.SetWatchAddress(wallet.EcdsaKeyPair.PublicKey.GetAddress()); 
 
             if (blockManager.TryBuildGenesisBlock())
@@ -117,18 +115,18 @@ namespace Lachain.Console
             {
                 List<string> args = options.SetStateTo.ToList();
             //    System.Console.WriteLine(args);
-                string peerURL = args[0];
                 ulong blockNumber = 0;
-                if(args.Count > 1)
+                if( !(args is null) && args.Count>0)
                 {
-                    blockNumber = Convert.ToUInt64(args[1]);
+                    blockNumber = Convert.ToUInt64(args[0]);
                 }
-                //FastSynchronizer.FastSync(stateManager, snapshotIndexRepository, peerURL, blockNumber);
                 FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
                                                 storageManager.GetVersionFactory(), blockNumber);
 
             }
-
+            /*    if(blockManager.GetHeight()==0)
+                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
+                                                storageManager.GetVersionFactory(), 0); */
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
