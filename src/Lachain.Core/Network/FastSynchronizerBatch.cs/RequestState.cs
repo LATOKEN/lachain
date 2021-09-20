@@ -15,7 +15,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public HttpWebResponse response;
         public Stream streamResponse;
         public Peer peer;
-        public List<string> hashBatch;
+        public List<string> batch;
+        public uint type;
         public RequestState()
         {
             BufferRead = new byte[BUFFER_SIZE];
@@ -23,7 +24,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             request = null;
             streamResponse = null;
             peer = null;
-            hashBatch = null;
+            batch = null;
+            type = 1;
         }
     }
 }

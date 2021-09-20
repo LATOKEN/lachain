@@ -8,10 +8,13 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Lachain.Storage;
 using Lachain.Storage.Trie;
+using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Crypto;
 using Lachain.Utility.Serialization;
+using Lachain.Proto;
+
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -131,6 +134,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 trieNode = new LeafNode(keyHash, value);
             }
             return trieNode;
+        }
+
+        public void AddBlock(IBlockSnapshot blockSnapshot, string blockRawHex)
+        {
+            byte[] raw = HexUtils.HexToBytes(blockRawHex);
+            Block block = Block.Parser.ParseFrom(raw);
+            Console.WriteLine("DB inertion. block index: "+block.Header.Index);
+            blockSnapshot.AddBlock(block);
         }
 
         public void CommitNodes()

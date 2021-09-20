@@ -11,7 +11,7 @@ using Lachain.Utility.Utils;
 using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
 using Lachain.Storage.Trie;
-using Lachain.Storage;
+using Google.Protobuf;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -83,6 +83,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["uncles"] = new JArray(),
             };
         }
+
+        public static string Web3BlockRaw(Block block)
+        {
+            return Web3Data(block.ToByteArray());
+        }
+
 
         public static JObject Web3Trie(IDictionary<ulong, IHashTrieNode> trie)
         {

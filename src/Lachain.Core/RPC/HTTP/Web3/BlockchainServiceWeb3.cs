@@ -76,6 +76,36 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
+        [JsonRpcMethod("la_getBlockRawByNumber")]
+        private string? GetBlockRawByNumber(string blockTag)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag);
+            if (blockNumber == null)
+                return null;
+            Block? block = _blockManager.GetByHeight((ulong)blockNumber);
+            if (block == null)
+                return null;
+            return Web3DataFormatUtils.Web3BlockRaw(block);
+        }
+
+        [JsonRpcMethod("la_getBlockRawByNumberBatch")]
+        private JArray GetBlockRawByNumberBatch(List<string> blockTagList)
+        {
+            JArray blockRawList = new JArray{};
+            foreach(var blockTag in blockTagList)
+            {
+                var blockNumber = GetBlockNumberByTag(blockTag);
+                if (blockNumber == null)
+                    return null;
+                Block? block = _blockManager.GetByHeight((ulong)blockNumber);
+                if(block!=null)
+                    blockRawList.Add(Web3DataFormatUtils.Web3BlockRaw(block));
+            }
+            return blockRawList;
+        }
+
+
+
         [JsonRpcMethod("la_getStateByNumber")]
         private JObject? GetStateByNumber(string blockTag)
         {
