@@ -7,7 +7,7 @@ namespace Lachain.Core.Network
 {
     public class NetworkManager : NetworkManagerBase
     {
-        public const int MyVersion = 9;
+        public const int MyVersion = 10;
         public const int MinCompatiblePeerVersion = 9;
         
         public NetworkManager(
