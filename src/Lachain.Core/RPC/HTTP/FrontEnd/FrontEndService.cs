@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using AustinHarris.JsonRpc;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -178,12 +179,13 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         private string SendTransaction(JObject opts)
         {
             var from = opts["from"]?.ToString().HexToBytes().ToUInt160() ??
-                       throw new Exception($"\"from\" {opts["from"]} is not valid");
+                       _systemContractReader.NodeAddress();
             var to = opts["to"]?.ToString().HexToBytes().ToUInt160() ??
-                     throw new Exception($"\"to\" {opts["from"]} is not valid");
+                     throw new Exception($"\"to\" {opts["to"]} is not valid");
             var value = Money.Parse(opts["amount"]?.ToString() ??
                                     throw new Exception($"\"amount\" {opts["amount"]} is not valid")
             );
+            var invocation = opts["data"]?.ToString().HexToBytes();
             var nonce = _transactionPool.GetNextNonceForAddress(from);
             var tx = new Transaction
             {
@@ -193,7 +195,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 /* TODO: "calculate gas limit for input size" */
                 GasLimit = 10000000,
                 Nonce = nonce,
-                Value = value.ToUInt256()
+                Value = value.ToUInt256(),
+                Invocation = ByteString.CopyFrom(invocation)
             };
 
             return AddTxToPool(tx);
