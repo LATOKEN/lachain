@@ -110,7 +110,7 @@ namespace Lachain.CoreTest.IntegrationTests
         //     //GenerateBlocks(50);
         //     //Assert.IsFalse(_validatorStatusManager.IsStarted());
         // }
-        
+        /*
         [Test]
         public void Test_StakeSize()
         {
@@ -139,6 +139,7 @@ namespace Lachain.CoreTest.IntegrationTests
             //    GenerateBlocks(50);
             //    Assert.That(!_validatorStatusManager.IsStarted(), "Manager is not stopped");
         }
+        */
 
         private void GenerateBlocks(int blockNum)
         {

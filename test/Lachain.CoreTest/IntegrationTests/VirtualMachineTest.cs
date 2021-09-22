@@ -60,7 +60,7 @@ namespace Lachain.CoreTest.IntegrationTests
          //   _container.Dispose();
         }
 
-        /*
+        
         [Test]
         public void Test_VirtualMachine_InvokeMulmodContract()
         {
@@ -1519,7 +1519,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 var context = new InvocationContext(sender, currentSnapshot, transactionReceipt);
 
                 {
-                    /* ERC-20: name &/
+                    /* ERC-20: name &*/
                     Console.WriteLine("\nERC-20: name()");
                     var input = ContractEncoder.Encode("name()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1535,7 +1535,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {"LAtoken"}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: symbol &/
+                    /* ERC-20: symbol &*/
                     Console.WriteLine("\nERC-20: symbol()");
                     var input = ContractEncoder.Encode("symbol()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1551,7 +1551,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {"LA"}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: decimals &/
+                    /* ERC-20: decimals &*/
                     Console.WriteLine("\nERC-20: decimals()");
                     var input = ContractEncoder.Encode("decimals()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1567,7 +1567,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {18}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: totalSupply &/
+                    /* ERC-20: totalSupply &*/
                     Console.WriteLine("\nERC-20: totalSupply()");
                     var input = ContractEncoder.Encode("totalSupply()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1583,7 +1583,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {0}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* mint &/
+                    /* mint &*/
                     Console.WriteLine($"\nERC-20: mint({sender.ToHex()},{Money.FromDecimal(100)})");
                     var input = ContractEncoder.Encode("mint(address,uint256)", sender, Money.FromDecimal(100));
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1599,7 +1599,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: totalSupply &/
+                    /* ERC-20: totalSupply &*/
                     Console.WriteLine("\nERC-20: totalSupply()");
                     var input = ContractEncoder.Encode("totalSupply()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1615,7 +1615,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {100}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf &/
+                    /* ERC-20: balanceOf &*/
                     Console.WriteLine($"\nERC-20: balanceOf({sender.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", sender);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1631,7 +1631,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {100}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: transfer &/
+                    /* ERC-20: transfer &*/
                     Console.WriteLine($"\nERC-20: transfer({to.ToHex()},{Money.FromDecimal(50)})");
                     var input = ContractEncoder.Encode("transfer(address,uint256)", to, Money.FromDecimal(50));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1647,7 +1647,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf &/
+                    /* ERC-20: balanceOf &*/
                     Console.WriteLine($"\nERC-20: balanceOf({sender.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", sender);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1663,7 +1663,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf &/
+                    /* ERC-20: balanceOf &*/
                     Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", to);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1679,7 +1679,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: approve &/
+                    /* ERC-20: approve &*/
                     Console.WriteLine($"\nERC-20: approve({to.ToHex()},{Money.FromDecimal(50)})");
                     var input = ContractEncoder.Encode("approve(address,uint256)", to, Money.FromDecimal(50));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1695,7 +1695,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: allowance &/
+                    /* ERC-20: allowance &*/
                     Console.WriteLine($"\nERC-20: allowance({sender.ToHex()},{to.ToHex()})");
                     var input = ContractEncoder.Encode("allowance(address,address)", sender, to);
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1711,7 +1711,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: increaseAllowance &/
+                    /* ERC-20: increaseAllowance &*/
                     Console.WriteLine($"\nERC-20: increaseAllowance({to.ToHex()},{Money.FromDecimal(10)})");
                     var input = ContractEncoder.Encode("increaseAllowance(address,uint256)", to, Money.FromDecimal(10));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1727,7 +1727,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: allowance &/
+                    /* ERC-20: allowance &*/
                     Console.WriteLine($"\nERC-20: allowance({sender.ToHex()},{to.ToHex()})");
                     var input = ContractEncoder.Encode("allowance(address,address)", sender, to);
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1743,7 +1743,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {60}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: decreaseAllowance &/
+                    /* ERC-20: decreaseAllowance &*/
                     Console.WriteLine($"\nERC-20: decreaseAllowance({to.ToHex()},{Money.FromDecimal(10)})");
                     var input = ContractEncoder.Encode("decreaseAllowance(address,uint256)", to, Money.FromDecimal(10));
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1759,7 +1759,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: allowance &/
+                    /* ERC-20: allowance &*/
                     Console.WriteLine($"\nERC-20: allowance({sender.ToHex()},{to.ToHex()})");
                     var input = ContractEncoder.Encode("allowance(address,address)", sender, to);
                     // Console.WriteLine($"ABI: {input.ToHex()}");
@@ -1775,7 +1775,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {50}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: transferFrom &/
+                    /* ERC-20: transferFrom &*/
                     Console.WriteLine($"\nERC-20: transferFrom({sender.ToHex()},{to.ToHex()},{Money.FromDecimal(50)})");
                     var input = ContractEncoder.Encode("transferFrom(address,address,uint256)", sender, to,
                         Money.FromDecimal(50));
@@ -1796,7 +1796,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf &/
+                    /* ERC-20: balanceOf &*/
                     Console.WriteLine($"\nERC-20: balanceOf({sender.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", sender);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1812,7 +1812,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {0}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf &/
+                    /* ERC-20: balanceOf &*/
                     Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", to);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1828,7 +1828,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {100}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* burn &/
+                    /* burn &*/
                     Console.WriteLine($"\nERC-20: burn({to.ToHex()},{Money.FromDecimal(30)})");
                     var input = ContractEncoder.Encode("burn(address,uint256)", to, Money.FromDecimal(30));
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1844,7 +1844,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {true}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: totalSupply &/
+                    /* ERC-20: totalSupply &*/
                     Console.WriteLine("\nERC-20: totalSupply()");
                     var input = ContractEncoder.Encode("totalSupply()");
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1860,7 +1860,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Console.WriteLine($"Result: {70}, {status.ReturnValue!.ToHex()}");
                 }
                 {
-                    /* ERC-20: balanceOf &/
+                    /* ERC-20: balanceOf &*/
                     Console.WriteLine($"\nERC-20: balanceOf({to.ToHex()}");
                     var input = ContractEncoder.Encode("balanceOf(address)", to);
                     // Console.WriteLine("ABI: " + input.ToHex());
@@ -1966,6 +1966,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 Console.WriteLine("Elapsed Time: " + elapsedTime + "ms");
             }
         }
-        */
+        
     }
 }
