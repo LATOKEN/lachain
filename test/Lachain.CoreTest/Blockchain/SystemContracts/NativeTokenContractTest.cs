@@ -72,8 +72,9 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         [TearDown]
         public void Teardown()
         {
-            TestUtils.DeleteTestChainData();
+            
             _container?.Dispose();
+            TestUtils.DeleteTestChainData();
         }
 
         /*
