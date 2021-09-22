@@ -76,8 +76,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         [TearDown]
         public void Teardown()
         {
-            var SessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(SessionId);
+            var sessionId = Handler.DefaultSessionId();
+            Handler.DestroySession(sessionId);
 
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
