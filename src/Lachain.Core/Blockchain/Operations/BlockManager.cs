@@ -651,6 +651,7 @@ namespace Lachain.Core.Blockchain.Operations
 
             foreach (var validator in genesisConfig.Validators)
             {
+                if(validator.StakeAmount == null || validator.StakerAddress == null) continue;
                 var validatorPublicKey = validator.EcdsaPublicKey.HexToBytes();
                 var validatorAddress = Hepler.PublicKeyToAddress(validatorPublicKey).ToBytes();
                 var stakerAddress = validator.StakerAddress.HexToBytes();
