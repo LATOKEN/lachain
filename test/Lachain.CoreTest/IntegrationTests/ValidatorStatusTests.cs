@@ -82,7 +82,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
         }
-        
+
         // TODO: this is not working since we have only 1 validator
         // [Test]
         // public void Test_StakeWithdraw()
@@ -110,13 +110,13 @@ namespace Lachain.CoreTest.IntegrationTests
         //     //GenerateBlocks(50);
         //     //Assert.IsFalse(_validatorStatusManager.IsStarted());
         // }
-        /*
+        
         [Test]
+        [Repeat(5)]
         public void Test_StakeSize()
         {
             _blockManager.TryBuildGenesisBlock();
             GenerateBlocks(1);
-
             var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(systemContractReader.NodeAddress());
             var placeToStake = Money.Parse("2000.0");
@@ -124,22 +124,19 @@ namespace Lachain.CoreTest.IntegrationTests
             _validatorStatusManager.StartWithStake(placeToStake.ToUInt256());
             Assert.That(_validatorStatusManager.IsStarted(), "Manager is not started");
             Assert.That(!_validatorStatusManager.IsWithdrawTriggered(), "Withdraw was triggered from the beggining");
-
             GenerateBlocks(50);
-
             var stake = new Money(systemContractReader.GetStake());
             Assert.That(stake == placeToStake, $"Stake is not as intended: {stake} != {placeToStake}");
-
             _validatorStatusManager.WithdrawStakeAndStop();
             Assert.That(_validatorStatusManager.IsStarted(), "Manager is stopped right after withdraw request");
             Assert.That(_validatorStatusManager.IsWithdrawTriggered(), "Withdraw is not triggered");
-
             // Test node is the only vaidator, so it is a next validator always 
             // and it can't withdraw its stake. 
             //    GenerateBlocks(50);
             //    Assert.That(!_validatorStatusManager.IsStarted(), "Manager is not stopped");
+            _validatorStatusManager.Stop();
         }
-        */
+        
 
         private void GenerateBlocks(int blockNum)
         {
@@ -178,7 +175,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Header = header,
                 Hash = header.Keccak(),
                 Multisig = multisig,
-                TransactionHashes = {receipts.Select(tx => tx.Hash)},
+                TransactionHashes = { receipts.Select(tx => tx.Hash) },
             };
         }
 
@@ -205,7 +202,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var multisig = new MultiSig
             {
                 Quorum = 1,
-                Validators = {_wallet.EcdsaKeyPair.PublicKey},
+                Validators = { _wallet.EcdsaKeyPair.PublicKey },
                 Signatures =
                 {
                     new MultiSig.Types.SignatureByValidator
