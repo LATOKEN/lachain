@@ -90,6 +90,9 @@ namespace Lachain.Console
 
             var peers = ecdsaPublicKeys.ToArray();
 
+            string feedAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
+            string stakeAmount = "1234567";
+
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -106,16 +109,16 @@ namespace Lachain.Console
                     Balances = new Dictionary<string, string>
                     {
                         {
-                            "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
+                            feedAddress, "1000000"
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j]
+                        ecdsaPublicKeys[j], pubShares[j], feedAddress, stakeAmount
                     )).ToList()
                 };
                 for (var j = 0; j < n; ++j)
                 {
-                    genesis.Balances[addresses[j]] = "1000000";
+                    genesis.Balances[addresses[j]] = "100";
                 }
 
                 var rpc = new RpcConfig
@@ -214,6 +217,9 @@ namespace Lachain.Console
 
             var peers = ecdsaPublicKeys.ToArray();
 
+            string feedAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
+            string stakeAmount = "1234567";
+
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -230,16 +236,16 @@ namespace Lachain.Console
                     Balances = new Dictionary<string, string>
                     {
                         {
-                            "0x6bc32575acb8754886dc283c2c8ac54b1bd93195", "1000000"
+                            feedAddress, "1000000"
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
-                        ecdsaPublicKeys[j], pubShares[j]
+                        ecdsaPublicKeys[j], pubShares[j], feedAddress, stakeAmount
                     )).ToList()
                 };
                 for (var j = 0; j < n; ++j)
                 {
-                    genesis.Balances[addresses[j]] = "1000000";
+                    genesis.Balances[addresses[j]] = "10";
                 }
 
                 var rpc = new RpcConfig
