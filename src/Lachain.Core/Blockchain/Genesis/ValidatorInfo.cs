@@ -8,11 +8,27 @@ namespace Lachain.Core.Blockchain.Genesis
 
         [JsonProperty("thresholdSignaturePublicKey")]
         public string ThresholdSignaturePublicKey;
-        
+
+        [JsonProperty("stakerAddress")]
+        public string? StakerAddress;
+
+        [JsonProperty("stakeAmount")]
+        public string? StakeAmount;
+
+
         public ValidatorInfo(string ecdsaPublicKey, string thresholdSignaturePublicKey)
         {
             EcdsaPublicKey = ecdsaPublicKey;
             ThresholdSignaturePublicKey = thresholdSignaturePublicKey;
+        }
+
+        [JsonConstructor]
+        public ValidatorInfo(string ecdsaPublicKey, string thresholdSignaturePublicKey, string stakerAddress, string stakeAmount)
+        {
+            EcdsaPublicKey = ecdsaPublicKey;
+            ThresholdSignaturePublicKey = thresholdSignaturePublicKey;
+            StakerAddress = stakerAddress;
+            StakeAmount = stakeAmount;
         }
     }
 }

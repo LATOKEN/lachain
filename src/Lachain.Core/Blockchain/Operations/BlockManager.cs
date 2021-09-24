@@ -20,6 +20,9 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Prometheus;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
+
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -619,6 +622,54 @@ namespace Lachain.Core.Blockchain.Operations
                 new BigInteger(8).ToUInt256().Buffer,
                 initialBasicGasPrice
             );
+
+            var _userToStake = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                snapshot.Storage,
+                new BigInteger(3).ToUInt256()
+            );
+            var _stakers = new StorageVariable(
+                ContractRegisterer.StakingContract,
+                snapshot.Storage,
+                new BigInteger(6).ToUInt256()
+            );
+            var _userToPubKey = new StorageMapping(
+               ContractRegisterer.StakingContract,
+               snapshot.Storage,
+               new BigInteger(2).ToUInt256()
+            );
+            var _pubKeyToStaker = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                snapshot.Storage,
+                new BigInteger(12).ToUInt256()
+            );
+            var _userToStartCycle = new StorageMapping(
+                ContractRegisterer.StakingContract,
+                snapshot.Storage,
+                new BigInteger(4).ToUInt256()
+            );
+
+            foreach (var validator in genesisConfig.Validators)
+            {
+                if(validator.StakeAmount == null || validator.StakerAddress == null) continue;
+                var validatorPublicKey = validator.EcdsaPublicKey.HexToBytes();
+                var validatorAddress = Hepler.PublicKeyToAddress(validatorPublicKey).ToBytes();
+                var stakerAddress = validator.StakerAddress.HexToBytes();
+
+                // add balance to staking contract
+                var stakeAmount = Money.Parse(validator.StakeAmount);
+                snapshot.Balances.AddBalance(ContractRegisterer.StakingContract, stakeAmount, true);
+                // set stake value 
+                _userToStake.SetValue(validatorAddress, stakeAmount.ToUInt256().ToBytes());
+                // update stakers list
+                var stakers = _stakers.Get();
+                _stakers.Set(stakers.Concat(validatorPublicKey).ToArray());
+                // user to public key and public key to staker
+                _userToPubKey.SetValue(validatorAddress, validatorPublicKey);
+                _pubKeyToStaker.SetValue(validatorPublicKey, stakerAddress);
+                // set start cycle
+                _userToStartCycle.SetValue(validatorAddress, BitConverter.GetBytes(0));
+            }
 
             _stateManager.Approve();
             var (error, removeTransactions, stateHash, relayTransactions) =
