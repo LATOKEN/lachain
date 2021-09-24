@@ -79,38 +79,40 @@ namespace Lachain.CoreTest.IntegrationTests
         [TearDown]
         public void Teardown()
         {
+            _validatorStatusManager.Stop();
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
         }
 
         // TODO: this is not working since we have only 1 validator
-        // [Test]
-        // public void Test_StakeWithdraw()
-        // {
-        //     _blockManager.TryBuildGenesisBlock();
-        //     GenerateBlocks(1);
-        //
-        //     _validatorStatusManager.Start(false);
-        //     Assert.IsTrue(_validatorStatusManager.IsStarted());
-        //     Assert.IsFalse(_validatorStatusManager.IsWithdrawTriggered());
-        //
-        //     GenerateBlocks(50);
-        //
-        //     var systemContractReader = _container.Resolve<ISystemContractReader>();
-        //     var stake = new Money(systemContractReader.GetStake());
-        //     Console.WriteLine($"Current stake is {stake}");
-        //     Assert.That(stake > Money.Zero, "Stake is zero");
-        //
-        //     _validatorStatusManager.WithdrawStakeAndStop();
-        //     Assert.IsTrue(_validatorStatusManager.IsStarted());
-        //     Assert.IsTrue(_validatorStatusManager.IsWithdrawTriggered());
-        //
-        //     // Test node is the only validator, so it is a next validator always 
-        //     // and it can't withdraw its stake. TODO: test to check withdraw is working
-        //     //GenerateBlocks(50);
-        //     //Assert.IsFalse(_validatorStatusManager.IsStarted());
-        // }
-        
+        [Test]
+        [Repeat(5)]
+        public void Test_StakeWithdraw()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            GenerateBlocks(1);
+
+            _validatorStatusManager.Start(false);
+            Assert.IsTrue(_validatorStatusManager.IsStarted());
+            Assert.IsFalse(_validatorStatusManager.IsWithdrawTriggered());
+
+            GenerateBlocks(50);
+
+            var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
+            var stake = new Money(systemContractReader.GetStake());
+            Console.WriteLine($"Current stake is {stake}");
+            Assert.That(stake > Money.Zero, "Stake is zero");
+
+            _validatorStatusManager.WithdrawStakeAndStop();
+            Assert.IsTrue(_validatorStatusManager.IsStarted());
+            Assert.IsTrue(_validatorStatusManager.IsWithdrawTriggered());
+
+            // Test node is the only validator, so it is a next validator always 
+            // and it can't withdraw its stake. TODO: test to check withdraw is working
+            //GenerateBlocks(50);
+            //Assert.IsFalse(_validatorStatusManager.IsStarted());
+        }
+
         [Test]
         [Repeat(5)]
         public void Test_StakeSize()
@@ -134,7 +136,7 @@ namespace Lachain.CoreTest.IntegrationTests
             // and it can't withdraw its stake. 
             //    GenerateBlocks(50);
             //    Assert.That(!_validatorStatusManager.IsStarted(), "Manager is not stopped");
-            _validatorStatusManager.Stop();
+            //_validatorStatusManager.Stop();
         }
         
 

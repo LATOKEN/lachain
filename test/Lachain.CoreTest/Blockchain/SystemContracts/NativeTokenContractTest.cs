@@ -77,8 +77,9 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             TestUtils.DeleteTestChainData();
         }
 
-        /*
+        
         [Test]
+        [Repeat(5)]
         public void Test_NativeTokenMinting()
         {
             var tx = new TransactionReceipt();
@@ -154,10 +155,11 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(Money.Parse("1100"), res.ToMoney());
             }
         }
-        */
         
-        /*
+        
+        
         [Test]
+        [Repeat(5)]
         public void Test_InvalidMintController()
         {
             var tx = new TransactionReceipt();
@@ -203,6 +205,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         }
         
         [Test]
+        [Repeat(5)]
         public void Test_InvalidMinter()
         {
             var tx = new TransactionReceipt();
@@ -233,9 +236,10 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(Money.Parse("0"), context.Snapshot.Balances.GetBalance(address));
             }
         }
-        */
+        
         
         [Test]
+        [Repeat(5)]
         public void Test_MaxSupply()
         {
             var tx = new TransactionReceipt();
@@ -290,8 +294,9 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             }
         }
 
-        /*
+        
         [Test]
+        [Repeat(5)]
         public void Test_SetMinter()
         {
             var tx = new TransactionReceipt();
@@ -323,9 +328,10 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(_minterAdd, res);
             }
         }
-        */
+        
         
         [Test]
+        [Repeat(5)]
         public void Test_SetMinterInvalidMintCtlr()
         {
             var keyPair = new EcdsaKeyPair("0x4433d156e8c53bf5b50af07aa95a29436f29a94e0ccc5d58df8e57bdc8583c32"

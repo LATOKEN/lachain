@@ -16,6 +16,8 @@ using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.UtilityTest;
 using NUnit.Framework;
+using AustinHarris.JsonRpc;
+using System;
 
 namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
 {
@@ -35,6 +37,8 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         [SetUp]
         public void Setup()
         {
+            
+            _container?.Dispose();
             TestUtils.DeleteTestChainData();
 
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
@@ -58,20 +62,27 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
                 _privateWallet, _stateManager, _container.Resolve<IValidatorAttendanceRepository>(),
                 _container.Resolve<ISystemContractReader>()
             );
-            
+            ServiceBinder.BindService<GenericParameterAttributes>();
             _fes = new FrontEndService(_stateManager, _transactionPool, _transactionSigner,
                 _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet);
+           
         }
 
         [TearDown]
         public void Teardown()
         {
-            TestUtils.DeleteTestChainData();
+            
+            var sessionId = Handler.DefaultSessionId();
+            Handler.DestroySession(sessionId);
             _container?.Dispose();
+            TestUtils.DeleteTestChainData();
+            
+
         }
 
-        /*
+        
         [Test]
+        [Repeat(5)]
         public void Test_PasswordChange()
         {
             // Change wallet password
@@ -89,7 +100,8 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             // Check the wallet lock status after 10 seconds
             Thread.Sleep(10000);
             Assert.AreEqual("0x1", _fes?.IsWalletLocked());
+            _fes?.ChangePassword("abcde", "12345");
         }
-    */
+    
     }
 }
