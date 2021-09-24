@@ -250,9 +250,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingWithdrawStakeCost);
             Logger.LogInformation($"Withdrawing stake");
-            var ok = IsPublicKeyOwner(publicKey, MsgSender());
-            if (!ok) return ExecutionStatus.ExecutionHalted;
-
+            var staker = GetStaker(publicKey);
+            if (staker == null) return ExecutionStatus.ExecutionHalted;
+            if (IsPublicKeyOwner(publicKey, MsgSender()) == false && staker!.Equals(MsgSender()) == false)
+            {
+                return ExecutionStatus.ExecutionHalted;
+            }
             var blockNumber = _context.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
             if (blockInCycle < AttendanceDetectionDuration)
@@ -260,7 +263,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
-                StakingInterface.MethodGetWithdrawRequestCycle, MsgSender());
+                StakingInterface.MethodGetWithdrawRequestCycle, Hepler.PublicKeyToAddress(publicKey));
 
             if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -277,7 +280,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
-                MsgSender());
+                Hepler.PublicKeyToAddress(publicKey));
 
             if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
                 return ExecutionStatus.ExecutionHalted;
@@ -291,7 +294,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 frame,
                 ContractRegisterer.StakingContract, 
                 ContractRegisterer.StakingContract, StakingInterface.MethodGetPenalty,
-                MsgSender()
+                Hepler.PublicKeyToAddress(publicKey)
             );
 
             if (getPenaltyExecutionResult.Status != ExecutionStatus.Ok)
@@ -344,7 +347,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (fail)
                 return ExecutionStatus.ExecutionHalted;
 
-            DeleteStaker(MsgSender());
+            DeleteStaker(Hepler.PublicKeyToAddress(publicKey));
             Logger.LogInformation($"Staker removed");
             return ExecutionStatus.Ok;
         }
