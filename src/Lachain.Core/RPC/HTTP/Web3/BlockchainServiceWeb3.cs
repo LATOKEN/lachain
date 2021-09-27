@@ -290,7 +290,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
-        private JObject? GetBlockByHash(string blockHash)
+        private JObject? GetBlockByHash(string blockHash, bool txFlag = true)
         {
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             if (block == null)
