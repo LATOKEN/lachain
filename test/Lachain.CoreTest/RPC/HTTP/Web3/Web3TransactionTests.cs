@@ -25,6 +25,13 @@ using Lachain.UtilityTest;
 using Nethereum.Signer;
 using NUnit.Framework;
 
+using Lachain.Core.Blockchain.Operations;
+using Lachain.Crypto.Misc;
+using Lachain.Utility;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Google.Protobuf;
+using System.Collections.Generic;
+
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
     public class Web3TransactionTests
@@ -39,6 +46,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IPrivateWallet? _privateWallet;
 
         private TransactionServiceWeb3? _apiService;
+
+        // from BlockTest.cs
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private static readonly ITransactionSigner Signer = new Core.Blockchain.Operations.TransactionSigner();
+        private IBlockManager _blockManager = null!;
+        private IPrivateWallet _wallet = null!;
 
         [SetUp]
         public void Setup()
@@ -67,6 +80,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
+
+            // from BlockTest.cs
+            _blockManager = _container.Resolve<IBlockManager>();
+            _wallet = _container.Resolve<IPrivateWallet>();
+
         }
 
         [TearDown]
@@ -150,7 +168,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
 
         [Test]
-        //private
+        //changed VerifyRawTransaction from private to public
         public void Test_VerifyRawTransaction_Valid_txn()
         {
             var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
@@ -160,7 +178,173 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(result, "0x2ad6261b4d33fc9d55eed4c48f16e33aba6178a8359c33237dba240b4f20aafb");
         }
 
+        [Test]
+        //changed GetTransactionReceipt from private to public
+        public void Test_GetTransactionReceipt()
+        {
+            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
 
+            var txHash1 = _apiService!.SendRawTransaction(rawTx);
+
+            var txHash = "0x2ad6261b4d33fc9d55eed4c48f16e33aba6178a8359c33237dba240b4f20aafb";
+
+            AddDummuyTx();
+
+            var txReceipt = _apiService!.GetTransactionReceipt(txHash1);
+
+        }
+
+        public void AddDummuyTx()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            var topUpReceipts = new List<TransactionReceipt>();
+            var randomReceipts = new List<TransactionReceipt>();
+            var txCount = new Random().Next(1, 50);
+
+            var coverTxFeeAmount = Money.Parse("10.0");
+            for (var i = 0; i < txCount; i++)
+            {
+                var tx = TestUtils.GetRandomTransaction();
+                randomReceipts.Add(tx);
+                topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
+                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
+            }
+
+            var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+            var topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+            Assert.AreEqual(topUpResult, OperatingError.Ok);
+
+            var randomBlock = BuildNextBlock(randomReceipts.ToArray());
+            var result = ExecuteBlock(randomBlock, randomReceipts.ToArray());
+            Assert.AreEqual(result, OperatingError.Ok);
+
+            var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
+            Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
+
+        }
+
+        // from BlockTest.cs
+        private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
+        {
+            receipts ??= new TransactionReceipt[] { };
+
+            var merkleRoot = UInt256Utils.Zero;
+
+            if (receipts.Any())
+                merkleRoot = MerkleTree.ComputeRoot(receipts.Select(tx => tx.Hash).ToArray()) ??
+                             throw new InvalidOperationException();
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) =
+                BuildHeaderAndMultisig(merkleRoot, predecessor, _stateManager.LastApprovedSnapshot.StateHash);
+
+            return new Block
+            {
+                Header = header,
+                Hash = header.Keccak(),
+                Multisig = multisig,
+                TransactionHashes = { receipts.Select(tx => tx.Hash) },
+            };
+        }
+
+        private (BlockHeader, MultiSig) BuildHeaderAndMultisig(UInt256 merkleRoot, Block? predecessor,
+            UInt256 stateHash)
+        {
+            var blockIndex = predecessor!.Header.Index + 1;
+            var header = new BlockHeader
+            {
+                Index = blockIndex,
+                PrevBlockHash = predecessor!.Hash,
+                MerkleRoot = merkleRoot,
+                StateHash = stateHash,
+                Nonce = blockIndex
+            };
+
+            var keyPair = _wallet.EcdsaKeyPair;
+
+            var headerSignature = Crypto.SignHashed(
+                header.Keccak().ToBytes(),
+                keyPair.PrivateKey.Encode()
+            ).ToSignature();
+
+            var multisig = new MultiSig
+            {
+                Quorum = 1,
+                Validators = { _wallet.EcdsaKeyPair.PublicKey },
+                Signatures =
+                {
+                    new MultiSig.Types.SignatureByValidator
+                    {
+                        Key = _wallet.EcdsaKeyPair.PublicKey,
+                        Value = headerSignature,
+                    }
+                }
+            };
+            return (header, multisig);
+        }
+
+        private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)
+        {
+            receipts ??= new TransactionReceipt[] { };
+
+            var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) = BuildHeaderAndMultisig(block.Header.MerkleRoot, predecessor, stateHash);
+
+            block.Header = header;
+            block.Multisig = multisig;
+            block.Hash = header.Keccak();
+
+            var status = _blockManager.Execute(block, receipts, true, true);
+            Console.WriteLine($"Executed block: {block.Header.Index}");
+            return status;
+        }
+
+        private OperatingError EmulateBlock(Block block, TransactionReceipt[]? receipts = null)
+        {
+            receipts ??= new TransactionReceipt[] { };
+            var (status, _, _, _) = _blockManager.Emulate(block, receipts);
+            return status;
+        }
+
+        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
+        {
+            var temptp = _transactionPool;
+
+            var tx = new Proto.Transaction
+            {
+                To = to,
+                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
+                GasLimit = 4_000_000,
+                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                        (ulong)nonceInc,
+                Value = value
+            };
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+        }
+
+        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
+        {
+            var input = ContractEncoder.Encode(Lrc20Interface.MethodApprove, to, value);
+            var tx = new Proto.Transaction
+            {
+                To = ContractRegisterer.LatokenContract,
+                Invocation = ByteString.CopyFrom(input),
+                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
+                GasLimit = 10_000_000,
+                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                        (ulong)nonceInc,
+                Value = UInt256Utils.Zero,
+            };
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+        }
 
     }
 }
