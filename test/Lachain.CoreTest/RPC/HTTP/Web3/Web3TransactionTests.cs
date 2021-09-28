@@ -193,14 +193,43 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var txHash = "0x2ad6261b4d33fc9d55eed4c48f16e33aba6178a8359c33237dba240b4f20aafb";
 
+            var tx = new TransactionReceipt();
+
+            var sender = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress();
+            var context = new InvocationContext(sender, _stateManager.LastApprovedSnapshot, tx);
+            context.Snapshot.Balances.SetBalance(sender, Money.Parse("10000000000000000"));
+
+            var balance = context.Snapshot.Balances.GetBalance(sender);
+
+            Console.WriteLine($"Account Balance: {balance}");
+
             GenerateBlocks(5);
 
             //AddDummuyTx();
 
             var txReceipt = _apiService!.GetTransactionReceipt(txHash1);
-            Console.WriteLine(txReceipt);
+
+            var gasPrice = _apiService!.GetNetworkGasPrice();
+            Console.WriteLine("Gas Price:: ", gasPrice);
+
+            Console.WriteLine("Tx Receipt:: ", txReceipt);
 
         }
+
+        [Test]
+        /// Changed from private to public
+        public void Test_GetNetworkGasPrice()
+        {
+            var gasPrice_Expected = "0x0";
+
+            var gasPrice_Actual = _apiService!.GetNetworkGasPrice();
+
+            Assert.AreEqual(gasPrice_Expected, gasPrice_Actual);
+
+        }
+
+
+
 
         private void GenerateBlocks(ulong blockNum)
         {
