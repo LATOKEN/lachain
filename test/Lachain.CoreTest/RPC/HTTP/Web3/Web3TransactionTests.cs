@@ -51,7 +51,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private static readonly ITransactionSigner Signer = new Core.Blockchain.Operations.TransactionSigner();
         private IBlockManager _blockManager = null!;
-        private IPrivateWallet _wallet = null!;
+        //private IPrivateWallet _privateWallet = null!;
 
         [SetUp]
         public void Setup()
@@ -83,7 +83,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
-            _wallet = _container.Resolve<IPrivateWallet>();
+            //_privateWallet = _container.Resolve<IPrivateWallet>();
 
         }
 
@@ -182,17 +182,42 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed GetTransactionReceipt from private to public
         public void Test_GetTransactionReceipt()
         {
+            _blockManager.TryBuildGenesisBlock();
+            GenerateBlocks(5);
+
             var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
 
             var txHash1 = _apiService!.SendRawTransaction(rawTx);
 
+            Console.WriteLine($"tx sent: {txHash1}");
+
             var txHash = "0x2ad6261b4d33fc9d55eed4c48f16e33aba6178a8359c33237dba240b4f20aafb";
 
-            AddDummuyTx();
+            GenerateBlocks(5);
+
+            //AddDummuyTx();
 
             var txReceipt = _apiService!.GetTransactionReceipt(txHash1);
+            Console.WriteLine(txReceipt);
 
         }
+
+        private void GenerateBlocks(ulong blockNum)
+        {
+            for (ulong i = 0; i < blockNum; i++)
+            {
+                var txes = GetCurrentPoolTxes();
+                var block = BuildNextBlock(txes);
+                var result = ExecuteBlock(block, txes);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+        }
+
+        private TransactionReceipt[] GetCurrentPoolTxes()
+        {
+            return _transactionPool.Peek(1000, 1000).ToArray();
+        }
+
 
         public void AddDummuyTx()
         {
@@ -262,7 +287,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 Nonce = blockIndex
             };
 
-            var keyPair = _wallet.EcdsaKeyPair;
+            var keyPair = _privateWallet.EcdsaKeyPair;
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
@@ -272,12 +297,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var multisig = new MultiSig
             {
                 Quorum = 1,
-                Validators = { _wallet.EcdsaKeyPair.PublicKey },
+                Validators = { _privateWallet.EcdsaKeyPair.PublicKey },
                 Signatures =
                 {
                     new MultiSig.Types.SignatureByValidator
                     {
-                        Key = _wallet.EcdsaKeyPair.PublicKey,
+                        Key = _privateWallet.EcdsaKeyPair.PublicKey,
                         Value = headerSignature,
                     }
                 }
@@ -319,14 +344,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var tx = new Proto.Transaction
             {
                 To = to,
-                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                From = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
                 GasLimit = 4_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                Nonce = _transactionPool.GetNextNonceForAddress(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()) +
                         (ulong)nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair);
         }
 
         private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
@@ -336,14 +361,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             {
                 To = ContractRegisterer.LatokenContract,
                 Invocation = ByteString.CopyFrom(input),
-                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                From = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
                 GasLimit = 10_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                Nonce = _transactionPool.GetNextNonceForAddress(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()) +
                         (ulong)nonceInc,
                 Value = UInt256Utils.Zero,
             };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair);
         }
 
     }
