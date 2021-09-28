@@ -398,7 +398,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Logger.LogInformation($"eth_estimateGas({opts})");
             try
             {
-                var gasUsed = GasMetering.DefaultTxCost;
+                var gasUsed = GasMetering.DefaultTxCost + 1_000_000;
                 var from = opts["from"];
                 var to = opts["to"];
                 var data = opts["data"];
