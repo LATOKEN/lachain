@@ -350,7 +350,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return res;
                 });
 
-                return result.ReturnValue?.ToHex() ?? "0x";
+                return result.ReturnValue?.ToHex(true) ?? "0x";
             }
 
             var (err, invocationResult) =
@@ -363,7 +363,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             switch (invocationResult)
             {
                 case UInt256 result:
-                    return result.ToBytes().ToHex();
+                    return result.ToBytes().ToHex(true);
                 case int result:
                     var res = result.ToHex();
                     while (res.Length < 64)
