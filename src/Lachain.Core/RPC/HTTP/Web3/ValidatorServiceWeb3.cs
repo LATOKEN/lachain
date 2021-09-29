@@ -22,7 +22,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("validator_start")]
-        private string StartValidator()
+        public string StartValidator() // changed from private to public: done
         {
             if (_privateWallet.GetWalletInstance() is null) 
                 return "wallet_locked";
@@ -37,7 +37,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("validator_start_with_stake")]
-        private string StartValidatorWithStake(string stake)
+        public string StartValidatorWithStake(string stake) // changed from private to public: done
         {
             if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
 
@@ -51,20 +51,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("validator_status")]
-        private string GetValidatorStatus()
+        public string GetValidatorStatus() // changed from private to public: done
         {
             if (!_validatorStatusManager.IsStarted()) return "0x00";
             return _validatorStatusManager.IsWithdrawTriggered() ? "0x002" : "0x01";
         }
 
         [JsonRpcMethod("eth_mining")]
-        private bool IsMining()
+        public bool IsMining() // changed from private to public: done
         {
             return _validatorStatusManager.IsStarted();
         }
 
         [JsonRpcMethod("validator_stop")]
-        private string StopValidator()
+        public string StopValidator() // changed from private to public: done
         {
             if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
 
