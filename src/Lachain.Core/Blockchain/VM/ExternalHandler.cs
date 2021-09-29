@@ -708,7 +708,7 @@ namespace Lachain.Core.Blockchain.VM
             var balance = snapshot.Balances.GetBalance(address);
             
             // Load balance at the given resultOffset
-            var result = SafeCopyToMemory(frame.Memory, balance.ToUInt256().ToBytes(), resultOffset);
+            var result = SafeCopyToMemory(frame.Memory, balance.ToUInt256().ToBytes().Reverse().ToArray(), resultOffset);
 
             if (!result)
                 throw new InvalidContractException("Bad call to (get_external_balance)");
