@@ -398,7 +398,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Logger.LogInformation($"eth_estimateGas({opts})");
             try
             {
-                var gasUsed = GasMetering.DefaultTxCost + 1_000_000;
+                var gasUsed = GasMetering.DefaultTxCost;
                 var from = opts["from"];
                 var to = opts["to"];
                 var data = opts["data"];
@@ -442,10 +442,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
                 var systemContract = _contractRegisterer.GetContractByAddress(destination);
 
-                if (contract is null && systemContract is null)
-                {
-                    return Web3DataFormatUtils.Web3Number(gasUsed);
-                }
+                // if (contract is null && systemContract is null)
+                // {
+                //     return Web3DataFormatUtils.Web3Number(gasUsed);
+                // }
 
                 if (!(contract is null))
                 {
@@ -477,8 +477,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
                         Transaction = new Transaction{Value = 0.ToUInt256()}
                     });
+                    
+                    var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
                     var invocationResult =
-                        ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
+                        ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, 100_000_000);
                     _stateManager.Rollback();
 
                     return invocationResult;
