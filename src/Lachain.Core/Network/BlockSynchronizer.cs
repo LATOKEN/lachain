@@ -154,7 +154,7 @@ namespace Lachain.Core.Network
                     return false;
                 }
 
-                if (_blockManager.VerifySignatures(block) != OperatingError.Ok)
+                if (_blockManager.VerifySignatures(block, true) != OperatingError.Ok)
                 {
                     Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig");
                     return false;
