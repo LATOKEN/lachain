@@ -27,7 +27,7 @@ namespace Lachain.Core.Blockchain.Interface
 
         Signature Sign(BlockHeader block, EcdsaKeyPair keyPair);
         OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey);
-        OperatingError VerifySignatures(Block block);
+        OperatingError VerifySignatures(Block block, bool checkValidatorSet);
         OperatingError Verify(Block block);
         ulong CalcEstimatedFee(UInt256 blockHash);
         ulong CalcEstimatedFee();
