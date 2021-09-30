@@ -350,7 +350,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return res;
                 });
 
-                return result.ReturnValue?.ToHex() ?? "0x";
+                return result.ReturnValue?.ToHex(true) ?? "0x";
             }
 
             var (err, invocationResult) =
@@ -363,7 +363,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             switch (invocationResult)
             {
                 case UInt256 result:
-                    return result.ToBytes().ToHex();
+                    return result.ToBytes().ToHex(true);
                 case int result:
                     var res = result.ToHex();
                     while (res.Length < 64)
@@ -444,7 +444,26 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                 if (contract is null && systemContract is null)
                 {
-                    return Web3DataFormatUtils.Web3Number(gasUsed);
+                    InvocationResult transferInvRes = _stateManager.SafeContext(() =>
+                    {
+                        var snapshot = _stateManager.NewSnapshot();
+                        var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
+                        {
+                            Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
+                        });
+                    
+                        var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
+                        var invocationResult =
+                            ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, 100_000_000);
+                        _stateManager.Rollback();
+
+                        return invocationResult;
+                    });
+
+                    return transferInvRes.Status == ExecutionStatus.Ok
+                        ? (gasUsed + transferInvRes.GasUsed).ToHex()
+                        : Web3DataFormatUtils.Web3Number(gasUsed);
                 }
 
                 if (!(contract is null))
@@ -477,6 +496,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
                         Transaction = new Transaction{Value = 0.ToUInt256()}
                     });
+                    
                     var invocationResult =
                         ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
                     _stateManager.Rollback();
