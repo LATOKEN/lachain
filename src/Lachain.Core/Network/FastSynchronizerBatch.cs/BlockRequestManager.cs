@@ -68,7 +68,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     foreach(var block in batch)
                     {
-                        ulong blockId = Convert.ToUInt64(block,16);
+                        ulong blockId = Convert.ToUInt64(block, 16);
                         _pending.Remove(blockId);
                         nextBlocksToDownload.Add(blockId);
                     }
@@ -79,7 +79,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     for(int i=0; i<batch.Count; i++)
                     {
-                        ulong blockId = Convert.ToUInt64(batch[i],16);
+                        ulong blockId = Convert.ToUInt64(batch[i], 16);
                         _pending.Remove(blockId);
                         downloaded[blockId] = (string)response[i]; 
                     }
@@ -91,7 +91,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         void AddToDB()
         {
-            while(downloaded.TryGetValue(_done+1,out var blockRawHex))
+            while(downloaded.TryGetValue(_done+1, out var blockRawHex))
             {
                 _nodeStorage.AddBlock(_blockSnapshot, blockRawHex);
                 _done++;

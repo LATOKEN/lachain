@@ -52,7 +52,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             string rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
             System.Console.WriteLine("Inside Get Trie. rootHash: " + rootHash);
-            if (!rootHash.Equals(EmptyHash)) _requestManager.AddHash(rootHash);
+            if (!rootHash.Equals(EmptyHash))
+            {
+                bool foundHash = _nodeStorage.GetIdByHash(rootHash, out var id);
+                if(!foundHash) _requestManager.AddHash(rootHash);
+            }
             while(!_requestManager.Done())
             {
             //    Console.WriteLine("GetTrie........");
@@ -71,8 +75,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //    Console.WriteLine("GetTrie after TryGetHashBatch........");
                 HandleRequest(peer, hashBatch, 1);
             }
-            _nodeStorage.CommitIds();
-            _nodeStorage.CommitNodes();
+            _nodeStorage.Commit();
             if(!rootHash.Equals(EmptyHash))
             {
     //            bool res =_nodeStorage.GetIdByHash(rootHash,out ulong id);
@@ -224,6 +227,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return blockNumber;
         }
 
+        public string DownloadRootHashByTrieName(string trieName)
+        {
+            return DownloadRootHashByTrieName(trieName, _blockNumber);
+        }
         private string DownloadRootHashByTrieName(string trieName, string blockNumber)
         {
             if (_peerManager.GetTotalPeerCount() == 0) throw new Exception("No available peers");
