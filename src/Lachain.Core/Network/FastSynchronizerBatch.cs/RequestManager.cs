@@ -15,14 +15,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     class RequestManager
     {
  //       private Queue<string> _queue = new Queue<string>();
-        private HashSet<string> _pending = new HashSet<string>();
         private NodeStorage _nodeStorage;
         private uint _batchSize = 20;
 
-        HybridQueue _hybridQueue;
+        HybridQueue2 _hybridQueue;
         public int maxQueueSize = 0;
 
-        public RequestManager(NodeStorage nodeStorage, HybridQueue hybridQueue)
+        public RequestManager(NodeStorage nodeStorage, HybridQueue2 hybridQueue)
         {
             _nodeStorage = nodeStorage;
             _hybridQueue = hybridQueue;
@@ -33,14 +32,17 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             hashBatch = new List<string>();
             lock(this)
             {
-                while(_hybridQueue.Count > 0 && hashBatch.Count < _batchSize)
+                string hash;
+                while(hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out hash) )
                 {
-                    var hash = _hybridQueue.Dequeue();
+                //    Console.WriteLine("In request manager: got hash: "+ hash);
                     hashBatch.Add(hash);
-                    _pending.Add(hash);
                 }
             }
-            if (hashBatch.Count == 0) return false;
+            if (hashBatch.Count == 0){
+            //    Console.WriteLine("could not get hash");
+                return false;
+            }
 
             return true;
         }
@@ -48,11 +50,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Done()
         {
-            return _hybridQueue.Count == 0 && _pending.Count == 0;
+            return _hybridQueue.Complete();
         }
 
         public bool CheckConsistency(ulong rootId)
         {
+            if(rootId==0) return true;
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(rootId);
             while(queue.Count > 0)
@@ -121,15 +124,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 foreach (var hash in failedHashes)
                 {
-                    if (!_pending.TryGetValue(hash, out var foundHash) || !hash.Equals(foundHash))
+                    if (!_hybridQueue.isPending(hash))
                     {
                         // do nothing, this request was probably already served
                     }
                     else
                     {
-                        _pending.Remove(hash);
-                        _hybridQueue.Enqueue(hash);
+                        
                     }
+                    _hybridQueue.Add(hash);
                 }
 
 
@@ -137,15 +140,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     var hash = successfulHashes[i];
                     var node = successfulNodes[i];
-                    if (!_pending.TryGetValue(hash, out var foundHash) || !hash.Equals(foundHash))
+                    if (!_hybridQueue.isPending(hash))
                     {
                         // do nothing, this request was probably already served
                     }
                     else
                     {
-                        bool res = _nodeStorage.TryAddNode(node);
-                        _pending.Remove(hash);
-
                         var nodeType = (string)node["NodeType"];
                         if (nodeType == null) continue;
 
@@ -154,11 +154,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             var jsonChildren = (JArray)node["ChildrenHash"];
                             foreach (var jsonChild in jsonChildren)
                             {
-                                _hybridQueue.Enqueue((string)jsonChild);
+                                _hybridQueue.Add((string)jsonChild);
                             }
-                            if(_hybridQueue.Count>maxQueueSize)
-                                maxQueueSize = _hybridQueue.Count;
                         }
+
+                        bool res = _nodeStorage.TryAddNode(node);
+                        _hybridQueue.ReceivedNode(hash);
                     }
                 }
             }
@@ -167,7 +168,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             lock(_hybridQueue)
             {
-                _hybridQueue.Enqueue(hash);
+                _hybridQueue.Add(hash);
             }
         }
     }
