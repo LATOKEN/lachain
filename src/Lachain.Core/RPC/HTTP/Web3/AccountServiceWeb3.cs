@@ -30,7 +30,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBalance")]
-        private string GetBalance(string address, string tag)
+        public string GetBalance(string address, string tag)
         {
             var addressUint160 = address.HexToUInt160();
             var availableBalance = GetSnapshotByTag(tag)!.Balances.GetBalance(addressUint160);
@@ -38,13 +38,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionCount")]
-        private ulong GetTransactionCount(string from, string blockId)
+        public ulong GetTransactionCount(string from, string blockId)
         {
             return GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
         }
 
         [JsonRpcMethod("eth_getCode")]
-        private string GetCode(string contractAddr, string blockId)
+        public string GetCode(string contractAddr, string blockId)
         {
             var hash = contractAddr.HexToUInt160();
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(hash);
@@ -52,7 +52,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
         
         [JsonRpcMethod("eth_accounts")]
-        private JArray GetAccounts()
+        public JArray GetAccounts()
         {
             return new JArray {Web3DataFormatUtils.Web3Data(_systemContractReader.NodeAddress())};
         }
