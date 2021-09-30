@@ -16,7 +16,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     class HybridQueue{
         private IRocksDbContext _dbContext;
         private const int BatchSize = 1000;
-        private int CurBatch, TotalBatch;
+        private int CurBatch, TotalBatch;        
+        private HashSet<string> _pending = new HashSet<string>();
         private Queue<string> _queue = new Queue<string>(); 
 
         public int Count = 0;
@@ -64,5 +65,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 return "0x";
             }
         }
+        
     }
 }
