@@ -13,6 +13,8 @@ using System.IO;
 using Lachain.Core.Config;
 using AustinHarris.JsonRpc;
 using Lachain.Storage.Repositories;
+using Lachain.Utility;
+using Lachain.Utility.Utils;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -73,6 +75,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
             var bal = _apiService.GetBalance(address, "latest");
             Assert.AreEqual(bal, "0x0");
+
+            //updating balance
+            _stateManager.LastApprovedSnapshot.Balances.SetBalance(address.HexToBytes().ToUInt160(), Money.Parse("90000000000000000"));
+            var balNew = _apiService.GetBalance(address, "latest");
+
+            Assert.AreEqual(balNew, "0x115557b419c5c1f3fa018400000000");
         }
 
         [Test] 
