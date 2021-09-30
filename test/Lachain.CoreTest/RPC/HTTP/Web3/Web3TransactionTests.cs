@@ -183,29 +183,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionReceipt()
         {
             _blockManager.TryBuildGenesisBlock();
-            GenerateBlocks(1);
 
             var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
-
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
 
-            var txHashSent = _apiService!.SendRawTransaction(rawTx);
-
+            var txHashSent = Execute_dummy_transaction(rawTx);
             Console.WriteLine($"tx sent: {txHashSent}");
-
-            var tx = new TransactionReceipt();
-            var sender = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
-
-            var tsnapshot = _stateManager.LastApprovedSnapshot;
-
-            var context = new InvocationContext(sender, _stateManager.LastApprovedSnapshot, tx);
-            context.Snapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
-
-            var balance = context.Snapshot.Balances.GetBalance(sender);
-
-            Console.WriteLine($"Account Balance: {balance}");
-
-            GenerateBlocks(1);
 
             var txReceipt = _apiService!.GetTransactionReceipt(txHashSent);
 
@@ -213,6 +196,61 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
 
+        }
+
+        [Test]
+        //changed GetTransactionByHash from private to public
+        public void Test_GetTransactionByHash()
+        {
+
+        }
+
+        [Test]
+        //changed GetTransactionByBlockHashAndIndex from private to public
+        public void Test_GetTransactionByBlockHashAndIndex()
+        {
+
+        }
+
+        [Test]
+        //changed GetTransactionByBlockNumberAndIndex from private to public
+        public void Test_GetTransactionByBlockNumberAndIndex()
+        {
+
+        }
+
+        [Test]
+        //changed SendTransaction from private to public
+        public void Test_SendTransaction()
+        {
+
+        }
+
+        [Test]
+        //changed InvokeContract from private to public
+        public void Test_InvokeContract()
+        {
+
+        }
+
+        [Test]
+        //changed SendRawTransactionBatch from private to public
+        public void Test_SendRawTransactionBatch()
+        {
+
+        }
+
+        [Test]
+        //changed Call from private to public
+        public void Test_Call()
+        {
+
+        }
+
+        [Test]
+        //changed EstimateGas from private to public
+        public void Test_EstimateGas()
+        {
 
         }
 
@@ -225,6 +263,26 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var gasPrice_Actual = _apiService!.GetNetworkGasPrice();
 
             Assert.AreEqual(gasPrice_Expected, gasPrice_Actual);
+
+        }
+
+        // Below methods Execute a Transaction
+        private String Execute_dummy_transaction(String rawTx)
+        {
+            _blockManager.TryBuildGenesisBlock();
+
+            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+
+            var txHashSent = _apiService!.SendRawTransaction(rawTx);
+
+            var sender = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
+
+            // Updating balance of sender's Wallet
+            _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
+
+            GenerateBlocks(1);
+
+            return txHashSent;
 
         }
 
@@ -244,35 +302,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             return _transactionPool.Peek(1000, 1000).ToArray();
         }
 
-
-        public void AddDummuyTx()
-        {
-            _blockManager.TryBuildGenesisBlock();
-            var topUpReceipts = new List<TransactionReceipt>();
-            var randomReceipts = new List<TransactionReceipt>();
-            var txCount = new Random().Next(1, 50);
-
-            var coverTxFeeAmount = Money.Parse("10.0");
-            for (var i = 0; i < txCount; i++)
-            {
-                var tx = TestUtils.GetRandomTransaction();
-                randomReceipts.Add(tx);
-                topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
-                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
-            }
-
-            var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
-            var topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
-            Assert.AreEqual(topUpResult, OperatingError.Ok);
-
-            var randomBlock = BuildNextBlock(randomReceipts.ToArray());
-            var result = ExecuteBlock(randomBlock, randomReceipts.ToArray());
-            Assert.AreEqual(result, OperatingError.Ok);
-
-            var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
-            Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
-
-        }
 
         // from BlockTest.cs
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
@@ -354,47 +383,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var status = _blockManager.Execute(block, receipts, true, true);
             Console.WriteLine($"Executed block: {block.Header.Index}");
             return status;
-        }
-
-        private OperatingError EmulateBlock(Block block, TransactionReceipt[]? receipts = null)
-        {
-            receipts ??= new TransactionReceipt[] { };
-            var (status, _, _, _) = _blockManager.Emulate(block, receipts);
-            return status;
-        }
-
-        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
-        {
-            var temptp = _transactionPool;
-
-            var tx = new Proto.Transaction
-            {
-                To = to,
-                From = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-                GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
-                GasLimit = 4_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()) +
-                        (ulong)nonceInc,
-                Value = value
-            };
-            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair);
-        }
-
-        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
-        {
-            var input = ContractEncoder.Encode(Lrc20Interface.MethodApprove, to, value);
-            var tx = new Proto.Transaction
-            {
-                To = ContractRegisterer.LatokenContract,
-                Invocation = ByteString.CopyFrom(input),
-                From = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
-                GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
-                GasLimit = 10_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()) +
-                        (ulong)nonceInc,
-                Value = UInt256Utils.Zero,
-            };
-            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair);
         }
 
     }
