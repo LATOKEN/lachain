@@ -515,7 +515,7 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.HashMismatched;
             if (_IsGenesisBlock(block))
                 return OperatingError.Ok;
-            if (checkValidatorSet && !VerifyValidatorSet(block.Multisig.Validators, GetHeight()))
+            if (checkValidatorSet && !VerifyValidatorSet(block.Multisig.Validators, block.Header.Index - 1))
                 return OperatingError.InvalidMultisig;
             return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash);
         }
