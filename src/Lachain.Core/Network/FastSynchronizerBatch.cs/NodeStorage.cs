@@ -51,7 +51,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             else trieNode = BuildHashTrieNode(jsonNode);
             _nodeCache[id] = trieNode;
-            if(_nodeCache.Count>=_nodeCacheCapacity) CommitNodes();
+            if(_nodeCache.Count>=_nodeCacheCapacity) Commit();
             return false;
         }
 
@@ -165,8 +165,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 tx.Put(EntryPrefix.VersionByHash.BuildPrefix(HexUtils.HexToBytes(item.Key)), UInt64Utils.ToBytes(item.Value));
             }
+            ulong nextVersion = _versionFactory.CurrentVersion + 1;
+            tx.Put(EntryPrefix.StorageVersionIndex.BuildPrefix((uint) RepositoryType.MetaRepository), nextVersion.ToBytes().ToArray());
             tx.Commit();
             _idCache.Clear();
+        }
+
+        public void Commit()
+        {
+            CommitIds();
+            CommitNodes();
         }
     }
 }

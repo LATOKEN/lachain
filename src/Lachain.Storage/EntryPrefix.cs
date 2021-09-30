@@ -68,5 +68,11 @@
         /* validator attendance */
         PeerList = 0x0e01,
         PeerByPublicKey = 0x0e01,
+
+        /*fast_sync status*/
+        BlockNumber = 0x0701,
+        LastDownloaded = 0x0702,
+        DoneBatch = 0x0703,
+        TotalBatch = 0x0704,
     }
 }
