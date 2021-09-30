@@ -18,10 +18,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private NodeStorage _nodeStorage;
         private uint _batchSize = 200;
 
-        HybridQueue _hybridQueue;
+        HybridQueue2 _hybridQueue;
         public int maxQueueSize = 0;
 
-        public RequestManager(NodeStorage nodeStorage, HybridQueue hybridQueue)
+        public RequestManager(NodeStorage nodeStorage, HybridQueue2 hybridQueue)
         {
             _nodeStorage = nodeStorage;
             _hybridQueue = hybridQueue;
@@ -132,6 +132,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     {
                         _hybridQueue.Add(hash);   
                     }
+                    _hybridQueue.Add(hash);
                 }
 
 
