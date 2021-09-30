@@ -737,6 +737,32 @@ namespace Lachain.Core.Blockchain.VM
             if (!result)
                 throw new InvalidContractException("Bad call to (get_block_timestamp)");
         }
+
+        public static void Handler_Env_GetBlockHash(int numberOffset, int dataOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetBlockHash({numberOffset}, {dataOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call Handler_Env_GetBlockHash outside wasm frame");
+
+            var snapshot = frame.InvocationContext.Snapshot;
+            var blockNumberBuffer = SafeCopyFromMemory(frame.Memory, numberOffset, 8);
+            if (blockNumberBuffer is null)
+                throw new InvalidContractException("Bad call to (get_block_hash)");
+            var blockNumber = BitConverter.ToUInt64(blockNumberBuffer, 0);
+
+            // Get block at the given height
+            var block = snapshot.Blocks.GetBlockByHeight(blockNumber);
+            
+            // Get block's hash
+            if (block is null)
+                throw new InvalidContractException("Bad call to (get_block_hash)");
+            var hash = block.Hash;
+            
+            // Load hash at the given dataOffset
+            var result = SafeCopyToMemory(frame.Memory, hash.ToBytes().ToArray(), dataOffset);
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_block_hash)");
+        }
         
         public static void Handler_Env_GetChainId(int dataOffset)
         {
@@ -794,6 +820,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_tx_origin", CreateImport(nameof(Handler_Env_GetTxOrigin))},
                 {EnvModule, "get_tx_gas_price", CreateImport(nameof(Handler_Env_GetTxGasPrice))},
                 {EnvModule, "get_block_number", CreateImport(nameof(Handler_Env_GetBlockNumber))},
+                {EnvModule, "get_block_hash", CreateImport(nameof(Handler_Env_GetBlockHash))},
                 {EnvModule, "system_halt", CreateImport(nameof(Handler_Env_SystemHalt))},
                 {EnvModule, "get_transferred_funds", CreateImport(nameof(Handler_Env_GetTransferredFunds))},
                 {EnvModule, "get_transaction_hash", CreateImport(nameof(Handler_Env_GetTransactionHash))},
