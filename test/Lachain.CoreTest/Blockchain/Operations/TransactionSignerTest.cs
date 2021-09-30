@@ -13,6 +13,13 @@ namespace Lachain.CoreTest.Blockchain.Operations
 {
     public class SignerTest
     {
+
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            TransactionUtils.SetChainId(41);
+        }
+
         [Test]
         public void Test_SignAndRecover()
         {
