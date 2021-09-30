@@ -72,10 +72,15 @@
         /*fast_sync status*/
         BlockNumber = 0x0701,
         LastDownloaded = 0x0702,
+<<<<<<< HEAD
         SavedBatch = 0x0703,
         TotalBatch = 0x0704,
         QueueBatch = 0x0705,
         NodesDownloadedTillNow = 0x0706,
 
+=======
+        DoneBatch = 0x0703,
+        TotalBatch = 0x0704,
+>>>>>>> f8373624 (resilient fast_sync working, with additional consistency check, lot of logging, will be helpful for debugging if needed)
     }
 }
