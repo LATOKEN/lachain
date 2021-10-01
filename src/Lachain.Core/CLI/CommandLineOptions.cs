@@ -45,9 +45,17 @@ namespace Lachain.Core.CLI
         [Option('c', "chainid", Required = true, HelpText = "ChainID for this network")]
         public ulong chainid { get; set; }
         
-        [Option('s', "network", Required = true, HelpText = "Name of the network")]
+        [Option('k', "network", Required = true, HelpText = "Name of the network")]
         public string networkName { get; set; }
 
+        [Option('s', "stake", Required = false, HelpText = "Stake amount for initial validators set")]
+        public string stakeAmount { get; set; } = "1000000";
+
+        [Option('a', "feedAddress", Required = false, HelpText = "Feed address")]
+        public string feedAddress { get; set; } = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
+
+        [Option('b', "feedBalance", Required = false, HelpText = "Initial feed balance")]
+        public string feedBalance { get; set; } = "10000000";
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]

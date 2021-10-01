@@ -40,19 +40,21 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName)
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+            string feedAddress, string feedBalance, string stakeAmount)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort, target, chainId, networkName);
+                CloudKeygen(n, f, ips, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
             }
             else
             {
-                LocalKeygen(n, f, basePort, target, chainId, networkName);
+                LocalKeygen(n, f, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
             }
         }
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName)
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+            string feedAddress, string feedBalance, string stakeAmount)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -89,10 +91,7 @@ namespace Lachain.Console
                 .ToArray();
 
             var peers = ecdsaPublicKeys.ToArray();
-
-            string feedAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
-            string stakeAmount = "1234567";
-
+            
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -110,7 +109,7 @@ namespace Lachain.Console
                     Balances = new Dictionary<string, string>
                     {
                         {
-                            feedAddress, "1000000"
+                            feedAddress, feedBalance
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
@@ -180,7 +179,8 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName)
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName, 
+            string feedAddress, string feedBalance, string stakeAmount)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -219,9 +219,6 @@ namespace Lachain.Console
 
             var peers = ecdsaPublicKeys.ToArray();
 
-            string feedAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
-            string stakeAmount = "1234567";
-
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -239,7 +236,7 @@ namespace Lachain.Console
                     Balances = new Dictionary<string, string>
                     {
                         {
-                            feedAddress, "1000000"
+                            feedAddress, feedBalance
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
