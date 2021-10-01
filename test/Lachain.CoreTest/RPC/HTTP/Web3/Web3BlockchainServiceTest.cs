@@ -28,6 +28,10 @@ using System.Collections.Generic;
 using Lachain.Logger;
 using Lachain.Utility;
 using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.ValidatorStatus;
+
+
+
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -51,8 +55,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private ITransactionPool _transactionPool = null!;
         private IContractRegisterer _contractRegisterer = null!;
         private IPrivateWallet _privateWallet = null!;
+        private IValidatorStatusManager _validatorStatusManager = null!;
 
         private BlockchainServiceWeb3 _apiService = null!;
+        
 
         [SetUp]
         public void Setup()
@@ -86,10 +92,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _nodeRetrieval = _container.Resolve<INodeRetrieval>();
             _systemContractReader = _container.Resolve<ISystemContractReader>();
             _blockManager = _container.Resolve<IBlockManager>();
+            _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
+
+            
 
             ServiceBinder.BindService<GenericParameterAttributes>();
             _apiService = new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool,
                 _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader);
+            
 
 
         }
@@ -97,6 +107,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         [TearDown]
         public void Teardown()
         {
+            _validatorStatusManager.Stop();
             var sessionId = Handler.DefaultSessionId();
             Handler.DestroySession(sessionId);
             _container?.Dispose();
@@ -104,10 +115,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         }
 
-
+        
         [Test]
         [Repeat(2)]
-        public void Test_Web3Block() // changed from private to public: GetBlockByNumber() , GetBlockRawByNumber(), GetBlockByHash()
+        // changed from private to public: GetBlockByNumber() , GetBlockRawByNumber(), GetBlockByHash()
+        public void Test_Web3Block() 
         {
             
             ulong total = 50;
@@ -122,7 +134,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_Web3BlockBatch() // changed from private to public: GetBlockRawByNumberBatch()
+        // changed from private to public: GetBlockRawByNumberBatch()
+        public void Test_Web3BlockBatch() 
         {
             ulong total = 50;
             GenerateBlocksWithGenesis(total);
@@ -136,11 +149,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var rawBlockList = _apiService.GetBlockRawByNumberBatch(listOfBlockTag);
             foreach(var item in rawBlockList)
             {
-                var str = item.ToString();
-                // Assert.AreEqual("0x", string.Substring(0, 2)) to check if the string is valid
-                // Assert.AreNotEqual("0x", string) to check if the string is not null
-                Assert.AreEqual("0x", str.Substring(0, 2));
-                Assert.AreNotEqual("0x", str);
+                CheckHex(item.ToString());
             }
             var BlockToJArray = new JArray();
             foreach(var item in listOfBlockNo)
@@ -158,7 +167,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_Web3State() // changed from private to public: GetStateByNumber() , GetAllTrieRootsHash() , GetRootHashByTrieName()
+        // changed from private to public: GetStateByNumber() , GetAllTrieRootsHash() , GetRootHashByTrieName() , GetRootVersionByTrieName()
+        public void Test_Web3State() 
         {
             
             
@@ -171,6 +181,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             blockTag = "latest";
             var sameState = _apiService.GetStateByNumber(blockTag);
             Assert.AreEqual(sameState, state);
+            CheckStateWeb3Format(sameState, blockTag);
 
             blockTag = "0x0";
             state = _apiService.GetStateByNumber(blockTag);
@@ -179,6 +190,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             blockTag = "earliest";
             sameState = _apiService.GetStateByNumber(blockTag);
             Assert.AreEqual(sameState, state);
+            CheckStateWeb3Format(sameState, blockTag);
 
             ulong someBlockNo = 20;
             blockTag = someBlockNo.ToHex();
@@ -194,7 +206,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_CheckNodeHashes() // // changed from private to public: CheckNodeHashes()
+        // changed from private to public: CheckNodeHashes()
+        public void Test_CheckNodeHashes()
         {
             
             ulong total = 50;
@@ -208,7 +221,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_Web3StateHashFromTrieRoots() // changed from private to public: GetStateHashFromTrieRootsRange() , GetStateHashFromTrieRoots()
+        // changed from private to public: GetStateHashFromTrieRootsRange() , GetStateHashFromTrieRoots()
+        public void Test_Web3StateHashFromTrieRoots() 
         {
             _blockManager.TryBuildGenesisBlock();
             ulong total = 50;
@@ -230,7 +244,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_Web3Node() // changed from private to public: GetNodeByVersion() , GetNodeByHash(), GetChildrenByVersion() , GetChildrenByHash()
+        // changed from private to public: GetNodeByVersion() , GetNodeByHash(), GetChildrenByVersion() , GetChildrenByHash()
+        public void Test_Web3Node() 
         {
             
             ulong total = 50;
@@ -300,53 +315,197 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Console.WriteLine($"total nodes: {totalNodes} , last node ID: {latestNode}");
         }
 
+
         [Test]
-        public void Test_A()
+        [Repeat(2)]
+        // changed from private to public: GetTransactionsByBlockHash(), GetBlockTransactionsCountByNumber(), GetBlockTransactionsCountByHash()
+        public void Test_Web3Transactions() 
         {
-            var x = (int)NodeType.Internal;
-            Console.WriteLine(x.ToHex(false));
+
+            GenerateBlocksWithGenesis(1);
+
+            //var customReceipts = GetCustomTransactionBatch(10, "0.00000000001", "0.000000000000000001");
+            var customReceipts = GetCustomTransactionBatch(10,"0.00000000001","0.000000000000000001");
+            // set coverTxFee = "10" if GetRandomTransactionBatch() is used instead of GetCustomTransactionBatch()
+            var coverTxFee = "0.0001"; 
+            var topUpReceipts = TopUpBalanceTxBatch(customReceipts, coverTxFee); 
+            Logger.LogInformation("Adding topUpReceipts transactions in Pool:");
+            foreach (var tx in topUpReceipts)
+            {
+                Logger.LogInformation($"{tx.Hash.ToHex()}");
+            }
+            AddBatchTransactionToPool(topUpReceipts,false);
+            ulong total = 1;
+            GenerateBlocks(total);
+            
+            Logger.LogInformation("Adding randomReceipts transaction in Pool:");
+            foreach (var tx in customReceipts)
+            {
+                Logger.LogInformation($"{tx.Hash.ToHex()}");
+            }
+            
+            AddBatchTransactionToPool(customReceipts,false);
+            GenerateBlocks(total);
+            for (ulong blockId = 0; blockId <= total*2 + 5; blockId++)
+            {
+                CheckTransactionWeb3Format(blockId);
+            }
         }
 
-        //[Test]
-        //[Repeat(1)]
-        //public void Test_Web3TransactionsByBlockHash() // changed from private to public: GetTransactionsByBlockHash()
-        //{
-            
-        //    GenerateBlocksWithGenesis(1);
-        //    var txCheck = TestUtils.GetRandomTransaction();
-        //    _transactionPool.Add(txCheck);
-        //    var topUpReceipts = new List<TransactionReceipt>();
-        //    var randomReceipts = new List<TransactionReceipt>();
-        //    var txCount = 10;
-          
-        //    var coverTxFeeAmount = Money.Parse("0.0001");
-        //    for (var i = 0; i < txCount; i++)
-        //    {
-        //        var tx = TestUtils.GetCustomTransaction("1.0","0.000000000000000001");
-        //        randomReceipts.Add(tx);
-        //        topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
-        //            (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
-        //    }
-        //    AddBatchTransactionToPool(topUpReceipts);
-        //    ulong total = 1;
-        //    GenerateBlocks(total);
-        //    for (ulong blockId = 0; blockId <= total; blockId++)
-        //    {
-        //        CheckTransactionWeb3Format(blockId);
-        //    }
-        //    //AddBatchTransactionToPool(randomReceipts);
-        //    //GenerateBlocks(total);
-        //    //for (ulong blockId = 0; blockId <= total * 2; blockId++)
-        //    //{
-        //    //    CheckTransactionWeb3Format(blockId);
-        //    //}
-        //}
 
-        public void AddBatchTransactionToPool(List<TransactionReceipt> txes)
+        [Test]
+        [Repeat(2)]
+        // changed from private to public: GetBlockNumber(), GetDownloadedNodesTillNow(), ChainId(), NetVersion()
+        public void Test_Web3Format() 
+        {
+            ulong total = 0;
+            GenerateBlocksWithGenesis(total);
+            var noOfBlocks = _apiService.GetBlockNumber();
+            CheckHex(noOfBlocks);
+            Assert.AreEqual(total.ToHex(false), noOfBlocks);
+            CheckHex(_apiService.ChainId());
+            CheckHex(_apiService.NetVersion());
+            // does not work if number of downloaded nodes is 0;
+            //var nodes = _apiService.GetDownloadedNodesTillNow();
+            //CheckHex(nodes);
+        }
+
+        [Test]
+        [Repeat(2)]
+        // changed from private to public: GetValidatorInfo()
+        public void Test_ValidatorInfo() 
+        {
+            GenerateBlocksWithGenesis(1);
+            Init();
+        }
+
+        [Test]
+        [Repeat(2)]
+        // changed from private to public: GetEventsByTransactionHash()
+        public void Test_Wev3Events()
+        {
+            GenerateBlocksWithGenesis(0);
+            var randomtx = TestUtils.GetRandomTransaction();
+            var coverTxFee = Money.Parse("10");
+            var topUpTx = TopUpBalanceTx(randomtx.Transaction.From, (randomtx.Transaction.Value.ToMoney() + coverTxFee).ToUInt256(), 0);
+            Console.WriteLine($"Sending tx: {topUpTx.Hash.ToHex()} and {randomtx.Hash.ToHex()}");
+            _transactionPool.Add(topUpTx , false);
+            
+            GenerateBlocks(1);
+            _transactionPool.Add(randomtx, false);
+            GenerateBlocks(1);
+            
+            CheckEvents(_apiService.GetEventsByTransactionHash(topUpTx.Hash.ToHex()));
+            CheckEvents(_apiService.GetEventsByTransactionHash(topUpTx.Hash.ToHex()));
+        }
+
+        [Test]
+        [Repeat(2)]
+        // changed from private to public: GetTransactionPool(), GetTransactionPoolByHash()
+        public void Test_TransactionPool()
+        {
+            CheckTransactionPoolWeb3();
+            var randomTx = GetRandomTransactionBatch(10);
+            AddBatchTransactionToPool(randomTx, true);
+            CheckTransactionPoolWeb3();
+            _transactionPool.Peek(1000, 1000);
+            Assert.AreEqual(0, _transactionPool.Size());
+            CheckTransactionPoolWeb3();
+        }
+
+        public void CheckTransactionPoolWeb3()
+        {
+            var txHashes = _apiService.GetTransactionPool();
+            Assert.AreEqual(_transactionPool.Size(), txHashes.Count);
+            foreach(var txHash in txHashes)
+            {
+                var txHashInString = txHash.ToString();
+                CheckHex(txHashInString);
+                var txJObject = _apiService.GetTransactionPoolByHash(txHashInString);
+                Assert.AreEqual(txHashInString, txJObject["hash"].ToString());
+            }
+        }
+
+        public List<TransactionReceipt> GetRandomTransactionBatch(int txCount)
+        {
+            
+            var randomReceipts = new List<TransactionReceipt>();
+
+            for (var i = 0; i < txCount; i++)
+            {
+                var tx = TestUtils.GetRandomTransaction();
+                randomReceipts.Add(tx);
+                
+            }
+            return randomReceipts;
+        }
+
+        public List<TransactionReceipt> GetCustomTransactionBatch(int txCount, string value, string gasPrice)
+        {
+
+            var customReceipts = new List<TransactionReceipt>();
+
+            for (var i = 0; i < txCount; i++)
+            {
+                var tx = TestUtils.GetCustomTransaction(value , gasPrice);
+                customReceipts.Add(tx);
+
+            }
+            return customReceipts;
+        }
+
+        public List<TransactionReceipt> TopUpBalanceTxBatch(List<TransactionReceipt> receipts , string coverTxFee = "10") 
+        {
+
+            var topUpReceipts = new List<TransactionReceipt>();
+            if (receipts.Count == 0) return topUpReceipts;
+            var txCount = receipts.Count;
+            int nonce = 0;
+            foreach (var receipt in receipts)
+            {
+                //var coverTxFee = receipt.Transaction.GasLimit * receipt.Transaction.GasPrice;
+                var tx = TopUpBalanceTx(receipt.Transaction.From,(receipt.Transaction.Value.ToMoney() + Money.Parse(coverTxFee)).ToUInt256(),nonce);
+                nonce++;
+                topUpReceipts.Add(tx);
+            }
+            return topUpReceipts;
+        }
+
+        public void CheckEvents(JArray events)
+        {
+            foreach(var eachEvent in events)
+            {
+                CheckHex(eachEvent["transactionHash"].ToString());
+                // block hash is null empty for unknown reason
+                //CheckHex(eachEvent["blockHash"].ToString());
+            }
+        }
+
+
+        public void CheckValidatorInfo()
+        {
+            var publicKey = _privateWallet.EcdsaKeyPair.PublicKey.ToHex();
+            var validatorInfo = _apiService.GetValidatorInfo(publicKey);
+            Console.WriteLine(validatorInfo);
+            Assert.AreEqual("Validator", validatorInfo["state"].ToString());
+        }
+
+        public void Init()
+        {
+            CheckValidatorInfo();
+            var stake = "2000";
+            string password = "12345";
+            _privateWallet.Unlock(password, 10000);
+            _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256());
+            CheckValidatorInfo();
+        }
+
+        public void AddBatchTransactionToPool(List<TransactionReceipt> txes , bool notify = true)
         {
             foreach(var tx in txes)
             {
-                var result = _transactionPool.Add(tx);
+                // TODPO: If the second parameter is set to true, the test run is aborted for unknown reason
+                var result = _transactionPool.Add(tx, notify); 
                 Assert.AreEqual(OperatingError.Ok, result);
             }
         }
@@ -369,13 +528,38 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void CheckTransactionWeb3Format(ulong blockHeight)
         {
             var block = _blockManager.GetByHeight(blockHeight);
+            var txCount = _apiService.GetBlockTransactionsCountByNumber(blockHeight.ToHex());
+
+            if (block == null)
+            {
+                Console.WriteLine("null block");
+                Assert.AreEqual(null, txCount);
+                return;
+            }
+            CheckHex(txCount);
+            Assert.AreEqual(block.TransactionHashes.Count.ToHex(false), txCount);
+            var sameTxCount = _apiService.GetBlockTransactionsCountByHash(block.Hash.ToHex());
+            Assert.AreEqual(txCount, sameTxCount);
             var txes = _apiService.GetTransactionsByBlockHash(block.Hash.ToHex());
             var sameTxes = TxesForBlockInWeb3Format(block, true);
             var sameTxesAgain = _apiService.GetBlockByNumber(blockHeight.ToHex(),true);
-            Console.WriteLine(txes);
-            Console.WriteLine(sameTxes);
-            Console.WriteLine(sameTxesAgain);
-            //if(blockHeight > 0) Assert.AreEqual(txes["transactions"], sameTxes);
+            List<string> txesToList = new List<string>() , sameTxesToList = new List<string>(), sameTxesAgainToList = new List<string>();
+            foreach(var item in txes["transactions"])
+            {
+                txesToList.Add(item["hash"].ToString());
+                CheckHex(item["hash"].ToString());
+            }
+            foreach(var item in sameTxes)
+            {
+                sameTxesToList.Add(item["hash"].ToString());
+            }
+            foreach(var item in sameTxesAgain["transactions"])
+            {
+                sameTxesAgainToList.Add(item["hash"].ToString());
+            }
+            Assert.AreEqual(txesToList, sameTxesAgainToList);
+            Assert.AreEqual(txesToList, sameTxesToList);
+            
         }
 
         public void GenerateBlocksWithGenesis(ulong noOfBlocks)
@@ -415,6 +599,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 if (name != "Storage") key = key.Remove(key.Length - 1);
                 key = prefix + key + suffix;
                 Assert.AreEqual(allTrieRootHash[key]?.ToString() , rootHash);
+
+                var rootVersion = _apiService.GetRootVersionByTrieName(name, blockTag);
+                CheckHex(rootVersion);
             }
         }
         public void CheckBlockWeb3Format(string blockTag, ulong blockNumber , bool fullTx = false)
@@ -483,18 +670,21 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             return gasUsed;
         }
 
+        
         private void GenerateBlocks(ulong blockNum)
         {
             for (ulong i = 0; i < blockNum; i++)
             {
-                var txes = GetCurrentPoolTxes();
-                foreach(var item in txes)
+                lock (this)
                 {
-                    Console.WriteLine($"tx: {item}");
+                    var txes = GetCurrentPoolTxes();
+                   
+                    var block = BuildNextBlock(txes);
+                    var result = ExecuteBlock(block, txes);
+                    Assert.AreEqual(OperatingError.Ok, result);
+                    
                 }
-                var block = BuildNextBlock(txes);
-                var result = ExecuteBlock(block, txes);
-                Assert.AreEqual(OperatingError.Ok, result);
+                
             }
         }
 
@@ -569,17 +759,19 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             receipts ??= new TransactionReceipt[] { };
 
             var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
-
+            //return OperatingError.Ok;
             var predecessor =
                 _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
                     .GetTotalBlockHeight());
+            //return OperatingError.Ok;
             var (header, multisig) = BuildHeaderAndMultisig(block.Header.MerkleRoot, predecessor, stateHash);
-
+            //return OperatingError.Ok;
             block.Header = header;
             block.Multisig = multisig;
             block.Hash = header.Keccak();
-
+            //return OperatingError.Ok;
             var status = _blockManager.Execute(block, receipts, true, true);
+            //return OperatingError.Ok;
             Console.WriteLine($"Executed block: {block.Header.Index}");
             return status;
         }

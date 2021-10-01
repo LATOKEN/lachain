@@ -58,7 +58,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
-        public JObject? GetBlockByNumber(string blockTag, bool fullTx) // changed from private to public: done
+        public JObject? GetBlockByNumber(string blockTag, bool fullTx)
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null)
@@ -77,7 +77,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getBlockRawByNumber")]
-        public string? GetBlockRawByNumber(string blockTag) // changed from private to public: done
+        public string? GetBlockRawByNumber(string blockTag) 
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null)
@@ -89,7 +89,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getBlockRawByNumberBatch")]
-        public JArray GetBlockRawByNumberBatch(List<string> blockTagList) // changed from private to public: done
+        public JArray GetBlockRawByNumberBatch(List<string> blockTagList) 
         {
             JArray blockRawList = new JArray{};
             foreach(var blockTag in blockTagList)
@@ -107,7 +107,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
 
         [JsonRpcMethod("la_getStateByNumber")]
-        public JObject? GetStateByNumber(string blockTag) // changed from private to public: done
+        public JObject? GetStateByNumber(string blockTag) 
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) return null;
@@ -126,7 +126,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_checkNodeHashes")]
-        public string CheckNodeHashes(string blockTag) // changed from private to public: done
+        public string CheckNodeHashes(string blockTag) 
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
@@ -137,7 +137,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getStateHashFromTrieRootsRange")]
-        public JObject? GetStateHashFromTrieRootsRange(string startBlockTag, string endBlockTag) // changed from private to public: done
+        public JObject? GetStateHashFromTrieRootsRange(string startBlockTag, string endBlockTag) 
         {
             ulong startBlock = startBlockTag.HexToUlong(), endBlock = endBlockTag.HexToUlong();
             var stateHash = new JObject { };
@@ -151,13 +151,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getStateHashFromTrieRoots")]
-        public string GetStateHashFromTrieRoots(string blockTag) // changed from private to public: done
+        public string GetStateHashFromTrieRoots(string blockTag) 
         {
             return Web3DataFormatUtils.Web3Data(SingleNodeHashFromRoot(blockTag));
         }
 
         [JsonRpcMethod("la_getAllTriesHash")]
-        public JObject? GetAllTrieRootsHash(string blockTag) // changed from private to public: done
+        public JObject? GetAllTrieRootsHash(string blockTag) 
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
@@ -172,7 +172,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getNodeByHash")]
-        public JObject GetNodeByHash(string nodeHash) // changed from private to public: done
+        public JObject GetNodeByHash(string nodeHash) 
         {
             IHashTrieNode? node = _nodeRetrieval.TryGetNode(HexUtils.HexToBytes(nodeHash), out var childrenHash);
             if (node == null) return new JObject { };
@@ -180,7 +180,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getNodeByHashBatch")]
-        private JArray GetNodeByHashBatch(List<string> nodeHashList)
+        public JArray GetNodeByHashBatch(List<string> nodeHashList)
         {
             JArray nodeList = new JArray{};
             foreach(var nodeHash in nodeHashList)
@@ -192,7 +192,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getChildrenByHash")]
-        public JObject GetChildrenByHash(string nodeHash) // changed from private to public: done
+        public JObject GetChildrenByHash(string nodeHash) 
         {
             IHashTrieNode? node = _nodeRetrieval.TryGetNode(HexUtils.HexToBytes(nodeHash), out var childrenHash);
             if (node == null) return new JObject { };
@@ -211,7 +211,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getChildrenByHashBatch")]
-        private JArray GetChildrenByHashBatch(List<string> nodeHashList)
+        public JArray GetChildrenByHashBatch(List<string> nodeHashList)
         {
             JArray childrenList = new JArray{};
             foreach(var nodeHash in nodeHashList)
@@ -223,7 +223,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getRootHashByTrieName")]
-        public string GetRootHashByTrieName(string trieName, string blockTag) // changed from private to public: done
+        public string GetRootHashByTrieName(string trieName, string blockTag) 
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) return "0x";
@@ -234,7 +234,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getNodeByVersion")]
-        public JObject GetNodeByVersion(string versionTag) // changed from private to public: done
+        public JObject GetNodeByVersion(string versionTag) 
         {
             var version = GetVersionNumberByTag(versionTag);
             if (version == null) return new JObject { };
@@ -243,7 +243,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Node(node);
         }
         [JsonRpcMethod("la_getChildrenByVersion")]
-        public JObject GetChildrenByVersion(string versionTag) // changed from private to public: done
+        public JObject GetChildrenByVersion(string versionTag) 
         {
             var version = GetVersionNumberByTag(versionTag);
             if (version == null) return new JObject { };
@@ -267,7 +267,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getChildrenByVersionBatch")]
-        private JArray GetChildrenByVersionBatch(List<string> versionTags)
+        public JArray GetChildrenByVersionBatch(List<string> versionTags)
         {
             JArray childrenBatch = new JArray {};
             foreach (var versionTag in versionTags)
@@ -279,7 +279,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("la_getRootVersionByTrieName")]
-        private string GetRootVersionByTrieName(string trieName, string blockTag)
+        public string GetRootVersionByTrieName(string trieName, string blockTag)
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) return "0x";
@@ -304,7 +304,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionsByBlockHash")]
-        public JObject? GetTransactionsByBlockHash(string blockHash) // changed from private to public
+        public JObject? GetTransactionsByBlockHash(string blockHash)
         {
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             if (block is null)
@@ -319,7 +319,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockTransactionCountByNumber")]
-        private string? GetBlockTransactionsCountByNumber(string blockTag)
+        public string? GetBlockTransactionsCountByNumber(string blockTag) 
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
             if (blockNumber == null) 
@@ -329,26 +329,26 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockTransactionCountByHash")]
-        private string? GetBlockTransactionsCountByHash(string blockHash)
+        public string? GetBlockTransactionsCountByHash(string blockHash) 
         {
             var block = _blockManager.GetByHash(blockHash.HexToUInt256());
             return block == null ? null : Web3DataFormatUtils.Web3Number((ulong)block!.TransactionHashes.Count);
         }
 
         [JsonRpcMethod("eth_blockNumber")]
-        private string GetBlockNumber()
+        public string GetBlockNumber()
         {
             return Web3DataFormatUtils.Web3Number(_blockManager.GetHeight());
         }
 
         [JsonRpcMethod("la_getDownloadedNodesTillNow")]
-        private string GetDownloadedNodesTillNow()
+        public string GetDownloadedNodesTillNow() 
         {
             return Web3DataFormatUtils.Web3Number(_nodeRetrieval.GetDownloadedNodeCount());
         }
 
         [JsonRpcMethod("la_validator_info")]
-        private JObject GetValidatorInfo(string publicKeyStr)
+        public JObject GetValidatorInfo(string publicKeyStr) 
         {
             var publicKey = publicKeyStr.HexToBytes();
             var addressUint160 = Crypto.ComputeAddress(publicKey).ToUInt160();
@@ -421,7 +421,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getEventsByTransactionHash")]
-        private JArray GetEventsByTransactionHash(string txHash)
+        public JArray GetEventsByTransactionHash(string txHash) 
         {
             var transactionHash = txHash.HexToUInt256();
             var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(transactionHash);
@@ -575,7 +575,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionPool")]
-        private JArray GetTransactionPool()
+        public JArray GetTransactionPool() 
         {
             var txHashes = _transactionPool.Transactions.Keys;
             var jArray = new JArray();
@@ -588,20 +588,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_chainId")]
-        private string ChainId()
+        public string ChainId() 
         {
             return TransactionUtils.ChainId.ToHex();
         }
 
         [JsonRpcMethod("net_version")]
-        private string NetVersion()
+        public string NetVersion() 
         {
             return TransactionUtils.ChainId.ToHex();
         }
 
 
         [JsonRpcMethod("eth_getTransactionPoolByHash")]
-        private JObject? GetTransactionPoolByHash(string txHash)
+        public JObject? GetTransactionPoolByHash(string txHash) 
         {
             var transaction = _transactionPool.GetByHash(txHash.HexToUInt256());
             return transaction?.ToJson();

@@ -68,7 +68,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_StartValidator() // changed from private to public: StartValidator()
+        // changed from private to public: StartValidator()
+        public void Test_StartValidator() 
         {
             Assert.AreEqual("wallet_locked" , _apiService.StartValidator());
             string passWord = "12345";
@@ -78,7 +79,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_StartValidatorWithStake() // changed from private to public: StartValidatorWithStake()
+        // changed from private to public: StartValidatorWithStake()
+        public void Test_StartValidatorWithStake() 
         {
             string money = "2000";
             Assert.AreEqual("wallet_locked", _apiService.StartValidatorWithStake(money));
@@ -90,7 +92,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_GetValidatorStatus() // changed from private to public: GetValidatorStatus()
+        // changed from private to public: GetValidatorStatus()
+        public void Test_GetValidatorStatus() 
         {
             Assert.AreEqual("0x00" , _apiService.GetValidatorStatus());
             _validatorStatusManager.Start(false);
@@ -102,7 +105,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         [Repeat(2)]
-        public void Test_StopValidator() // changed from private to public: StopValidator() , IsMining()
+        // changed from private to public: StopValidator() , IsMining()
+        public void Test_StopValidator() 
         {
             Assert.AreEqual("wallet_locked", _apiService.StopValidator());
             string passWord = "12345";
