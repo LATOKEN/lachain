@@ -41,6 +41,13 @@ namespace Lachain.Core.CLI
         
         [Option('t', "target", Required = false, HelpText = "Block target time in ms, default is 5000 (5sec)")]
         public ushort target { get; set; }
+        
+        [Option('c', "chainid", Required = true, HelpText = "ChainID for this network")]
+        public ulong chainid { get; set; }
+        
+        [Option('s', "network", Required = true, HelpText = "Name of the network")]
+        public string networkName { get; set; }
+
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]

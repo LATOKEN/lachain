@@ -40,19 +40,19 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort, target);
+                CloudKeygen(n, f, ips, basePort, target, chainId, networkName);
             }
             else
             {
-                LocalKeygen(n, f, basePort, target);
+                LocalKeygen(n, f, basePort, target, chainId, networkName);
             }
         }
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -102,7 +102,8 @@ namespace Lachain.Console
                     ForceIPv6 = false,
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
-                    HubMetricsPort = basePort + 2
+                    HubMetricsPort = basePort + 2,
+                    NetworkName = networkName
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -142,7 +143,7 @@ namespace Lachain.Console
                 var blockchain = new BlockchainConfig
                 {
                     TargetBlockTime = target,
-                    ChainId = 41,
+                    ChainId = (int)chainId
                 };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
@@ -179,7 +180,7 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target)
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -231,6 +232,7 @@ namespace Lachain.Console
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2 * n + i,
+                    NetworkName = networkName
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -270,7 +272,7 @@ namespace Lachain.Console
                 var blockchain = new BlockchainConfig
                 {
                     TargetBlockTime = target,
-                    ChainId = 41,
+                    ChainId = (int)chainId,
                 };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
