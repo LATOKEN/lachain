@@ -30,6 +30,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using Lachain.Storage;
+using Lachain.Core.Blockchain;
 
 namespace Lachain.Console
 {
@@ -78,6 +79,12 @@ namespace Lachain.Console
             var NodeRetrieval = _container.Resolve<INodeRetrieval>();
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
+
+            // set chainId from config
+            var chainId = configManager.GetConfig<BlockchainConfig>("blockchain")?.ChainId;
+            if (chainId == null || chainId == 0) throw new Exception("chainId is not defined in the config file");
+
+            TransactionUtils.SetChainId((int)chainId);
 
             rpcManager.Start();
             
