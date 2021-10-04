@@ -41,7 +41,7 @@ namespace Lachain.UtilityTest
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
             rng.GetBytes(random);
             var keyPair = new EcdsaKeyPair(random.ToPrivateKey());
-            //var randomValue = new Random().Next(1, 100);
+            
             var tx = new Transaction
             {
                 To = random.Slice(0, 20).ToUInt160(),

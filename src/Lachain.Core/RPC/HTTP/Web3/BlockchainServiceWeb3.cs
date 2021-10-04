@@ -439,7 +439,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getLogs")]
-        private JArray GetLogs(JObject opts)
+        public JArray GetLogs(JObject opts)
         {
             var fromBlock = opts["fromBlock"];
             var toBlock = opts["toBlock"];
@@ -447,7 +447,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var topicsJson = opts["topics"];
             var blockhash = opts["blockHash"];
 
-            if (!(fromBlock is null) && !(toBlock is null) && !(blockhash is null))
+            if ((!(fromBlock is null) || !(toBlock is null)) && !(blockhash is null))
                 throw new Exception(
                     "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
 

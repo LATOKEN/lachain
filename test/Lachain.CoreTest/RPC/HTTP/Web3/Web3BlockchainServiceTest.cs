@@ -29,8 +29,8 @@ using Lachain.Logger;
 using Lachain.Utility;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.ValidatorStatus;
-
-
+using Lachain.Crypto.ECDSA;
+using System.Security.Cryptography;
 
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
@@ -353,6 +353,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
 
+
         [Test]
         [Repeat(2)]
         // changed from private to public: GetBlockNumber(), GetDownloadedNodesTillNow(), ChainId(), NetVersion()
@@ -411,6 +412,80 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transactionPool.Peek(1000, 1000);
             Assert.AreEqual(0, _transactionPool.Size());
             CheckTransactionPoolWeb3();
+        }
+
+        [Test]
+        [Repeat(1)]
+        // changed from private to public: GetLogs()
+        public void Test_GetLogs()
+        {
+            GenerateBlocksWithGenesis(0);
+            var randomTx = GetRandomTransactionBatch(10);
+            var topUpTx = TopUpBalanceTxBatch(randomTx);
+            AddBatchTransactionToPool(topUpTx, false);
+            GenerateBlocks(1);
+            AddBatchTransactionToPool(randomTx, false);
+            GenerateBlocks(1);
+
+            var input = new JObject();
+            var logs = _apiService.GetLogs(input);
+
+            input = LogInputByBlockNo(0, 2);
+            var allLogs = _apiService.GetLogs(input);
+            Assert.AreEqual(logs, allLogs);
+
+            var allTx = new List<TransactionReceipt>();
+            allTx.AddRange(topUpTx);
+            allTx.AddRange(randomTx);
+            input = new JObject();
+            input["address"] = JArrayOfTxAddress(allTx);
+            var logsForAllTx = _apiService.GetLogs(input);
+            Assert.AreEqual(allLogs, logsForAllTx);
+            Assert.AreEqual(allTx.Count, logsForAllTx.Count);
+
+            input["address"] = JArrayOfTxAddress(topUpTx);
+            var logsForTopUpTx = _apiService.GetLogs(input);
+            Assert.AreEqual(topUpTx.Count,logsForTopUpTx.Count);
+
+            input["address"] = JArrayOfTxAddress(randomTx);
+            var logsForRandomRx = _apiService.GetLogs(input);
+            Assert.AreEqual(randomTx.Count, logsForRandomRx.Count);
+
+            input = LogInputByBlockNo(1, 1);
+            var logsForBlock1 = _apiService.GetLogs(input);
+            Assert.AreEqual(logsForBlock1, logsForTopUpTx);
+
+            input = LogInputByBlockNo(2, 2);
+            var logsForBlock2 = _apiService.GetLogs(input);
+            Assert.AreEqual(logsForBlock2, logsForRandomRx);
+            Assert.AreNotEqual(logsForBlock1 , logsForBlock2);
+            Assert.AreNotEqual(logsForBlock1, allLogs);
+            Assert.AreNotEqual(logsForBlock2, allLogs);
+
+            input = new JObject();
+            input["address"] = new JArray() { GetRandomAddress() };
+            var emptyLogs = _apiService.GetLogs(input);
+            Assert.AreEqual(0, emptyLogs.Count);
+        }
+
+
+        public JObject LogInputByBlockNo(ulong fromBlock, ulong toBlock)
+        {
+            var JObj = new JObject();
+            JObj["fromBlock"] = Web3DataFormatUtils.Web3Number(fromBlock);
+            JObj["toBlock"] = Web3DataFormatUtils.Web3Number(toBlock);
+            return JObj;
+        }
+
+
+        public JArray JArrayOfTxAddress(List < TransactionReceipt > txList)
+        {
+            var txAddress = new JArray();
+            foreach (var tx in txList)
+            {
+                txAddress.Add(tx.Transaction.From.ToHex());
+            }
+            return txAddress;
         }
 
         public void CheckTransactionPoolWeb3()
@@ -482,22 +557,48 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
 
-        public void CheckValidatorInfo()
+        public void CheckValidatorInfo(bool random)
         {
-            var publicKey = _privateWallet.EcdsaKeyPair.PublicKey.ToHex();
+            string publicKey;
+            if (random) publicKey = GetRandomPublicKey();
+            else publicKey = _privateWallet.EcdsaKeyPair.PublicKey.ToHex();
             var validatorInfo = _apiService.GetValidatorInfo(publicKey);
-            Console.WriteLine(validatorInfo);
-            Assert.AreEqual("Validator", validatorInfo["state"].ToString());
+            //Console.WriteLine(validatorInfo);
+            if (random) Assert.AreEqual("Newbie", validatorInfo["state"].ToString());
+            else Assert.AreEqual("Validator", validatorInfo["state"].ToString());
         }
 
         public void Init()
         {
-            CheckValidatorInfo();
+            CheckValidatorInfo(false);
+            CheckValidatorInfo(true);
             var stake = "2000";
             string password = "12345";
             _privateWallet.Unlock(password, 10000);
             _validatorStatusManager.StartWithStake(Money.Parse(stake).ToUInt256());
-            CheckValidatorInfo();
+            CheckValidatorInfo(false);
+            CheckValidatorInfo(true);
+        }
+
+        // returns random address in hex
+        public string GetRandomAddress()
+        {
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+            var keyPair = new EcdsaKeyPair(random.ToPrivateKey());
+            return keyPair.PublicKey.GetAddress().ToHex();
+        }
+
+
+        // returns random public key in hex
+        public string GetRandomPublicKey()
+        {
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+            var keyPair = new EcdsaKeyPair(random.ToPrivateKey());
+            return keyPair.PublicKey.ToHex();
         }
 
         public void AddBatchTransactionToPool(List<TransactionReceipt> txes , bool notify = true)
