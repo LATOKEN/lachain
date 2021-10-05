@@ -393,7 +393,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_estimateGas")]
-        private string? EstimateGas(JObject opts)
+        public string? EstimateGas(JObject opts)
         {
             Logger.LogInformation($"eth_estimateGas({opts})");
             try
