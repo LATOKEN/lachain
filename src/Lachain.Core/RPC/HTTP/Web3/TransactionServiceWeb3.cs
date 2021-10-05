@@ -310,7 +310,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
         
         [JsonRpcMethod("eth_call")]
-        private string Call(JObject opts, string? blockId)
+        public string Call(JObject opts, string? blockId)
         {
             var from = opts["from"];
             var to = opts["to"];
