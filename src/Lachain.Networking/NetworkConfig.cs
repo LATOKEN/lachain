@@ -17,5 +17,7 @@ namespace Lachain.Networking
         [JsonProperty("hubMetricsPort")] public int? HubMetricsPort { get; set; }
         
         [JsonProperty("networkName")] public string? NetworkName { get; set; }
+        
+        [JsonProperty("chainId")] public int ChainId;
     }
 }
