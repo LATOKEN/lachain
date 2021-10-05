@@ -47,7 +47,7 @@ namespace Lachain.Networking
             };
             _hubConnector = new HubConnector(
                 string.Join(",", networkConfig.BootstrapAddresses),
-                hubPrivateKey, networkConfig.NetworkName ?? "devnet", version, minPeerVersion,
+                hubPrivateKey, networkConfig.NetworkName ?? "devnet", version, minPeerVersion, TransactionUtils.ChainId,
                 networkConfig.HubMetricsPort ?? 7072, _messageFactory, networkConfig.HubLogLevel
             );
             _hubConnector.OnMessage += _HandleMessage;
