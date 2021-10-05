@@ -102,7 +102,8 @@ namespace Lachain.Console
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2,
-                    NetworkName = networkName
+                    NetworkName = networkName,
+                    ChainId = (int)chainId
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -142,7 +143,6 @@ namespace Lachain.Console
                 var blockchain = new BlockchainConfig
                 {
                     TargetBlockTime = target,
-                    ChainId = (int)chainId
                 };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
@@ -229,7 +229,8 @@ namespace Lachain.Console
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2 * n + i,
-                    NetworkName = networkName
+                    NetworkName = networkName,
+                    ChainId = (int)chainId,
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -269,7 +270,6 @@ namespace Lachain.Console
                 var blockchain = new BlockchainConfig
                 {
                     TargetBlockTime = target,
-                    ChainId = (int)chainId,
                 };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
