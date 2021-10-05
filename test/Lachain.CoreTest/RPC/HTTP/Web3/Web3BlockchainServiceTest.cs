@@ -419,6 +419,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // changed from private to public: GetLogs()
         public void Test_GetLogs()
         {
+
+
             GenerateBlocksWithGenesis(0);
             var randomTx = GetRandomTransactionBatch(10);
             var topUpTx = TopUpBalanceTxBatch(randomTx);
@@ -427,47 +429,103 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             AddBatchTransactionToPool(randomTx, false);
             GenerateBlocks(1);
 
-            var input = new JObject();
-            var logs = _apiService.GetLogs(input);
-
-            input = LogInputByBlockNo(0, 2);
-            var allLogs = _apiService.GetLogs(input);
-            Assert.AreEqual(logs, allLogs);
-
             var allTx = new List<TransactionReceipt>();
             allTx.AddRange(topUpTx);
             allTx.AddRange(randomTx);
-            input = new JObject();
-            input["address"] = JArrayOfTxAddress(allTx);
-            var logsForAllTx = _apiService.GetLogs(input);
-            Assert.AreEqual(allLogs, logsForAllTx);
-            Assert.AreEqual(allTx.Count, logsForAllTx.Count);
 
-            input["address"] = JArrayOfTxAddress(topUpTx);
-            var logsForTopUpTx = _apiService.GetLogs(input);
-            Assert.AreEqual(topUpTx.Count,logsForTopUpTx.Count);
 
-            input["address"] = JArrayOfTxAddress(randomTx);
-            var logsForRandomRx = _apiService.GetLogs(input);
-            Assert.AreEqual(randomTx.Count, logsForRandomRx.Count);
-
-            input = LogInputByBlockNo(1, 1);
-            var logsForBlock1 = _apiService.GetLogs(input);
-            Assert.AreEqual(logsForBlock1, logsForTopUpTx);
-
-            input = LogInputByBlockNo(2, 2);
-            var logsForBlock2 = _apiService.GetLogs(input);
-            Assert.AreEqual(logsForBlock2, logsForRandomRx);
-            Assert.AreNotEqual(logsForBlock1 , logsForBlock2);
-            Assert.AreNotEqual(logsForBlock1, allLogs);
-            Assert.AreNotEqual(logsForBlock2, allLogs);
+            var input = new JObject();
+            var defaultLogs = _apiService.GetLogs(input);
 
             input = new JObject();
             input["address"] = new JArray() { GetRandomAddress() };
             var emptyLogs = _apiService.GetLogs(input);
             Assert.AreEqual(0, emptyLogs.Count);
+            var block = _blockManager.GetByHeight(10);
+            CheckLogs(emptyLogs, block!, new List<TransactionReceipt>());
+
+            input = new JObject();
+            input["fromBlock"] = input["toBlock"] = "pending";
+            var newEmptyLogs = _apiService.GetLogs(input);
+            Assert.AreEqual(0, newEmptyLogs.Count);
+            Assert.AreEqual(newEmptyLogs, emptyLogs);
+
+            input = LogInputByBlockNo(0, 2);
+            var allLogs = _apiService.GetLogs(input);
+
+            input = new JObject();
+            input["fromBlock"] = "earliest";
+            input["toBlock"] = "latest";
+            var logsForAllBlocks = _apiService.GetLogs(input);
+            Assert.AreEqual(allLogs, logsForAllBlocks);
+
+
+
+            input = new JObject();
+            input["address"] = JArrayOfTxAddress(allTx);
+            var logsForAllTx = _apiService.GetLogs(input);
+            Assert.AreEqual(defaultLogs, logsForAllTx);
+            Assert.AreEqual(randomTx.Count, logsForAllTx.Count); // by defautl, it gets the "latest" block only
+
+            input = new JObject();
+            input["address"] = JArrayOfTxAddress(topUpTx);
+            var logsForTopUpTx = _apiService.GetLogs(input);
+            Assert.AreEqual(0, logsForTopUpTx.Count); // latest block has no topUpTx
+            Assert.AreEqual(emptyLogs, logsForTopUpTx);
+
+            input = new JObject();
+            input["address"] = JArrayOfTxAddress(randomTx);
+            var logsForRandomRx = _apiService.GetLogs(input);
+            Assert.AreEqual(randomTx.Count, logsForRandomRx.Count);
+            Assert.AreEqual(defaultLogs, logsForRandomRx);
+
+            input = LogInputByBlockNo(1, 1);
+            var logsForBlock1 = _apiService.GetLogs(input);
+            block = _blockManager.GetByHeight(1);
+            CheckLogs(logsForBlock1, block!,topUpTx);
+
+            input = LogInputByBlockNo(2, 2);
+            var logsForBlock2 = _apiService.GetLogs(input);
+            block = _blockManager.GetByHeight(2);
+            CheckLogs(logsForBlock2, block!, randomTx);
+            Assert.AreEqual(logsForBlock2, logsForRandomRx);
+            Assert.AreEqual(defaultLogs, logsForBlock2);
+            Assert.AreNotEqual(logsForBlock1, logsForBlock2);
+            Assert.AreNotEqual(logsForBlock1, allLogs);
+            Assert.AreNotEqual(logsForBlock2, allLogs);
+
+            input = LogInputByBlockNo(0, 2);
+            input["address"] = JArrayOfTxAddress(topUpTx);
+            logsForTopUpTx = _apiService.GetLogs(input);
+            Assert.AreEqual(logsForBlock1, logsForTopUpTx);
+            Assert.AreEqual(topUpTx.Count, logsForTopUpTx.Count);
+
+            input = LogInputByBlockNo(0, 2);
+            input["address"] = JArrayOfTxAddress(randomTx);
+            logsForRandomRx = _apiService.GetLogs(input);
+            Assert.AreEqual(logsForBlock2, logsForRandomRx);
+            Assert.AreEqual(randomTx.Count, logsForRandomRx.Count);
+
+            input = LogInputByBlockNo(0, 2);
+            input["address"] = JArrayOfTxAddress(allTx);
+            logsForAllTx = _apiService.GetLogs(input);
+            Assert.AreEqual(allLogs, logsForAllTx);
+            Assert.AreEqual(allTx.Count, logsForAllTx.Count);
         }
 
+
+        public void CheckLogs(JArray logs, Block block, List<TransactionReceipt> txList)
+        {
+            foreach (var token in logs)
+            {
+                var blockHash = token["blockHash"]!.ToString();
+                var txHash = token["transactionHash"]!.ToString();
+                CheckHex(blockHash);
+                CheckHex(txHash);
+                Assert.AreEqual(block!.Hash.ToHex(), blockHash);
+                Assert.That(txList.Any(tx => txHash == tx.Hash.ToHex()));
+            }
+        }
 
         public JObject LogInputByBlockNo(ulong fromBlock, ulong toBlock)
         {

@@ -451,30 +451,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new Exception(
                     "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
 
-            var start = (ulong)0;
+            ulong ?start;
+            start = _blockManager.GetHeight();
             if (!(fromBlock is null))
             {
-                if (((string)fromBlock!).StartsWith("0x"))
-                {
-                    start = UInt64.Parse(((string)fromBlock!).Substring(2), NumberStyles.HexNumber);
-                }
-                else
-                {
-                    start = (ulong)fromBlock!;
-                }
+                start = GetBlockNumberByTag(fromBlock!.ToString());
             }
 
-            var finish = _blockManager.GetHeight();
+            ulong? finish;
+            finish = _blockManager.GetHeight();
             if (!(toBlock is null))
             {
-                if (((string)toBlock!).StartsWith("0x"))
-                {
-                    finish = UInt64.Parse(((string)toBlock!).Substring(2), NumberStyles.HexNumber);
-                }
-                else
-                {
-                    finish = (ulong)toBlock!;
-                }
+                finish = GetBlockNumberByTag(toBlock!.ToString());
             }
 
             if (!(blockhash is null))
@@ -527,7 +515,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var jArray = new JArray();
             for (var blockNumber = start; blockNumber <= finish; blockNumber++)
             {
-                var block = _blockManager.GetByHeight((ulong)blockNumber);
+                var block = _blockManager.GetByHeight((ulong)blockNumber!);
                 if (block == null)
                     continue;
                 var txs = block!.TransactionHashes;
