@@ -81,9 +81,10 @@ namespace Lachain.Console
             var storageManager = _container.Resolve<IStorageManager>();
 
             // set chainId from config
-            var chainId = configManager.GetConfig<BlockchainConfig>("blockchain")?.ChainId;
+            var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
             if (chainId == null || chainId == 0) throw new Exception("chainId is not defined in the config file");
 
+            Logger.LogInformation($"Chainid {chainId}");
             TransactionUtils.SetChainId((int)chainId);
 
             rpcManager.Start();
