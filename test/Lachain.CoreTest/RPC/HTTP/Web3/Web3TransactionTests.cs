@@ -31,6 +31,8 @@ using Lachain.Utility;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Google.Protobuf;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -52,6 +54,36 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private static readonly ITransactionSigner Signer = new Core.Blockchain.Operations.TransactionSigner();
         private IBlockManager _blockManager = null!;
         //private IPrivateWallet _privateWallet = null!;
+
+        /*
+         * Contract bytecode. It's C++ code is:
+            #include <lachain/lachain.h>
+            using namespace lachain;
+            LACHAIN_ABI("test()", "uint8")
+            static uint8 test() {
+                return uint8(42);
+            }
+            static void fallback() {
+                system_halt(HALT_CODE_UNKNOWN_METHOD);
+            }
+         */
+        private static readonly string ByteCodeHex = "0061736d010000000117056000017f60037f7f7f0060017f0060027f7f00600" +
+                                                     "000024e0403656e760d6765745f63616c6c5f73697a65000003656e760f636f" +
+                                                     "70795f63616c6c5f76616c7565000103656e760b73797374656d5f68616c740" +
+                                                     "00203656e760a7365745f72657475726e000303020104040501700101010503" +
+                                                     "0100020608017f01418088040b071202066d656d6f727902000573746172740" +
+                                                     "0040a880101850101027f23808080800041106b220024808080800002400240" +
+                                                     "024002401080808080004104490d00410041042000410b6a108180808000200" +
+                                                     "028000b220141f8d1f6ef06460d012001417f470d020b41051082808080000c" +
+                                                     "020b2000412a3a000f2000410f6a41011083808080000c010b4105108280808" +
+                                                     "0000b200041106a2480808080000b0048046e616d65014105000d6765745f63" +
+                                                     "616c6c5f73697a65010f636f70795f63616c6c5f76616c7565020b737973746" +
+                                                     "56d5f68616c74030a7365745f72657475726e0405737461727400760970726f" +
+                                                     "647563657273010c70726f6365737365642d62790105636c616e675631312e3" +
+                                                     "02e30202868747470733a2f2f6769746875622e636f6d2f6c6c766d2f6c6c76" +
+                                                     "6d2d70726f6a656374203137363234396264363733326138303434643435373" +
+                                                     "039326564393332373638373234613666303629";
+
 
         [SetUp]
         public void Setup()
@@ -268,6 +300,43 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed Call from private to public
         public void Test_Call()
         {
+            _blockManager.TryBuildGenesisBlock();
+
+            var keyPair = _privateWallet!.EcdsaKeyPair;
+            GenerateBlocks(1);
+
+            // Deploy contract 
+            var byteCode = ByteCodeHex.HexToBytes();
+            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate smart-contract code");
+            var from = keyPair.PublicKey.GetAddress();
+            var fromHx = from.ToHex();
+
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            var contractHashHx = contractHash.ToHex();
+
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            var signedTx = Signer.Sign(tx, keyPair);
+            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
+            GenerateBlocks(1);
+
+            // check contract is deployed
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed contract");
+
+            var abi = ContractEncoder.Encode("test()");
+            var data = abi.ToHex();
+
+            JObject opts = new JObject
+            {
+                ["from"] = fromHx,
+                ["to"] = contractHashHx,
+                ["data"] = data
+            };
+
+            var result = _apiService!.Call(opts, "latest");
+
+            Assert.AreEqual(result, "0x2a");
 
         }
 
