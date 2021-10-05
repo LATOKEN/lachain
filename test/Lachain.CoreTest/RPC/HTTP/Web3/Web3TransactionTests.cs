@@ -344,7 +344,42 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed EstimateGas from private to public
         public void Test_EstimateGas()
         {
+            _blockManager.TryBuildGenesisBlock();
 
+            var keyPair = _privateWallet!.EcdsaKeyPair;
+            GenerateBlocks(1);
+
+            // Deploy contract 
+            var byteCode = ByteCodeHex.HexToBytes();
+            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate smart-contract code");
+            var from = keyPair.PublicKey.GetAddress();
+            var fromHx = from.ToHex();
+
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            var contractHashHx = contractHash.ToHex();
+
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            var signedTx = Signer.Sign(tx, keyPair);
+            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
+            GenerateBlocks(1);
+
+            // check contract is deployed
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed contract");
+
+            var abi = ContractEncoder.Encode("test()");
+            var data = abi.ToHex();
+
+            JObject opts = new JObject
+            {
+                ["from"] = fromHx,
+                ["to"] = contractHashHx,
+                ["data"] = data
+            };
+
+            var result = _apiService!.EstimateGas(opts);
+            Assert.AreEqual(result, "0x2dcffd");
         }
 
         [Test]
