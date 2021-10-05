@@ -182,6 +182,7 @@ namespace Lachain.Console
         public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
+            System.Console.WriteLine($"chainId : {chainId}");
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
