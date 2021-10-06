@@ -306,7 +306,7 @@ namespace Lachain.Core.Blockchain.VM
                 .Concat((frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress).ToBytes())
                 .Concat(salt)
                 .Concat(dataBuffer.KeccakBytes())
-                .KeccakBytes().Skip(12).Take(20).Reverse().ToArray().ToUInt160();
+                .KeccakBytes().Skip(12).Take(20).ToArray().ToUInt160();
 
             var contract = new Contract(hash, dataBuffer);
 
