@@ -19,6 +19,7 @@ using Lachain.Storage.Trie;
 using Lachain.Utility;
 
 
+
 namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class BlockchainServiceWeb3 : JsonRpcService
@@ -596,11 +597,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getStorageAt")]
-        private string GetStorageAt(string address, string position, string blockTag)
+        public string GetStorageAt(string address, string position, string blockTag)
         {
-            // TODO: get data at given address and position, blockTag is the same as in eth_getBalance
-            return Web3DataFormatUtils.Web3Data("".HexToBytes());
-            //throw new ApplicationException("Not implemented");
+
+            var blockNumber = GetBlockNumberByTag(blockTag);
+            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber!);
+            var value = blockchainSnapshot.Storage.GetValue(address.HexToUInt160(), position.HexToUInt256());
+            return Web3DataFormatUtils.Web3Data(value.ToHex().HexToBytes());
+
         }
 
         [JsonRpcMethod("eth_getWork")]

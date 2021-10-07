@@ -31,7 +31,9 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto.ECDSA;
 using System.Security.Cryptography;
-
+using Lachain.Core.Blockchain.VM;
+using Lachain.Utility.Serialization;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -94,7 +96,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager = _container.Resolve<IBlockManager>();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
 
-            
+
 
             ServiceBinder.BindService<GenericParameterAttributes>();
             _apiService = new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool,
@@ -415,7 +417,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
-        [Repeat(1)]
+        [Repeat(2)]
         // changed from private to public: GetLogs()
         public void Test_GetLogs()
         {
@@ -513,6 +515,60 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(allTx.Count, logsForAllTx.Count);
         }
 
+
+
+        [Test]
+        [Repeat(2)]
+        // changed from private to public: GetStorageAt()
+        public void Test_StorageAt()
+        {
+            GenerateBlocksWithGenesis(1);
+            ulong blockNumber = 1;
+            var address = UInt160Utils.Zero;
+            var randomKey = new Random().Next(1, 100).ToUInt256();
+            var valueSet = SetRandomValueAtStorage(blockNumber.ToHex(), address, randomKey, true);
+            CheckHex(valueSet.ToHex());
+            Assert.AreNotEqual(UInt256Utils.Zero, valueSet);
+            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(blockNumber);
+            var value = blockchainSnapshot.Storage.GetValue(address, randomKey);
+            Assert.AreEqual(valueSet, value);
+            var valueFromApi = _apiService.GetStorageAt(address.ToHex(), randomKey.ToHex(), blockNumber.ToHex());
+            Assert.AreEqual(value.ToHex(),valueFromApi);
+        }
+
+        public UInt256 SetRandomValueAtStorage(string blockTag , UInt160 address , UInt256 key, bool save = false)
+        {
+            var blockNumber = GetBlockNumberByTag(blockTag);
+            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber!);
+            var randomValue = new Random().Next(1, 100).ToUInt256();
+            blockchainSnapshot.Storage.SetValue(address, key, randomValue);
+            if (save)
+            {
+                _snapshotIndexer.SaveSnapshotForBlock((ulong)blockNumber , blockchainSnapshot);
+            }
+            return randomValue;
+        }
+
+
+        public ulong? GetBlockNumberByTag(string blockTag)
+        {
+            return blockTag switch
+            {
+                "latest" => _blockManager.GetHeight(),
+                "earliest" => 0,
+                "pending" => null,
+                _ => blockTag.HexToUlong()
+            };
+        }
+
+        public void print(byte[] array)
+        {
+            Console.WriteLine($"array length: {array.Length} and array elements:");
+            foreach(var item in array)
+            {
+                Console.WriteLine(item);
+            }
+        }
 
         public void CheckLogs(JArray logs, Block block, List<TransactionReceipt> txList)
         {
