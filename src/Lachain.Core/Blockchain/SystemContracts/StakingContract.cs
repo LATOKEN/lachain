@@ -24,13 +24,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
-        public static BigInteger ExpectedValidatorsCount = 4;
-        public static ulong CycleDuration = 20; // in blocks
+        public static BigInteger ExpectedValidatorsCount = 7;
+        public static ulong CycleDuration = 1000; // in blocks
         public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
         public static ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
         public static bool AlreadySet { get; private set; }
-
-
+        
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly InvocationContext _context;
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
