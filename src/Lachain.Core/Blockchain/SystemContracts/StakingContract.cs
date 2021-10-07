@@ -61,7 +61,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         // A cycle represents the consecutive set of blocks where the validatorSet stays the same
         // Default 20 is not used anymore, this parameter is set from the config file
         // for both mainnet and testnet, CycleDuration = 1000 blocks
-        public static ulong CycleDuration = 20; // in blocks
+        public static ulong CycleDuration = 1000; // in blocks
         public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
         
         // validators submit attendance during [0, cycleDuration/10 - 1] blocks of next cycle
@@ -72,8 +72,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         // AlreadySet is true, if parameters have already been set from config.json file
         public static bool AlreadySet { get; private set; }
-
-
+        
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly InvocationContext _context;
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
