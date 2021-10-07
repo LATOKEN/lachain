@@ -124,9 +124,17 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_Web3Block() 
         {
             
-            ulong total = 50;
+            ulong total = 5;
             GenerateBlocksWithGenesis(total);
-            bool fullTx = true;
+            bool fullTx = false;
+            var randomTxList = GetRandomTransactionBatch(10);
+            var topUpTxList = TopUpBalanceTxBatch(randomTxList);
+            AddBatchTransactionToPool(topUpTxList, false);
+            GenerateBlocks(1);
+            total++;
+            AddBatchTransactionToPool(randomTxList, false);
+            GenerateBlocks(1);
+            total++;
             CheckBlockWeb3Format("latest",(ulong)total , fullTx);
             CheckBlockWeb3Format( "earliest", 0, fullTx);
             CheckBlockWeb3Format( "pending", (ulong)total + 1, fullTx);
@@ -139,7 +147,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // changed from private to public: GetBlockRawByNumberBatch()
         public void Test_Web3BlockBatch() 
         {
-            ulong total = 50;
+            ulong total = 5;
             GenerateBlocksWithGenesis(total);
             var listOfBlockNo = new List<ulong>();
             var listOfBlockTag = new List<String>();
@@ -174,36 +182,36 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             
             
-            ulong total = 50;
+            ulong total = 5;
             GenerateBlocksWithGenesis(total);
             string blockTag = total.ToHex();
             var state = _apiService.GetStateByNumber(blockTag);
-            CheckStateWeb3Format(state , blockTag);
+            CheckStateWeb3Format(state! , blockTag);
 
             blockTag = "latest";
             var sameState = _apiService.GetStateByNumber(blockTag);
             Assert.AreEqual(sameState, state);
-            CheckStateWeb3Format(sameState, blockTag);
+            CheckStateWeb3Format(sameState!, blockTag);
 
             blockTag = "0x0";
             state = _apiService.GetStateByNumber(blockTag);
-            CheckStateWeb3Format(state, blockTag);
+            CheckStateWeb3Format(state!, blockTag);
 
             blockTag = "earliest";
             sameState = _apiService.GetStateByNumber(blockTag);
             Assert.AreEqual(sameState, state);
-            CheckStateWeb3Format(sameState, blockTag);
+            CheckStateWeb3Format(sameState!, blockTag);
 
-            ulong someBlockNo = 20;
+            ulong someBlockNo = 2;
             blockTag = someBlockNo.ToHex();
             state = _apiService.GetStateByNumber(blockTag);
-            CheckStateWeb3Format(state, blockTag);
+            CheckStateWeb3Format(state!, blockTag);
 
             someBlockNo = 100;
             blockTag = someBlockNo.ToHex();
             blockTag = "pending";
             state = _apiService.GetStateByNumber(blockTag);
-            CheckStateWeb3Format(state, blockTag);
+            CheckStateWeb3Format(state!, blockTag);
         }
 
         [Test]
@@ -211,8 +219,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // changed from private to public: CheckNodeHashes()
         public void Test_CheckNodeHashes()
         {
-            
-            ulong total = 50;
+
+            ulong total = 5;
             GenerateBlocksWithGenesis(total);
             for(ulong iter = 0; iter <= total; iter++)
             {
@@ -227,15 +235,15 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_Web3StateHashFromTrieRoots() 
         {
             _blockManager.TryBuildGenesisBlock();
-            ulong total = 50;
+            ulong total = 5;
             GenerateBlocks(total);
             ulong startBlock = 0, endBlock = total;
             var stateHash = _apiService.GetStateHashFromTrieRootsRange(startBlock.ToHex(), endBlock.ToHex());
-            Assert.AreEqual(stateHash[startBlock.ToHex(false)] , stateHash[endBlock.ToHex(false)]);
+            Assert.AreEqual(stateHash![startBlock.ToHex(false)] , stateHash[endBlock.ToHex(false)]);
             List<JToken> stateHashList1 = new List<JToken>() , stateHashList2 = new List<JToken>();
             foreach(var (_,value) in stateHash)
             {
-                stateHashList1.Add(value);
+                stateHashList1.Add(value!);
             }
             for(var currentBlock = startBlock; currentBlock <= endBlock; currentBlock++)
             {
@@ -250,7 +258,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_Web3Node() 
         {
             
-            ulong total = 50;
+            ulong total = 5;
             GenerateBlocksWithGenesis(total);
             int totalNodes = 0;
             ulong latestNode = 0;
@@ -266,20 +274,20 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                     var web3Node = _apiService.GetNodeByVersion(nodeId.ToHex());
                     
                     var hash = web3Node["Hash"]?.ToString();
-                    var sameHash = web3NodeByHash["Hash"].ToString();
-                    CheckHex(hash);
+                    var sameHash = web3NodeByHash["Hash"]!.ToString();
+                    CheckHex(hash!);
                     Assert.AreEqual(hash, sameHash);
                     Assert.AreEqual(hash, node.Hash.ToHex());
                     if(web3Node["NodeType"]?.ToString() == "0x2")
                     {
-                        CheckHex(web3Node["KeyHash"]?.ToString());
-                        CheckHex(web3Node["Value"]?.ToString());
+                        CheckHex(web3Node["KeyHash"]?.ToString()!);
+                        CheckHex(web3Node["Value"]?.ToString()!);
                     }
 
                     
                    
 
-                    if (web3Node["NodeType"].ToString() == ((int)NodeType.Internal).ToHex(false)) // internal node: must have children
+                    if (web3Node["NodeType"]!.ToString() == ((int)NodeType.Internal).ToHex(false)) // internal node: must have children
                     {
                         
                         var children = _apiService.GetChildrenByVersion(nodeId.ToHex());
@@ -288,22 +296,22 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                         var childrenArray = children[nodeId.ToHex(false)];
 
                         List<string> childrenHash = new List<string>(), sameChildrenHash = new List<string>(), anotherSameChildrenHash = new List<string>();
-                        foreach (var item in childrenArray)
+                        foreach (var item in childrenArray!)
                         {
-                            var childHash = item["Hash"].ToString();
+                            var childHash = item["Hash"]!.ToString();
                             CheckHex(childHash);
                             childrenHash.Add(childHash);
                         }
 
                         var childrenFromNode = web3NodeByHash["ChildrenHash"];
-                        foreach (var item in childrenFromNode)
+                        foreach (var item in childrenFromNode!)
                         {
                             sameChildrenHash.Add(item.ToString());
                         }
 
-                        foreach (var item in sameChildren)
+                        foreach (var item in sameChildren!)
                         {
-                            anotherSameChildrenHash.Add(item["Hash"].ToString());
+                            anotherSameChildrenHash.Add(item["Hash"]!.ToString());
                         }
 
                         Assert.AreEqual(childrenHash, sameChildrenHash);
@@ -361,7 +369,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // changed from private to public: GetBlockNumber(), GetDownloadedNodesTillNow(), ChainId(), NetVersion()
         public void Test_Web3Format() 
         {
-            ulong total = 0;
+            ulong total = 5;
             GenerateBlocksWithGenesis(total);
             var noOfBlocks = _apiService.GetBlockNumber();
             CheckHex(noOfBlocks);
@@ -611,7 +619,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 var txHashInString = txHash.ToString();
                 CheckHex(txHashInString);
                 var txJObject = _apiService.GetTransactionPoolByHash(txHashInString);
-                Assert.AreEqual(txHashInString, txJObject["hash"].ToString());
+                Assert.AreEqual(txHashInString, txJObject!["hash"]!.ToString());
             }
         }
 
@@ -664,7 +672,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             foreach(var eachEvent in events)
             {
-                CheckHex(eachEvent["transactionHash"].ToString());
+                CheckHex(eachEvent["transactionHash"]!.ToString());
                 // block hash is null empty for unknown reason
                 //CheckHex(eachEvent["blockHash"].ToString());
             }
@@ -678,8 +686,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             else publicKey = _privateWallet.EcdsaKeyPair.PublicKey.ToHex();
             var validatorInfo = _apiService.GetValidatorInfo(publicKey);
             //Console.WriteLine(validatorInfo);
-            if (random) Assert.AreEqual("Newbie", validatorInfo["state"].ToString());
-            else Assert.AreEqual("Validator", validatorInfo["state"].ToString());
+            if (random) Assert.AreEqual("Newbie", validatorInfo["state"]!.ToString());
+            else Assert.AreEqual("Validator", validatorInfo["state"]!.ToString());
         }
 
         public void Init()
@@ -751,7 +759,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 Assert.AreEqual(null, txCount);
                 return;
             }
-            CheckHex(txCount);
+            CheckHex(txCount!);
             Assert.AreEqual(block.TransactionHashes.Count.ToHex(false), txCount);
             var sameTxCount = _apiService.GetBlockTransactionsCountByHash(block.Hash.ToHex());
             Assert.AreEqual(txCount, sameTxCount);
@@ -759,18 +767,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var sameTxes = TxesForBlockInWeb3Format(block, true);
             var sameTxesAgain = _apiService.GetBlockByNumber(blockHeight.ToHex(),true);
             List<string> txesToList = new List<string>() , sameTxesToList = new List<string>(), sameTxesAgainToList = new List<string>();
-            foreach(var item in txes["transactions"])
+            foreach(var item in txes!["transactions"]!)
             {
-                txesToList.Add(item["hash"].ToString());
-                CheckHex(item["hash"].ToString());
+                txesToList.Add(item["hash"]!.ToString());
+                CheckHex(item["hash"]!.ToString());
             }
             foreach(var item in sameTxes)
             {
-                sameTxesToList.Add(item["hash"].ToString());
+                sameTxesToList.Add(item["hash"]!.ToString());
             }
-            foreach(var item in sameTxesAgain["transactions"])
+            foreach(var item in sameTxesAgain!["transactions"]!)
             {
-                sameTxesAgainToList.Add(item["hash"].ToString());
+                sameTxesAgainToList.Add(item["hash"]!.ToString());
             }
             Assert.AreEqual(txesToList, sameTxesAgainToList);
             Assert.AreEqual(txesToList, sameTxesToList);
@@ -800,9 +808,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
 
             var allTrieRootHash = _apiService.GetAllTrieRootsHash(blockTag);
-            foreach(var (_,value) in allTrieRootHash)
+            foreach(var (_,value) in allTrieRootHash!)
             {
-                Assert.AreEqual("0x", value.ToString().Substring(0, 2));
+                Assert.AreEqual("0x", value!.ToString().Substring(0, 2));
                 Assert.AreNotEqual("0x", value.ToString());
             }
             string[] trieNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
@@ -832,10 +840,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 return;
             }
 
-            var web3BlockByHash = _apiService.GetBlockByHash(block.Hash.ToHex());
+            var web3BlockByHash = _apiService.GetBlockByHash(block.Hash.ToHex(),fullTx);
             
-            Assert.AreEqual(block.Hash.ToHex(), web3Block["hash"].ToString());
-            CheckHex(sameBlock);
+            Assert.AreEqual(block.Hash.ToHex(), web3Block!["hash"]!.ToString());
+            CheckHex(sameBlock!);
             foreach(var item in web3Block)
             {
                 var (key, pair) = item;
@@ -843,7 +851,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 {
                     var pairToString = pair?.ToString();
                     
-                    if (key != "extraData") CheckHex(pairToString);
+                    if (key != "extraData") CheckHex(pairToString!);
                     else Assert.AreEqual("0x", pairToString?.Substring(0, 2));
                 }
             }
@@ -856,14 +864,23 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         public JArray TxesForBlockInWeb3Format(Block block , bool fullTx)
         {
-            if (!fullTx) return new JArray();
+           
             var txs = new List<TransactionReceipt>();
             var txHashes = block!.TransactionHashes;
             foreach (var hash in txHashes)
             {
                 txs.Add(_transactionManager.GetByHash(hash)!);
             }
-            return Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            var txArray = fullTx? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index) : new JArray();
+            if (!fullTx)
+            {
+                foreach(var hash in txHashes)
+                {
+                    txArray.Add(Web3DataFormatUtils.Web3Data(hash));
+                }
+            }
+            return txArray;
+
         }
 
         public ulong GasForBlock(Block block)

@@ -74,6 +74,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var txArray = fullTx
                 ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index)
                 : new JArray();
+            if (!fullTx)
+            {
+                foreach(var tx in txs)
+                {
+                    txArray.Add(Web3DataFormatUtils.Web3Data(tx.Hash));
+                }
+            }
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
@@ -291,7 +298,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getBlockByHash")]
-        public JObject? GetBlockByHash(string blockHash, bool txFlag = true)
+        public JObject? GetBlockByHash(string blockHash , bool fullTx = true) 
         {
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             if (block == null)
@@ -300,7 +307,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 .Select(hash => _transactionManager.GetByHash(hash)!)
                 .ToList();
             var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
-            var txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            var txArray = fullTx
+                ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index)
+                : new JArray();
+            if (!fullTx)
+            {
+                foreach (var tx in txs)
+                {
+                    txArray.Add(Web3DataFormatUtils.Web3Data(tx.Hash));
+                }
+            }
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
