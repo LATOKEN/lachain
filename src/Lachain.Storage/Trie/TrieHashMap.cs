@@ -255,7 +255,6 @@ namespace Lachain.Storage.Trie
         {
             if (id == 0) return null;
             if (_nodeCache.TryGetValue(id, out var node)) return node;
-        //    Console.WriteLine("looking for id: "+id);
             var _node = _lruCache.Get(id);
             if (_node == null)
             {
