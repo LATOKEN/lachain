@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -17,6 +20,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public Peer peer;
         public List<string> batch;
         public uint type;
+        public DateTime start;
         public RequestState()
         {
             BufferRead = new byte[BUFFER_SIZE];
