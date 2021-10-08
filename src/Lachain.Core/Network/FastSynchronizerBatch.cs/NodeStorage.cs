@@ -55,6 +55,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return false;
         }
 
+        public bool ExistNode(string nodeHash)
+        {
+            if(GetIdByHash(nodeHash, out ulong id))
+            {
+                return TryGetNode(id, out IHashTrieNode? node);
+            }
+            return false;
+        }
+
         public bool GetIdByHash(string nodeHash, out ulong id)
         {
             id = 0;
@@ -150,7 +159,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             foreach(var item in _nodeCache)
             {
                 tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix(item.Key), NodeSerializer.ToBytes(item.Value));
-                Console.WriteLine("Adding node to DB : "+item.Key);
+          //      Console.WriteLine("Adding node to DB : "+item.Key);
             }
             ulong nodesCnt = UInt64Utils.FromBytes(_dbContext.Get(EntryPrefix.NodesDownloadedTillNow.BuildPrefix()));
             nodesCnt += (ulong)_nodeCache.Count;

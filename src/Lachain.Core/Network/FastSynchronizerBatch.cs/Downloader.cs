@@ -22,7 +22,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private PeerManager _peerManager;
         private RequestManager _requestManager;
         private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
-        private const int DefaultTimeout = 10 * 1000; // 10 sec 
+        private const int DefaultTimeout = 5 * 1000; // 5 sec 
         private BlockRequestManager _blockRequestManager; 
         public Downloader(PeerManager peerManager, RequestManager requestManager)
         {
@@ -62,14 +62,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //    Console.WriteLine("GetTrie........");
                 if(!_peerManager.TryGetPeer(out var peer))
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(500);
                     continue;
                 }
             //    Console.WriteLine("GetTrie after TryGetPeer........");
                 if(!_requestManager.TryGetHashBatch(out var hashBatch))
                 {
                     _peerManager.TryFreePeer(peer);
-                    Thread.Sleep(100);
+                    Thread.Sleep(500);
                     continue;
                 }
             //    Console.WriteLine("GetTrie after TryGetHashBatch........");
@@ -116,7 +116,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 myRequestState.batch = batch;
                 myRequestState.peer = peer;
                 myRequestState.type = type;
-                
+                myRequestState.start = DateTime.Now;
+
                 IAsyncResult result =
                     (IAsyncResult)myHttpWebRequest.BeginGetResponse(new AsyncCallback(RespCallback), myRequestState);
 
@@ -127,9 +128,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Console.WriteLine("\nMain Exception raised!");
                 Console.WriteLine("Source :{0} ", e.Source);
                 Console.WriteLine("Message :{0} ", e.Message);
-                if(type==1) _requestManager.HandleResponse(batch, new JArray { });
-                if(type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
-                _peerManager.TryFreePeer(peer);
+                if(_peerManager.TryFreePeer(peer, 0))
+                {
+                    if(type==1) _requestManager.HandleResponse(batch, new JArray { });
+                    if(type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
+                }
             }
         }
 
@@ -147,10 +150,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     request.request.Abort();
                     var peer = request.peer;
                     var batch = request.batch;
-                    Console.WriteLine($"timed out from peer {peer._url}");
-                    if(request.type==1) _requestManager.HandleResponse(batch, new JArray { });
-                    if(request.type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
-                    _peerManager.TryFreePeer(peer);
+                    TimeSpan time = DateTime.Now - request.start; 
+                    Console.WriteLine($"timed out from peer {peer._url} spent {time.TotalMilliseconds}   : {batch[0]}");
+                    if(_peerManager.TryFreePeer(peer, 0))
+                    {
+                        if(request.type==1) _requestManager.HandleResponse(batch, new JArray { });
+                        if(request.type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
+                    }
                 }
             }
         }
@@ -181,15 +187,21 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                 }
                 result = (JArray)response["result"];
+                TimeSpan time = DateTime.Now - myRequestState.start;
+                Console.WriteLine($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
             }
             catch (Exception e)
             {
                 Console.WriteLine("\nRespCallback Exception raised!");
                 Console.WriteLine("\nMessage:{0}", e.Message);
+                TimeSpan time = DateTime.Now - myRequestState.start;
+                Console.WriteLine($"Wasted time:{time.TotalMilliseconds} from peer:{peer._url}  :  {batch[0]}");
             }
-            if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
-            if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
-            _peerManager.TryFreePeer(peer);
+            if(_peerManager.TryFreePeer(peer, 1))
+            {
+                if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
+                if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
+            }
         }
 
         private string DownloadLatestBlockNumber()
