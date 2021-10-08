@@ -60,7 +60,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
             List<string> urls = devnetNodes;
-            HybridQueue2 hybridQueue = new HybridQueue2(dbContext, nodeStorage);
+            HybridQueue3 hybridQueue = new HybridQueue3(dbContext, nodeStorage);
             PeerManager peerManager = new PeerManager(urls);
             
             RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
@@ -82,12 +82,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 downloadedTries++;
                 dbContext.Save(EntryPrefix.LastDownloaded.BuildPrefix(), downloadedTries.ToBytes().ToArray());
                 Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");
-                //bool isConsistent = requestManager.CheckConsistency(curTrieRoot);
-                //Console.WriteLine("Is Consistent : "+isConsistent );
+            //    bool isConsistent = requestManager.CheckConsistency(curTrieRoot);
+            //    Console.WriteLine("Is Consistent : "+isConsistent );
                 Logger.LogWarning($"Total Nodes downloaded: {versionFactory.CurrentVersion}");
             }
-
-            
             
             if(downloadedTries==(int)trieNames.Length)
             {
