@@ -33,6 +33,8 @@ using Google.Protobuf;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Serialization;
+using Nethereum.Util;
+using System.Security.Cryptography;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -198,6 +200,38 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(res.ToHex(), supply.ToUInt256().ToHex());
         }
 
+
+        [Test]
+        //changed SendTransaction from private to public
+        public void Test_SendTransaction_Data_is_nul()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            GenerateBlocks(1);
+
+            var keyPair = _privateWallet!.EcdsaKeyPair;
+            var from = keyPair.PublicKey.GetAddress();
+            var fromHx = from.ToHex();
+
+            var data = ByteCodeHex;
+
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+
+            JObject opts = new JObject
+            {
+                ["from"] = fromHx,
+                ["gas"] = 5000000000,
+                ["gasPrice"] = "0.0000001",
+                ["to"] = "0xB8CD3195faf7da8a87A2816B9b4bBA2A19D25dAb",
+                ["value"] = 0,
+                ["nonce"] = 0
+            };
+
+            var TxHash = _apiService.SendTransaction(opts);
+
+            Assert.AreEqual(TxHash, "0xc41050b17b5470733699dccbf3838d07d511c920dcae23e33b4c61e9fac179fc");
+        }
 
         [Test]
         //changed VerifyRawTransaction from private to public
