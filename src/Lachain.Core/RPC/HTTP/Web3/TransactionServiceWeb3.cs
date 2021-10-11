@@ -4,13 +4,14 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Signer;
+//using Nethereum.Signer;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
@@ -22,7 +23,13 @@ using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Serialization;
+//using Nethereum.Util;
+
 using Transaction = Lachain.Proto.Transaction;
+using System.Security.Cryptography;
+using Lachain.Crypto.ECDSA;
+using Lachain.Utility;
+using Nethereum.Signer;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -249,7 +256,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_sendTransaction")]
-        private string SendTransaction(JObject opts)
+        public string SendTransaction(JObject opts)
         {
             var from = opts["from"];
             var gas = opts["gas"];
@@ -296,9 +303,36 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 if (data is null) // transfer tx
                 {
-                    // TODO: implement transfer tx
-                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
-                    //throw new ApplicationException("Not implemented yet");
+
+                    _privateWallet.Unlock("12345", 1000);
+                    var keyPair = _privateWallet.EcdsaKeyPair;
+                    Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
+
+                    var fromAddress = from is null ? keyPair.PublicKey.GetAddress() : ((string)from!).HexToUInt160();
+                    var toAddress = ((string)to!).HexToUInt160();
+                    var gasPriceWei = (ulong)Money.Parse(gasPrice.ToString()).ToWei();
+
+                    var tx = new Transaction
+                    {
+                        To = toAddress,
+                        From = fromAddress,
+                        GasPrice = gasPriceWei,
+                        GasLimit = 100000000,
+                        Nonce = 0,
+                        Value = Money.Parse(value.ToString()).ToUInt256()
+                    };
+
+                    var signedTx = _transactionSigner.Sign(tx, keyPair);
+
+                    var error = _transactionPool.Add(signedTx);
+
+                    if (error != OperatingError.Ok)
+                    {
+                        return Web3DataFormatUtils.Web3Data("".HexToBytes());
+                        //throw new ApplicationException($"Can not add to transaction pool: {error}");
+                    }
+
+                    return Web3DataFormatUtils.Web3Data(signedTx.Hash);
                 }
                 else // invoke tx
                 {
