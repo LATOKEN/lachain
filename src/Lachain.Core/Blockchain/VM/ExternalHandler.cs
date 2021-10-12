@@ -784,13 +784,7 @@ namespace Lachain.Core.Blockchain.VM
             var snapshot = frame.InvocationContext.Snapshot;
             var blockHeight = snapshot.Blocks.GetTotalBlockHeight();
             
-            // Get block at the given height
-            var block = snapshot.Blocks.GetBlockByHeight(blockHeight);
-            
-            // Get block's timestamp
-            if (block is null)
-                throw new InvalidContractException("Bad call to (get_block_timestamp)");
-            var timeStamp = block.Timestamp;
+            var timeStamp = blockHeight;
             
             // Load timestamp at the given dataOffset
             var result = SafeCopyToMemory(frame.Memory, timeStamp.ToBytes().ToArray(), dataOffset);
