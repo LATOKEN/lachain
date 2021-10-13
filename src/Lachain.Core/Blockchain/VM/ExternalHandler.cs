@@ -706,7 +706,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetMsgValue({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
-            var data = (frame.InvocationContext.Message?.Value ?? frame.InvocationContext.Value).ToBytes();
+            var data = (frame.InvocationContext.Message?.Value ?? frame.InvocationContext.Value).ToBytes().Reverse().ToArray();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to (get_msgvalue)");
