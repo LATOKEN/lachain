@@ -151,7 +151,19 @@ namespace Lachain.Core.Consensus
                     DefaultCrypto.ResetBenchmark();
                     broadcaster.Terminate();
                     _eras.Remove(CurrentEra);
-                    CurrentEra += 1;
+                    
+                    var height = (long) _blockManager.GetHeight();
+                    
+                    if(height >= CurrentEra) 
+                    {
+                        CurrentEra += 1;
+                        Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
+                    }
+                    else 
+                    {
+                        Logger.LogWarning($"block height: {height} is smaller than CurrentEra: {CurrentEra}.");
+                    }
+
                     _eras[CurrentEra] = new EraBroadcaster(
                         CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
                     );
