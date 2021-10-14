@@ -133,7 +133,7 @@ namespace Lachain.Console
                 var vault = new VaultConfig
                 {
                     Path = walletPath,
-                    Password = "12345"
+                    Password = getRandomPassword()
                 };
                 var storage = new StorageConfig
                 {
@@ -151,7 +151,8 @@ namespace Lachain.Console
                     ecdsaPrivateKeys[i],
                     serializedHubPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToHex(),
-                    privShares[i].ToHex()
+                    privShares[i].ToHex(),
+                    vault.Password
                 );
             }
 
@@ -261,7 +262,7 @@ namespace Lachain.Console
                 var vault = new VaultConfig
                 {
                     Path = walletPath,
-                    Password = "12345"
+                    Password = getRandomPassword()
                 };
                 var storage = new StorageConfig
                 {
@@ -279,7 +280,8 @@ namespace Lachain.Console
                     ecdsaPrivateKeys[i],
                     serializedHubPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToHex(),
-                    privShares[i].ToHex()
+                    privShares[i].ToHex(),
+                    vault.Password
                 );
             }
 
@@ -307,7 +309,7 @@ namespace Lachain.Console
             );
         }
 
-        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tpkeKey, string tsKey)
+        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tpkeKey, string tsKey, string password)
         {
             var config = new JsonWallet(
                 ecdsaKey,
@@ -316,9 +318,15 @@ namespace Lachain.Console
                 new Dictionary<ulong, string> {{0, tsKey}}
             );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
-            var passwordHash = Encoding.UTF8.GetBytes("12345").KeccakBytes();
+            var passwordHash = Encoding.UTF8.GetBytes(password).KeccakBytes();
             var crypto = CryptoProvider.GetCrypto();
             File.WriteAllBytes(path, crypto.AesGcmEncrypt(passwordHash, json));
+        }
+
+        private static string getRandomPassword()
+        {
+            var crypto = CryptoProvider.GetCrypto();
+            return crypto.GenerateRandomBytes(20).ToHex(false);
         }
     }
 }
