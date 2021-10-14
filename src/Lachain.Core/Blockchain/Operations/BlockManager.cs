@@ -22,6 +22,7 @@ using Lachain.Utility.Utils;
 using Prometheus;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Blockchain.Validators;
 
 
 namespace Lachain.Core.Blockchain.Operations
@@ -309,7 +310,7 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.PrevBlockHashMismatched;
 
             /* verify block signatures */
-            error = VerifySignatures(block);
+            error = VerifySignatures(block, false);
             if (error != OperatingError.Ok)
                 return error;
 
@@ -508,13 +509,29 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignatures(Block block)
+        public OperatingError VerifySignatures(Block block, bool checkValidatorSet)
         {
             if (!block.Header.Keccak().Equals(block.Hash))
                 return OperatingError.HashMismatched;
             if (_IsGenesisBlock(block))
                 return OperatingError.Ok;
+            if (checkValidatorSet && !VerifyValidatorSet(block.Multisig.Validators, block.Header.Index - 1))
+                return OperatingError.InvalidMultisig;
             return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash);
+        }
+
+        private bool VerifyValidatorSet(IReadOnlyCollection<ECDSAPublicKey> keys, ulong height)
+        {
+            try
+            {
+                IReadOnlyCollection<ECDSAPublicKey> validators = _snapshotIndexRepository.GetSnapshotForBlock(height).Validators
+                    .GetValidatorsPublicKeys().ToArray();
+                return validators.All(v => keys.Contains(v)) && keys.All(k => validators.Contains(k));
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

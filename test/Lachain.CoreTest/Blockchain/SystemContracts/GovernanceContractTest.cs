@@ -56,8 +56,9 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         [TearDown]
         public void Teardown()
         {
-            TestUtils.DeleteTestChainData();
             _container?.Dispose();
+            TestUtils.DeleteTestChainData();
+
         }
 
         [Test]
@@ -390,6 +391,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         }
         
         [Test]
+        [Repeat(1)]
         public void Test_FourNodeCycle()
         {
             ExecuteCycle(4, 1);

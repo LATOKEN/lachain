@@ -154,7 +154,7 @@ namespace Lachain.Core.Network
                     return false;
                 }
 
-                if (_blockManager.VerifySignatures(block) != OperatingError.Ok)
+                if (_blockManager.VerifySignatures(block, true) != OperatingError.Ok)
                 {
                     Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig");
                     return false;
@@ -219,9 +219,16 @@ namespace Lachain.Core.Network
             if (validatorPeers.Length < setOfPeers.Count * 2 / 3)
                 return true;
             if (!validatorPeers.Any()) return false;
-            var maxHeight = validatorPeers.Max(v => v.Value);
-            Logger.LogDebug($"Max height among peers: {maxHeight}, my height: {myHeight}");
-            return myHeight < maxHeight;
+
+            List<ulong> heights = new List<ulong>();
+            foreach (var keyValuePair in validatorPeers)
+            {
+                heights.Add(keyValuePair.Value);
+            }
+            heights.Sort();
+            var medianHeight = heights[heights.Count / 2];
+            Logger.LogDebug($"Median height among peers: {medianHeight}, my height: {myHeight}");
+            return myHeight < medianHeight;
         }
 
         public void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers)

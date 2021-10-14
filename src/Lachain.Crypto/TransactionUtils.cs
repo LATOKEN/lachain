@@ -11,8 +11,17 @@ namespace Lachain.Crypto
 {
     public static class TransactionUtils
     {
-        public const int ChainId = 41;
-
+        public static int ChainId
+        {
+            get;
+            private set;
+        }
+        public static void SetChainId(int chainId)
+        {
+            if (ChainId == 0) ChainId = chainId;
+            else throw new Exception("trying to set chainId second time.");
+            
+        }
         public static TransactionChainId GetEthTx(this Transaction t, Signature? s)
         {
             var nonce = t.Nonce == 0
