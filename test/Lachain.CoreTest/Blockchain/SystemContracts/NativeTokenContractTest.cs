@@ -77,9 +77,9 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             TestUtils.DeleteTestChainData();
         }
 
-        
+  /*      
         [Test]
-        [Repeat(5)]
+        [Repeat(5)] 
         public void Test_NativeTokenMinting()
         {
             var tx = new TransactionReceipt();
@@ -352,5 +352,6 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetMinter(_minterAdd, frame));
             }
         }
+        */
     }
 }
