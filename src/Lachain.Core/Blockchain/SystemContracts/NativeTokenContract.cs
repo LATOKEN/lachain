@@ -38,11 +38,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         // private static byte[] _minterPubKey = CryptoUtils.EncodeCompressed(_minterKeyPair.PublicKey);
         // private static UInt160 _minterAdd = Crypto.ComputeAddress(_minterPubKey).ToUInt160();
 
-        private static EcdsaKeyPair _mintCntrlKeyPair =
-            new EcdsaKeyPair("0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75".HexToBytes()
-                .ToPrivateKey());
-        private static byte[] _mintCntrlPubKey = CryptoUtils.EncodeCompressed(_mintCntrlKeyPair.PublicKey);
-        private static UInt160 _mintCntrlAdd = Crypto.ComputeAddress(_mintCntrlPubKey).ToUInt160();
+        private static UInt160 _mintCntrlAdd = "0x5d7D368dAC9C291809a780068680f593b0592eB8".HexToUInt160();
 
         private readonly Money _maxSupply = Money.Parse("1000000000");
 
