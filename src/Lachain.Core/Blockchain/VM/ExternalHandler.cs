@@ -213,6 +213,35 @@ namespace Lachain.Core.Blockchain.VM
             return InvokeContract(callSignatureOffset, inputLength, inputOffset, valueOffset, gasOffset, InvocationType.Static);
         }
 
+        public static int Handler_Env_Transfer(
+            int callSignatureOffset, int valueOffset)
+        {
+            Logger.LogInformation($"Handler_Env_Transfer({callSignatureOffset}, {valueOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call transfer outside wasm frame");
+            var snapshot = frame.InvocationContext.Snapshot;
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
+            if (addressBuffer is null)
+                throw new InvalidContractException("Bad call to transfer function");
+            var address = addressBuffer.ToUInt160();
+            Logger.LogInformation($"Address: {address.ToHex()}");
+            var msgValue = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256();
+            var value = msgValue!.ToMoney();
+            Logger.LogInformation($"Value: {value}");
+
+            if (value is null)
+                throw new InvalidContractException("Bad call to transfer function");
+            if (value > Money.Zero)
+            {
+                frame.UseGas(GasMetering.TransferFundsGasCost);
+                var result = snapshot.Balances.TransferBalance(frame.CurrentAddress, address, value);
+                if (!result)
+                    throw new InsufficientFundsException();
+            }
+
+            return 0;
+        }
+
         public static int Handler_Env_Create(int valueOffset, int dataOffset, int dataLength, int resultOffset)
         {
             Logger.LogInformation($"Handler_Env_Create({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
@@ -859,6 +888,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
                 {EnvModule, "invoke_delegate_contract", CreateImport(nameof(Handler_Env_InvokeDelegateContract))},
                 {EnvModule, "invoke_static_contract", CreateImport(nameof(Handler_Env_InvokeStaticContract))},
+                {EnvModule, "transfer", CreateImport(nameof(Handler_Env_Transfer))},
                 {EnvModule, "create", CreateImport(nameof(Handler_Env_Create))},
                 {EnvModule, "create2", CreateImport(nameof(Handler_Env_Create2))},
                 {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetReturnSize))},
