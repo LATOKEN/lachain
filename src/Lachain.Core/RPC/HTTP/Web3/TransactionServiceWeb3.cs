@@ -73,7 +73,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_verifyRawTransaction")]
-        private string VerifyRawTransaction(string rawTx)
+        public string VerifyRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
             var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature();
@@ -100,7 +100,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionReceipt")]
-        private JObject? GetTransactionReceipt(string txHash)
+        public JObject? GetTransactionReceipt(string txHash)
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -122,7 +122,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
-        private JObject? GetTransactionByHash(string txHash)
+        public JObject? GetTransactionByHash(string txHash)
         {
             var hash = txHash.HexToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -133,7 +133,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByBlockHashAndIndex")]
-        private JObject? GetTransactionByBlockHashAndIndex(string blockHash, ulong index)
+        public JObject? GetTransactionByBlockHashAndIndex(string blockHash, ulong index)
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash.HexToUInt256());
             if (block is null)
@@ -146,7 +146,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByBlockNumberAndIndex")]
-        private JObject? GetTransactionByBlockNumberAndIndex(string blockTag, ulong index)
+        public JObject? GetTransactionByBlockNumberAndIndex(string blockTag, ulong index)
         {
             var height = GetBlockNumberByTag(blockTag);
             var block = (height is null) ? null : _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight((ulong) height);
@@ -310,7 +310,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
         
         [JsonRpcMethod("eth_call")]
-        private string Call(JObject opts, string? blockId)
+        public string Call(JObject opts, string? blockId)
         {
             var from = opts["from"];
             var to = opts["to"];
@@ -393,7 +393,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_estimateGas")]
-        private string? EstimateGas(JObject opts)
+        public string? EstimateGas(JObject opts)
         {
             Logger.LogInformation($"eth_estimateGas({opts})");
             try
@@ -516,7 +516,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_gasPrice")]
-        private string GetNetworkGasPrice()
+        public string GetNetworkGasPrice()
         {
             return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
