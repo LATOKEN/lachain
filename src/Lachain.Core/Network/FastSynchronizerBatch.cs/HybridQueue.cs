@@ -14,18 +14,19 @@ using Lachain.Utility.Serialization;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class HybridQueue2{
+    class HybridQueue{
         private IRocksDbContext _dbContext;
         private const int BatchSize = 5000;
-        private ulong _doneBatch=0, _totalBatch=0;        
-        private HashSet<string> _pending = new HashSet<string>();
+        private ulong _doneBatch=0, _totalBatch=0, _savedBatch=0;        
+        private IDictionary<string, ulong> _pending = new Dictionary<string, ulong>();
         private Queue<string> _incomingQueue = new Queue<string>();
         private Queue<string> _outgoingQueue = new Queue<string>();
+        private Queue<ulong> _batchQueue = new Queue<ulong>();
 
-        private IDictionary<string, ulong> _exists = new Dictionary<string, ulong>();
+        private IDictionary<ulong, int> _remaining = new Dictionary<ulong, int>();
 
         private NodeStorage _nodeStorage;
-        public HybridQueue2(IRocksDbContext dbContext, NodeStorage nodeStorage)
+        public HybridQueue(IRocksDbContext dbContext, NodeStorage nodeStorage)
         {
             _dbContext = dbContext;
             _nodeStorage = nodeStorage;
@@ -33,8 +34,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void init()
         {
-            _doneBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.DoneBatch.BuildPrefix()));
+            _savedBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.SavedBatch.BuildPrefix()));
+            _doneBatch = _savedBatch;
             _totalBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.TotalBatch.BuildPrefix()));
+            
             Console.WriteLine("Starting with....");
             Console.WriteLine("Done Batch: "+_doneBatch+" Total Batch: "+_totalBatch);
         }
@@ -42,9 +45,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Add(string key)
         {
-            if(_pending.Contains(key)){
-                _pending.Remove(key);
+            if(_pending.ContainsKey(key)){
                 _outgoingQueue.Enqueue(key);
+                _batchQueue.Enqueue(_pending[key]);
+                _pending.Remove(key);
                 return;
             }
         //    bool foundHash = _nodeStorage.GetIdByHash(key, out ulong id);
@@ -58,34 +62,50 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
         //    Console.WriteLine("Outgoing queue: "+_outgoingQueue.Count+" Incoming Queue: "+_incomingQueue.Count);
             key = null;
-            if(_outgoingQueue.Count>0) key = _outgoingQueue.Dequeue();
-            else{
-                if(_pending.Count!=0) return false;
-                if(_doneBatch==_totalBatch && _incomingQueue.Count>0) PushToDB();
-                if(_doneBatch<_totalBatch){
-                    LoadFromDB();
-                    key = _outgoingQueue.Dequeue();
-                }
-                else return false;
+            ulong batch;
+            if(_outgoingQueue.Count>0)
+            {
+                key = _outgoingQueue.Dequeue();
+                batch = _batchQueue.Dequeue();
             }
-            if(_pending.Contains(key)) Console.WriteLine("something is not okay!--------------------------------------------");
-            _pending.Add(key);
+            else{
+            //    if(_pending.Count!=0) return false;
+                if(_doneBatch==_totalBatch && _incomingQueue.Count>0) PushToDB();
+                while(_doneBatch<_totalBatch && _outgoingQueue.Count==0)
+                {
+                    LoadFromDB();
+                }
+                if(_outgoingQueue.Count==0) return false;
+                key = _outgoingQueue.Dequeue();
+                batch = _batchQueue.Dequeue();
+            }
+//            if(_pending.ContainsKey(key)) Console.WriteLine("something is not okay!----------------------------------: "+ _pending[key]+" "+_remaining[_pending[key]]);
+            _pending[key] = batch;
             return true;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool ReceivedNode(string key)
         {
+            ulong batch = _pending[key];
             _pending.Remove(key);
-            if(_pending.Count==0 &&_outgoingQueue.Count==0)
+            _remaining[batch] = _remaining[batch] - 1;
+            if(_remaining[batch]==0) Console.WriteLine("Batch "+batch +" download done.");
+            TryToSaveBatch();
+            return true;
+        }
+
+        public void TryToSaveBatch()
+        {
+            while(_remaining.ContainsKey(_savedBatch+1) && _remaining[_savedBatch+1]==0)
             {
+                _remaining.Remove(_savedBatch+1);
                 PushToDB();
                 _nodeStorage.Commit();
-                _doneBatch++;
-                _dbContext.Save(EntryPrefix.DoneBatch.BuildPrefix(), _doneBatch.ToBytes().ToArray());
-                Console.WriteLine("Another batch done: "+ _doneBatch);
+                _savedBatch++;
+                _dbContext.Save(EntryPrefix.SavedBatch.BuildPrefix(), _savedBatch.ToBytes().ToArray());
+                Console.WriteLine("Another batch saved: "+ _savedBatch);
             }
-            return true;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -97,7 +117,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool isPending(string key)
         {
-            return _pending.Contains(key);
+            return _pending.ContainsKey(key);
         }
 
         void PushToDB()
@@ -128,14 +148,21 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 byte[] array = new byte[32];
                 for(int j=0; j<32 ; j++,i++) array[j] = raw[i];
-                String hash = HexUtils.ToHex(array);
+                string hash = HexUtils.ToHex(array);
+                if(ExistNode(hash)) continue;
                 _outgoingQueue.Enqueue(hash);
-                if( _exists.ContainsKey(hash)) Console.WriteLine("same key being loaded multiple times....................");
-                else _exists[hash] = _curBatch;
-
+                _batchQueue.Enqueue(_curBatch);
                 cnt++;
             }
+            _remaining[_curBatch] = cnt;
+            _doneBatch = _curBatch;
             Console.WriteLine("Trying to download nodes from batch: "+_curBatch+"  size: "+ cnt);
+            if(cnt==0) TryToSaveBatch();
+        }
+        bool ExistNode(string hash)
+        {
+            if(_pending.ContainsKey(hash)) return true;
+            return _nodeStorage.ExistNode(hash);
         }
     }
 }
