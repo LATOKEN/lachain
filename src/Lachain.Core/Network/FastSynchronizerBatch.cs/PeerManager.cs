@@ -27,7 +27,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             else if(_availableGoodPeers.Count>0) peer = _availableGoodPeers.Dequeue();
             else{
                 TimeSpan time = DateTime.Now - _lastResult.Peek();
-                if( time.TotalMilliseconds < 120.0*1000 ) return false;
+                if( time.TotalMilliseconds < 30.0*1000 ) return false;
                 peer = _availableBadPeers.Dequeue();
                 _lastResult.Dequeue();
             }

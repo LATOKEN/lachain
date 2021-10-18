@@ -10,61 +10,159 @@ using Lachain.Storage;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     class HybridQueue{
         private IRocksDbContext _dbContext;
-        private const int BatchSize = 1000;
-        private int CurBatch, TotalBatch;        
-        private HashSet<string> _pending = new HashSet<string>();
-        private Queue<string> _queue = new Queue<string>(); 
+        private const int BatchSize = 5000;
+        private ulong _doneBatch=0, _totalBatch=0, _savedBatch=0;        
+        private IDictionary<string, ulong> _pending = new Dictionary<string, ulong>();
+        private Queue<string> _incomingQueue = new Queue<string>();
+        private Queue<string> _outgoingQueue = new Queue<string>();
+        private Queue<ulong> _batchQueue = new Queue<ulong>();
 
-        public int Count = 0;
-        public HybridQueue(IRocksDbContext dbContext)
+        private IDictionary<ulong, int> _remaining = new Dictionary<ulong, int>();
+
+        private NodeStorage _nodeStorage;
+        public HybridQueue(IRocksDbContext dbContext, NodeStorage nodeStorage)
         {
             _dbContext = dbContext;
-            CurBatch = 0;
-            TotalBatch = 0; 
+            _nodeStorage = nodeStorage;
         }
 
-        public void Enqueue(string val)
+        public void init()
         {
-            _queue.Enqueue(val);
-            if(_queue.Count >= 2*BatchSize)
-            {
-                List<byte> list = new List<byte>();
-                for(int i=0 ; i<BatchSize; i++)
-                {
-                //    byte[] array = HexUtils.HexToBytes(_queue.Dequeue());
-                //    for(int j=0; j<array.Length; j++) list.Add(array[j]);
-                    list.AddRange(HexUtils.HexToBytes(_queue.Dequeue()));
-                }
-                TotalBatch++;
-                _dbContext.Save(EntryPrefix.QueueBatch.BuildPrefix((ulong)TotalBatch), list.ToArray());
+            _savedBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.SavedBatch.BuildPrefix()));
+            _doneBatch = _savedBatch;
+            _totalBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.TotalBatch.BuildPrefix()));
+            
+            Console.WriteLine("Starting with....");
+            Console.WriteLine("Done Batch: "+_doneBatch+" Total Batch: "+_totalBatch);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Add(string key)
+        {
+            if(_pending.ContainsKey(key)){
+                _outgoingQueue.Enqueue(key);
+                _batchQueue.Enqueue(_pending[key]);
+                _pending.Remove(key);
+                return;
             }
-            Count++;
+        //    bool foundHash = _nodeStorage.GetIdByHash(key, out ulong id);
+        //    Console.WriteLine("Added to incomingqueue: "+id);
+            _incomingQueue.Enqueue(key);
+            if(_incomingQueue.Count >= BatchSize) PushToDB();
         }
 
-        public string Dequeue()
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryGetValue(out string key)
         {
-            Count--;
-            if(_queue.Count > 0) return _queue.Dequeue();
-            else if(CurBatch<TotalBatch){
-                CurBatch++;
-                byte[] raw = _dbContext.Get(EntryPrefix.QueueBatch.BuildPrefix((ulong)CurBatch));
-                for(int i=0; i<raw.Length; )
-                {
-                    byte[] array = new byte[32];
-                    for(int j=0; j<32 ; j++,i++) array[j] = raw[i];
-                    _queue.Enqueue(HexUtils.ToHex(array));
-                }
-                return _queue.Dequeue();
+        //    Console.WriteLine("Outgoing queue: "+_outgoingQueue.Count+" Incoming Queue: "+_incomingQueue.Count);
+            key = null;
+            ulong batch;
+            if(_outgoingQueue.Count>0)
+            {
+                key = _outgoingQueue.Dequeue();
+                batch = _batchQueue.Dequeue();
             }
             else{
-                return "0x";
+            //    if(_pending.Count!=0) return false;
+                if(_doneBatch==_totalBatch && _incomingQueue.Count>0) PushToDB();
+                while(_doneBatch<_totalBatch && _outgoingQueue.Count==0)
+                {
+                    LoadFromDB();
+                }
+                if(_outgoingQueue.Count==0) return false;
+                key = _outgoingQueue.Dequeue();
+                batch = _batchQueue.Dequeue();
+            }
+//            if(_pending.ContainsKey(key)) Console.WriteLine("something is not okay!----------------------------------: "+ _pending[key]+" "+_remaining[_pending[key]]);
+            _pending[key] = batch;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool ReceivedNode(string key)
+        {
+            ulong batch = _pending[key];
+            _pending.Remove(key);
+            _remaining[batch] = _remaining[batch] - 1;
+            if(_remaining[batch]==0) Console.WriteLine("Batch "+batch +" download done.");
+            TryToSaveBatch();
+            return true;
+        }
+
+        public void TryToSaveBatch()
+        {
+            while(_remaining.ContainsKey(_savedBatch+1) && _remaining[_savedBatch+1]==0)
+            {
+                _remaining.Remove(_savedBatch+1);
+                PushToDB();
+                _nodeStorage.Commit();
+                _savedBatch++;
+                _dbContext.Save(EntryPrefix.SavedBatch.BuildPrefix(), _savedBatch.ToBytes().ToArray());
+                Console.WriteLine("Another batch saved: "+ _savedBatch);
             }
         }
-        
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool Complete()
+        {
+            return _doneBatch==_totalBatch && _incomingQueue.Count==0 && _outgoingQueue.Count==0 && _pending.Count==0;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool isPending(string key)
+        {
+            return _pending.ContainsKey(key);
+        }
+
+        void PushToDB()
+        {
+            if(_incomingQueue.Count==0) return;
+            _nodeStorage.CommitIds();
+            List<byte> list = new List<byte>();
+            int sz = _incomingQueue.Count;
+            while(_incomingQueue.Count>0)
+            {
+                string hash = _incomingQueue.Dequeue();
+            //    bool foundHash = _nodeStorage.GetIdByHash(hash, out ulong id);
+            //    Console.WriteLine("adding id for download: "+ id);
+                list.AddRange(HexUtils.HexToBytes(hash));
+            }
+            _totalBatch++;
+            _dbContext.Save(EntryPrefix.QueueBatch.BuildPrefix((ulong)_totalBatch), list.ToArray());
+            _dbContext.Save(EntryPrefix.TotalBatch.BuildPrefix(), _totalBatch.ToBytes().ToArray());
+            Console.WriteLine("Another batch Downloaded: "+ _totalBatch+"  size: "+sz);
+        }
+
+        void LoadFromDB()
+        {
+            ulong _curBatch = _doneBatch+1;
+            byte[] raw = _dbContext.Get(EntryPrefix.QueueBatch.BuildPrefix((ulong)_curBatch));
+            int cnt = 0;
+            for(int i=0; i<raw.Length; )
+            {
+                byte[] array = new byte[32];
+                for(int j=0; j<32 ; j++,i++) array[j] = raw[i];
+                string hash = HexUtils.ToHex(array);
+                if(ExistNode(hash)) continue;
+                _outgoingQueue.Enqueue(hash);
+                _batchQueue.Enqueue(_curBatch);
+                cnt++;
+            }
+            _remaining[_curBatch] = cnt;
+            _doneBatch = _curBatch;
+            Console.WriteLine("Trying to download nodes from batch: "+_curBatch+"  size: "+ cnt);
+            if(cnt==0) TryToSaveBatch();
+        }
+        bool ExistNode(string hash)
+        {
+            if(_pending.ContainsKey(hash)) return true;
+            return _nodeStorage.ExistNode(hash);
+        }
     }
 }

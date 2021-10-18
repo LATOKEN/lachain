@@ -72,7 +72,10 @@
         /*fast_sync status*/
         BlockNumber = 0x0701,
         LastDownloaded = 0x0702,
-        DoneBatch = 0x0703,
+        SavedBatch = 0x0703,
         TotalBatch = 0x0704,
+        QueueBatch = 0x0705,
+        NodesDownloadedTillNow = 0x0706,
+
     }
 }
