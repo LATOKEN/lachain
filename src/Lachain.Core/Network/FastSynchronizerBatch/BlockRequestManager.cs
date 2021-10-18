@@ -101,6 +101,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 
                 downloaded.Remove(_done);
             }
+    /*        if(downloaded.Count>0) Console.WriteLine("More blocks downloaded. Done: " + 
+            _done + " downloaded: "+downloaded.Count+" NextBlockToDownload " +
+            nextBlocksToDownload.Count+ " pending: "+_pending.Count+" Min pending: "+ _pending.Min()
+            +" Min to download: "+nextBlocksToDownload.Min());
+*/
         }
     }
 }
