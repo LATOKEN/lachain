@@ -3,11 +3,16 @@ using System.Numerics;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Lachain.Logger;
 
 namespace Lachain.Storage.State
 {
     public class BlockchainSnapshot : IBlockchainSnapshot
     {
+
+        private static readonly ILogger<BlockchainSnapshot> Logger =
+            LoggerFactory.GetLoggerForClass<BlockchainSnapshot>();
+
         public BlockchainSnapshot(
             IBalanceSnapshot balances,
             IContractSnapshot contracts,
@@ -67,6 +72,14 @@ namespace Lachain.Storage.State
         {
             get
             {
+                string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
+                ISnapshot[] snapshots = new ISnapshot[]{Balances, Contracts, Storage, Transactions, Blocks, Events, Validators};
+
+                for(int i = 0; i < snapshotNames.Length; i++)
+                {
+                    Logger.LogDebug($"{snapshotNames[i]}'s hash: {snapshots[i].Hash.ToHex()}");
+                }
+
                 return new ISnapshot[] {Balances, Contracts, Storage, Transactions, Events, Validators}
                     .Select(snapshot => snapshot.Hash.ToBytes())
                     .Flatten()
