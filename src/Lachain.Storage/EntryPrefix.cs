@@ -27,10 +27,6 @@
 
         VersionByHash = 0x0604,
 
-        QueueBatch = 0x0605,
-
-        NodesDownloadedTillNow = 0x0606,
-
         /* contract */
         ContractByHash = 0x0801,
 
@@ -58,7 +54,10 @@
         /*fast_sync status*/
         BlockNumber = 0x0701,
         LastDownloaded = 0x0702,
-        DoneBatch = 0x0703,
+        SavedBatch = 0x0703,
         TotalBatch = 0x0704,
+        QueueBatch = 0x0705,
+        NodesDownloadedTillNow = 0x0706,
+
     }
 }

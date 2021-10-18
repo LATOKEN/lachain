@@ -16,7 +16,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     class BlockRequestManager
     {
  //       private Queue<string> _queue = new Queue<string>();
-        private HashSet<ulong> _pending = new HashSet<ulong>();
+        private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private SortedSet<ulong> nextBlocksToDownload = new SortedSet<ulong>();
         private IDictionary<ulong, string> downloaded = new Dictionary<ulong,string>();
         private uint _batchSize = 40;
@@ -62,6 +62,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void HandleResponse(List<string> batch, JArray response)
         {
+            if(batch.Count>0) Console.WriteLine("First Node in this batch: "+Convert.ToUInt64(batch[0], 16));
+
             if(batch.Count != response.Count)
             {
                 lock(this)
@@ -69,8 +71,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     foreach(var block in batch)
                     {
                         ulong blockId = Convert.ToUInt64(block, 16);
-                        _pending.Remove(blockId);
-                        nextBlocksToDownload.Add(blockId);
+                        if(_pending.Contains(blockId))
+                        {
+                            _pending.Remove(blockId);
+                            nextBlocksToDownload.Add(blockId);
+                        }
                     }
                 }
             }
@@ -80,8 +85,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     for(int i=0; i<batch.Count; i++)
                     {
                         ulong blockId = Convert.ToUInt64(batch[i], 16);
-                        _pending.Remove(blockId);
-                        downloaded[blockId] = (string)response[i]; 
+                        if(_pending.Contains(blockId))
+                        {
+                            _pending.Remove(blockId);
+                             downloaded[blockId] = (string)response[i]; 
+                        }
                     }
                 }
             }
@@ -95,7 +103,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 _nodeStorage.AddBlock(_blockSnapshot, blockRawHex);
                 _done++;
+                downloaded.Remove(_done);
             }
+    /*        if(downloaded.Count>0) Console.WriteLine("More blocks downloaded. Done: " + 
+            _done + " downloaded: "+downloaded.Count+" NextBlockToDownload " +
+            nextBlocksToDownload.Count+ " pending: "+_pending.Count+" Min pending: "+ _pending.Min()
+            +" Min to download: "+nextBlocksToDownload.Min());
+*/
         }
     }
 }
