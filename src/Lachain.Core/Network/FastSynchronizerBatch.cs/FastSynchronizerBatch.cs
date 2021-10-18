@@ -33,8 +33,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             dbContext.Save(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(0));
             List<string> devnetNodes = new List<string>
             {
-                "http://157.245.160.201:7070",
-                "http://95.217.6.171:7070",
                 "http://88.99.190.191:7070",
                 "http://94.130.78.183:7070",
                 "http://94.130.24.163:7070",
@@ -46,7 +44,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 "http://88.198.78.141:7070",
                 "http://88.99.126.144:7070",
                 "http://88.99.87.58:7070",
-                "http://95.217.6.234:7070"
+                "http://95.217.6.234:7070",
+                "http://157.245.160.201:7070",
+                "http://95.217.6.171:7070",
             };
 //            List <string> onlyonenode = new List<string>
             List<string> localnetNodes = new List<string>
@@ -60,7 +60,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
             List<string> urls = devnetNodes;
-            HybridQueue3 hybridQueue = new HybridQueue3(dbContext, nodeStorage);
+            HybridQueue hybridQueue = new HybridQueue(dbContext, nodeStorage);
             PeerManager peerManager = new PeerManager(urls);
             
             RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
@@ -124,7 +124,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 RocksDbAtomicWrite tx = new RocksDbAtomicWrite(dbContext);
                 tx.Put(EntryPrefix.BlockNumber.BuildPrefix(), blockNumber.ToBytes().ToArray());
                 ulong zero = 0;
-                tx.Put(EntryPrefix.DoneBatch.BuildPrefix(), zero.ToBytes().ToArray());
+                tx.Put(EntryPrefix.SavedBatch.BuildPrefix(), zero.ToBytes().ToArray());
                 tx.Put(EntryPrefix.TotalBatch.BuildPrefix(), zero.ToBytes().ToArray());
                 tx.Put(EntryPrefix.LastDownloaded.BuildPrefix(), zero.ToBytes().ToArray());
                 tx.Commit();
