@@ -403,7 +403,7 @@ namespace Lachain.Core.Blockchain.Operations
                     }
 
                     _stateManager.Approve();
-                    Logger.LogDebug($"state hash after executing tx: {_stateManager.LastApprovedSnapshot.StateHash}");
+                    Logger.LogDebug($"state hash after executing tx: {_stateManager.LastApprovedSnapshot.StateHash.ToHex()}");
                     indexInBlock++;
                 }
                 catch (Exception ex)
