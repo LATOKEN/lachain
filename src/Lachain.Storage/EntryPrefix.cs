@@ -35,10 +35,13 @@
         PersistentHashMap = 0x0603,
 
         VersionByHash = 0x0604,
+<<<<<<< HEAD
         NodeIdForRecentSnapshot = 0x0607,
         DbShrinkStatus = 0x0608,
         DbShrinkDepth = 0x0609,
         OldestSnapshotInDb = 0x060a,
+=======
+>>>>>>> fault-tolerant fast_sync working, tested multiple times
 
         /* contract */
         ContractByHash = 0x0801,
