@@ -51,6 +51,8 @@ namespace Lachain.Core.Vault
 
             _walletPassword = config.Password;
             _unlockEndTime = 0;
+            if(!File.Exists(_walletPath))
+                GenerateNewWallet(_walletPath, _walletPassword);
             var needsSave = RestoreWallet(_walletPath, _walletPassword, out var keyPair, out var hubKey);
             EcdsaKeyPair = keyPair;
             HubPrivateKey = hubKey;
@@ -169,6 +171,20 @@ namespace Lachain.Core.Vault
                     new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
                         PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
             return needsSave;
+        }
+        
+        private static void GenerateNewWallet(string path, string password)
+        {
+            var config = new JsonWallet(
+                CryptoProvider.GetCrypto().GenerateRandomBytes(32).ToHex(false),
+                GenerateHubKey().PrivateKey,
+                new Dictionary<ulong, string> {},
+                new Dictionary<ulong, string> {}
+            );
+            var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
+            var passwordHash = Encoding.UTF8.GetBytes(password).KeccakBytes();
+            var crypto = CryptoProvider.GetCrypto();
+            File.WriteAllBytes(path, crypto.AesGcmEncrypt(passwordHash, json));
         }
 
         public bool HasKeyForKeySet(PublicKeySet thresholdSignaturePublicKeySet, ulong beforeBlock)
