@@ -2,10 +2,14 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.Vault;
+using Lachain.Crypto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Nethereum.Signer;
 using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -16,17 +20,22 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly ISystemContractReader _systemContractReader;
-
+        private readonly IPrivateWallet _privateWallet;
+        private readonly ITransactionSigner _transactionSigner;
 
         public AccountServiceWeb3(IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexer,
             IContractRegisterer contractRegisterer,
-            ISystemContractReader systemContractReader)
+            ISystemContractReader systemContractReader,
+            IPrivateWallet privateWallet,
+            ITransactionSigner transactionSigner)
         {
             _stateManager = stateManager;
             _snapshotIndexer = snapshotIndexer;
             _contractRegisterer = contractRegisterer;
             _systemContractReader = systemContractReader;
+            _privateWallet = privateWallet;
+            _transactionSigner = transactionSigner;
         }
 
         [JsonRpcMethod("eth_getBalance")]
@@ -58,12 +67,23 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_sign")]
-        private string Sign(string address, string message)
+        public string Sign(string address, string message)
         {
-            // TODO: implement message signing
-            //var addressUint160 = address.HexToUInt160();
-            return Web3DataFormatUtils.Web3Data("".HexToBytes());
-            //throw new ApplicationException("Not implemented yet");
+
+            var addressUint160 = address.HexToUInt160();
+            address ??= _systemContractReader.NodeAddress().ToHex();
+
+            _privateWallet.Unlock("12345", 1000);
+            var keyPair = _privateWallet.EcdsaKeyPair;
+
+            var privateKey = keyPair.PrivateKey.Encode();
+
+            var crypto = new DefaultCrypto();
+
+            var signature = crypto.Sign(message.HexToBytes(), privateKey);
+            var signaturestr = System.Text.Encoding.UTF8.GetString(signature); 
+
+            return signaturestr;
         }
 
         [JsonRpcMethod("eth_getCompilers")]
