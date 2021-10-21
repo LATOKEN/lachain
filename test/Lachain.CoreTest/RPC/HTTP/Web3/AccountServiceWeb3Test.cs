@@ -78,7 +78,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             ServiceBinder.BindService<GenericParameterAttributes>();
 
-            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader);
+            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _privateWallet, _transactionSigner);
 
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
@@ -147,6 +147,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
             var adCode = _apiService!.GetCode(address, "latest");
             Assert.AreEqual(adCode, "");
+        }
+
+        [Test]
+        // Changed Sign to public
+        public void Test_Sign()
+        {
+            var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
+            var message = "0xdeadbeaf";
+
+            var signature = _apiService!.Sign(address, message);
+
+            //Assert.AreEqual(adCode, "");
         }
 
         // Below methods Execute a Transaction
