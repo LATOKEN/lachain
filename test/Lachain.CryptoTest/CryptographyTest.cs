@@ -18,6 +18,14 @@ namespace Lachain.CryptoTest
         private static readonly byte[] TestString =
             Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
 
+
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            TransactionUtils.SetChainId(41);
+        }
+
+
         [Test]
         public void Test_KeccakTestVector()
         {

@@ -40,19 +40,21 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+            string feedAddress, string feedBalance, string stakeAmount)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort, target);
+                CloudKeygen(n, f, ips, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
             }
             else
             {
-                LocalKeygen(n, f, basePort, target);
+                LocalKeygen(n, f, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
             }
         }
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target)
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+            string feedAddress, string feedBalance, string stakeAmount)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -89,10 +91,7 @@ namespace Lachain.Console
                 .ToArray();
 
             var peers = ecdsaPublicKeys.ToArray();
-
-            string feedAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
-            string stakeAmount = "1234567";
-
+            
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -102,14 +101,16 @@ namespace Lachain.Console
                     ForceIPv6 = false,
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
-                    HubMetricsPort = basePort + 2
+                    HubMetricsPort = basePort + 2,
+                    NetworkName = networkName,
+                    ChainId = (int)chainId
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
                     Balances = new Dictionary<string, string>
                     {
                         {
-                            feedAddress, "1000000"
+                            feedAddress, feedBalance
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
@@ -132,7 +133,7 @@ namespace Lachain.Console
                 var vault = new VaultConfig
                 {
                     Path = walletPath,
-                    Password = "12345"
+                    Password = getRandomPassword()
                 };
                 var storage = new StorageConfig
                 {
@@ -141,7 +142,7 @@ namespace Lachain.Console
                 };
                 var blockchain = new BlockchainConfig
                 {
-                    TargetBlockTime = target
+                    TargetBlockTime = target,
                 };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
@@ -150,7 +151,8 @@ namespace Lachain.Console
                     ecdsaPrivateKeys[i],
                     serializedHubPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToHex(),
-                    privShares[i].ToHex()
+                    privShares[i].ToHex(),
+                    vault.Password
                 );
             }
 
@@ -178,8 +180,10 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target)
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName, 
+            string feedAddress, string feedBalance, string stakeAmount)
         {
+            System.Console.WriteLine($"chainId : {chainId}");
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
             var tpkePubKey = tpkeKeyGen.GetPubKey();
@@ -217,9 +221,6 @@ namespace Lachain.Console
 
             var peers = ecdsaPublicKeys.ToArray();
 
-            string feedAddress = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
-            string stakeAmount = "1234567";
-
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -230,13 +231,15 @@ namespace Lachain.Console
                     BootstrapAddresses = bootstraps,
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2 * n + i,
+                    NetworkName = networkName,
+                    ChainId = (int)chainId,
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
                     Balances = new Dictionary<string, string>
                     {
                         {
-                            feedAddress, "1000000"
+                            feedAddress, feedBalance
                         }
                     },
                     Validators = Enumerable.Range(0, n).Select(j => new ValidatorInfo(
@@ -259,7 +262,7 @@ namespace Lachain.Console
                 var vault = new VaultConfig
                 {
                     Path = walletPath,
-                    Password = "12345"
+                    Password = getRandomPassword()
                 };
                 var storage = new StorageConfig
                 {
@@ -268,7 +271,7 @@ namespace Lachain.Console
                 };
                 var blockchain = new BlockchainConfig
                 {
-                    TargetBlockTime = target
+                    TargetBlockTime = target,
                 };
                 var config = new Config(net, genesis, rpc, vault, storage, blockchain);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
@@ -277,7 +280,8 @@ namespace Lachain.Console
                     ecdsaPrivateKeys[i],
                     serializedHubPrivateKeys[i],
                     tpkeKeyGen.GetPrivKey(i).ToHex(),
-                    privShares[i].ToHex()
+                    privShares[i].ToHex(),
+                    vault.Password
                 );
             }
 
@@ -305,7 +309,7 @@ namespace Lachain.Console
             );
         }
 
-        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tpkeKey, string tsKey)
+        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tpkeKey, string tsKey, string password)
         {
             var config = new JsonWallet(
                 ecdsaKey,
@@ -314,9 +318,15 @@ namespace Lachain.Console
                 new Dictionary<ulong, string> {{0, tsKey}}
             );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
-            var passwordHash = Encoding.UTF8.GetBytes("12345").KeccakBytes();
+            var passwordHash = Encoding.UTF8.GetBytes(password).KeccakBytes();
             var crypto = CryptoProvider.GetCrypto();
             File.WriteAllBytes(path, crypto.AesGcmEncrypt(passwordHash, json));
+        }
+
+        private static string getRandomPassword()
+        {
+            var crypto = CryptoProvider.GetCrypto();
+            return crypto.GenerateRandomBytes(20).ToHex(false);
         }
     }
 }
