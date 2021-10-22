@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -69,18 +70,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_sign")]
         public string Sign(string address, string message)
         {
+            var modified_message = Encoding.UTF8.GetBytes("\x19" + "Lachain Signed Message:\n" + message.Length + message);
 
             var addressUint160 = address.HexToUInt160();
             address ??= _systemContractReader.NodeAddress().ToHex();
 
-            _privateWallet.Unlock("12345", 1000);
+            if (_privateWallet.GetWalletInstance() is null) return "wallet_locked";
+
+            //_privateWallet.Unlock("12345", 1000);
             var keyPair = _privateWallet.EcdsaKeyPair;
 
             var privateKey = keyPair.PrivateKey.Encode();
 
             var crypto = new DefaultCrypto();
 
-            var signature = crypto.Sign(message.HexToBytes(), privateKey);
+            var signature = crypto.Sign(modified_message, privateKey);
             var signaturestr = System.Text.Encoding.UTF8.GetString(signature); 
 
             return signaturestr;
