@@ -198,6 +198,52 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(res.ToHex(), supply.ToUInt256().ToHex());
         }
 
+        [Test]
+        public void Test_SendRawTransactionBatchParallel()
+        {
+            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b";
+
+            var rawTx_arr = new List<string>();
+
+            for (ulong i = 1000; i < 9000; i++)
+            {
+                var rawTx_new = rawTx + i.ToString();
+
+                rawTx_arr.Add(rawTx_new);
+
+                Console.WriteLine($"RawTx string {rawTx_new}\n");
+
+            }
+
+
+            var result = _apiService!.SendRawTransactionBatchParallel(rawTx_arr);
+
+            Console.WriteLine($"Result len {result.Count()}\n");
+
+        }
+
+        [Test]
+        public void Test_SendRawTransactionBatch()
+        {
+            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b";
+
+            var rawTx_arr = new List<string>();
+
+            for (ulong i = 1000; i < 9000; i++)
+            {
+                var rawTx_new = rawTx + i.ToString();
+
+                rawTx_arr.Add(rawTx_new);
+
+                Console.WriteLine($"RawTx string {rawTx_new}\n");
+
+            }
+
+            var result = _apiService!.SendRawTransactionBatch(rawTx_arr);
+
+            Console.WriteLine($"Result len {result.Count()}\n");
+
+        }
 
         [Test]
         //changed VerifyRawTransaction from private to public
@@ -287,6 +333,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
 
         }
+
 
 
         [Test]
