@@ -23,6 +23,7 @@ using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Serialization;
 using Transaction = Lachain.Proto.Transaction;
+using System.Threading.Tasks;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -189,17 +190,46 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
-        [JsonRpcMethod("la_sendRawTransactionBatch")] 
-        private List<string> SendRawTransactionBatch(List<string> rawTxs)
+        [JsonRpcMethod("la_sendRawTransactionBatch")]
+        public List<string> SendRawTransactionBatch(List<string> rawTxs)
         {
             List<string> txIds = new List<string>();
-            foreach(string rawTx in rawTxs) {
+
+            Logger.LogInformation($"Received raw transaction strings count:: {rawTxs.Count}");
+
+            var time = DateTime.Now;
+
+            foreach (string rawTx in rawTxs)
+            {
                 txIds.Add(SendRawTransaction(rawTx));
             }
+
+            Logger.LogInformation($"Response count:: {txIds.Count}");
+            Logger.LogInformation($"Time taken for series:: {DateTime.Now - time}");
+
             return txIds;
         }
 
-        [JsonRpcMethod("eth_invokeContract")]
+        [JsonRpcMethod("la_sendRawTransactionBatchParallel")]
+         public List<string> SendRawTransactionBatchParallel(List<string> rawTxs)
+         {
+            List<string> txIds = new List<string>();
+ 
+            Logger.LogInformation($"Received raw transaction strings count:: {rawTxs.Count}");
+
+            var time = DateTime.Now;
+
+            Parallel.For(0, rawTxs.Count, i => {
+                 txIds.Add(SendRawTransaction(rawTxs[i]));
+             });
+ 
+            Logger.LogInformation($"Response count:: {txIds.Count}");
+            Logger.LogInformation($"Time taken for Parallel:: {DateTime.Now - time}");
+
+            return txIds;
+         }
+
+[JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
