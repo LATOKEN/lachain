@@ -424,6 +424,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private JArray GetEventsByTransactionHash(string txHash)
         {
             var transactionHash = txHash.HexToUInt256();
+            var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(transactionHash);
+            if (receipt is null) return new JArray();
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
+            if (block is null) return new JArray(); // ???
             var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(transactionHash);
             var jArray = new JArray();
             for (var i = 0; i < txEvents; i++)
@@ -432,7 +436,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     (uint)i);
                 if (ev is null)
                     continue;
-                jArray.Add(Web3DataFormatUtils.Web3Event(ev));
+                jArray.Add(Web3DataFormatUtils.Web3Event(ev, receipt!.Block, block!.Hash));
             }
 
             return jArray;
@@ -566,7 +570,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         {
                             ev.BlockHash = block.Hash;
                         }
-                        jArray.Add(Web3DataFormatUtils.Web3Event(ev, blockNumber));
+                        jArray.Add(Web3DataFormatUtils.Web3Event(ev, blockNumber,block.Hash));
                     }
                 }
             }
