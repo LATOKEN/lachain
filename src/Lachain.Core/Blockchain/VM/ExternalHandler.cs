@@ -108,6 +108,11 @@ namespace Lachain.Core.Blockchain.VM
                     throw new InsufficientFundsException();
             }
 
+            if (snapshot.Contracts.GetContractByHash(address) is null) {
+                frame.LastChildReturnValue = Array.Empty<byte>();
+                return 0;
+            }
+
             var gasBuffer = SafeCopyFromMemory(frame.Memory, gasOffset, 8);
             if (gasBuffer is null)
                 throw new InvalidContractException("Bad call to call function");
