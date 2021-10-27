@@ -118,7 +118,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
             
             return Web3DataFormatUtils.Web3TransactionReceipt(receipt, block!.Hash, receipt.Block, 
-                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt!.Block));
+                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt!.Block, block!.Hash));
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
