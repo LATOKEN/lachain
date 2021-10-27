@@ -22,6 +22,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
+        public static readonly ulong HardFork_1 = 0;
         public static readonly BigInteger ExpectedValidatorsCount = 22;
         public const ulong CycleDuration = 40; // in blocks
         public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
@@ -635,6 +636,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodFinishVrfLottery)]
         public ExecutionStatus FinishVrfLottery(SystemContractExecutionFrame frame)
         {
+            Logger.LogTrace($"Executing finish vrf lottery");
             if (!MsgSender().IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
@@ -645,8 +647,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var nextValidators = _nextValidators.Get();
 
-            if (nextValidators.Length == 0)
-                return ExecutionStatus.ExecutionHalted;
+            if(_context.Snapshot.Blocks.GetTotalBlockHeight() < HardFork_1)
+            {
+                if (nextValidators.Length == 0)
+                    return ExecutionStatus.ExecutionHalted;
+            }
+            else 
+            {
+                if(nextValidators.Length <= CryptoUtils.PublicKeyLength)
+                {
+                    Logger.LogWarning($"Only {nextValidators.Length / CryptoUtils.PublicKeyLength} validator was chosen, so validator set is not going to change");
+                    nextValidators = _context.Snapshot.Validators.GetValidatorsPublicKeys()
+                    .Select(pk => pk.Buffer.ToByteArray()).Flatten().ToArray();
+                }
+            }
 
             _vrfSeed.Set(GetNextVrfSeed());
             _nextVrfSeed.Set(new byte[] { });
