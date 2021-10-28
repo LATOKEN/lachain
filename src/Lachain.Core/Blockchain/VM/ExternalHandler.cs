@@ -807,6 +807,29 @@ namespace Lachain.Core.Blockchain.VM
             if (!result)
                 throw new InvalidContractException("Bad call to (get_external_balance)");
         }
+
+        public static void Handler_Env_GetExtcodesize(int addressOffset, int resultOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetExtcodesize({addressOffset}, {resultOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetExtcodesize outside wasm frame");
+            
+            // Get the address from the given memory offset
+            var snapshot = frame.InvocationContext.Snapshot;
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
+            if (addressBuffer is null)
+                throw new InvalidContractException("Bad call to (get_extcodesize)");
+            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            
+            // Get contract at the given address
+            var contract = snapshot.Contracts.GetContractByHash(address);
+            
+            // Load contract size at the given resultOffset
+            var result = SafeCopyToMemory(frame.Memory, (contract?.ByteCode.Length ?? 0).ToBytes().ToArray(), resultOffset);
+
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_extcodesize)");
+        }
         
         public static void Handler_Env_GetBlockTimestamp(int dataOffset)
         {
@@ -921,6 +944,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_block_coinbase_address", CreateImport(nameof(Handler_Env_GetBlockCoinbase))},
                 {EnvModule, "get_block_difficulty", CreateImport(nameof(Handler_Env_GetBlockDifficulty))},
                 {EnvModule, "get_external_balance", CreateImport(nameof(Handler_Env_GetExternalBalance))},
+                {EnvModule, "get_extcodesize", CreateImport(nameof(Handler_Env_GetExtcodesize))},
                 {EnvModule, "get_block_timestamp", CreateImport(nameof(Handler_Env_GetBlockTimestamp))},
                 {EnvModule, "get_chain_id", CreateImport(nameof(Handler_Env_GetChainId))},
                 // /* crypto hash bindings */
