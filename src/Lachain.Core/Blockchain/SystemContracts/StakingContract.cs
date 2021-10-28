@@ -9,6 +9,7 @@ using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -22,7 +23,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
-        public static readonly ulong HardFork_1 = 0;
         public static readonly BigInteger ExpectedValidatorsCount = 22;
         public const ulong CycleDuration = 40; // in blocks
         public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
@@ -647,7 +647,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var nextValidators = _nextValidators.Get();
 
-            if(_context.Snapshot.Blocks.GetTotalBlockHeight() < HardFork_1)
+            if(_context.Snapshot.Blocks.GetTotalBlockHeight() < Hardfork.Hardfork.Hardfork_1)
             {
                 if (nextValidators.Length == 0)
                     return ExecutionStatus.ExecutionHalted;
