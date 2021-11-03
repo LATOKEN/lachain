@@ -542,7 +542,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
                         if (receipt is null)
                             continue;
-                        if (!addresses.Any(a => receipt.Transaction.From.Equals(a)))
+                        if (!addresses.Any(a => receipt.Transaction.From.Equals(a) || receipt.Transaction.To.Equals(a)))
                             continue;
                     }
 
