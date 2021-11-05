@@ -181,9 +181,14 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Copy to contract memory failed");
         }
 
-        public static void Handler_Env_WriteLog(int offset, int length)
+        public static void Handler_Env_WriteLog(int dataOffset, int dataLength, int topicsNum, 
+            int topic0Offset, 
+            int topic1Offset, 
+            int topic2Offset, 
+            int topic3Offset 
+            )
         {
-            Logger.LogInformation($"Handler_Env_WriteLog({offset}, {length})");
+            Logger.LogInformation($"Handler_Env_WriteLog({dataOffset}, {dataLength})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call WRITELOG outside wasm frame");
 
@@ -192,9 +197,25 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidOperationException("Cannot call WRITELOG in STATICCALL");
             }
 
-            var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
-            if (buffer == null)
-                throw new InvalidContractException("Bad call to WRITELOG");
+            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            if (data == null)
+                throw new InvalidContractException("Bad call to WRITELOG,  can't read data");
+
+            if (topicsNum < 1)
+                throw new InvalidContractException("Bad call to WRITELOG, we should have at least one topic");
+
+            var topic0 = SafeCopyFromMemory(frame.Memory, topic0Offset, 32);
+            if (topic0 == null)
+                throw new InvalidContractException("Bad call to WRITELOG,  can't read topic0");
+
+            var eventObj = new Event
+            {
+                Contract = frame.CurrentAddress,
+                Data = ByteString.CopyFrom(data),
+                TransactionHash = frame.InvocationContext.Receipt.Hash,
+                SignatureHash =  topic0.ToUInt256()
+            };
+            frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
         }
 
         public static int Handler_Env_InvokeContract(
