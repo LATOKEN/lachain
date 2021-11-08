@@ -31,23 +31,44 @@ namespace Lachain.Storage.Repositories
 
         public void TryAddTransaction(TransactionReceipt receipt)
         {
-            if (receipt.Transaction.Invocation.Length > 0)
+            try
             {
+                string[] signatures = {
+                    "transfer(address,uint256)", 
+                    "transferFrom(address,address,uint256)",
+                    "mint(address,uint256)",
+                    "burn(address,uint256)"
+                };
+                
                 var decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToArray());
-                var res = decoder.Decode("uint160")[4] as UInt160;
-                if (res!.Equals(receipt.Transaction.To))
+                object[] decodedRes = {};
+                
+                foreach (var signature in signatures)
                 {
-                    var temp = LoadState();
-                    SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());        
+                    decodedRes = decoder.Decode(signature);
+                    break;
+                }
+                
+                if (decodedRes.Length >= 5)
+                {
+                    if (decodedRes[4] is UInt256 decodedAddr && decodedAddr.Equals(receipt.Transaction.To.ToUInt256()))
+                    {
+                        var temp = LoadState();
+                        SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());     
+                    }
+                }
+                else
+                {
+                    if (_watchAddresses.Count(addr =>
+                        addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
+                    
+                    var data = LoadState();
+                    SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
                 }
             }
-            else
+            catch (Exception e)
             {
-                if (_watchAddresses.Count(addr =>
-                    addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
-                
-                var data = LoadState();
-                SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
+                Console.WriteLine($"exception occured while decoding: {e}");
             }
         }
 
