@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
@@ -33,7 +34,14 @@ namespace Lachain.Storage.Repositories
         {
             if (_watchAddresses.Count(addr =>
                     addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
-            
+
+            if (receipt.Transaction.Invocation.Length > 0)
+            {
+                var decoder = new ContractDecoder(receipt.Transaction.Invocation.ToArray());
+                var res = decoder.Decode("uint160")[4] as UInt160;
+                if (res == )
+            }
+
             var data = LoadState();
             SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
         }
