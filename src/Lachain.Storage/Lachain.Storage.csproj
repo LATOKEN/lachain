@@ -11,7 +11,6 @@
     <PackageReference Include="RocksDbSharp" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Lachain.Core\Lachain.Core.csproj" />
     <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />
     <ProjectReference Include="..\Lachain.Proto\Lachain.Proto.csproj" />
     <ProjectReference Include="..\Lachain.Utility\Lachain.Utility.csproj" />

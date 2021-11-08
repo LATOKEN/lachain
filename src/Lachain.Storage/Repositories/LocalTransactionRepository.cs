@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
@@ -37,13 +36,19 @@ namespace Lachain.Storage.Repositories
 
             if (receipt.Transaction.Invocation.Length > 0)
             {
-                var decoder = new ContractDecoder(receipt.Transaction.Invocation.ToArray());
+                var decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToArray());
                 var res = decoder.Decode("uint160")[4] as UInt160;
-                if (res == )
+                if (res!.Equals(receipt.Transaction.To))
+                {
+                    var temp = LoadState();
+                    SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());        
+                }
             }
-
-            var data = LoadState();
-            SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
+            else
+            {
+                var data = LoadState();
+                SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
+            }
         }
 
         public byte[] LoadState()
