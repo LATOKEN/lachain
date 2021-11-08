@@ -31,9 +31,6 @@ namespace Lachain.Storage.Repositories
 
         public void TryAddTransaction(TransactionReceipt receipt)
         {
-            if (_watchAddresses.Count(addr =>
-                    addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
-
             if (receipt.Transaction.Invocation.Length > 0)
             {
                 var decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToArray());
@@ -46,6 +43,9 @@ namespace Lachain.Storage.Repositories
             }
             else
             {
+                if (_watchAddresses.Count(addr =>
+                    addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
+                
                 var data = LoadState();
                 SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
             }
