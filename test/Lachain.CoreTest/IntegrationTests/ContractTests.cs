@@ -218,6 +218,55 @@ namespace Lachain.CoreTest.IntegrationTests
                 "Invalid invocation return value");
         }
 
+        [Test]
+        public void Test_ContractEvents()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resource = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.Event.wasm");
+            if(resource is null) 
+                Assert.Fail("Failed t read script from resources");
+            var keyPair = _wallet.EcdsaKeyPair;
+            GenerateBlocks(1);
+            //
+            // // Deploy contract 
+            // var byteCode = new byte[resource!.Length];
+            // resource!.Read(byteCode, 0, (int)resource!.Length);
+            // Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate contract code");
+            // var from = keyPair.PublicKey.GetAddress();
+            // var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            // var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            // var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            // var signedTx = Signer.Sign(tx, keyPair);
+            // Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
+            // GenerateBlocks(1);
+            //
+            // // check contract is deployed
+            // var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            // Assert.That(contract != null, "Failed to find deployed contract");
+            //
+            // // invoke contract 
+            // var txInvoke = _transactionBuilder.InvokeTransaction(
+            //     keyPair.PublicKey.GetAddress(),
+            //     contractHash,
+            //     Money.Zero,
+            //     "test()",
+            //     new dynamic[0]);
+            // var signedTxInvoke = Signer.Sign(txInvoke, keyPair);
+            // var error = _transactionPool.Add(signedTxInvoke);
+            // Assert.That(error == OperatingError.Ok, "Failed to add invoke tx to pool");
+            // GenerateBlocks(1);
+            // var tx2 = 
+            //     _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(signedTxInvoke.Hash);
+            // Assert.That(tx2 != null, "Failed to add invoke tx to block");
+            // Assert.That(tx2!.Status == TransactionStatus.Executed, "Failed to execute invoke tx");
+            // Assert.That(tx2.GasUsed > 0, "Invoke tx didn't use gas");
+            //
+            // var emitedEvent =
+            //     _stateManager.CurrentSnapshot.Events.GetEventByTransactionHashAndIndex(signedTxInvoke.Hash, 0);
+            // Assert.NotNull(emitedEvent);
+            // Assert.That(emitedEvent!.TransactionHash.Equals(signedTxInvoke.Hash), "Invalid tx hash in event");
+        }
+
         private void GenerateBlocks(int blockNum)
         {
             for (var i = 0; i < blockNum; i++)
@@ -299,18 +348,18 @@ namespace Lachain.CoreTest.IntegrationTests
         private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
-
+            
             var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
-
+            
             var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
             var predecessor =
                 _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(height);
             var (header, multisig) = BuildHeaderAndMultisig(block.Header.MerkleRoot, predecessor, stateHash);
-
+            
             block.Header = header;
             block.Multisig = multisig;
             block.Hash = header.Keccak();
-
+            
             var status = _blockManager.Execute(block, receipts, true, true);
             return status;
         }
