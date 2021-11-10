@@ -190,6 +190,36 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
+        //[JsonRpcMethod("eth_sendRawTransactionParallel")]
+        //public async Task<string> SendRawTransactionParallelAsync(string rawTx)
+        //{
+        //    var ethTx = new TransactionChainId(rawTx.HexToBytes());
+
+        //    var r = ethTx.Signature.R;
+        //    while (r.Length < 32)
+        //        r = "00".HexToBytes().Concat(r).ToArray();
+
+        //    var s = ethTx.Signature.S;
+        //    while (s.Length < 32)
+        //        s = "00".HexToBytes().Concat(s).ToArray();
+
+        //    var signature = r.Concat(s).Concat(ethTx.Signature.V).ToArray();
+        //    try
+        //    {
+        //        var transaction = MakeTransaction(ethTx);
+        //        if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)TransactionUtils.ChainId }))
+        //            return "Can not add to transaction pool: BadChainId";
+        //        var result = await _transactionPool.AddPrlAsync(transaction, signature.ToSignature());
+        //        if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
+        //        return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Logger.LogError($"Exception in handling eth_sendRawTransaction: {e}");
+        //        return e.Message;
+        //    }
+        //}
+
         [JsonRpcMethod("la_sendRawTransactionBatch")]
         public List<string> SendRawTransactionBatch(List<string> rawTxs)
         {
@@ -229,7 +259,36 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return txIds;
          }
 
-[JsonRpcMethod("eth_invokeContract")]
+        [JsonRpcMethod("la_sendRawTransactionBatchParallelAsync")]
+        public async Task<List<string>> SendRawTransactionBatchParallelAsync(List<string> rawTxs)
+        {
+            List<string> txIds = new List<string>();
+
+            Logger.LogInformation($"Received raw transaction strings count:: {rawTxs.Count}");
+
+            var time = DateTime.Now;
+
+            List<Task<string>> tasks = new List<Task<string>>();
+
+            foreach (var rawTx in rawTxs)
+            {
+                tasks.Add(Task.Run(() => SendRawTransaction(rawTx)));
+            }
+
+            var results = await Task.WhenAll(tasks);
+
+            foreach(var item in results)
+            {
+                txIds.Add(item);
+            }
+
+            Logger.LogInformation($"Response count:: {txIds.Count}");
+            Logger.LogInformation($"Time taken for Parallel:: {DateTime.Now - time}");
+
+            return txIds;
+        }
+
+        [JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
