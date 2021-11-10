@@ -49,13 +49,10 @@ namespace Lachain.Storage.Repositories
                     break;
                 }
                 
-                if (decodedRes.Length >= 5)
+                if (decodedRes[0] is UInt160 decodedAddr && decodedAddr.Equals(receipt.Transaction.To))
                 {
-                    if (decodedRes[4] is UInt256 decodedAddr && decodedAddr.Equals(receipt.Transaction.To.ToUInt256()))
-                    {
-                        var temp = LoadState();
-                        SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());     
-                    }
+                    var temp = LoadState();
+                    SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());     
                 }
                 else
                 {
