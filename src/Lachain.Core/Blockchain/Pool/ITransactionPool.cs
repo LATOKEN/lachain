@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
+using System.Threading.Tasks;
 
 namespace Lachain.Core.Blockchain.Pool
 {
@@ -18,6 +19,8 @@ namespace Lachain.Core.Blockchain.Pool
         OperatingError Add(Transaction transaction, Signature signature, bool notify = true);
 
         OperatingError Add(TransactionReceipt receipt, bool notify = true);
+
+        Task<OperatingError> AddPrlAsync(Transaction transaction, Signature signature, bool notify = true);
 
         IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
 
