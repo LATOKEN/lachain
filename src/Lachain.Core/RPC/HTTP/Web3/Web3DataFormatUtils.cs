@@ -205,7 +205,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["input"] = Web3Data(receipt.Transaction.Invocation),
                 ["nonce"] = Web3Number(receipt.Transaction.Nonce),
                 ["to"] = receipt.Transaction.To.Buffer.IsEmpty ? null : Web3Data(receipt.Transaction.To),
-                ["transactionIndex"] = Web3Number(receipt.IndexInBlock),
+                ["transactionIndex"] = blockNumber != null ? Web3Number(receipt.IndexInBlock) : null,
                 ["value"] = Web3Number(receipt.Transaction.Value),
                 ["r"] = Web3Data(signature.Take(32)),
                 ["s"] = Web3Data(signature.Skip(32).Take(32)),

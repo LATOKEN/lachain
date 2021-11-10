@@ -127,8 +127,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             var hash = txHash.HexToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
+
             if (receipt is null)
-                return null;
+            {
+                receipt = _transactionPool.GetByHash(hash);
+                if(receipt is null)
+                {
+                    return null;
+                }
+                return Web3DataFormatUtils.Web3Transaction(receipt!);
+            }
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
             return Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
         }
