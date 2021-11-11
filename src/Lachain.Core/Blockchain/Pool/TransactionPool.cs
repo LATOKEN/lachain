@@ -96,60 +96,6 @@ namespace Lachain.Core.Blockchain.Pool
             return Add(acceptedTx, notify);
         }
 
-        //[MethodImpl(MethodImplOptions.Synchronized)]
-        public async Task<OperatingError> AddPrlAsync(Transaction transaction, Signature signature, bool notify = true)
-        {
-            var acceptedTx = new TransactionReceipt
-            {
-                Transaction = transaction,
-                Hash = transaction.FullHash(signature),
-                Signature = signature,
-                Status = TransactionStatus.Pool
-            };
-            return await AddPrl(acceptedTx, notify);
-        }
-
-        public Task<OperatingError> AddPrl(TransactionReceipt receipt, bool notify = true)
-        {
-            return Task<OperatingError>.Factory.StartNew(() =>
-            {
-                if (receipt is null)
-                    throw new ArgumentNullException(nameof(receipt));
-
-                /* don't add to transaction pool transactions with the same hashes */
-                if (_transactions.ContainsKey(receipt.Hash))
-                    return OperatingError.AlreadyExists;
-                /* verify transaction before adding */
-                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
-                    return OperatingError.InvalidNonce;
-
-                /* special case for system transactions */
-                if (receipt.Transaction.From.IsZero())
-                {
-                    if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
-                        _poolRepository.AddTransaction(receipt);
-                    return OperatingError.Ok;
-                }
-
-                var result = _transactionManager.Verify(receipt);
-                if (result != OperatingError.Ok)
-                    return result;
-                _transactionVerifier.VerifyTransaction(receipt);
-                /* put transaction to pool queue */
-                _transactions[receipt.Hash] = receipt;
-                _transactionsQueue.Add(receipt);
-
-                /* write transaction to persistence storage */
-                if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
-                    _poolRepository.AddTransaction(receipt);
-
-                UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
-                Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-                if (notify) TransactionAdded?.Invoke(this, receipt);
-                return OperatingError.Ok;
-            });
-        }
-
         private void UpdateNonceForAddress(UInt160 address, ulong nonce)
         {
             if (!_lastNonceForAddress.TryGetValue(address, out var lastNonce) || nonce > lastNonce)
