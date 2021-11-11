@@ -23,7 +23,15 @@ using Lachain.UtilityTest;
 using Nethereum.Signer;
 using NUnit.Framework;
 using AustinHarris.JsonRpc;
-
+using Lachain.Core.Blockchain.Operations;
+using Lachain.Crypto.Misc;
+using Lachain.Utility;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Google.Protobuf;
+using System.Collections.Generic;
+using Lachain.Networking;
+using Newtonsoft.Json.Linq;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -37,6 +45,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private ITransactionPool? _transactionPool;
         private IContractRegisterer? _contractRegisterer;
         private IPrivateWallet? _privateWallet;
+        private IConfigManager _configManager = null!;
 
         private TransactionServiceWeb3? _apiService = null;
 
@@ -69,7 +78,13 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             ServiceBinder.BindService<GenericParameterAttributes>();
             _apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
-            
+            _blockManager = _container.Resolve<IBlockManager>();
+            _configManager = _container.Resolve<IConfigManager>();
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
 
         }
 

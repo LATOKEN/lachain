@@ -18,6 +18,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -185,14 +186,13 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_Storage_Changing()
         {
             _blockManager.TryBuildGenesisBlock();
-
             var randomTx = TestUtils.GetRandomTransaction();
             var balance = randomTx.Transaction.Value;
             var allowance = balance;
             var receiver = randomTx.Transaction.From;
 
             var tx1 = TopUpBalanceTx(receiver, balance, 0);
-            var tx2 = ApproveTx(receiver, allowance, 1);
+            var tx2 = ApproveTx(receiver, allowance, 0);
 
             var owner = tx2.Transaction.From;
 
@@ -324,17 +324,19 @@ namespace Lachain.CoreTest.IntegrationTests
 
         private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
         {
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
             var tx = new Transaction
             {
                 To = to,
-                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                From = keyPair.PublicKey.GetAddress(),
                 GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
                 GasLimit = 4_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()) +
                         (ulong) nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, keyPair);
         }
 
         private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
