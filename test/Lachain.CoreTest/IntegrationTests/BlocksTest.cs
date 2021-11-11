@@ -19,6 +19,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -38,6 +39,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
+        private IConfigManager _configManager = null!;
         private IContainer? _container;
 
         public BlocksTest()
@@ -64,6 +66,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
                 new RunOptions()
             ));
+            
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
@@ -72,7 +75,14 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _configManager = _container.Resolve<IConfigManager>();
 
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
         }
 
         [TearDown]
@@ -85,6 +95,7 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_Genesis()
         {
+            Console.WriteLine( Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"));
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
                 new RunOptions()
@@ -109,8 +120,11 @@ namespace Lachain.CoreTest.IntegrationTests
                 "0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
                 genesis.Header.PrevBlockHash
             );
+            Console.WriteLine(
+                genesis.Header.StateHash.ToHex()
+            );
             Assert.AreEqual(
-                "0xf0155c2e8107f6d2b29657a1d856f0b0fec6a64568c5ec2f2fdb7d2f074d6f69",
+                "0xe1cc48aee243f602ec9ab6247a8bfe082b96d2a8c963497543c9ddc4c8029789",
                 genesis.Header.StateHash.ToHex()
             );
             Assert.AreEqual(0, genesis.GasPrice);
@@ -133,7 +147,6 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             _blockManager.TryBuildGenesisBlock();
             var block = BuildNextBlock();
-
             var result = ExecuteBlock(block);
             Assert.AreEqual(OperatingError.Ok, result);
         }
