@@ -31,6 +31,7 @@ using Lachain.Utility;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Google.Protobuf;
 using System.Collections.Generic;
+using Lachain.Networking;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Serialization;
 
@@ -46,6 +47,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private ITransactionPool? _transactionPool;
         private IContractRegisterer? _contractRegisterer;
         private IPrivateWallet? _privateWallet;
+        private IConfigManager _configManager = null!;
 
         private TransactionServiceWeb3? _apiService;
 
@@ -115,7 +117,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
+            _configManager = _container.Resolve<IConfigManager>();
             //_privateWallet = _container.Resolve<IPrivateWallet>();
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
 
         }
 
