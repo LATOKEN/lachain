@@ -67,11 +67,8 @@
     <None Remove="Resources\scripts\test.wasm" />
     <EmbeddedResource Include="Resources\scripts\test.wasm" />
     <None Remove="Resources\scripts\Event.abi" />
-    <EmbeddedResource Include="Resources\scripts\Event.abi" />
     <None Remove="Resources\scripts\event.sol" />
-    <EmbeddedResource Include="Resources\scripts\event.sol" />
     <None Remove="Resources\scripts\Event.wasm" />
-    <EmbeddedResource Include="Resources\scripts\Event.wasm" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.12.0" />

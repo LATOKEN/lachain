@@ -16,6 +16,7 @@ using NUnit.Framework;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
+    [Ignore("Need top recompile contracts")]
     public class VirtualMachineTest
     {
         private IContainer? _container;
