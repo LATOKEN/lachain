@@ -31,56 +31,54 @@ namespace Lachain.Storage.Repositories
 
         public void TryAddTransaction(TransactionReceipt receipt)
         {
-            try
+            string[] signatures =
             {
-                string[] signatures =
-                {
-                    "transfer(address,uint256)",
-                    "transferFrom(address,address,uint256)",
-                    "mint(address,uint256)",
-                    "burn(address,uint256)"
-                };
+                "transfer(address,uint256)",
+                "transferFrom(address,address,uint256)",
+                "mint(address,uint256)",
+                "burn(address,uint256)"
+            };
 
-                var decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToArray());
-                object[] decodedRes = { };
+            var decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToArray());
+            object[] decodedRes = Array.Empty<object>();
 
-                foreach (var signature in signatures)
+            foreach (var signature in signatures)
+            {
+                try
                 {
                     decodedRes = decoder.Decode(signature);
-                    break;
-                }
 
-                if (decodedRes.Length == 3)
-                {
-                    if (decodedRes[0] is UInt160 fromAddr && fromAddr.Equals(receipt.Transaction.From) &&
-                        decodedRes[1] is UInt160 toAddr && toAddr.Equals(receipt.Transaction.To) &&
-                        decodedRes[2] is UInt256 value && value.Equals(receipt.Transaction.Value))
+                    if (decodedRes.Length == 3)
                     {
+                        if (_watchAddresses.Count(addr =>
+                            decodedRes[0] is UInt160 fromAddr && fromAddr.Equals(addr) ||
+                            decodedRes[1] is UInt160 toAddr && toAddr.Equals(addr)) <= 0) continue;
+
                         var temp = LoadState();
                         SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());
                     }
-                }
-                else if (decodedRes.Length == 2)
-                {
-                    if (decodedRes[0] is UInt160 toAddr && toAddr.Equals(receipt.Transaction.To) &&
-                        decodedRes[1] is UInt256 value && value.Equals(receipt.Transaction.Value))
+
+                    else if (decodedRes.Length == 2)
                     {
+                        if (_watchAddresses.Count(addr =>
+                            decodedRes[0] is UInt160 fromAddr && fromAddr.Equals(addr)) <= 0) continue;
+
                         var temp = LoadState();
                         SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());
                     }
-                }
-                else
-                {
-                    if (_watchAddresses.Count(addr =>
-                        addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
+                    else
+                    {
+                        if (_watchAddresses.Count(addr =>
+                            addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
 
-                    var data = LoadState();
-                    SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
+                        var data = LoadState();
+                        SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"exception occured while decoding: {e}");
+                catch (Exception e)
+                {
+                    Console.WriteLine($"exception occured while decoding: {e}");
+                }
             }
         }
 
