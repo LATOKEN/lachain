@@ -12,6 +12,8 @@ using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using Google.Protobuf;
+using Lachain.Logger;
+
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -24,6 +26,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
         private const int DefaultTimeout = 5 * 1000; // 5 sec 
         private BlockRequestManager _blockRequestManager; 
+        private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
+
         public Downloader(PeerManager peerManager, RequestManager requestManager)
         {
             _peerManager = peerManager;
@@ -51,7 +55,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public string GetTrie(string trieName, NodeStorage _nodeStorage)
         {
             string rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
-            System.Console.WriteLine("Inside Get Trie. rootHash: " + rootHash);
+            Logger.LogWarning("Inside Get Trie. rootHash: " + rootHash);
             if (!rootHash.Equals(EmptyHash))
             {
                 bool foundHash = _nodeStorage.GetIdByHash(rootHash, out var id);
@@ -125,9 +129,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             catch (Exception e)
             {
-                Console.WriteLine("\nMain Exception raised!");
-                Console.WriteLine("Source :{0} ", e.Source);
-                Console.WriteLine("Message :{0} ", e.Message);
+                Logger.LogWarning("\nMain Exception raised!");
+                Logger.LogWarning("Source :{0} ", e.Source);
+                Logger.LogWarning("Message :{0} ", e.Message);
                 if(_peerManager.TryFreePeer(peer, 0))
                 {
                     if(type==1) _requestManager.HandleResponse(batch, new JArray { });
@@ -150,7 +154,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     request.request.Abort();
                     var peer = request.peer;
                     var batch = request.batch;
-                    Console.WriteLine($"timed out from peer {peer._url} spent {time.TotalMilliseconds}   : {batch[0]}");
+                    Logger.LogWarning($"timed out from peer {peer._url} spent {time.TotalMilliseconds}   : {batch[0]}");
                     _peerManager.TryFreePeer(peer, 0);
                     if(request.type==1) _requestManager.HandleResponse(batch, new JArray { });
                     if(request.type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
@@ -185,16 +189,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                 }
                 result = (JArray)response["result"];
-                Console.WriteLine($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
+                Logger.LogWarning($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
                 _peerManager.TryFreePeer(peer, 1);
                 if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
                 if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
             }
             catch (Exception e)
             {
-                Console.WriteLine("\nRespCallback Exception raised!");
-                Console.WriteLine("\nMessage:{0}", e.Message);
-                Console.WriteLine($"Wasted time:{time.TotalMilliseconds} from peer:{peer._url}  :  {batch[0]}");
+                Logger.LogWarning("\nRespCallback Exception raised!");
+                Logger.LogWarning("\nMessage:{0}", e.Message);
+                Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._url}  :  {batch[0]}");
                 _peerManager.TryFreePeer(peer, 0);
                 if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
                 if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
@@ -229,8 +233,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             catch (Exception e)
             {
-                Console.WriteLine($"failed in downloading latest Block Number from peer: {peer._url}");
-                Console.WriteLine("\nMessage:{0}", e.Message);
+                Logger.LogWarning($"failed in downloading latest Block Number from peer: {peer._url}");
+                Logger.LogWarning("\nMessage:{0}", e.Message);
             }
             if(blockNumber is null) blockNumber = "0x";
             return blockNumber;
@@ -251,7 +255,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     throw new Exception("No available peers");
                 }
-
+                Logger.LogWarning("Trying to download root hash from peer: "+peer._url);
                 try
                 {
                     rootHash = (string)SyncRPCApi("la_getRootHashByTrieName",
@@ -265,7 +269,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"failed in downloading root hash of trie {trieName} from peer: {peer._url}");
+                    Logger.LogWarning($"failed in downloading root hash of trie {trieName} from peer: {peer._url}");
                 }
 
                 _peerManager.TryFreePeer(peer);
@@ -304,6 +308,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             };
             if (param.Count != 0) options["params"] = param;
             var webRequest = (HttpWebRequest)WebRequest.Create(_rpcURL);
+            webRequest.Timeout = 10*1000;
             webRequest.ContentType = "application/json";
             webRequest.Method = "POST";
             using (Stream dataStream = webRequest.GetRequestStream())

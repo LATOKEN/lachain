@@ -128,13 +128,23 @@ namespace Lachain.Console
                 {
                     blockNumber = Convert.ToUInt64(args[0]);
                 }
+
+                var addresses = configManager.GetConfig<NetworkConfig>("network")?.BootstrapAddresses;
+                for(int i=0; i<addresses?.Length; i++)
+                {
+                    string tempAddress = addresses[i];
+                    StringBuilder address = new StringBuilder("http://");
+                    int j=0;
+                    while(tempAddress[j]!='@') j++;
+                    for( j++; tempAddress[j]!=':'; j++) address.Append(tempAddress[j]);
+                    address.Append(":7070");
+                    addresses[i] = address.ToString();
+                }
+
                 FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), blockNumber);
+                                                storageManager.GetVersionFactory(), blockNumber, addresses.ToList());
 
             }
-            /*    if(blockManager.GetHeight()==0)
-                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), 0); */
 
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
