@@ -61,6 +61,8 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 Delete(txHash);
             }
+            _poolRepository.RemoveTransactions(e.TransactionHashes);
+            SanitizePool();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -166,6 +168,29 @@ namespace Lachain.Core.Blockchain.Pool
                 );
             }
         }
+
+
+        private void SanitizePool()
+        {
+            var txHashes = _poolRepository.GetTransactionPool();
+            var txToRemove = new List<UInt256>();
+            foreach(var txHash in txHashes)
+            {
+                var tx = _poolRepository.GetTransactionByHash(txHash);
+                if(tx is null) 
+                    continue;
+                if(!TxNonceValid(tx))
+                    txToRemove.Add(txHash);
+            }
+            int txRemovedCount = _poolRepository.RemoveTransactions(txToRemove);
+            
+            if(txRemovedCount > 0) 
+            {
+                Logger.LogTrace($"Sanitized transaction pool; dropped {txRemovedCount} txs from pool repository");
+            }
+        }
+
+        
 
         private void RemoveTxes(IReadOnlyCollection<TransactionReceipt> txes)
         {

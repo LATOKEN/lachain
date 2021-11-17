@@ -48,6 +48,33 @@ namespace Lachain.Storage.Repositories
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public int RemoveTransactions(IEnumerable<UInt256> txHashes)
+        {
+            var raw = _rocksDbContext.Get(EntryPrefix.TransactionPool.BuildPrefix());
+            if (raw == null)
+                return 0;
+                
+            var pool = raw.ToMessageArray<UInt256>();
+            List<UInt256> txToRemove = new List<UInt256>();
+
+            foreach(var txHash in txHashes)
+            {
+                if (pool.Remove(txHash))
+                {
+                    txToRemove.Add(txHash);
+                }
+            }
+            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), pool.ToByteArray());
+
+            foreach(var txHash in txToRemove)
+            {
+                _rocksDbContext.Delete(EntryPrefix.TransactionByHash.BuildPrefix(txHash));
+            }            
+            return txToRemove.Count;
+        }
+        
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddTransaction(TransactionReceipt transaction)
         {
             /* write transaction to storage */
