@@ -23,7 +23,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                                      IRocksDbContext dbContext,
                                      ISnapshotIndexRepository snapshotIndexRepository,
                                      VersionFactory versionFactory,
-                                     ulong blockNumber)
+                                     ulong blockNumber,
+                                     List<string> urls)
         {
             if(Alldone(dbContext))
             {
@@ -31,35 +32,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 return;
             }
             dbContext.Save(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(0));
-            List<string> devnetNodes = new List<string>
-            {
-                "http://88.99.190.191:7070",
-                "http://94.130.78.183:7070",
-                "http://94.130.24.163:7070",
-                "http://94.130.110.127:7070",
-                "http://94.130.110.95:7070",
-                "http://94.130.58.63:7070",
-                "http://88.99.86.166:7070",
-                "http://88.198.78.106:7070",
-                "http://88.198.78.141:7070",
-                "http://88.99.126.144:7070",
-                "http://88.99.87.58:7070",
-                "http://95.217.6.234:7070",
-                "http://157.245.160.201:7070",
-                "http://95.217.6.171:7070",
-            };
-//            List <string> onlyonenode = new List<string>
-            List<string> localnetNodes = new List<string>
-            { 
-                "http://127.0.0.1:7070",
-                "http://127.0.0.1:7071",
-                "http://127.0.0.1:7072"
-            };
             
             Console.WriteLine("Current Version: "+versionFactory.CurrentVersion);
 
             NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
-            List<string> urls = devnetNodes;
             HybridQueue hybridQueue = new HybridQueue(dbContext, nodeStorage);
             PeerManager peerManager = new PeerManager(urls);
             
