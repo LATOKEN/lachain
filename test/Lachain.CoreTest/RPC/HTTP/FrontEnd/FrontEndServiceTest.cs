@@ -18,8 +18,6 @@ using Lachain.UtilityTest;
 using NUnit.Framework;
 using AustinHarris.JsonRpc;
 using System;
-using Lachain.Core.RPC;
-using Lachain.Networking;
 
 namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
 {
