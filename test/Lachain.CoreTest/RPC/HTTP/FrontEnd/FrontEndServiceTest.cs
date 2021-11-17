@@ -18,11 +18,14 @@ using Lachain.UtilityTest;
 using NUnit.Framework;
 using AustinHarris.JsonRpc;
 using System;
+using Lachain.Core.RPC;
+using Lachain.Networking;
 
 namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
 {
     public class FrontEndServiceTest
     {
+        private IConfigManager? _configManager;
         private IContainer? _container;
         private IStateManager? _stateManager;
         private ITransactionPool? _transactionPool;
@@ -51,6 +54,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
 
+            _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
             _transactionPool = _container.Resolve<ITransactionPool>();
             _transactionSigner = _container.Resolve<ITransactionSigner>();
@@ -85,9 +89,9 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         [Repeat(2)]
         public void Test_PasswordChange()
         {
-            // TODO: Read it from config during setup
-            var initialPassword = "d88de92cb046a01a8aa81813d7815a76dfa1d994";
+            var initialPassword = _configManager.GetConfig<VaultConfig>("vault")?.Password;
             var newPassword = "abcde";
+            
             // Change wallet password
             Assert.AreEqual("password_changed", _fes?.ChangePassword(initialPassword, newPassword));
             
