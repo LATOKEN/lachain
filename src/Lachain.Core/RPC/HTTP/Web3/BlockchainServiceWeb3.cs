@@ -218,7 +218,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
             for(int i = 0; i<snapshots.Length; i++)
             {
-                trieRootsHash[snapshots[i]+"Hash"] = Web3DataFormatUtils.Web3Data(snapshots[i].Hash);
+                trieRootsHash[snapshotNames[i]+"Hash"] = Web3DataFormatUtils.Web3Data(snapshots[i].Hash);
             }
             return trieRootsHash;
         }
