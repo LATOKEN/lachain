@@ -85,7 +85,8 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         [Repeat(2)]
         public void Test_PasswordChange()
         {
-            var initialPassword = "12345";
+            // TODO: Read it from config during setup
+            var initialPassword = "d88de92cb046a01a8aa81813d7815a76dfa1d994";
             var newPassword = "abcde";
             // Change wallet password
             Assert.AreEqual("password_changed", _fes?.ChangePassword(initialPassword, newPassword));

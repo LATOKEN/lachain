@@ -108,6 +108,11 @@ namespace Lachain.Core.Blockchain.VM
                     throw new InsufficientFundsException();
             }
 
+            if (snapshot.Contracts.GetContractByHash(address) is null) {
+                frame.LastChildReturnValue = Array.Empty<byte>();
+                return 0;
+            }
+
             var gasBuffer = SafeCopyFromMemory(frame.Memory, gasOffset, 8);
             if (gasBuffer is null)
                 throw new InvalidContractException("Bad call to call function");
@@ -176,9 +181,14 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Copy to contract memory failed");
         }
 
-        public static void Handler_Env_WriteLog(int offset, int length)
+        public static void Handler_Env_WriteLog(int dataOffset, int dataLength, int topicsNum, 
+            int topic0Offset, 
+            int topic1Offset, 
+            int topic2Offset, 
+            int topic3Offset 
+            )
         {
-            Logger.LogInformation($"Handler_Env_WriteLog({offset}, {length})");
+            Logger.LogInformation($"Handler_Env_WriteLog({dataOffset}, {dataLength})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call WRITELOG outside wasm frame");
 
@@ -187,9 +197,25 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidOperationException("Cannot call WRITELOG in STATICCALL");
             }
 
-            var buffer = SafeCopyFromMemory(frame.Memory, offset, length);
-            if (buffer == null)
-                throw new InvalidContractException("Bad call to WRITELOG");
+            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            if (data == null)
+                throw new InvalidContractException("Bad call to WRITELOG,  can't read data");
+
+            if (topicsNum < 1)
+                throw new InvalidContractException("Bad call to WRITELOG, we should have at least one topic");
+
+            var topic0 = SafeCopyFromMemory(frame.Memory, topic0Offset, 32);
+            if (topic0 == null)
+                throw new InvalidContractException("Bad call to WRITELOG,  can't read topic0");
+
+            var eventObj = new Event
+            {
+                Contract = frame.CurrentAddress,
+                Data = ByteString.CopyFrom(data),
+                TransactionHash = frame.InvocationContext.Receipt.Hash,
+                SignatureHash =  topic0.ToUInt256()
+            };
+            frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
         }
 
         public static int Handler_Env_InvokeContract(
@@ -211,6 +237,35 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"Handler_Env_InvokeStaticContract({callSignatureOffset}, {inputLength}, {inputOffset}, {valueOffset}, {gasOffset})");
             return InvokeContract(callSignatureOffset, inputLength, inputOffset, valueOffset, gasOffset, InvocationType.Static);
+        }
+
+        public static int Handler_Env_Transfer(
+            int callSignatureOffset, int valueOffset)
+        {
+            Logger.LogInformation($"Handler_Env_Transfer({callSignatureOffset}, {valueOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call transfer outside wasm frame");
+            var snapshot = frame.InvocationContext.Snapshot;
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
+            if (addressBuffer is null)
+                throw new InvalidContractException("Bad call to transfer function");
+            var address = addressBuffer.ToUInt160();
+            Logger.LogInformation($"Address: {address.ToHex()}");
+            var msgValue = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256();
+            var value = msgValue!.ToMoney();
+            Logger.LogInformation($"Value: {value}");
+
+            if (value is null)
+                throw new InvalidContractException("Bad call to transfer function");
+            if (value > Money.Zero)
+            {
+                frame.UseGas(GasMetering.TransferFundsGasCost);
+                var result = snapshot.Balances.TransferBalance(frame.CurrentAddress, address, value);
+                if (!result)
+                    throw new InsufficientFundsException();
+            }
+
+            return 0;
         }
 
         public static int Handler_Env_Create(int valueOffset, int dataOffset, int dataLength, int resultOffset)
@@ -773,6 +828,29 @@ namespace Lachain.Core.Blockchain.VM
             if (!result)
                 throw new InvalidContractException("Bad call to (get_external_balance)");
         }
+
+        public static void Handler_Env_GetExtcodesize(int addressOffset, int resultOffset)
+        {
+            Logger.LogInformation($"Handler_Env_GetExtcodesize({addressOffset}, {resultOffset})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call GetExtcodesize outside wasm frame");
+            
+            // Get the address from the given memory offset
+            var snapshot = frame.InvocationContext.Snapshot;
+            var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
+            if (addressBuffer is null)
+                throw new InvalidContractException("Bad call to (get_extcodesize)");
+            var address = addressBuffer.Take(20).ToArray().ToUInt160();
+            
+            // Get contract at the given address
+            var contract = snapshot.Contracts.GetContractByHash(address);
+            
+            // Load contract size at the given resultOffset
+            var result = SafeCopyToMemory(frame.Memory, (contract?.ByteCode.Length ?? 0).ToBytes().ToArray(), resultOffset);
+
+            if (!result)
+                throw new InvalidContractException("Bad call to (get_extcodesize)");
+        }
         
         public static void Handler_Env_GetBlockTimestamp(int dataOffset)
         {
@@ -859,6 +937,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
                 {EnvModule, "invoke_delegate_contract", CreateImport(nameof(Handler_Env_InvokeDelegateContract))},
                 {EnvModule, "invoke_static_contract", CreateImport(nameof(Handler_Env_InvokeStaticContract))},
+                {EnvModule, "transfer", CreateImport(nameof(Handler_Env_Transfer))},
                 {EnvModule, "create", CreateImport(nameof(Handler_Env_Create))},
                 {EnvModule, "create2", CreateImport(nameof(Handler_Env_Create2))},
                 {EnvModule, "get_return_size", CreateImport(nameof(Handler_Env_GetReturnSize))},
@@ -886,6 +965,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_block_coinbase_address", CreateImport(nameof(Handler_Env_GetBlockCoinbase))},
                 {EnvModule, "get_block_difficulty", CreateImport(nameof(Handler_Env_GetBlockDifficulty))},
                 {EnvModule, "get_external_balance", CreateImport(nameof(Handler_Env_GetExternalBalance))},
+                {EnvModule, "get_extcodesize", CreateImport(nameof(Handler_Env_GetExtcodesize))},
                 {EnvModule, "get_block_timestamp", CreateImport(nameof(Handler_Env_GetBlockTimestamp))},
                 {EnvModule, "get_chain_id", CreateImport(nameof(Handler_Env_GetChainId))},
                 // /* crypto hash bindings */

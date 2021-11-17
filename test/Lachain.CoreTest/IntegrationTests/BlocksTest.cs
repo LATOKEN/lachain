@@ -18,7 +18,9 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -38,6 +40,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
+        private IConfigManager _configManager = null!;
         private IContainer? _container;
 
         public BlocksTest()
@@ -64,6 +67,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
                 new RunOptions()
             ));
+            
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
@@ -72,7 +76,14 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _configManager = _container.Resolve<IConfigManager>();
 
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
         }
 
         [TearDown]
@@ -85,6 +96,7 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_Genesis()
         {
+            Console.WriteLine( Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"));
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
                 new RunOptions()
@@ -109,8 +121,11 @@ namespace Lachain.CoreTest.IntegrationTests
                 "0x0000000000000000000000000000000000000000000000000000000000000000".HexToUInt256(),
                 genesis.Header.PrevBlockHash
             );
+            Console.WriteLine(
+                genesis.Header.StateHash.ToHex()
+            );
             Assert.AreEqual(
-                "0xf0155c2e8107f6d2b29657a1d856f0b0fec6a64568c5ec2f2fdb7d2f074d6f69",
+                "0xe1cc48aee243f602ec9ab6247a8bfe082b96d2a8c963497543c9ddc4c8029789",
                 genesis.Header.StateHash.ToHex()
             );
             Assert.AreEqual(0, genesis.GasPrice);
@@ -133,7 +148,6 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             _blockManager.TryBuildGenesisBlock();
             var block = BuildNextBlock();
-
             var result = ExecuteBlock(block);
             Assert.AreEqual(OperatingError.Ok, result);
         }
@@ -172,14 +186,13 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_Storage_Changing()
         {
             _blockManager.TryBuildGenesisBlock();
-
             var randomTx = TestUtils.GetRandomTransaction();
             var balance = randomTx.Transaction.Value;
             var allowance = balance;
             var receiver = randomTx.Transaction.From;
 
             var tx1 = TopUpBalanceTx(receiver, balance, 0);
-            var tx2 = ApproveTx(receiver, allowance, 1);
+            var tx2 = ApproveTx(receiver, allowance, 0);
 
             var owner = tx2.Transaction.From;
 
@@ -311,17 +324,19 @@ namespace Lachain.CoreTest.IntegrationTests
 
         private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
         {
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
             var tx = new Transaction
             {
                 To = to,
-                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                From = keyPair.PublicKey.GetAddress(),
                 GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
                 GasLimit = 4_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
+                Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()) +
                         (ulong) nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, keyPair);
         }
 
         private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)

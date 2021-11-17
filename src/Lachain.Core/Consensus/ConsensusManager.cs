@@ -152,21 +152,11 @@ namespace Lachain.Core.Consensus
                     broadcaster.Terminate();
                     _eras.Remove(CurrentEra);
                     
-                    var height = (long) _blockManager.GetHeight();
-                    
-                    if(height >= CurrentEra) 
-                    {
-                        CurrentEra += 1;
-                        Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
-                    }
-                    else 
-                    {
-                        Logger.LogWarning($"block height: {height} is smaller than CurrentEra: {CurrentEra}.");
-                    }
-
+                    CurrentEra += 1;
                     _eras[CurrentEra] = new EraBroadcaster(
                         CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
                     );
+                    Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
                 }
             }
         }

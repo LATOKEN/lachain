@@ -23,6 +23,7 @@ using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Serialization;
 using Transaction = Lachain.Proto.Transaction;
+using System.Threading.Tasks;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -73,7 +74,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_verifyRawTransaction")]
-        private string VerifyRawTransaction(string rawTx)
+        public string VerifyRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
             var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature();
@@ -100,7 +101,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionReceipt")]
-        private JObject? GetTransactionReceipt(string txHash)
+        public JObject? GetTransactionReceipt(string txHash)
         {
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
@@ -118,22 +119,30 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
             
             return Web3DataFormatUtils.Web3TransactionReceipt(receipt, block!.Hash, receipt.Block, 
-                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt!.Block));
+                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt!.Block, block!.Hash));
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
-        private JObject? GetTransactionByHash(string txHash)
+        public JObject? GetTransactionByHash(string txHash)
         {
             var hash = txHash.HexToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
+
             if (receipt is null)
-                return null;
+            {
+                receipt = _transactionPool.GetByHash(hash);
+                if(receipt is null)
+                {
+                    return null;
+                }
+                return Web3DataFormatUtils.Web3Transaction(receipt!);
+            }
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
             return Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
         }
 
         [JsonRpcMethod("eth_getTransactionByBlockHashAndIndex")]
-        private JObject? GetTransactionByBlockHashAndIndex(string blockHash, ulong index)
+        public JObject? GetTransactionByBlockHashAndIndex(string blockHash, ulong index)
         {
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash.HexToUInt256());
             if (block is null)
@@ -146,7 +155,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByBlockNumberAndIndex")]
-        private JObject? GetTransactionByBlockNumberAndIndex(string blockTag, ulong index)
+        public JObject? GetTransactionByBlockNumberAndIndex(string blockTag, ulong index)
         {
             var height = GetBlockNumberByTag(blockTag);
             var block = (height is null) ? null : _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight((ulong) height);
@@ -189,17 +198,46 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
         }
 
-        [JsonRpcMethod("la_sendRawTransactionBatch")] 
-        private List<string> SendRawTransactionBatch(List<string> rawTxs)
+        [JsonRpcMethod("la_sendRawTransactionBatch")]
+        public List<string> SendRawTransactionBatch(List<string> rawTxs)
         {
             List<string> txIds = new List<string>();
-            foreach(string rawTx in rawTxs) {
+
+            Logger.LogInformation($"Received raw transaction strings count:: {rawTxs.Count}");
+
+            var time = DateTime.Now;
+
+            foreach (string rawTx in rawTxs)
+            {
                 txIds.Add(SendRawTransaction(rawTx));
             }
+
+            Logger.LogInformation($"Response count:: {txIds.Count}");
+            Logger.LogInformation($"Time taken for series:: {DateTime.Now - time}");
+
             return txIds;
         }
 
-        [JsonRpcMethod("eth_invokeContract")]
+        [JsonRpcMethod("la_sendRawTransactionBatchParallel")]
+         public List<string> SendRawTransactionBatchParallel(List<string> rawTxs)
+         {
+            List<string> txIds = new List<string>();
+ 
+            Logger.LogInformation($"Received raw transaction strings count:: {rawTxs.Count}");
+
+            var time = DateTime.Now;
+
+            Parallel.For(0, rawTxs.Count, i => {
+                 txIds.Add(SendRawTransaction(rawTxs[i]));
+             });
+ 
+            Logger.LogInformation($"Response count:: {txIds.Count}");
+            Logger.LogInformation($"Time taken for Parallel:: {DateTime.Now - time}");
+
+            return txIds;
+         }
+
+[JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
@@ -310,7 +348,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
         
         [JsonRpcMethod("eth_call")]
-        private string Call(JObject opts, string? blockId)
+        public string Call(JObject opts, string? blockId)
         {
             var from = opts["from"];
             var to = opts["to"];
@@ -393,7 +431,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_estimateGas")]
-        private string? EstimateGas(JObject opts)
+        public string? EstimateGas(JObject opts)
         {
             Logger.LogInformation($"eth_estimateGas({opts})");
             try
@@ -516,7 +554,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_gasPrice")]
-        private string GetNetworkGasPrice()
+        public string GetNetworkGasPrice()
         {
             return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
