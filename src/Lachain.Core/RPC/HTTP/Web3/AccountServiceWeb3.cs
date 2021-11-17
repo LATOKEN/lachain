@@ -2,11 +2,13 @@
 using System.Linq;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Pool;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
+
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -16,17 +18,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly ISystemContractReader _systemContractReader;
+        private readonly ITransactionPool _transactionPool;
+
+        
 
 
         public AccountServiceWeb3(IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexer,
             IContractRegisterer contractRegisterer,
-            ISystemContractReader systemContractReader)
+            ISystemContractReader systemContractReader, ITransactionPool transactionPool)
         {
             _stateManager = stateManager;
             _snapshotIndexer = snapshotIndexer;
             _contractRegisterer = contractRegisterer;
             _systemContractReader = systemContractReader;
+            _transactionPool = transactionPool;
         }
 
         [JsonRpcMethod("eth_getBalance")]
@@ -40,6 +46,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getTransactionCount")]
         public ulong GetTransactionCount(string from, string blockId)
         {
+            if(blockId.Equals("pending")) return _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
             return GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
         }
 
