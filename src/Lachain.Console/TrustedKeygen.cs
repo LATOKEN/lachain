@@ -6,6 +6,7 @@ using System.Text;
 using Lachain.CommunicationHub.Net;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Genesis;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.RPC;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
@@ -22,7 +23,7 @@ namespace Lachain.Console
         internal class Config
         {
             public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
-                StorageConfig storage, BlockchainConfig blockchain)
+                StorageConfig storage, BlockchainConfig blockchain, HardforkConfig hardfork)
             {
                 Network = network;
                 Genesis = genesis;
@@ -30,6 +31,7 @@ namespace Lachain.Console
                 Vault = vault;
                 Storage = storage;
                 Blockchain = blockchain;
+                Hardfork = hardfork;
             }
 
             [JsonProperty("network")] public NetworkConfig Network { get; set; }
@@ -38,6 +40,7 @@ namespace Lachain.Console
             [JsonProperty("vault")] public VaultConfig Vault { get; set; }
             [JsonProperty("storage")] public StorageConfig Storage { get; set; }
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
+            [JsonProperty("hardfork")] public HardforkConfig Hardfork { get; set; }
         }
 
         public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
@@ -144,7 +147,11 @@ namespace Lachain.Console
                 {
                     TargetBlockTime = target,
                 };
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain);
+                var hardfork = new HardforkConfig
+                {
+                    Hardfork_1 = 0,
+                };
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
@@ -273,7 +280,11 @@ namespace Lachain.Console
                 {
                     TargetBlockTime = target,
                 };
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain);
+                var hardfork = new HardforkConfig
+                {
+                    Hardfork_1 = 123,
+                };
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
