@@ -18,7 +18,7 @@ using Lachain.Storage.Repositories;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.Core.Blockchain.Error;
-
+using Lachain.Core.Blockchain.Genesis;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
@@ -30,6 +30,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
     public class AccountServiceWeb3Test
     {
 
+        private IConfigManager? _configManager;
         private IContainer? _container;
         private IStateManager? _stateManager;
         private ISnapshotIndexRepository? _snapshotIndexer;
@@ -65,6 +66,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
 
+            _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
@@ -78,7 +80,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             ServiceBinder.BindService<GenericParameterAttributes>();
 
-            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader);
+            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
 
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
@@ -113,14 +115,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(balNew, "0x115557b419c5c1f3fa018400000000");
         }
 
-        [Test] 
-        [Ignore("fix it")]
+        [Test]
         public void Test_GetAccounts()
         {
             var account_list = _apiService!.GetAccounts();
             var address = account_list.First.ToString();
-            // TODO: read correct account from the config in setup
-            Assert.AreEqual(address, "0x6bc32575acb8754886dc283c2c8ac54b1bd93195");
+            
+            var balances = _configManager!.GetConfig<GenesisConfig>("genesis")?.Balances;
+            var balanceList = balances!.ToList();
+            
+            Assert.AreEqual(address, balanceList[1].Key);
         }
 
         [Test]
