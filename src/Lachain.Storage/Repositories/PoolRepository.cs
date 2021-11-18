@@ -9,6 +9,7 @@ namespace Lachain.Storage.Repositories
 {
     public class PoolRepository : IPoolRepository
     {
+
         private readonly IRocksDbContext _rocksDbContext;
         
         public PoolRepository(IRocksDbContext rocksDbContext)
@@ -50,27 +51,28 @@ namespace Lachain.Storage.Repositories
         [MethodImpl(MethodImplOptions.Synchronized)]
         public int RemoveTransactions(IEnumerable<UInt256> txHashes)
         {
-            var raw = _rocksDbContext.Get(EntryPrefix.TransactionPool.BuildPrefix());
-            if (raw == null)
-                return 0;
-                
-            var pool = raw.ToMessageArray<UInt256>();
-            List<UInt256> txToRemove = new List<UInt256>();
-
+            HashSet<UInt256> txHashSet = new HashSet<UInt256>();
             foreach(var txHash in txHashes)
-            {
-                if (pool.Remove(txHash))
-                {
-                    txToRemove.Add(txHash);
-                }
-            }
-            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), pool.ToByteArray());
+                txHashSet.Add(txHash);
+            
+            var pool = GetTransactionPool();
+            List<UInt256> newPool = new List<UInt256>();
+            List<UInt256> txRemoved = new List<UInt256>();
 
-            foreach(var txHash in txToRemove)
+            foreach(var txHash in pool)
             {
+                if (!txHashSet.Contains(txHash))
+                    newPool.Add(txHash);
+                else 
+                    txRemoved.Add(txHash);
+            }
+            
+            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), newPool.ToByteArray());
+
+            foreach(var txHash in txRemoved)
                 _rocksDbContext.Delete(EntryPrefix.TransactionByHash.BuildPrefix(txHash));
-            }            
-            return txToRemove.Count;
+                       
+            return txRemoved.Count;
         }
         
 
