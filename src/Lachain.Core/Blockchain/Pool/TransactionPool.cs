@@ -50,7 +50,6 @@ namespace Lachain.Core.Blockchain.Pool
             _relayQueue = new HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
-            Restore();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
