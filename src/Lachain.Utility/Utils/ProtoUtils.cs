@@ -19,7 +19,11 @@ namespace Lachain.Utility.Utils
                 var arrayOf = values as T[] ?? values.ToArray();
                 writer.WriteLength(arrayOf.Length);
                 foreach (var value in arrayOf)
-                    writer.Write(value.ToByteArray());
+                {
+                    var valueByteArray = value.ToByteArray();
+                    writer.WriteLength(valueByteArray.Length);
+                    writer.Write(valueByteArray);
+                }
                 writer.Flush();
                 return stream.ToArray();
             }
@@ -48,7 +52,8 @@ namespace Lachain.Utility.Utils
                 var parser = new MessageParser<T>(() => new T());
                 for (var i = 0UL; i < length; i++)
                 {
-                    var el = parser.ParseFrom(stream);
+                    var msgLen = (int) reader.ReadLength();
+                    var el = parser.ParseFrom(reader.ReadBytes(msgLen));
                     result.Add(el);
                 }
 
