@@ -70,20 +70,18 @@ namespace Lachain.Storage.Repositories
                         var temp = LoadState();
                         SaveState(temp.Concat(receipt.Hash.ToBytes()).ToArray());
                     }
-                    else
-                    {
-                        if (_watchAddresses.Count(addr =>
-                            addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
-
-                        var data = LoadState();
-                        SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
-                    }
                 }
                 catch (Exception e)
                 {
                     Logger.LogError($"Exception in adding TryAddTransaction: {e}");
                 }
             }
+            
+            if (_watchAddresses.Count(addr =>
+                addr.Equals(receipt.Transaction.To) || addr.Equals(receipt.Transaction.From)) <= 0) return;
+
+            var data = LoadState();
+            SaveState(data.Concat(receipt.Hash.ToBytes()).ToArray());
         }
 
         public byte[] LoadState()
