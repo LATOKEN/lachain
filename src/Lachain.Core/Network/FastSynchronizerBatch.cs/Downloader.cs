@@ -55,7 +55,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public string GetTrie(string trieName, NodeStorage _nodeStorage)
         {
             string rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
-            Logger.LogWarning("Inside Get Trie. rootHash: " + rootHash);
+            Logger.LogInformation("Inside Get Trie. rootHash: " + rootHash);
             if (!rootHash.Equals(EmptyHash))
             {
                 bool foundHash = _nodeStorage.GetIdByHash(rootHash, out var id);
@@ -189,7 +189,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                 }
                 result = (JArray)response["result"];
-                Logger.LogWarning($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
+                Logger.LogInformation($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
                 _peerManager.TryFreePeer(peer, 1);
                 if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
                 if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
