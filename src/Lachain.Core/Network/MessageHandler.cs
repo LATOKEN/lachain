@@ -104,7 +104,7 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksRequest").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
-            if (request.ToHeight > request.FromHeight)
+            if (request.ToHeight >= request.FromHeight)
             {
                 var reply = new SyncBlocksReply
                 {
