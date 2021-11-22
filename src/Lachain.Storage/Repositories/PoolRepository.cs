@@ -29,7 +29,7 @@ namespace Lachain.Storage.Repositories
         public ICollection<UInt256> GetTransactionPool()
         {
             var raw = _rocksDbContext.Get(EntryPrefix.TransactionPool.BuildPrefix());
-            return raw == null ? new List<UInt256>() : raw.ToMessageArray<UInt256>();
+            return raw == null ? new List<UInt256>() : raw.ByteArrayToTransactionHashList();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -39,10 +39,10 @@ namespace Lachain.Storage.Repositories
             var raw = _rocksDbContext.Get(EntryPrefix.TransactionPool.BuildPrefix());
             if (raw == null)
                 return false;
-            var pool = raw.ToMessageArray<UInt256>();
+            var pool = raw.ByteArrayToTransactionHashList();
             if (!pool.Remove(txHash))
                 return false;
-            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), pool.ToByteArray());
+            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), pool.TransactionHashListToByteArray());
             /* remove transaction from storage */
             _rocksDbContext.Delete(EntryPrefix.TransactionByHash.BuildPrefix(txHash));
             return true;
@@ -67,7 +67,7 @@ namespace Lachain.Storage.Repositories
                     txRemoved.Add(txHash);
             }
             
-            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), newPool.ToByteArray());
+            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), newPool.TransactionHashListToByteArray());
 
             foreach(var txHash in txRemoved)
                 _rocksDbContext.Delete(EntryPrefix.TransactionByHash.BuildPrefix(txHash));
@@ -84,11 +84,11 @@ namespace Lachain.Storage.Repositories
             _rocksDbContext.Save(prefixTx, transaction.ToByteArray());
             /* add transaction to pool */
             var raw = _rocksDbContext.Get(EntryPrefix.TransactionPool.BuildPrefix());
-            var pool = raw != null ? raw.ToMessageArray<UInt256>() : new List<UInt256>();
+            var pool = raw != null ? raw.ByteArrayToTransactionHashList() : new List<UInt256>();
             if (pool.Contains(transaction.Hash))
                 return;
             pool.Add(transaction.Hash);
-            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), pool.ToByteArray());
+            _rocksDbContext.Save(EntryPrefix.TransactionPool.BuildPrefix(), pool.TransactionHashListToByteArray());
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
