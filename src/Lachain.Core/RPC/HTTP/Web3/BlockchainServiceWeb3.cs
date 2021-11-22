@@ -57,6 +57,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _systemContractReader = systemContractReader;
         }
 
+        [JsonRpcMethod("eth_getBlockByNumber")]
         private JObject? GetBlockByNumber(string blockTag, bool fullTx)
         {
             var blockNumber = GetBlockNumberByTag(blockTag);
@@ -80,33 +81,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
-
-        [JsonRpcMethod("testapi")]
-        private JObject? test(string blockRaw)
-        {
-            var block = Block.Parser.ParseFrom(blockRaw.HexToBytes());
-            Console.WriteLine(Web3DataFormatUtils.Web3Block(block,0,new JArray{}));
-            if (block == null)
-                return null;
-            Console.WriteLine("Tx count from block: "+  block.TransactionHashes.Count);
-            
-            ulong gasUsed = 0;
-            var txArray = new JArray{};
-            if(block.TransactionHashes.Count>0)
-            {
-                var txs = block!.TransactionHashes
-                .Select(hash => _transactionManager.GetByHash(hash)!)
-                .ToList();
-                Console.WriteLine("Entered here");
-                gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
-                Console.WriteLine("GaseUsed: "+gasUsed);
-
-                txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
-                Console.WriteLine("Here is Tx Array: "+txArray);
-            }
-            return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
-        }
-
 
         [JsonRpcMethod("la_getBlockRawByNumber")]
         private string? GetBlockRawByNumber(string blockTag)
