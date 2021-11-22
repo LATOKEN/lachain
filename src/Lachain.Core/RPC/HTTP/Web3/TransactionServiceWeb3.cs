@@ -434,124 +434,124 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string? EstimateGas(JObject opts)
         {
             Logger.LogInformation($"eth_estimateGas({opts})");
-            // try
-            // {
-            //     var gasUsed = GasMetering.DefaultTxCost;
-            //     var from = opts["from"];
-            //     var to = opts["to"];
-            //     var data = opts["data"];
-            //
-            //     if (to is null && data is null) return null;
-            //
-            //     var invocation = ((string) data!).HexToBytes();
-            //     var destination = to is null ? UInt160Utils.Zero : ((string) to!).HexToUInt160();
-            //     var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
-            //     gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
-            //
-            //     if (to is null) // deploy contract
-            //     {
-            //         if (!VirtualMachine.VerifyContract(invocation)) 
-            //             throw new ArgumentException("Unable to validate smart-contract code");
-            //         InvocationResult invRes = _stateManager.SafeContext(() =>
-            //         {
-            //             var snapshot = _stateManager.NewSnapshot();
-            //             var context = new InvocationContext(source, snapshot, new TransactionReceipt
-            //             {
-            //                 Block = snapshot.Blocks.GetTotalBlockHeight(),
-            //                 Transaction = new Transaction{Value = 0.ToUInt256()}
-            //             });
-            //             var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, invocation);
-            //             var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.DeployContract, abi);
-            //             if (call is null)
-            //                 throw new Exception("Failed to create system call");
-            //             var res = VirtualMachine.InvokeSystemContract(
-            //                 call,
-            //                 context,
-            //                 invocation,
-            //                 100_000_000
-            //             );
-            //             _stateManager.Rollback();
-            //             return res;
-            //         });
-            //         return invRes.Status == ExecutionStatus.Ok
-            //             ? Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed)
-            //             : GetErrorResponse("eth_estimateGas", opts);
-            //     }
-            //     
-            //     var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
-            //     var systemContract = _contractRegisterer.GetContractByAddress(destination);
-            //
-            //     if (contract is null && systemContract is null)
-            //     {
-            //         InvocationResult transferInvRes = _stateManager.SafeContext(() =>
-            //         {
-            //             var snapshot = _stateManager.NewSnapshot();
-            //             var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
-            //             {
-            //                 Block = snapshot.Blocks.GetTotalBlockHeight(),
-            //                 Transaction = new Transaction{Value = 0.ToUInt256()}
-            //             });
-            //         
-            //             var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
-            //             var invocationResult =
-            //                 ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, 100_000_000);
-            //             _stateManager.Rollback();
-            //
-            //             return invocationResult;
-            //         });
-            //
-            //         return transferInvRes.Status == ExecutionStatus.Ok
-            //             ? (gasUsed + transferInvRes.GasUsed).ToHex()
-            //             : Web3DataFormatUtils.Web3Number(gasUsed);
-            //     }
-            //
-            //     if (!(contract is null))
-            //     {
-            //         InvocationResult invRes = _stateManager.SafeContext(() =>
-            //         {
-            //             var snapshot = _stateManager.NewSnapshot();
-            //             var res = VirtualMachine.InvokeWasmContract(
-            //                 contract,
-            //                 new InvocationContext(source, snapshot, new TransactionReceipt
-            //                 {
-            //                     Block = snapshot.Blocks.GetTotalBlockHeight(),
-            //                     Transaction = new Transaction{Value = 0.ToUInt256()}
-            //                 }),
-            //                 invocation,
-            //                 100_000_000
-            //             );
-            //             _stateManager.Rollback();
-            //             return res;
-            //         });
-            //         return invRes.Status == ExecutionStatus.Ok ? 
-            //             Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) 
-            //             : GetErrorResponse("eth_estimateGas", opts);
-            //     }
-            //
-            //     InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
-            //     {
-            //         var snapshot = _stateManager.NewSnapshot();
-            //         var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
-            //         {
-            //             Block = snapshot.Blocks.GetTotalBlockHeight(),
-            //             Transaction = new Transaction{Value = 0.ToUInt256()}
-            //         });
-            //         
-            //         var invocationResult =
-            //             ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
-            //         _stateManager.Rollback();
-            //
-            //         return invocationResult;
-            //     });
-            //
-            //     return systemContractInvRes.Status == ExecutionStatus.Ok
-            //         ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
-            //         : GetErrorResponse("eth_estimateGas", opts);
-            // }
-            // catch (Exception e)
-            // {
-            //     Logger.LogInformation($"Error in eth_estimateGas: {e}");
-            // }
+            try
+            {
+                var gasUsed = GasMetering.DefaultTxCost;
+                var from = opts["from"];
+                var to = opts["to"];
+                var data = opts["data"];
+            
+                if (to is null && data is null) return null;
+            
+                var invocation = ((string) data!).HexToBytes();
+                var destination = to is null ? UInt160Utils.Zero : ((string) to!).HexToUInt160();
+                var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
+                gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
+            
+                if (to is null) // deploy contract
+                {
+                    if (!VirtualMachine.VerifyContract(invocation)) 
+                        throw new ArgumentException("Unable to validate smart-contract code");
+                    InvocationResult invRes = _stateManager.SafeContext(() =>
+                    {
+                        var snapshot = _stateManager.NewSnapshot();
+                        var context = new InvocationContext(source, snapshot, new TransactionReceipt
+                        {
+                            Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
+                        });
+                        var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, invocation);
+                        var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.DeployContract, abi);
+                        if (call is null)
+                            throw new Exception("Failed to create system call");
+                        var res = VirtualMachine.InvokeSystemContract(
+                            call,
+                            context,
+                            invocation,
+                            100_000_000
+                        );
+                        _stateManager.Rollback();
+                        return res;
+                    });
+                    return invRes.Status == ExecutionStatus.Ok
+                        ? Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed)
+                        : GetErrorResponse("eth_estimateGas", opts);
+                }
+                
+                var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
+                var systemContract = _contractRegisterer.GetContractByAddress(destination);
+            
+                if (contract is null && systemContract is null)
+                {
+                    InvocationResult transferInvRes = _stateManager.SafeContext(() =>
+                    {
+                        var snapshot = _stateManager.NewSnapshot();
+                        var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
+                        {
+                            Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = new Transaction{Value = 0.ToUInt256()}
+                        });
+                    
+                        var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
+                        var invocationResult =
+                            ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, 100_000_000);
+                        _stateManager.Rollback();
+            
+                        return invocationResult;
+                    });
+            
+                    return transferInvRes.Status == ExecutionStatus.Ok
+                        ? (gasUsed + transferInvRes.GasUsed).ToHex()
+                        : Web3DataFormatUtils.Web3Number(gasUsed);
+                }
+            
+                if (!(contract is null))
+                {
+                    InvocationResult invRes = _stateManager.SafeContext(() =>
+                    {
+                        var snapshot = _stateManager.NewSnapshot();
+                        var res = VirtualMachine.InvokeWasmContract(
+                            contract,
+                            new InvocationContext(source, snapshot, new TransactionReceipt
+                            {
+                                Block = snapshot.Blocks.GetTotalBlockHeight(),
+                                Transaction = new Transaction{Value = 0.ToUInt256()}
+                            }),
+                            invocation,
+                            100_000_000
+                        );
+                        _stateManager.Rollback();
+                        return res;
+                    });
+                    return invRes.Status == ExecutionStatus.Ok ? 
+                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) 
+                        : GetErrorResponse("eth_estimateGas", opts);
+                }
+            
+                InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
+                {
+                    var snapshot = _stateManager.NewSnapshot();
+                    var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
+                    {
+                        Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        Transaction = new Transaction{Value = 0.ToUInt256()}
+                    });
+                    
+                    var invocationResult =
+                        ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
+                    _stateManager.Rollback();
+            
+                    return invocationResult;
+                });
+            
+                return systemContractInvRes.Status == ExecutionStatus.Ok
+                    ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
+                    : GetErrorResponse("eth_estimateGas", opts);
+            }
+            catch (Exception e)
+            {
+                Logger.LogInformation($"Error in eth_estimateGas: {e}");
+            }
             return GetErrorResponse("eth_estimateGas", opts);
         }
 
