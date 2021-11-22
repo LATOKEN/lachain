@@ -23,11 +23,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
-        public static BigInteger ExpectedValidatorsCount;
-        public static ulong CycleDuration; // in blocks
-        public static ulong VrfSubmissionPhaseDuration; // in blocks
-        public static ulong AttendanceDetectionDuration; // in blocks
-        private static bool alreadySet = false; 
+        public static BigInteger ExpectedValidatorsCount = 4;
+        public static ulong CycleDuration = 20; // in blocks
+        public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
+        public static ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
+        public static bool AlreadySet { get; private set; }
 
 
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
@@ -127,10 +127,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if(networkConfig is null)
                 throw new Exception("network config passed in staking contract is null");
             
-            if(alreadySet == true)
+            if(AlreadySet == true)
                 throw new Exception("Staking Contract can't be initialized more than once");
             
-            alreadySet = true;
+            AlreadySet = true;
             
             if(networkConfig.CycleDuration is null)
                 throw new Exception("Cycle Duration is not provided");
