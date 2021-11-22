@@ -43,20 +43,20 @@ namespace Lachain.Console
             [JsonProperty("hardfork")] public HardforkConfig Hardfork { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
+                CloudKeygen(n, f, ips, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount);
             }
             else
             {
-                LocalKeygen(n, f, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
+                LocalKeygen(n, f, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount);
             }
         }
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -106,7 +106,9 @@ namespace Lachain.Console
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2,
                     NetworkName = networkName,
-                    ChainId = (int)chainId
+                    ChainId = (int)chainId,
+                    CycleDuration = cycleDuration,
+                    ValidatorsCount = validatorsCount,
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -187,7 +189,7 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName, 
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
             System.Console.WriteLine($"chainId : {chainId}");
@@ -240,6 +242,9 @@ namespace Lachain.Console
                     HubMetricsPort = basePort + 2 * n + i,
                     NetworkName = networkName,
                     ChainId = (int)chainId,
+                    CycleDuration = cycleDuration,
+                    ValidatorsCount = validatorsCount,
+
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
