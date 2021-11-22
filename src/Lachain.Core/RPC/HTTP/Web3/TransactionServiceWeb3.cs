@@ -366,7 +366,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (contract is null && systemContract is null)
             {
                 Logger.LogWarning("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
-                return "0x";
+                return GetErrorResponse("eth_call", data);
             }
 
             if (!(contract is null))
@@ -388,14 +388,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return res;
                 });
 
-                return result.ReturnValue?.ToHex(true) ?? "0x";
+                return result.ReturnValue?.ToHex(true) ?? GetErrorResponse("eth_call", data);;
             }
 
             var (err, invocationResult) =
                 _InvokeSystemContract(destination, invocation, source, _stateManager.LastApprovedSnapshot);
             if (err != OperatingError.Ok)
             {
-                return "0x";
+                return GetErrorResponse("eth_call", data);;
             }
 
             switch (invocationResult)
@@ -473,8 +473,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         _stateManager.Rollback();
                         return res;
                     });
-                    return invRes.Status == ExecutionStatus.Ok ? 
-                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+                    return invRes.Status == ExecutionStatus.Ok
+                        ? Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed)
+                        : GetErrorResponse("eth_estimateGas", data);
                 }
                 
                 var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
@@ -523,7 +524,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         return res;
                     });
                     return invRes.Status == ExecutionStatus.Ok ? 
-                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) 
+                        : GetErrorResponse("eth_estimateGas", data);
                 }
 
                 InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
@@ -544,13 +546,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                 return systemContractInvRes.Status == ExecutionStatus.Ok
                     ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
-                    : "0x";
+                    : GetErrorResponse("eth_estimateGas", data);
             }
             catch (Exception e)
             {
                 Logger.LogInformation($"Error in eth_estimateGas: {e}");
             }
-            return "0x";
+            return GetErrorResponse("eth_estimateGas", "");
         }
 
         [JsonRpcMethod("eth_gasPrice")]
@@ -607,6 +609,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 "pending" => null,
                 _ => blockTag.HexToUlong()
             };
+        }
+
+        private string GetErrorResponse(string methodName, JToken? data)
+        {
+            JObject errorObject = new JObject
+            {
+                ["message"] = "error in the method " + methodName,
+                ["code"] = "INVALID REQUEST",
+                ["data"] = data
+            };
+
+            return errorObject.ToString();
         }
 
     }
