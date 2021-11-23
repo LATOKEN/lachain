@@ -69,29 +69,48 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             ulong gasUsed = 0;
             var txArray = new JArray();
-
-            if (fullTx)
+            if (block.TransactionHashes.Count <= 0) 
+                return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
+            List<TransactionReceipt>? txs = null;
+            try
             {
-                if(block.TransactionHashes.Count>0)
-                {
-                    var txs = block!.TransactionHashes
-                        .Select(hash => _transactionManager.GetByHash(hash)!)
-                        .ToList();
-                    gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
-
-                    if(fullTx) txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
-                }    
+                txs = block!.TransactionHashes
+                    .Select(hash => _transactionManager.GetByHash(hash)!)
+                    .ToList();
             }
-            
-            // return list of TxHases
-            else
+            catch (Exception e)
             {
-                foreach (var txHash in block.TransactionHashes)
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
+                foreach (var txhash in block.TransactionHashes)
+                    Logger.LogWarning($"txhash {txhash}");
+            }
+
+            try
+            {
+                gasUsed = txs.Aggregate(gasUsed, (current, tx) => current + tx.GasUsed);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"txs {txs}");
+                foreach (var tx in txs)
                 {
-                    txArray.Add(txHash.ToHex());
+                    Logger.LogWarning($"tx {tx.Hash} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
                 }
             }
             
+
+            if(fullTx) 
+                txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            else
+            {
+                foreach (var tx in txs)
+                {
+                    txArray.Add(tx.Hash);
+                }
+            }
+
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
