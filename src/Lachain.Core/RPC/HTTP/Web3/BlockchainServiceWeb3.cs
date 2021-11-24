@@ -71,9 +71,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var txArray = new JArray();
             if (block.TransactionHashes.Count <= 0) 
                 return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
-            var txs = block!.TransactionHashes
-                .Select(hash => _transactionManager.GetByHash(hash)!)
-                .ToList();
+            List<TransactionReceipt>? txs = null;
+            try
+            {
+                txs = block!.TransactionHashes
+                    .Select(hash => _transactionManager.GetByHash(hash)!)
+                    .ToList();
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
+                foreach (var txhash in block.TransactionHashes)
+                    Logger.LogWarning($"txhash {txhash}");
+            }
+
             try
             {
                 gasUsed = txs.Aggregate(gasUsed, (current, tx) => current + tx.GasUsed);
@@ -83,7 +95,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogWarning($"Exception {e}");
                 Logger.LogWarning($"txs {txs}");
                 foreach (var tx in txs)
+                {
                     Logger.LogWarning($"tx {tx.Hash} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
+                }
             }
             
 
