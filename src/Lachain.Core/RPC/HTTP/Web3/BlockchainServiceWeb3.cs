@@ -66,13 +66,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var block = _blockManager.GetByHeight((ulong)blockNumber);
             if (block == null)
                 return null;
-            var txs = block!.TransactionHashes
+
+            ulong gasUsed = 0;
+            var txArray = new JArray();
+            if(block.TransactionHashes.Count>0)
+            {
+                var txs = block!.TransactionHashes
                 .Select(hash => _transactionManager.GetByHash(hash)!)
                 .ToList();
-            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
-            var txArray = fullTx
-                ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index)
-                : new JArray();
+                gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+
+                if(fullTx) txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            }
+
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 

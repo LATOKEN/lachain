@@ -233,7 +233,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             var topics = new JArray();
-            topics.Add(Web3Number(e.SignatureHash));
+            topics.Add(Web3Data(e.SignatureHash));
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),
