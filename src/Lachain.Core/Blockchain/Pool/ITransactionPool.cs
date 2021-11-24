@@ -15,6 +15,8 @@ namespace Lachain.Core.Blockchain.Pool
 
         void Restore();
 
+        IEnumerable<UInt256> GetTransactionPoolRepository();
+
         OperatingError Add(Transaction transaction, Signature signature, bool notify = true);
 
         OperatingError Add(TransactionReceipt receipt, bool notify = true);
