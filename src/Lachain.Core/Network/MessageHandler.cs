@@ -104,25 +104,36 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksRequest").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
-            var reply = new SyncBlocksReply
+            if (request.ToHeight >= request.FromHeight)
             {
-                Blocks =
+                var reply = new SyncBlocksReply
                 {
-                    _stateManager.LastApprovedSnapshot.Blocks
-                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
-                        .Select(block => new BlockInfo
-                        {
-                            Block = block,
-                            Transactions =
+                    Blocks =
+                    {
+                        _stateManager.LastApprovedSnapshot.Blocks
+                            .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
+                            .Select(block => new BlockInfo
                             {
-                                block.TransactionHashes
-                                    .Select(txHash =>
-                                        _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash))
-                            }
-                        })
-                }
-            };
-            callback(reply);
+                                Block = block,
+                                Transactions =
+                                {
+                                    block.TransactionHashes
+                                        .Select(txHash =>
+                                            _stateManager.LastApprovedSnapshot.Transactions
+                                                .GetTransactionByHash(txHash)?? new TransactionReceipt())
+                                }
+                            })
+                    }
+                };
+                callback(reply);
+            }
+            else
+            {
+                Logger.LogWarning($"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
+                var reply = new SyncBlocksReply { Blocks={}};
+                callback(reply);
+            }
+
             Logger.LogTrace("Finished processing SyncBlocksRequest");
         }
 

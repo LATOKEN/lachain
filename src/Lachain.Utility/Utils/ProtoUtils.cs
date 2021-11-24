@@ -19,12 +19,31 @@ namespace Lachain.Utility.Utils
                 var arrayOf = values as T[] ?? values.ToArray();
                 writer.WriteLength(arrayOf.Length);
                 foreach (var value in arrayOf)
-                    writer.Write(value.ToByteArray());
+                {
+                    var valueByteArray = value.ToByteArray();
+                    writer.WriteLength(valueByteArray.Length);
+                    writer.Write(valueByteArray);
+                }
                 writer.Flush();
                 return stream.ToArray();
             }
         }
         
+        public static byte[] TransactionHashListToByteArray(this IEnumerable<UInt256> values)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                var arrayOf = values.ToArray();
+                writer.WriteLength(arrayOf.Length);
+                foreach (var value in arrayOf)
+                    writer.Write(value.ToByteArray());
+                
+                writer.Flush();
+                return stream.ToArray();
+            }
+        }
+
         public static string ParsedObject(object obj)
         {
             var parsedObject = "";
@@ -48,7 +67,26 @@ namespace Lachain.Utility.Utils
                 var parser = new MessageParser<T>(() => new T());
                 for (var i = 0UL; i < length; i++)
                 {
-                    var el = parser.ParseFrom(stream);
+                    var msgLen = (int) reader.ReadLength();
+                    var el = parser.ParseFrom(reader.ReadBytes(msgLen));
+                    result.Add(el);
+                }
+
+                return result;
+            }
+        }
+
+        public static ICollection<UInt256> ByteArrayToTransactionHashList(this byte[] buffer, ulong limit = ulong.MaxValue)
+        {
+            using (var stream = new MemoryStream(buffer))
+            using (var reader = new BinaryReader(stream))
+            {
+                var length = reader.ReadLength(limit);
+                var result = new List<UInt256>();
+                var parser = new MessageParser<UInt256>(() => new UInt256());
+                for (var i = 0UL; i < length; i++)
+                {
+                    var el = parser.ParseFrom(reader.ReadBytes(34));
                     result.Add(el);
                 }
 
