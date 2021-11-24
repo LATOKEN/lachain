@@ -129,6 +129,19 @@ namespace Lachain.Core.RPC.HTTP
             return jArray;
         }
 
+        [JsonRpcMethod("getTransactionPoolRepository")]
+        private JArray GetTransactionPoolRepository()
+        {
+            var txHashes = _transactionPool.GetTransactionPoolRepository();
+            var jArray = new JArray();
+            foreach (var txHash in txHashes)
+            {
+                jArray.Add(txHash.ToHex());
+            }
+            return jArray;
+        }
+
+
 
         [JsonRpcMethod("getTransactionPoolByHash")]
         private JObject? GetTransactionPoolByHash(string txHash)

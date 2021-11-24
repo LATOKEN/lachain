@@ -84,6 +84,12 @@ namespace Lachain.Core.Blockchain.Pool
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public IEnumerable<UInt256> GetTransactionPoolRepository()
+        {
+            return _poolRepository.GetTransactionPool();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(Transaction transaction, Signature signature, bool notify = true)
         {
             var acceptedTx = new TransactionReceipt
