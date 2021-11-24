@@ -42,29 +42,48 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     .Concat(receipt.Transaction.Nonce.ToBytes())
                     .Ripemd();
             }
-            
-            // TODO: this is fake, we have to think of what happens if someone tries to get current address during deploy
-            var contract = new Contract(hash, byteCode);
 
-            if (!VirtualMachine.VerifyContract(contract.ByteCode))
+            // TODO: this is fake, we have to think of what happens if someone tries to get current address during deploy
+            // deployment code
+            var deploymentContract = new Contract(hash, byteCode);
+
+            if (!VirtualMachine.VerifyContract(deploymentContract.ByteCode))
             {
-                Logger.LogInformation("Failed to verify contract");
+                Logger.LogInformation("Failed to verify deployment contract");
                 return ExecutionStatus.ExecutionHalted;
             }
 
             try
             {
-                // TODO: Deploy raw bytecode for now. Need to uncomment when we get convenient tool to get deploy code
-                // var result = _virtualMachine.InvokeContract(
-                //     contract,
-                //     new InvocationContext(_contractContext.Sender, _contractContext.Receipt),
-                //     Array.Empty<byte>(),
-                //     _contractContext.GasRemaining
-                // );
-                // if (result.Status != ExecutionStatus.Ok || result.ReturnValue is null)
-                //     return ExecutionStatus.ExecutionHalted;
+                _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, deploymentContract.ByteCode));
+            }
+            catch (OutOfGasException e)
+            {
+                Logger.LogInformation("Out of gas");
+                frame.UseGas(e.GasUsed);
+                return ExecutionStatus.GasOverflow;
+            }
 
-                _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, contract.ByteCode));
+            var status = VirtualMachine.InvokeWasmContract(deploymentContract, _context, Array.Empty<byte>(), frame.GasLimit);
+
+            if (status.Status != ExecutionStatus.Ok || status.ReturnValue is null)
+            {
+                Logger.LogInformation("Failed to initialize contract");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            // runtime code
+            var runtimeContract = new Contract(hash, status.ReturnValue);
+
+            if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode))
+            {
+                Logger.LogInformation("Failed to verify runtime contract");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            try
+            {
+                _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, runtimeContract.ByteCode));
                 Logger.LogInformation($"New contract with address {hash.ToHex()} deployed");
             }
             catch (OutOfGasException e)
