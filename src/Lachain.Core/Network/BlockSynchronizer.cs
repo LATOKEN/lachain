@@ -157,7 +157,7 @@ namespace Lachain.Core.Network
                     }
                     catch (Exception e)
                     {
-                        Logger.LogWarning("Failed to get transaction receipts for tx hash");
+                        Logger.LogWarning($"Failed to get transaction receipts for tx hash: {e}");
                     }
 
                     return false;
