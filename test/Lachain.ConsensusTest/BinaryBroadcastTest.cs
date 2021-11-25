@@ -129,7 +129,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        [Repeat(1000)]
+        [Repeat(10)]
         public void TestRandomValues()
         {
             var n = _rnd.Next(1, 10);
