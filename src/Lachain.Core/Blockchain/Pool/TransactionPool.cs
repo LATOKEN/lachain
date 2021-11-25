@@ -74,13 +74,22 @@ namespace Lachain.Core.Blockchain.Pool
         public void Restore()
         {
             var txHashes = _poolRepository.GetTransactionPool();
+            Logger.LogTrace($"restoring transactions from pool to in-memory storage");
             foreach (var txHash in txHashes)
             {
+                Logger.LogTrace($"Tx from pool: {txHash.ToHex()}");
                 var tx = _poolRepository.GetTransactionByHash(txHash);
+                
                 if (tx is null)
                     continue;
                 Add(tx);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public IEnumerable<UInt256> GetTransactionPoolRepository()
+        {
+            return _poolRepository.GetTransactionPool();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
