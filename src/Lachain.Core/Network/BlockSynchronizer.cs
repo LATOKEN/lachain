@@ -147,10 +147,19 @@ namespace Lachain.Core.Network
 
                 if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
                 {
-                    var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
-                    var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
-                    Logger.LogTrace(
-                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
+                    try
+                    {
+                        var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
+                        var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
+
+                        Logger.LogTrace(
+                            $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogWarning("Failed to get transaction receipts for tx hash");
+                    }
+
                     return false;
                 }
 
