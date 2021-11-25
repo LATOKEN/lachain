@@ -82,6 +82,36 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
+        [JsonRpcMethod("testapi")]
+        private JObject? test(string blockraw)
+        {
+            var block = Block.Parser.ParseFrom(blockraw.HexToBytes());
+            if (block == null)
+                return null;
+
+            Console.WriteLine(Web3DataFormatUtils.Web3Block(block,0,new JArray()));
+
+            Console.WriteLine("transactionHashes Count: "+ block.TransactionHashes.Count);
+
+            foreach(var tx in block.TransactionHashes)
+                Console.WriteLine(tx.ToHex());
+
+            ulong gasUsed = 0;
+            var txArray = new JArray();
+            if(block.TransactionHashes.Count>0)
+            {
+                var txs = block!.TransactionHashes
+                .Select(hash => _transactionManager.GetByHash(hash)!)
+                .ToList();
+                gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+
+            //    if(fullTx) txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+            }
+
+            return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
+        }
+
+
         [JsonRpcMethod("la_getBlockRawByNumber")]
         private string? GetBlockRawByNumber(string blockTag)
         {
