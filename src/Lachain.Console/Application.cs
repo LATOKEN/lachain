@@ -29,6 +29,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using Lachain.Storage;
 using Lachain.Core.Blockchain;
@@ -88,6 +89,11 @@ namespace Lachain.Console
 
             Logger.LogInformation($"Chainid {chainId}");
             TransactionUtils.SetChainId((int)chainId);
+
+            var version = Assembly.GetEntryAssembly()!
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                .InformationalVersion;
+            Logger.LogInformation($"Version: {version}");
 
             rpcManager.Start();
             
