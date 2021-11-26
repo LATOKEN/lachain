@@ -110,7 +110,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     txArray.Add(tx.Hash);
                 }
             }
-
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
