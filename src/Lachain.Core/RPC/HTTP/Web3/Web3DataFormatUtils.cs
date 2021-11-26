@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
@@ -32,7 +33,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         
         public static string Web3Number(IEnumerable<byte> x)
         {
-            return x.ToHex();
+            return new BigInteger((byte[])x).ToHex(false);
         }
 
         public static string Web3Number(UInt256 x)
@@ -208,12 +209,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["gasPrice"] = Web3Number(receipt.Transaction.GasPrice),
                 ["hash"] = Web3Data(receipt.Hash),
                 ["input"] = Web3Number(receipt.Transaction.Invocation),
+                ["input1"] = Web3Data(receipt.Transaction.Invocation),
                 ["nonce"] = Web3Number(receipt.Transaction.Nonce),
                 ["to"] = receipt.Transaction.To.Buffer.IsEmpty ? null : Web3Data(receipt.Transaction.To),
                 ["transactionIndex"] = blockNumber != null ? Web3Number(receipt.IndexInBlock) : null,
                 ["value"] = Web3Number(receipt.Transaction.Value),
                 ["r"] = Web3Number(signature.Take(32)),
+                ["r1"] = Web3Data(signature.Take(32)),
                 ["s"] = Web3Number(signature.Skip(32).Take(32)),
+                ["s1"] = Web3Data(signature.Skip(32).Take(32)),
                 ["v"] = Web3Number(signature[64]),
             };
         }
