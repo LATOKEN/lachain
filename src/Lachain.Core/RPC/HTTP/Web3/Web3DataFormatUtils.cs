@@ -29,6 +29,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             return x.ToHex(false);
         }
+        
+        public static string Web3Number(IEnumerable<byte> x)
+        {
+            return x.ToHex();
+        }
 
         public static string Web3Number(UInt256 x)
         {
@@ -202,13 +207,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["gas"] = Web3Number(receipt.Transaction.GasLimit),
                 ["gasPrice"] = Web3Number(receipt.Transaction.GasPrice),
                 ["hash"] = Web3Data(receipt.Hash),
-                ["input"] = Web3Data(receipt.Transaction.Invocation),
+                ["input"] = Web3Number(receipt.Transaction.Invocation),
                 ["nonce"] = Web3Number(receipt.Transaction.Nonce),
                 ["to"] = receipt.Transaction.To.Buffer.IsEmpty ? null : Web3Data(receipt.Transaction.To),
                 ["transactionIndex"] = blockNumber != null ? Web3Number(receipt.IndexInBlock) : null,
                 ["value"] = Web3Number(receipt.Transaction.Value),
-                ["r"] = Web3Data(signature.Take(32)),
-                ["s"] = Web3Data(signature.Skip(32).Take(32)),
+                ["r"] = Web3Number(signature.Take(32)),
+                ["s"] = Web3Number(signature.Skip(32).Take(32)),
                 ["v"] = Web3Number(signature[64]),
             };
         }
