@@ -57,6 +57,14 @@ namespace Lachain.Utility.Utils
                 sb.AppendFormat("{0:x2}", b);
             return prefix ? $"0x{sb}" : sb.ToString();
         }
+        
+        public static string ToTrimHex(this IEnumerable<byte> buffer, bool prefix = true)
+        {
+            var sb = new StringBuilder();
+            foreach (var b in buffer)
+                sb.AppendFormat("{0:x2}", b);
+            return prefix ? $"0x{sb.ToString().TrimStart('0')}" : sb.ToString();
+        }
 
         public static UInt256 HexToUInt256(this string buffer)
         {
