@@ -60,6 +60,7 @@ namespace Lachain.Core.Consensus
             ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken
         )
         {
+            Logger.LogTrace("CreateHeader");
             if (_blockManager.GetHeight() >= index)
             {
                 Logger.LogWarning("Block already produced");
