@@ -41,6 +41,8 @@ namespace Lachain.Core.Network
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
 
+        private IDictionary<UInt256, TransactionReceipt?> _requiredTxs = new ConcurrentDictionary<UInt256, TransactionReceipt?>();
+
         public BlockSynchronizer(
             ITransactionManager transactionManager,
             IBlockManager blockManager,
@@ -62,10 +64,27 @@ namespace Lachain.Core.Network
 
         public event EventHandler<ulong>? OnSignedBlockReceived;
 
-        public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
+        public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout, out List<TransactionReceipt> receipts)
         {
+            receipts = new List<TransactionReceipt>();
             var txHashes = transactionHashes as UInt256[] ?? transactionHashes.ToArray();
+            foreach(var txHash in txHashes)
+                _requiredTxs[txHash] = null;
+            
             var lostTxs = _GetMissingTransactions(txHashes);
+
+            if(lostTxs.Count == 0)
+            {
+                foreach(var txHash in txHashes)
+                {
+                    if(_requiredTxs[txHash] is null) 
+                        throw new Exception("Did not get the transaction receipt from peers");
+                    receipts.Add(_requiredTxs[txHash]!);
+                }
+                _requiredTxs.Clear();
+                return (uint) txHashes.Length;
+            }
+
             var endWait = DateTime.UtcNow.Add(timeout);
 
             while (_GetMissingTransactions(txHashes).Count != 0)
@@ -79,7 +98,7 @@ namespace Lachain.Core.Network
                     .OrderBy(_ => rnd.Next())
                     .Take(maxPeersToAsk)
                     .ToArray();
-                if (lostTxs.Count == 0) return (uint) txHashes.Length;
+
                 Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
                 var request = _networkManager.MessageFactory.SyncPoolRequest(lostTxs);
                 foreach (var peer in peers) _networkManager.SendTo(peer, request);
@@ -87,7 +106,15 @@ namespace Lachain.Core.Network
                     Monitor.Wait(_peerHasTransactions, TimeSpan.FromMilliseconds(5_000));
                 if (DateTime.UtcNow.CompareTo(endWait) > 0) break;
             }
-            return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
+
+            foreach(var txHash in txHashes)
+            {
+                if(_requiredTxs[txHash] is null) 
+                    throw new Exception("Timed out. Yet did not get the transaction receipt from peers");
+                receipts.Add(_requiredTxs[txHash]!);
+            }
+            _requiredTxs.Clear();
+            return (uint) txHashes.Length;
         }
 
         public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
@@ -99,6 +126,11 @@ namespace Lachain.Core.Network
                 var persisted = 0u;
                 foreach (var tx in txs)
                 {
+                    if(_requiredTxs.Contains(new KeyValuePair<UInt256, TransactionReceipt?>(tx.Hash, null)))
+                    {
+                        Logger.LogTrace($"Added {tx.Hash.ToHex()} to the requiredTxs");
+                        _requiredTxs[tx.Hash] = tx;
+                    }
                     if (tx.Signature.IsZero())
                     {
                         Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
@@ -360,9 +392,19 @@ namespace Lachain.Core.Network
 
         private List<UInt256> _GetMissingTransactions(IEnumerable<UInt256> txHashes)
         {
-            return txHashes
-                .Where(hash => (_transactionManager.GetByHash(hash) ?? _transactionPool.GetByHash(hash)) is null)
-                .ToList();
+            List<UInt256> missingTransactions = new List<UInt256>();
+            foreach(var txHash in txHashes)
+            {
+                if(_requiredTxs[txHash] is null)
+                {
+                    _requiredTxs[txHash] = _transactionManager.GetByHash(txHash) ?? _transactionPool.GetByHash(txHash);
+                    if(_requiredTxs[txHash] is null)
+                    {
+                        missingTransactions.Add(txHash);
+                    }
+                }
+            }
+            return missingTransactions;
         }
 
         public void Dispose()
