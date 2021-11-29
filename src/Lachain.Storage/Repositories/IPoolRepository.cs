@@ -40,5 +40,7 @@ namespace Lachain.Storage.Repositories
         int RemoveTransactions(IEnumerable<UInt256> txHashes);
 
         bool ContainsTransactionByHash(UInt256 txHash);
+
+        void ClearPool();
     }
 }

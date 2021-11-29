@@ -98,5 +98,17 @@ namespace Lachain.Storage.Repositories
             var raw = _rocksDbContext.Get(prefix);
             return raw != null;
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearPool()
+        {
+            var pool = GetTransactionPool();
+            foreach(var txHash in pool)
+            {
+                if(txHash is null) continue;
+                _rocksDbContext.Delete(EntryPrefix.TransactionByHash.BuildPrefix(txHash));
+            }
+            _rocksDbContext.Delete(EntryPrefix.TransactionPool.BuildPrefix());
+        }
     }
 }
