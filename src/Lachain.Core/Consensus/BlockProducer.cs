@@ -66,7 +66,7 @@ namespace Lachain.Core.Consensus
                 hashesTaken = new UInt256[]{};
                 return null;
             }
-            var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromDays(1), out List<TransactionReceipt> receipts); // TODO: timeout?
+            var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromHours(1), out List<TransactionReceipt> receipts); // TODO: timeout?
             if (txsGot != txHashes.Count)
             {
                 Logger.LogError(
