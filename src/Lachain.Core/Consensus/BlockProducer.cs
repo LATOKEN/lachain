@@ -60,13 +60,14 @@ namespace Lachain.Core.Consensus
             ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken
         )
         {
+            Logger.LogTrace("CreateHeader");
             if (_blockManager.GetHeight() >= index)
             {
                 Logger.LogWarning("Block already produced");
                 hashesTaken = new UInt256[]{};
                 return null;
             }
-            var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromDays(1)); // TODO: timeout?
+            var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromHours(1), out List<TransactionReceipt> receipts); // TODO: timeout?
             if (txsGot != txHashes.Count)
             {
                 Logger.LogError(
@@ -75,9 +76,7 @@ namespace Lachain.Core.Consensus
                     $"Cannot retrieve all transactions in time, got only {txsGot} of {txHashes.Count}, aborting");
             }
 
-            var receipts = txHashes
-                .Select(hash => _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException())
-                .OrderBy(receipt => receipt, new ReceiptComparer())
+            receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
             var cycle = index / StakingContract.CycleDuration;

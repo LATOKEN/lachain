@@ -337,6 +337,15 @@ namespace Lachain.Core.Blockchain.Pool
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearRepository()
+        {
+            _poolRepository.ClearPool();
+        }
+
+        
+
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address)
         {
             if (!_lastNonceForAddress.TryGetValue(address, out var lastNonce)) return null;

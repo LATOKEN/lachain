@@ -35,11 +35,25 @@ namespace Lachain.Utility.Utils
             using (var writer = new BinaryWriter(stream))
             {
                 var arrayOf = values.ToArray();
-                writer.WriteLength(arrayOf.Length);
-                foreach (var value in arrayOf)
-                    writer.Write(value.ToByteArray());
+                var len = 0;
                 
+                foreach (var value in arrayOf) 
+                {
+                    if(value.ToByteArray().Length == 34) 
+                    {
+                        len++;
+                    }
+                }
+                writer.WriteLength(len);
+                foreach (var value in arrayOf)
+                {
+                    if(value.ToByteArray().Length == 34) 
+                    {
+                        writer.Write(value.ToByteArray());
+                    }
+                }
                 writer.Flush();
+                
                 return stream.ToArray();
             }
         }
@@ -84,12 +98,19 @@ namespace Lachain.Utility.Utils
                 var length = reader.ReadLength(limit);
                 var result = new List<UInt256>();
                 var parser = new MessageParser<UInt256>(() => new UInt256());
+                
                 for (var i = 0UL; i < length; i++)
                 {
-                    var el = parser.ParseFrom(reader.ReadBytes(34));
-                    result.Add(el);
+                    var bytes = reader.ReadBytes(34);
+                    if(bytes.Length == 34) 
+                    {
+                        var el = parser.ParseFrom(bytes);
+                        result.Add(el);
+                    }
+                    else {
+                        break;
+                    }
                 }
-
                 return result;
             }
         }
