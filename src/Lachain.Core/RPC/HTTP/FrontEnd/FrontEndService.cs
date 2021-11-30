@@ -249,6 +249,32 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["transactions"] = results,
             };
         }
+        
+        [JsonRpcMethod("fe_larcHistory")]
+        private JObject GetLarcHistory(JObject opts)
+        {
+            var address = opts["address"]?.ToString().HexToBytes().ToUInt160() ??
+                          throw new Exception($"\"address\" {opts["address"]} is not valid");
+            var limit = ulong.Parse(opts["count"]?.ToString());
+
+            var results = new JArray();
+            var txHashes = _localTransactionRepository.GetTransactionHashes(limit * 2);
+            
+            for (ulong i = 0; i <= (ulong)txHashes.Length && i <= limit; i++)
+            {
+                var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHashes[i]);
+
+                if (receipt is null || !receipt.Transaction.To.Equals(address)) continue;
+                var txFormatted = FormatTx(receipt,
+                    _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block)!); 
+                results.Add(txFormatted);
+            }
+
+            return new JObject
+            {
+                ["transactions"] = results,
+            };
+        }
 
         private static JObject FormatTx(TransactionReceipt receipt, Block? block = null)
         {

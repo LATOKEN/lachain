@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -28,6 +29,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using Lachain.Storage;
 using Lachain.Core.Blockchain;
@@ -79,6 +81,7 @@ namespace Lachain.Console
             var NodeRetrieval = _container.Resolve<INodeRetrieval>();
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
+            var transactionPool = _container.Resolve<ITransactionPool>();
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
@@ -86,6 +89,11 @@ namespace Lachain.Console
 
             Logger.LogInformation($"Chainid {chainId}");
             TransactionUtils.SetChainId((int)chainId);
+
+            var version = Assembly.GetEntryAssembly()!
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                .InformationalVersion;
+            Logger.LogInformation($"Version: {version}");
 
             rpcManager.Start();
             
@@ -143,7 +151,10 @@ namespace Lachain.Console
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
-            
+
+            // pending transactions are restored from pool repository to in-memory storage
+            // it's important to restore pool after transactionVerifier and before blockSynchronizer starts
+            transactionPool.Restore();
 
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");

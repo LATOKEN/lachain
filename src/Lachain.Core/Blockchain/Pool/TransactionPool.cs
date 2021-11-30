@@ -50,7 +50,6 @@ namespace Lachain.Core.Blockchain.Pool
             _relayQueue = new HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
-            Restore();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -61,6 +60,8 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 Delete(txHash);
             }
+            _poolRepository.RemoveTransactions(e.TransactionHashes);
+            SanitizePool();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -73,13 +74,22 @@ namespace Lachain.Core.Blockchain.Pool
         public void Restore()
         {
             var txHashes = _poolRepository.GetTransactionPool();
+            Logger.LogTrace($"restoring transactions from pool to in-memory storage");
             foreach (var txHash in txHashes)
             {
+                Logger.LogTrace($"Tx from pool: {txHash.ToHex()}");
                 var tx = _poolRepository.GetTransactionByHash(txHash);
+                
                 if (tx is null)
                     continue;
                 Add(tx);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public IEnumerable<UInt256> GetTransactionPoolRepository()
+        {
+            return _poolRepository.GetTransactionPool();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -166,6 +176,29 @@ namespace Lachain.Core.Blockchain.Pool
                 );
             }
         }
+
+
+        private void SanitizePool()
+        {
+            var txHashes = _poolRepository.GetTransactionPool();
+            var txToRemove = new List<UInt256>();
+            foreach(var txHash in txHashes)
+            {
+                var tx = _poolRepository.GetTransactionByHash(txHash);
+                if(tx is null) 
+                    continue;
+                if(!TxNonceValid(tx))
+                    txToRemove.Add(txHash);
+            }
+            int txRemovedCount = _poolRepository.RemoveTransactions(txToRemove);
+            
+            if(txRemovedCount > 0) 
+            {
+                Logger.LogTrace($"Sanitized transaction pool; dropped {txRemovedCount} txs from pool repository");
+            }
+        }
+
+        
 
         private void RemoveTxes(IReadOnlyCollection<TransactionReceipt> txes)
         {
@@ -302,6 +335,15 @@ namespace Lachain.Core.Blockchain.Pool
             _transactions.Clear();
             _transactionsQueue.Clear();
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearRepository()
+        {
+            _poolRepository.ClearPool();
+        }
+
+        
+
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address)

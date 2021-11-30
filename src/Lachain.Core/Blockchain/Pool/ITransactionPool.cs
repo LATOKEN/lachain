@@ -15,6 +15,8 @@ namespace Lachain.Core.Blockchain.Pool
 
         void Restore();
 
+        IEnumerable<UInt256> GetTransactionPoolRepository();
+
         OperatingError Add(Transaction transaction, Signature signature, bool notify = true);
 
         OperatingError Add(TransactionReceipt receipt, bool notify = true);
@@ -28,7 +30,9 @@ namespace Lachain.Core.Blockchain.Pool
         void Delete(UInt256 transactionHash);
 
         void Clear();
+        void ClearRepository();
         ulong? GetMaxNonceForAddress(UInt160 address);
         ulong GetNextNonceForAddress(UInt160 address);
+
     }
 }

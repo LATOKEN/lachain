@@ -13,6 +13,7 @@ using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using NLog;
 using NLog.Fluent;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
@@ -177,13 +178,25 @@ namespace Lachain.Consensus.RootProtocol
 
         private void TrySignHeader()
         {
-            if (_hashes is null || _nonce is null || _blockProducer is null) return;
-            if (!(_header is null)) return;
+            Logger.LogTrace("TrySignHeader");
+            if (_hashes is null || _nonce is null || _blockProducer is null)
+            {
+                Logger.LogTrace($"Not ready yet: _hasges {_hashes is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
+                return;
+            }
+
+            if (!(_header is null))
+            {
+                Logger.LogTrace("Header already exists");
+                return;
+            }
             try
             {
+                Logger.LogTrace("Try to create header");
                 _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);
                 if (_header == null)
                 {
+                    Logger.LogTrace("Failed to create header");
                     return;
                 }
             }
@@ -207,7 +220,12 @@ namespace Lachain.Consensus.RootProtocol
 
         private void CheckSignatures()
         {
-            if (_header is null || _hashes is null || _blockProducer is null || _signatures.Count == 0) return;
+            Logger.LogTrace("CheckSignatures");
+            if (_header is null || _hashes is null || _blockProducer is null || _signatures.Count == 0)
+            {
+                Logger.LogTrace($"Not ready yet: _header {_header is null}, _hashes {_hashes is null}, _blockProducer {_blockProducer is null}, _signatures {_signatures.Count}");
+                return;
+            }
             var bestHeader = _signatures
                 .GroupBy(
                     tuple => tuple.Item1,
@@ -215,6 +233,7 @@ namespace Lachain.Consensus.RootProtocol
                 )
                 .Select(p => new KeyValuePair<BlockHeader, int>(p.Key, p.Count()))
                 .Aggregate((x, y) => x.Value > y.Value ? x : y);
+            Logger.LogTrace($"bestHeader.Value {bestHeader.Value} Wallet.N {Wallet.N}  Wallet.F {Wallet.F}");
             if (bestHeader.Value < Wallet.N - Wallet.F) return;
             Logger.LogTrace($"Received {bestHeader.Value} signatures for block header");
             _multiSig = new MultiSig {Quorum = (uint) (Wallet.N - Wallet.F)};
