@@ -28,7 +28,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             try
             {
-                var config = new CompilerConfiguration();
+                var config = new CompilerConfiguration() {IgnoreEndingCode = true};
                 using var stream = new MemoryStream(contractCode);
                 Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
