@@ -9,6 +9,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -81,6 +82,13 @@ namespace Lachain.CoreTest.IntegrationTests
             using var container = containerBuilder.Build();
 
             var txPool = container.Resolve<ITransactionPool>();
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var configManager = container.Resolve<IConfigManager>();
+                var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
 
             var tx = TestUtils.GetRandomTransaction();
             var result = txPool.Add(tx);
@@ -92,7 +100,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var tx2 = TestUtils.GetRandomTransaction();
             tx2.Transaction.Nonce++;
             result = txPool.Add(tx2);
-            Assert.AreEqual(OperatingError.InvalidNonce, result);
+            Assert.AreEqual(OperatingError.HashMismatched, result); // signature check is later than tx check,  we changed nonce,  so signature is invalid now
 
             /* TODO: maybe we should fix this strange behaviour */
             var tx3 = TestUtils.GetRandomTransaction();

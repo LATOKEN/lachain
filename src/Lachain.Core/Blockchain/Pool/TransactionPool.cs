@@ -123,7 +123,7 @@ namespace Lachain.Core.Blockchain.Pool
             if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
             /* verify transaction before adding */
-            if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+            if (!(GetNextNonceForAddress(receipt.Transaction.From) <= receipt.Transaction.Nonce && TxNonceValid(receipt)))
                 return OperatingError.InvalidNonce;
 
             /* special case for system transactions */
