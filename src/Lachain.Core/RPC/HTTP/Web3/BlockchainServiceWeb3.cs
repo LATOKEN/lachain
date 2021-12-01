@@ -71,19 +71,26 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var txArray = new JArray();
             if (block.TransactionHashes.Count <= 0) 
                 return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
-            List<TransactionReceipt>? txs = null;
+            List<TransactionReceipt> txs = new List<TransactionReceipt>();
             try
             {
-                txs = block!.TransactionHashes
-                    .Select(hash => _transactionManager.GetByHash(hash)!)
-                    .ToList();
+                foreach(var txHash in block.TransactionHashes)
+                {
+                    Logger.LogInformation($"Transaction hash {txHash.ToHex()} in block {blockNumber}");
+                    TransactionReceipt? tx = _transactionManager.GetByHash(txHash);
+                    if(tx is null)
+                    {
+                        Logger.LogWarning($"Transaction not found in DB {txHash.ToHex()}");
+                    }
+                    else txs.Add(tx);
+                }
             }
             catch (Exception e)
             {
                 Logger.LogWarning($"Exception {e}");
                 Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
                 foreach (var txhash in block.TransactionHashes)
-                    Logger.LogWarning($"txhash {txhash}");
+                    Logger.LogWarning($"txhash {txhash.ToHex()}");
             }
 
             try
@@ -96,10 +103,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogWarning($"txs {txs}");
                 foreach (var tx in txs)
                 {
-                    Logger.LogWarning($"tx {tx.Hash} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
+                    if (tx is null) 
+                         continue;
+                    Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
                 }
             }
-            
 
             if(fullTx) 
                 txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);

@@ -327,11 +327,13 @@ namespace Lachain.Core.Blockchain.Operations
                 Logger.LogTrace($"Trying to execute tx : {txHash.ToHex()}");
                 /* try to find transaction by hash */
                 var receipt = currentTransactions[txHash];
+                if(receipt is null) Logger.LogError($"For tx : {txHash.ToHex()} receipt is NULL");
                 receipt.Block = block.Header.Index;
                 receipt.GasUsed = GasMetering.DefaultTxCost;
                 receipt.IndexInBlock = indexInBlock;
                 var transaction = receipt.Transaction;
-
+                Logger.LogInformation($"tx : {txHash.ToHex()} blockHeaderIndex:{receipt.Block} indexinBlock:{receipt.IndexInBlock}");
+            
                 try
                 {
                     var snapshot = _stateManager.NewSnapshot();
@@ -345,6 +347,7 @@ namespace Lachain.Core.Blockchain.Operations
                         );
                         continue;
                     }
+                    else Logger.LogInformation($"Gas limit is ok for tx : {txHash.ToHex()}");
 
                     /* try to execute transaction */
                     var result = _transactionManager.Execute(block, receipt, snapshot);
@@ -365,6 +368,7 @@ namespace Lachain.Core.Blockchain.Operations
                         snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
                         Logger.LogTrace($"Transaction {txHash.ToHex()} failed because of error: {result}");
                     }
+                    else Logger.LogInformation($"Tx is not failed for tx : {txHash.ToHex()}");
 
                     /* check block gas limit after execution */
                     gasUsed += receipt.GasUsed;
@@ -380,6 +384,7 @@ namespace Lachain.Core.Blockchain.Operations
                             $"Unable to take transaction {txHash.ToHex()} with gas {receipt.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
                         continue;
                     }
+                    else Logger.LogInformation($"Block gas limit after execution ok for tx : {txHash.ToHex()}");
 
                     /* try to take fee from sender */
                     result = _TakeTransactionFee(receipt, snapshot, out var fee);
@@ -392,6 +397,7 @@ namespace Lachain.Core.Blockchain.Operations
                         );
                         continue;
                     }
+                    else Logger.LogInformation($"Fee taken for tx : {txHash.ToHex()}");
 
                     totalFee += fee;
 
