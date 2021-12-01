@@ -112,7 +112,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         {
             if (ByteCodeCache.TryGetValue(contract, out var instance))
                 return instance();
-            var config = new CompilerConfiguration();
+            var config = new CompilerConfiguration() {IgnoreEndingCode = true};
             using var stream = new MemoryStream(buffer, 0, buffer.Length, false);
             return Compile.FromBinary<JitEntryPoint>(stream, config)(imports);
         }
