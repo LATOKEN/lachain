@@ -90,7 +90,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogWarning($"Exception {e}");
                 Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
                 foreach (var txhash in block.TransactionHashes)
-                    Logger.LogWarning($"txhash {txhash}");
+                    Logger.LogWarning($"txhash {txhash.ToHex()}");
             }
 
             try
@@ -103,7 +103,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogWarning($"txs {txs}");
                 foreach (var tx in txs)
                 {
-                    Logger.LogWarning($"tx {tx.Hash} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
+                    Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
                 }
             }
 
