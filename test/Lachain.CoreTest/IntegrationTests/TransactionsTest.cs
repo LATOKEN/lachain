@@ -92,7 +92,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var tx2 = TestUtils.GetRandomTransaction();
             tx2.Transaction.Nonce++;
             result = txPool.Add(tx2);
-            Assert.AreEqual(OperatingError.InvalidNonce, result);
+            Assert.AreEqual(OperatingError.Ok, result);
 
             /* TODO: maybe we should fix this strange behaviour */
             var tx3 = TestUtils.GetRandomTransaction();
