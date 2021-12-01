@@ -103,6 +103,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogWarning($"txs {txs}");
                 foreach (var tx in txs)
                 {
+                    if (tx is null) 
+                         continue;
                     Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
                 }
             }
