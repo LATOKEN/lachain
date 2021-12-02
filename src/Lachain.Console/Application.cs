@@ -103,6 +103,7 @@ namespace Lachain.Console
                 var snapshot = snapshotIndexRepository.GetSnapshotForBlock(options.RollBackTo.Value);
                 stateManager.RollbackTo(snapshot);
                 wallet.DeleteKeysAfterBlock(options.RollBackTo.Value);
+                stateManager.Commit();
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
             }
 
