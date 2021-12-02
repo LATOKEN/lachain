@@ -100,7 +100,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var tx2 = TestUtils.GetRandomTransaction();
             tx2.Transaction.Nonce++;
             result = txPool.Add(tx2);
-            Assert.AreEqual(OperatingError.HashMismatched, result); // signature check is later than tx check,  we changed nonce,  so signature is invalid now
+            Assert.AreEqual(OperatingError.InvalidNonce, result); 
 
             /* TODO: maybe we should fix this strange behaviour */
             var tx3 = TestUtils.GetRandomTransaction();
