@@ -350,7 +350,16 @@ namespace Lachain.Core.Blockchain.Operations
                     else Logger.LogInformation($"Gas limit is ok for tx : {txHash.ToHex()}");
 
                     /* try to execute transaction */
-                    var result = _transactionManager.Execute(block, receipt, snapshot);
+                    OperatingError result = OperatingError.Ok;
+                    try
+                    {
+                        result = _transactionManager.Execute(block, receipt, snapshot);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogWarning($"Exception during tx execution: {e}");
+                        result = OperatingError.InvalidContract;
+                    }
                     var txFailed = result != OperatingError.Ok;
                     if (txFailed)
                     {
@@ -413,7 +422,8 @@ namespace Lachain.Core.Blockchain.Operations
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogWarning($"Exception [{ex.ToString()}] while executing tx {txHash.ToHex()}");
+                    Logger.LogWarning($"Exception [{ex}] while executing tx {txHash.ToHex()}");
+                    removeTransactions.Add(receipt);
                     if (_stateManager.PendingSnapshot != null)
                         _stateManager.Rollback();
                 }

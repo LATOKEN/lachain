@@ -95,6 +95,10 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 receipt.GasUsed += e.GasUsed;
             }
+            catch (Exception e)
+            {
+                return OperatingError.InvalidContract;
+            }
 
             return OperatingError.OutOfGas;
         }
