@@ -7,6 +7,7 @@ using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json.Linq;
 
 
@@ -44,10 +45,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionCount")]
-        public ulong GetTransactionCount(string from, string blockId)
+        public HexBigInteger GetTransactionCount(string from, string blockId)
         {
-            if(blockId.Equals("pending")) return _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
-            return GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
+            if(blockId.Equals("pending")) return _transactionPool.GetNextNonceForAddress(from.HexToUInt160()).ToHexBigInteger();
+            return GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160()).ToHexBigInteger();
         }
 
         [JsonRpcMethod("eth_getCode")]
