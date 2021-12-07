@@ -563,6 +563,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
+        
+        [JsonRpcMethod("eth_maxPriorityFeePerGas")]
+        public string GetMaxPriorityGasPrice()
+        {
+            return GetNetworkGasPrice();
+        }
 
         [JsonRpcMethod("eth_signTransaction")]
         private string SignTransaction(JObject opts)
