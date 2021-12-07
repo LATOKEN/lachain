@@ -142,28 +142,30 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionByBlockHashAndIndex")]
-        public JObject? GetTransactionByBlockHashAndIndex(string blockHash, ulong index)
+        public JObject? GetTransactionByBlockHashAndIndex(string blockHash, string index)
         {
+            ulong txIndex = index.HexToUlong();
             var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash.HexToUInt256());
             if (block is null)
                 return null;
-            if ((int)index >= block.TransactionHashes.Count)
+            if ((int)txIndex >= block.TransactionHashes.Count)
                 return null;
-            var txHash = block.TransactionHashes[(int)index];
+            var txHash = block.TransactionHashes[(int)txIndex];
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
             return receipt is null ? null : Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
         }
 
         [JsonRpcMethod("eth_getTransactionByBlockNumberAndIndex")]
-        public JObject? GetTransactionByBlockNumberAndIndex(string blockTag, ulong index)
+        public JObject? GetTransactionByBlockNumberAndIndex(string blockTag, string index)
         {
+            ulong txIndex = index.HexToUlong();
             var height = GetBlockNumberByTag(blockTag);
             var block = (height is null) ? null : _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight((ulong) height);
             if (block is null)
                 return null;
-            if ((int)index >= block.TransactionHashes.Count)
+            if ((int)txIndex >= block.TransactionHashes.Count)
                 return null;
-            var txHash = block.TransactionHashes[(int)index];
+            var txHash = block.TransactionHashes[(int)txIndex];
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
             return receipt is null ? null : Web3DataFormatUtils.Web3Transaction(receipt!, block?.Hash, receipt.Block);
         }
@@ -559,6 +561,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string GetNetworkGasPrice()
         {
             return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
+        }
+        
+        [JsonRpcMethod("eth_maxPriorityFeePerGas")]
+        public string GetMaxPriorityGasPrice()
+        {
+            return GetNetworkGasPrice();
         }
 
         [JsonRpcMethod("eth_signTransaction")]
