@@ -326,6 +326,7 @@ namespace Lachain.Core.Network
                 try
                 {
                     var myHeight = _blockManager.GetHeight();
+                    Logger.LogTrace($"my height: {myHeight}");
                     if (myHeight > _networkManager.LocalNode.BlockHeight)
                         _networkManager.LocalNode.BlockHeight = myHeight;
 
@@ -367,13 +368,15 @@ namespace Lachain.Core.Network
                     var waitStart = TimeUtils.CurrentTimeMillis();
                     while (true)
                     {
+                        Logger.LogTrace("starting waiting till new blocks arrive");
                         lock (_peerHasBlocks)
                         {
                             Monitor.Wait(_peerHasBlocks, TimeSpan.FromMilliseconds(1_000));
                         }
-
+                        Logger.LogTrace("ending waiting till new blocks arrive");
                         if (TimeUtils.CurrentTimeMillis() - waitStart > 5_000) break;
                     }
+                    Logger.LogTrace($"ended waiting altogether..");
                 }
                 catch (Exception e)
                 {
