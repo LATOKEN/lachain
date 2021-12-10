@@ -43,8 +43,17 @@ namespace Lachain.Storage.Repositories
                 "burn(address,uint256)"
             };
 
-            var decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToArray());
-            object[] decodedRes = Array.Empty<object>();
+            ContractDecoderLtr decoder = null!;
+            object[] decodedRes;
+            
+            try
+            {
+                decoder = new ContractDecoderLtr(receipt.Transaction.Invocation.ToByteArray());
+            }
+            catch (Exception e)
+            {
+                // skip logging
+            }
 
             foreach (var signature in signatures)
             {
@@ -73,7 +82,7 @@ namespace Lachain.Storage.Repositories
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError($"Exception in adding TryAddTransaction: {e}");
+                    // skip logging
                 }
             }
             
