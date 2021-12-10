@@ -138,12 +138,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
-            Assert.AreEqual(txCountBefore.ToUlong(), 0);
+            Assert.AreEqual(txCountBefore.HexToUlong(), 0);
 
             Execute_dummy_transaction();
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
-            Assert.AreEqual(txCountAfter.ToUlong(), 1);
+            Assert.AreEqual(txCountAfter.HexToUlong(), 1);
         }
 
         [Test]
