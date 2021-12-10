@@ -4,6 +4,8 @@ using System.Threading;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -94,6 +96,15 @@ namespace Lachain.Console
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 .InformationalVersion;
             Logger.LogInformation($"Version: {version}");
+
+            // set cycle and validatorCount
+            StakingContract.Initialize(configManager.GetConfig<NetworkConfig>("network"));
+
+            // set hardfork heights
+            Logger.LogInformation($"Setting hardfork heights.");
+            var hardforkConfig = configManager.GetConfig<HardforkConfig>("hardfork") ??
+                    throw new Exception("No 'hardfork' section in config file");
+            HardforkHeights.SetHardforkHeights(hardforkConfig);
 
             rpcManager.Start();
             

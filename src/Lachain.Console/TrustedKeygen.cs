@@ -6,6 +6,8 @@ using System.Text;
 using Lachain.CommunicationHub.Net;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Genesis;
+using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Config;
 using Lachain.Core.RPC;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
@@ -22,7 +24,7 @@ namespace Lachain.Console
         internal class Config
         {
             public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
-                StorageConfig storage, BlockchainConfig blockchain)
+                StorageConfig storage, BlockchainConfig blockchain, HardforkConfig hardfork, VersionConfig version)
             {
                 Network = network;
                 Genesis = genesis;
@@ -30,6 +32,8 @@ namespace Lachain.Console
                 Vault = vault;
                 Storage = storage;
                 Blockchain = blockchain;
+                Hardfork = hardfork;
+                ConfigVersion = version;
             }
 
             [JsonProperty("network")] public NetworkConfig Network { get; set; }
@@ -38,22 +42,24 @@ namespace Lachain.Console
             [JsonProperty("vault")] public VaultConfig Vault { get; set; }
             [JsonProperty("storage")] public StorageConfig Storage { get; set; }
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
+            [JsonProperty("hardfork")] public HardforkConfig Hardfork { get; set; }
+            [JsonProperty("version")] public VersionConfig ConfigVersion { get; set; }
         }
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
+                CloudKeygen(n, f, ips, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount);
             }
             else
             {
-                LocalKeygen(n, f, basePort, target, chainId, networkName, feedAddress, feedBalance, stakeAmount);
+                LocalKeygen(n, f, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount);
             }
         }
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, string networkName, 
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -103,7 +109,9 @@ namespace Lachain.Console
                     HubLogLevel = "Trace",
                     HubMetricsPort = basePort + 2,
                     NetworkName = networkName,
-                    ChainId = (int)chainId
+                    ChainId = (int)chainId,
+                    CycleDuration = cycleDuration,
+                    ValidatorsCount = validatorsCount,
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -144,7 +152,15 @@ namespace Lachain.Console
                 {
                     TargetBlockTime = target,
                 };
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain);
+                var hardfork = new HardforkConfig
+                {
+                    Hardfork_1 = 0,
+                };
+                var version = new VersionConfig
+                {
+                    Version = 2
+                };
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork, version);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
@@ -180,7 +196,7 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, string networkName, 
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount)
         {
             System.Console.WriteLine($"chainId : {chainId}");
@@ -233,6 +249,9 @@ namespace Lachain.Console
                     HubMetricsPort = basePort + 2 * n + i,
                     NetworkName = networkName,
                     ChainId = (int)chainId,
+                    CycleDuration = cycleDuration,
+                    ValidatorsCount = validatorsCount,
+
                 };
                 var genesis = new GenesisConfig(tpkePubKey.ToHex(), "5.000000000000000000", "0.000000100000000000")
                 {
@@ -273,7 +292,15 @@ namespace Lachain.Console
                 {
                     TargetBlockTime = target,
                 };
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain);
+                var hardfork = new HardforkConfig
+                {
+                    Hardfork_1 = 123,
+                };
+                var version = new VersionConfig
+                {
+                    Version = 2
+                };
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork, version);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",

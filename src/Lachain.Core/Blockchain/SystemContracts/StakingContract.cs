@@ -13,6 +13,7 @@ using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Networking;
 using Lachain.Utility.Utils;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
@@ -23,11 +24,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
-        public static readonly BigInteger ExpectedValidatorsCount = 22;
-        public const ulong CycleDuration = 40; // in blocks
-        public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
-        public const ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
-        
+        public static BigInteger ExpectedValidatorsCount = 4;
+        public static ulong CycleDuration = 20; // in blocks
+        public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
+        public static ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
+        public static bool AlreadySet { get; private set; }
+
+
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly InvocationContext _context;
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
@@ -118,6 +121,29 @@ namespace Lachain.Core.Blockchain.SystemContracts
               contractContext.Snapshot.Storage,
               new BigInteger(12).ToUInt256()
             );
+        }
+
+        public static void Initialize(NetworkConfig networkConfig)
+        {
+            if(networkConfig is null)
+                throw new Exception("network config passed in staking contract is null");
+            
+            if(AlreadySet == true)
+                throw new Exception("Staking Contract can't be initialized more than once");
+            
+            AlreadySet = true;
+            
+            if(networkConfig.CycleDuration is null)
+                throw new Exception("Cycle Duration is not provided");
+            CycleDuration = (ulong) networkConfig.CycleDuration;
+
+            if(networkConfig.ValidatorsCount is null)
+                throw new Exception("Validator Count is not provided");
+            ExpectedValidatorsCount = new BigInteger((ulong) networkConfig.ValidatorsCount);
+            VrfSubmissionPhaseDuration = CycleDuration / 2; 
+            AttendanceDetectionDuration = CycleDuration / 10;
+
+            Logger.LogTrace($"Initializing staking contract done.");
         }
 
         public ContractStandard ContractStandard => ContractStandard.StakingContract;

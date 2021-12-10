@@ -19,5 +19,10 @@ namespace Lachain.Networking
         [JsonProperty("networkName")] public string? NetworkName { get; set; }
         
         [JsonProperty("chainId")] public int ChainId;
+        
+        [JsonProperty("cycleDuration")] public ulong? CycleDuration;
+        
+        [JsonProperty("validatorsCount")] public ulong? ValidatorsCount;
+        
     }
 }
