@@ -11,6 +11,12 @@ namespace Lachain.Core.Blockchain.Hardfork
             private set;
         }
 
+        public static ulong Hardfork_2
+        {
+            get; 
+            private set;
+        }
+
         public static void SetHardforkHeights(HardforkConfig hardforkConfig)
         {
             if(alreadySet == true) 
@@ -20,8 +26,11 @@ namespace Lachain.Core.Blockchain.Hardfork
 
             if(hardforkConfig.Hardfork_1 is null)
                 throw new Exception("hardfork_1 is null");
-            else
-                Hardfork_1 = (ulong) hardforkConfig.Hardfork_1;
+            Hardfork_1 = (ulong) hardforkConfig.Hardfork_1;
+
+            if(hardforkConfig.Hardfork_2 is null)
+                throw new Exception("hardfork_2 is null");
+            Hardfork_2 = (ulong) hardforkConfig.Hardfork_2;
         }
     }
 }
