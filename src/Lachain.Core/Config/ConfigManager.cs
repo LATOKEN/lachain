@@ -78,7 +78,7 @@ namespace Lachain.Core.Config
                     Hardfork_1 = network.NetworkName switch
                     {
                         "mainnet" => 0,
-                        "testnet" => 0,
+                        "testnet" => 773000,
                         "devnet" => 213000,
                         _ => 0
                     }
