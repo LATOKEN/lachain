@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -29,6 +30,51 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         [ContractMethod(DeployInterface.MethodDeploy)]
         public ExecutionStatus Deploy(byte[] byteCode, SystemContractExecutionFrame frame)
+        {
+            if (frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() < HardforkHeights.Hardfork_2)
+                return DeployV1(byteCode, frame);
+            return DeployV2(byteCode, frame);
+        }
+
+        private ExecutionStatus DeployV1(byte[] byteCode, SystemContractExecutionFrame frame)
+        {
+            Logger.LogInformation($"Deploy({byteCode.ToHex()})");
+            frame.ReturnValue = Array.Empty<byte>();
+            frame.UseGas(checked(GasMetering.DeployCost + GasMetering.DeployCostPerByte * (ulong) byteCode.Length));
+            var receipt = _context.Receipt ?? throw new InvalidOperationException();
+            /* calculate contract hash and register it */
+            var hash = UInt160Utils.Zero.ToBytes().Ripemd();
+            if (receipt.Transaction?.From != null)
+            {
+                hash = receipt.Transaction.From.ToBytes()
+                    .Concat(receipt.Transaction.Nonce.ToBytes())
+                    .Ripemd();
+            }
+            
+            var contract = new Contract(hash, byteCode);
+
+            if (!VirtualMachine.VerifyContract(contract.ByteCode))
+            {
+                Logger.LogInformation("Failed to verify contract");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            try
+            {
+                _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, contract.ByteCode));
+                Logger.LogInformation($"New contract with address {hash.ToHex()} deployed");
+            }
+            catch (OutOfGasException e)
+            {
+                Logger.LogInformation("Out of gas");
+                frame.UseGas(e.GasUsed);
+                return ExecutionStatus.GasOverflow;
+            }
+
+            return ExecutionStatus.Ok;
+        }
+        
+        private ExecutionStatus DeployV2(byte[] byteCode, SystemContractExecutionFrame frame)
         {
             Logger.LogInformation($"Deploy({byteCode.ToHex()})");
             frame.ReturnValue = Array.Empty<byte>();
