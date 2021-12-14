@@ -212,6 +212,15 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake)
         {
+            var txToPropose = PeekInternal(txsToLook, txsToTake);
+            List<UInt256> txHashes = new List<UInt256>();
+            foreach(var tx in txToPropose)
+                txHashes.Add(tx.Hash);
+            _poolRepository.RemoveTransactions(txHashes);
+            return txToPropose;
+        }
+        private IReadOnlyCollection<TransactionReceipt> PeekInternal(int txsToLook, int txsToTake)
+        {
             Sanitize();
             var rnd = new Random();
             // First,  get governance txes from relay queue
