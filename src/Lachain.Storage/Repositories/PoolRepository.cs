@@ -54,7 +54,9 @@ namespace Lachain.Storage.Repositories
             HashSet<UInt256> txHashSet = new HashSet<UInt256>();
             foreach(var txHash in txHashes)
                 txHashSet.Add(txHash);
-            
+                
+            if(txHashSet.Count == 0) return 0;
+
             var pool = GetTransactionPool();
             List<UInt256> newPool = new List<UInt256>();
             List<UInt256> txRemoved = new List<UInt256>();
