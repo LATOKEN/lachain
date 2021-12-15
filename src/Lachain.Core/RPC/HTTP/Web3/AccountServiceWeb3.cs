@@ -8,7 +8,7 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
-
+using Lachain.Proto;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -39,8 +39,42 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string GetBalance(string address, string tag)
         {
             var addressUint160 = address.HexToUInt160();
-            var availableBalance = GetSnapshotByTag(tag)!.Balances.GetBalance(addressUint160);
-            return Web3DataFormatUtils.Web3Number(availableBalance.ToWei().ToUInt256());
+
+            if (tag == "pending")
+            {
+                //Extract all the transactions from the pool
+                //Extract the transactions where 'to' is this address(let's say type-1)
+                //Extract the transactions where 'from' is this address(let's say type-2)
+                //Then you have to simulate execution of all these transactions in the(ReceiptCompare Order).
+                //Then you can find the pending balance of the address.
+
+                var txpool = this._transactionPool;
+                var transactions = txpool.Transactions;
+
+                var availableBalance = GetSnapshotByTag("latest")!.Balances.GetBalance(addressUint160);
+
+                foreach (var tx in transactions)
+                {
+                    var from = tx.Value.Transaction.From.ToHex();
+
+                    if (address == from)
+                    {
+
+                        var gasp = new Money(tx.Value.Transaction.GasPrice);
+                        var gasl = new Money(tx.Value.Transaction.GasLimit);
+                        var txamnt = new Money(tx.Value.Transaction.Value);
+
+                        availableBalance = availableBalance - txamnt  - (gasl * gasp);
+                    }
+                }
+
+                return Web3DataFormatUtils.Web3Number(availableBalance.ToWei().ToUInt256());
+            }
+            else
+            {
+                var availableBalance = GetSnapshotByTag(tag)!.Balances.GetBalance(addressUint160);
+                return Web3DataFormatUtils.Web3Number(availableBalance.ToWei().ToUInt256());
+            }
         }
 
         [JsonRpcMethod("eth_getTransactionCount")]
