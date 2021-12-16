@@ -23,6 +23,7 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
+using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
@@ -65,6 +66,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
+
 
             _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
@@ -116,6 +118,19 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        // Changed GetBalance to public
+        public void Test_GetBalance_pending()
+        {
+            var address = "0x2605c1ad496f428ab2b700edd257f0a378f83750";
+
+            Execute_dummy_transaction(false);
+
+            var bal = _apiService.GetBalance(address, "pending");
+            Assert.AreEqual(bal, "0x115557b419c5c1f3fa0183ffd1e5d0");
+
+        }
+
+        [Test]
         public void Test_GetAccounts()
         {
             var account_list = _apiService!.GetAccounts();
@@ -137,12 +152,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
-            Assert.AreEqual(txCountBefore, 0);
+            Assert.AreEqual(txCountBefore.ToUlong(), 0);
 
-            Execute_dummy_transaction();
+            Execute_dummy_transaction(true);
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
-            Assert.AreEqual(txCountAfter, 1);
+            Assert.AreEqual(txCountAfter.ToUlong(), 1);
         }
 
         [Test]
@@ -155,7 +170,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         // Below methods Execute a Transaction
-        private void Execute_dummy_transaction()
+        private void Execute_dummy_transaction(bool generate_block)
         {
             _blockManager.TryBuildGenesisBlock();
 
@@ -169,7 +184,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             // Updating balance of sender's Wallet
             _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
 
-            GenerateBlocks(1);
+            if (generate_block) {
+                GenerateBlocks(1);
+            }
 
         }
 
