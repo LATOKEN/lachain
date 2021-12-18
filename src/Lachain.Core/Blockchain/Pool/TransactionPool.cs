@@ -32,6 +32,8 @@ namespace Lachain.Core.Blockchain.Pool
         private ISet<TransactionReceipt> _transactionsQueue;
         private ISet<TransactionReceipt> _relayQueue;
 
+        private IList<UInt256> _lastProposed = new List<UInt256>();
+
         public event EventHandler<TransactionReceipt>? TransactionAdded;
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
@@ -60,6 +62,8 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 Delete(txHash);
             }
+            _poolRepository.RemoveTransactions(_lastProposed);
+            _lastProposed.Clear();
             _poolRepository.RemoveTransactions(e.TransactionHashes);
             SanitizePool();
         }
@@ -211,6 +215,13 @@ namespace Lachain.Core.Blockchain.Pool
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake)
+        {
+            var proposedReceipt = PeekInternal(txsToLook, txsToTake);
+            foreach(var tx in proposedReceipt)
+                _lastProposed.Add(tx.Hash);    
+            return proposedReceipt;
+        }
+        private IReadOnlyCollection<TransactionReceipt> PeekInternal(int txsToLook, int txsToTake)
         {
             Sanitize();
             var rnd = new Random();
