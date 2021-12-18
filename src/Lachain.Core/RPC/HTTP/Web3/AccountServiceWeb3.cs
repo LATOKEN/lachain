@@ -9,6 +9,8 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Nethereum.Hex.HexTypes;
 using Newtonsoft.Json.Linq;
+using Lachain.Crypto;
+using Lachain.Utility.Serialization;
 
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -54,9 +56,47 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getCode")]
         public string GetCode(string contractAddr, string blockId)
         {
+
             var hash = contractAddr.HexToUInt160();
-            var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(hash);
-            return contractByHash != null ? Web3DataFormatUtils.Web3Data(contractByHash!.ByteCode) : "";
+            if(hash is null) return "";
+
+            if(!blockId.Equals("pending"))
+            {
+                var snapshot = GetSnapshotByTag(blockId);
+                if(snapshot is null) return "";
+                var contractByHash = snapshot.Contracts.GetContractByHash(hash);
+                return contractByHash != null ? Web3DataFormatUtils.Web3Data(contractByHash!.ByteCode) : "";
+            }
+
+            // getting Code for "pending" 
+            // look for the code in latest snapshot first
+            var contractFromLatest = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(hash);
+            if(contractFromLatest != null)
+                return Web3DataFormatUtils.Web3Data(contractFromLatest!.ByteCode);
+            
+            // look for the code in pool
+            var txHashPool = _transactionPool.Transactions.Keys;
+            foreach(var txHash in txHashPool)
+            {
+                var receipt = _transactionPool.GetByHash(txHash);
+                if(receipt is null) continue;
+                if (receipt.Transaction.To.Buffer.IsEmpty || receipt.Transaction.To.IsZero()) // this is deploy transaction
+                {
+                    // find the contract address where this contract will be deployed
+                    var address = UInt160Utils.Zero.ToBytes().Ripemd();
+                    if (receipt.Transaction?.From != null)
+                    {
+                        address = receipt.Transaction.From.ToBytes()
+                        .Concat(receipt.Transaction.Nonce.ToBytes())
+                        .Ripemd();
+                    }
+                    if(address.Equals(hash) && receipt!.Transaction != null)
+                        return Web3DataFormatUtils.Web3Data(receipt!.Transaction!.Invocation.ToArray());
+                }
+            }
+            
+            // contract was not found anywhere
+            return "";
         }
         
         [JsonRpcMethod("eth_accounts")]
