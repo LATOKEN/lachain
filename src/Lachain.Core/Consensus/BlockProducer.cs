@@ -53,6 +53,11 @@ namespace Lachain.Core.Consensus
             var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
             var taken = _transactionPool.Peek(BatchSize, txNum);
+            Logger.LogTrace("Proposed Transactions: ");
+            foreach(var tx in taken)
+            {
+                Logger.LogTrace($"{tx.Hash.ToHex()}");
+            }
             return taken;
         }
 
