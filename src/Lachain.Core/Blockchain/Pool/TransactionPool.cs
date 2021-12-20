@@ -164,8 +164,16 @@ namespace Lachain.Core.Blockchain.Pool
 
         private void Sanitize()
         {
+
             var wasRelayQueueSize = _relayQueue.Count;
             var wasTransactionsQueue = _transactionsQueue.Count;
+
+            Logger.LogTrace("Before Sanitizing: ");
+            foreach(var tx in _transactionsQueue)
+            {
+                Logger.LogTrace($"hash: {tx.Hash.ToHex()}, nonce: {tx.Transaction.Nonce}, state: {_transactionManager.CalcNextTxNonce(tx.Transaction.From)}");   
+            }
+
             _relayQueue = new HashSet<TransactionReceipt>(_relayQueue.Where(TxNonceValid));
             _transactionsQueue = new HashSet<TransactionReceipt>(_transactionsQueue.Where(TxNonceValid));
             if (wasRelayQueueSize != _relayQueue.Count || wasTransactionsQueue != _transactionsQueue.Count)
@@ -174,6 +182,12 @@ namespace Lachain.Core.Blockchain.Pool
                     $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs" +
                     $" from queue & {wasRelayQueueSize - _relayQueue.Count} tx from relay queue"
                 );
+            }
+
+            Logger.LogTrace("After Sanitizing: ");
+            foreach(var tx in _transactionsQueue)
+            {
+                Logger.LogTrace($"hash: {tx.Hash.ToHex()}, nonce: {tx.Transaction.Nonce}, state: {_transactionManager.CalcNextTxNonce(tx.Transaction.From)}");   
             }
         }
 
@@ -212,6 +226,7 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake)
         {
+            Logger.LogTrace($"Proposing Transactions from pool");
             Sanitize();
             var rnd = new Random();
             // First,  get governance txes from relay queue
