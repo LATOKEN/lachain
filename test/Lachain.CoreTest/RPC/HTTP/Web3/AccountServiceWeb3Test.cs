@@ -23,7 +23,6 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
-using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
@@ -138,12 +137,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
-            Assert.AreEqual(txCountBefore.HexToUlong(), 0);
+            Assert.AreEqual(txCountBefore, 0);
 
             Execute_dummy_transaction();
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
-            Assert.AreEqual(txCountAfter.HexToUlong(), 1);
+            Assert.AreEqual(txCountAfter, 1);
         }
 
         [Test]

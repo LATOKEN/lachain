@@ -318,7 +318,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var blockHash = tx["blockHash"].ToString();
             var txIndex = (ulong)0; // 0
 
-            var txFromBlockHash = _apiService!.GetTransactionByBlockHashAndIndex(blockHash, txIndex.ToHex());
+            var txFromBlockHash = _apiService!.GetTransactionByBlockHashAndIndex(blockHash, txIndex);
             var txHashReceived = txFromBlockHash["hash"].ToString();
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
@@ -339,7 +339,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var tx = _apiService!.GetTransactionByHash(txHashSent);
             var txIndex = (ulong)0; // 0
-            var txFromBlockHash = _apiService!.GetTransactionByBlockNumberAndIndex("latest", txIndex.ToHex());
+            var txFromBlockHash = _apiService!.GetTransactionByBlockNumberAndIndex("latest", txIndex);
             var txHashReceived = txFromBlockHash["hash"];
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
@@ -451,14 +451,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             Assert.AreEqual(gasPrice_Expected, gasPrice_Actual);
 
-        }
-        
-        [Test]
-        public void Test_GetMaxPriorityGasPrice()
-        {
-            var gasPriceExpected = "0x0";
-            var maxPriorityGasPriceActual = _apiService!.GetMaxPriorityGasPrice();
-            Assert.AreEqual(gasPriceExpected, maxPriorityGasPriceActual);
         }
 
         // Below methods Execute a Transaction
