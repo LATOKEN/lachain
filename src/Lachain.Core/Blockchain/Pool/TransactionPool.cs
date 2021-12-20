@@ -26,8 +26,10 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
 
-        private readonly ConcurrentDictionary<UInt160, ulong> _lastNonceForAddress =
-            new ConcurrentDictionary<UInt160, ulong>();
+        private readonly ConcurrentDictionary<UInt160, List<TransactionReceipt>> _transactionPerAddress
+            = new ConcurrentDictionary<UInt160, List<TransactionReceipt>>();
+
+        private IList<TransactionReceipt> _lastProposed = new List<TransactionReceipt>();
 
         private ISet<TransactionReceipt> _transactionsQueue;
         private ISet<TransactionReceipt> _relayQueue;
@@ -62,6 +64,12 @@ namespace Lachain.Core.Blockchain.Pool
             }
             _poolRepository.RemoveTransactions(e.TransactionHashes);
             SanitizePool();
+
+            foreach(var receipt in _lastProposed)
+            {
+                RemoveFromTransactionPerAddress(receipt);
+            }
+            _lastProposed.Clear();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -105,11 +113,16 @@ namespace Lachain.Core.Blockchain.Pool
             return Add(acceptedTx, notify);
         }
 
-        private void UpdateNonceForAddress(UInt160 address, ulong nonce)
+        private void UpdateNonceForAddress(UInt160 address, TransactionReceipt receipt)
         {
-            if (!_lastNonceForAddress.TryGetValue(address, out var lastNonce) || nonce > lastNonce)
+            if(_transactionPerAddress.TryGetValue(address, out var list)) 
             {
-                _lastNonceForAddress[address] = nonce;
+                if(!list.Contains(receipt))
+                    list.Add(receipt);
+            }
+            else 
+            {
+                _transactionPerAddress.TryAdd(address, new List<TransactionReceipt>{receipt});
             }
         }
 
@@ -146,7 +159,7 @@ namespace Lachain.Core.Blockchain.Pool
             if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                 _poolRepository.AddTransaction(receipt);
 
-            UpdateNonceForAddress(receipt.Transaction.From, receipt.Transaction.Nonce);
+            UpdateNonceForAddress(receipt.Transaction.From, receipt);
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
             if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
@@ -168,26 +181,37 @@ namespace Lachain.Core.Blockchain.Pool
             var wasRelayQueueSize = _relayQueue.Count;
             var wasTransactionsQueue = _transactionsQueue.Count;
 
-            Logger.LogTrace("Before Sanitizing: ");
-            foreach(var tx in _transactionsQueue)
+            var toErase = new List<TransactionReceipt>();
+            foreach(var receipt in _relayQueue)
+                if(!TxNonceValid(receipt))
+                    toErase.Add(receipt);
+            
+            foreach(var receipt in toErase)
             {
-                Logger.LogTrace($"hash: {tx.Hash.ToHex()}, nonce: {tx.Transaction.Nonce}, state: {_transactionManager.CalcNextTxNonce(tx.Transaction.From)}");   
+                _relayQueue.Remove(receipt);
+                RemoveFromTransactionPerAddress(receipt);
+                _transactions.TryRemove(receipt.Hash, out var _);
+            }
+            
+            toErase.Clear();
+
+            foreach(var receipt in _transactionsQueue)
+                if(!TxNonceValid(receipt))
+                    toErase.Add(receipt);
+            
+            foreach(var receipt in toErase)
+            {
+                _transactionsQueue.Remove(receipt);
+                RemoveFromTransactionPerAddress(receipt);
+                _transactions.TryRemove(receipt.Hash, out var _);
             }
 
-            _relayQueue = new HashSet<TransactionReceipt>(_relayQueue.Where(TxNonceValid));
-            _transactionsQueue = new HashSet<TransactionReceipt>(_transactionsQueue.Where(TxNonceValid));
             if (wasRelayQueueSize != _relayQueue.Count || wasTransactionsQueue != _transactionsQueue.Count)
             {
                 Logger.LogTrace(
                     $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs" +
                     $" from queue & {wasRelayQueueSize - _relayQueue.Count} tx from relay queue"
                 );
-            }
-
-            Logger.LogTrace("After Sanitizing: ");
-            foreach(var tx in _transactionsQueue)
-            {
-                Logger.LogTrace($"hash: {tx.Hash.ToHex()}, nonce: {tx.Transaction.Nonce}, state: {_transactionManager.CalcNextTxNonce(tx.Transaction.From)}");   
             }
         }
 
@@ -212,7 +236,20 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
-        
+        private void RemoveFromTransactionPerAddress(TransactionReceipt receipt) 
+        {
+            var from = receipt.Transaction.From;
+            if(_transactionPerAddress.TryGetValue(from, out var list))
+            {
+                list.Remove(receipt);
+                if(list.Count == 0)
+                {
+                    _transactionPerAddress.TryRemove(from, out var _);
+                }
+            }
+        }
+
+
 
         private void RemoveTxes(IReadOnlyCollection<TransactionReceipt> txes)
         {
@@ -220,6 +257,7 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 _transactionsQueue.Remove(tx);
                 _relayQueue.Remove(tx);
+                _lastProposed.Add(tx);
             }
         }
 
@@ -341,6 +379,7 @@ namespace Lachain.Core.Blockchain.Pool
             if (_transactions.TryRemove(transactionHash, out var tx))
             {
                 _transactionsQueue.Remove(tx);
+                RemoveFromTransactionPerAddress(tx);
             }
         }
 
@@ -363,8 +402,14 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address)
         {
-            if (!_lastNonceForAddress.TryGetValue(address, out var lastNonce)) return null;
-            return lastNonce;
+            if (!_transactionPerAddress.TryGetValue(address, out var list)) return null;
+            
+            ulong nonce = 0;
+            foreach(var receipt in list)
+            {
+                nonce = Math.Max(nonce, receipt.Transaction.Nonce);
+            }
+            return nonce;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
