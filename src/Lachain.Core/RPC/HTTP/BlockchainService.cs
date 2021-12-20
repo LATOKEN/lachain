@@ -147,6 +147,12 @@ namespace Lachain.Core.RPC.HTTP
             _transactionPool.ClearRepository();
         }
 
+        [JsonRpcMethod("clearInMemoryPool")]
+        private void ClearInMemoryPool()
+        {
+            _transactionPool.Clear();
+        }
+
 
 
         [JsonRpcMethod("getTransactionPoolByHash")]
