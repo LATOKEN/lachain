@@ -38,6 +38,8 @@ namespace Lachain.Core.RPC.HTTP
             "validator_start",
             "validator_stop",
             "fe_sendTransaction",
+            "deleteTransactionPoolRepository",
+            "clearInMemoryPool",
         };
 
         public void Stop()
