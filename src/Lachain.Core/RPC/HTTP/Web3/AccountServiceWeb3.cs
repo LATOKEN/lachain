@@ -9,6 +9,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using Lachain.Proto;
+using System.Collections.Generic;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -42,30 +43,48 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             if (tag == "pending")
             {
-                //Extract all the transactions from the pool
-                //Extract the transactions where 'to' is this address(let's say type-1)
-                //Extract the transactions where 'from' is this address(let's say type-2)
-                //Then you have to simulate execution of all these transactions in the(ReceiptCompare Order).
-                //Then you can find the pending balance of the address.
-
+                // Get all transaction from pool
                 var txpool = this._transactionPool;
                 var transactions = txpool.Transactions;
 
+                List<TransactionReceipt> tx_Receipts = new List<TransactionReceipt>();
+                
+                foreach(var tx in transactions)
+                {
+                    tx_Receipts.Add(tx.Value);
+                }
+
+                // Sort on the basis of nonce
+                tx_Receipts = tx_Receipts.OrderBy(receipt => receipt, new ReceiptComparer()).ToList();
+
+                // Get current address nonce
+                var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
+                var curr_nonce = transactionRepository.GetTotalTransactionCount(address.HexToBytes().ToUInt160());
+
+                // Virtually execute the txs in nonce order
                 var availableBalance = GetSnapshotByTag("latest")!.Balances.GetBalance(addressUint160);
 
-                foreach (var tx in transactions)
+                foreach (var tx in tx_Receipts)
                 {
-                    var from = tx.Value.Transaction.From.ToHex();
+                    var from = tx.Transaction.From.ToHex();
 
-                    if (address == from)
+                    if (address == from & curr_nonce == tx.Transaction.Nonce)
                     {
-
-                        var gasp = new Money(tx.Value.Transaction.GasPrice);
-                        var gasl = new Money(tx.Value.Transaction.GasLimit);
-                        var txamnt = new Money(tx.Value.Transaction.Value);
+                        // Executing the transaction
+                        var gasp = new Money(tx.Transaction.GasPrice);
+                        var gasl = new Money(tx.Transaction.GasLimit);
+                        var txamnt = new Money(tx.Transaction.Value);
 
                         availableBalance = availableBalance - txamnt  - (gasl * gasp);
+
+                        // Check if balance is less than 0
+                        if(availableBalance < Money.Parse("0"))
+                        {
+                            return Web3DataFormatUtils.Web3Number(Money.Parse("0").ToWei().ToUInt256());
+                        }
                     }
+
+                    curr_nonce += 1;
                 }
 
                 return Web3DataFormatUtils.Web3Number(availableBalance.ToWei().ToUInt256());
