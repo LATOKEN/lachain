@@ -273,6 +273,75 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_Create({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call Create outside wasm frame");
+            if (frame!.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2)
+                return Handler_Env_Create_V2(valueOffset, dataOffset, dataLength, resultOffset, frame);
+            return Handler_Env_Create_V1(valueOffset, dataOffset, dataLength, resultOffset, frame);
+        }
+
+        private static int Handler_Env_Create_V1(int valueOffset, int dataOffset, int dataLength, int resultOffset,
+            WasmExecutionFrame? frame)
+        {
+            Logger.LogInformation($"Handler_Env_Create_V1({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
+
+            if (frame.InvocationContext.Message?.Type == InvocationType.Static)
+            {
+                throw new InvalidOperationException("Cannot call Create in STATICCALL");
+            }
+
+            var context = frame.InvocationContext;
+            var snapshot = context.Snapshot;
+            var dataBuffer = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
+            var value = SafeCopyFromMemory(frame.Memory, valueOffset, 32)?.ToUInt256()!.ToMoney();
+
+            if (value is null)
+                throw new InvalidContractException("Bad call to Create function");
+            if (snapshot.Balances.GetBalance(frame.CurrentAddress) < value)
+            {
+                throw new InsufficientFundsException();
+            }
+
+            // calculate contract hash and register it
+            frame.UseGas(checked(GasMetering.DeployCost + GasMetering.DeployCostPerByte * (ulong) dataBuffer.Length));
+            var receipt = context.Receipt ?? throw new InvalidOperationException();
+
+            var hash = UInt160Utils.Zero.ToBytes().Ripemd();
+            if (receipt.Transaction?.From != null)
+            {
+                hash = receipt.Transaction.From.ToBytes()
+                    .Concat(receipt.Transaction.Nonce.ToBytes())
+                    .Ripemd();
+            }
+
+            var contract = new Contract(hash, dataBuffer);
+
+            if (!VirtualMachine.VerifyContract(contract.ByteCode))
+            {
+                throw new InvalidContractException("Failed to verify contract");
+            }
+
+            try
+            {
+                snapshot.Contracts.AddContract(context.Sender, contract);
+            }
+            catch (OutOfGasException e)
+            {
+                frame.UseGas(e.GasUsed);
+                throw;
+            }
+
+            // transfer funds
+            frame.UseGas(GasMetering.TransferFundsGasCost);
+            snapshot.Balances.TransferBalance(frame.CurrentAddress, hash, value);
+
+            SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
+
+            return 0;
+        }
+
+        private static int Handler_Env_Create_V2(int valueOffset, int dataOffset, int dataLength, int resultOffset,  
+            WasmExecutionFrame? frame)
+        {
+            Logger.LogInformation($"Handler_Env_Create_V2({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
 
             if (frame.InvocationContext.Message?.Type == InvocationType.Static)
             {
