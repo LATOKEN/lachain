@@ -351,7 +351,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate smart-contract code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate smart-contract code");
             var from = keyPair.PublicKey.GetAddress();
             var fromHx = from.ToHex();
 
@@ -395,7 +395,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate smart-contract code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate smart-contract code");
             var from = keyPair.PublicKey.GetAddress();
             var fromHx = from.ToHex();
 

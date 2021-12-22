@@ -24,6 +24,7 @@ using Lachain.Utility.Utils;
 using Newtonsoft.Json.Serialization;
 using Transaction = Lachain.Proto.Transaction;
 using System.Threading.Tasks;
+using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -313,7 +314,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
 
                 var byteCode = ((string) data!).HexToBytes();
-                if (!VirtualMachine.VerifyContract(byteCode)) 
+                if (!VirtualMachine.VerifyContract(byteCode, 
+                        _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() > HardforkHeights.Hardfork_2)) 
                     throw new ArgumentException("Unable to validate smart-contract code");
                 var fromAddress = from is null ? keyPair.PublicKey.GetAddress() : ((string) from!).HexToUInt160();
                 var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
@@ -450,7 +452,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             
                 if (to is null) // deploy contract
                 {
-                    if (!VirtualMachine.VerifyContract(invocation)) 
+                    if (!VirtualMachine.VerifyContract(invocation,
+                            _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() > HardforkHeights.Hardfork_2)) 
                         throw new ArgumentException("Unable to validate smart-contract code");
                     InvocationResult invRes = _stateManager.SafeContext(() =>
                     {

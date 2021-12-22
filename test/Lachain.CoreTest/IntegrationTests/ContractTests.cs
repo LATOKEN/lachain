@@ -96,7 +96,7 @@ namespace Lachain.CoreTest.IntegrationTests
             
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate smart-contract code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate smart-contract code");
             var from = keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
@@ -159,7 +159,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.Fail("Failed t read script from resources");
             var byteCode = new byte[resourceD!.Length];
             resourceD!.Read(byteCode, 0, (int)resourceD!.Length);
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate callee code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate callee code");
             var from = keyPair.PublicKey.GetAddress();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
@@ -178,7 +178,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.Fail("Failed to read script from resources");
             byteCode = new byte[resourceC!.Length];
             resourceC!.Read(byteCode, 0, (int)resourceC!.Length);
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate caller code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate caller code");
             nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             tx = _transactionBuilder.DeployTransaction(from, byteCode);

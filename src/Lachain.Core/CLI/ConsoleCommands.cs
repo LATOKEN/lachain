@@ -126,7 +126,7 @@ namespace Lachain.Core.CLI
             var hash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var byteCode = arguments[1].HexToBytes();
-            if (!VirtualMachine.VerifyContract(byteCode)) return "Unable to validate smart-contract code";
+            if (!VirtualMachine.VerifyContract(byteCode, true)) return "Unable to validate smart-contract code";
             // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionSigner.Sign(tx, _keyPair);

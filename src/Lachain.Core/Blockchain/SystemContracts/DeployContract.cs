@@ -53,7 +53,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             
             var contract = new Contract(hash, byteCode);
 
-            if (!VirtualMachine.VerifyContract(contract.ByteCode))
+            if (!VirtualMachine.VerifyContract(contract.ByteCode,  false))
             {
                 Logger.LogInformation("Failed to verify contract");
                 return ExecutionStatus.ExecutionHalted;
@@ -93,7 +93,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             // deployment code
             var deploymentContract = new Contract(hash, byteCode);
 
-            if (!VirtualMachine.VerifyContract(deploymentContract.ByteCode))
+            if (!VirtualMachine.VerifyContract(deploymentContract.ByteCode, true))
             {
                 Logger.LogInformation("Failed to verify deployment contract");
                 return ExecutionStatus.ExecutionHalted;
@@ -121,7 +121,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             // runtime code
             var runtimeContract = new Contract(hash, status.ReturnValue);
 
-            if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode))
+            if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode,  true))
             {
                 Logger.LogInformation("Failed to verify runtime contract");
                 return ExecutionStatus.ExecutionHalted;
