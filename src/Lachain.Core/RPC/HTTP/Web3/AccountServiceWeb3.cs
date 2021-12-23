@@ -63,7 +63,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                 // Get current address nonce
                 var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
-                var curr_nonce = transactionRepository.GetTotalTransactionCount(addressUint160);
+                var currNonce = transactionRepository.GetTotalTransactionCount(addressUint160);
 
                 // Virtually execute the txs in nonce order
                 var availableBalance = GetSnapshotByTag("latest")!.Balances.GetBalance(addressUint160);
@@ -72,7 +72,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     var from = tx.Transaction.From.ToHex();
 
-                    if (curr_nonce == tx.Transaction.Nonce)
+                    if (currNonce == tx.Transaction.Nonce)
                     {
                         // Executing the transaction
                         var gasp = new Money(tx.Transaction.GasPrice);
@@ -83,13 +83,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         {
                             // If transaction can be executed
                             availableBalance = availableBalance - txamnt - (gasl * gasp);
-                            curr_nonce += 1;
+                            currNonce += 1;
                         }
                         else if(availableBalance - (gasl * gasp) >= Money.Parse("0"))
                         {
                             // If balance is not enough for transaction
                             availableBalance = availableBalance - (gasl * gasp);
-                            curr_nonce += 1;
+                            currNonce += 1;
                         }
 
                     }
