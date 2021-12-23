@@ -63,7 +63,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                 // Get current address nonce
                 var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
-                var curr_nonce = transactionRepository.GetTotalTransactionCount(address.HexToBytes().ToUInt160());
+                var curr_nonce = transactionRepository.GetTotalTransactionCount(addressUint160);
 
                 // Virtually execute the txs in nonce order
                 var availableBalance = GetSnapshotByTag("latest")!.Balances.GetBalance(addressUint160);
