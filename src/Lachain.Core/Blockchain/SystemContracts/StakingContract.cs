@@ -673,9 +673,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var nextValidators = _nextValidators.Get();
 
-            Logger.LogTrace($"Executing finish vrf lottery. current height: {_context.Snapshot.Blocks.GetTotalBlockHeight()}, hardfork_1: {HardforkHeights.Hardfork_1}");
+            Logger.LogTrace($"Executing finish vrf lottery. current height: {_context.Snapshot.Blocks.GetTotalBlockHeight()}");
 
-            if(_context.Snapshot.Blocks.GetTotalBlockHeight() < HardforkHeights.Hardfork_1)
+            if(!HardforkHeights.IsHardfork_1Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
                 if (nextValidators.Length == 0)
                     return ExecutionStatus.ExecutionHalted;

@@ -108,11 +108,11 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         private static readonly ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>> ByteCodeCache
             = new ConcurrentDictionary<UInt160, Func<Instance<JitEntryPoint>>>();
 
-        internal static Instance<JitEntryPoint> CompileWasm(UInt160 contract, byte[] buffer, ImportDictionary imports)
+        internal static Instance<JitEntryPoint> CompileWasm(UInt160 contract, byte[] buffer, ImportDictionary imports,  bool ignoreEndingCode)
         {
             if (ByteCodeCache.TryGetValue(contract, out var instance))
                 return instance();
-            var config = new CompilerConfiguration();
+            var config = new CompilerConfiguration() {IgnoreEndingCode = ignoreEndingCode};
             using var stream = new MemoryStream(buffer, 0, buffer.Length, false);
             return Compile.FromBinary<JitEntryPoint>(stream, config)(imports);
         }
