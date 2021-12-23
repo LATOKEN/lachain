@@ -273,7 +273,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_Create({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call Create outside wasm frame");
-            if (frame!.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2)
+            if (Hardfork.HardforkHeights.IsHardfork_2Active(frame!.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
                 return Handler_Env_Create_V2(valueOffset, dataOffset, dataLength, resultOffset, frame);
             return Handler_Env_Create_V1(valueOffset, dataOffset, dataLength, resultOffset, frame);
         }
@@ -315,7 +315,7 @@ namespace Lachain.Core.Blockchain.VM
             var contract = new Contract(hash, dataBuffer);
 
             if (!VirtualMachine.VerifyContract(contract.ByteCode, 
-                    context.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2))
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
             {
                 throw new InvalidContractException("Failed to verify contract");
             }
@@ -470,7 +470,7 @@ namespace Lachain.Core.Blockchain.VM
             var deploymentContract = new Contract(hash, dataBuffer);
 
             if (!VirtualMachine.VerifyContract(deploymentContract.ByteCode, 
-                    context.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2))
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
             {
                 throw new InvalidContractException("Failed to verify deployment contract");
             }
@@ -501,7 +501,7 @@ namespace Lachain.Core.Blockchain.VM
             var runtimeContract = new Contract(hash, status.ReturnValue);
 
             if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode, 
-                    context.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2))
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
             {
                 throw new InvalidContractException("Failed to verify runtime contract");
             }

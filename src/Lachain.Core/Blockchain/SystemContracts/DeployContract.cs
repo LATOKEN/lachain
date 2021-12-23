@@ -31,9 +31,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(DeployInterface.MethodDeploy)]
         public ExecutionStatus Deploy(byte[] byteCode, SystemContractExecutionFrame frame)
         {
-            if (frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() < HardforkHeights.Hardfork_2)
-                return DeployV1(byteCode, frame);
-            return DeployV2(byteCode, frame);
+            if (HardforkHeights.IsHardfork_2Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                return DeployV2(byteCode, frame);
+            return DeployV1(byteCode, frame);
         }
 
         private ExecutionStatus DeployV1(byte[] byteCode, SystemContractExecutionFrame frame)

@@ -315,7 +315,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                 var byteCode = ((string) data!).HexToBytes();
                 if (!VirtualMachine.VerifyContract(byteCode, 
-                        _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() > HardforkHeights.Hardfork_2)) 
+                        HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                     throw new ArgumentException("Unable to validate smart-contract code");
                 var fromAddress = from is null ? keyPair.PublicKey.GetAddress() : ((string) from!).HexToUInt160();
                 var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
@@ -453,7 +453,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 if (to is null) // deploy contract
                 {
                     if (!VirtualMachine.VerifyContract(invocation,
-                            _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() > HardforkHeights.Hardfork_2)) 
+                            HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                         throw new ArgumentException("Unable to validate smart-contract code");
                     InvocationResult invRes = _stateManager.SafeContext(() =>
                     {

@@ -16,7 +16,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         {
             frame = new WasmExecutionFrame(
                 WasmExecutionFrame.CompileWasm(contract, code, blockchainInterface.GetFunctionImports(),
-                    context.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2),
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())),
                 context, contract, input, gasLimit
             );
             return ExecutionStatus.Ok;
@@ -33,7 +33,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         {
             frame = new WasmExecutionFrame(
                 WasmExecutionFrame.CompileWasm(currentAddress, code, blockchainInterface.GetFunctionImports(), 
-                    context.Snapshot.Blocks.GetTotalBlockHeight() > Hardfork.HardforkHeights.Hardfork_2),
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())),
                 context, currentAddress, input, gasLimit
             );
             return ExecutionStatus.Ok;

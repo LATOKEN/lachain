@@ -116,7 +116,7 @@ namespace Lachain.Core.RPC.HTTP
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var byteCode = byteCodeInHex.HexToBytes();
             if (!VirtualMachine.VerifyContract(byteCode, 
-                    _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() > HardforkHeights.Hardfork_2)) 
+                    HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                 throw new ArgumentException("Unable to validate smart-contract code");
             // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
