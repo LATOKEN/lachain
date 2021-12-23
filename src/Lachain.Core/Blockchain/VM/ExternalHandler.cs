@@ -437,15 +437,14 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call Create2 outside wasm frame");
             if (Hardfork.HardforkHeights.IsHardfork_2Active(frame!.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
-                return Handler_Env_Create2_V2(valueOffset, dataOffset, dataLength, resultOffset, frame);
-            return Handler_Env_Create2_V1(valueOffset, dataOffset, dataLength, resultOffset, frame);
+                return Handler_Env_Create2_V2(valueOffset, dataOffset, dataLength, saltOffset, resultOffset, frame);
+            return Handler_Env_Create2_V1(valueOffset, dataOffset, dataLength, saltOffset, resultOffset, frame);
         }
 
-        public static int Handler_Env_Create2_V1(int valueOffset, int dataOffset, int dataLength, int saltOffset, int resultOffset)
+        public static int Handler_Env_Create2_V1(int valueOffset, int dataOffset, int dataLength, int saltOffset, int resultOffset, 
+            WasmExecutionFrame? frame)
         {
             Logger.LogInformation($"Handler_Env_Create2_V1({valueOffset}, {dataOffset}, {dataLength}, {saltOffset}, {resultOffset})");
-            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call Create2 outside wasm frame");
 
             if (frame.InvocationContext.Message?.Type == InvocationType.Static)
             {
@@ -477,7 +476,8 @@ namespace Lachain.Core.Blockchain.VM
 
             var contract = new Contract(hash, dataBuffer);
 
-            if (!VirtualMachine.VerifyContract(contract.ByteCode))
+            if (!VirtualMachine.VerifyContract(contract.ByteCode,
+                Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
             {
                 throw new InvalidContractException("Failed to verify contract");
             }
@@ -501,11 +501,10 @@ namespace Lachain.Core.Blockchain.VM
             return 0;
         }
 
-        public static int Handler_Env_Create2_V2(int valueOffset, int dataOffset, int dataLength, int saltOffset, int resultOffset)
+        public static int Handler_Env_Create2_V2(int valueOffset, int dataOffset, int dataLength, int saltOffset, int resultOffset, 
+            WasmExecutionFrame? frame)
         {
             Logger.LogInformation($"Handler_Env_Create2_V2({valueOffset}, {dataOffset}, {dataLength}, {saltOffset}, {resultOffset})");
-            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
-                        ?? throw new InvalidOperationException("Cannot call Create2 outside wasm frame");
 
             if (frame.InvocationContext.Message?.Type == InvocationType.Static)
             {
@@ -539,8 +538,7 @@ namespace Lachain.Core.Blockchain.VM
             // deployment code
             var deploymentContract = new Contract(hash, dataBuffer);
 
-            if (!VirtualMachine.VerifyContract(deploymentContract.ByteCode, 
-                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
+            if (!VirtualMachine.VerifyContract(deploymentContract.ByteCode, true))
             {
                 throw new InvalidContractException("Failed to verify deployment contract");
             }
@@ -570,8 +568,7 @@ namespace Lachain.Core.Blockchain.VM
             // runtime code
             var runtimeContract = new Contract(hash, status.ReturnValue);
 
-            if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode, 
-                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
+            if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode, true))
             {
                 throw new InvalidContractException("Failed to verify runtime contract");
             }
