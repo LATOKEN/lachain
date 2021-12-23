@@ -44,10 +44,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (tag == "pending")
             {
                 // Get all transaction from pool
-                var txpool = _transactionPool;
-                var transactions = txpool.Transactions;
+                var transactions = _transactionPool.Transactions;
 
-                List<TransactionReceipt> tx_receipts = new List<TransactionReceipt>();
+                List<TransactionReceipt> txReceipts = new List<TransactionReceipt>();
                 
                 foreach(var tx in transactions)
                 {
@@ -55,12 +54,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                     if (address == from)
                     {
-                        tx_receipts.Add(tx.Value);
+                        txReceipts.Add(tx.Value);
                     }
                 }
 
                 // Sort on the basis of nonce
-                tx_receipts = tx_receipts.OrderBy(receipt => receipt, new ReceiptComparer()).ToList();
+                txReceipts = txReceipts.OrderBy(receipt => receipt, new ReceiptComparer()).ToList();
 
                 // Get current address nonce
                 var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
@@ -69,7 +68,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 // Virtually execute the txs in nonce order
                 var availableBalance = GetSnapshotByTag("latest")!.Balances.GetBalance(addressUint160);
 
-                foreach (var tx in tx_receipts)
+                foreach (var tx in txReceipts)
                 {
                     var from = tx.Transaction.From.ToHex();
 
