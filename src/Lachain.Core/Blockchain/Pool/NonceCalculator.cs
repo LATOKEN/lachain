@@ -31,7 +31,7 @@ namespace Lachain.Core.Blockchain.Pool
             }
             else
             {
-                var emptyNonces = new SortedSet<KeyValuePair<ulong, UInt256>>();
+                var emptyNonces = new SortedSet<KeyValuePair<ulong, UInt256>>(new NonceComparer());
                 emptyNonces.Add(kv);
                 _noncePerAddress.TryAdd(from, emptyNonces);
                 return true; 
