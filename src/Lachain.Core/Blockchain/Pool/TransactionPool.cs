@@ -271,7 +271,7 @@ namespace Lachain.Core.Blockchain.Pool
             if(_transactions.Count != _transactionsQueue.Count + _relayQueue.Count)
             {
                 // this should never happen, something must be wrong if this gets triggered
-                Logger.LogDebug($"_transaction.Count = {_transactions.Count} is not equal to _transactionsQueue.Count = {_transactionsQueue.Count} + _relayQueue.Count = {_relayQueue.Count} ");
+                Logger.LogError($"_transaction.Count = {_transactions.Count} is not equal to _transactionsQueue.Count = {_transactionsQueue.Count} + _relayQueue.Count = {_relayQueue.Count} ");
             }
             return result;
         }
