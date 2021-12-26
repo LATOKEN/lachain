@@ -27,6 +27,7 @@ using Nethereum.Signer;
 using Transaction = Lachain.Proto.Transaction;
 using Google.Protobuf;
 using Lachain.Utility.Serialization;
+using Lachain.Networking;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -93,6 +94,13 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
 
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
+
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
 
@@ -128,10 +136,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             var account_list = _apiService!.GetAccounts();
             var address = account_list.First.ToString();
-            
+
             var balances = _configManager!.GetConfig<GenesisConfig>("genesis")?.Balances;
             var balanceList = balances!.ToList();
-            
+
             Assert.AreEqual(address, balanceList[1].Key);
         }
 
@@ -144,7 +152,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
-            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
+            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
             Assert.AreEqual(txCountBefore, 0);
 
             Execute_dummy_transaction(true);
@@ -166,11 +174,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetCode to public
         public void Test_GetCode_pending()
         {
-            // Look for contract deployment
-            // Deploy contract
-
             var keyPair = _wallet.EcdsaKeyPair;
-            //GenerateBlocks(1);
+            var address = "0x9210567c1f79e9e9c3634331158d3143e572c001";
 
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
@@ -182,19 +187,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var signedTx = Signer.Sign(tx, keyPair);
             var result = _transactionPool.Add(signedTx);
-            //Assert.That( == OperatingError.Ok, "Can't add deploy tx to pool");
 
-            //Transaction tx = TryGetRandomDeployContract(ethTx);
-
-            //var rawTx = TransactionUtils.Rlp(tx).ToString();
-
-            //Execute_dummy_transaction(false, rawTx);
-            //var adCode = _apiService!.GetCode(address, "pending");
-            //Assert.AreEqual(adCode, "");
+            var adCode = _apiService!.GetCode(address, "pending");
+            var adCode_bytes = adCode.HexToBytes();
+            Assert.AreEqual(adCode_bytes, byteCode);
         }
 
         // Below methods Execute a Transaction
-        private void Execute_dummy_transaction(bool generateblock, string rawTx= "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0")
+        private void Execute_dummy_transaction(bool generateblock, string rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0")
         {
             _blockManager.TryBuildGenesisBlock();
 
