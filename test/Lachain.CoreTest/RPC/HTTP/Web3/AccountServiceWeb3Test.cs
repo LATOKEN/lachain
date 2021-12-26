@@ -49,7 +49,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         private AccountServiceWeb3? _apiService;
         private TransactionServiceWeb3? _transaction_apiService;
-        private IPrivateWallet _wallet = null!;
 
         // from BlockTest.cs
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
@@ -80,7 +79,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _snapshotIndexer = _container.Resolve<ISnapshotIndexRepository>();
             _systemContractReader = _container.Resolve<ISystemContractReader>();
-            _wallet = _container.Resolve<IPrivateWallet>();
 
             _transactionManager = _container.Resolve<ITransactionManager>();
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
@@ -174,7 +172,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetCode to public
         public void Test_GetCode_pending()
         {
-            var keyPair = _wallet.EcdsaKeyPair;
+            var keyPair = _privateWallet.EcdsaKeyPair;
             var address = "0x9210567c1f79e9e9c3634331158d3143e572c001";
 
             // Deploy contract 
@@ -212,21 +210,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 GenerateBlocks(1);
             }
 
-        }
-
-        public Transaction TryGetRandomDeployContract(SignedTransactionBase ethTx)
-        {
-            return new Transaction
-            {
-                // this is special case where empty uint160 is allowed
-                To = UInt160Utils.Empty,
-                Value = ethTx.Value.ToUInt256(true),
-                From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
-                Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
-                GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
-                GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
-                Invocation = ByteString.Empty,
-            };
         }
 
         private void GenerateBlocks(ulong blockNum)
