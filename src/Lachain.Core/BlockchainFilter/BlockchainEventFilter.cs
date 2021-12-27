@@ -93,7 +93,7 @@ namespace Lachain.Core.BlockchainFilter
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong TimeOut(){
-            return 600000; // in ms, set to 15 mins
+            return 600000; // in ms, set to 10 mins
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
