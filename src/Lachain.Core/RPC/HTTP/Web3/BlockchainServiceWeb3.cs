@@ -17,7 +17,7 @@ using System.Globalization;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Storage.Trie;
 using Lachain.Utility;
-
+using Lachain.Core.BlockchainFilter;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -495,16 +495,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new Exception(
                     "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
 
-            var start = _blockManager.GetHeight();
+            ulong? start = _blockManager.GetHeight();
             if (!(fromBlock is null))
             {
-                start = (ulong)GetBlockNumberByTag((string)fromBlock!)!;
+                start = GetBlockNumberByTag((string)fromBlock!);
             }
 
-            var finish = _blockManager.GetHeight();
+            ulong? finish = _blockManager.GetHeight();
             if (!(toBlock is null))
             {
-                finish = (ulong)GetBlockNumberByTag((string)toBlock!)!;
+                finish = GetBlockNumberByTag((string)toBlock!);
             }
 
             if (!(blockhash is null))
@@ -522,23 +522,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var topics = new List<UInt256>();
             if (!(topicsJson is null))
             {
-                topics = GetTopics((JArray)topicsJson);
+                topics = BlockchainFilterUtils.GetTopics((JArray)topicsJson);
             }
 
             var addresses = new List<UInt160>();
             if (!(address is null))
             {
-                foreach (var a in address)
-                {
-                    var addressString = (string)a!;
-                    if (!(addressString is null)){
-                        var addressBuffer = addressString.HexToUInt160();
-                        addresses.Add(addressBuffer);
-                    }
-                }
+                addresses = BlockchainFilterUtils.GetAddresses((JArray)address);
+                
             }
 
-            return GetLogs(start , finish , addresses , topics);
+            if((start is null) || (finish is null)) return new JArray();
+
+            return GetLogs((ulong)start , (ulong)finish , addresses , topics);
         }
 
 
@@ -641,37 +637,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             return blockchainSnapshot.StateHash;
-        }
-
-        public List<UInt256> GetTopics(JArray topicsJson)
-        {
-            var topics = new List<UInt256>();
-            foreach(var topic in topicsJson)
-            {
-
-                try{
-                    JArray topicList = (JArray)topic;
-                    foreach (var t in topicList)
-                    {
-                        var topicString = (string)t!;
-                        var topicBuffer = topicString.HexToUInt256();
-                        topics.Add(topicBuffer);        
-                    }
-                }
-                catch(InvalidCastException _){
-                    
-                    var topicString = (string)topic!;
-                    if(!(topicString is null)){
-                        var topicBuffer = topicString.HexToUInt256();
-                        topics.Add(topicBuffer);
-                    }
-                  
-                }
-                break; // Only first topic is supported now.
-                // TODO: change implementation when other topics are supported
-            }
-
-            return topics;
         }
 
         public JArray GetLogs(ulong start, ulong finish, List<UInt160> addresses, List<UInt256> topics)
