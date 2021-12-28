@@ -92,12 +92,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
 
-            // set chainId from config
-            if (TransactionUtils.ChainId == 0)
-            {
-                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
-            }
+            //// set chainId from config
+            //if (TransactionUtils.ChainId == 0)
+            //{
+            //    var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+            //    TransactionUtils.SetChainId((int)chainId!);
+            //}
 
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
@@ -160,6 +160,25 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        // Changed GetTransactionCount to public
+        public void Test_GetTransactionCount_pending()
+        {
+
+            var rawTx2 = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
+            var ethTx = new TransactionChainId(rawTx2.HexToBytes());
+            var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
+
+            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "pending");
+            Assert.AreEqual(txCountBefore, 0);
+
+            TransactionUtils.SetChainId(41);
+            Execute_dummy_transaction(false);
+
+            var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "pending");
+            Assert.AreEqual(txCountAfter, 1);
+        }
+
+        [Test]
         // Changed GetCode to public
         public void Test_GetCode_latest()
         {
@@ -174,6 +193,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             var keyPair = _privateWallet.EcdsaKeyPair;
             var address = "0x9210567c1f79e9e9c3634331158d3143e572c001";
+
+            var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+            TransactionUtils.SetChainId((int)chainId!);
 
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
