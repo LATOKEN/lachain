@@ -24,8 +24,6 @@ using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
 using Nethereum.Signer;
-using Transaction = Lachain.Proto.Transaction;
-using Google.Protobuf;
 using Lachain.Utility.Serialization;
 using Lachain.Networking;
 
