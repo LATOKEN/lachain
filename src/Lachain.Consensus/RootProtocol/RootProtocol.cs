@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Lachain.Logger;
@@ -274,15 +273,6 @@ namespace Lachain.Consensus.RootProtocol
                 res[i % 8] ^= result.RawBytes[i];
             return res.AsReadOnlySpan().ToUInt64();
         }
-
-        private static IEnumerable<byte[]> SplitShare(IReadOnlyCollection<byte> share)
-        {
-            for (var i = 0; i < share.Count; i += 32)
-            {
-                yield return share.Skip(i).Take(32).ToArray();
-            }
-        }
-
         private ConsensusMessage CreateSignedHeaderMessage(BlockHeader header, Signature signature)
         {
             var message = new ConsensusMessage
