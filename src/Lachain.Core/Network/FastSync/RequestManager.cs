@@ -92,7 +92,6 @@ namespace Lachain.Core.Network.FastSync
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandleResponse(List<UInt256> hashBatch, List<ulong> batchId, List<TrieNodeInfo> response, ECDSAPublicKey? peer)
         {
-            string peerPubkey = (peer is null) ? "null" : peer.ToHex();
             List<(UInt256, ulong)> successfulHashes = new List<(UInt256, ulong)>();
             List<(UInt256, ulong)> failedHashes = new List<(UInt256, ulong)>();
             List<TrieNodeInfo> successfulNodes = new List<TrieNodeInfo>();
@@ -104,18 +103,6 @@ namespace Lachain.Core.Network.FastSync
                 {
                     failedHashes.Add((hashBatch[i], batchId[i]));
                 }
-            }
-            else
-            {
-                for (var i = 0; i < hashBatch.Count; i++)
-                {
-                    var hash = hashBatch[i];
-                    var batch = batchId[i];
-                    var node = response[i];
-                    // check if actually the node's content produce desired hash or data is corrupted
-                    if (_repository.IsConsistent(node, out var nodeHash) && hash.Equals(nodeHash))
-                    {
-                        successfulHashes.Add((hash, batch));
                         successfulNodes.Add(node);
                     }
                     else

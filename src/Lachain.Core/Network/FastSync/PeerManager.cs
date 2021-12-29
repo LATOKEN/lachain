@@ -70,6 +70,5 @@ namespace Lachain.Core.Network.FastSync
         {
             return _isPeerBusy.Count;
         }
-
     }
 }
