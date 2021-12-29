@@ -153,6 +153,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
             Assert.AreEqual(txCountBefore, 0);
 
+            TransactionUtils.SetChainId(41);
             Execute_dummy_transaction(true);
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
@@ -179,12 +180,22 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
-        // Changed GetCode to public
-        public void Test_GetCode_latest()
+        // Changed GetTransactionCount to public
+        public void Test_GetTransactionCount_blockId()
         {
-            var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
-            var adCode = _apiService!.GetCode(address, "latest");
-            Assert.AreEqual(adCode, "");
+
+            var rawTx2 = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
+            var ethTx = new TransactionChainId(rawTx2.HexToBytes());
+            var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
+
+            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
+            Assert.AreEqual(txCountBefore, 0);
+
+            TransactionUtils.SetChainId(41);
+            Execute_dummy_transaction(true);
+
+            var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "0x1");
+            Assert.AreEqual(txCountAfter, 1);
         }
 
         [Test]
