@@ -158,7 +158,7 @@ namespace Lachain.Storage.State
 
         public void Commit(RocksDbAtomicWrite batch)
         {
-
+            throw new Exception("Invalid function used");
         }
 
         public void RollbackTo(IBlockchainSnapshot snapshot)
