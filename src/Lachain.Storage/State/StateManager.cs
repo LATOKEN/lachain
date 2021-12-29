@@ -20,7 +20,7 @@ namespace Lachain.Storage.State
         private readonly ISnapshotManager<IValidatorSnapshot> _validatorManager;
 
         private readonly Mutex _globalMutex = new Mutex(false);
-        public IRocksDbContext _dbContext;
+        private IRocksDbContext _dbContext;
 
         public StateManager(IStorageManager storageManager, IRocksDbContext dbContext)
         {

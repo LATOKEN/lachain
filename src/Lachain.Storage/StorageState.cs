@@ -106,10 +106,8 @@ namespace Lachain.Storage
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Commit(RocksDbAtomicWrite batch)
         {
-        //    using var tx = _repositoryManager.CreateTransaction();
             _trieMap.Checkpoint(CurrentVersion, batch);
             _repositoryManager.SetState(CurrentVersion, batch);
-        //    tx.Commit();
             return CurrentVersion;
         }
 
