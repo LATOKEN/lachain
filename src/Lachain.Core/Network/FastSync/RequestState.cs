@@ -1,76 +1,35 @@
+using System.Collections.Generic;
+using System.Text;
+using System.Net;
+using System.IO;
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using Lachain.Proto;
-using Lachain.Utility.Serialization;
-
+using System.Linq;
 
 namespace Lachain.Core.Network.FastSync
 {
-    public class RequestState
+    class RequestState
     {
         // This class stores the State of the request.
-
-        // Common info for all type of requests
-        public Peer _peer;
-        public RequestType _type;
-        public DateTime _start;
-        // _requestId is generated randomly so that we can check if we got the reply that we wanted from peer.
-        // If the message from peer to peer cannot be intercepted then this will work.
-        public ulong _requestId;
-        public object _peerHasReply = new object();
-        
-        // _fromBlock and _toBlock indicate the range to request blocks in a batch
-        public ulong? _fromBlock;
-        public ulong? _toBlock;
-
-        // _nodeBatch is the hash of trie nodes in a batch and _batchId is their corresponding batch id
-        public List<UInt256>? _nodeBatch;
-        public List<ulong>? _batchId;
-
-        // _blockNumber and _trieName are used to fetch checkpoint state hash
-        // _blockNumber is also used to fetch checkpoint block.
-        public ulong? _blockNumber;
-        public string? _trieName;
-        public RequestState(RequestType type, ulong fromBlock, ulong toBlock, Peer peer)
+        const int BUFFER_SIZE = 1024 * 128;
+        public StringBuilder requestData;
+        public byte[] BufferRead;
+        public HttpWebRequest request;
+        public HttpWebResponse response;
+        public Stream streamResponse;
+        public Peer peer;
+        public List<string> batch;
+        public uint type;
+        public DateTime start;
+        public RequestState()
         {
-            Initialize();
-            _fromBlock = fromBlock;
-            _toBlock = toBlock;
-            _type = type;
-            _peer = peer;
-        }
-        public RequestState(RequestType type, List<UInt256> nodeBatch, List<ulong> batchId, Peer peer)
-        {
-            Initialize();
-            _nodeBatch = nodeBatch;
-            _batchId = batchId;
-            _type = type;
-            _peer = peer;
-        }
-        public RequestState(RequestType type, ulong blockNumber, Peer peer)
-        {
-            Initialize();
-            _blockNumber = blockNumber;
-            _type = type;
-            _peer = peer;
-        }
-        public RequestState(RequestType type, ulong blockNumber, string trieName, Peer peer)
-        {
-            Initialize();
-            _blockNumber = blockNumber;
-            _trieName = trieName;
-            _type = type;
-            _peer = peer;
-        }
-
-        private void Initialize()
-        {
-            _start = DateTime.Now;
-            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
-            var random = new byte[8];
-            rng.GetBytes(random);
-            _requestId = SerializationUtils.ToUInt64(random);
+            BufferRead = new byte[BUFFER_SIZE];
+            requestData = new StringBuilder("");
+            request = null;
+            streamResponse = null;
+            peer = null;
+            batch = null;
+            type = 1;
         }
     }
 }
