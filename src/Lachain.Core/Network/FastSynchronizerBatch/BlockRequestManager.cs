@@ -1,135 +1,108 @@
-/*
-    Here we are downloading block headers. This part is quite slow. Needs investigation.
-*/
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
-using Lachain.Core.Blockchain.Error;
-using Lachain.Core.Blockchain.Interface;
-using Lachain.Logger;
-using Lachain.Proto;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
-
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Storage.State;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    public class BlockRequestManager : IBlockRequestManager
+    class BlockRequestManager
     {
-        private static readonly ILogger<BlockRequestManager> Logger = LoggerFactory.GetLoggerForClass<BlockRequestManager>();
+ //       private Queue<string> _queue = new Queue<string>();
+        private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private SortedSet<ulong> nextBlocksToDownload = new SortedSet<ulong>();
-        private IDictionary<ulong, Block> downloaded = new Dictionary<ulong,Block>();
-        private uint _batchSize = 1000;
-        private ulong _done = 0;
-        private ulong _maxBlock = 0;
-        private readonly IFastSyncRepository _repository;
-        private readonly IBlockManager _blockManager;
-        public ulong MaxBlock => _maxBlock;
+        private IDictionary<ulong, string> downloaded = new Dictionary<ulong,string>();
+        private uint _batchSize = 40;
+        ulong _done = 0;
+        ulong _maxBlock;
 
-        public BlockRequestManager(IFastSyncRepository repository, IBlockManager blockManager)
+        IBlockSnapshot _blockSnapshot;
+        NodeStorage _nodeStorage; 
+
+        public BlockRequestManager(IBlockSnapshot blockSnapshot, ulong maxBlock, NodeStorage nodeStorage)
         {
-            _repository = repository;
-            _blockManager = blockManager;
+            _nodeStorage = nodeStorage;
+            _blockSnapshot = blockSnapshot;
+            _done = 0;
+            _maxBlock = maxBlock;
+            for(ulong i=1; i<=_maxBlock; i++) nextBlocksToDownload.Add(i);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Initialize()
+        public bool TryGetBatch(out List<string> batch)
         {
-            _done = _repository.GetCurrentBlockHeight();
-            if (_maxBlock != 0)
-                throw new Exception("Trying to initialize second time.");
-            _maxBlock = _repository.GetCheckpointBlockNumber();
-            if (_maxBlock < _done) throw new ArgumentOutOfRangeException("Max block is less then current block height");
-            for (ulong i = _done+1; i <= _maxBlock; i++) nextBlocksToDownload.Add(i);
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetBatch(out ulong fromBlock, out ulong toBlock)
-        {
-            fromBlock = _done + 1;
-            toBlock = _done;
-            if (nextBlocksToDownload.Count == 0) return false;
-            fromBlock = toBlock = nextBlocksToDownload.Min;
-            nextBlocksToDownload.Remove(fromBlock);
-            for(var i = 1; i < _batchSize && nextBlocksToDownload.Count > 0; i++)
+            batch = new List<string>();
+            lock(this)
             {
-                ulong blockId = nextBlocksToDownload.Min;
-                if (blockId != toBlock + 1) break;
-                toBlock = blockId;
-                nextBlocksToDownload.Remove(blockId);
-            } 
+                for(ulong i=0; i<_batchSize && nextBlocksToDownload.Count>0; i++)
+                {
+                    ulong blockId = nextBlocksToDownload.Min();
+                    _pending.Add(blockId);
+                    batch.Add(HexUtils.ToHex(blockId));
+                    nextBlocksToDownload.Remove(blockId);
+                } 
+            }
+            if (batch.Count == 0) return false;
+
             return true;
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Done()
         {
-            return _done == _maxBlock;
+            return _done==_maxBlock && _pending.Count==0;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public void HandleResponse(ulong fromBlock, ulong toBlock, List<Block> response, ECDSAPublicKey? peer)
+
+        public void HandleResponse(List<string> batch, JArray response)
         {
-            string peerPubkey = (peer is null) ? "null" : peer.ToHex();
-            try
+            if(batch.Count>0) Console.WriteLine("First Node in this batch: "+Convert.ToUInt64(batch[0], 16));
+
+            if(batch.Count != response.Count)
             {
-                if(fromBlock <= toBlock) Logger.LogInformation("First Node in this batch: " + fromBlock);
-                if(ExpectedBlockCount(fromBlock, toBlock) != response.Count) throw new Exception("Invalid response");
-                for(int i = 0; i < response.Count; i++)
+                lock(this)
                 {
-                    ulong blockId = (ulong) i + fromBlock;
-                    var block = response[i];
-                    if (block is null)
+                    foreach(var block in batch)
                     {
-                        Logger.LogWarning($"Got null block from peer {peerPubkey}");
-                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                        ulong blockId = Convert.ToUInt64(block, 16);
+                        if(_pending.Contains(blockId))
+                        {
+                            _pending.Remove(blockId);
+                            nextBlocksToDownload.Add(blockId);
+                        }
                     }
-                    if (blockId != block.Header.Index)
-                    {
-                        Logger.LogWarning($"Got invalid block index from peer {peerPubkey}");
-                        throw new Exception($"Invalid response from peer {peerPubkey}");
-                    }
-                    var result = VerifySignatures(block);
-                    if (result != OperatingError.Ok)
-                    {
-                        Logger.LogDebug($"Block Verification failed with: {result} from peer {peerPubkey}");
-                        throw new Exception($"Block verification failed from peer {peerPubkey}");
-                    }
-                }
-                foreach (var block in response)
-                {
-                    downloaded[block.Header.Index] = block;
-                }
-                AddToDB();
-            }
-            catch (Exception)
-            {
-                for (var blockId = fromBlock; blockId <= toBlock; blockId++)
-                {
-                    nextBlocksToDownload.Add(blockId);
                 }
             }
+            else{
+                lock(this)
+                {
+                    for(int i=0; i<batch.Count; i++)
+                    {
+                        ulong blockId = Convert.ToUInt64(batch[i], 16);
+                        if(_pending.Contains(blockId))
+                        {
+                            _pending.Remove(blockId);
+                             downloaded[blockId] = (string)response[i]; 
+                        }
+                    }
+                }
+            }
+            AddToDB();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignatures(Block? block)
+        void AddToDB()
         {
-            if (block is null) return OperatingError.InvalidBlock;
-            // Setting checkValidatorSet = false because we don't have validator set.
-            return _blockManager.VerifySignatures(block, false);
-        }
-
-        public static int ExpectedBlockCount(ulong fromBlock, ulong toBlock)
-        {
-            return (int) (toBlock - fromBlock + 1);
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private void AddToDB()
-        {
-            while(downloaded.TryGetValue(_done+1, out var block))
+            while(downloaded.TryGetValue(_done+1, out var blockRawHex))
             {
-                _repository.AddBlock(block);
+                _nodeStorage.AddBlock(_blockSnapshot, blockRawHex);
                 _done++;
-                
                 downloaded.Remove(_done);
             }
     /*        if(downloaded.Count>0) Console.WriteLine("More blocks downloaded. Done: " + 

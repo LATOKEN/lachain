@@ -1,168 +1,173 @@
-/*
-    It provides the downloader which nodes to download and also processes the downloaded nodes.
-*/
-
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
-using Lachain.Logger;
-using Lachain.Proto;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
-
+using Lachain.Core.RPC.HTTP.Web3;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    public class RequestManager : IRequestManager
+    class RequestManager
     {
-        private static readonly ILogger<RequestManager>
-            Logger = LoggerFactory.GetLoggerForClass<RequestManager>();
-        private readonly IFastSyncRepository _repository;
+ //       private Queue<string> _queue = new Queue<string>();
+        private NodeStorage _nodeStorage;
+        private uint _batchSize = 200;
 
-        // how many nodes we should ask for in every request
-        private uint _batchSize = 500;
+        HybridQueue _hybridQueue;
+        public int maxQueueSize = 0;
 
-        private readonly IHybridQueue _hybridQueue;
-
-        public RequestManager(IFastSyncRepository repository, IHybridQueue hybridQueue)
+        public RequestManager(NodeStorage nodeStorage, HybridQueue hybridQueue)
         {
-            _repository = repository;
+            _nodeStorage = nodeStorage;
             _hybridQueue = hybridQueue;
         }
 
-        public bool TryGetHashBatch(out List<UInt256> hashBatch, out List<ulong> batchId)
+        public bool TryGetHashBatch(out List<string> hashBatch)
         {
-            hashBatch = new List<UInt256>();
-            batchId = new List<ulong>();
+            hashBatch = new List<string>();
             lock(this)
             {
-                while (hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out var hash, out var batch))
+                string hash;
+                while(hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out hash) )
                 {
-                    hashBatch.Add(hash!);
-                    batchId.Add(batch!.Value);
+                //    Console.WriteLine("In request manager: got hash: "+ hash);
+                    hashBatch.Add(hash);
                 }
             }
-            if (hashBatch.Count == 0)
-            {
+            if (hashBatch.Count == 0){
+            //    Console.WriteLine("could not get hash");
                 return false;
             }
 
             return true;
         }
         
-        // it is used to check if downloading the current tree is complete
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Done()
         {
             return _hybridQueue.Complete();
         }
 
-        // useful for debugging purpose, use it to check if some tree is downloaded properly
         public bool CheckConsistency(ulong rootId)
         {
-            if(rootId == 0) return true;
+            if(rootId==0) return true;
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(rootId);
             while(queue.Count > 0)
             {
                 ulong cur = queue.Dequeue();
-                Logger.LogTrace("id: " + cur);
-                if(_repository.TryGetNode(cur, out IHashTrieNode? trieNode))
+                System.Console.WriteLine("id: " + cur);
+            //    System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
+                if(_nodeStorage.TryGetNode(cur, out IHashTrieNode? trieNode))
                 {
-                    switch (trieNode)
+                    JObject node = Web3DataFormatUtils.Web3Node(trieNode);
+                //    Console.WriteLine("printing Node");
+                //    Console.WriteLine(node);
+                    var nodeType = (string)node["NodeType"];
+            //        if (nodeType == null) return false; 
+
+                    if (nodeType.Equals("0x1")) // internal node 
                     {
-                        case InternalNode node:
-                            foreach(var childId in node.Children)
-                            {
-                                Logger.LogTrace("Enqueueing child: "+ childId);
-                                queue.Enqueue(childId);
-                            }
-                            break;
+                        var jsonChildren = (JArray)node["Children"];
+                        foreach (var jsonChild in jsonChildren)
+                        {
+                            ulong childId = Convert.ToUInt64((string)jsonChild,16);
+                            Console.WriteLine("Enqueueing child: "+ childId);
+                            queue.Enqueue(childId);
+                        }
                     }
                 }
                 else
                 {
-                    Logger.LogTrace("Not Found: " + cur);
+                    Console.WriteLine("Not Found: " + cur);
                     return false;
                 }
             }
             return true;
         }
 
-        // "response" is received from a peer for the "hashBatch" of nodes
-        public void HandleResponse(List<UInt256> hashBatch, List<ulong> batchId, List<TrieNodeInfo> response, ECDSAPublicKey? peer)
+        public void HandleResponse(List<string> hashBatch, JArray response)
         {
-            string peerPubkey = (peer is null) ? "null" : peer.ToHex();
-            List<(UInt256, ulong)> successfulHashes = new List<(UInt256, ulong)>();
-            List<(UInt256, ulong)> failedHashes = new List<(UInt256, ulong)>();
-            List<TrieNodeInfo> successfulNodes = new List<TrieNodeInfo>();
+            List<string> successfulHashes = new List<string>();
+            
+            List<string> failedHashes = new List<string>();
+            
+            List<JObject> successfulNodes = new List<JObject>();
 
-            // discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
             if (hashBatch.Count != response.Count)
             {
-                for (int i = 0 ; i < hashBatch.Count; i++)
-                {
-                    failedHashes.Add((hashBatch[i], batchId[i]));
-                }
+                failedHashes = hashBatch;
             }
             else
             {
                 for (var i = 0; i < hashBatch.Count; i++)
                 {
                     var hash = hashBatch[i];
-                    var batch = batchId[i];
-                    var node = response[i];
-                    // check if actually the node's content produce desired hash or data is corrupted
-                    if (_repository.IsConsistent(node, out var nodeHash) && hash.Equals(nodeHash))
+                    JObject node = (JObject)response[i];
+                    if (_nodeStorage.IsConsistent(node))
                     {
-                        successfulHashes.Add((hash, batch));
+                        successfulHashes.Add(hash);
                         successfulNodes.Add(node);
                     }
                     else
                     {
-                        failedHashes.Add((hash, batch));
+                        failedHashes.Add(hash);
                     }
                 }
             }
             lock (this)
             {
-                Logger.LogInformation($"Got {failedHashes.Count} failed response and {successfulHashes.Count} response out of"
-                    + $" {hashBatch.Count} requests from peer {peerPubkey}");
-                foreach (var (hash, batch) in failedHashes)
+                foreach (var hash in failedHashes)
                 {
-                    _hybridQueue.AddToOutgoingQueue(hash, batch);
+                    if (!_hybridQueue.isPending(hash))
+                    {
+                        // do nothing, this request was probably already served
+                    }
+                    else
+                    {
+                        _hybridQueue.Add(hash);   
+                    }
                 }
 
 
                 for(var i = 0; i < successfulHashes.Count; i++)
                 {
-                    var (hash, batch) = successfulHashes[i];
+                    var hash = successfulHashes[i];
                     var node = successfulNodes[i];
-                    switch (node!.MessageCase)
+                    if (!_hybridQueue.isPending(hash))
                     {
-                        // for internal node, we need to extract it's children and put it in the queue for downloading them next
-                        case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
-                            var childrenHashes = node.InternalNodeInfo.ChildrenHash.ToList();
-                            foreach (var childHash in childrenHashes)
-                            {
-                                _hybridQueue.AddToIncomingQueue(childHash);
-                            }
-                            break;
+                        // do nothing, this request was probably already served
                     }
+                    else
+                    {
+                        var nodeType = (string)node["NodeType"];
+                        if (nodeType == null) continue;
 
-                    // sending the node to repository for inserting it to database
-                    // (maybe temporarily it will reside in memory but flushed to db later)
-                    bool res = _repository.TryAddNode(node);
-                    // informing the hybridQueue that node is received successfully
-                    _hybridQueue.ReceivedNode(hash, batch);
+                        if (nodeType.Equals("0x1")) // internal node 
+                        {
+                            var jsonChildren = (JArray)node["ChildrenHash"];
+                            foreach (var jsonChild in jsonChildren)
+                            {
+                                _hybridQueue.Add((string)jsonChild);
+                            }
+                        }
+
+                        bool res = _nodeStorage.TryAddNode(node);
+                        _hybridQueue.ReceivedNode(hash);
+                    }
                 }
             }
         }
-        public void AddHash(UInt256 hash)
+        public void AddHash(string hash)
         {
             lock(_hybridQueue)
             {
-                _hybridQueue.AddToIncomingQueue(hash);
+                _hybridQueue.Add(hash);
             }
         }
     }
