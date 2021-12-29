@@ -143,7 +143,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         // Changed GetTransactionCount to public
-        public void Test_GetTransactionCount()
+        public void Test_GetTransactionCount_latest()
         {
 
             var rawTx2 = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
