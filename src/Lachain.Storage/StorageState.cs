@@ -104,12 +104,12 @@ namespace Lachain.Storage
         public UInt256 Hash => _trieMap.GetHash(CurrentVersion);
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ulong Commit()
+        public ulong Commit(RocksDbAtomicWrite batch)
         {
-            using var tx = _repositoryManager.CreateTransaction();
-            _trieMap.Checkpoint(CurrentVersion, tx);
-            _repositoryManager.SetState(CurrentVersion, tx);
-            tx.Commit();
+        //    using var tx = _repositoryManager.CreateTransaction();
+            _trieMap.Checkpoint(CurrentVersion, batch);
+            _repositoryManager.SetState(CurrentVersion, batch);
+        //    tx.Commit();
             return CurrentVersion;
         }
 

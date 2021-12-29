@@ -56,9 +56,9 @@ namespace Lachain.Storage.State
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Commit()
+        public void Commit(RocksDbAtomicWrite batch)
         {
-            _lastApprovedSnapshot.Commit();
+            _lastApprovedSnapshot.Commit(batch);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
