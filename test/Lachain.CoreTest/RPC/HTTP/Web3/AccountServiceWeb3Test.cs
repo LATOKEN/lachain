@@ -90,13 +90,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
 
-            //// set chainId from config
-            //if (TransactionUtils.ChainId == 0)
-            //{
-            //    var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-            //    TransactionUtils.SetChainId((int)chainId!);
-            //}
-
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
 
