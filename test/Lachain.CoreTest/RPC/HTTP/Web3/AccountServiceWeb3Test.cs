@@ -224,6 +224,41 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(adCode_bytes, byteCode);
         }
 
+        [Test]
+        // Changed GetCode to public
+        public void Test_GetCode_earliest()
+        {
+            TransactionUtils.SetChainId(41);
+            Execute_dummy_transaction(true);
+
+            var address = "0x9210567c1f79e9e9c3634331158d3143e572c001";
+
+            var adCode = _apiService!.GetCode(address, "earliest");
+            Assert.AreEqual(adCode, "");
+        }
+
+        [Test]
+        // Changed GetCode to public
+        public void Test_GetCode_latest()
+        {
+            var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
+            var adCode = _apiService!.GetCode(address, "latest");
+            Assert.AreEqual(adCode, "");
+        }
+
+        [Test]
+        // Changed GetCode to public
+        public void Test_GetCode_blockId()
+        {
+            TransactionUtils.SetChainId(41);
+            Execute_dummy_transaction(true);
+
+            var address = "0x9210567c1f79e9e9c3634331158d3143e572c001";
+
+            var adCode = _apiService!.GetCode(address, "0x1");
+            Assert.AreEqual(adCode, "");
+        }
+
         // Below methods Execute a Transaction
         private void Execute_dummy_transaction(bool generateblock, string rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0")
         {
