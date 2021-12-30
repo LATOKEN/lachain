@@ -249,8 +249,6 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
-
-
         private void RemoveTxes(IReadOnlyCollection<TransactionReceipt> txes)
         {
             foreach (var tx in txes)

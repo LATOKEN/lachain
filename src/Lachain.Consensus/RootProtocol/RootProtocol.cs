@@ -151,13 +151,20 @@ namespace Lachain.Consensus.RootProtocol
                         foreach(var rawShare in rawShares)
                         {
                             // this rawShare may be malicious
-                            // we need to change ToMessageArray to discard this if any issue arises during decoding
-                            var contributions = rawShare.ToBytes().ToMessageArray<TransactionReceipt>();
-                            foreach(var receipt in contributions)
+                            // we may need to discard this if any issue arises during decoding
+                            try 
                             {
-                                receipts.Add(receipt);
+                                var contributions = rawShare.ToBytes().ToMessageArray<TransactionReceipt>();
+                                foreach(var receipt in contributions)
+                                    receipts.Add(receipt);
+                            }
+                            catch(Exception e)
+                            {
+                                Logger.LogError($"Skipped a rawShare due to exception: {e.Message}");
+                                Logger.LogError($"One of the validators might be malicious!!!");
                             }
                         }
+
                         _receipts = receipts.Distinct().ToArray();
 
                         Logger.LogTrace($"Collected {_receipts.Length} transactions in total");
