@@ -10,6 +10,7 @@ using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
+using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Pool
@@ -22,6 +23,7 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
+        private readonly StateManager _stateManager;
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -41,7 +43,8 @@ namespace Lachain.Core.Blockchain.Pool
             ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
-            IBlockManager blockManager
+            IBlockManager blockManager,
+            StateManager stateManager
         )
         {
             _transactionVerifier = transactionVerifier;
@@ -50,6 +53,7 @@ namespace Lachain.Core.Blockchain.Pool
             _blockManager = blockManager;
             _transactionsQueue = new HashSet<TransactionReceipt>();
             _relayQueue = new HashSet<TransactionReceipt>();
+            _stateManager = stateManager;
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
@@ -129,6 +133,11 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt receipt, bool notify = true)
         {
+            //check if balance from "from" address is > tx.gasPrice * tx.gasLimit
+            var addressUint160 = receipt.Transaction.From.ToHex().HexToBytes().ToUInt160();
+
+            var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
+
             if (receipt is null)
                 throw new ArgumentNullException(nameof(receipt));
 
