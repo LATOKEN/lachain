@@ -11,6 +11,7 @@ using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Pool
@@ -23,7 +24,7 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly StateManager _stateManager;
+        private readonly IStateManager _stateManager;
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -44,7 +45,7 @@ namespace Lachain.Core.Blockchain.Pool
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            StateManager stateManager
+            IStateManager stateManager
         )
         {
             _transactionVerifier = transactionVerifier;
@@ -133,11 +134,7 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt receipt, bool notify = true)
         {
-            //check if balance from "from" address is > tx.gasPrice * tx.gasLimit
-            var addressUint160 = receipt.Transaction.From.ToHex().HexToBytes().ToUInt160();
-
-            var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
-
+         
             if (receipt is null)
                 throw new ArgumentNullException(nameof(receipt));
 
@@ -154,6 +151,16 @@ namespace Lachain.Core.Blockchain.Pool
                 if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
+            }
+
+            //check if balance from "from" address is > tx.gasPrice * tx.gasLimit
+            var address = receipt.Transaction.From;
+            var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(address);
+            var fee = new Money(receipt.Transaction.GasLimit * receipt.Transaction.GasPrice);
+
+            if (balance.CompareTo(fee) < 0)
+            {
+                return OperatingError.InsufficientBalance;
             }
 
             var result = _transactionManager.Verify(receipt);
