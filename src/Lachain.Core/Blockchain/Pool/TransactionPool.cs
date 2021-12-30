@@ -229,7 +229,6 @@ namespace Lachain.Core.Blockchain.Pool
                 
                 result.Add(_transactions[hash]);
             }
-
             _lastProposed = new List<TransactionReceipt>(result);
             foreach(var tx in result)
             {
