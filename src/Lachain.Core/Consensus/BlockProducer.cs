@@ -73,7 +73,8 @@ namespace Lachain.Core.Consensus
                 return null;
             }
 
-            // TODO: need to think about if we should verify transactions here...
+            // we don't need to verify receipts here
+            // verfification will be done during emulation
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
