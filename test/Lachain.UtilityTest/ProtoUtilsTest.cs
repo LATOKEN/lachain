@@ -65,7 +65,7 @@ namespace Lachain.UtilityTest
             }
             catch(Exception e)
             {
-                // adding junk at the end should throw Exception;
+                // random bytes should not be decoded and throw an exception
                 caughtException = true;
             }
             Assert.IsTrue(caughtException == true);
