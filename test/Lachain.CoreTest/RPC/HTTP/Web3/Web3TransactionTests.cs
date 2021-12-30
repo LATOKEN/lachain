@@ -104,12 +104,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager = _container.Resolve<IBlockManager>();
             _configManager = _container.Resolve<IConfigManager>();
             //_privateWallet = _container.Resolve<IPrivateWallet>();
-            // set chainId from config
-            if (TransactionUtils.ChainId == 0)
-            {
-                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
-            }
+            //// set chainId from config
+            //if (TransactionUtils.ChainId == 0)
+            //{
+            //    var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+            //    TransactionUtils.SetChainId((int)chainId!);
+            //}
 
         }
 
@@ -125,13 +125,15 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         
         
         [Test]
-        [Ignore("fix it")]
+        //[Ignore("fix it")]
         public void Test_SendRawTransactionSimpleSend()
         {
+            TransactionUtils.SetChainId(41);
+
             var rawTx2 = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var t = _apiService!.MakeTransaction(ethTx);
-            
+
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
             var receipt = _transactionSigner.Sign(t, keyPair);
@@ -255,9 +257,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed GetTransactionReceipt from private to public
         public void Test_GetTransactionReceipt()
         {
+            TransactionUtils.SetChainId(30);
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
+            var rawTx = "0xf87080840dfb38d98405f5e1009471b293c2593d4ff9b534b2e691f56c1d18c95a178b084595161401484a0000008060a078fafedfc2bc0837406e4bdee10bb1b3da92b777d98ebad79d9103530fa97aaea010ba3338224dab908401ced13041c9656fcc4a030b31f0baa3800a994c85bd63";
 
             var txHashSent = Execute_dummy_transaction(rawTx);
             Console.WriteLine($"tx sent: {txHashSent}");
@@ -273,9 +276,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed GetTransactionByHash from private to public
         public void Test_GetTransactionByHash()
         {
+            TransactionUtils.SetChainId(30);
+
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
+            var rawTx = "0xf87080840dfb38d98405f5e1009471b293c2593d4ff9b534b2e691f56c1d18c95a178b084595161401484a0000008060a078fafedfc2bc0837406e4bdee10bb1b3da92b777d98ebad79d9103530fa97aaea010ba3338224dab908401ced13041c9656fcc4a030b31f0baa3800a994c85bd63";
 
             var txHashSent = Execute_dummy_transaction(rawTx);
             Console.WriteLine($"tx sent: {txHashSent}");
