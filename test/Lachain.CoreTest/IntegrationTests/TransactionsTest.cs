@@ -1,28 +1,49 @@
 using System.IO;
+using Lachain.Proto;
+
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
+using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
-using Lachain.Networking;
-using Lachain.Proto;
-using Lachain.Utility;
+using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using NUnit.Framework;
+
+using Lachain.Utility;
+using Lachain.Networking;
+using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
     public class TransactionsTest
     {
+        private IStateManager? _stateManager;
+        private IContainer? _container;
+
         [SetUp]
         public void Setup()
         {
+            TestUtils.DeleteTestChainData();
+
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+
+            _container = containerBuilder.Build();
+            _stateManager = _container.Resolve<IStateManager>();
+
             TestUtils.DeleteTestChainData();
         }
 
@@ -43,7 +64,7 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 To = "0xB8CD3195faf7da8a87A2816B9b4bBA2A19D25dAb".HexToUInt160(),
                 From = keyPair.PublicKey.GetAddress(),
-                GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
+                GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
                 GasLimit = 100000000,
                 Nonce = 0,
                 Value = Money.Parse("20.0").ToUInt256()
@@ -72,25 +93,20 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_Tx_Pool_Adding()
         {
-            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
-                new RunOptions()
-            ));
-            containerBuilder.RegisterModule<BlockchainModule>();
-            containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<StorageModule>();
-            using var container = containerBuilder.Build();
 
-            var txPool = container.Resolve<ITransactionPool>();
+            var txPool = _container.Resolve<ITransactionPool>();
+
             // set chainId from config
             if (TransactionUtils.ChainId == 0)
             {
-                var configManager = container.Resolve<IConfigManager>();
+                var configManager = _container.Resolve<IConfigManager>();
                 var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 TransactionUtils.SetChainId((int)chainId!);
             }
 
             var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+
             var result = txPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
 
@@ -98,9 +114,11 @@ namespace Lachain.CoreTest.IntegrationTests
             Assert.AreEqual(OperatingError.AlreadyExists, result);
 
             var tx2 = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx2.Transaction.From, Money.Parse("1000"));
+
             tx2.Transaction.Nonce++;
             result = txPool.Add(tx2);
-            Assert.AreEqual(OperatingError.InvalidNonce, result); 
+            Assert.AreEqual(OperatingError.InvalidNonce, result);
 
             /* TODO: maybe we should fix this strange behaviour */
             var tx3 = TestUtils.GetRandomTransaction();
