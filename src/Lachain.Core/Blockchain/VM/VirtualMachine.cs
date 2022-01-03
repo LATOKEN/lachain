@@ -24,11 +24,11 @@ namespace Lachain.Core.Blockchain.VM
         private static readonly ILogger<VirtualMachine> Logger = LoggerFactory.GetLoggerForClass<VirtualMachine>();
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public static bool VerifyContract(byte[] contractCode)
+        public static bool VerifyContract(byte[] contractCode, bool ignoreEndingCode)
         {
             try
             {
-                var config = new CompilerConfiguration();
+                var config = new CompilerConfiguration() {IgnoreEndingCode = ignoreEndingCode};
                 using var stream = new MemoryStream(contractCode);
                 Compile.FromBinary<dynamic>(stream, config)(BlockchainInterface.GetFunctionImports());
                 return true;
