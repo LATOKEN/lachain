@@ -28,6 +28,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockManager, BlockManager>();
             containerBuilder.RegisterSingleton<IContractRegisterer, ContractRegisterer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
+            containerBuilder.RegisterSingleton<INonceCalculator, NonceCalculator>();
             /* VM */
             containerBuilder.RegisterSingleton<IVirtualMachine, VirtualMachine>();
             containerBuilder.RegisterSingleton<IContractInvoker, ContractInvoker>();
