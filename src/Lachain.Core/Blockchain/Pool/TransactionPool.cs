@@ -229,20 +229,6 @@ namespace Lachain.Core.Blockchain.Pool
                 
                 result.Add(_transactions[hash]);
             }
-<<<<<<< HEAD
-=======
-        }
-        private IReadOnlyCollection<TransactionReceipt> Take(HashSet<UInt256> txHashesTaken)
-        {
-            List<TransactionReceipt> result = new List<TransactionReceipt>();
-            foreach(var hash in txHashesTaken)
-            {
-                if(!_transactions.ContainsKey(hash)) 
-                    throw new Exception("Transaction does not exist in the _transaction hashset");
-                
-                result.Add(_transactions[hash]);
-            }
->>>>>>> a41dd0bc69b9b2a7a4e393a99d38306914707855
 
             _lastProposed = new List<TransactionReceipt>(result);
             foreach(var tx in result)
@@ -392,11 +378,7 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 _transactionsQueue.Remove(tx);
                 _relayQueue.Remove(tx);
-<<<<<<< HEAD
                 _nonceCalculator.TryRemove(tx);
-=======
-                RemoveFromTransactionPerAddress(tx);
->>>>>>> a41dd0bc69b9b2a7a4e393a99d38306914707855
             }
         }
 
