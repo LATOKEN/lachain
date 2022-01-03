@@ -70,5 +70,10 @@ namespace Lachain.Core.Blockchain.Pool
             
             return nonces.Max.Key;
         }
+
+        public void Clear()
+        {
+            _noncePerAddress.Clear();
+        }
    }
 }
