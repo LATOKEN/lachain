@@ -57,7 +57,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             TestUtils.DeleteTestChainData();
 
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
                 new RunOptions()
             ));
 
