@@ -20,6 +20,7 @@ using NUnit.Framework;
 using Lachain.Utility;
 using Lachain.Networking;
 using Transaction = Lachain.Proto.Transaction;
+using AustinHarris.JsonRpc;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
@@ -27,6 +28,8 @@ namespace Lachain.CoreTest.IntegrationTests
     {
         private IStateManager? _stateManager;
         private IContainer? _container;
+        private ITransactionPool? _transactionPool;
+        private IConfigManager? _configManager;
 
         [SetUp]
         public void Setup()
@@ -34,22 +37,39 @@ namespace Lachain.CoreTest.IntegrationTests
             TestUtils.DeleteTestChainData();
 
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
                 new RunOptions()
             ));
+
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
 
             _container = containerBuilder.Build();
+
+            _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
 
-            TestUtils.DeleteTestChainData();
+            _transactionPool = _container.Resolve<ITransactionPool>();
+
+            ServiceBinder.BindService<GenericParameterAttributes>();
+
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var configManager = _container.Resolve<IConfigManager>();
+                var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
         }
 
         [TearDown]
         public void Teardown()
         {
+            var sessionId = Handler.DefaultSessionId();
+            Handler.DestroySession(sessionId);
+
+            _container?.Dispose();
             TestUtils.DeleteTestChainData();
         }
 
@@ -94,36 +114,26 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_Tx_Pool_Adding()
         {
 
-            var txPool = _container.Resolve<ITransactionPool>();
-
-            // set chainId from config
-            if (TransactionUtils.ChainId == 0)
-            {
-                var configManager = _container.Resolve<IConfigManager>();
-                var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
-            }
-
             var tx = TestUtils.GetRandomTransaction();
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
 
-            var result = txPool.Add(tx);
+            var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
 
-            result = txPool.Add(tx);
+            result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.AlreadyExists, result);
 
             var tx2 = TestUtils.GetRandomTransaction();
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx2.Transaction.From, Money.Parse("1000"));
 
             tx2.Transaction.Nonce++;
-            result = txPool.Add(tx2);
+            result = _transactionPool.Add(tx2);
             Assert.AreEqual(OperatingError.InvalidNonce, result);
 
             /* TODO: maybe we should fix this strange behaviour */
             var tx3 = TestUtils.GetRandomTransaction();
             tx3.Transaction.From = UInt160Utils.Zero;
-            result = txPool.Add(tx3);
+            result = _transactionPool.Add(tx3);
             Assert.AreEqual(OperatingError.Ok, result);
         }
     }
