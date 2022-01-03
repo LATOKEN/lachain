@@ -1,11 +1,15 @@
-﻿﻿using System.Collections.Generic;
+﻿﻿using System;
+using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using System.Linq;
+
 
 namespace Lachain.Core.BlockchainFilter
 {
     public class BlockchainEventFilterParams
     {
+        
         public BlockchainEvent EventType;
         public ulong LastSyncedBlock;
 
@@ -34,10 +38,12 @@ namespace Lachain.Core.BlockchainFilter
             PollingTime = TimeUtils.CurrentTimeMillis();
         }
 
-        public BlockchainEventFilterParams(BlockchainEvent eventType, List<UInt256> txHashes)
+        public BlockchainEventFilterParams(BlockchainEvent eventType, UInt256[] txHashes)
         {
             EventType = eventType;
-            PendingTransactionList = new List<UInt256>(txHashes);
+            // sorting the tx hashes for further optimization
+            Array.Sort(txHashes, (x,y) => UInt256Utils.Compare(x,y));
+            PendingTransactionList = new List<UInt256>(txHashes.ToList());
             PollingTime = TimeUtils.CurrentTimeMillis();
         }
     }

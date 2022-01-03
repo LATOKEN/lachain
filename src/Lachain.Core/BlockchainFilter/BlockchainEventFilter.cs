@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -45,7 +46,7 @@ namespace Lachain.Core.BlockchainFilter
                 );
             else if(eventType == BlockchainEvent.Transaction)
                 _filters[_currentId] = new BlockchainEventFilterParams(
-                    eventType, _transactionPool.Transactions.Keys.ToList()
+                    eventType, _transactionPool.Transactions.Keys.ToArray()
                 );
             else{
                 Logger.LogError($"Implementation not found for filter type: {eventType}");
@@ -125,16 +126,24 @@ namespace Lachain.Core.BlockchainFilter
             var results = new JArray();
             
             var pendingTx = filter.PendingTransactionList;
-            var poolTx = _transactionPool.Transactions.Keys;
+            var poolTx = _transactionPool.Transactions.Keys.ToArray();
+            Array.Sort(poolTx, (x,y) => UInt256Utils.Compare(x,y));
 
+            // comparing two sorted list listA and listB in O(listA.Count + listB.Count)
+            
+            int iter = 0;
             foreach(var txHash in poolTx){
                 if(txHash is null) continue;
-                if(!pendingTx.Any(tx => txHash.Equals(tx))){
+
+                while(iter < pendingTx.Count && UInt256Utils.Compare(txHash,pendingTx[iter]) > 0) iter++;
+                if(iter == pendingTx.Count || UInt256Utils.Compare(txHash,pendingTx[iter]) < 0){
                     results.Add(Web3DataFormatUtils.Web3Data(txHash));
                 }
+                
             }
 
             if(poll){
+                // Pending transaction list in filter must be sorted for further optimization
                 filter.PendingTransactionList = new List<UInt256>(poolTx.ToList());
                 filter.PollingTime = TimeUtils.CurrentTimeMillis();
                 _filters[id] = filter;
