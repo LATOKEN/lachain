@@ -24,6 +24,9 @@ using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
 using Nethereum.Signer;
+using Lachain.Crypto.ECDSA;
+using Transaction = Lachain.Proto.Transaction;
+using Lachain.Networking;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -57,7 +60,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             TestUtils.DeleteTestChainData();
 
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
                 new RunOptions()
             ));
 
@@ -87,6 +90,13 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
+
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
 
         }
 
@@ -131,15 +141,17 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetTransactionCount to public
         public void Test_GetTransactionCount()
         {
+            _blockManager.TryBuildGenesisBlock();
 
-            var rawTx2 = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
+            var rawTx2 = MakeDummyTx();
+
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
             Assert.AreEqual(txCountBefore, 0);
 
-            Execute_dummy_transaction();
+            Execute_dummy_transaction(rawTx2);
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
             Assert.AreEqual(txCountAfter, 1);
@@ -154,12 +166,36 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(adCode, "");
         }
 
+        private string MakeDummyTx()
+        {
+            var tx = new Transaction
+            {
+                From = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160(),
+                To = "0x71B293C2593d4Ff9b534b2e691f56c1D18c95a17".HexToBytes().ToUInt160(),
+                Value = Money.Parse("100").ToUInt256(),
+                Nonce = 0,
+                GasPrice = 5000000000,
+                GasLimit = 4500000
+            };
+
+            var rlp = tx.Rlp();
+
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
+            var receipt = _transactionSigner.Sign(tx, keyPair);
+
+            var s = receipt.Signature;
+            var rawTx = tx.RlpWithSignature(s);
+
+            return rawTx.ToHex();
+
+        }
+
         // Below methods Execute a Transaction
-        private void Execute_dummy_transaction()
+        private String Execute_dummy_transaction(String rawTx)
         {
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
 
             var txHashSent = _transaction_apiService!.SendRawTransaction(rawTx);
@@ -170,6 +206,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
 
             GenerateBlocks(1);
+
+            return txHashSent;
 
         }
 
