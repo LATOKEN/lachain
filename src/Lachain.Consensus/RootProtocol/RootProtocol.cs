@@ -128,10 +128,10 @@ namespace Lachain.Consensus.RootProtocol
                             var proposed = _blockProducer.GetTransactionsToPropose(Id.Era).ToList();
                             var endTime = TimeUtils.CurrentTimeMillis();
                             Logger.LogTrace($"Proposed {proposed.Count()} txs in {(endTime - startTime) / 1000.0} sec");
-                            for(int i = 0; i < Extra; i++)
-                            {
-                                proposed.Add(_blockProducer.FinishCycleTxReceipt());
-                            }
+                            //for(int i = 0; i < Extra; i++)
+                            //{
+                            //    proposed.Add(_blockProducer.FinishCycleTxReceipt());
+                            //}
                             var data = proposed.ToByteArray();
                             Broadcaster.InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                                 Id, new HoneyBadgerId(Id.Era), new RawShare(data, GetMyId()))
@@ -168,8 +168,8 @@ namespace Lachain.Consensus.RootProtocol
                             {
                                 var contributions = rawShare.ToBytes().ToMessageArray<TransactionReceipt>().ToList();
                                 cnt += contributions.Count();
-                                if(contributions.Count() >= Extra)
-                                    contributions.RemoveRange(receipts.Count() - Extra, Extra);
+                                //if(contributions.Count() >= Extra)
+                                //    contributions.RemoveRange(receipts.Count() - Extra, Extra);
                                 
                                 foreach(var receipt in contributions)
                                     receipts.Add(receipt);
