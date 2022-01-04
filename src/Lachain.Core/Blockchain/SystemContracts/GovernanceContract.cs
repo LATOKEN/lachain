@@ -517,7 +517,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 Contract = ContractRegisterer.GovernanceContract,
                 Data = ByteString.CopyFrom(eventData),
                 TransactionHash = _context.Receipt.Hash,
-                SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256(),
+                Topics = {new List<UInt256>()}
             };
             _context.Snapshot.Events.AddEvent(eventObj);
             Logger.LogTrace($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");

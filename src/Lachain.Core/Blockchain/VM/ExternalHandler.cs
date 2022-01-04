@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
@@ -197,26 +198,41 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidOperationException("Cannot call WRITELOG in STATICCALL");
             }
 
-            var data = SafeCopyFromMemory(frame.Memory, dataOffset, dataLength);
-            if (data == null)
-                throw new InvalidContractException("Bad call to WRITELOG,  can't read data");
+            var data = GetData(frame , dataOffset , dataLength , "data");
 
             if (topicsNum < 1)
                 throw new InvalidContractException("Bad call to WRITELOG, we should have at least one topic");
 
-            var topic0 = SafeCopyFromMemory(frame.Memory, topic0Offset, 32);
-            if (topic0 == null)
-                throw new InvalidContractException("Bad call to WRITELOG,  can't read topic0");
+            var topic0 = GetData(frame , topic0Offset , 32 , "topic0");
+
+            var topics = new List<UInt256>();
+
+            if(topicsNum >= 2){
+                var topic = GetData(frame , topic1Offset , 32 , "topic1");
+                topics.Add(topic.ToUInt256());
+            }
+
+            if(topicsNum >= 3){
+                var topic = GetData(frame , topic2Offset , 32 , "topic2");
+                topics.Add(topic.ToUInt256());
+            }
+
+            if(topicsNum >= 4){
+                var topic = GetData(frame , topic3Offset , 32 , "topic3");
+                topics.Add(topic.ToUInt256());
+            }
 
             var eventObj = new Event
             {
                 Contract = frame.CurrentAddress,
                 Data = ByteString.CopyFrom(data),
                 TransactionHash = frame.InvocationContext.Receipt.Hash,
-                SignatureHash =  topic0.ToUInt256()
+                SignatureHash =  topic0.ToUInt256(),
+                Topics = {topics}
             };
             frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
         }
+
 
         public static int Handler_Env_InvokeContract(
             int callSignatureOffset, int inputLength, int inputOffset, int valueOffset, int gasOffset)
@@ -959,17 +975,16 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call WRITEEVENT outside wasm frame");
             frame.UseGas(GasMetering.WriteEventPerByteGas * (uint) (valueLength + 32));
-            var signature = SafeCopyFromMemory(frame.Memory, signatureOffset, 32) ??
-                            throw new InvalidOperationException();
-            var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength) ??
-                        throw new InvalidOperationException();
+            var signature = GetData(frame , signatureOffset , 32 , "topic0");
+            var value = GetData(frame , valueOffset, valueLength , "data");
             var ev = new Event
             {
                 Contract = frame.CurrentAddress,
                 Data = ByteString.CopyFrom(value),
                 TransactionHash = frame.InvocationContext.TransactionHash,
                 Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
-                SignatureHash = signature.ToUInt256()
+                SignatureHash = signature.ToUInt256(),
+                Topics = {new List<UInt256>()}
             };
             frame.InvocationContext.Snapshot.Events.AddEvent(ev);
         }
@@ -1135,6 +1150,13 @@ namespace Lachain.Core.Blockchain.VM
             var result = SafeCopyToMemory(frame.Memory, chainId.ToBytes().ToArray(), dataOffset);
             if (!result)
                 throw new InvalidContractException("Bad call to (get_chain_id)");
+        }
+
+        public static byte[] GetData(WasmExecutionFrame frame, int offset, int length, string msg = ""){
+            var data = SafeCopyFromMemory(frame.Memory, offset, length);
+            if (data == null)
+                throw new InvalidContractException($"Bad call to WRITELOG,  can't read {msg}");
+            return data;
         }
 
         private static FunctionImport CreateImport(string methodName)

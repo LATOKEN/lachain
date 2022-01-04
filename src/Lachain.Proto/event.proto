@@ -1,7 +1,6 @@
 syntax = "proto3";
 option csharp_namespace = "Lachain.Proto";
 option java_package = "com.latoken.proto";
-
 import "default.proto";
 
 message Event {
@@ -11,4 +10,5 @@ message Event {
     uint32 index = 4;
     UInt256 block_hash = 5;
     UInt256 signature_hash = 6;
+    repeated UInt256 topics = 7;
 }

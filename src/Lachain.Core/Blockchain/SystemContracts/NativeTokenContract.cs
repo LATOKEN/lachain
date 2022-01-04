@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Google.Protobuf;
@@ -264,7 +265,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 Contract = ContractRegisterer.LatokenContract,
                 Data = ByteString.CopyFrom(eventData),
                 TransactionHash = _context.Receipt.Hash,
-                SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256(),
+                Topics = {new List<UInt256>()}
             };
             _context.Snapshot.Events.AddEvent(eventObj);
             Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
