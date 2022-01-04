@@ -1,6 +1,6 @@
 using System.IO;
 using Lachain.Proto;
-
+using System;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Pool;
@@ -23,11 +23,14 @@ using Transaction = Lachain.Proto.Transaction;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Vault;
+using Lachain.Logger;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
     public class TransactionsTest
     {
+
+        private static readonly ILogger<TransactionsTest> Logger = LoggerFactory.GetLoggerForClass<TransactionsTest>();
         private IStateManager? _stateManager;
         private IContainer? _container;
         private ITransactionPool? _transactionPool;
@@ -68,11 +71,13 @@ namespace Lachain.CoreTest.IntegrationTests
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
 
-            ServiceBinder.BindService<GenericParameterAttributes>();
-
+            
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
-            _configManager = _container.Resolve<IConfigManager>();
+            //_configManager = _container.Resolve<IConfigManager>();
+
+            ServiceBinder.BindService<GenericParameterAttributes>();
+
 
             // set chainId from config
             if (TransactionUtils.ChainId == 0)
@@ -85,15 +90,20 @@ namespace Lachain.CoreTest.IntegrationTests
         [TearDown]
         public void Teardown()
         {
-            var sessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(sessionId);
 
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
+
+            var sessionId = Handler.GetSessionHandler().SessionId;
+            if(sessionId != null) Handler.DestroySession(sessionId);
+
+            
         }
 
+
+
         [Test]
-        [Ignore("fix it")]
+        [Repeat(2)]
         public void Test_Tx_Building()
         {
             var signer = new TransactionSigner();
@@ -128,9 +138,14 @@ namespace Lachain.CoreTest.IntegrationTests
                 expectedFullHash,
                 receipt.Hash
             );
+
+            Logger.LogInformation("in Test_Tx_Building");
         }
 
+
+
         [Test]
+        [Repeat(2)]
         public void Test_Tx_Pool_Adding()
         {
 
@@ -155,6 +170,9 @@ namespace Lachain.CoreTest.IntegrationTests
             tx3.Transaction.From = UInt160Utils.Zero;
             result = _transactionPool.Add(tx3);
             Assert.AreEqual(OperatingError.Ok, result);
+            Logger.LogInformation("in Test_Tx_Pool_Adding");
         }
+
+
     }
 }
