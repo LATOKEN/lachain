@@ -124,8 +124,12 @@ namespace Lachain.Consensus.RootProtocol
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
                         {
+                            var startTime = TimeUtils.CurrentTimeMillis();
                             var proposed = _blockProducer.GetTransactionsToPropose(Id.Era).ToList();
-                            for(int i = 0; i < Extra; i++) {
+                            var endTime = TimeUtils.CurrentTimeMillis();
+                            Logger.LogTrace($"Proposed {proposed.Count()} txs in {(endTime - startTime) / 1000.0} sec");
+                            for(int i = 0; i < Extra; i++)
+                            {
                                 proposed.Add(_blockProducer.FinishCycleTxReceipt());
                             }
                             var data = proposed.ToByteArray();
@@ -154,13 +158,19 @@ namespace Lachain.Consensus.RootProtocol
                         var rawShares = result.Result.ToArray();
                         var receipts = new List<TransactionReceipt>();
 
+                        int cnt = 0; 
+
                         foreach(var rawShare in rawShares)
                         {
                             // this rawShare may be malicious
                             // we may need to discard this if any issue arises during decoding
                             try 
                             {
-                                var contributions = rawShare.ToBytes().ToMessageArray<TransactionReceipt>();
+                                var contributions = rawShare.ToBytes().ToMessageArray<TransactionReceipt>().ToList();
+                                cnt += contributions.Count();
+                                if(contributions.Count() >= Extra)
+                                    contributions.RemoveRange(receipts.Count() - Extra, Extra);
+                                
                                 foreach(var receipt in contributions)
                                     receipts.Add(receipt);
                             }
@@ -170,11 +180,7 @@ namespace Lachain.Consensus.RootProtocol
                                 Logger.LogError($"One of the validators might be malicious!!!");
                             }
                         }
-                        Logger.LogTrace($"Collected {receipts.Count()} non-distinct transactions in total");
-                        if(receipts.Count() >= Extra)
-                        {
-                            receipts.RemoveRange(receipts.Count() - Extra, Extra);
-                        }
+                        Logger.LogTrace($"Collected {cnt} non-distinct transactions in total");
                         _receipts = receipts.Distinct().ToArray();
                         Logger.LogTrace($"Collected {_receipts.Length} transactions in total");
                         TrySignHeader();
