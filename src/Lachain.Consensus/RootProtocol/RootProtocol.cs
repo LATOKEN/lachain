@@ -123,7 +123,7 @@ namespace Lachain.Consensus.RootProtocol
                         using (var stream = new MemoryStream())
                         {
                             var proposed = _blockProducer.GetTransactionsToPropose(Id.Era).ToList();
-                            while(proposed.Count() > 1 && proposed.Count() < 500) 
+                            while(proposed.Count() >= 1 && proposed.Count() < 125) 
                             {
                                 var tx = proposed.Last();
                                 proposed.Add(tx);
