@@ -91,7 +91,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         private void HandleRequest(Peer peer, List<string> batch, uint type)
         {
-        //    System.Console.WriteLine(peer._url);
+            DateTime t1 = DateTime.Now; 
             JArray batchJson = new JArray { };
             foreach (var item in batch) batchJson.Add(item);
 
@@ -122,8 +122,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 myRequestState.type = type;
                 myRequestState.start = DateTime.Now;
 
+                DateTime t2 = DateTime.Now;
+
+//                Logger.LogInformation($"Object ready for sending to peer{peer._url}, spent time:{(t2-t1).TotalMilliseconds}");
+
                 IAsyncResult result =
                     (IAsyncResult)myHttpWebRequest.BeginGetResponse(new AsyncCallback(RespCallback), myRequestState);
+                
 
                 ThreadPool.RegisterWaitForSingleObject(result.AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), myRequestState, DefaultTimeout, true);
             }
@@ -166,6 +171,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             RequestState myRequestState = (RequestState)asynchronousResult.AsyncState;
             TimeSpan time = DateTime.Now - myRequestState.start;
+            DateTime receiveTime = DateTime.Now;
             var peer = myRequestState.peer;
             var batch = myRequestState.batch;
             JArray result = new JArray { };
@@ -189,7 +195,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                 }
                 result = (JArray)response["result"];
-                Logger.LogInformation($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
+                Logger.LogInformation($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
                 _peerManager.TryFreePeer(peer, 1);
                 if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
                 if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
@@ -284,15 +290,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 if(!_peerManager.TryGetPeer(out var peer))
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(200);
                     continue;
                 }
                 if(!_blockRequestManager.TryGetBatch(out var batch))
                 {
                     _peerManager.TryFreePeer(peer);
-                    Thread.Sleep(100);
+                    Thread.Sleep(500);
                     continue;
                 }
+                Logger.LogInformation($"Requesting peer {peer._url}");
                 HandleRequest(peer, batch, 2);
             }
         }
