@@ -7,6 +7,7 @@ namespace Lachain.Core.Blockchain.Hardfork
         private static bool alreadySet;
         private static ulong Hardfork_1;
         private static ulong Hardfork_2;
+        private static ulong Hardfork_3;
 
         public static bool IsHardfork_1Active(ulong height)
         {
@@ -16,6 +17,11 @@ namespace Lachain.Core.Blockchain.Hardfork
         public static bool IsHardfork_2Active(ulong height)
         {
             return height >= Hardfork_2;
+        }
+
+        public static bool IsHardfork_3Active(ulong height)
+        {
+            return height >= Hardfork_3;
         }
 
         public static void SetHardforkHeights(HardforkConfig hardforkConfig)
@@ -32,6 +38,11 @@ namespace Lachain.Core.Blockchain.Hardfork
             if(hardforkConfig.Hardfork_2 is null)
                 throw new Exception("hardfork_2 is null");
             Hardfork_2 = (ulong) hardforkConfig.Hardfork_2;
+            
+            if(hardforkConfig.Hardfork_3 is null)
+                throw new Exception("hardfork_3 is null");
+            Hardfork_3 = (ulong) hardforkConfig.Hardfork_3;
+
         }
     }
 }
