@@ -62,7 +62,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public void HandleResponse(List<string> batch, JArray response)
         {
             if(batch.Count>0) Logger.LogInformation("First Node in this batch: "+Convert.ToUInt64(batch[0], 16));
-
             if(batch.Count != response.Count)
             {
                 foreach(var block in batch)
@@ -92,15 +91,17 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         [MethodImpl(MethodImplOptions.Synchronized)]
         void AddToDB()
         {
-            ulong cnt = _done ;
-            DateTime start = DateTime.Now;
             while(downloaded.TryGetValue(_done+1, out var blockRawHex))
             {
                 _nodeStorage.AddBlock(_blockSnapshot, blockRawHex);
                 _done++;
-                
                 downloaded.Remove(_done);
             }
+    /*        if(downloaded.Count>0) Console.WriteLine("More blocks downloaded. Done: " + 
+            _done + " downloaded: "+downloaded.Count+" NextBlockToDownload " +
+            nextBlocksToDownload.Count+ " pending: "+_pending.Count+" Min pending: "+ _pending.Min()
+            +" Min to download: "+nextBlocksToDownload.Min());
+*/
         }
     }
 }
