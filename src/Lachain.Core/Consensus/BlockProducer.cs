@@ -29,7 +29,7 @@ namespace Lachain.Core.Consensus
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly ITransactionBuilder _transactionBuilder;
-        private const int BatchSize = 1000; // TODO: calculate batch size
+        private const int BatchSize = 4000; // TODO: calculate batch size
 
         public BlockProducer(
             ITransactionPool transactionPool,
@@ -52,7 +52,7 @@ namespace Lachain.Core.Consensus
         {
             var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
-            var taken = _transactionPool.Peek(BatchSize, txNum);
+            var taken = _transactionPool.Peek(BatchSize, 500);
             Logger.LogTrace("Proposed Transactions: ");
             foreach(var tx in taken)
             {
