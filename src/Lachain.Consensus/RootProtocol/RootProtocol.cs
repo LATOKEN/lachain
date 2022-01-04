@@ -170,9 +170,8 @@ namespace Lachain.Consensus.RootProtocol
                                 Logger.LogError($"One of the validators might be malicious!!!");
                             }
                         }
-
+                        Logger.LogTrace($"Collected {receipts.Count()} non-distinct transactions in total");
                         _receipts = receipts.Distinct().ToArray();
-
                         Logger.LogTrace($"Collected {_receipts.Length} transactions in total");
                         TrySignHeader();
                         CheckSignatures();
