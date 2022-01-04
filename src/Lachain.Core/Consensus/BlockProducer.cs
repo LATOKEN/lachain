@@ -76,6 +76,8 @@ namespace Lachain.Core.Consensus
             // we don't need to verify receipts here
             // verfification will be done during emulation
 
+            receipts = new TransactionReceipt[]{};
+
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
