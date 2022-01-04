@@ -150,7 +150,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             byte[] raw = HexUtils.HexToBytes(blockRawHex);
             Block block = Block.Parser.ParseFrom(raw);
             blockSnapshot.AddBlock(block);
-            Console.WriteLine("Added BlockHeader: "+ block.Header.Index);
+            if(block.Header.Index%200==0) Console.WriteLine("Added BlockHeader: "+ block.Header.Index);
+            if(block.Header.Index%10000==0) blockSnapshot.Commit();
         }
 
         public void CommitNodes()
