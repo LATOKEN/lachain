@@ -30,7 +30,7 @@ namespace Lachain.Consensus.RootProtocol
         private MultiSig? _multiSig;
         private ulong _cycleDuration;
 
-        private const int Extra = 125;
+        private const int Extra = 100;
 
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
