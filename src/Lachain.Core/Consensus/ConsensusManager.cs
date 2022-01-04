@@ -71,6 +71,7 @@ namespace Lachain.Core.Consensus
             _blockManager.OnBlockPersisted += BlockManagerOnOnBlockPersisted;
             blockSynchronizer.OnSignedBlockReceived += BlockSynchronizerOnOnSignedBlockReceived;
             _targetBlockInterval = configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetBlockTime ?? 5_000;
+            _targetBlockInterval = 0;
         }
 
         private void BlockSynchronizerOnOnSignedBlockReceived(object sender, ulong block)
