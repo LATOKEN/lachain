@@ -23,6 +23,7 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
+using Nethereum.Hex.HexTypes;
 using Nethereum.Signer;
 using Lachain.Crypto.ECDSA;
 using Transaction = Lachain.Proto.Transaction;
@@ -69,6 +70,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
 
+
             _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
@@ -112,7 +114,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         // Changed GetBalance to public
-        public void Test_GetBalance()
+        public void TestGetBalance()
         {
             var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
             var bal = _apiService.GetBalance(address, "latest");
@@ -126,7 +128,20 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
-        public void Test_GetAccounts()
+        // Changed GetBalance to public
+        public void TestGetBalancePending()
+        {
+            var address = "0x2605c1ad496f428ab2b700edd257f0a378f83750";
+
+            ExecuteDummyTransaction(false);
+
+            var bal = _apiService.GetBalance(address, "pending");
+            Assert.AreEqual(bal, "0x115557b419c5c1f3fa0183ffd1e5d0");
+
+        }
+
+        [Test]
+        public void TestGetAccounts()
         {
             var account_list = _apiService!.GetAccounts();
             var address = account_list.First.ToString();
@@ -139,7 +154,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         // Changed GetTransactionCount to public
-        public void Test_GetTransactionCount()
+        public void TestGetTransactionCount()
         {
             _blockManager.TryBuildGenesisBlock();
 
@@ -151,7 +166,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
             Assert.AreEqual(txCountBefore, 0);
 
-            Execute_dummy_transaction(rawTx2);
+            ExecuteDummyTransaction(true, rawTx2);
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
             Assert.AreEqual(txCountAfter, 1);
@@ -159,7 +174,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         [Test]
         // Changed GetCode to public
-        public void Test_GetCode()
+        public void TestGetCode()
         {
             var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
             var adCode = _apiService!.GetCode(address, "latest");
@@ -192,7 +207,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         // Below methods Execute a Transaction
-        private String Execute_dummy_transaction(String rawTx)
+        private void ExecuteDummyTransaction(bool generate_block, String rawTx)
         {
             _blockManager.TryBuildGenesisBlock();
 
@@ -205,7 +220,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             // Updating balance of sender's Wallet
             _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
 
-            GenerateBlocks(1);
+            if (generate_block) {
+                GenerateBlocks(1);
+            }
 
             return txHashSent;
 
