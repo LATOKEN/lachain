@@ -61,8 +61,8 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 Delete(txHash);
             }
-            _poolRepository.RemoveTransactions(e.TransactionHashes);
-            SanitizePool();
+            //_poolRepository.RemoveTransactions(e.TransactionHashes);
+            //SanitizePool();
 
             foreach(var receipt in _lastProposed)
             {
@@ -80,6 +80,7 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Restore()
         {
+            return;
             var txHashes = _poolRepository.GetTransactionPool();
             Logger.LogTrace($"restoring transactions from pool to in-memory storage");
             foreach (var txHash in txHashes)
@@ -128,8 +129,8 @@ namespace Lachain.Core.Blockchain.Pool
             /* special case for system transactions */
             if (receipt.Transaction.From.IsZero())
             {
-                if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
-                    _poolRepository.AddTransaction(receipt);
+                //if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
+                //    _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
 
@@ -142,8 +143,8 @@ namespace Lachain.Core.Blockchain.Pool
             _transactionsQueue.Add(receipt);
 
             /* write transaction to persistence storage */
-            if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
-                _poolRepository.AddTransaction(receipt);
+            //if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
+            //    _poolRepository.AddTransaction(receipt);
 
             _nonceCalculator.TryAdd(receipt);
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
@@ -229,17 +230,9 @@ namespace Lachain.Core.Blockchain.Pool
                 
                 result.Add(_transactions[hash]);
             }
-<<<<<<< HEAD
-        }
-
-        private void RemoveTxes(IReadOnlyCollection<TransactionReceipt> txes)
-        {
-            foreach (var tx in txes)
-=======
 
             _lastProposed = new List<TransactionReceipt>(result);
             foreach(var tx in result)
->>>>>>> dev
             {
                 _transactionsQueue.Remove(tx);
                 _relayQueue.Remove(tx);
