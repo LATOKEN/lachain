@@ -128,7 +128,7 @@ namespace Lachain.Consensus.RootProtocol
                                 var tx = proposed.Last();
                                 proposed.Add(tx);
                             }
-                            var data = _blockProducer.GetTransactionsToPropose(Id.Era).ToByteArray();
+                            var data = proposed.ToByteArray();
                             Broadcaster.InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                                 Id, new HoneyBadgerId(Id.Era), new RawShare(data, GetMyId()))
                             );
