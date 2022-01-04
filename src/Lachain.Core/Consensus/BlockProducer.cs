@@ -52,7 +52,7 @@ namespace Lachain.Core.Consensus
         {
             var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
-            var taken = _transactionPool.Peek(500, 500);
+            var taken = _transactionPool.Peek(100, 10);
             Logger.LogTrace("Proposed Transactions: ");
             foreach(var tx in taken)
             {
@@ -75,8 +75,6 @@ namespace Lachain.Core.Consensus
 
             // we don't need to verify receipts here
             // verfification will be done during emulation
-
-            receipts = new TransactionReceipt[]{};
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();

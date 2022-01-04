@@ -122,6 +122,12 @@ namespace Lachain.Consensus.RootProtocol
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
                         {
+                            var proposed = _blockProducer.GetTransactionsToPropose(Id.Era).ToList();
+                            while(proposed.Count() > 1 && proposed.Count() < 500) 
+                            {
+                                var tx = proposed.Last();
+                                proposed.Add(tx);
+                            }
                             var data = _blockProducer.GetTransactionsToPropose(Id.Era).ToByteArray();
                             Broadcaster.InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                                 Id, new HoneyBadgerId(Id.Era), new RawShare(data, GetMyId()))
