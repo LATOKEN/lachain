@@ -52,7 +52,7 @@ namespace Lachain.Core.Consensus
         {
             var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
-            var taken = _transactionPool.Peek(BatchSize, 500);
+            var taken = _transactionPool.Peek(500, 500);
             Logger.LogTrace("Proposed Transactions: ");
             foreach(var tx in taken)
             {
