@@ -35,11 +35,14 @@ using Lachain.Networking;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Serialization;
 using Transaction = Lachain.Proto.Transaction;
+using Lachain.Logger;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
     public class Web3TransactionTests
     {
+
+        private static readonly ILogger<Web3TransactionTests> Logger = LoggerFactory.GetLoggerForClass<Web3TransactionTests>();
         private IContainer? _container;
         private IStateManager? _stateManager;
         private ITransactionManager? _transactionManager;
@@ -117,11 +120,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         [TearDown]
         public void Teardown()
         {
-            var sessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(sessionId);
 
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
+
+            var sessionId = Handler.GetSessionHandler().SessionId;
+            if(sessionId != null) Handler.DestroySession(sessionId);
         }
         
         

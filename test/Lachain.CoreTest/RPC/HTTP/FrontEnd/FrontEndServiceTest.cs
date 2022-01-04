@@ -74,11 +74,11 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         public void Teardown()
         {
             
-            var sessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(sessionId);
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
             
+            var sessionId = Handler.GetSessionHandler().SessionId;
+            if(sessionId != null) Handler.DestroySession(sessionId);
 
         }
 
