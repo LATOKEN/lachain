@@ -113,6 +113,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         // Changed GetBalance to public
         public void TestGetBalance()
         {
@@ -128,6 +129,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         // Changed GetBalance to public
         public void TestGetBalancePending()
         {
@@ -142,6 +144,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         public void TestGetAccounts()
         {
             var account_list = _apiService!.GetAccounts();
@@ -154,6 +157,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         // Changed GetTransactionCount to public
         public void TestGetTransactionCount()
         {
@@ -174,6 +178,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         // Changed GetCode to public
         public void TestGetCode()
         {

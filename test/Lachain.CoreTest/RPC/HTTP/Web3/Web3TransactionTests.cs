@@ -126,6 +126,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         
         
         [Test]
+        [Repeat(2)]
         public void Test_SendRawTransactionSimpleSend()
         {
             _blockManager.TryBuildGenesisBlock();
@@ -219,6 +220,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         public void Test_SendRawTransactionBatch()
         {
             var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b";
@@ -252,6 +254,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         //changed GetTransactionReceipt from private to public
         public void Test_GetTransactionReceipt()
         {
@@ -270,6 +273,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         //changed GetTransactionByHash from private to public
         public void Test_GetTransactionByHash()
         {
@@ -288,6 +292,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         //changed GetTransactionByBlockHashAndIndex from private to public
         public void Test_GetTransactionByBlockHashAndIndex()
         {
@@ -312,6 +317,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         //changed GetTransactionByBlockNumberAndIndex from private to public
         public void Test_GetTransactionByBlockNumberAndIndex()
         {
@@ -341,6 +347,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         //changed Call from private to public
         public void Test_Call()
         {
@@ -385,6 +392,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         //changed EstimateGas from private to public
         public void Test_EstimateGas()
         {
@@ -427,6 +435,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Repeat(2)]
         /// Changed from private to public
         public void Test_GetNetworkGasPrice()
         {

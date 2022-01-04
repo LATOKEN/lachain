@@ -93,6 +93,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        [Repeat(2)]
         [Ignore("fix it")]
         public void Test_Tx_Building()
         {
@@ -131,6 +132,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        [Repeat(2)]
         public void Test_Tx_Pool_Adding()
         {
 
