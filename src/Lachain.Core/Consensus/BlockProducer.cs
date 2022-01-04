@@ -52,12 +52,7 @@ namespace Lachain.Core.Consensus
         {
             var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
-            var taken = _transactionPool.Peek(100, 10);
-            Logger.LogTrace("Proposed Transactions: ");
-            foreach(var tx in taken)
-            {
-                Logger.LogTrace($"{tx.Hash.ToHex()}");
-            }
+            var taken = _transactionPool.Peek(100, 10).ToList();
             return taken;
         }
 
@@ -200,7 +195,7 @@ namespace Lachain.Core.Consensus
                 StakingInterface.MethodFinishVrfLottery);
         }
 
-        private TransactionReceipt FinishCycleTxReceipt()
+        public TransactionReceipt FinishCycleTxReceipt()
         {
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 UInt160Utils.Zero,

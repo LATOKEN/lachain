@@ -12,5 +12,7 @@ namespace Lachain.Consensus
         );
 
         void ProduceBlock(IEnumerable<TransactionReceipt> receipts, BlockHeader header, MultiSig multiSig);
+
+        TransactionReceipt FinishCycleTxReceipt();
     }
 }

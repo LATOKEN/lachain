@@ -30,6 +30,8 @@ namespace Lachain.Consensus.RootProtocol
         private MultiSig? _multiSig;
         private ulong _cycleDuration;
 
+        private const int Extra = 125;
+
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
 
@@ -123,10 +125,8 @@ namespace Lachain.Consensus.RootProtocol
                         using (var stream = new MemoryStream())
                         {
                             var proposed = _blockProducer.GetTransactionsToPropose(Id.Era).ToList();
-                            while(proposed.Count() >= 1 && proposed.Count() < 125) 
-                            {
-                                var tx = proposed.Last();
-                                proposed.Add(tx);
+                            for(int i = 0; i < Extra; i++) {
+                                proposed.Add(_blockProducer.FinishCycleTxReceipt());
                             }
                             var data = proposed.ToByteArray();
                             Broadcaster.InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
@@ -171,6 +171,10 @@ namespace Lachain.Consensus.RootProtocol
                             }
                         }
                         Logger.LogTrace($"Collected {receipts.Count()} non-distinct transactions in total");
+                        if(receipts.Count() >= Extra)
+                        {
+                            receipts.RemoveRange(receipts.Count() - Extra, Extra);
+                        }
                         _receipts = receipts.Distinct().ToArray();
                         Logger.LogTrace($"Collected {_receipts.Length} transactions in total");
                         TrySignHeader();
