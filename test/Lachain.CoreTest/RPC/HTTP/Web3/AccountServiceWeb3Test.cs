@@ -131,12 +131,13 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetBalance to public
         public void TestGetBalancePending()
         {
-            var address = "0x2605c1ad496f428ab2b700edd257f0a378f83750";
+            var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
+            var rawTx2 = MakeDummyTx();
 
-            ExecuteDummyTransaction(false);
+            ExecuteDummyTransaction(false, rawTx2);
 
             var bal = _apiService.GetBalance(address, "pending");
-            Assert.AreEqual(bal, "0x115557b419c5c1f3fa0183ffd1e5d0");
+            Assert.AreEqual(bal, "0x115557b419c5bc87e2b3b5217dc000");
 
         }
 
@@ -207,7 +208,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         // Below methods Execute a Transaction
-        private void ExecuteDummyTransaction(bool generate_block, String rawTx)
+        private String ExecuteDummyTransaction(bool generate_block, String rawTx)
         {
             _blockManager.TryBuildGenesisBlock();
 
