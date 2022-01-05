@@ -299,7 +299,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     Thread.Sleep(500);
                     continue;
                 }
-                Logger.LogInformation($"Requesting peer {peer._url}");
                 HandleRequest(peer, batch, 2);
             }
         }
