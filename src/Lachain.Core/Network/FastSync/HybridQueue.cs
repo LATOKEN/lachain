@@ -11,10 +11,12 @@ using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Utility.Serialization;
+using Lachain.Logger;
 
 namespace Lachain.Core.Network.FastSync
 {
     class HybridQueue{
+        private static readonly ILogger<HybridQueue> Logger = LoggerFactory.GetLoggerForClass<HybridQueue>();
         private IRocksDbContext _dbContext;
         private const int BatchSize = 5000;
         private ulong _doneBatch=0, _totalBatch=0, _savedBatch=0;        
@@ -22,6 +24,7 @@ namespace Lachain.Core.Network.FastSync
         private Queue<string> _incomingQueue = new Queue<string>();
         private Queue<string> _outgoingQueue = new Queue<string>();
         private Queue<ulong> _batchQueue = new Queue<ulong>();
+
 
         private IDictionary<ulong, int> _remaining = new Dictionary<ulong, int>();
 
@@ -38,8 +41,8 @@ namespace Lachain.Core.Network.FastSync
             _doneBatch = _savedBatch;
             _totalBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.TotalBatch.BuildPrefix()));
             
-            Console.WriteLine("Starting with....");
-            Console.WriteLine("Done Batch: "+_doneBatch+" Total Batch: "+_totalBatch);
+            Logger.LogInformation($"Starting with....");
+            Logger.LogInformation($"Done Batch: {_doneBatch} Total Batch: {_totalBatch}");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -90,7 +93,7 @@ namespace Lachain.Core.Network.FastSync
             ulong batch = _pending[key];
             _pending.Remove(key);
             _remaining[batch] = _remaining[batch] - 1;
-            if(_remaining[batch]==0) Console.WriteLine("Batch "+batch +" download done.");
+            if(_remaining[batch]==0) Logger.LogInformation($"Node batch: {batch}  download done.");
             TryToSaveBatch();
             return true;
         }
@@ -104,7 +107,7 @@ namespace Lachain.Core.Network.FastSync
                 _nodeStorage.Commit();
                 _savedBatch++;
                 _dbContext.Save(EntryPrefix.SavedBatch.BuildPrefix(), _savedBatch.ToBytes().ToArray());
-                Console.WriteLine("Another batch saved: "+ _savedBatch);
+                Logger.LogInformation($"Another batch saved: {_savedBatch}");
             }
         }
 
@@ -136,7 +139,7 @@ namespace Lachain.Core.Network.FastSync
             _totalBatch++;
             _dbContext.Save(EntryPrefix.QueueBatch.BuildPrefix((ulong)_totalBatch), list.ToArray());
             _dbContext.Save(EntryPrefix.TotalBatch.BuildPrefix(), _totalBatch.ToBytes().ToArray());
-            Console.WriteLine("Another batch Downloaded: "+ _totalBatch+"  size: "+sz);
+            Logger.LogInformation($"Another hash batch downloaded: {_totalBatch}  size: {sz}");
         }
 
         void LoadFromDB()
@@ -156,7 +159,7 @@ namespace Lachain.Core.Network.FastSync
             }
             _remaining[_curBatch] = cnt;
             _doneBatch = _curBatch;
-            Console.WriteLine("Trying to download nodes from batch: "+_curBatch+"  size: "+ cnt);
+            Logger.LogInformation($"Trying to download nodes from batch: {_curBatch}  size: {cnt}");
             if(cnt==0) TryToSaveBatch();
         }
         bool ExistNode(string hash)

@@ -16,7 +16,7 @@ namespace Lachain.Core.Network.FastSync
     {
  //       private Queue<string> _queue = new Queue<string>();
         private NodeStorage _nodeStorage;
-        private uint _batchSize = 200;
+        private uint _batchSize = 500;
 
         HybridQueue _hybridQueue;
         public int maxQueueSize = 0;
@@ -112,7 +112,7 @@ namespace Lachain.Core.Network.FastSync
                 {
                     var hash = hashBatch[i];
                     JObject node = (JObject)response[i];
-                    if (_nodeStorage.IsConsistent(node))
+                    if (_nodeStorage.IsConsistent(node) && hash == (string)node["Hash"])
                     {
                         successfulHashes.Add(hash);
                         successfulNodes.Add(node);
