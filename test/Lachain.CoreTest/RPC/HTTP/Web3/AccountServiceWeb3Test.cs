@@ -91,11 +91,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         [TearDown]
         public void Teardown()
         {
-            var sessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(sessionId);
 
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
+
+            var sessionId = Handler.GetSessionHandler().SessionId;
+            if(sessionId != null) Handler.DestroySession(sessionId);
         }
 
         [Test]

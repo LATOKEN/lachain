@@ -58,10 +58,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Teardown()
         {
             _validatorStatusManager.Stop();
-            var sessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(sessionId);
+            
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
+
+            var sessionId = Handler.GetSessionHandler().SessionId;
+            if(sessionId != null) Handler.DestroySession(sessionId);
 
         }
 
