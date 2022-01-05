@@ -414,8 +414,9 @@ namespace Lachain.Core.Blockchain.Operations
                     if (!txFailed)
                     {
                         /* mark transaction as executed */
-                        Logger.LogTrace($"Transaction executed {txHash.ToHex()}");
+                        Logger.LogTrace($"Adding transaction to database");
                         snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Executed);
+                        Logger.LogTrace($"Transaction executed {txHash.ToHex()}");
                     }
 
                     _stateManager.Approve();
