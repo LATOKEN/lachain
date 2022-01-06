@@ -107,6 +107,8 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly ILocalTransactionRepository _localTransactionRepository;
         private InvocationContext? _contractTxJustExecuted;
 
+        private ulong _lastTouchedBlock = 0;
+
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
         public BlockManager(
@@ -187,6 +189,8 @@ namespace Lachain.Core.Blockchain.Operations
                 snapshotBefore.Balances.TouchAll();
                 snapshotBefore.Events.TouchAll();
 
+                _lastTouchedBlock = block.Header.Index;
+
                 Logger.LogTrace("Executing transactions in no-check no-commit mode");
                 var error = _Execute(
                     block,
@@ -223,6 +227,29 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 var transactions = transactionsEnumerable.ToList();
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
+
+                if(block.Header.Index != _lastTouchedBlock) 
+                {
+                    Logger.LogTrace($"Doing touch operations before execution");
+
+                    foreach(var receipt in transactions)
+                    {
+                        snapshotBefore.Transactions.AddToTouch(receipt);
+                        snapshotBefore.Balances.AddToTouch(receipt);
+                        snapshotBefore.Events.AddToTouch(receipt);
+                    }
+
+                    snapshotBefore.Transactions.TouchAll();
+                    snapshotBefore.Balances.TouchAll();
+                    snapshotBefore.Events.TouchAll();
+
+                    Logger.LogTrace($"Ended touch operations before execution");
+
+                    _lastTouchedBlock = block.Header.Index;
+                }
+                
+
+
                 var startTime = TimeUtils.CurrentTimeMillis();
                 var operatingError = _Execute(
                     block, transactions, out _, out _, false, out var gasUsed, out var totalFee
