@@ -57,7 +57,7 @@ namespace Lachain.Storage.Trie
 
         public void Preload(ulong root, IEnumerable<byte[]> keys)
         {
-            if(root==0) return;
+            if(root == 0) return;
             List<byte[]> hashedKeys = new List<byte[]>();
             foreach(var key in keys)
             {
@@ -268,7 +268,7 @@ namespace Lachain.Storage.Trie
                 if(_nodeCache.TryGetValue(id, out node))
                 {
                     _lruCache.Add(id, node);
-                    inCache.Add(id,node);
+                    inCache.Add(id, node);
                 }
                 else{
                     node = _lruCache.Get(id);
@@ -473,37 +473,62 @@ namespace Lachain.Storage.Trie
             IDictionary<ulong, List<byte[]>> relatedKeys = new Dictionary<ulong, List<byte[]>>();
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(root);
-            relatedKeys[root] = keys.ToList();
+            relatedKeys.Add(root, keys.ToList());
+            
             for(int height = 0; queue.Count() > 0; height++)
             {
                 int curSize = queue.Count();
                 List<ulong> batch = new List<ulong>();
+                IDictionary<ulong, List<byte[]>> relatedKeysNext = new Dictionary<ulong, List<byte[]>>();
+
                 for(int i = 0; i < curSize; i++)
                 {
                     batch.Add(queue.Dequeue());
                 }
                 IDictionary<ulong, IHashTrieNode> foundNodes = GetNodesById(batch);
+
+                Console.Write("batch: ");
+                foreach(var x in batch) 
+                {
+                    Console.Write($"{x} ");
+                }
+                Console.WriteLine();
+
+                Console.Write("foundNodes: ");
+                foreach(var x in foundNodes) 
+                {
+                    Console.Write($"{x.Key} ");
+                }
+                Console.WriteLine();
+
+                
+
+                if(curSize != foundNodes.Count())
+                {
+                    throw new Exception("cursize is not equal to foundNodes.count()");
+                }
                 foreach(var node in foundNodes)
                 {
-                    if(node.Value.Type==NodeType.Leaf) continue;
+                    if(node.Value.Type == NodeType.Leaf) continue;
                     InternalNode internalNode = (InternalNode)node.Value;
+                    if(!relatedKeys.ContainsKey(node.Key))
+                    {
+                        throw new Exception("relatedKeys does not contain node.key");
+                    }
                     foreach(var key in relatedKeys[node.Key])
                     {
                         var h = HashFragment(key, height);
                         var to = internalNode.GetChildByHash(h);
                         if(to == 0) continue;
-                        if(!relatedKeys.ContainsKey(to))
+                        if(!relatedKeysNext.ContainsKey(to))
                         {
-                            relatedKeys[to] = new List<byte[]>();
+                            relatedKeysNext.Add(to, new List<byte[]>());
                             queue.Enqueue(to);
                         }
-                        relatedKeys[to].Add(key);
+                        relatedKeysNext[to].Add(key);
                     }
                 }
-                foreach(var key in batch)
-                {
-                    relatedKeys.Remove(key);
-                }
+                relatedKeys = relatedKeysNext;
             }
         }
     }

@@ -38,7 +38,7 @@ namespace Lachain.Storage.Trie
                 {
                     key = ((key<<1)|item.Key[i]);
                 }
-                result[key] = NodeSerializer.FromBytes(item.Value);
+                result.Add(key, NodeSerializer.FromBytes(item.Value));
             }
             return result;
         }
