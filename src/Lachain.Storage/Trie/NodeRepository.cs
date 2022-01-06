@@ -1,6 +1,7 @@
 ﻿using RocksDbSharp;
 using System;
 using Lachain.Utility.Utils;
+using System.Collections.Generic;
 
 namespace Lachain.Storage.Trie
 {
@@ -20,6 +21,28 @@ namespace Lachain.Storage.Trie
             var raw = _rocksDbContext.Get(prefix);
             return NodeSerializer.FromBytes(raw);
         }
+
+        public IDictionary<ulong, IHashTrieNode> GetNodes(IEnumerable<ulong> ids)
+        {
+            List<byte[]> prefixAddedIds = new List<byte[]>();
+            foreach(var id in ids)
+            {
+                prefixAddedIds.Add(EntryPrefix.PersistentHashMap.BuildPrefix(id));
+            }
+            var raw = _rocksDbContext.GetMany(prefixAddedIds);
+            IDictionary<ulong, IHashTrieNode> result = new Dictionary<ulong, IHashTrieNode>();
+            foreach(var item in raw)
+            {
+                ulong key = (ulong)0;
+                for(int i = 9; i >= 2; i--)
+                {
+                    key = ((key<<1)|item.Key[i]);
+                }
+                result[key] = NodeSerializer.FromBytes(item.Value);
+            }
+            return result;
+        }
+
 
         public WriteBatch CreateBatch()
         {

@@ -55,6 +55,17 @@ namespace Lachain.Storage.Trie
             ClearCaches();
         }
 
+        public void Preload(ulong root, IEnumerable<byte[]> keys)
+        {
+            if(root==0) return;
+            List<byte[]> hashedKeys = new List<byte[]>();
+            foreach(var key in keys)
+            {
+                hashedKeys.Add(Hash(key));
+            }
+            PreloadInternal(root, keys);
+        }
+
         public void ClearCaches()
         {
             _nodeCache.Clear();
@@ -247,6 +258,36 @@ namespace Lachain.Storage.Trie
             return _node;
         }
 
+        private IDictionary<ulong, IHashTrieNode> GetNodesById(List<ulong> ids)
+        {
+            List<ulong> notInCache = new List<ulong>();
+            IDictionary<ulong, IHashTrieNode> inCache = new Dictionary<ulong, IHashTrieNode>();
+            foreach(var id in ids)
+            {
+                IHashTrieNode? node;
+                if(_nodeCache.TryGetValue(id, out node))
+                {
+                    _lruCache.Add(id, node);
+                    inCache.Add(id,node);
+                }
+                else{
+                    node = _lruCache.Get(id);
+                    if(node is null) notInCache.Add(id);
+                    else inCache.Add(id, node);
+                }
+            }
+            var foundNodes = _repository.GetNodes(notInCache);
+            foreach(var item in foundNodes)
+            {
+                _lruCache.Add(item.Key, item.Value);
+            }
+            foreach(var item in inCache)
+            {
+                foundNodes.Add(item);
+            }
+            return foundNodes;
+        }
+
         private ulong ModifyInternalNode(ulong id, InternalNode node, byte h, ulong value, byte[]? valueHash)
         {
             if (value == 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 2)
@@ -424,6 +465,48 @@ namespace Lachain.Storage.Trie
                         return null;
                     default:
                         throw new InvalidOperationException($"Unknown node type {root.GetType()}");
+                }
+            }
+        }
+        private void PreloadInternal(ulong root, IEnumerable<byte[]> keys)
+        {
+            IDictionary<ulong, List<byte[]>> relatedKeys = new Dictionary<ulong, List<byte[]>>();
+            Queue<ulong> queue = new Queue<ulong>();
+            queue.Enqueue(root);
+            relatedKeys[root] = new List<byte[]>();
+            foreach(var key in keys)
+            {
+                relatedKeys[root].Add(key);
+            }
+            for(int height = 0; queue.Count() > 0; height++)
+            {
+                int curSize = queue.Count();
+                List<ulong> batch = new List<ulong>();
+                for(int i = 0; i < curSize; i++)
+                {
+                    batch.Add(queue.Dequeue());
+                }
+                IDictionary<ulong, IHashTrieNode> foundNodes = GetNodesById(batch);
+                foreach(var node in foundNodes)
+                {
+                    if(node.Value.Type==NodeType.Leaf) continue;
+                    InternalNode internalNode = (InternalNode)node.Value;
+                    foreach(var key in relatedKeys[node.Key])
+                    {
+                        var h = HashFragment(key, height);
+                        var to = internalNode.GetChildByHash(h);
+                        if(to == 0) continue;
+                        if(!relatedKeys.ContainsKey(to))
+                        {
+                            relatedKeys[to] = new List<byte[]>();
+                            queue.Enqueue(to);
+                        }
+                        relatedKeys[to].Add(key);
+                    }
+                }
+                foreach(var key in batch)
+                {
+                    relatedKeys.Remove(key);
                 }
             }
         }
