@@ -2,6 +2,7 @@
 using System;
 using Lachain.Utility.Utils;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Lachain.Storage.Trie
 {
@@ -24,6 +25,7 @@ namespace Lachain.Storage.Trie
 
         public IDictionary<ulong, IHashTrieNode> GetNodes(IEnumerable<ulong> ids)
         {
+            if(ids.ToList().Count() == 0) return new Dictionary<ulong, IHashTrieNode>();
             List<byte[]> prefixAddedIds = new List<byte[]>();
             foreach(var id in ids)
             {
@@ -36,10 +38,13 @@ namespace Lachain.Storage.Trie
                 ulong key = (ulong)0;
                 for(int i = 9; i >= 2; i--)
                 {
-                    key = ((key<<1)|item.Key[i]);
+                    key = ((key<<8)|item.Key[i]);
                 }
                 result.Add(key, NodeSerializer.FromBytes(item.Value));
             }
+            
+            /*
+            
             Console.WriteLine("input:");
             foreach(var id in ids) Console.WriteLine(" "+id);
             Console.WriteLine("\n");
@@ -47,6 +52,8 @@ namespace Lachain.Storage.Trie
             Console.WriteLine("output:");
             foreach(var item in result) Console.WriteLine(" "+item.Key);
             Console.WriteLine("\n");
+
+            */
 
             return result;
         }

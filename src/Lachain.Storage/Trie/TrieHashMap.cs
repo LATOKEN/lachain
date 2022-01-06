@@ -7,8 +7,6 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
-using RocksDbSharp;
-using Newtonsoft.Json.Linq;
 
 namespace Lachain.Storage.Trie
 {
@@ -487,6 +485,8 @@ namespace Lachain.Storage.Trie
                 }
                 IDictionary<ulong, IHashTrieNode> foundNodes = GetNodesById(batch);
 
+                /*
+
                 Console.Write("batch: ");
                 foreach(var x in batch) 
                 {
@@ -507,14 +507,18 @@ namespace Lachain.Storage.Trie
                 {
                     throw new Exception("cursize is not equal to foundNodes.count()");
                 }
+
+                */
                 foreach(var node in foundNodes)
                 {
                     if(node.Value.Type == NodeType.Leaf) continue;
                     InternalNode internalNode = (InternalNode)node.Value;
+                    /*
                     if(!relatedKeys.ContainsKey(node.Key))
                     {
                         throw new Exception("relatedKeys does not contain node.key");
                     }
+                    */
                     foreach(var key in relatedKeys[node.Key])
                     {
                         var h = HashFragment(key, height);
