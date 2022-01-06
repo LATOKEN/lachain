@@ -173,6 +173,20 @@ namespace Lachain.Core.Blockchain.Operations
             var (operatingError, removeTransactions, stateHash, relayTransactions) = _stateManager.SafeContext(() =>
             {
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
+
+                Logger.LogTrace($"Doing touch operations before emulation");
+
+                foreach(var receipt in transactions)
+                {
+                    snapshotBefore.Transactions.AddToTouch(receipt);
+                    snapshotBefore.Balances.AddToTouch(receipt);
+                    snapshotBefore.Events.AddToTouch(receipt);
+                }
+
+                snapshotBefore.Transactions.TouchAll();
+                snapshotBefore.Balances.TouchAll();
+                snapshotBefore.Events.TouchAll();
+
                 Logger.LogTrace("Executing transactions in no-check no-commit mode");
                 var error = _Execute(
                     block,

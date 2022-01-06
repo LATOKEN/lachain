@@ -63,6 +63,7 @@ namespace Lachain.Storage.State
             /* save transaction status */
             receipt.Status = status;
             /* write transaction to storage */
+            
             _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(receipt.Hash),
                 receipt.ToByteArray());
             /* update current address nonce */
@@ -70,6 +71,17 @@ namespace Lachain.Storage.State
                 EntryPrefix.TransactionCountByFrom.BuildPrefix(receipt.Transaction.From),
                 (expectedNonce + 1).ToBytes().ToArray()
             );
+        }
+
+        public void AddToTouch(TransactionReceipt receipt)
+        {
+            _state.AddToTouch(EntryPrefix.TransactionByHash.BuildPrefix(receipt.Hash));
+            _state.AddToTouch(EntryPrefix.TransactionCountByFrom.BuildPrefix(receipt.Transaction.From));
+        }
+
+        public void TouchAll()
+        {
+            _state.TouchAll();
         }
 
         public void SetCurrentVersion(ulong root)

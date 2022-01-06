@@ -14,6 +14,8 @@ namespace Lachain.Storage
         ulong Update(byte[] key, byte[] value);
         ulong Delete(byte[] key, out byte[]? value);
         ulong TryDelete(byte[] key, out byte[]? value);
+        void AddToTouch(byte[] key);
+        void TouchAll();
         
         IDictionary<ulong, IHashTrieNode> GetAllNodes();
         public bool IsNodeHashesOk();

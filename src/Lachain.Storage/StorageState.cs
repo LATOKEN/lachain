@@ -13,6 +13,7 @@ namespace Lachain.Storage
     {
         private readonly RepositoryManager _repositoryManager;
         private readonly ITrieMap _trieMap;
+        private List<byte[]> _keysToTouch = new List<byte[]>();
         
         private readonly ulong _initialVersion;
 
@@ -97,6 +98,17 @@ namespace Lachain.Storage
         {
             CurrentVersion = _trieMap.TryDelete(CurrentVersion, key, out value);
             return CurrentVersion;
+        }
+
+        public void AddToTouch(byte[] key)
+        {
+            _keysToTouch.Add(key);
+        }
+
+        public void TouchAll()
+        {
+            // call _TrieMap to touch all the keys
+            _keysToTouch.Clear();
         }
 
         public IEnumerable<byte[]> Values => _trieMap.GetValues(CurrentVersion);

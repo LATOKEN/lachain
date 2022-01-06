@@ -139,6 +139,16 @@ namespace Lachain.Storage.State
             var key = EntryPrefix.MinterAddress.BuildPrefix();
             _state.AddOrUpdate(key, value.ToBytes());
         }
+        public void AddToTouch(TransactionReceipt receipt)
+        {
+            _state.AddToTouch(EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(receipt.Transaction.From));
+            _state.AddToTouch(EntryPrefix.BalanceByOwnerAndAsset.BuildPrefix(receipt.Transaction.To));
+        }
+
+        public void TouchAll()
+        {
+            _state.TouchAll();
+        }
 
         public void Commit()
         {

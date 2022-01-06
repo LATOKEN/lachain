@@ -65,6 +65,18 @@ namespace Lachain.Storage.State
             var raw = _state.Get(EntryPrefix.EventCountByTransactionHash.BuildPrefix(transactionHash));
             return raw?.AsReadOnlySpan().ToUInt32() ?? 0u;
         }
+
+        public void AddToTouch(TransactionReceipt receipt)
+        {
+            var transactionHash = receipt.Hash;
+            _state.AddToTouch(EntryPrefix.EventCountByTransactionHash.BuildPrefix(transactionHash));
+            _state.AddToTouch(EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(transactionHash, 0));
+        }
+
+        public void TouchAll()
+        {
+            _state.TouchAll();
+        }
         
         public void SetCurrentVersion(ulong root)
         {

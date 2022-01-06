@@ -19,5 +19,8 @@ namespace Lachain.Storage.State
         UInt160 GetMinter();
         void SetMinter(UInt160 minter);
 
+        void AddToTouch(TransactionReceipt receipt);
+
+        void TouchAll();
     }
 }
