@@ -107,7 +107,7 @@ namespace Lachain.Storage
 
         public void TouchAll()
         {
-            // call _TrieMap to touch all the keys
+            _trieMap.Preload(CurrentVersion, _keysToTouch);
             _keysToTouch.Clear();
         }
 
