@@ -63,7 +63,7 @@ namespace Lachain.Storage.Trie
             {
                 hashedKeys.Add(Hash(key));
             }
-            PreloadInternal(root, keys);
+            PreloadInternal(root, hashedKeys);
         }
 
         public void ClearCaches()
@@ -473,11 +473,7 @@ namespace Lachain.Storage.Trie
             IDictionary<ulong, List<byte[]>> relatedKeys = new Dictionary<ulong, List<byte[]>>();
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(root);
-            relatedKeys[root] = new List<byte[]>();
-            foreach(var key in keys)
-            {
-                relatedKeys[root].Add(key);
-            }
+            relatedKeys[root] = keys.ToList();
             for(int height = 0; queue.Count() > 0; height++)
             {
                 int curSize = queue.Count();
