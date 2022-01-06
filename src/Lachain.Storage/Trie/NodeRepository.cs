@@ -40,6 +40,14 @@ namespace Lachain.Storage.Trie
                 }
                 result.Add(key, NodeSerializer.FromBytes(item.Value));
             }
+            Console.WriteLine("input:");
+            foreach(var id in ids) Console.WriteLine(" "+id);
+            Console.WriteLine("\n");
+
+            Console.WriteLine("output:");
+            foreach(var item in result) Console.WriteLine(" "+item.Key);
+            Console.WriteLine("\n");
+
             return result;
         }
 
