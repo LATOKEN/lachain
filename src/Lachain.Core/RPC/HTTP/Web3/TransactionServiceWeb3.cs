@@ -290,63 +290,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_sendTransaction")]
         private string SendTransaction(JObject opts)
         {
-            var from = opts["from"];
-            var gas = opts["gas"];
-            var gasPrice = opts["gasPrice"];
-            var data = opts["data"];
-            var to = opts["to"];
-            var value = opts["value"];
-            var nonce = opts["nonce"];
-            
-            if (to is null) // deploy transaction
+            var signedTx = MakeAndSignTransaction(opts);
+            var error = _transactionPool.Add(signedTx);
+            if (error != OperatingError.Ok)
             {
-                if (data is null)
-                {
-                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
-                    //throw new ArgumentException("To and data fields are both empty");
-                }
-
-                // TODO: find other way to access keys to sign txes
-                // if (_privateWallet.IsLocked())
-                //     throw new MethodAccessException("Wallet is locked");
-                _privateWallet.Unlock("12345", 1000);
-                var keyPair = _privateWallet.EcdsaKeyPair;
-                Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
-
-                var byteCode = ((string) data!).HexToBytes();
-                if (!VirtualMachine.VerifyContract(byteCode, 
-                        HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
-                    throw new ArgumentException("Unable to validate smart-contract code");
-                var fromAddress = from is null ? keyPair.PublicKey.GetAddress() : ((string) from!).HexToUInt160();
-                var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
-                var contractHash = fromAddress.ToBytes().Concat(nonceToUse.ToBytes()).Ripemd();
-                Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
-                var tx = _transactionBuilder.DeployTransaction(fromAddress, byteCode);
-                var signedTx = _transactionSigner.Sign(tx, keyPair);
-                var error = _transactionPool.Add(signedTx);
-                if (error != OperatingError.Ok)
-                {
-                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
-                    //throw new ApplicationException($"Can not add to transaction pool: {error}");
-                }
-
-                return Web3DataFormatUtils.Web3Data(signedTx.Hash);
+                throw new ApplicationException($"Can not add to transaction pool: {error}");
             }
-            else
-            {
-                if (data is null) // transfer tx
-                {
-                    // TODO: implement transfer tx
-                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
-                    //throw new ApplicationException("Not implemented yet");
-                }
-                else // invoke tx
-                {
-                    // TODO: implement invoke tx
-                    return Web3DataFormatUtils.Web3Data("".HexToBytes());
-                    //throw new ApplicationException("Not implemented yet");
-                }
-            }
+
+            return Web3DataFormatUtils.Web3Data(signedTx.Hash);
         }
         
         [JsonRpcMethod("eth_call")]
@@ -567,9 +518,79 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_signTransaction")]
         private string SignTransaction(JObject opts)
         {
-            // TODO: implement tx signing
-            return Web3DataFormatUtils.Web3Data("".HexToBytes());
-            //throw new ApplicationException("Not implemented yet");
+            var signedTx = MakeAndSignTransaction(opts);
+            var transaction = signedTx.Transaction;
+            var sign = signedTx.Signature;
+            var rawTx = transaction.RlpWithSignature(sign);
+            return Web3DataFormatUtils.Web3Data(rawTx);
+        }
+
+        private TransactionReceipt? MakeAndSignTransaction(JObject opts){
+
+            var from = opts["from"];
+            var gas = opts["gas"];
+            var gasPrice = opts["gasPrice"];
+            var data = opts["data"];
+            var to = opts["to"];
+            var value = opts["value"];
+            var nonce = opts["nonce"];
+
+            if(from is null){
+                throw new ArgumentException("from should not be null");
+            }
+            var fromAddress = ((string) from!).HexToUInt160();
+
+            ulong? nonceToUse = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress);
+            if(!(nonce is null)) nonceToUse = ((string)nonce!).HexToUlong();
+            
+            ulong? gasToUse = null;
+            if(!(gas is null)) gasToUse = ((string)gas!).HexToUlong();
+            
+            ulong? gasPriceToUse = null;
+            if(!(gasPrice is null)) gasPriceToUse  = ((string)gasPrice!).HexToUlong();
+            
+            byte[]? byteCode = null;
+            if(!(data is null)) byteCode = ((string) data!).HexToBytes();
+
+            // TODO: find other way to access keys to sign txes
+            // if (_privateWallet.IsLocked())
+            //     throw new MethodAccessException("Wallet is locked");
+            _privateWallet.Unlock("12345", 1000);
+            var keyPair = _privateWallet.EcdsaKeyPair;
+            Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
+
+
+            Transaction? tx;
+
+            if (to is null) // deploy transaction
+            {
+                if (data is null)
+                {
+                    throw new ArgumentException("To and data fields are both empty");
+                }
+
+                if (!VirtualMachine.VerifyContract(byteCode!, 
+                        HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
+                    throw new ArgumentException("Unable to validate smart-contract code");
+                
+                
+                var contractHash = fromAddress.ToBytes().Concat(((ulong)nonceToUse).ToBytes()).Ripemd();
+                Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
+                tx = _transactionBuilder.DeployTransaction(fromAddress, byteCode!, gasToUse, gasPriceToUse , nonceToUse);
+                
+            }
+            else
+            {
+
+                if((value is null) && (data is null)) throw new ArgumentException("value and data both null");
+                var toAddress = ((string)to!).HexToUInt160();
+                var valueToUse = UInt256Utils.Zero.ToMoney();
+                if(!(value is null)) valueToUse = ((string)value!).HexToUInt256().ToMoney();
+                tx = _transactionBuilder.TransferTransaction(fromAddress , toAddress , valueToUse , gasToUse, gasPriceToUse, nonceToUse, byteCode);
+               
+            }
+
+            return _transactionSigner.Sign(tx, keyPair);
         }
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot
