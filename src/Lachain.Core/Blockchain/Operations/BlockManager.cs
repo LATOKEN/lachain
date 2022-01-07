@@ -23,6 +23,7 @@ using Prometheus;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Storage.Trie;
 
 
 namespace Lachain.Core.Blockchain.Operations
@@ -183,13 +184,42 @@ namespace Lachain.Core.Blockchain.Operations
                     snapshotBefore.Transactions.AddToTouch(receipt);
                     snapshotBefore.Balances.AddToTouch(receipt);
                     snapshotBefore.Events.AddToTouch(receipt);
+                    snapshotBefore.Contracts.AddToTouch(receipt);
                 }
 
                 snapshotBefore.Transactions.TouchAll();
                 snapshotBefore.Balances.TouchAll();
                 snapshotBefore.Events.TouchAll();
+                snapshotBefore.Contracts.TouchAll();
+
+                Logger.LogTrace($"Trying some queries");
+
+                foreach(var receipt in transactions)
+                {
+                    snapshotBefore.Balances.GetBalance(receipt.Transaction.From);
+                    snapshotBefore.Balances.GetBalance(receipt.Transaction.To);
+                    snapshotBefore.Transactions.GetTransactionByHash(receipt.Hash);
+                }
+                     
+
+                Logger.LogTrace($"second time touching");
+
+                foreach(var receipt in transactions)
+                {
+                    snapshotBefore.Transactions.AddToTouch(receipt);
+                    snapshotBefore.Balances.AddToTouch(receipt);
+                    snapshotBefore.Events.AddToTouch(receipt);
+                    snapshotBefore.Contracts.AddToTouch(receipt);
+                }
+
+                snapshotBefore.Transactions.TouchAll();
+                snapshotBefore.Balances.TouchAll();
+                snapshotBefore.Events.TouchAll();
+                snapshotBefore.Contracts.TouchAll();
 
                 _lastTouchedBlock = block.Header.Index;
+
+                TrieHashMap.databaseCounter = 0;
 
                 Logger.LogTrace("Executing transactions in no-check no-commit mode");
                 var error = _Execute(
@@ -201,7 +231,12 @@ namespace Lachain.Core.Blockchain.Operations
                     out var gasUsed,
                     out _
                 );
+
+                Logger.LogTrace($"During Emulation database hit count: {TrieHashMap.databaseCounter}");
+                TrieHashMap.databaseCounter = 0;
+
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
+                
                 Logger.LogDebug(
                     $"Block execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
                     $" stateHash={currentStateHash.ToHex()}, gasUsed={gasUsed}"
@@ -237,23 +272,31 @@ namespace Lachain.Core.Blockchain.Operations
                         snapshotBefore.Transactions.AddToTouch(receipt);
                         snapshotBefore.Balances.AddToTouch(receipt);
                         snapshotBefore.Events.AddToTouch(receipt);
+                        snapshotBefore.Contracts.AddToTouch(receipt);
                     }
 
                     snapshotBefore.Transactions.TouchAll();
                     snapshotBefore.Balances.TouchAll();
                     snapshotBefore.Events.TouchAll();
+                    snapshotBefore.Contracts.TouchAll();
 
                     Logger.LogTrace($"Ended touch operations before execution");
 
                     _lastTouchedBlock = block.Header.Index;
                 }
                 
-
+                TrieHashMap.databaseCounter = 0;
 
                 var startTime = TimeUtils.CurrentTimeMillis();
                 var operatingError = _Execute(
                     block, transactions, out _, out _, false, out var gasUsed, out var totalFee
                 );
+
+                Logger.LogTrace($"During execution database hit count: {TrieHashMap.databaseCounter}");
+                TrieHashMap.databaseCounter = 0;
+
+            
+
                 if (operatingError != OperatingError.Ok)
                 {
                     Logger.LogError($"Error occured while executing block: {operatingError}");
@@ -416,6 +459,7 @@ namespace Lachain.Core.Blockchain.Operations
                         }
 
                         snapshot = _stateManager.NewSnapshot();
+                        Logger.LogTrace("before adding tx");
                         snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
                         Logger.LogTrace($"Transaction {txHash.ToHex()} failed because of error: {result}");
                     }
@@ -438,7 +482,10 @@ namespace Lachain.Core.Blockchain.Operations
                     else Logger.LogInformation($"Block gas limit after execution ok for tx : {txHash.ToHex()}");
 
                     /* try to take fee from sender */
+
                     result = _TakeTransactionFee(receipt, snapshot, out var fee);
+
+                    Logger.LogTrace($"After taking fee");
                     if (result != OperatingError.Ok)
                     {
                         removeTransactions.Add(receipt);
@@ -533,6 +580,7 @@ namespace Lachain.Core.Blockchain.Operations
             TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
+            Logger.LogTrace("Before taking fee");
             fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;

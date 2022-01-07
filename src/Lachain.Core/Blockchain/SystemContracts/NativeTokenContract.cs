@@ -115,11 +115,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
             var from = _context.Sender ?? throw new InvalidOperationException();
+            Logger.LogTrace($"Before transferring balance");
             var result = _context.Snapshot.Balances.TransferBalance(
                 from,
                 recipient,
                 value.ToMoney()
             );
+            Logger.LogTrace($"After transferring balance");
+
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
             return ExecutionStatus.Ok;
@@ -266,6 +269,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 TransactionHash = _context.Receipt.Hash,
                 SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
             };
+            Logger.LogTrace($"before adding event");
             _context.Snapshot.Events.AddEvent(eventObj);
             Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
             Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");

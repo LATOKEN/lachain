@@ -6,11 +6,14 @@ using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
+using Lachain.Logger;
 
 namespace Lachain.Storage.State
 {
     public class TransactionSnapshot : ITransactionSnapshot
     {
+
+        private static readonly ILogger<TransactionSnapshot> Logger = LoggerFactory.GetLoggerForClass<TransactionSnapshot>();
         private readonly IStorageState _state;
 
         public ulong Version => _state.CurrentVersion;
@@ -56,21 +59,27 @@ namespace Lachain.Storage.State
 
         public void AddTransaction(TransactionReceipt receipt, TransactionStatus status)
         {
+            Logger.LogTrace($"Before reading expectedNonce");
             var expectedNonce = GetTotalTransactionCount(receipt.Transaction.From);
+            Logger.LogTrace($"After reading expectedNonce");
             if (expectedNonce != receipt.Transaction.Nonce)
                 throw new Exception(
                     $"This should never happen, transaction nonce mismatch: {receipt.Transaction.Nonce} but should be {expectedNonce}");
             /* save transaction status */
             receipt.Status = status;
             /* write transaction to storage */
-            
+
+            Logger.LogTrace($"Adding tx hash to the database");
             _state.AddOrUpdate(EntryPrefix.TransactionByHash.BuildPrefix(receipt.Hash),
                 receipt.ToByteArray());
             /* update current address nonce */
+
+            Logger.LogTrace($"Adding nonce to the database");
             _state.AddOrUpdate(
                 EntryPrefix.TransactionCountByFrom.BuildPrefix(receipt.Transaction.From),
                 (expectedNonce + 1).ToBytes().ToArray()
             );
+            Logger.LogTrace($"Done adding transaction");
         }
 
         public void AddToTouch(TransactionReceipt receipt)

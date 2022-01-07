@@ -5,12 +5,15 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
+using Lachain.Logger;
 
 
 namespace Lachain.Storage.State
 {
     public class BalanceSnapshot : IBalanceSnapshot
     {
+        private static readonly ILogger<BalanceSnapshot> Logger = LoggerFactory.GetLoggerForClass<BalanceSnapshot>();
+
         private readonly IStorageState _state;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 

@@ -5,12 +5,16 @@ using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
-
+using Lachain.Logger;
 
 namespace Lachain.Storage.State
 {
     public class EventSnapshot : IEventSnapshot
     {
+
+        private static readonly ILogger<EventSnapshot> Logger =
+            LoggerFactory.GetLoggerForClass<EventSnapshot>();
+
         private readonly IStorageState _state;
 
         public EventSnapshot(IStorageState state)
@@ -43,14 +47,24 @@ namespace Lachain.Storage.State
 
         public void AddEvent(Event @event)
         {
+            Logger.LogTrace($"Before transaction hash from event");
             var total = GetTotalTransactionEvents(@event.TransactionHash ?? UInt256Utils.Zero);
+            Logger.LogTrace($"After transaction hash from event. total: {total}");
+
             @event.Index = total;
+
+            Logger.LogTrace($"Before event-2");
             _state.AddOrUpdate(
                 EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash ?? UInt256Utils.Zero),
                 (total + 1).ToBytes().ToArray()
             );
+            Logger.LogTrace("After event-2");
+            Logger.LogTrace("Before event-3");
+            
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash?? UInt256Utils.Zero, total);
             _state.AddOrUpdate(prefix, @event.ToByteArray());
+            Logger.LogTrace("After event-3");
+            
         }
 
         public Event? GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex)

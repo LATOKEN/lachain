@@ -53,6 +53,16 @@ namespace Lachain.Storage.State
             _state.AddOrUpdate(EntryPrefix.ContractByHash.BuildPrefix(contract.ContractAddress), contract.ToBytes());
         }
 
+        public void AddToTouch(TransactionReceipt receipt)
+        {
+            _state.AddToTouch(EntryPrefix.ContractByHash.BuildPrefix(receipt.Transaction.To));
+        }
+
+        public void TouchAll()
+        {
+            _state.TouchAll();
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void DeleteContractByHash(UInt160 contractHash)
         {

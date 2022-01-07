@@ -11,11 +11,14 @@ using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.Logger;
 
 namespace Lachain.Core.Blockchain.Operations
 {
     public class TransactionManager : ITransactionManager
     {
+        private static readonly ILogger<TransactionManager> Logger = LoggerFactory.GetLoggerForClass<TransactionManager>();
+
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IStateManager _stateManager;
         private readonly TransactionExecuter _transactionExecuter;
@@ -52,9 +55,13 @@ namespace Lachain.Core.Blockchain.Operations
         {
             var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
             /* check transaction with this hash in database */
+
+            Logger.LogTrace($"Before getting tx by hash");
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
+
+            Logger.LogTrace($"After getting tx by hash");
             var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
             var cycle = block.Header.Index / StakingContract.CycleDuration;
 
@@ -73,7 +80,10 @@ namespace Lachain.Core.Blockchain.Operations
             if (!receipt.Transaction.FullHash(receipt.Signature).Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check transaction nonce */
+
+            Logger.LogTrace($"Before getting nonce");
             var nonce = transactionRepository.GetTotalTransactionCount(receipt.Transaction.From);
+            Logger.LogTrace($"After getting nonce");
             if (nonce != receipt.Transaction.Nonce)
                 return OperatingError.InvalidNonce;
             /* try to persist transaction */

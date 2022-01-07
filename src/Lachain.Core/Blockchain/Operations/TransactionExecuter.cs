@@ -8,11 +8,13 @@ using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.Logger;
 
 namespace Lachain.Core.Blockchain.Operations
 {
     public class TransactionExecuter
     {
+        private static readonly ILogger<TransactionExecuter> Logger = LoggerFactory.GetLoggerForClass<TransactionExecuter>();
         private readonly IContractRegisterer _contractRegisterer;
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
@@ -45,17 +47,23 @@ namespace Lachain.Core.Blockchain.Operations
                 var invocation = ContractEncoder.Encode("deploy(bytes)", transaction.Invocation.ToArray());
                 return _InvokeContract(ContractRegisterer.DeployContract, invocation, receipt, snapshot, true);
             }
-
+            Logger.LogTrace("Before getting contract by hash");
             var contract = snapshot.Contracts.GetContractByHash(transaction.To);
+            Logger.LogTrace("After getting contract by hash");
+            Logger.LogTrace("Before getting sys contract by hash");
             var systemContract = _contractRegisterer.GetContractByAddress(transaction.To);
+            Logger.LogTrace("After getting contract by hash");
             if (contract is null && systemContract is null)
             {
                 /*
                  * Destination address is not smart-contract, just plain address
                  * So we just call transfer method of system contract
                  */
+                
+                Logger.LogTrace("Before getting balace from");
                 if (snapshot.Balances.GetBalance(transaction.From) < transaction.Value.ToMoney())
                     return OperatingError.InsufficientBalance;
+                Logger.LogTrace("After getting contract by hash");
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
                 return _InvokeContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot, true);
             }

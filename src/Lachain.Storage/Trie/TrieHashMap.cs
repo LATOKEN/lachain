@@ -7,16 +7,20 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
+using Lachain.Logger;
 
 namespace Lachain.Storage.Trie
 {
-    internal class TrieHashMap : ITrieMap
+    public class TrieHashMap : ITrieMap
     {
+        private static readonly ILogger<TrieHashMap> Logger = LoggerFactory.GetLoggerForClass<TrieHashMap>();
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
         private const int Capacity = 100000;
         private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
+
+        public static ulong databaseCounter = 0;
         
         private readonly NodeRepository _repository;
         private readonly VersionFactory _versionFactory;
@@ -55,6 +59,7 @@ namespace Lachain.Storage.Trie
 
         public void Preload(ulong root, IEnumerable<byte[]> keys)
         {
+            databaseCounter = 0;
             if(root == 0) return;
             List<byte[]> hashedKeys = new List<byte[]>();
             foreach(var key in keys)
@@ -62,6 +67,8 @@ namespace Lachain.Storage.Trie
                 hashedKeys.Add(Hash(key));
             }
             PreloadInternal(root, hashedKeys);
+            Logger.LogTrace($"During Preload, database hit count: {databaseCounter}");
+            databaseCounter = 0;
         }
 
         public void ClearCaches()
@@ -250,6 +257,8 @@ namespace Lachain.Storage.Trie
             if (_node == null)
             {
                 _node = _repository.GetNode(id);
+                databaseCounter++;
+                Logger.LogTrace($"database hit with node: {id}");
                 _lruCache.Add(id, _node);
             }
             if(_node is null) System.Console.WriteLine($"Get Node By id: {id} not found");
@@ -258,6 +267,11 @@ namespace Lachain.Storage.Trie
 
         private IDictionary<ulong, IHashTrieNode> GetNodesById(List<ulong> ids)
         {
+            Logger.LogTrace($"preload nodes: ");
+            foreach(var id in ids) {
+                Console.Write($"{id} ");
+            }
+            Console.WriteLine();
             List<ulong> notInCache = new List<ulong>();
             IDictionary<ulong, IHashTrieNode> inCache = new Dictionary<ulong, IHashTrieNode>();
             foreach(var id in ids)
@@ -274,6 +288,8 @@ namespace Lachain.Storage.Trie
                     else inCache.Add(id, node);
                 }
             }
+            databaseCounter += (ulong) notInCache.Count();
+            
             var foundNodes = _repository.GetNodes(notInCache);
             foreach(var item in foundNodes)
             {
