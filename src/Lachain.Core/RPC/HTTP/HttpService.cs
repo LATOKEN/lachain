@@ -41,6 +41,7 @@ namespace Lachain.Core.RPC.HTTP
             "deleteTransactionPoolRepository",
             "clearInMemoryPool",
             "eth_sendTransaction",
+            "eth_signTransaction",
         };
 
         public void Stop()

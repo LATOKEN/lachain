@@ -525,7 +525,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3Data(rawTx);
         }
 
-        private TransactionReceipt? MakeAndSignTransaction(JObject opts){
+        private TransactionReceipt MakeAndSignTransaction(JObject opts){
 
             var from = opts["from"];
             var gas = opts["gas"];
@@ -560,7 +560,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
 
 
-            Transaction? tx;
+            Transaction tx;
 
             if (to is null) // deploy transaction
             {
