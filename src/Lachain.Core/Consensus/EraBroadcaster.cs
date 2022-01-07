@@ -208,7 +208,7 @@ namespace Lachain.Core.Consensus
                 _callback[request.To] = request.From;
             }
 
-        //    Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
+            Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
             EnsureProtocol(request.To);
             
             if (_registry.TryGetValue(request.To, out var protocol))
@@ -218,7 +218,7 @@ namespace Lachain.Core.Consensus
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
-        //    Logger.LogTrace($"Protocol {result.From} returned result");
+            Logger.LogTrace($"Protocol {result.From} returned result");
             if (_terminated)
             {
                 Logger.LogTrace($"Era {_era} is already finished, skipping InternalResponse");
@@ -234,7 +234,7 @@ namespace Lachain.Core.Consensus
                 else
                 {
                     cbProtocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-                //    Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
+                    Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
                 }
             }
 
@@ -277,7 +277,7 @@ namespace Lachain.Core.Consensus
         {
             ValidateId(id);
             if (_registry.TryGetValue(id, out var existingProtocol)) return existingProtocol;
-        //    Logger.LogTrace($"Creating protocol {id} on demand");
+            Logger.LogTrace($"Creating protocol {id} on demand");
             if (_terminated)
             {
                 Logger.LogTrace($"Protocol {id} not created since broadcaster is terminated");

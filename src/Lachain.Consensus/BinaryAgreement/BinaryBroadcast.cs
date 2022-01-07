@@ -232,7 +232,7 @@ namespace Lachain.Consensus.BinaryAgreement
         {
             if (_confSent) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
-        //    Logger.LogTrace($"{_broadcastId}: conf message sent with set {_binValues}");
+            Logger.LogTrace($"{_broadcastId}: conf message sent with set {_binValues}");
             Broadcaster.Broadcast(CreateConfMessage(_binValues));
             _confSent = true;
             RevisitConfMessages();
@@ -288,7 +288,7 @@ namespace Lachain.Consensus.BinaryAgreement
         {
             if (!_result.HasValue) return;
             if (_requested != ResultStatus.Requested) return;
-        //    Logger.LogTrace($"{_broadcastId}: made result {_result.Value.ToString()}");
+            Logger.LogTrace($"{_broadcastId}: made result {_result.Value.ToString()}");
             Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));
             _requested = ResultStatus.Sent;

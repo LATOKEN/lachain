@@ -92,7 +92,7 @@ namespace Lachain.Consensus
             lock (_queueLock)
             {
                 if (Terminated) return;
-            //    Logger.LogTrace($"{Id}: protocol is terminated");
+                Logger.LogTrace($"{Id}: protocol is terminated");
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
             }

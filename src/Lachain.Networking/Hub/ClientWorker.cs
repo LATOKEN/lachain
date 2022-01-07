@@ -99,14 +99,14 @@ namespace Lachain.Networking.Hub
                     var megaBatchBytes = megaBatch.ToByteArray();
                     if (megaBatchBytes.Length == 0)
                         throw new Exception("Cannot send empty message");
-                /*    Logger.LogTrace(
-                        $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}"); */
+                    Logger.LogTrace(
+                        $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}"); 
                     var messageTypes = toSend.Messages.Select(m =>
                         m.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage
                             ? m.MessageCase.ToString()
                             : m.ConsensusMessage.PrettyTypeString()
                     );
-                //    Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
+                    Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
                     foreach (var message in toSend.Messages)
                     {
                         MessageCounter
