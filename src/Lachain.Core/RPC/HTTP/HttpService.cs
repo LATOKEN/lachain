@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
 using Newtonsoft.Json.Linq;
 using Lachain.Logger;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -14,6 +15,7 @@ namespace Lachain.Core.RPC.HTTP
     {
         private static readonly ILogger<HttpService> Logger =
             LoggerFactory.GetLoggerForClass<HttpService>();
+        private static string _keyValidation = "LACHAIN_KEYVALIDATION2022";
         
         public void Start(RpcConfig rpcConfig)
         {
@@ -32,6 +34,7 @@ namespace Lachain.Core.RPC.HTTP
 
         private HttpListener? _httpListener;
         private string? _apiKey;
+        private string? _keyFile;
         
         private readonly List<string> _privateMethods = new List<string>
         {
@@ -56,6 +59,7 @@ namespace Lachain.Core.RPC.HTTP
                 _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             _apiKey = rpcConfig.ApiKey ?? throw new InvalidOperationException();
+            _keyFile = rpcConfig.KeyFile ?? throw new InvalidOperationException();
             _httpListener.Start();
             while (_httpListener.IsListening)
             {
@@ -154,12 +158,48 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
+        //private bool _CheckAuth(JObject body, HttpListenerContext context)
+        //{
+        //    if (context.Request.IsLocal) return true;
+        //    if (_privateMethods.Contains(body["method"]!.ToString()))
+        //    {
+        //        return !(body["key"] is null) && Equals(body["key"]!.ToString(), _apiKey);
+        //    }
+
+        //    return true;
+        //}
+
         private bool _CheckAuth(JObject body, HttpListenerContext context)
         {
             if (context.Request.IsLocal) return true;
+
             if (_privateMethods.Contains(body["method"]!.ToString()))
             {
-                return !(body["key"] is null) && Equals(body["key"]!.ToString(), _apiKey);
+                var publicKey = body["key"]!.ToString();
+                var privateKey = string.Empty;
+                if (File.Exists(_keyFile))
+                {
+                    privateKey = File.ReadAllText(_keyFile);
+                }
+                
+                if (string.IsNullOrEmpty(privateKey) || string.IsNullOrEmpty(publicKey))
+                {
+                    return false;
+                }
+
+                try
+                {
+                    var enc = RSAEncription.Encrypt(_keyValidation, publicKey);
+                    var dec = RSAEncription.Decrypt(enc, privateKey);
+
+                    return Equals(_keyValidation, dec);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex);
+                }
+
+                return false;
             }
 
             return true;

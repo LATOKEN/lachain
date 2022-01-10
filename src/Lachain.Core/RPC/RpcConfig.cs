@@ -16,7 +16,8 @@ namespace Lachain.Core.RPC
             Port = 7070,
             MetricsPort = 7071,
             ApiKey = new string(Enumerable.Repeat("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 16)
-                .Select(s => s[new Random().Next(s.Length)]).ToArray())
+                .Select(s => s[new Random().Next(s.Length)]).ToArray()),
+            KeyFile = "./private_key"
         };
         
         [JsonProperty("hosts")]
@@ -30,5 +31,8 @@ namespace Lachain.Core.RPC
 
         [JsonProperty("apiKey")]
         public string? ApiKey { get; set; }
+
+        [JsonProperty("keyFile")]
+        public string? KeyFile { get; set; }
     }
 }

@@ -32,7 +32,8 @@
     ],
     "port": 7070,
     "metricsPort": 7071,
-    "apiKey": "asdasdasd"
+    "apiKey": "asdasdasd",
+    "keyFile": "./private_key"
   },
   "vault": {
     "path": "wallet.json",
