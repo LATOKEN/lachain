@@ -108,10 +108,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         [JsonRpcMethod("eth_getTransactionCount")]
-        public ulong GetTransactionCount(string from, string blockId)
+        public string GetTransactionCount(string from, string blockId)
         {
-            if(blockId.Equals("pending")) return _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
-            return GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
+            ulong nonce;
+            if(blockId.Equals("pending")) nonce = _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
+            else nonce = GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
+            return Web3DataFormatUtils.Web3Number(nonce);
         }
 
         [JsonRpcMethod("eth_getCode")]

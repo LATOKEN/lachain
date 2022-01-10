@@ -186,8 +186,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
             try
             {
                 var transaction = MakeTransaction(ethTx);
+                Logger.LogInformation($"got tx: {transaction.FullHash(signature.ToSignature()).ToHex()}, from: {transaction.From.ToHex()}");
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId)}))
                     return "Can not add to transaction pool: BadChainId";
+                Logger.LogInformation($"nonce got: {transaction.Nonce}");
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
                 if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
                 return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
@@ -540,9 +542,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
             var fromAddress = ((string) from!).HexToUInt160();
 
+
             ulong? nonceToUse = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress);
             if(!(nonce is null)) nonceToUse = ((string)nonce!).HexToUlong();
-            
+
             ulong? gasToUse = null;
             if(!(gas is null)) gasToUse = ((string)gas!).HexToUlong();
             
@@ -551,6 +554,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             
             byte[]? byteCode = null;
             if(!(data is null)) byteCode = ((string) data!).HexToBytes();
+            
 
             // TODO: find other way to access keys to sign txes
             // if (_privateWallet.IsLocked())
@@ -558,7 +562,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _privateWallet.Unlock("12345", 1000);
             var keyPair = _privateWallet.EcdsaKeyPair;
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
-
+            
 
             Transaction tx;
 
@@ -585,7 +589,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 if((value is null) && (data is null)) throw new ArgumentException("value and data both null");
                 var toAddress = ((string)to!).HexToUInt160();
                 var valueToUse = UInt256Utils.Zero.ToMoney();
-                if(!(value is null)) valueToUse = ((string)value!).HexToUInt256().ToMoney();
+                if(!(value is null)) valueToUse = ((string)value!).HexToBytes().ToUInt256(true).ToMoney();
                 tx = _transactionBuilder.TransferTransaction(fromAddress , toAddress , valueToUse , gasToUse, gasPriceToUse, nonceToUse, byteCode);
                
             }
