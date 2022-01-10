@@ -151,12 +151,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
-            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");        
+            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest").HexToUlong();        
             Assert.AreEqual(txCountBefore, 0);
 
             ExecuteDummyTransaction(true);
 
-            var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
+            var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest").HexToUlong();
             Assert.AreEqual(txCountAfter, 1);
         }
 
