@@ -243,6 +243,7 @@ namespace Lachain.Core.Blockchain.Operations
                     snapshotBefore.Balances.TouchAll();
                     snapshotBefore.Events.TouchAll();
 
+
                     Logger.LogTrace($"Ended touch operations before execution");
 
                     _lastTouchedBlock = block.Header.Index;

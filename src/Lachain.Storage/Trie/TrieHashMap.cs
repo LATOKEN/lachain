@@ -466,13 +466,14 @@ namespace Lachain.Storage.Trie
                 }
             }
         }
-        private void PreloadInternal(ulong root, IEnumerable<byte[]> keys)
+         private void PreloadInternal(ulong root, IEnumerable<byte[]> keys)
         {
             IDictionary<ulong, List<byte[]>> relatedKeys = new Dictionary<ulong, List<byte[]>>();
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(root);
             relatedKeys.Add(root, keys.ToList());
-            
+            List<IHashTrieNode> allNodes = new List<IHashTrieNode>();
+
             for(int height = 0; queue.Count() > 0; height++)
             {
                 int curSize = queue.Count();
@@ -484,41 +485,11 @@ namespace Lachain.Storage.Trie
                     batch.Add(queue.Dequeue());
                 }
                 IDictionary<ulong, IHashTrieNode> foundNodes = GetNodesById(batch);
-
-                /*
-
-                Console.Write("batch: ");
-                foreach(var x in batch) 
-                {
-                    Console.Write($"{x} ");
-                }
-                Console.WriteLine();
-
-                Console.Write("foundNodes: ");
-                foreach(var x in foundNodes) 
-                {
-                    Console.Write($"{x.Key} ");
-                }
-                Console.WriteLine();
-
-                
-
-                if(curSize != foundNodes.Count())
-                {
-                    throw new Exception("cursize is not equal to foundNodes.count()");
-                }
-
-                */
                 foreach(var node in foundNodes)
                 {
                     if(node.Value.Type == NodeType.Leaf) continue;
                     InternalNode internalNode = (InternalNode)node.Value;
-                    /*
-                    if(!relatedKeys.ContainsKey(node.Key))
-                    {
-                        throw new Exception("relatedKeys does not contain node.key");
-                    }
-                    */
+                    allNodes.Add(internalNode);
                     foreach(var key in relatedKeys[node.Key])
                     {
                         var h = HashFragment(key, height);
@@ -534,6 +505,16 @@ namespace Lachain.Storage.Trie
                 }
                 relatedKeys = relatedKeysNext;
             }
+
+            HashSet<ulong> childrens = new HashSet<ulong>();
+            foreach(var parent in allNodes) 
+            {
+                foreach(var child in parent.Children)
+                {
+                    childrens.Add(child);
+                }
+            }
+            GetNodesById(childrens.ToList());
         }
     }
 }
