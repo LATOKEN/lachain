@@ -60,6 +60,11 @@ namespace Lachain.Storage.Trie
 
         public void Preload(ulong root, IEnumerable<byte[]> keys)
         {
+            Logger.LogTrace("Printing preload keys...");
+            Logger.LogTrace($"root: {root}");
+            foreach(var key in keys) 
+                Logger.LogTrace($"{key.ToHex()}");
+            Logger.LogTrace("Printing preload keys...done");
             databaseCounter = 0;
             if(root == 0) return;
             List<byte[]> hashedKeys = new List<byte[]>();
@@ -94,36 +99,47 @@ namespace Lachain.Storage.Trie
 
         public ulong Add(ulong root, byte[] key, byte[] value)
         {
+            Logger.LogTrace($"Adding: root: {root}, key: {key.ToHex()}");
             key = Hash(key);
             return AddInternal(root, 0, key, value, true);
         }
 
         public ulong AddOrUpdate(ulong root, byte[] key, byte[] value)
         {
+
+            Logger.LogTrace($"Adding or updating: root: {root}, key: {key.ToHex()}");
             key = Hash(key);
             return AddInternal(root, 0, key, value, false);
         }
 
         public ulong Update(ulong root, byte[] key, byte[] value)
         {
+
+            Logger.LogTrace($"updating: root: {root}, key: {key.ToHex()}");
             key = Hash(key);
             return UpdateInternal(root, 0, key, value);
         }
 
         public ulong Delete(ulong root, byte[] key, out byte[]? value)
         {
+
+            Logger.LogTrace($"deleting: root: {root}, key: {key.ToHex()}");
             key = Hash(key);
             return DeleteInternal(root, 0, key, out value, true);
         }
 
         public ulong TryDelete(ulong root, byte[] key, out byte[]? value)
         {
+
+            Logger.LogTrace($"Try deleting: root: {root}, key: {key.ToHex()}");
             key = Hash(key);
             return DeleteInternal(root, 0, key, out value, false);
         }
 
         public byte[]? Find(ulong root, byte[] key)
         {
+
+            Logger.LogTrace($"find: root: {root}, key: {key.ToHex()}");
             key = Hash(key);
             return FindInternal(root, key);
         }
@@ -505,7 +521,8 @@ namespace Lachain.Storage.Trie
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(root);
             relatedKeys.Add(root, keys.ToList());
-            
+            List<IHashTrieNode> allNodes = new List<IHashTrieNode>();
+
             for(int height = 0; queue.Count() > 0; height++)
             {
                 int curSize = queue.Count();
@@ -546,6 +563,7 @@ namespace Lachain.Storage.Trie
                 {
                     if(node.Value.Type == NodeType.Leaf) continue;
                     InternalNode internalNode = (InternalNode)node.Value;
+                    allNodes.Add(internalNode);
                     /*
                     if(!relatedKeys.ContainsKey(node.Key))
                     {
@@ -567,6 +585,16 @@ namespace Lachain.Storage.Trie
                 }
                 relatedKeys = relatedKeysNext;
             }
+
+            HashSet<ulong> childrens = new HashSet<ulong>();
+            foreach(var parent in allNodes) 
+            {
+                foreach(var child in parent.Children)
+                {
+                    childrens.Add(child);
+                }
+            }
+            GetNodesById(childrens.ToList());
         }
 
         void PrintNode(IHashTrieNode node, ulong id = 0)
