@@ -6,7 +6,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
     {
         public const string MethodDeploy = "deploy(bytes)";
         public const string MethodGetDeployHeight = "getDeployHeight(address)";
-        public const string MethodSetDeployHeight = "setDeployHeight(address, uint256)";
+        public const string MethodSetDeployHeight = "setDeployHeight(address, bytes)";
         
         public string[] Methods { get; } =
         {

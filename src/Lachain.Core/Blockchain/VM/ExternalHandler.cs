@@ -4,6 +4,9 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
@@ -32,6 +35,20 @@ namespace Lachain.Core.Blockchain.VM
             var context = currentFrame.InvocationContext.NextContext(caller);
             context.Message = message;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
+        }
+        
+        private static ulong GetDeployHeight(UInt160 contract, UInt160 caller, ulong gasLimit, InvocationMessage message)
+        {
+            var input = ContractEncoder.Encode(DeployInterface.MethodGetDeployHeight, contract);
+            var height = DoInternalCall(caller, ContractRegisterer.DeployContract,
+                input,  gasLimit,  message).ReturnValue!;
+            return BitConverter.ToUInt64(height, 0);
+        }
+        
+        private static void SetDeployHeight(UInt160 contract, ulong height, UInt160 caller, ulong gasLimit, InvocationMessage message)
+        {
+            var input = ContractEncoder.Encode(DeployInterface.MethodSetDeployHeight, contract,  height.ToBytes());
+            DoInternalCall(caller, ContractRegisterer.DeployContract, input, gasLimit, message);
         }
 
         private static byte[]? SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)

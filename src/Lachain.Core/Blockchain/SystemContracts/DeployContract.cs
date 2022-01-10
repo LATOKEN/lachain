@@ -173,12 +173,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(DeployInterface.MethodSetDeployHeight)]
-        public ExecutionStatus SetDeployHeight(UInt160 contractAddress, UInt256 height, SystemContractExecutionFrame frame)
+        public ExecutionStatus SetDeployHeight(UInt160 contractAddress, byte[] height, SystemContractExecutionFrame frame)
         {
             try
             {
                 if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
-                    _deployHeight.SetValue(contractAddress.ToBytes(), height.ToBytes().ToArray());
+                    _deployHeight.SetValue(contractAddress.ToBytes(), height.ToArray());
             }
             catch (Exception e)
             {
