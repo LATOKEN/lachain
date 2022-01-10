@@ -15,7 +15,8 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
             ulong gasLimit)
         {
             frame = new WasmExecutionFrame(
-                WasmExecutionFrame.CompileWasm(contract, code, blockchainInterface.GetFunctionImports()),
+                WasmExecutionFrame.CompileWasm(contract, code, blockchainInterface.GetFunctionImports(),
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())),
                 context, contract, input, gasLimit
             );
             return ExecutionStatus.Ok;
@@ -31,7 +32,8 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
             ulong gasLimit)
         {
             frame = new WasmExecutionFrame(
-                WasmExecutionFrame.CompileWasm(currentAddress, code, blockchainInterface.GetFunctionImports()),
+                WasmExecutionFrame.CompileWasm(currentAddress, code, blockchainInterface.GetFunctionImports(), 
+                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())),
                 context, currentAddress, input, gasLimit
             );
             return ExecutionStatus.Ok;

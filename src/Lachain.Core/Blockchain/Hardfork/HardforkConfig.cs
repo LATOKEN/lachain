@@ -4,8 +4,7 @@ namespace Lachain.Core.Blockchain.Hardfork
 {
     public class HardforkConfig
     {
-        const string hardfork_1 = "hardfork_1";
-        
-        [JsonProperty(hardfork_1)] public ulong? Hardfork_1 { get; set; }
+        [JsonProperty("hardfork_1")] public ulong? Hardfork_1 { get; set; }
+        [JsonProperty("hardfork_2")] public ulong? Hardfork_2 { get; set; }
     }
 }

@@ -280,6 +280,7 @@ namespace Lachain.Core.Blockchain.Operations
             BlockExecCounter.WithLabels(mode).Inc();
             totalFee = Money.Zero;
             gasUsed = 0;
+            _contractTxJustExecuted = null;
 
             var currentTransactions = transactions
                 .ToDictionary(tx => tx.Hash, tx => tx);

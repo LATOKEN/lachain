@@ -3,6 +3,7 @@ using System.Linq;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Newtonsoft.Json.Linq;
 using Lachain.Core.Blockchain.Pool;
@@ -114,7 +115,8 @@ namespace Lachain.Core.RPC.HTTP
             var hash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             Console.WriteLine("Contract Hash: " + hash.ToHex());
             var byteCode = byteCodeInHex.HexToBytes();
-            if (!VirtualMachine.VerifyContract(byteCode)) 
+            if (!VirtualMachine.VerifyContract(byteCode, 
+                    HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                 throw new ArgumentException("Unable to validate smart-contract code");
             // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);

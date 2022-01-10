@@ -24,6 +24,7 @@ using Lachain.Utility.Utils;
 using Newtonsoft.Json.Serialization;
 using Transaction = Lachain.Proto.Transaction;
 using System.Threading.Tasks;
+using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -314,7 +315,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
 
                 var byteCode = ((string) data!).HexToBytes();
-                if (!VirtualMachine.VerifyContract(byteCode)) 
+                if (!VirtualMachine.VerifyContract(byteCode, 
+                        HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                     throw new ArgumentException("Unable to validate smart-contract code");
                 var fromAddress = from is null ? keyPair.PublicKey.GetAddress() : ((string) from!).HexToUInt160();
                 var nonceToUse = ((ulong) (nonce?? _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress)));
@@ -367,7 +369,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (contract is null && systemContract is null)
             {
                 Logger.LogWarning("Unable to resolve contract by hash (" + contract + ")", nameof(contract));
-                return "0x";
+                return GetErrorResponse("eth_call", opts);
             }
 
             if (!(contract is null))
@@ -389,14 +391,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return res;
                 });
 
-                return result.ReturnValue?.ToHex(true) ?? "0x";
+                return result.ReturnValue?.ToHex(true) ?? GetErrorResponse("eth_call", opts);;
             }
 
             var (err, invocationResult) =
                 _InvokeSystemContract(destination, invocation, source, _stateManager.LastApprovedSnapshot);
             if (err != OperatingError.Ok)
             {
-                return "0x";
+                return GetErrorResponse("eth_call", opts);;
             }
 
             switch (invocationResult)
@@ -441,17 +443,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var from = opts["from"];
                 var to = opts["to"];
                 var data = opts["data"];
-
+            
                 if (to is null && data is null) return null;
-
+            
                 var invocation = ((string) data!).HexToBytes();
                 var destination = to is null ? UInt160Utils.Zero : ((string) to!).HexToUInt160();
                 var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
                 gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
-
+            
                 if (to is null) // deploy contract
                 {
-                    if (!VirtualMachine.VerifyContract(invocation)) 
+                    if (!VirtualMachine.VerifyContract(invocation,
+                            HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                         throw new ArgumentException("Unable to validate smart-contract code");
                     InvocationResult invRes = _stateManager.SafeContext(() =>
                     {
@@ -474,13 +477,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         _stateManager.Rollback();
                         return res;
                     });
-                    return invRes.Status == ExecutionStatus.Ok ? 
-                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+                    return invRes.Status == ExecutionStatus.Ok
+                        ? Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed)
+                        : GetErrorResponse("eth_estimateGas", opts);
                 }
                 
                 var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
                 var systemContract = _contractRegisterer.GetContractByAddress(destination);
-
+            
                 if (contract is null && systemContract is null)
                 {
                     InvocationResult transferInvRes = _stateManager.SafeContext(() =>
@@ -496,15 +500,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         var invocationResult =
                             ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, 100_000_000);
                         _stateManager.Rollback();
-
+            
                         return invocationResult;
                     });
-
+            
                     return transferInvRes.Status == ExecutionStatus.Ok
                         ? (gasUsed + transferInvRes.GasUsed).ToHex()
                         : Web3DataFormatUtils.Web3Number(gasUsed);
                 }
-
+            
                 if (!(contract is null))
                 {
                     InvocationResult invRes = _stateManager.SafeContext(() =>
@@ -524,9 +528,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         return res;
                     });
                     return invRes.Status == ExecutionStatus.Ok ? 
-                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) : "0x";
+                        Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) 
+                        : GetErrorResponse("eth_estimateGas", opts);
                 }
-
+            
                 InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
                 {
                     var snapshot = _stateManager.NewSnapshot();
@@ -539,19 +544,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var invocationResult =
                         ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
                     _stateManager.Rollback();
-
+            
                     return invocationResult;
                 });
-
+            
                 return systemContractInvRes.Status == ExecutionStatus.Ok
                     ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
-                    : "0x";
+                    : GetErrorResponse("eth_estimateGas", opts);
             }
             catch (Exception e)
             {
                 Logger.LogInformation($"Error in eth_estimateGas: {e}");
             }
-            return "0x";
+            return GetErrorResponse("eth_estimateGas", opts);
         }
 
         [JsonRpcMethod("eth_gasPrice")]
@@ -608,6 +613,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 "pending" => null,
                 _ => blockTag.HexToUlong()
             };
+        }
+
+        private string GetErrorResponse(string methodName, JObject data)
+        {
+            JObject errorObject = new JObject
+            {
+                ["message"] = "error in the method " + methodName,
+                ["code"] = -32600,
+                ["data"] = data.ToString()
+            };
+
+            return errorObject.ToString();
         }
 
     }
