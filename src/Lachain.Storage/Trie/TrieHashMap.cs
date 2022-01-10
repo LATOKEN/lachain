@@ -8,6 +8,7 @@ using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 using Lachain.Logger;
+//using Lachain.Core.;
 
 namespace Lachain.Storage.Trie
 {
@@ -155,12 +156,14 @@ namespace Lachain.Storage.Trie
                         var newInternalNodeId = _versionFactory.NewVersion();
                         _nodeCache[newInternalNodeId] = new InternalNode(childrenMask,children,childrenHash);
                         Logger.LogTrace($"Creating an internal node with id: {newInternalNodeId}");
+                        PrintNode(_nodeCache[newInternalNodeId], newInternalNodeId);
                         return newInternalNodeId;
 
                     case LeafNode leafNode:
                         var newLeafNodeId = _versionFactory.NewVersion();
                         _nodeCache[newLeafNodeId] = leafNode;
                         Logger.LogTrace($"Creating a leaf node with id: {newLeafNodeId}");
+                        PrintNode(_nodeCache[newLeafNodeId], newLeafNodeId);
                         return newLeafNodeId;
                 }
             }
@@ -338,6 +341,7 @@ namespace Lachain.Storage.Trie
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = new LeafNode(key, value);
             Logger.LogTrace($"Creating a leaf node with id: {newId}");
+            PrintNode(_nodeCache[newId], newId);
             return newId;
         }
 
@@ -379,6 +383,7 @@ namespace Lachain.Storage.Trie
                         new[] {leafNode.Hash, secondSonHash}
                 );
                 Logger.LogTrace($"Creating an internal node in split leaf with id: {newId}");
+                PrintNode(_nodeCache[newId], newId);
                 return newId;
             }
             else
@@ -389,6 +394,7 @@ namespace Lachain.Storage.Trie
                 var newId = _versionFactory.NewVersion();
                 _nodeCache[newId] = InternalNode.WithChildren(new[] {son}, new[] {firstFragment}, new[] {sonHash});
                 Logger.LogTrace($"Creating an internal node in split leaf else block with id: {newId}");
+                PrintNode(_nodeCache[newId], newId);
                 return newId;
             }
         }
@@ -560,6 +566,24 @@ namespace Lachain.Storage.Trie
                     }
                 }
                 relatedKeys = relatedKeysNext;
+            }
+        }
+
+        void PrintNode(IHashTrieNode node, ulong id = 0)
+        {
+            switch (node)
+            {
+                case InternalNode internalNode:
+                    Console.WriteLine(id+" is internal node.");
+                    foreach(var child in internalNode._children)
+                    {
+                        Console.Write(child+" ");
+                    }
+                    Console.WriteLine("     mask:"+internalNode.ChildrenMask);
+                    break;
+                case LeafNode leafNode:
+                    Console.WriteLine(id+" is leaf node. Value is: "+leafNode.Value.ToHex());
+                    break;
             }
         }
     }

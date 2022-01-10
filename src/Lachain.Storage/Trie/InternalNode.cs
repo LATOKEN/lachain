@@ -10,7 +10,7 @@ namespace Lachain.Storage.Trie
     {
         public uint ChildrenMask { get; private set; }
 
-        private ulong[] _children;
+        public ulong[] _children;
 
         public NodeType Type { get; } = NodeType.Internal;
         public byte[] Hash { get; private set; }
