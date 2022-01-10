@@ -585,8 +585,12 @@ namespace Lachain.Core.Blockchain.Operations
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
 
+            Logger.LogTrace($"fee is not zero");
+            Logger.LogTrace($"sender: {transaction.Transaction.From.ToHex()}, receiver: {transaction.Transaction.To.ToHex()}");
             /* check available LA balance */
             var senderBalance = snapshot.Balances.GetBalance(transaction.Transaction.From);
+
+
             if (senderBalance < fee)
             {
                 return OperatingError.InsufficientBalance;

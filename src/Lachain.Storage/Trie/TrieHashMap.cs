@@ -154,11 +154,13 @@ namespace Lachain.Storage.Trie
                         }
                         var newInternalNodeId = _versionFactory.NewVersion();
                         _nodeCache[newInternalNodeId] = new InternalNode(childrenMask,children,childrenHash);
+                        Logger.LogTrace($"Creating an internal node with id: {newInternalNodeId}");
                         return newInternalNodeId;
 
                     case LeafNode leafNode:
                         var newLeafNodeId = _versionFactory.NewVersion();
                         _nodeCache[newLeafNodeId] = leafNode;
+                        Logger.LogTrace($"Creating a leaf node with id: {newLeafNodeId}");
                         return newLeafNodeId;
                 }
             }
@@ -291,6 +293,11 @@ namespace Lachain.Storage.Trie
             databaseCounter += (ulong) notInCache.Count();
             
             var foundNodes = _repository.GetNodes(notInCache);
+            Logger.LogTrace($"not in cache list.");
+            foreach(var x in notInCache)
+            {
+                Logger.LogTrace($"During Emulation id: {x}");
+            }
             foreach(var item in foundNodes)
             {
                 _lruCache.Add(item.Key, item.Value);
@@ -322,6 +329,7 @@ namespace Lachain.Storage.Trie
             if (modified == null) return 0u;
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = modified;
+            Logger.LogTrace($"Modify and create an internal node with id: {newId}");
             return newId;
         }
 
@@ -329,6 +337,7 @@ namespace Lachain.Storage.Trie
         {
             var newId = _versionFactory.NewVersion();
             _nodeCache[newId] = new LeafNode(key, value);
+            Logger.LogTrace($"Creating a leaf node with id: {newId}");
             return newId;
         }
 
@@ -369,6 +378,7 @@ namespace Lachain.Storage.Trie
                         new[] {firstFragment, secondFragment},
                         new[] {leafNode.Hash, secondSonHash}
                 );
+                Logger.LogTrace($"Creating an internal node in split leaf with id: {newId}");
                 return newId;
             }
             else
@@ -378,6 +388,7 @@ namespace Lachain.Storage.Trie
                 if (sonHash is null) throw new InvalidOperationException();
                 var newId = _versionFactory.NewVersion();
                 _nodeCache[newId] = InternalNode.WithChildren(new[] {son}, new[] {firstFragment}, new[] {sonHash});
+                Logger.LogTrace($"Creating an internal node in split leaf else block with id: {newId}");
                 return newId;
             }
         }

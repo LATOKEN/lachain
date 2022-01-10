@@ -10,6 +10,8 @@ namespace Lachain.Storage.Trie
         private Dictionary<ulong, LinkedListNode<LRUCacheItem>> cacheMap = new Dictionary<ulong, LinkedListNode<LRUCacheItem>>();
         private LinkedList<LRUCacheItem> _lruList = new LinkedList<LRUCacheItem>();
 
+        private Dictionary<ulong, IHashTrieNode> _temp = new Dictionary<ulong, IHashTrieNode>();
+
         public LRUCache(int capacity)
         {
             if (capacity == 0)
@@ -22,6 +24,11 @@ namespace Lachain.Storage.Trie
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IHashTrieNode? Get(ulong key)
         {
+            if(_temp.TryGetValue(key, out var t)) {
+                return t;
+            }
+            return null;
+
             if (cacheMap.TryGetValue(key, out var node))
             {
                 IHashTrieNode value = node.Value.Value;
@@ -35,6 +42,9 @@ namespace Lachain.Storage.Trie
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Add(ulong key, IHashTrieNode value)
         {
+            if(_temp.ContainsKey(key)) return;
+            _temp.Add(key, value);
+            return;
             if(cacheMap.TryGetValue(key, out var oldNode)) 
             {
                 _lruList.Remove(oldNode);
