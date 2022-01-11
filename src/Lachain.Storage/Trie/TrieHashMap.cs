@@ -7,11 +7,14 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
+using Lachain.Logger;
 
 namespace Lachain.Storage.Trie
 {
     internal class TrieHashMap : ITrieMap
     {
+
+        private static readonly ILogger<TrieHashMap> Logger = LoggerFactory.GetLoggerForClass<TrieHashMap>();
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
         private const int Capacity = 100000;
@@ -274,7 +277,12 @@ namespace Lachain.Storage.Trie
                     else inCache.Add(id, node);
                 }
             }
+            var start = TimeUtils.CurrentTimeMillis();
+            Logger.LogTrace($"Fetching {notInCache.Count()} nodes from database");
             var foundNodes = _repository.GetNodes(notInCache);
+            var end = TimeUtils.CurrentTimeMillis();
+            Logger.LogTrace($"Fetched {notInCache.Count()} nodes from database, took {end - start} ms");
+
             foreach(var item in foundNodes)
             {
                 _lruCache.Add(item.Key, item.Value);
