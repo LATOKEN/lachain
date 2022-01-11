@@ -45,10 +45,10 @@ namespace Lachain.Core.Blockchain.VM
             return BitConverter.ToUInt64(height, 0);
         }
         
-        private static void SetDeployHeight(UInt160 contract, ulong height, UInt160 caller, ulong gasLimit, InvocationMessage message)
+        private static void SetDeployHeight(UInt160 contract, ulong height, ulong gasLimit, InvocationMessage message)
         {
             var input = ContractEncoder.Encode(DeployInterface.MethodSetDeployHeight, contract,  height.ToBytes());
-            DoInternalCall(caller, ContractRegisterer.DeployContract, input, gasLimit, message);
+            DoInternalCall(contract, ContractRegisterer.DeployContract, input, gasLimit, message);
         }
 
         private static byte[]? SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)
@@ -355,8 +355,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, contract);
-                SetDeployHeight(hash, deployHeight, frame.CurrentAddress, frame.GasLimit,
-                    invocationMessage);
+                SetDeployHeight(hash, deployHeight, frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
@@ -452,8 +451,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, runtimeContract);
-                SetDeployHeight(hash,  deployHeight, context.Sender,  frame.GasLimit,
-                    invocationMessage);
+                SetDeployHeight(hash,  deployHeight, frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
@@ -541,7 +539,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, contract);
-                SetDeployHeight(hash, deployHeight,  context.Sender,  frame.GasLimit, invocationMessage);
+                SetDeployHeight(hash, deployHeight,  frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
@@ -636,7 +634,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, runtimeContract);
-                SetDeployHeight(hash, deployHeight, context.Sender, frame.GasLimit, invocationMessage);
+                SetDeployHeight(hash, deployHeight, frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {

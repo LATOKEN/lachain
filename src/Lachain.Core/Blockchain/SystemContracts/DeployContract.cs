@@ -167,6 +167,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
             catch (Exception e)
             {
+                Logger.LogInformation($"Exception while get deploy height: {e}");
             }
             
             return ExecutionStatus.Ok;
@@ -177,11 +178,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             try
             {
+                // Only contract itself can change its deploy height
+                if (!frame.CurrentAddress.Equals(contractAddress))
+                    throw new Exception("Only contract itself can change its deploy height");
+                
                 if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
                     _deployHeight.SetValue(contractAddress.ToBytes(), height.ToArray());
             }
             catch (Exception e)
             {
+                Logger.LogInformation($"Exception while set deploy height: {e}");
                 return ExecutionStatus.UnknownError;
             }
             
