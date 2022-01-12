@@ -135,7 +135,7 @@ namespace Lachain.Console
                     Hosts = new[] {"+"},
                     Port = basePort,
                     MetricsPort = (ushort) (basePort + 1),
-                    ApiKey = "asdasdasd",
+                    ApiKey = "0x2e917846fe7487a4ea3a765473a3fc9b2d9227a4d312bc77fb9de357cf73d7e52b771d537394336e9eb2cb4838138f668f4bd7d8cf7e04d9242a42c71b99f166",
                 };
                 var walletPath = "wallet.json";
                 var vault = new VaultConfig
@@ -275,7 +275,7 @@ namespace Lachain.Console
                     Hosts = new[] {"+"},
                     Port = (ushort) (basePort + i),
                     MetricsPort = (ushort) (basePort + n + i),
-                    ApiKey = "asdasdasd",
+                    ApiKey = "0x2e917846fe7487a4ea3a765473a3fc9b2d9227a4d312bc77fb9de357cf73d7e52b771d537394336e9eb2cb4838138f668f4bd7d8cf7e04d9242a42c71b99f166",
                 };
                 var walletPath = "wallet.json";
                 var vault = new VaultConfig
