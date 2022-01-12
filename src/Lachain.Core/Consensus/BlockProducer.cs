@@ -62,24 +62,19 @@ namespace Lachain.Core.Consensus
         }
 
         public BlockHeader? CreateHeader(
-            ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken
+            ulong index, IReadOnlyCollection<TransactionReceipt> receipts, ulong nonce, out TransactionReceipt[] receiptsTaken
         )
         {
             Logger.LogTrace("CreateHeader");
             if (_blockManager.GetHeight() >= index)
             {
                 Logger.LogWarning("Block already produced");
-                hashesTaken = new UInt256[]{};
+                receiptsTaken = new TransactionReceipt[]{};
                 return null;
             }
-            var txsGot = _blockSynchronizer.WaitForTransactions(txHashes, TimeSpan.FromHours(1), out List<TransactionReceipt> receipts); // TODO: timeout?
-            if (txsGot != txHashes.Count)
-            {
-                Logger.LogError(
-                    $"Cannot retrieve all transactions in time, got only {txsGot} of {txHashes.Count}, aborting");
-                throw new InvalidOperationException(
-                    $"Cannot retrieve all transactions in time, got only {txsGot} of {txHashes.Count}, aborting");
-            }
+
+            // we don't need to verify receipts here
+            // verfification will be done during emulation
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
@@ -109,7 +104,7 @@ namespace Lachain.Core.Consensus
             }
 
             if (_blockManager.LatestBlock().Header.Index + 1 != index)
-            {
+            {  
                 throw new InvalidOperationException(
                     $"Latest block is {_blockManager.LatestBlock().Header.Index} " +
                     $"with hash {_blockManager.LatestBlock().Hash.ToHex()}, " +
@@ -124,15 +119,14 @@ namespace Lachain.Core.Consensus
             var (operatingError, removedTxs, stateHash, returnedTxs) =
                 _blockManager.Emulate(blockWithTransactions.Block, blockWithTransactions.Transactions);
 
-            var badHashes = new HashSet<UInt256>(
-                removedTxs.Select(receipt => receipt.Hash).Concat(returnedTxs.Select(receipt => receipt.Hash))
-            );
+            
+            var badReceipts = new HashSet<TransactionReceipt>(removedTxs.Concat(returnedTxs));
+            receiptsTaken = receipts.Where(receipt => !badReceipts.Contains(receipt)).ToArray();
 
             blockWithTransactions = new BlockBuilder(_blockManager.LatestBlock().Header)
-                .WithTransactions(receipts.FindAll(receipt => !badHashes.Contains(receipt.Hash)).ToArray())
+                .WithTransactions(receiptsTaken)
                 .Build(nonce);
 
-            hashesTaken = blockWithTransactions.Transactions.Select(receipt => receipt.Hash).ToArray();
             if (operatingError != OperatingError.Ok)
                 throw new InvalidOperationException($"Cannot assemble block: error {operatingError}");
 
@@ -146,7 +140,7 @@ namespace Lachain.Core.Consensus
             };
         }
 
-        public void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig)
+        public void ProduceBlock(IEnumerable<TransactionReceipt> receipts, BlockHeader header, MultiSig multiSig)
         {
             Logger.LogDebug($"Producing block {header.Index}");
             if (_blockManager.GetHeight() >= header.Index)
@@ -154,25 +148,6 @@ namespace Lachain.Core.Consensus
                 Logger.LogWarning("Block already produced");
                 return;
             }
-
-            var hashes = txHashes as UInt256[] ?? txHashes.ToArray();
-            var txCount = hashes.Count();
-            var indexInCycle = header.Index % StakingContract.CycleDuration;
-            var cycle = header.Index / StakingContract.CycleDuration;
-            var receipts = hashes
-                .Select((hash, i) =>
-                {
-                    if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration && i == txCount - 1)
-                        return DistributeCycleRewardsAndPenaltiesTxReceipt();
-                    if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration && i == txCount - 1)
-                        return FinishVrfLotteryTxReceipt();
-                    if (cycle > 0 && indexInCycle == 0 && i == txCount - 1)
-                        return FinishCycleTxReceipt();
-                    return _transactionPool.GetByHash(hash) ?? throw new InvalidOperationException();
-                })
-                .OrderBy(receipt => receipt, new ReceiptComparer())
-                .ToList();
-
             var blockWithTransactions = new BlockBuilder(_blockManager.LatestBlock().Header, header.StateHash)
                 .WithTransactions(receipts)
                 .WithMultisig(multiSig)
