@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -18,12 +21,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
     public class DeployContract : ISystemContract
     {
         private readonly InvocationContext _context;
+        private readonly StorageMapping _deployHeight;
 
         private static readonly ILogger<DeployContract> Logger = LoggerFactory.GetLoggerForClass<DeployContract>();
 
         public DeployContract(InvocationContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+
+            _deployHeight = new StorageMapping(ContractRegisterer.DeployContract, _context.Snapshot.Storage,
+                new BigInteger(13).ToUInt256());
         }
 
         public ContractStandard ContractStandard => ContractStandard.DeployContract;
@@ -63,6 +70,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, contract.ByteCode));
                 Logger.LogInformation($"New contract with address {hash.ToHex()} deployed");
+                
+                if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                    _deployHeight.SetValue(hash.ToBytes(),
+                        frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight().ToBytes().ToArray());
             }
             catch (OutOfGasException e)
             {
@@ -131,6 +142,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             {
                 _context.Snapshot.Contracts.AddContract(_context.Sender, new Contract(hash, runtimeContract.ByteCode));
                 Logger.LogInformation($"New contract with address {hash.ToHex()} deployed");
+                if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                    _deployHeight.SetValue(hash.ToBytes(),
+                        frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight().ToBytes().ToArray());
             }
             catch (OutOfGasException e)
             {
@@ -139,6 +153,44 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.GasOverflow;
             }
 
+            return ExecutionStatus.Ok;
+        }
+        
+        [ContractMethod(DeployInterface.MethodGetDeployHeight)]
+        public ExecutionStatus GetDeployHeight(UInt160 contractAddress, SystemContractExecutionFrame frame)
+        {
+            frame.ReturnValue = new byte[64];
+            try
+            {
+                if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                    frame.ReturnValue = _deployHeight.GetValue(contractAddress.ToBytes());
+            }
+            catch (Exception e)
+            {
+                Logger.LogInformation($"Exception while get deploy height: {e}");
+            }
+            
+            return ExecutionStatus.Ok;
+        }
+
+        [ContractMethod(DeployInterface.MethodSetDeployHeight)]
+        public ExecutionStatus SetDeployHeight(UInt160 contractAddress, byte[] height, SystemContractExecutionFrame frame)
+        {
+            try
+            {
+                // Only contract itself can change its deploy height
+                if (!frame.CurrentAddress.Equals(contractAddress))
+                    throw new Exception("Only contract itself can change its deploy height");
+                
+                if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                    _deployHeight.SetValue(contractAddress.ToBytes(), height.ToArray());
+            }
+            catch (Exception e)
+            {
+                Logger.LogInformation($"Exception while set deploy height: {e}");
+                return ExecutionStatus.UnknownError;
+            }
+            
             return ExecutionStatus.Ok;
         }
     }

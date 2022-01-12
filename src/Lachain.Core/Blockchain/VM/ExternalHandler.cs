@@ -4,6 +4,9 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
@@ -32,6 +35,20 @@ namespace Lachain.Core.Blockchain.VM
             var context = currentFrame.InvocationContext.NextContext(caller);
             context.Message = message;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
+        }
+        
+        private static ulong GetDeployHeight(UInt160 contract, UInt160 caller, ulong gasLimit, InvocationMessage message)
+        {
+            var input = ContractEncoder.Encode(DeployInterface.MethodGetDeployHeight, contract);
+            var height = DoInternalCall(caller, ContractRegisterer.DeployContract,
+                input,  gasLimit,  message).ReturnValue!;
+            return BitConverter.ToUInt64(height, 0);
+        }
+        
+        private static void SetDeployHeight(UInt160 contract, ulong height, ulong gasLimit, InvocationMessage message)
+        {
+            var input = ContractEncoder.Encode(DeployInterface.MethodSetDeployHeight, contract,  height.ToBytes());
+            DoInternalCall(contract, ContractRegisterer.DeployContract, input, gasLimit, message);
         }
 
         private static byte[]? SafeCopyFromMemory(UnmanagedMemory memory, int offset, int length)
@@ -273,7 +290,14 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_Create({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call Create outside wasm frame");
-            if (Hardfork.HardforkHeights.IsHardfork_2Active(frame!.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            InvocationMessage invocationMessage = new InvocationMessage {
+                Sender = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress,
+                Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
+                Type = InvocationType.Regular,
+            };
+            var deployHeight = GetDeployHeight(frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit,
+                invocationMessage);
+            if (Hardfork.HardforkHeights.IsHardfork_2Active(deployHeight))
                 return Handler_Env_Create_V2(valueOffset, dataOffset, dataLength, resultOffset, frame);
             return Handler_Env_Create_V1(valueOffset, dataOffset, dataLength, resultOffset, frame);
         }
@@ -314,8 +338,16 @@ namespace Lachain.Core.Blockchain.VM
 
             var contract = new Contract(hash, dataBuffer);
 
+            InvocationMessage invocationMessage = new InvocationMessage {
+                Sender = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress,
+                Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
+                Type = InvocationType.Regular,
+            };
+            var deployHeight = GetDeployHeight(frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit,
+                invocationMessage);
+            
             if (!VirtualMachine.VerifyContract(contract.ByteCode, 
-                    Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
+                    Hardfork.HardforkHeights.IsHardfork_2Active(deployHeight)))
             {
                 throw new InvalidContractException("Failed to verify contract");
             }
@@ -323,6 +355,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, contract);
+                SetDeployHeight(hash, deployHeight, frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
@@ -412,9 +445,13 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Failed to verify runtime contract");
             }
 
+            var deployHeight = GetDeployHeight(context.Sender, context.Sender, frame.GasLimit,
+                invocationMessage);
+
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, runtimeContract);
+                SetDeployHeight(hash,  deployHeight, frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
@@ -436,7 +473,16 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_Create2({valueOffset}, {dataOffset}, {dataLength}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call Create2 outside wasm frame");
-            if (Hardfork.HardforkHeights.IsHardfork_2Active(frame!.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            
+            InvocationMessage invocationMessage = new InvocationMessage {
+                Sender = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress,
+                Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
+                Type = InvocationType.Regular,
+            };
+            var deployHeight = GetDeployHeight(frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit,
+                invocationMessage);
+
+            if (Hardfork.HardforkHeights.IsHardfork_2Active(deployHeight))
                 return Handler_Env_Create2_V2(valueOffset, dataOffset, dataLength, saltOffset, resultOffset, frame);
             return Handler_Env_Create2_V1(valueOffset, dataOffset, dataLength, saltOffset, resultOffset, frame);
         }
@@ -476,8 +522,16 @@ namespace Lachain.Core.Blockchain.VM
 
             var contract = new Contract(hash, dataBuffer);
 
+            InvocationMessage invocationMessage = new InvocationMessage {
+                Sender = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress,
+                Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
+                Type = InvocationType.Regular,
+            };
+            var deployHeight = GetDeployHeight(frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit,
+                invocationMessage);
+            
             if (!VirtualMachine.VerifyContract(contract.ByteCode,
-                Hardfork.HardforkHeights.IsHardfork_2Active(context.Snapshot.Blocks.GetTotalBlockHeight())))
+                Hardfork.HardforkHeights.IsHardfork_2Active(deployHeight)))
             {
                 throw new InvalidContractException("Failed to verify contract");
             }
@@ -485,6 +539,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, contract);
+                SetDeployHeight(hash, deployHeight,  frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
@@ -568,6 +623,9 @@ namespace Lachain.Core.Blockchain.VM
             // runtime code
             var runtimeContract = new Contract(hash, status.ReturnValue);
 
+            var deployHeight = GetDeployHeight(frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit,
+                invocationMessage);
+
             if (!VirtualMachine.VerifyContract(runtimeContract.ByteCode, true))
             {
                 throw new InvalidContractException("Failed to verify runtime contract");
@@ -576,6 +634,7 @@ namespace Lachain.Core.Blockchain.VM
             try
             {
                 snapshot.Contracts.AddContract(context.Sender, runtimeContract);
+                SetDeployHeight(hash, deployHeight, frame.GasLimit, invocationMessage);
             }
             catch (OutOfGasException e)
             {
