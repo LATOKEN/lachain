@@ -185,6 +185,11 @@ namespace Lachain.Core.RPC.HTTP
                     return false;
                 }
 
+                if (string.IsNullOrEmpty(_apiKey))
+                {
+                    return false;
+                }
+
                 var messageBytes = Encoding.UTF8.GetBytes(message);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
 
