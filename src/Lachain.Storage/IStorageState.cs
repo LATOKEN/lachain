@@ -25,7 +25,7 @@ namespace Lachain.Storage
         public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
         public void SetCurrentVersion(ulong root);
         
-        ulong Commit(RocksDbAtomicWrite batch);
+        ulong Commit();
         ulong Cancel();
     }
 }
