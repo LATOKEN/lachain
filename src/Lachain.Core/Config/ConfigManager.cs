@@ -134,8 +134,8 @@ namespace Lachain.Core.Config
             hardforks.Hardfork_3 ??= network.NetworkName switch
             {
                 "mainnet" => 0,
-                "testnet" => 1010000,
-                "devnet" => 563000,
+                "testnet" => 1220000,
+                "devnet" => 690000,
                 _ => 0
             };
             _config["hardfork"] = JObject.FromObject(hardforks);
