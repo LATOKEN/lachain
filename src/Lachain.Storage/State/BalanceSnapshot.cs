@@ -140,9 +140,9 @@ namespace Lachain.Storage.State
             _state.AddOrUpdate(key, value.ToBytes());
         }
 
-        public void Commit()
+        public void Commit(RocksDbAtomicWrite batch)
         {
-            _state.Commit();
+            _state.Commit(batch);
         }
         public void SetCurrentVersion(ulong root)
         {
