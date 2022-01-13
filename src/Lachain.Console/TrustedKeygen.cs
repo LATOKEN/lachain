@@ -4,8 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Lachain.CommunicationHub.Net;
-using Lachain.Consensus;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Hardfork;
@@ -50,9 +48,9 @@ namespace Lachain.Console
             [JsonProperty("version")] public VersionConfig ConfigVersion { get; set; }
         }
 
-        private static readonly ILogger<AbstractProtocol> Logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+        private static readonly ILogger<TrustedKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustedKeygen>();
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount)
         {
             if (ips.Any())
@@ -65,7 +63,7 @@ namespace Lachain.Console
             }
         }
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -103,7 +101,7 @@ namespace Lachain.Console
                 .ToArray();
 
             var peers = ecdsaPublicKeys.ToArray();
-            
+
             for (var i = 0; i < n; ++i)
             {
                 var net = new NetworkConfig
@@ -147,15 +145,13 @@ namespace Lachain.Console
                 Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
                 var publicKeyHex = publicKey.ToHex();
 
-                // Write private key to log file
-                //File.WriteAllText($"privateKey{i+1:D2}.txt", privateKeyHex);
-                Logger.LogTrace($"Loop {i+1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
+                Logger.LogTrace($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
 
                 var rpc = new RpcConfig
                 {
-                    Hosts = new[] {"+"},
+                    Hosts = new[] { "+" },
                     Port = basePort,
-                    MetricsPort = (ushort) (basePort + 1),
+                    MetricsPort = (ushort)(basePort + 1),
                     // ApiKey = "0x2e917846fe7487a4ea3a765473a3fc9b2d9227a4d312bc77fb9de357cf73d7e52b771d537394336e9eb2cb4838138f668f4bd7d8cf7e04d9242a42c71b99f166",
                     ApiKey = publicKeyHex
                 };
@@ -218,7 +214,7 @@ namespace Lachain.Console
             );
         }
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount)
         {
             System.Console.WriteLine($"chainId : {chainId}");
@@ -303,8 +299,6 @@ namespace Lachain.Console
                 Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
                 var publicKeyHex = publicKey.ToHex();
 
-                // Write private key to log file
-                //File.WriteAllText($"privateKey{i+1:D2}.txt", privateKeyHex);
                 Logger.LogTrace($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
 
                 var rpc = new RpcConfig
@@ -379,8 +373,8 @@ namespace Lachain.Console
             var config = new JsonWallet(
                 ecdsaKey,
                 hubKey,
-                new Dictionary<ulong, string> {{0, tpkeKey}},
-                new Dictionary<ulong, string> {{0, tsKey}}
+                new Dictionary<ulong, string> { { 0, tpkeKey } },
+                new Dictionary<ulong, string> { { 0, tsKey } }
             );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
             var passwordHash = Encoding.UTF8.GetBytes(password).KeccakBytes();

@@ -17,7 +17,7 @@ namespace Lachain.Core.RPC.HTTP
     {
         private static readonly ILogger<HttpService> Logger =
             LoggerFactory.GetLoggerForClass<HttpService>();
-        
+
         public void Start(RpcConfig rpcConfig)
         {
             Task.Factory.StartNew(() =>
@@ -35,7 +35,7 @@ namespace Lachain.Core.RPC.HTTP
 
         private HttpListener? _httpListener;
         private string? _apiKey;
-        
+
         private readonly List<string> _privateMethods = new List<string>
         {
             "validator_start",
@@ -108,7 +108,7 @@ namespace Lachain.Core.RPC.HTTP
             var body = reader.ReadToEnd();
             Logger.LogInformation($"Body: [{body}]");
             var isArray = body.StartsWith("[");
-                    
+
             if (request.Headers["Origin"] != null)
                 response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
@@ -117,12 +117,12 @@ namespace Lachain.Core.RPC.HTTP
             {
                 if (!(result is JsonRpcStateAsync jsonRpcStateAsync))
                     return;
-                
+
                 var resultString = jsonRpcStateAsync.Result;
 
                 if (isArray && !jsonRpcStateAsync.Result.StartsWith("["))
                     resultString = "[" + resultString + "]";
-                    
+
                 var output = Encoding.UTF8.GetBytes(resultString);
                 Logger.LogInformation($"output: [{resultString}]");
                 response.OutputStream.Write(output, 0, output.Length);
@@ -134,11 +134,11 @@ namespace Lachain.Core.RPC.HTTP
                 JsonRpc = body
             };
 
-            var requests = isArray ? JArray.Parse(body) : new JArray{JObject.Parse(body)};
+            var requests = isArray ? JArray.Parse(body) : new JArray { JObject.Parse(body) };
 
             foreach (var item in requests)
             {
-                var requestObj = (JObject) item;
+                var requestObj = (JObject)item;
                 if (!_CheckAuth(requestObj, context, sig, body))
                 {
                     var error = new JObject
@@ -159,7 +159,7 @@ namespace Lachain.Core.RPC.HTTP
                     response.Close();
                     return false;
                 }
-            }            
+            }
 
             JsonRpcProcessor.Process(async);
             return true;
