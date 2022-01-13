@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 using Lachain.Logger;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
-using Lachain.Crypto;
+using Newtonsoft.Json;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -79,16 +79,8 @@ namespace Lachain.Core.RPC.HTTP
         {
             var request = context.Request;
 
-            var messages = request.Headers.GetValues("Message");
             var sigs = request.Headers.GetValues("Signature");
-
-            var message = string.Empty;
             var sig = string.Empty;
-            
-            if(messages != null && messages.Length > 0)
-            {
-                message = messages[0];
-            }
 
             if (sigs != null && sigs.Length > 0)
             {
@@ -147,7 +139,7 @@ namespace Lachain.Core.RPC.HTTP
             foreach (var item in requests)
             {
                 var requestObj = (JObject) item;
-                if (!_CheckAuth(requestObj, context, message, sig))
+                if (!_CheckAuth(requestObj, context, sig, body))
                 {
                     var error = new JObject
                     {
@@ -167,30 +159,29 @@ namespace Lachain.Core.RPC.HTTP
                     response.Close();
                     return false;
                 }
-            }
-            
+            }            
 
             JsonRpcProcessor.Process(async);
             return true;
         }
 
-        private bool _CheckAuth(JObject body, HttpListenerContext context, string message, string sig)
+        private bool _CheckAuth(JObject body, HttpListenerContext context, string sig, string bodyPlainText)
         {
-            //if (context.Request.IsLocal) return true;
+			if (string.IsNullOrEmpty(_apiKey))
+            {
+                return false;
+            }
+			
+            if (context.Request.IsLocal) return true;
 
             if (_privateMethods.Contains(body["method"]!.ToString()))
             {
-                if (string.IsNullOrEmpty(message) || string.IsNullOrEmpty(sig))
+                if (string.IsNullOrEmpty(sig))
                 {
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(_apiKey))
-                {
-                    return false;
-                }
-
-                var messageBytes = Encoding.UTF8.GetBytes(message);
+                var messageBytes = Encoding.UTF8.GetBytes(bodyPlainText);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
 
                 var signature = sig.HexToBytes();
