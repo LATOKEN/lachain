@@ -50,7 +50,7 @@
     ],
     "port": 7070,
     "metricsPort": 7071,
-    "apiKey": "0x2e917846fe7487a4ea3a765473a3fc9b2d9227a4d312bc77fb9de357cf73d7e52b771d537394336e9eb2cb4838138f668f4bd7d8cf7e04d9242a42c71b99f166"
+    "apiKey": "asdasdasd"
   },
   "vault": {
     "path": "wallet.json",
