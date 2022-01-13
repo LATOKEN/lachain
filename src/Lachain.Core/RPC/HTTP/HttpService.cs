@@ -167,11 +167,6 @@ namespace Lachain.Core.RPC.HTTP
 
         private bool _CheckAuth(JObject body, HttpListenerContext context, string sig, string bodyPlainText)
         {
-			if (string.IsNullOrEmpty(_apiKey))
-            {
-                return false;
-            }
-			
             if (context.Request.IsLocal) return true;
 
             if (_privateMethods.Contains(body["method"]!.ToString()))
