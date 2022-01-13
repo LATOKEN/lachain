@@ -47,20 +47,20 @@ namespace Lachain.Console
         }
 
         public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
-            string feedAddress, string feedBalance, string stakeAmount)
+            string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             if (ips.Any())
             {
-                CloudKeygen(n, f, ips, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount);
+                CloudKeygen(n, f, ips, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount, hardforks);
             }
             else
             {
-                LocalKeygen(n, f, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount);
+                LocalKeygen(n, f, basePort, target, chainId, cycleDuration, validatorsCount, networkName, feedAddress, feedBalance, stakeAmount, hardforks);
             }
         }
 
         public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
-            string feedAddress, string feedBalance, string stakeAmount)
+            string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
             var tpkeKeyGen = new Crypto.TPKE.TrustedKeyGen(n, f);
@@ -152,9 +152,12 @@ namespace Lachain.Console
                 {
                     TargetBlockTime = target,
                 };
+                List<ulong> hardforkHeights = hardforks.ToList();
                 var hardfork = new HardforkConfig
                 {
-                    Hardfork_1 = 0,
+                    Hardfork_1 = hardforkHeights[0],
+                    Hardfork_2 = hardforkHeights[1],
+                    Hardfork_3 = hardforkHeights[2],
                 };
                 var version = new VersionConfig
                 {
@@ -197,7 +200,7 @@ namespace Lachain.Console
         }
 
         public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
-            string feedAddress, string feedBalance, string stakeAmount)
+            string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             System.Console.WriteLine($"chainId : {chainId}");
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -292,9 +295,12 @@ namespace Lachain.Console
                 {
                     TargetBlockTime = target,
                 };
+                List<ulong> hardforkHeights = hardforks.ToList();
                 var hardfork = new HardforkConfig
                 {
-                    Hardfork_1 = 123,
+                    Hardfork_1 = hardforkHeights[0],
+                    Hardfork_2 = hardforkHeights[1],
+                    Hardfork_3 = hardforkHeights[2],
                 };
                 var version = new VersionConfig
                 {
