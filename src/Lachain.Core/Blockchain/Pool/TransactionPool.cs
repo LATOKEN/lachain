@@ -209,12 +209,7 @@ namespace Lachain.Core.Blockchain.Pool
                     nextNonce.Add(address, _transactionManager.CalcNextTxNonce(address));
 
                 if(receipt.Transaction.Nonce != nextNonce[address] || !IsBalanceValid(receipt))
-                {
-                    Logger.LogTrace($"Erasing: {receipt.Hash.ToHex()}");
-                    Logger.LogTrace($"From: {receipt.Transaction.From.ToHex()}");
-                    Logger.LogTrace($"Expected nonce: {nextNonce[address]}, got nonce: {receipt.Transaction.Nonce}");
                     toErase.Add(receipt);
-                }
                 else
                     nextNonce[address]++;
             }
