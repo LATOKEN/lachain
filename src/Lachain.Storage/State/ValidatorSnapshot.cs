@@ -77,6 +77,10 @@ namespace Lachain.Storage.State
         {
             _state.SetCurrentVersion(root);
         }
+        public void ClearCache()
+        {
+            _state.ClearCache();
+        }
     }
 
     public class ConsensusStateNotPresentException : Exception

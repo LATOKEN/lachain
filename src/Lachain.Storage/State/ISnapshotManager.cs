@@ -27,5 +27,6 @@
         /// Rollback to specific version (in approved but uncommited state)
         /// </summary>
         void RollbackTo(T snapshot);
+        void ClearCache();
     }
 }

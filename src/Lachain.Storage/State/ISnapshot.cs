@@ -15,5 +15,7 @@ namespace Lachain.Storage.State
         ulong SetState(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
 
         void SetCurrentVersion(ulong root);
+
+        void ClearCache();
     }
 }

@@ -112,6 +112,12 @@ namespace Lachain.Storage
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearCache()
+        {
+            _trieMap.ClearCaches();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong Cancel()
         {
             _trieMap.ClearCaches();

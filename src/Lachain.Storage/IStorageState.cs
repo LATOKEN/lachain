@@ -26,6 +26,7 @@ namespace Lachain.Storage
         public void SetCurrentVersion(ulong root);
         
         ulong Commit(RocksDbAtomicWrite batch);
+        void ClearCache();
         ulong Cancel();
     }
 }

@@ -70,5 +70,10 @@ namespace Lachain.Storage.State
                                     throw new InvalidOperationException($"Invalid snapshot type {snapshot.GetType()}");
             _pendingSnapshot = null;
         }
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearCache()
+        {
+            _lastApprovedSnapshot.ClearCache();
+        }
     }
 }

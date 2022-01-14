@@ -154,8 +154,19 @@ namespace Lachain.Storage.State
             _eventManager.Commit(batch);
             _validatorManager.Commit(batch);
             batch.Commit();
+            ClearCache();
         }
 
+        public void ClearCache()
+        {
+            _balanceManager.ClearCache();
+            _contractManager.ClearCache();
+            _storageManager.ClearCache();
+            _transactionManager.ClearCache();
+            _blockManager.ClearCache();
+            _eventManager.ClearCache();
+            _validatorManager.ClearCache();
+        }
         public void Commit(RocksDbAtomicWrite batch)
         {
             throw new Exception("Invalid function used");
