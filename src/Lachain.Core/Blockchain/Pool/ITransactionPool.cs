@@ -21,13 +21,9 @@ namespace Lachain.Core.Blockchain.Pool
 
         OperatingError Add(TransactionReceipt receipt, bool notify = true);
 
-        IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
-
-        void Relay(IEnumerable<TransactionReceipt> receipts);
+        IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake, ulong era = 0);
 
         uint Size();
-
-        void Delete(UInt256 transactionHash);
         void Clear();
         void ClearRepository();
         ulong GetNextNonceForAddress(UInt160 address);
