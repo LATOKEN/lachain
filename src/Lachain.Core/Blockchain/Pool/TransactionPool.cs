@@ -31,6 +31,8 @@ namespace Lachain.Core.Blockchain.Pool
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
         private readonly ConcurrentDictionary<ulong, List<TransactionReceipt>> _proposed 
             = new ConcurrentDictionary<ulong, List<TransactionReceipt>>();
+        private IList<TransactionReceipt> _toDeleteRepo = new List<TransactionReceipt>();
+        private ulong _lastSanitized = 0;
         private ISet<TransactionReceipt> _transactionsQueue;
 
         public event EventHandler<TransactionReceipt>? TransactionAdded;
@@ -59,38 +61,10 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object sender, Block block)
         {
-            // after persisting the block - first remove the proposed
-            // transactions from the nonceCalculator and db pool
-
-            if(_proposed.TryGetValue(block.Header.Index, out var lastProposed))
-            {
-                foreach(var receipt in lastProposed)
-                    _nonceCalculator.TryRemove(receipt);
-                
-                _poolRepository.RemoveTransactions(lastProposed.Select(receipt => receipt.Hash));
-                
-                _proposed.Remove(block.Header.Index, out var _);
-            }
-
-            CheckConsistency();
-
-            // remove transactions that has been added to block
-            foreach (var txHash in block.TransactionHashes)
-            {
-                if (_transactions.TryRemove(txHash, out var tx))
-                {
-                    _transactionsQueue.Remove(tx);
-                    _nonceCalculator.TryRemove(tx);
-                }
-            }
-            _poolRepository.RemoveTransactions(block.TransactionHashes);
-            
-            // make sure that - transactions with bad nonces
-            // and not enough balance are removed
-            var droppedTransactions = SanitizeMemPool();
-            _poolRepository.RemoveTransactions(droppedTransactions.Select(receipt => receipt.Hash));
-
-            CheckConsistency();
+            SanitizeMemPool(block.Header.Index);
+            // TO DO: we should make this removal async for better performance
+            _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
+            _toDeleteRepo.Clear();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -192,8 +166,39 @@ namespace Lachain.Core.Blockchain.Pool
             return balance.CompareTo(fee) >= 0;
         }
 
-        private IEnumerable<TransactionReceipt> SanitizeMemPool()
+        // this sanitizeMemPool is required to be done after persisting a block and before proposing
+        // transactions for the next block and it should be called only once for better performance
+        // after persisting a block - two methods can be called - (1) onBlockPersisted and
+        // (2) Peek and their order may vary.
+        // that means it's possible that peek is executed before onBlockPersisted and vice versa
+        // We keep track of the lastSanitized era and do the sanitization only once per era
+
+        private void SanitizeMemPool(ulong era)
         {
+            if(era <= _lastSanitized) return;
+            if(_lastSanitized != 0 && _lastSanitized + 1 != era) {
+                Logger.LogError($"_lastSanitized: {_lastSanitized}, trying to sanitize: {era}");
+                throw new Exception("Pool Sanitization should be sequential");
+            }
+
+            // after persisting the block - first remove the proposed
+            // transactions from the nonceCalculator and db pool
+            // this makes sure that the transactions that failed during
+            // emulation is removed from _nonceCalculator
+
+            if(_proposed.TryGetValue(era, out var lastProposed))
+            {
+                foreach(var receipt in lastProposed)
+                {
+                    _nonceCalculator.TryRemove(receipt);
+                    _toDeleteRepo.Add(receipt);
+                }
+                _proposed.Remove(era, out var _);
+            }
+
+            // make sure that - transactions with bad nonces
+            // and not enough balance are removed
+            
             var wasTransactionsQueue = _transactionsQueue.Count;
 
             var toErase = new List<TransactionReceipt>();
@@ -219,6 +224,7 @@ namespace Lachain.Core.Blockchain.Pool
                 _transactionsQueue.Remove(receipt);
                 _nonceCalculator.TryRemove(receipt);
                 _transactions.TryRemove(receipt.Hash, out var _);
+                _toDeleteRepo.Add(receipt);
             }
 
             if (wasTransactionsQueue != _transactionsQueue.Count)
@@ -228,7 +234,9 @@ namespace Lachain.Core.Blockchain.Pool
                 );
             }
 
-            return toErase;
+            _lastSanitized = era;
+            CheckConsistency();
+            return;
         }
         private IReadOnlyCollection<TransactionReceipt> Take(HashSet<UInt256> txHashesTaken, ulong era)
         {
@@ -268,8 +276,9 @@ namespace Lachain.Core.Blockchain.Pool
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake, ulong era)
         {
             Logger.LogTrace($"Proposing Transactions from pool");
-            // no need to sanitize - as it should already be sanitized after persisting the last block
-            // Sanitize();
+            // try sanitizing mempool ...
+            SanitizeMemPool(era - 1);
+
             var rnd = new Random();
             HashSet<UInt256> takenTxHashes = new HashSet<UInt256>();
 
@@ -347,7 +356,6 @@ namespace Lachain.Core.Blockchain.Pool
 
         private void CheckConsistency()
         {
-            
             // sanity check that transactions and transactionsQueue
             // are the same          
             if(_transactions.Count() != _transactionsQueue.Count())
@@ -363,6 +371,13 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 Logger.LogError($"_transactions count: {_transactions.Count()} != _nonceCalculator: {_nonceCalculator.Count()}");
                 throw new Exception("transactions and nonceCalculator should be of same size");
+            }
+
+            // Proposed should be empty
+            if(_proposed.Count() != 0)
+            {
+                Logger.LogError($"_proposed size: {_proposed.Count()} but should be empty.");
+                throw new Exception("proposed dict should be empty");
             }
         }
 
