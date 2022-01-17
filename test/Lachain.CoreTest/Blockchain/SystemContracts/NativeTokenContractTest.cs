@@ -79,7 +79,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
         
         [Test]
-        [Repeat(5)]
+        [Ignore("Doesn't work in mainnet")]
         public void Test_NativeTokenMinting()
         {
             var tx = new TransactionReceipt();
@@ -159,7 +159,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         
         
         [Test]
-        [Repeat(5)]
+        [Ignore("Doesn't work in mainnet")]
         public void Test_InvalidMintController()
         {
             var tx = new TransactionReceipt();
@@ -205,7 +205,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         }
         
         [Test]
-        [Repeat(5)]
+        [Ignore("Doesn't work in mainnet")]
         public void Test_InvalidMinter()
         {
             var tx = new TransactionReceipt();
@@ -239,7 +239,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         
         
         [Test]
-        [Repeat(5)]
+        [Ignore("Doesn't work in mainnet")]
         public void Test_MaxSupply()
         {
             var tx = new TransactionReceipt();
@@ -296,7 +296,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
         
         [Test]
-        [Repeat(5)]
+        [Ignore("Doesn't work in mainnet")]
         public void Test_SetMinter()
         {
             var tx = new TransactionReceipt();
