@@ -7,6 +7,7 @@ using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
+using Lachain.Storage.State;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Networking;
@@ -92,6 +93,11 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var tx = TestUtils.GetRandomTransaction();
             var result = txPool.Add(tx);
+            Assert.AreEqual(OperatingError.InsufficientBalance, result);
+
+            var _stateManager = container.Resolve<IStateManager>();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            result = txPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
 
             result = txPool.Add(tx);
