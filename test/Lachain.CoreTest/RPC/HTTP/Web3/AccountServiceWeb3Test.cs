@@ -23,8 +23,11 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
-using Nethereum.Hex.HexTypes;
+using Lachain.Crypto.ECDSA;
+using Transaction = Lachain.Proto.Transaction;
+using Lachain.Networking;
 using Nethereum.Signer;
+
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -87,9 +90,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
 
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
+
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
-
         }
 
         [TearDown]
@@ -121,13 +129,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetBalance to public
         public void TestGetBalancePending()
         {
-            var address = "0x2605c1ad496f428ab2b700edd257f0a378f83750";
+            var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
 
-            ExecuteDummyTransaction(false);
-
-            var bal = _apiService.GetBalance(address, "pending");
-            Assert.AreEqual(bal, "0x115557b419c5c1f3fa0183ffd1e5d0");
-
+            var beforeBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(tx.Transaction.From);
+            var sentValue = new Money(tx.Transaction.Value);
+            var afterBalance = beforeBalance - sentValue - new Money(tx.Transaction.GasLimit * tx.Transaction.GasPrice);
+            var balance = _apiService.GetBalance(tx.Transaction.From.ToHex(), "pending");
+            Assert.IsTrue(Web3DataFormatUtils.Web3Number(afterBalance.ToWei().ToUInt256()) == balance);
         }
 
         [Test]
