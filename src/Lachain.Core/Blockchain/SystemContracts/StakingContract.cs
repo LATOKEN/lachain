@@ -558,13 +558,16 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodIsCheckedInAttendanceDetection)]
         public ExecutionStatus IsCheckedInAttendanceDetection(byte[] publicKey, SystemContractExecutionFrame frame)
         {
+            Logger.LogTrace($"IsCheckedInAttendanceDetection({publicKey.ToHex()})");
             frame.UseGas(GasMetering.StakingIsCheckedInAttendanceDetectionCost);
 
             var result = false;
             var seenValidatorsBytes = _attendanceDetectorCheckIns.Get();
+            Logger.LogTrace($"seenValidatorsBytes: [{seenValidatorsBytes.ToHex()}]");
             for (var startByte = 0; startByte < seenValidatorsBytes.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var validator = seenValidatorsBytes.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
+                Logger.LogTrace($"validator: [{validator.ToHex()}]");
                 if (validator.SequenceEqual(publicKey))
                 {
                     result = true;
