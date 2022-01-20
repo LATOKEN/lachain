@@ -1,0 +1,89 @@
+{
+  "network": {
+    "chainId": 41,
+    "cycleDuration": 40,
+    "validatorsCount": 4,
+    "peers": [
+      "03989a413d05f5a58aac85fbed94e1345b802d083c78bda1ca1c89027ae3e61a5f",
+      "02d5de00fa80387f088749dfcc808967be9a1367d017fd08fd837d54f7daa0c03e",
+      "031bcc4d3a6c916920ed21b12f4845e5b69c40ad4e903fae83b4fdfa1b54d7dce1",
+      "03627787df9993f2bac7693e50648550c6ace37f8d5448417d6f396ad4c2271836"
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100,
+    "bootstrapAddresses": [
+      "QmPnk51cDZckQdqNeUh6e1NARjZjsg5fyxXEgiiyLLpXsM@127.0.0.1:41011",
+      "QmdTH1DRmrpPaEgzf4J6smDBrSzrcSr3i4s1w4Nyf3CfUx@127.0.0.1:41012",
+      "QmURS2thxJHhUvy4nhWwpVTFHJgygreEG3uP3KyCKztzv9@127.0.0.1:41013",
+      "QmRrVM5CB4sCYNSTQvAsdByLpCDitRmvsczT8Q6h833xAv@127.0.0.1:41014"
+    ],
+    "hubLogLevel": "Trace",
+    "hubMetricsPort": 7081,
+    "networkName": "localnet"
+  },
+  "genesis": {
+    "TPKEPublicKey": "0x01000000073e12ef4175a72522aa86ff38a4b571ccdf05a67d41907738a5d43e75432c13d0bdd571e6a5fc4326e468b66f85ea17",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000",
+    "balances": {
+      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "10000000",
+      "0x770e1145738e7ea91c8c452a5b35623b0010bf38": "10",
+      "0x1376c218bdc8fa79fe316b1fd56d258d126cb526": "10",
+      "0x6b68ac2bcbc7daba34d8475ac9c918d45533fe47": "10",
+      "0x0e86036745d4af18822429e0dd8f35f2259e9a28": "10"
+    },
+    "validators": [
+      {
+        "ECDSAPublicKey": "03989a413d05f5a58aac85fbed94e1345b802d083c78bda1ca1c89027ae3e61a5f",
+        "thresholdSignaturePublicKey": "0x16af3c2f4bfc2fbb67833a743affa2e762c9e392328d825bcfa34d2be019c87a1a0f5eb39ec9f4e4443b0e1b4c044b16",
+        "stakerAddress": "0x6bc32575acb8754886dc283c2c8ac54b1bd93195",
+        "stakeAmount": "1000000"
+      },
+      {
+        "ECDSAPublicKey": "02d5de00fa80387f088749dfcc808967be9a1367d017fd08fd837d54f7daa0c03e",
+        "thresholdSignaturePublicKey": "0x19bd65bdd5f1a27acc1d3fc05a04ca555b3970c22874442d9622dfa74e65e0cfd5d0e2cb12b515e6b7c768bea1e2a410",
+        "stakerAddress": "0x6bc32575acb8754886dc283c2c8ac54b1bd93195",
+        "stakeAmount": "1000000"
+      },
+      {
+        "ECDSAPublicKey": "031bcc4d3a6c916920ed21b12f4845e5b69c40ad4e903fae83b4fdfa1b54d7dce1",
+        "thresholdSignaturePublicKey": "0x9e391dc8268b8a04de122794995714d4d64a92bc17605e97109746f92669b9ebfcfce0708cac12c75556eaab6fb73e8b",
+        "stakerAddress": "0x6bc32575acb8754886dc283c2c8ac54b1bd93195",
+        "stakeAmount": "1000000"
+      },
+      {
+        "ECDSAPublicKey": "03627787df9993f2bac7693e50648550c6ace37f8d5448417d6f396ad4c2271836",
+        "thresholdSignaturePublicKey": "0x3ad171ba8aeff871210d73475ca5f89da950b705d60ff0c8d42bbbcd5277d3b4fe4a0f1ddbcd13f275f947f752e43808",
+        "stakerAddress": "0x6bc32575acb8754886dc283c2c8ac54b1bd93195",
+        "stakeAmount": "1000000"
+      }
+    ]
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7073,
+    "metricsPort": 7077,
+    "apiKey": "0x3d09c13c8356aa525618d706b62b711f5f93a54eabdc96d86e7531efd2a15e17ce9fe480427d17e66fc8a643b2297dc56b39a075ff2d93bf235dece3cde90dba"
+  },
+  "vault": {
+    "path": "wallet.json",
+    "password": "4852800e3e04da4519f37d711c24192b1c777f1a"
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainLachain"
+  },
+  "blockchain": {
+    "targetBlockTime": 5000
+  },
+  "hardfork": {
+    "hardfork_1": 0,
+    "hardfork_2": 0,
+    "hardfork_3": 0
+  },
+  "version": {
+    "configVersion": 2
+  }
+}

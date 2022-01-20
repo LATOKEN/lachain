@@ -23,6 +23,8 @@ namespace Lachain.Console
 {
     public class TrustedKeygen
     {
+        private static readonly ILogger<TrustedKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustedKeygen>();
+
         internal class Config
         {
             public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
