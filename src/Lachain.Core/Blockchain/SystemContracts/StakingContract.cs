@@ -529,22 +529,26 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void VoteForAttendance(byte[] faultPerson, int faultBlocksCount)
         {
+            Logger.LogTrace($"VoteForAttendance({faultPerson.ToHex()}, {faultBlocksCount})");
             var votes = _attendanceVotes.GetValue(faultPerson);
             _attendanceVotes.SetValue(faultPerson, votes.Concat(faultBlocksCount.ToBytes().ToArray()).ToArray());
         }
 
         private void ClearAttendanceVotes(byte[] faultPerson)
         {
+            Logger.LogTrace($"ClearAttendanceVotes({faultPerson.ToHex()})");
             _attendanceVotes.Delete(faultPerson);
         }
 
         private int[] GetAttendanceVotes(byte[] faultPerson)
         {
+            Logger.LogTrace($"GetAttendanceVotes({faultPerson.ToHex()})");
             var votesBytes = _attendanceVotes.GetValue(faultPerson);
             var votes = new int[votesBytes.Length / 4];
             for (var i = 0; i < votes.Length; i += 1)
             {
                 votes[i] = votesBytes.AsReadOnlySpan().Slice(4 * i).ToInt32();
+                Logger.LogTrace($"Vote {i}: {votes[i]}");
             }
 
             return votes;
@@ -552,6 +556,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void ClearAttendanceDetectorCheckIns()
         {
+            Logger.LogTrace("ClearAttendanceDetectorCheckIns()");
             _attendanceDetectorCheckIns.Set(new byte[] { });
         }
 
@@ -647,8 +652,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private int GetActiveBlocksCount(byte[] validator)
         {
+            Logger.LogTrace($"GetActiveBlocksCount({validator.ToHex()})");
             var votes = GetAttendanceVotes(validator);
-            if (votes.Length == 0) return 0;
+            if (votes.Length == 0)
+            {
+                Logger.LogTrace("Empty GetAttendanceVotes,  return 0");
+                return 0;
+            }
             var middleIndex = votes.Length / 2;
             if (votes.Length % 2 == 0)
             {

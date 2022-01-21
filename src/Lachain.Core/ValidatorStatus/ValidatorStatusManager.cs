@@ -455,7 +455,12 @@ namespace Lachain.Core.ValidatorStatus
         private ValidatorAttendance? GetValidatorAttendance()
         {
             var bytes = _validatorAttendanceRepository.LoadState();
-            if (bytes is null || bytes.Length == 0) return null;
+            if (bytes is null || bytes.Length == 0)
+            {
+                Logger.LogTrace("Failed to load validator attendance");
+                return null;
+            }
+
             var cycle = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() / StakingContract.CycleDuration;
             var indexInCycle = _stateManager.CurrentSnapshot.Blocks.GetTotalBlockHeight() %
                                StakingContract.CycleDuration;
