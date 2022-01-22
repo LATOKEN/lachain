@@ -499,6 +499,20 @@ namespace Lachain.Core.Blockchain.VM
             SafeCopyToMemory(frame.Memory, result, resultOffset);
         }
 
+        public static void Handler_Env_CopyExternalCodeValue(int addressOffset, int resultOffset, int dataOffset, int length)
+        {
+            Logger.LogInformation($"Handler_Env_CopyCodeValue({resultOffset}, {dataOffset}, {length})");
+            var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
+                        ?? throw new InvalidOperationException("Cannot call CopyCodeValue outside wasm frame");
+            frame.UseGas(GasMetering.CopyCodeValueGasCost);
+            var byteCode = frame.InvocationContext.Snapshot.Contracts.GetContractByHash(frame.CurrentAddress)?.ByteCode ?? Array.Empty<byte>();
+            if (dataOffset < 0 || length < 0 || dataOffset + length > byteCode.Length)
+                throw new InvalidContractException("Bad CopyCodeValue call");
+            var result = new byte[length];
+            Array.Copy(byteCode, dataOffset, result, 0, length);
+            SafeCopyToMemory(frame.Memory, result, resultOffset);
+        }
+
         public static void Handler_Env_LoadStorage(int keyOffset, int valueOffset)
         {
             Logger.LogInformation($"Handler_Env_LoadStorage({keyOffset}, {valueOffset})");
@@ -1023,6 +1037,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_call_size", CreateImport(nameof(Handler_Env_GetCallSize))},
                 {EnvModule, "copy_call_value", CreateImport(nameof(Handler_Env_CopyCallValue))},
                 {EnvModule, "invoke_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
+                {EnvModule, "invoke_code_contract", CreateImport(nameof(Handler_Env_InvokeContract))},
                 {EnvModule, "invoke_delegate_contract", CreateImport(nameof(Handler_Env_InvokeDelegateContract))},
                 {EnvModule, "invoke_static_contract", CreateImport(nameof(Handler_Env_InvokeStaticContract))},
                 {EnvModule, "transfer", CreateImport(nameof(Handler_Env_Transfer))},
@@ -1032,6 +1047,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "copy_return_value", CreateImport(nameof(Handler_Env_CopyReturnValue))},
                 {EnvModule, "get_code_size", CreateImport(nameof(Handler_Env_GetCodeSize))},
                 {EnvModule, "copy_code_value", CreateImport(nameof(Handler_Env_CopyCodeValue))},
+                {EnvModule, "externalCodeCopy", CreateImport(nameof(Handler_Env_CopyExternalCodeValue))},
                 {EnvModule, "write_log", CreateImport(nameof(Handler_Env_WriteLog))},
                 {EnvModule, "load_storage", CreateImport(nameof(Handler_Env_LoadStorage))},
                 {EnvModule, "save_storage", CreateImport(nameof(Handler_Env_SaveStorage))},
@@ -1042,6 +1058,7 @@ namespace Lachain.Core.Blockchain.VM
                 {EnvModule, "get_sender", CreateImport(nameof(Handler_Env_GetSender))},
                 {EnvModule, "get_gas_left", CreateImport(nameof(Handler_Env_GetGasLeft))},
                 {EnvModule, "get_tx_origin", CreateImport(nameof(Handler_Env_GetTxOrigin))},
+                {EnvModule, "selfDestruct", CreateImport(nameof(Handler_Env_GetTxOrigin))},
                 {EnvModule, "get_tx_gas_price", CreateImport(nameof(Handler_Env_GetTxGasPrice))},
                 {EnvModule, "get_block_number", CreateImport(nameof(Handler_Env_GetBlockNumber))},
                 {EnvModule, "get_block_hash", CreateImport(nameof(Handler_Env_GetBlockHash))},
