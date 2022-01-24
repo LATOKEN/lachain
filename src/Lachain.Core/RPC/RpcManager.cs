@@ -95,7 +95,7 @@ namespace Lachain.Core.RPC
                     _transactionPool, _contractRegisterer, _privateWallet),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader,
                     _localTransactionRepository, _validatorStatusManager, _privateWallet),
-                new NodeService(_blockSynchronizer, _blockchainEventFilter, _networkManager)
+                new NodeService(_blockSynchronizer, _blockchainEventFilter, _networkManager, _blockManager)
             };
 
             RpcConfig rpcConfig;

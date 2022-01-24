@@ -186,6 +186,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             try
             {
                 var transaction = MakeTransaction(ethTx);
+                //TransactionUtils.SetChainId(41);
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId)}))
                     throw new Exception($"Can not add to transaction pool: BadChainId");
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
@@ -238,7 +239,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return txIds;
          }
 
-[JsonRpcMethod("eth_invokeContract")]
+        [JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
