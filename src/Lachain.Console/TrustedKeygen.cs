@@ -48,13 +48,10 @@ namespace Lachain.Console
             [JsonProperty("version")] public VersionConfig ConfigVersion { get; set; }
         }
 
+        private static readonly ILogger<TrustedKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustedKeygen>();
 
         public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
-
-        private static readonly ILogger<TrustedKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustedKeygen>();
-
-
         {
             if (ips.Any())
             {
