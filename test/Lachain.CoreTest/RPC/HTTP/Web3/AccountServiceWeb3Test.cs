@@ -23,12 +23,13 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
 using Lachain.Core.Blockchain.Pool;
-using Nethereum.Hex.HexTypes;
+using Lachain.Networking;
 using Nethereum.Signer;
 using Lachain.Utility.Serialization;
 using Lachain.Networking;
 using Transaction = Lachain.Proto.Transaction;
 using Lachain.Crypto.ECDSA;
+
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -94,8 +95,15 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
 
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
+
             // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
+            _blockManager.TryBuildGenesisBlock();
 
             // set chainId from config
             if (TransactionUtils.ChainId == 0)
@@ -122,7 +130,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
             var bal = _apiService.GetBalance(address, "latest");
-            Assert.AreEqual(bal, "0x0");
+            Assert.AreEqual(bal, "0x84595161401484a000000");
 
             //updating balance
             _stateManager.LastApprovedSnapshot.Balances.SetBalance(address.HexToBytes().ToUInt160(), Money.Parse("90000000000000000"));
@@ -135,16 +143,17 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetBalance to public
         public void TestGetBalancePending()
         {
-            var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
 
-            _blockManager.TryBuildGenesisBlock();
+            var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
 
-            var rawTx2 = MakeDummyTx();
-
-            ExecuteDummyTransaction(false, rawTx2);
-
-            var bal = _apiService.GetBalance(address, "pending");
-            Assert.AreEqual(bal, "0x115557b419c5bc87e2b3b5217dc000");
+            var beforeBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(tx.Transaction.From);
+            var sentValue = new Money(tx.Transaction.Value);
+            var afterBalance = beforeBalance - sentValue - new Money(tx.Transaction.GasLimit * tx.Transaction.GasPrice);
+            var balance = _apiService.GetBalance(tx.Transaction.From.ToHex(), "pending");
+            Assert.IsTrue(Web3DataFormatUtils.Web3Number(afterBalance.ToWei().ToUInt256()) == balance);
 
         }
 
@@ -164,21 +173,23 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // Changed GetTransactionCount to public
         public void Test_GetTransactionCount_latest()
         {
-
             _blockManager.TryBuildGenesisBlock();
+            var tx = TestUtils.GetRandomTransaction();
+            // adding balance so that it's transaction is added to the pool
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
 
-            var rawTx2 = MakeDummyTx();
 
-            var ethTx = new TransactionChainId(rawTx2.HexToBytes());
-            var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
+            var txCountBefore = _apiService!.GetTransactionCount(tx.Transaction.From.ToHex(), "latest");        
 
-            var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
             Assert.AreEqual(txCountBefore, 0);
+            
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
 
-            //TransactionUtils.SetChainId(41);
-            ExecuteDummyTransaction(true, rawTx2);
 
-            var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest");
+            GenerateBlocks(1);
+
+            var txCountAfter = _apiService!.GetTransactionCount(tx.Transaction.From.ToHex(), "latest");
             Assert.AreEqual(txCountAfter, 1);
         }
 
