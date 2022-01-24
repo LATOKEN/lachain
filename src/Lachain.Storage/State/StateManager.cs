@@ -22,7 +22,9 @@ namespace Lachain.Storage.State
 
         private readonly Mutex _globalMutex = new Mutex(false);
 
-        public StateManager(IStorageManager storageManager)
+        private readonly IRocksDbContext _dbContext;
+
+        public StateManager(IStorageManager storageManager, IRocksDbContext dbContext)
         {
             _balanceManager =
                 new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager,
@@ -55,6 +57,7 @@ namespace Lachain.Storage.State
                 _eventManager.LastApprovedSnapshot,
                 _validatorManager.LastApprovedSnapshot
             );
+            _dbContext = dbContext;
         }
 
         public void SafeContext(Action callback)
