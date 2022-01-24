@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Lachain.Logger;
+
 namespace Lachain.Storage.State
 {
     public class StateManager : IStateManager
@@ -20,9 +21,8 @@ namespace Lachain.Storage.State
         private readonly ISnapshotManager<IValidatorSnapshot> _validatorManager;
 
         private readonly Mutex _globalMutex = new Mutex(false);
-        private IRocksDbContext _dbContext;
 
-        public StateManager(IStorageManager storageManager, IRocksDbContext dbContext)
+        public StateManager(IStorageManager storageManager)
         {
             _balanceManager =
                 new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager,
@@ -55,8 +55,6 @@ namespace Lachain.Storage.State
                 _eventManager.LastApprovedSnapshot,
                 _validatorManager.LastApprovedSnapshot
             );
-
-            _dbContext = dbContext;
         }
 
         public void SafeContext(Action callback)

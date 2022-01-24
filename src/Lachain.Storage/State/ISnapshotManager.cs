@@ -21,7 +21,7 @@
         /// <summary>
         /// Commit already approved snapshot
         /// </summary>
-        void Commit(RocksDbAtomicWrite batch);
+        void Commit();
 
         /// <summary>
         /// Rollback to specific version (in approved but uncommited state)

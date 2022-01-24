@@ -91,13 +91,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     Transaction = transaction
                 });
 
-                if (result != OperatingError.Ok) return $"Transaction is invalid: {result}";
+                if (result != OperatingError.Ok) throw new Exception($"Transaction is invalid: {result}");
                 return txHash.ToHex();
             }
             catch (Exception e)
             {
                 Logger.LogError($"Exception in handling eth_verifyRawTransaction: {e}");
-                return e.Message;
+                throw;
             }
         }
 
@@ -186,16 +186,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             try
             {
                 var transaction = MakeTransaction(ethTx);
+                //TransactionUtils.SetChainId(41);
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId)}))
-                    return "Can not add to transaction pool: BadChainId";
+                    throw new Exception($"Can not add to transaction pool: BadChainId");
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
-                if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
+                if (result != OperatingError.Ok) throw new Exception($"Can not add to transaction pool: {result}");
                 return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
             }
             catch (Exception e)
             {
                 Logger.LogError($"Exception in handling eth_sendRawTransaction: {e}");
-                return e.Message;
+                throw;
             }
         }
 
@@ -238,7 +239,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return txIds;
          }
 
-[JsonRpcMethod("eth_invokeContract")]
+        [JsonRpcMethod("eth_invokeContract")]
         private JObject InvokeContract(string contract, string sender, string input, ulong gasLimit)
         {
             var contractByHash = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(
