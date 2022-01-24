@@ -62,6 +62,12 @@ namespace Lachain.Core.CLI
 
         [Option('b', "feedBalance", Required = false, HelpText = "Initial feed balance")]
         public string feedBalance { get; set; } = "10000000";
+
+
+        [Option('r', "hardfork", Required = true, Separator = ' ', HelpText = "hardfork heights")]
+        public IEnumerable<ulong> hardforks { get; set; } = Enumerable.Empty<ulong>();
+
+
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]
