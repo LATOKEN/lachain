@@ -61,35 +61,6 @@ namespace Lachain.Core.Network
         }
 
         public event EventHandler<ulong>? OnSignedBlockReceived;
-
-        public uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout)
-        {
-            var txHashes = transactionHashes as UInt256[] ?? transactionHashes.ToArray();
-            var lostTxs = _GetMissingTransactions(txHashes);
-            var endWait = DateTime.UtcNow.Add(timeout);
-
-            while (_GetMissingTransactions(txHashes).Count != 0)
-            {
-                const int maxPeersToAsk = 1;
-                var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
-                var rnd = new Random();
-                var peers = _peerHeights
-                    .Where(entry => entry.Value >= maxHeight)
-                    .Select(entry => entry.Key)
-                    .OrderBy(_ => rnd.Next())
-                    .Take(maxPeersToAsk)
-                    .ToArray();
-                if (lostTxs.Count == 0) return (uint) txHashes.Length;
-                Logger.LogTrace($"Sending query for {lostTxs.Count} transactions to {peers.Length} peers");
-                var request = _networkManager.MessageFactory.SyncPoolRequest(lostTxs);
-                foreach (var peer in peers) _networkManager.SendTo(peer, request);
-                lock (_peerHasTransactions)
-                    Monitor.Wait(_peerHasTransactions, TimeSpan.FromMilliseconds(5_000));
-                if (DateTime.UtcNow.CompareTo(endWait) > 0) break;
-            }
-            return (uint) (txHashes.Length - (uint) _GetMissingTransactions(txHashes).Count);
-        }
-
         public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
         {
             lock (_txLock)
@@ -147,10 +118,19 @@ namespace Lachain.Core.Network
 
                 if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
                 {
-                    var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
-                    var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
-                    Logger.LogTrace(
-                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
+                    try
+                    {
+                        var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
+                        var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
+
+                        Logger.LogTrace(
+                            $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogWarning($"Failed to get transaction receipts for tx hash: {e}");
+                    }
+
                     return false;
                 }
 
@@ -348,14 +328,7 @@ namespace Lachain.Core.Network
             _blockSyncThread.Start();
             _pingThread.Start();
         }
-
-        private List<UInt256> _GetMissingTransactions(IEnumerable<UInt256> txHashes)
-        {
-            return txHashes
-                .Where(hash => (_transactionManager.GetByHash(hash) ?? _transactionPool.GetByHash(hash)) is null)
-                .ToList();
-        }
-
+        
         public void Dispose()
         {
             _running = false;

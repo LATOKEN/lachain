@@ -39,6 +39,7 @@ namespace Lachain.Core.Consensus
         private long CurrentEra { get; set; } = -1;
 
         private readonly Dictionary<long, EraBroadcaster> _eras = new Dictionary<long, EraBroadcaster>();
+        private readonly object _erasLock = new object();
         private readonly object _blockPersistedLock = new object();
         private ulong _lastSignedHeaderReceived = 0;
 
@@ -95,7 +96,7 @@ namespace Lachain.Core.Consensus
 
         public void Dispatch(ConsensusMessage message, ECDSAPublicKey from)
         {
-            lock (_eras)
+            lock (_erasLock)
             {
                 var era = message.Validator.Era;
                 if (era < CurrentEra)
@@ -143,7 +144,7 @@ namespace Lachain.Core.Consensus
 
         private void FinishEra()
         {
-            lock (_eras)
+            lock (_erasLock)
             {
                 var broadcaster = _eras[CurrentEra];
                 lock (broadcaster)
@@ -152,30 +153,22 @@ namespace Lachain.Core.Consensus
                     broadcaster.Terminate();
                     _eras.Remove(CurrentEra);
                     
-                    var height = (long) _blockManager.GetHeight();
-                    
-                    if(height >= CurrentEra) 
-                    {
-                        CurrentEra += 1;
-                        Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
-                    }
-                    else 
-                    {
-                        Logger.LogWarning($"block height: {height} is smaller than CurrentEra: {CurrentEra}.");
-                    }
-
+                    CurrentEra += 1;
                     _eras[CurrentEra] = new EraBroadcaster(
                         CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
                     );
+                    Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
                 }
             }
         }
 
         private void Run(ulong startingEra)
         {
+            Logger.LogTrace($"Starting, startingEra {startingEra}");
             CurrentEra = (long) startingEra;
-            lock (_eras)
+            lock (_erasLock)
             {
+                Logger.LogTrace("Create EraBroadcaster");
                 _eras[CurrentEra] = new EraBroadcaster(
                     CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
                 );
@@ -204,7 +197,7 @@ namespace Lachain.Core.Consensus
                     );
 
                     EraBroadcaster? broadcaster;
-                    lock (_eras)
+                    lock (_erasLock)
                     {
                         broadcaster = _eras[CurrentEra];
                         broadcaster.SetValidatorKeySet(validators);

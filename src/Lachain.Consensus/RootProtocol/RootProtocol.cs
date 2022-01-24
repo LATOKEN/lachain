@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Lachain.Logger;
@@ -13,7 +12,6 @@ using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
-using NLog.Fluent;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
 namespace Lachain.Consensus.RootProtocol
@@ -27,7 +25,7 @@ namespace Lachain.Consensus.RootProtocol
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private IBlockProducer? _blockProducer;
         private ulong? _nonce;
-        private UInt256[]? _hashes;
+        private TransactionReceipt[]? _receipts;
         private BlockHeader? _header;
         private MultiSig? _multiSig;
         private ulong _cycleDuration;
@@ -124,13 +122,7 @@ namespace Lachain.Consensus.RootProtocol
                         _blockProducer = request.Input;
                         using (var stream = new MemoryStream())
                         {
-                            foreach (var hash in _blockProducer.GetTransactionsToPropose(Id.Era).Select(tx => tx.Hash))
-                            {
-                                Debug.Assert(hash.ToBytes().Length == 32);
-                                stream.Write(hash.ToBytes(), 0, 32);
-                            }
-
-                            var data = stream.ToArray();
+                            var data = _blockProducer.GetTransactionsToPropose(Id.Era).ToByteArray();
                             Broadcaster.InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                                 Id, new HoneyBadgerId(Id.Era), new RawShare(data, GetMyId()))
                             );
@@ -153,12 +145,29 @@ namespace Lachain.Consensus.RootProtocol
                         Logger.LogTrace($"Received shares {result.Result.Count} from HoneyBadger");
                         _lastMessage = $"Received shares {result.Result.Count} from HoneyBadger";
 
-                        _hashes = result.Result.ToArray()
-                            .SelectMany(share => SplitShare(share.ToBytes()))
-                            .Select(hash => hash.ToUInt256())
-                            .Distinct()
-                            .ToArray();
-                        Logger.LogTrace($"Collected {_hashes.Length} transactions in total");
+                        var rawShares = result.Result.ToArray();
+                        var receipts = new List<TransactionReceipt>();
+
+                        foreach(var rawShare in rawShares)
+                        {
+                            // this rawShare may be malicious
+                            // we may need to discard this if any issue arises during decoding
+                            try 
+                            {
+                                var contributions = rawShare.ToBytes().ToMessageArray<TransactionReceipt>();
+                                foreach(var receipt in contributions)
+                                    receipts.Add(receipt);
+                            }
+                            catch(Exception e)
+                            {
+                                Logger.LogError($"Skipped a rawShare due to exception: {e.Message}");
+                                Logger.LogError($"One of the validators might be malicious!!!");
+                            }
+                        }
+
+                        _receipts = receipts.Distinct().ToArray();
+
+                        Logger.LogTrace($"Collected {_receipts.Length} transactions in total");
                         TrySignHeader();
                         CheckSignatures();
                         break;
@@ -177,13 +186,25 @@ namespace Lachain.Consensus.RootProtocol
 
         private void TrySignHeader()
         {
-            if (_hashes is null || _nonce is null || _blockProducer is null) return;
-            if (!(_header is null)) return;
+            Logger.LogTrace("TrySignHeader");
+            if (_receipts is null || _nonce is null || _blockProducer is null)
+            {
+                Logger.LogTrace($"Not ready yet: _hasges {_receipts is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
+                return;
+            }
+
+            if (!(_header is null))
+            {
+                Logger.LogTrace("Header already exists");
+                return;
+            }
             try
             {
-                _header = _blockProducer.CreateHeader((ulong) Id.Era, _hashes, _nonce.Value, out _hashes);
+                Logger.LogTrace("Try to create header");
+                _header = _blockProducer.CreateHeader((ulong) Id.Era, _receipts, _nonce.Value, out _receipts);
                 if (_header == null)
                 {
+                    Logger.LogTrace("Failed to create header");
                     return;
                 }
             }
@@ -207,7 +228,12 @@ namespace Lachain.Consensus.RootProtocol
 
         private void CheckSignatures()
         {
-            if (_header is null || _hashes is null || _blockProducer is null || _signatures.Count == 0) return;
+            Logger.LogTrace("CheckSignatures");
+            if (_header is null || _receipts is null || _blockProducer is null || _signatures.Count == 0)
+            {
+                Logger.LogTrace($"Not ready yet: _header {_header is null}, _hashes {_receipts is null}, _blockProducer {_blockProducer is null}, _signatures {_signatures.Count}");
+                return;
+            }
             var bestHeader = _signatures
                 .GroupBy(
                     tuple => tuple.Item1,
@@ -215,6 +241,7 @@ namespace Lachain.Consensus.RootProtocol
                 )
                 .Select(p => new KeyValuePair<BlockHeader, int>(p.Key, p.Count()))
                 .Aggregate((x, y) => x.Value > y.Value ? x : y);
+            Logger.LogTrace($"bestHeader.Value {bestHeader.Value} Wallet.N {Wallet.N}  Wallet.F {Wallet.F}");
             if (bestHeader.Value < Wallet.N - Wallet.F) return;
             Logger.LogTrace($"Received {bestHeader.Value} signatures for block header");
             _multiSig = new MultiSig {Quorum = (uint) (Wallet.N - Wallet.F)};
@@ -233,7 +260,7 @@ namespace Lachain.Consensus.RootProtocol
 
             try
             {
-                _blockProducer.ProduceBlock(_hashes, _header, _multiSig);
+                _blockProducer.ProduceBlock(_receipts, _header, _multiSig);
             }
             catch (Exception e)
             {
@@ -253,15 +280,6 @@ namespace Lachain.Consensus.RootProtocol
                 res[i % 8] ^= result.RawBytes[i];
             return res.AsReadOnlySpan().ToUInt64();
         }
-
-        private static IEnumerable<byte[]> SplitShare(IReadOnlyCollection<byte> share)
-        {
-            for (var i = 0; i < share.Count; i += 32)
-            {
-                yield return share.Skip(i).Take(32).ToArray();
-            }
-        }
-
         private ConsensusMessage CreateSignedHeaderMessage(BlockHeader header, Signature signature)
         {
             var message = new ConsensusMessage

@@ -165,20 +165,17 @@ namespace Lachain.ConsensusTest
                     received[i].Add(b ? 1 : 0);
             }
 
-            ISet<int>? firstReceived = null;
             for (var i = 0; i < n; ++i)
             {
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
-                if (firstReceived == null) firstReceived = received[i];
-                for (var v = 0; v < 2; ++v)
+
+                foreach(var v in received[i])
                 {
-                    if (inputsCount[v] < f + 1) continue;
-                    Assert.Contains(v, received[i].ToList(),
-                        "all correct nodes should output value if at least F + 1 inputed it");
+                    Assert.IsTrue(v >= 0 && v < 2, "received value must be a binary.");
+                    Assert.IsTrue(inputsCount[v] >= f + 1, "received value must be input of at least (f+1) correct processes.");
                 }
 
                 Assert.Greater(received[i].Count, 0, "all correct nodes should output something");
-                Assert.IsTrue(firstReceived.SequenceEqual(received[i]), "all correct nodes should output same values");
             }
         }
     }

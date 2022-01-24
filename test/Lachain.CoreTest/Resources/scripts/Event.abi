@@ -1,0 +1,1 @@
+[{"name":"test","type":"function","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"name":"Test","type":"event","inputs":[{"name":"i","type":"uint256","internalType":"uint256"},{"name":"a","type":"address","internalType":"address"},{"name":"b","type":"bool","internalType":"bool"}],"anonymous":false}]

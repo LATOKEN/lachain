@@ -155,6 +155,7 @@ namespace Lachain.ConsensusTest
             }
 
             CheckRequest(request.To);
+            if (Terminated) return;
             Registry[request.To]?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
         }
 

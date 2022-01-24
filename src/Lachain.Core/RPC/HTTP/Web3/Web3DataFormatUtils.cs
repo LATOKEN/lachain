@@ -205,7 +205,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["input"] = Web3Data(receipt.Transaction.Invocation),
                 ["nonce"] = Web3Number(receipt.Transaction.Nonce),
                 ["to"] = receipt.Transaction.To.Buffer.IsEmpty ? null : Web3Data(receipt.Transaction.To),
-                ["transactionIndex"] = Web3Number(receipt.IndexInBlock),
+                ["transactionIndex"] = blockNumber != null ? Web3Number(receipt.IndexInBlock) : null,
                 ["value"] = Web3Number(receipt.Transaction.Value),
                 ["r"] = Web3Data(signature.Take(32)),
                 ["s"] = Web3Data(signature.Skip(32).Take(32)),
@@ -225,7 +225,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return logs;
         }
 
-        public static JObject Web3Event(Event e, ulong? blockNumber = null)
+        public static JObject Web3Event(Event e, ulong? blockNumber = null, UInt256? blockHash = null)
         {
             if (e.Contract is null || e.Data is null || e.TransactionHash is null || e.BlockHash is null)
             {
@@ -233,7 +233,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             var topics = new JArray();
-            topics.Add(Web3Number(e.SignatureHash));
+            topics.Add(Web3Data(e.SignatureHash));
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),
@@ -241,18 +241,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["data"] = Web3Data(e.Data ?? Enumerable.Empty<byte>()),
                 ["blockNumber"] = Web3Number(blockNumber ?? 0),
                 ["transactionHash"] = Web3Data(e.TransactionHash),
-                ["blockHash"] = Web3Data(e.BlockHash),
+                ["blockHash"] = Web3Data(blockHash),
                 ["logIndex"] = Web3Number(e.Index),
                 ["transactionIndex"] = Web3Number(0),
                 ["removed"] = false,
             };
         }
 
-        public static JArray Web3EventArray(IEnumerable<Event> events, ulong? blockNumber = null)
+        public static JArray Web3EventArray(IEnumerable<Event> events, ulong? blockNumber = null, UInt256? blockHash = null)
         {
             var logs = new JArray();
             foreach(Event e in events)
-                logs.Add(Web3Event(e, blockNumber));
+                logs.Add(Web3Event(e, blockNumber, blockHash));
             return logs;
         }
         

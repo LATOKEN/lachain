@@ -36,6 +36,11 @@ namespace Lachain.Storage.Repositories
         /// </summary>
         /// <param name="txHash"></param>
         /// <returns></returns>
+
+        int RemoveTransactions(IEnumerable<UInt256> txHashes);
+
         bool ContainsTransactionByHash(UInt256 txHash);
+
+        void ClearPool();
     }
 }

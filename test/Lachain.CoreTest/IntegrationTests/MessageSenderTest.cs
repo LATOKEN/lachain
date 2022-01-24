@@ -16,6 +16,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -37,6 +38,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
+        private IConfigManager _configManager = null!;
         private IContainer? _container;
 
         [SetUp]
@@ -56,6 +58,13 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _configManager = _container.Resolve<IConfigManager>();
+            // set chainId from config
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
             _blockManager.TryBuildGenesisBlock();
         }
 
@@ -79,7 +88,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.Fail("Failed to read bytecode from resources");
             var byteCode = new byte[resourceTest!.Length];
             resourceTest!.Read(byteCode, 0, (int)resourceTest!.Length);
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate contract code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate contract code");
             var from = keyPair.PublicKey.GetAddress();
             var fromReverted = from.ToBytes().Reverse().ToArray().ToUInt160();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);

@@ -17,7 +17,7 @@ using System.Globalization;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Storage.Trie;
 using Lachain.Utility;
-
+using Lachain.Core.BlockchainFilter;
 
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -67,20 +67,52 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var block = _blockManager.GetByHeight((ulong)blockNumber);
             if (block == null)
                 return null;
-            var txs = block!.TransactionHashes
-                .Select(hash => _transactionManager.GetByHash(hash)!)
-                .ToList();
-            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
-            var txArray = fullTx
-                ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index)
-                : new JArray();
-            if (!fullTx)
+
+            ulong gasUsed = 0;
+            var txArray = new JArray();
+            if (block.TransactionHashes.Count <= 0) 
+                return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
+            List<TransactionReceipt> txs = new List<TransactionReceipt>();
+            try
             {
-                foreach(var tx in txs)
+                foreach(var txHash in block.TransactionHashes)
                 {
-                    txArray.Add(Web3DataFormatUtils.Web3Data(tx.Hash));
+                    Logger.LogInformation($"Transaction hash {txHash.ToHex()} in block {blockNumber}");
+                    TransactionReceipt? tx = _transactionManager.GetByHash(txHash);
+                    if(tx is null)
+                    {
+                        Logger.LogWarning($"Transaction not found in DB {txHash.ToHex()}");
+                    }
+                    else txs.Add(tx);
                 }
             }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
+                foreach (var txhash in block.TransactionHashes)
+                    Logger.LogWarning($"txhash {txhash.ToHex()}");
+            }
+
+            try
+            {
+                gasUsed = txs.Aggregate(gasUsed, (current, tx) => current + tx.GasUsed);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"txs {txs}");
+                foreach (var tx in txs)
+                {
+                    if (tx is null) 
+                         continue;
+                    Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
+                }
+            }
+
+            if(fullTx) 
+                txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
+
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
@@ -441,6 +473,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public JArray GetEventsByTransactionHash(string txHash) 
         {
             var transactionHash = txHash.HexToUInt256();
+            var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(transactionHash);
+            if (receipt is null) return new JArray();
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
+            if (block is null) return new JArray(); // ???
             var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(transactionHash);
             var jArray = new JArray();
             for (var i = 0; i < txEvents; i++)
@@ -449,7 +485,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     (uint)i);
                 if (ev is null)
                     continue;
-                jArray.Add(Web3DataFormatUtils.Web3Event(ev));
+                jArray.Add(Web3DataFormatUtils.Web3Event(ev, receipt!.Block, block!.Hash));
             }
 
             return jArray;
@@ -464,22 +500,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var topicsJson = opts["topics"];
             var blockhash = opts["blockHash"];
 
+
             if ((!(fromBlock is null) || !(toBlock is null)) && !(blockhash is null))
                 throw new Exception(
                     "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
 
-            ulong ?start;
-            start = _blockManager.GetHeight();
+            ulong? start = _blockManager.GetHeight();
             if (!(fromBlock is null))
             {
-                start = GetBlockNumberByTag(fromBlock!.ToString());
+                start = GetBlockNumberByTag((string)fromBlock!);
             }
 
-            ulong? finish;
-            finish = _blockManager.GetHeight();
+            ulong? finish = _blockManager.GetHeight();
             if (!(toBlock is null))
             {
-                finish = GetBlockNumberByTag(toBlock!.ToString());
+                finish = GetBlockNumberByTag((string)toBlock!);
             }
 
             if (!(blockhash is null))
@@ -497,87 +532,22 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var topics = new List<UInt256>();
             if (!(topicsJson is null))
             {
-                foreach (var t_sig in topicsJson)
-                {
-                    if (t_sig is null)
-                        break;
-                    foreach (var t in t_sig)
-                    {
-                        var tString = (t is null) ? null : (string)t!;
-                        var topicBuffer = tString?.HexToUInt256();
-                        if (!(topicBuffer is null))
-                        {
-                            Logger.LogInformation($"Use topic [{topicBuffer.ToHex()}]");
-                            topics.Add(topicBuffer);
-                        }
-                    }
-
-                    break; // we check event signatures only,  no indexed parameters support
-                    // TODO: Throw an error if there are topics for indexed parameters
-                }
+                topics = BlockchainFilterUtils.GetTopics((JArray)topicsJson);
             }
 
             var addresses = new List<UInt160>();
             if (!(address is null))
             {
-                foreach (var a in address)
-                {
-                    var addressString = (a is null) ? null : (string)a!;
-                    var addressBuffer = addressString?.HexToUInt160();
-                    if (!(addressBuffer is null))
-                        addresses.Add(addressBuffer);
-                }
+                addresses = BlockchainFilterUtils.GetAddresses((JArray)address);
+                
             }
 
-            var jArray = new JArray();
-            for (var blockNumber = start; blockNumber <= finish; blockNumber++)
-            {
-                var block = _blockManager.GetByHeight((ulong)blockNumber!);
-                if (block == null)
-                    continue;
-                var txs = block!.TransactionHashes;
-                foreach (var tx in txs)
-                {
-                    if (addresses.Count > 0)
-                    {
-                        var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
-                        if (receipt is null)
-                            continue;
-                        if (!addresses.Any(a => receipt.Transaction.From.Equals(a)))
-                            continue;
-                    }
+            if((start is null) || (finish is null)) return new JArray();
 
-                    var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(tx);
-                    for (var i = 0; i < txEvents; i++)
-                    {
-                        var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
-                            (uint)i);
-                        if (ev is null)
-                            continue;
-                        if (topics.Count > 0)
-                        {
-                            if (!topics.Any(t => ev.SignatureHash.Equals(t)))
-                            {
-                                Logger.LogInformation($"Skip event with signature [{ev.SignatureHash.ToHex()}]");
-                                continue;
-                            }
-                        }
-
-                        if (ev.BlockHash is null)
-                        {
-                            ev.BlockHash = block.Hash;
-                        }
-                        if (ev.BlockHash.IsZero())
-                        {
-                            ev.BlockHash = block.Hash;
-                        }
-                        jArray.Add(Web3DataFormatUtils.Web3Event(ev, blockNumber));
-                    }
-                }
-            }
-
-            return jArray;
+            return GetLogs((ulong)start , (ulong)finish , addresses , topics);
         }
+
+
 
         [JsonRpcMethod("eth_getTransactionPool")]
         public JArray GetTransactionPool() 
@@ -680,6 +650,51 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var blockNumber = GetBlockNumberByTag(blockTag);
             IBlockchainSnapshot blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber);
             return blockchainSnapshot.StateHash;
+        }
+
+        public JArray GetLogs(ulong start, ulong finish, List<UInt160> addresses, List<UInt256> topics)
+        {
+            var jArray = new JArray();
+            for (var blockNumber = start; blockNumber <= finish; blockNumber++)
+            {
+                var block = _blockManager.GetByHeight(blockNumber);
+                if (block == null)
+                    continue;
+                var txs = block!.TransactionHashes;
+                foreach (var tx in txs)
+                {
+                    
+
+                    var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(tx);
+                    for (var i = 0; i < txEvents; i++)
+                    {
+                        var txEvent = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
+                            (uint)i);
+                        if (txEvent is null)
+                            continue;
+                        
+                        if(!addresses.Any(a => txEvent.Contract.Equals(a))) continue;
+
+                        if (topics.Count > 0)
+                        {
+                            if (!topics.Any(t => txEvent.SignatureHash.Equals(t)))
+                            {
+                                Logger.LogInformation($"Skip event with signature [{txEvent.SignatureHash.ToHex()}]");
+                                continue;
+                            }
+                        }
+
+                        if (txEvent.BlockHash is null || txEvent.BlockHash.IsZero())
+                        {
+                            txEvent.BlockHash = block.Hash;
+                        }
+           
+                        jArray.Add(Web3DataFormatUtils.Web3Event(txEvent, blockNumber,block.Hash));
+                    }
+                }
+            }
+
+            return jArray;
         }
     }
 }

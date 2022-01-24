@@ -3,6 +3,9 @@ using System.Linq;
 using System.Threading;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -28,6 +31,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using Lachain.Storage;
 using Lachain.Core.Blockchain;
@@ -79,6 +83,7 @@ namespace Lachain.Console
             var NodeRetrieval = _container.Resolve<INodeRetrieval>();
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
+            var transactionPool = _container.Resolve<ITransactionPool>();
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
@@ -86,6 +91,20 @@ namespace Lachain.Console
 
             Logger.LogInformation($"Chainid {chainId}");
             TransactionUtils.SetChainId((int)chainId);
+
+            var version = Assembly.GetEntryAssembly()!
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                .InformationalVersion;
+            Logger.LogInformation($"Version: {version}");
+
+            // set cycle and validatorCount
+            StakingContract.Initialize(configManager.GetConfig<NetworkConfig>("network"));
+
+            // set hardfork heights
+            Logger.LogInformation($"Setting hardfork heights.");
+            var hardforkConfig = configManager.GetConfig<HardforkConfig>("hardfork") ??
+                    throw new Exception("No 'hardfork' section in config file");
+            HardforkHeights.SetHardforkHeights(hardforkConfig);
 
             rpcManager.Start();
             
@@ -95,6 +114,7 @@ namespace Lachain.Console
                 var snapshot = snapshotIndexRepository.GetSnapshotForBlock(options.RollBackTo.Value);
                 stateManager.RollbackTo(snapshot);
                 wallet.DeleteKeysAfterBlock(options.RollBackTo.Value);
+                stateManager.Commit();
                 Logger.LogWarning($"Rollback to block {options.RollBackTo.Value} complete");
             }
 
@@ -143,7 +163,10 @@ namespace Lachain.Console
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
-            
+
+            // pending transactions are restored from pool repository to in-memory storage
+            // it's important to restore pool after transactionVerifier and before blockSynchronizer starts
+            transactionPool.Restore();
 
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
