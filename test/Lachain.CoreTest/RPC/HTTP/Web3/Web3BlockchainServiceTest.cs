@@ -128,11 +128,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_Web3Block() 
         {
             
-            ulong total = 5;
+            ulong total = 1;
             GenerateBlocksWithGenesis(total);
             bool fullTx = false;
+            var tx = GiveMeSomeMoney(Money.Parse("100000").ToUInt256());
+            var txList = new List<TransactionReceipt> ();
+            txList.Add(tx);
+            AddBatchTransactionToPool(txList, false);
+            GenerateBlocks(1);
+            total++;
+            CheckBlockWeb3Format("latest",(ulong)total , fullTx);
             var randomTxList = GetRandomTransactionBatch(10);
-            var topUpTxList = TopUpBalanceTxBatch(randomTxList);
+            var topUpTxList = TopUpBalanceTxBatch(randomTxList, "10");
             AddBatchTransactionToPool(topUpTxList, false);
             GenerateBlocks(1);
             total++;
@@ -706,6 +713,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
         {
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
             var tx = new Transaction
             {
                 To = to,
@@ -718,6 +727,21 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             };
             return Signer.Sign(tx, _privateWallet.EcdsaKeyPair);
         }
+
+        private TransactionReceipt GiveMeSomeMoney(UInt256 money){
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
+            var tx = new Transaction
+            {
+                To = _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
+                From = keyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong)Money.Parse("0.000000000000000001").ToWei(),
+                GasLimit = 4_000_000,
+                Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()),
+                Value = money
+            };
+            return Signer.Sign(tx, keyPair);
+        } 
 
         public void CheckTransactionWeb3Format(ulong blockHeight)
         {
@@ -828,8 +852,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
             var gasUsed = GasForBlock(block);
             var txArray = TxesForBlockInWeb3Format(block, fullTx);
-            Logger.LogInformation($"{web3Block}");
-            Logger.LogInformation($"{Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray)}");
+            
             Assert.AreEqual(web3Block, Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray));
             Assert.AreEqual(sameBlock, Web3DataFormatUtils.Web3BlockRaw(block));
             Assert.AreEqual(web3BlockByHash, web3Block);
