@@ -22,6 +22,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IPrivateWallet _privateWallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
 
+        private IConfigManager _configManager = null!;
+
         private ValidatorServiceWeb3 _apiService = null!;
 
         [SetUp]
@@ -47,6 +49,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
            
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
+            _configManager = _container.Resolve<IConfigManager>();
 
             ServiceBinder.BindService<GenericParameterAttributes>();
             _apiService = new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet);
@@ -74,8 +77,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_StartValidator() 
         {
             Assert.AreEqual("wallet_locked" , _apiService.StartValidator());
-            string passWord = "12345";
-            Assert.AreEqual(true, _privateWallet.Unlock(passWord,100) );
+            UnlockWallet(false);
+            Assert.AreEqual("wallet_locked" , _apiService.StartValidator());
+            UnlockWallet(true);
             Assert.AreEqual("validator_started" , _apiService.StartValidator());
         }
 
@@ -86,8 +90,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             string money = "2000";
             Assert.AreEqual("wallet_locked", _apiService.StartValidatorWithStake(money));
-            string passWord = "12345";
-            Assert.AreEqual(true, _privateWallet.Unlock(passWord, 100));
+            UnlockWallet(true);
             Assert.AreEqual("validator_started", _apiService.StartValidatorWithStake(money));
 
         }
@@ -111,8 +114,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_StopValidator() 
         {
             Assert.AreEqual("wallet_locked", _apiService.StopValidator());
-            string passWord = "12345";
-            Assert.AreEqual(true, _privateWallet.Unlock(passWord, 100));
+            UnlockWallet(true);
             string money = "2000";
             _validatorStatusManager.StartWithStake(Money.Parse(money).ToUInt256());
             Assert.AreEqual(true, _apiService.IsMining());
@@ -121,7 +123,19 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             //Assert.AreEqual(false, _apiService.IsMining());
         }
 
-        
+        public void UnlockWallet(bool unlock, int time = 100){
+            string password;
+            if(unlock){
+                var config = _configManager.GetConfig<VaultConfig>("vault") ??
+                         throw new Exception("No 'vault' section in config file");
+                password = config.Password!;
+                Assert.AreEqual(true,_privateWallet.Unlock(password, time));
+            }
+            else{
+                password = "12345" ; // random password
+                Assert.AreEqual(false,_privateWallet.Unlock(password, time));
+            }
+        }
 
     }
 }

@@ -112,7 +112,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             if(fullTx) 
                 txArray = Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index);
-
+            else
+            {
+                foreach (var tx in txs)
+                {
+                    txArray.Add(Web3DataFormatUtils.Web3Data(tx.Hash));
+                }
+            }
             return Web3DataFormatUtils.Web3Block(block!, gasUsed, txArray);
         }
 
@@ -335,10 +341,46 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
             if (block == null)
                 return null;
-            var txs = block!.TransactionHashes
-                .Select(hash => _transactionManager.GetByHash(hash)!)
-                .ToList();
-            var gasUsed = txs.Aggregate<TransactionReceipt, ulong>(0, (current, tx) => current + tx.GasUsed);
+            
+            List<TransactionReceipt> txs = new List<TransactionReceipt>();
+            try
+            {
+                foreach(var txHash in block.TransactionHashes)
+                {
+                    Logger.LogInformation($"Transaction hash {txHash.ToHex()} in block {block.Header.Index}");
+                    TransactionReceipt? tx = _transactionManager.GetByHash(txHash);
+                    if(tx is null)
+                    {
+                        Logger.LogWarning($"Transaction not found in DB {txHash.ToHex()}");
+                    }
+                    else txs.Add(tx);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
+                foreach (var txhash in block.TransactionHashes)
+                    Logger.LogWarning($"txhash {txhash.ToHex()}");
+            }
+
+            ulong gasUsed = 0;
+            try
+            {
+                gasUsed = txs.Aggregate(gasUsed, (current, tx) => current + tx.GasUsed);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"txs {txs}");
+                foreach (var tx in txs)
+                {
+                    if (tx is null) 
+                         continue;
+                    Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
+                }
+            }
+            
             var txArray = fullTx
                 ? Web3DataFormatUtils.Web3BlockTransactionArray(txs, block!.Hash, block!.Header.Index)
                 : new JArray();
