@@ -36,6 +36,23 @@ using System.Text;
 using Lachain.Storage;
 using Lachain.Core.Blockchain;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using Lachain.Storage;
+using Lachain.Storage.Trie;
+using Lachain.Storage.State;
+using Lachain.Utility.Utils;
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Crypto;
+using Lachain.Utility.Serialization;
+using Lachain.Proto;
+
 namespace Lachain.Console
 {
     public class Application : IBootstrapper, IDisposable
@@ -63,7 +80,18 @@ namespace Lachain.Console
             _container = containerBuilder.Build();
         }
 
-        public void Start(RunOptions options)
+        public async byte[] RandomBytes()
+        {
+            byte[] ara = new byte[232];
+            for(int i=0; i<58; i++)
+            {
+                var x = Rand();
+                for (var j = 0; j < 4; ++j)
+                    buffer[i * 4 + j] = (byte)((x >> (8 * j)) & 0xFF);
+            }
+        }
+
+        public async void Start(RunOptions options)
         {
             var configManager = _container.Resolve<IConfigManager>();
             var blockManager = _container.Resolve<IBlockManager>();
@@ -84,6 +112,20 @@ namespace Lachain.Console
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
+
+            int n = 10000;
+
+            for(int i=1; i<=n; i++)
+            {
+                dbContext.Save(EntryPrefix.PersistentHashMap.BuildPrefix(i), RandomBytes());
+            }
+
+            int q = n;
+            for(int i=1; i<=q; i++)
+            {
+                int j = Rand()%n + 1;
+                dbContext.get(EntryPrefix.PersistentHashMap.BuildPrefix(j));
+            }
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
