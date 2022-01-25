@@ -135,18 +135,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var txList = new List<TransactionReceipt> ();
             txList.Add(tx);
             AddBatchTransactionToPool(txList, false);
-            GenerateBlocks(1);
             total++;
+            GenerateBlocks(1,total);
             CheckBlockWeb3Format("latest",(ulong)total , fullTx);
             var randomTxList = GetRandomTransactionBatch(10);
             var topUpTxList = TopUpBalanceTxBatch(randomTxList, "10");
             AddBatchTransactionToPool(topUpTxList, false);
-            GenerateBlocks(1);
             total++;
+            GenerateBlocks(1,total);
             CheckBlockWeb3Format("latest",(ulong)total , fullTx);
             AddBatchTransactionToPool(randomTxList, false);
-            GenerateBlocks(1);
             total++;
+            GenerateBlocks(1,total);
             CheckBlockWeb3Format("latest",(ulong)total , fullTx);
             CheckBlockWeb3Format( "earliest", 0, fullTx);
             CheckBlockWeb3Format( "pending", (ulong)total + 1, fullTx);
@@ -248,7 +248,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
             ulong total = 5;
-            GenerateBlocks(total);
+            GenerateBlocks(total,1);
             ulong startBlock = 0, endBlock = total;
             var stateHash = _apiService.GetStateHashFromTrieRootsRange(startBlock.ToHex(), endBlock.ToHex());
             Assert.AreEqual(stateHash![startBlock.ToHex(false)] , stateHash[endBlock.ToHex(false)]);
@@ -357,8 +357,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 Logger.LogInformation($"{tx.Hash.ToHex()}");
             }
             AddBatchTransactionToPool(topUpReceipts,false);
-            ulong total = 1;
-            GenerateBlocks(total);
+            ulong total = 2;
+            GenerateBlocks(1,total);
             
             Logger.LogInformation("Adding randomReceipts transaction in Pool:");
             foreach (var tx in customReceipts)
@@ -367,7 +367,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
             
             AddBatchTransactionToPool(customReceipts,false);
-            GenerateBlocks(total);
+            total++;
+            GenerateBlocks(1,total);
             for (ulong blockId = 0; blockId <= total*2 + 5; blockId++)
             {
                 CheckTransactionWeb3Format(blockId);
@@ -413,10 +414,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var topUpTx = TopUpBalanceTx(randomtx.Transaction.From, (randomtx.Transaction.Value.ToMoney() + coverTxFee).ToUInt256(), 0);
             Console.WriteLine($"Sending tx: {topUpTx.Hash.ToHex()} and {randomtx.Hash.ToHex()}");
             _transactionPool.Add(topUpTx , false);
-            
-            GenerateBlocks(1);
+            ulong total = 1;
+            GenerateBlocks(1,total);
             _transactionPool.Add(randomtx, false);
-            GenerateBlocks(1);
+            total++;
+            GenerateBlocks(1,total);
             
             CheckEvents(_apiService.GetEventsByTransactionHash(topUpTx.Hash.ToHex()));
             CheckEvents(_apiService.GetEventsByTransactionHash(topUpTx.Hash.ToHex()));
@@ -427,11 +429,25 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // changed from private to public: GetTransactionPool(), GetTransactionPoolByHash()
         public void Test_TransactionPool()
         {
+            GenerateBlocksWithGenesis(0);
             CheckTransactionPoolWeb3();
-            var randomTx = GetRandomTransactionBatch(10);
-            AddBatchTransactionToPool(randomTx, true);
+            var tx = GiveMeSomeMoney(Money.Parse("10").ToUInt256());
+            var txList = new List<TransactionReceipt> ();
+            txList.Add(tx);
+            AddBatchTransactionToPool(txList, false);
             CheckTransactionPoolWeb3();
-            _transactionPool.Peek(1000, 1000);
+            ulong total = 1;
+            GenerateBlocks(1,total);
+            var randomTx = GetCustomTransactionBatch(5,"1","0.00000000001");
+            var topUpTx = TopUpBalanceTxBatch(randomTx,"1");
+            AddBatchTransactionToPool(topUpTx, false);
+            CheckTransactionPoolWeb3();
+            total++;
+            GenerateBlocks(1,total);
+            AddBatchTransactionToPool(randomTx,false);
+            CheckTransactionPoolWeb3();
+            total++;
+            GenerateBlocks(1,total);
             Assert.AreEqual(0, _transactionPool.Size());
             CheckTransactionPoolWeb3();
         }
@@ -444,12 +460,20 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
 
             GenerateBlocksWithGenesis(0);
-            var randomTx = GetRandomTransactionBatch(10);
-            var topUpTx = TopUpBalanceTxBatch(randomTx);
+            var tx = GiveMeSomeMoney(Money.Parse("10").ToUInt256());
+            var txList = new List<TransactionReceipt> ();
+            txList.Add(tx);
+            AddBatchTransactionToPool(txList, false);
+            ulong total = 1;
+            GenerateBlocks(1,total);
+            var randomTx = GetCustomTransactionBatch(5 , "1" , "0.000000000001");
+            var topUpTx = TopUpBalanceTxBatch(randomTx , "1");
             AddBatchTransactionToPool(topUpTx, false);
-            GenerateBlocks(1);
+            total++;
+            GenerateBlocks(1,total);
             AddBatchTransactionToPool(randomTx, false);
-            GenerateBlocks(1);
+            total++;
+            GenerateBlocks(1,total);
 
             var allTx = new List<TransactionReceipt>();
             allTx.AddRange(topUpTx);
@@ -705,7 +729,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             foreach(var tx in txes)
             {
-                // TODPO: If the second parameter is set to true, the test run is aborted for unknown reason
+                // TODO: If the second parameter is set to true, the test run is aborted for unknown reason
                 var result = _transactionPool.Add(tx, notify); 
                 Assert.AreEqual(OperatingError.Ok, result);
             }
@@ -783,7 +807,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void GenerateBlocksWithGenesis(ulong noOfBlocks)
         {
             _blockManager.TryBuildGenesisBlock();
-            GenerateBlocks(noOfBlocks);
+            GenerateBlocks(noOfBlocks,1);
         }
 
         public void CheckStateWeb3Format(JObject state , string blockTag)
@@ -899,14 +923,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         
-        private void GenerateBlocks(ulong blockNum)
+        private void GenerateBlocks(ulong blockNum, ulong era)
         {
             for (ulong i = 0; i < blockNum; i++)
             {
                 lock (this)
                 {
-                    var txes = GetCurrentPoolTxes();
-                   
+                    var txes = GetCurrentPoolTxes(era);
+                    era++;
                     var block = BuildNextBlock(txes);
                     var result = ExecuteBlock(block, txes);
                     Assert.AreEqual(OperatingError.Ok, result);
@@ -916,9 +940,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxes()
+        private TransactionReceipt[] GetCurrentPoolTxes(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
