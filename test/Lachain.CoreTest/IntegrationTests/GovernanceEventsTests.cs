@@ -121,8 +121,8 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             for (var i = 0; i < blockNum; i++)
             {
-                var txs = GetCurrentPoolTxs();
                 var height = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+                var txs = GetCurrentPoolTxs(height + 1);
                 if (height % CycleDuration == CycleDuration - 1) // next block is last in cycle
                 {
                     var newTxs = new TransactionReceipt[txs.Length + 1];
@@ -157,9 +157,9 @@ namespace Lachain.CoreTest.IntegrationTests
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxs()
+        private TransactionReceipt[] GetCurrentPoolTxs(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)

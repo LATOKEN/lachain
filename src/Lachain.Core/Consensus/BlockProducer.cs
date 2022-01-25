@@ -50,14 +50,16 @@ namespace Lachain.Core.Consensus
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
         {
+        
             var n = _validatorManager.GetValidators(era - 1)!.N;
             var txNum = (BatchSize + n - 1) / n;
-            var taken = _transactionPool.Peek(BatchSize, txNum);
-            Logger.LogTrace("Proposed Transactions: ");
-            foreach(var tx in taken)
+            if(era < 0)
             {
-                Logger.LogTrace($"{tx.Hash.ToHex()}");
+                Logger.LogError($"era : {era} should not be negative");
+                throw new ArgumentException("era is negative");
             }
+            var taken = _transactionPool.Peek(BatchSize, txNum, (ulong) era);
+            Logger.LogTrace($"Proposed Transactions Count: {taken.Count()}");
             return taken;
         }
 

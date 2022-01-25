@@ -24,12 +24,8 @@ using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using Nethereum.Signer;
 using NUnit.Framework;
-
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Crypto.Misc;
 using Lachain.Utility;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Google.Protobuf;
 using System.Collections.Generic;
 using Lachain.Networking;
 using Newtonsoft.Json.Linq;
@@ -221,6 +217,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
+        [Ignore("implement it")]
         public void Test_SendRawTransactionBatch()
         {
             var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b";
@@ -256,18 +253,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed GetTransactionReceipt from private to public
         public void Test_GetTransactionReceipt()
         {
-            _blockManager.TryBuildGenesisBlock();
-
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
-
-            var txHashSent = Execute_dummy_transaction(rawTx);
-            Console.WriteLine($"tx sent: {txHashSent}");
-
+             _blockManager.TryBuildGenesisBlock();
+            var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
+            GenerateBlocks(1, 1);
+            var txHashSent = tx.Hash.ToHex();
             var txReceipt = _apiService!.GetTransactionReceipt(txHashSent);
             var txHashReceived = txReceipt["transactionHash"].ToString();
-
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
-
         }
 
         [Test]
@@ -275,14 +270,15 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionByHash()
         {
             _blockManager.TryBuildGenesisBlock();
+            var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
+            GenerateBlocks(1, 1);
+            var txHashSent = tx.Hash.ToHex();
 
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
-
-            var txHashSent = Execute_dummy_transaction(rawTx);
-            Console.WriteLine($"tx sent: {txHashSent}");
-
-            var tx = _apiService!.GetTransactionByHash(txHashSent);
-            var txHashReceived = tx["hash"].ToString();
+            var tx2 = _apiService!.GetTransactionByHash(txHashSent);
+            var txHashReceived = tx2["hash"].ToString();
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
 
@@ -293,17 +289,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionByBlockHashAndIndex()
         {
             _blockManager.TryBuildGenesisBlock();
+            var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
+            GenerateBlocks(1, 1);
 
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
-
-            var txHashSent = Execute_dummy_transaction(rawTx);
-            Console.WriteLine($"tx sent: {txHashSent}");
-
-            var tx = _apiService!.GetTransactionByHash(txHashSent);
-
-            var blockHash = tx["blockHash"].ToString();
+            var txHashSent = tx.Hash.ToHex();
+            var tx2 = _apiService!.GetTransactionByHash(txHashSent);
+            var blockHash = tx2["blockHash"].ToString();
             var txIndex = (ulong)0; // 0
-
             var txFromBlockHash = _apiService!.GetTransactionByBlockHashAndIndex(blockHash, txIndex);
             var txHashReceived = txFromBlockHash["hash"].ToString();
 
@@ -316,14 +311,15 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         //changed GetTransactionByBlockNumberAndIndex from private to public
         public void Test_GetTransactionByBlockNumberAndIndex()
         {
+
             _blockManager.TryBuildGenesisBlock();
+            var tx = TestUtils.GetRandomTransaction();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(tx);
+            Assert.AreEqual(OperatingError.Ok, result);
+            GenerateBlocks(1, 1);
 
-            var rawTx = "0xf8848001832e1a3094010000000000000000000000000000000000000080a4c76d99bd000000000000000000000000000000000000000000042300c0d3ae6a03a0000075a0f5e9683653d203dc22397b6c9e1e39adf8f6f5ad68c593ba0bb6c35c9cd4dbb8a0247a8b0618930c5c4abe178cbafb69c6d3ed62cfa6fa33f5c8c8147d096b0aa0";
-
-            var txHashSent = Execute_dummy_transaction(rawTx);
-            Console.WriteLine($"tx sent: {txHashSent}");
-
-            var tx = _apiService!.GetTransactionByHash(txHashSent);
+            var txHashSent = tx.Hash.ToHex();
             var txIndex = (ulong)0; // 0
             var txFromBlockHash = _apiService!.GetTransactionByBlockNumberAndIndex("latest", txIndex);
             var txHashReceived = txFromBlockHash["hash"];
@@ -348,7 +344,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager.TryBuildGenesisBlock();
 
             var keyPair = _privateWallet!.EcdsaKeyPair;
-            GenerateBlocks(1);
+            GenerateBlocks(1, 1);
 
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
@@ -363,7 +359,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = Signer.Sign(tx, keyPair);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlocks(1);
+            GenerateBlocks(2, 2);
 
             // check contract is deployed
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
@@ -392,7 +388,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager.TryBuildGenesisBlock();
 
             var keyPair = _privateWallet!.EcdsaKeyPair;
-            GenerateBlocks(1);
+            GenerateBlocks(1, 1);
 
             // Deploy contract 
             var byteCode = ByteCodeHex.HexToBytes();
@@ -407,7 +403,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = Signer.Sign(tx, keyPair);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlocks(1);
+            GenerateBlocks(2, 2);
 
             // check contract is deployed
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
@@ -453,26 +449,26 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             // Updating balance of sender's Wallet
             _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
 
-            GenerateBlocks(1);
+            GenerateBlocks(1, 1);
 
             return txHashSent;
 
         }
 
-        private void GenerateBlocks(ulong blockNum)
+        private void GenerateBlocks(ulong from, ulong to)
         {
-            for (ulong i = 0; i < blockNum; i++)
+            for (ulong i = from; i <= to; i++)
             {
-                var txes = GetCurrentPoolTxes();
+                var txes = GetCurrentPoolTxes(i);
                 var block = BuildNextBlock(txes);
                 var result = ExecuteBlock(block, txes);
                 Assert.AreEqual(OperatingError.Ok, result);
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxes()
+        private TransactionReceipt[] GetCurrentPoolTxes(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
 
