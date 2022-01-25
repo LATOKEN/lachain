@@ -13,6 +13,7 @@ using NUnit.Framework;
 using AustinHarris.JsonRpc;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Utility;
+using System.Threading;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -104,6 +105,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _validatorStatusManager.Start(false);
             Assert.AreEqual("0x01" , _apiService.GetValidatorStatus());
             _validatorStatusManager.Stop();
+            Thread.Sleep(2000);
+            Assert.AreEqual("0x00" , _apiService.GetValidatorStatus());
             _validatorStatusManager.Start(true);
             Assert.AreEqual("0x002" , _apiService.GetValidatorStatus());
         }
