@@ -60,6 +60,8 @@ namespace Lachain.Console
         private readonly IContainer _container;
         private static readonly ILogger<Application> Logger = LoggerFactory.GetLoggerForClass<Application>();
 
+
+
         public Application(string configPath, RunOptions options)
         {
             var logLevel = options.LogLevel ?? Environment.GetEnvironmentVariable("LOG_LEVEL");
@@ -79,16 +81,27 @@ namespace Lachain.Console
             containerBuilder.RegisterModule<ConsoleModule>();
             _container = containerBuilder.Build();
         }
+        private static uint _next = 48821;
 
-        public async byte[] RandomBytes()
+        private static uint Rand()
         {
-            byte[] ara = new byte[232];
+            unchecked
+            {
+                _next = _next * 1103515245 + 12345;
+                return _next / 2;
+            }
+        }
+
+        public byte[] RandomBytes()
+        {
+            byte[] buffer = new byte[232];
             for(int i=0; i<58; i++)
             {
                 var x = Rand();
                 for (var j = 0; j < 4; ++j)
                     buffer[i * 4 + j] = (byte)((x >> (8 * j)) & 0xFF);
             }
+            return buffer;
         }
 
         public async void Start(RunOptions options)
@@ -113,19 +126,31 @@ namespace Lachain.Console
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
 
-            int n = 10000;
+            int n = 40000000;
 
+            Logger.LogInformation($"Data insertion started");
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(dbContext);
             for(int i=1; i<=n; i++)
             {
-                dbContext.Save(EntryPrefix.PersistentHashMap.BuildPrefix(i), RandomBytes());
+                tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix((ulong)i), RandomBytes());
+                if(i%1000==0)
+                {
+                    tx.Commit();
+                    tx = new RocksDbAtomicWrite(dbContext);
+                }
+                if(i%1000000==0) Logger.LogInformation($"Insertion going on: {i}");
             }
+            tx.Commit(); 
 
-            int q = n;
+            Logger.LogInformation($"Data insertion ended. Data Query started");
+            int q = n/4;
             for(int i=1; i<=q; i++)
             {
-                int j = Rand()%n + 1;
-                dbContext.get(EntryPrefix.PersistentHashMap.BuildPrefix(j));
+                ulong j = (ulong)(Rand()%n) + 1;
+                dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(j));
+                if(i%1000000==0) Logger.LogInformation($"Query going on: {i}");
             }
+            Logger.LogInformation($"Data Query Ended");
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;

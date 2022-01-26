@@ -20,8 +20,22 @@ namespace Lachain.Storage
             _writeOptions.DisableWal(0);
             _writeOptions.SetSync(true);
 
-            var options = new DbOptions().SetCreateIfMissing();
-            _rocksDb = RocksDb.Open(options, _dbpath);
+            var bbto = new BlockBasedTableOptions()
+                .SetFilterPolicy(BloomFilterPolicy.Create(10, false))
+                .SetWholeKeyFiltering(false)
+                ;
+            var options = new DbOptions()
+            .SetCreateIfMissing()
+            .SetCreateMissingColumnFamilies(true);
+            var columnFamilies = new ColumnFamilies
+            {
+                { "default", new ColumnFamilyOptions()
+            //    .OptimizeForPointLookup(256)
+                .SetBlockBasedTableFactory(bbto) 
+                }
+            };
+
+            _rocksDb = RocksDb.Open(options, _dbpath, columnFamilies);
         }
 
         public ulong EstimateNumberOfKeys()
