@@ -25,6 +25,7 @@ using Newtonsoft.Json.Serialization;
 using Transaction = Lachain.Proto.Transaction;
 using System.Threading.Tasks;
 using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Config;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -40,6 +41,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IPrivateWallet _privateWallet;
+        private readonly IConfigManager _configManager;
 
         public TransactionServiceWeb3(
             IStateManager stateManager,
@@ -48,7 +50,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             ITransactionSigner transactionSigner,
             ITransactionPool transactionPool,
             IContractRegisterer contractRegisterer,
-            IPrivateWallet privateWallet)
+            IPrivateWallet privateWallet,
+            IConfigManager configManager)
         {
             _stateManager = stateManager;
             _transactionManager = transactionManager;
@@ -57,6 +60,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _transactionPool = transactionPool;
             _contractRegisterer = contractRegisterer;
             _privateWallet = privateWallet;
+            _configManager = configManager;
         }
 
         public Transaction MakeTransaction(SignedTransactionBase ethTx)
@@ -553,11 +557,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             byte[]? byteCode = null;
             if(!(data is null)) byteCode = ((string) data!).HexToBytes();
             
-
-            // TODO: find other way to access keys to sign txes
-            // if (_privateWallet.IsLocked())
-            //     throw new MethodAccessException("Wallet is locked");
-            _privateWallet.Unlock("12345", 1000);
+            
+            var config = _configManager.GetConfig<VaultConfig>("vault") ??
+                         throw new Exception("No 'vault' section in config file");
+            string password = config.Password!;
+            _privateWallet.Unlock(password, 1000);
             var keyPair = _privateWallet.EcdsaKeyPair;
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
             

@@ -94,22 +94,19 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transactionPool = _container.Resolve<ITransactionPool>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
-            
-            ServiceBinder.BindService<GenericParameterAttributes>();
-
-            _apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
-                _transactionPool, _contractRegisterer, _privateWallet);
-
-            // from BlockTest.cs
             _blockManager = _container.Resolve<IBlockManager>();
             _configManager = _container.Resolve<IConfigManager>();
-            //_privateWallet = _container.Resolve<IPrivateWallet>();
             // set chainId from config
             if (TransactionUtils.ChainId == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 TransactionUtils.SetChainId((int)chainId!);
             }
+            ServiceBinder.BindService<GenericParameterAttributes>();
+
+            _apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
+                _transactionPool, _contractRegisterer, _privateWallet, _configManager);
+            
 
         }
 
