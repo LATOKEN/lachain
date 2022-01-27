@@ -41,7 +41,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IPrivateWallet _privateWallet;
-        private readonly IConfigManager _configManager;
+        
 
         public TransactionServiceWeb3(
             IStateManager stateManager,
@@ -50,8 +50,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             ITransactionSigner transactionSigner,
             ITransactionPool transactionPool,
             IContractRegisterer contractRegisterer,
-            IPrivateWallet privateWallet,
-            IConfigManager configManager)
+            IPrivateWallet privateWallet)
         {
             _stateManager = stateManager;
             _transactionManager = transactionManager;
@@ -60,7 +59,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _transactionPool = transactionPool;
             _contractRegisterer = contractRegisterer;
             _privateWallet = privateWallet;
-            _configManager = configManager;
         }
 
         public Transaction MakeTransaction(SignedTransactionBase ethTx)
@@ -559,10 +557,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if(!(data is null)) byteCode = ((string) data!).HexToBytes();
             
             
-            var config = _configManager.GetConfig<VaultConfig>("vault") ??
-                         throw new Exception("No 'vault' section in config file");
-            string password = config.Password!;
-            _privateWallet.Unlock(password, 1000);
+            if(_privateWallet.IsLocked()) throw new Exception("wallet is locked");
             var keyPair = _privateWallet.EcdsaKeyPair;
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
             
