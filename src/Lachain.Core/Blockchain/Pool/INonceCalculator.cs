@@ -11,5 +11,7 @@ namespace Lachain.Core.Blockchain.Pool
         public bool TryRemove(TransactionReceipt receipt);
         ulong? GetMaxNonceForAddress(UInt160 address);
         void Clear();
+
+        uint Count();
     }
 }

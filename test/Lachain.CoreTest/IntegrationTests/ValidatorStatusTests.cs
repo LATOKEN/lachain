@@ -100,13 +100,13 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_StakeWithdraw()
         {
             _blockManager.TryBuildGenesisBlock();
-            GenerateBlocks(1);
+            GenerateBlocks(1, 1);
 
             _validatorStatusManager.Start(false);
             Assert.IsTrue(_validatorStatusManager.IsStarted());
             Assert.IsFalse(_validatorStatusManager.IsWithdrawTriggered());
 
-            GenerateBlocks(50);
+            GenerateBlocks(2, 51);
 
             var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
             var stake = new Money(systemContractReader.GetStake());
@@ -131,14 +131,14 @@ namespace Lachain.CoreTest.IntegrationTests
             var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
             var tx = TopUpBalanceTx(systemContractReader.NodeAddress(),Money.Parse("3000.0").ToUInt256(), 0);
             Assert.AreEqual(OperatingError.Ok, _transactionPool.Add(tx));
-            GenerateBlocks(1);
+            GenerateBlocks(1, 1);
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(systemContractReader.NodeAddress());
             var placeToStake = Money.Parse("2000.0");
             Assert.That(balance > placeToStake, "Not enough balance to make stake");
             _validatorStatusManager.StartWithStake(placeToStake.ToUInt256());
             Assert.That(_validatorStatusManager.IsStarted(), "Manager is not started");
             Assert.That(!_validatorStatusManager.IsWithdrawTriggered(), "Withdraw was triggered from the beggining");
-            GenerateBlocks(50);
+            GenerateBlocks(2, 51);
             var stake = new Money(systemContractReader.GetStake(systemContractReader.NodeAddress()));
             // TODO: fix it
 //            Assert.That(stake == placeToStake, $"Stake is not as intended: {stake} != {placeToStake}");
@@ -153,20 +153,20 @@ namespace Lachain.CoreTest.IntegrationTests
         }
         
 
-        private void GenerateBlocks(int blockNum)
+        private void GenerateBlocks(int from, int to)
         {
-            for (int i = 0; i < blockNum; i++)
+            for (int i = from; i <= to; i++)
             {
-                var txes = GetCurrentPoolTxes();
+                var txes = GetCurrentPoolTxes((ulong) i);
                 var block = BuildNextBlock(txes);
                 var result = ExecuteBlock(block, txes);
                 Assert.AreEqual(OperatingError.Ok, result);
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxes()
+        private TransactionReceipt[] GetCurrentPoolTxes(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)

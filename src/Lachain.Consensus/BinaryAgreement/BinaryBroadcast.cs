@@ -221,9 +221,9 @@ namespace Lachain.Consensus.BinaryAgreement
             if (_result != null) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             _result = ChoseMinimalSet();
-            Logger.LogTrace($"{_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
-            Logger.LogTrace($"{_broadcastId}: current bin_values = {_binValues}");
-            Logger.LogTrace($"{_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
+        //    Logger.LogTrace($"{_broadcastId}: aux cnt = 0 -> {_receivedAux[0]}, 1 -> {_receivedAux[1]}");
+        //    Logger.LogTrace($"{_broadcastId}: current bin_values = {_binValues}");
+        //    Logger.LogTrace($"{_broadcastId}: and sum of aux on bin_values is {_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0])}");
             CheckResult();
         }
 

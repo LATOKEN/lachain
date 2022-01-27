@@ -17,11 +17,15 @@ namespace Lachain.Utility.Utils
             using (var writer = new BinaryWriter(stream))
             {
                 var arrayOf = values as T[] ?? values.ToArray();
+                // first we write the length of the array of msgs
                 writer.WriteLength(arrayOf.Length);
                 foreach (var value in arrayOf)
                 {
                     var valueByteArray = value.ToByteArray();
+                    // for each element we write how many bytes required to 
+                    // encode this element
                     writer.WriteLength(valueByteArray.Length);
+                    // then we write the encoded bytes
                     writer.Write(valueByteArray);
                 }
                 writer.Flush();
@@ -70,6 +74,8 @@ namespace Lachain.Utility.Utils
             return parsedObject;
         }
 
+        // returns decoded msg array from encoded bytes
+        // throws exception if the format is wrong
         public static ICollection<T> ToMessageArray<T>(this byte[] buffer, ulong limit = ulong.MaxValue)
             where T : IMessage<T>, new()
         {
@@ -82,10 +88,18 @@ namespace Lachain.Utility.Utils
                 for (var i = 0UL; i < length; i++)
                 {
                     var msgLen = (int) reader.ReadLength();
-                    var el = parser.ParseFrom(reader.ReadBytes(msgLen));
+                    var elByte = reader.ReadBytes(msgLen);
+                    if(elByte.Length != msgLen)
+                        throw new Exception("not enough bytes to decode the message array");
+
+                    // parser throws exception if it can't decode from the given bytes
+                    var el = parser.ParseFrom(elByte);
                     result.Add(el);
                 }
-
+                // need to check if we are at the end of the byte array ...
+                if(reader.BaseStream.Position != reader.BaseStream.Length)
+                    throw new Exception("extra bytes at the end of encoded bytes");
+                
                 return result;
             }
         }

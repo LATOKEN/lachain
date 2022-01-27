@@ -56,9 +56,9 @@ namespace Lachain.Storage.State
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Commit()
+        public void Commit(RocksDbAtomicWrite batch)
         {
-            _lastApprovedSnapshot.Commit();
+            _lastApprovedSnapshot.Commit(batch);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -69,6 +69,11 @@ namespace Lachain.Storage.State
             _lastApprovedSnapshot = snapshot as TSnapshotType ??
                                     throw new InvalidOperationException($"Invalid snapshot type {snapshot.GetType()}");
             _pendingSnapshot = null;
+        }
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearCache()
+        {
+            _lastApprovedSnapshot.ClearCache();
         }
     }
 }

@@ -80,5 +80,9 @@ namespace Lachain.Utility.Utils
             var padded = addLeadingZeros ? Enumerable.Repeat((byte) 0, 32 - buffer.Length).Concat(buffer) : buffer;
             return new UInt256 {Buffer = ByteString.CopyFrom(padded.ToArray())};
         }
+
+        public static int Compare(UInt256 x , UInt256 y){
+            return x.ToBigInteger().CompareTo(y.ToBigInteger());
+        }
     }
 }

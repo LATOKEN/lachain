@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using Lachain.Crypto;
 using Lachain.Utility.Serialization;
 
-
 namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class AccountServiceWeb3 : JsonRpcService
@@ -217,7 +216,16 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 default:
                 {
                     var blockNum = tag.HexToUlong();
-                    return _snapshotIndexer.GetSnapshotForBlock(blockNum);
+                    try
+                    {
+                        return _snapshotIndexer.GetSnapshotForBlock(blockNum);
+
+                    }
+                    catch(Exception e)
+                    {
+                        throw new Exception("Block with " + tag + " doesn't exist.");
+
+                    }
                 }
             }
         }

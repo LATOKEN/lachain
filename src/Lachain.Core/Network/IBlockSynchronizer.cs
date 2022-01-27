@@ -8,8 +8,6 @@ namespace Lachain.Core.Network
     {
         event EventHandler<ulong> OnSignedBlockReceived;
         
-        uint WaitForTransactions(IEnumerable<UInt256> transactionHashes, TimeSpan timeout, out List<TransactionReceipt> receipts);
-
         uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey);
         
         void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey);
