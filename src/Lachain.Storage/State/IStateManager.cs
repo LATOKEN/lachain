@@ -11,5 +11,7 @@ namespace Lachain.Storage.State
         void Acquire();
 
         void Release();
+
+        void Commit();
     }
 }

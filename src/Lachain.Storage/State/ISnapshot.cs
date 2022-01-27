@@ -7,7 +7,7 @@ namespace Lachain.Storage.State
     public interface ISnapshot
     {
         ulong Version { get; }
-        void Commit();
+        void Commit(RocksDbAtomicWrite batch);
         UInt256 Hash { get; }
         IDictionary<ulong,IHashTrieNode> GetState();
         bool IsTrieNodeHashesOk();
@@ -15,5 +15,7 @@ namespace Lachain.Storage.State
         ulong SetState(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
 
         void SetCurrentVersion(ulong root);
+
+        void ClearCache();
     }
 }

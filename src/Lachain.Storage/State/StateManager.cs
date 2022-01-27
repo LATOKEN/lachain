@@ -22,7 +22,9 @@ namespace Lachain.Storage.State
 
         private readonly Mutex _globalMutex = new Mutex(false);
 
-        public StateManager(IStorageManager storageManager)
+        private readonly IRocksDbContext _dbContext;
+
+        public StateManager(IStorageManager storageManager, IRocksDbContext dbContext)
         {
             _balanceManager =
                 new SnapshotManager<IBalanceSnapshot, BalanceSnapshot>(storageManager,
@@ -55,6 +57,7 @@ namespace Lachain.Storage.State
                 _eventManager.LastApprovedSnapshot,
                 _validatorManager.LastApprovedSnapshot
             );
+            _dbContext = dbContext;
         }
 
         public void SafeContext(Action callback)
@@ -143,13 +146,31 @@ namespace Lachain.Storage.State
 
         public void Commit()
         {
-            _balanceManager.Commit();
-            _contractManager.Commit();
-            _storageManager.Commit();
-            _transactionManager.Commit();
-            _blockManager.Commit();
-            _eventManager.Commit();
-            _validatorManager.Commit();
+            var batch = new RocksDbAtomicWrite(_dbContext);
+            _balanceManager.Commit(batch);
+            _contractManager.Commit(batch);
+            _storageManager.Commit(batch);
+            _transactionManager.Commit(batch);
+            _blockManager.Commit(batch);
+            _eventManager.Commit(batch);
+            _validatorManager.Commit(batch);
+            batch.Commit();
+            ClearCache();
+        }
+
+        public void ClearCache()
+        {
+            _balanceManager.ClearCache();
+            _contractManager.ClearCache();
+            _storageManager.ClearCache();
+            _transactionManager.ClearCache();
+            _blockManager.ClearCache();
+            _eventManager.ClearCache();
+            _validatorManager.ClearCache();
+        }
+        public void Commit(RocksDbAtomicWrite batch)
+        {
+            throw new Exception("Invalid function used");
         }
 
         public void RollbackTo(IBlockchainSnapshot snapshot)
