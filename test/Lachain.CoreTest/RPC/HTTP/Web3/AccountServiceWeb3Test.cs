@@ -120,8 +120,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
 
-            var sessionId = Handler.DefaultSessionId();
-            Handler.DestroySession(sessionId);
+            var sessionId = Handler.GetSessionHandler().SessionId;
+            if(sessionId != null) Handler.DestroySession(sessionId);
         }
 
         [Test]
