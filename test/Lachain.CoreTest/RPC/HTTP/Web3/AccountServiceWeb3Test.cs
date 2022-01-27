@@ -86,30 +86,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _transactionSigner = _container.Resolve<ITransactionSigner>();
             _transactionPool = _container.Resolve<ITransactionPool>();
-<<<<<<< HEAD
-=======
-
-            ServiceBinder.BindService<GenericParameterAttributes>();
-
-            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
-
-            _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
-                _transactionPool, _contractRegisterer, _privateWallet, _configManager);
-
-            if (TransactionUtils.ChainId == 0)
-            {
-                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
-            }
-
-            if (TransactionUtils.ChainId == 0)
-            {
-                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
-            }
-
-            // from BlockTest.cs
->>>>>>> a4d2adf6622187adf939388a6524a15b90380d5c
             _blockManager = _container.Resolve<IBlockManager>();
             _blockManager.TryBuildGenesisBlock();
 
