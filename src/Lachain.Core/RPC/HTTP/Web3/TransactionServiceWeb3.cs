@@ -195,7 +195,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             catch (Exception e)
             {
                 Logger.LogError($"Exception in handling eth_sendRawTransaction: {e}");
-                return e.Message;
+                throw;
             }
         }
 
