@@ -104,6 +104,35 @@ namespace Lachain.Console
             return buffer;
         }
 
+        void Write(int n, IRocksDbContext dbContext)
+        {
+            Logger.LogInformation($"Data insertion started");
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(dbContext);
+            for(int i=1; i<=n; i++)
+            {
+                tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix((ulong)i), RandomBytes());
+                if(i%1000==0)
+                {
+                    tx.Commit();
+                    tx = new RocksDbAtomicWrite(dbContext);
+                }
+                if(i%1000000==0) Logger.LogInformation($"Insertion going on: {i}");
+            }
+            tx.Commit();
+            Logger.LogInformation($"Data Insertion Ended");
+        }
+        void Read(int n, int q, IRocksDbContext dbContext)
+        {
+            Logger.LogInformation($"Data Query started");
+            for(int i=1; i<=q; i++)
+            {
+                ulong j = (ulong)(Rand()%n) + 1;
+                dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(j));
+                if(i%1000000==0) Logger.LogInformation($"Query going on: {i}");
+            }
+            Logger.LogInformation($"Data Query Ended");
+        }
+
         public async void Start(RunOptions options)
         {
             var configManager = _container.Resolve<IConfigManager>();
@@ -126,31 +155,9 @@ namespace Lachain.Console
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
 
-            int n = 40000000;
-
-            Logger.LogInformation($"Data insertion started");
-            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(dbContext);
-            for(int i=1; i<=n; i++)
-            {
-                tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix((ulong)i), RandomBytes());
-                if(i%1000==0)
-                {
-                    tx.Commit();
-                    tx = new RocksDbAtomicWrite(dbContext);
-                }
-                if(i%1000000==0) Logger.LogInformation($"Insertion going on: {i}");
-            }
-            tx.Commit(); 
-
-            Logger.LogInformation($"Data insertion ended. Data Query started");
-            int q = n/4;
-            for(int i=1; i<=q; i++)
-            {
-                ulong j = (ulong)(Rand()%n) + 1;
-                dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(j));
-                if(i%1000000==0) Logger.LogInformation($"Query going on: {i}");
-            }
-            Logger.LogInformation($"Data Query Ended");
+        //    int n = 40000000;
+        //    Write(n, dbContext);
+        //    Read(n, n/4, dbContext);
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;

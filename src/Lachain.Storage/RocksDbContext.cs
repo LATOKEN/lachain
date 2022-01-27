@@ -30,7 +30,7 @@ namespace Lachain.Storage
             var columnFamilies = new ColumnFamilies
             {
                 { "default", new ColumnFamilyOptions()
-            //    .OptimizeForPointLookup(256)
+                .OptimizeForPointLookup(256)
                 .SetBlockBasedTableFactory(bbto) 
                 }
             };
