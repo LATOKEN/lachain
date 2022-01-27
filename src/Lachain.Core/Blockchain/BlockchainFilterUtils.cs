@@ -8,34 +8,45 @@ namespace Lachain.Core.BlockchainFilter{
 
     public static class BlockchainFilterUtils
     {
-        public static List<UInt256> GetTopics(JArray topicsJson)
+        public static List<UInt256> GetTopics(JToken topicsJson)
         {
+            // We handle only first topic for now. Change the implementation when other topics are supported
             var topics = new List<UInt256>();
-            foreach(var topic in topicsJson)
-            {
+            try{
+                var topicArray = (JArray)topicsJson;
+                foreach(var topic in topicArray)
+                {
 
-                try{
-                    JArray topicList = (JArray)topic;
-                    foreach (var t in topicList)
-                    {
-                        var topicString = (string)t!;
-                        var topicBuffer = topicString.HexToUInt256();
-                        topics.Add(topicBuffer);        
+                    try{
+                        JArray topicList = (JArray)topic;
+                        foreach (var t in topicList)
+                        {
+                            var topicString = (string)t!;
+                            var topicBuffer = topicString.HexToUInt256();
+                            topics.Add(topicBuffer);        
+                        }
                     }
-                }
-                catch(InvalidCastException _){
+                    catch(InvalidCastException _){
+                        
+                        var topicString = (string)topic!;
+                        if(!(topicString is null)){
+                            var topicBuffer = topicString.HexToUInt256();
+                            topics.Add(topicBuffer);
+                        }
                     
-                    var topicString = (string)topic!;
-                    if(!(topicString is null)){
-                        var topicBuffer = topicString.HexToUInt256();
-                        topics.Add(topicBuffer);
                     }
-                  
+                    break; // Only first topic is supported now.
+                    // TODO: change implementation when other topics are supported
                 }
-                break; // Only first topic is supported now.
-                // TODO: change implementation when other topics are supported
-            }
 
+            }
+            catch(InvalidCastException _){
+                var topicString = (string)topicsJson!;
+                if(!(topicString is null)){
+                    var topicBuffer = topicString.HexToUInt256();
+                    topics.Add(topicBuffer);
+                }
+            }
             return topics;
         }
 

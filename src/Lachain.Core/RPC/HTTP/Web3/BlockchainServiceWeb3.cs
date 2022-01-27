@@ -522,7 +522,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var topics = new List<UInt256>();
             if (!(topicsJson is null))
             {
-                topics = BlockchainFilterUtils.GetTopics((JArray)topicsJson);
+                topics = BlockchainFilterUtils.GetTopics(topicsJson);
             }
 
             var addresses = new List<UInt160>();

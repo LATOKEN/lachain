@@ -117,7 +117,7 @@ namespace Lachain.Core.RPC.HTTP
             if(!(address is null)) addresses = BlockchainFilterUtils.GetAddresses((JArray)address);
 
             var topics = new List<UInt256>();
-            if(!(topicsJson is null)) topics = BlockchainFilterUtils.GetTopics((JArray)topicsJson);
+            if(!(topicsJson is null)) topics = BlockchainFilterUtils.GetTopics(topicsJson);
 
             return Web3.Web3DataFormatUtils.Web3Number(
                 _blockchainEventFilter.Create(BlockchainEvent.Logs, start, finish, addresses , topics)
