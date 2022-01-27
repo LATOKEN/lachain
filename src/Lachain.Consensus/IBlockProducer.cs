@@ -8,9 +8,9 @@ namespace Lachain.Consensus
         IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era);
 
         BlockHeader? CreateHeader(
-            ulong index, IReadOnlyCollection<UInt256> txHashes, ulong nonce, out UInt256[] hashesTaken
+            ulong index, IReadOnlyCollection<TransactionReceipt> receipts, ulong nonce, out TransactionReceipt[] receiptsTaken
         );
 
-        void ProduceBlock(IEnumerable<UInt256> txHashes, BlockHeader header, MultiSig multiSig);
+        void ProduceBlock(IEnumerable<TransactionReceipt> receipts, BlockHeader header, MultiSig multiSig);
     }
 }

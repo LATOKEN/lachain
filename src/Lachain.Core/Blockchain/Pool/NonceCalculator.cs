@@ -13,6 +13,7 @@ namespace Lachain.Core.Blockchain.Pool
         private static readonly ILogger<NonceCalculator> Logger = LoggerFactory.GetLoggerForClass<NonceCalculator>();
         private readonly ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>> _noncePerAddress
             = new ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>>();
+        private uint _count = 0;
 
         public NonceCalculator() {}
 
@@ -27,13 +28,16 @@ namespace Lachain.Core.Blockchain.Pool
 
             if(_noncePerAddress.TryGetValue(from, out var nonces))
             {
-                return nonces.Add(kv);
+                bool isAdded = nonces.Add(kv);
+                if(isAdded) _count++;
+                return isAdded;
             }
             else
             {
                 var emptyNonces = new SortedSet<KeyValuePair<ulong, UInt256>>(new NonceComparer());
                 emptyNonces.Add(kv);
                 _noncePerAddress.TryAdd(from, emptyNonces);
+                _count++;
                 return true; 
             }
         }
@@ -54,6 +58,7 @@ namespace Lachain.Core.Blockchain.Pool
                 {
                     _noncePerAddress.TryRemove(from, out var _);
                 }
+                if(canRemove) _count--;
                 return canRemove;
             }
             else
@@ -74,6 +79,11 @@ namespace Lachain.Core.Blockchain.Pool
         public void Clear()
         {
             _noncePerAddress.Clear();
+        }
+
+        public uint Count()
+        {
+            return _count;
         }
    }
 }

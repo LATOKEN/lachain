@@ -33,9 +33,9 @@ namespace Lachain.Storage.State
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Commit()
+        public void Commit(RocksDbAtomicWrite batch)
         {
-            _state.Commit();
+            _state.Commit(batch);
         }
 
         public UInt256 Hash => _state.Hash;
@@ -86,6 +86,11 @@ namespace Lachain.Storage.State
         public void SetCurrentVersion(ulong root)
         {
             _state.SetCurrentVersion(root);
+        }
+
+        public void ClearCache()
+        {
+            _state.ClearCache();
         }
     }
 }

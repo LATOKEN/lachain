@@ -86,6 +86,30 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _transactionSigner = _container.Resolve<ITransactionSigner>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+<<<<<<< HEAD
+=======
+
+            ServiceBinder.BindService<GenericParameterAttributes>();
+
+            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
+
+            _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
+                _transactionPool, _contractRegisterer, _privateWallet, _configManager);
+
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
+
+            if (TransactionUtils.ChainId == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!);
+            }
+
+            // from BlockTest.cs
+>>>>>>> a4d2adf6622187adf939388a6524a15b90380d5c
             _blockManager = _container.Resolve<IBlockManager>();
             _blockManager.TryBuildGenesisBlock();
 
@@ -170,7 +194,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
 
 
+
             var txCountBefore = _apiService!.GetTransactionCount(tx.Transaction.From.ToHex(), "latest").HexToUlong();        
+
 
             Assert.AreEqual(txCountBefore, 0);
             
@@ -180,7 +206,9 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             GenerateBlocks(1);
 
+
             var txCountAfter = _apiService!.GetTransactionCount(tx.Transaction.From.ToHex(), "latest").HexToUlong();
+
             Assert.AreEqual(txCountAfter, 1);
         }
 
@@ -195,13 +223,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
+
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "pending").HexToUlong();
+
             Assert.AreEqual(txCountBefore, 0);
 
             //TransactionUtils.SetChainId(41);
             ExecuteDummyTransaction(false, rawTx2);
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "pending").HexToUlong();
+
             Assert.AreEqual(txCountAfter, 1);
         }
 
@@ -217,13 +248,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
+
             var txCountBefore = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "latest").HexToUlong();
+
             Assert.AreEqual(txCountBefore, 0);
 
             //TransactionUtils.SetChainId(41);
             ExecuteDummyTransaction(true, rawTx2);
 
             var txCountAfter = _apiService!.GetTransactionCount(ethTx.Key.GetPublicAddress(), "0x1").HexToUlong();
+
             Assert.AreEqual(txCountAfter, 1);
         }
 

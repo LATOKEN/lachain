@@ -4,5 +4,6 @@
     {
         Block = 0,
         Transaction = 1,
+        Logs = 2,
     }
 }
