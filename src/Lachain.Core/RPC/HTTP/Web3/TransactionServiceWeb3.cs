@@ -186,12 +186,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
             try
             {
                 var transaction = MakeTransaction(ethTx);
-                Logger.LogInformation($"got tx: {transaction.FullHash(signature.ToSignature()).ToHex()}, from: {transaction.From.ToHex()}");
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId)}))
-                    return "Can not add to transaction pool: BadChainId";
-                Logger.LogInformation($"nonce got: {transaction.Nonce}");
+                    throw new Exception($"Can not add to transaction pool: BadChainId");
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
-                if (result != OperatingError.Ok) return $"Can not add to transaction pool: {result}";
+                if (result != OperatingError.Ok) throw new Exception($"Can not add to transaction pool: {result}");
                 return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
             }
             catch (Exception e)
