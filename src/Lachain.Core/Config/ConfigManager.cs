@@ -153,9 +153,9 @@ namespace Lachain.Core.Config
         // version 5 of config should contain cache option
         private void _UpdateConfigToV5()
         {
-            var cache = GetConfig<CacheConfig>("cache") ?? new CacheConfig();
             var cacheOption = new CacheOptions();
-            cacheOption.SizeLimit ??= 100;
+            cacheOption.SizeLimit ??= 100; // 100 is default blockSizeLimit
+            var cache = GetConfig<CacheConfig>("cache") ?? new CacheConfig();
             cache.BlockHeight = cacheOption;
             _config["cache"] = JObject.FromObject(cache);
 
