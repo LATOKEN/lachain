@@ -111,6 +111,9 @@ namespace Lachain.Core.Blockchain.Operations
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
+        /* default cache size limit is 100 items */
+        private int _blockSizeLimit = 100;
+
         public BlockManager(
             ITransactionManager transactionManager,
             IGenesisBuilder genesisBuilder,
@@ -129,6 +132,12 @@ namespace Lachain.Core.Blockchain.Operations
             _configManager = configManager;
             _localTransactionRepository = localTransactionRepository;
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
+
+            var cacheConfig = _configManager.GetConfig<CacheConfig>("cache");
+            if (cacheConfig != null && cacheConfig.BlockHeight != null && cacheConfig.BlockHeight.SizeLimit != null)
+            {
+                _blockSizeLimit = cacheConfig.BlockHeight.SizeLimit.Value;
+            }
         }
 
         private void TransactionManagerOnSystemContractInvoked(object sender, InvocationContext e)
@@ -154,14 +163,6 @@ namespace Lachain.Core.Blockchain.Operations
         {
             try
             {
-                /* default cache size limit is 100 items */
-                var sizeLimit = 100;
-                var cacheConfig = _configManager.GetConfig<CacheConfig>("cache");                
-                if (cacheConfig != null && cacheConfig.BlockHeight != null && cacheConfig.BlockHeight.SizeLimit != null)
-                {
-                    sizeLimit = cacheConfig.BlockHeight.SizeLimit.Value; 
-                }
-
                 /* try to block from cache */
                 if (_heightCache.TryGetValue(blockHeight, out var block))
                     return block;
@@ -169,7 +170,7 @@ namespace Lachain.Core.Blockchain.Operations
                 var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
 
                 /* if it reach cache size limit, remove the oldest one */
-                if (_heightCache.Count == sizeLimit)
+                if (_heightCache.Count == _blockSizeLimit)
                     _heightCache.Remove(_heightCache.First());
 
                 /* then add new key to cache */
