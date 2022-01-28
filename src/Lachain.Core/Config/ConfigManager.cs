@@ -11,7 +11,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 4;
+        private const ulong _CurrentVersion = 5;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -47,6 +47,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV3();
             if (version < 4)
                 _UpdateConfigToV4();
+            if (version < 5)
+                _UpdateConfigToV5();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -145,6 +147,24 @@ namespace Lachain.Core.Config
             version.Version = 4;
             _config["version"] = JObject.FromObject(version);
             
+            _SaveCurrentConfig();
+        }
+
+        // version 5 of config should contain cache option
+        private void _UpdateConfigToV5()
+        {
+            var cache = GetConfig<CacheConfig>("cache") ??
+                          throw new ApplicationException("No cache section in config");
+            var cacheOption = new CacheOptions();
+            cacheOption.SizeLimit = cacheOption.SizeLimit == null ? 100 : cacheOption.SizeLimit;
+            cache.BlockHeight = cacheOption;
+            _config["cache"] = JObject.FromObject(cache);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 5;
+            _config["version"] = JObject.FromObject(version);
+
             _SaveCurrentConfig();
         }
 
