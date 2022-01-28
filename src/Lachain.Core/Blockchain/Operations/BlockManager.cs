@@ -31,6 +31,8 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private IDictionary<ulong, Block?> _heightCache
+            = new Dictionary<ulong, Block?>();
 
         private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
             "lachain_block_exec_count",
@@ -150,7 +152,36 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHeight(ulong blockHeight)
         {
-            return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+            try
+            {
+                /* default cache size limit is 100 items */
+                var sizeLimit = 100;
+                var cacheConfig = _configManager.GetConfig<CacheConfig>("cache");                
+                if (cacheConfig != null && cacheConfig.BlockHeight != null && cacheConfig.BlockHeight.SizeLimit != null)
+                {
+                    sizeLimit = cacheConfig.BlockHeight.SizeLimit.Value; 
+                }
+
+                /* try to block from cache */
+                if (_heightCache.TryGetValue(blockHeight, out var block))
+                    return block;
+
+                var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+
+                /* if it reach cache size limit, remove the oldest one */
+                if (_heightCache.Count == sizeLimit)
+                    _heightCache.Remove(_heightCache.First());
+
+                /* then add new key to cache */
+                _heightCache.Add(blockHeight, newBlock);
+
+                return newBlock;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
