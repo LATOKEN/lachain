@@ -31,8 +31,8 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private IDictionary<ulong, Block?> _heightCache
-            = new Dictionary<ulong, Block?>();
+        private SortedDictionary<ulong, Block?> _heightCache
+            = new SortedDictionary<ulong, Block?>();
 
         private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
             "lachain_block_exec_count",
@@ -171,7 +171,7 @@ namespace Lachain.Core.Blockchain.Operations
 
                 /* if it reach cache size limit, remove the oldest one */
                 if (_heightCache.Count == _blockSizeLimit)
-                    _heightCache.Remove(_heightCache.First());
+                    _heightCache.Remove(_heightCache.First().Key);
 
                 /* then add new key to cache */
                 _heightCache.Add(blockHeight, newBlock);
