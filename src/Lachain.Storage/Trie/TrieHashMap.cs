@@ -16,6 +16,7 @@ namespace Lachain.Storage.Trie
     {
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
+        private readonly IList<ulong> _toBeDeleted = new List<ulong>();
         private const int Capacity = 100000;
         private LRUCache _lruCache = new LRUCache(Capacity);
         private SpinLock _dataLock = new SpinLock();
@@ -52,17 +53,30 @@ namespace Lachain.Storage.Trie
         public void Checkpoint(ulong root, RocksDbAtomicWrite batch)
         {
             EnsurePersisted(root, batch);
-            ClearCaches();
+            var lockTaken = false;
+            _dataLock.Enter(ref lockTaken);
+            try
+            {
+                foreach(var item in _nodeCache) _toBeDeleted.Add(item.Key);
+            }
+            finally
+            {
+                if (lockTaken) _dataLock.Exit();
+            }
         }
 
         public void ClearCaches()
         {
-            _nodeCache.Clear();
             var lockTaken = false;
             _dataLock.Enter(ref lockTaken);
             try
             {
                 _persistedNodes.Clear();
+                foreach(var id in _toBeDeleted)
+                {
+                    if(_nodeCache.ContainsKey(id)) _nodeCache.Remove(id);
+                }
+                _toBeDeleted.Clear();
             }
             finally
             {

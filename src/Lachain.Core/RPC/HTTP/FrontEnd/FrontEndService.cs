@@ -258,11 +258,11 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var limit = ulong.Parse(opts["count"]?.ToString());
 
             var results = new JArray();
-            var txHashes = _localTransactionRepository.GetTransactionHashes(limit * 2);
+            var txHashes = _localTransactionRepository.GetTransactionHashes(limit);
             
-            for (ulong i = 0; i <= (ulong)txHashes.Length && i <= limit; i++)
+            foreach (var txHash in txHashes)
             {
-                var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHashes[i]);
+                var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash);
 
                 if (receipt is null || !receipt.Transaction.To.Equals(address)) continue;
                 var txFormatted = FormatTx(receipt,

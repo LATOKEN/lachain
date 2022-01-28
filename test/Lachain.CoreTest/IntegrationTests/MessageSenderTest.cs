@@ -81,14 +81,14 @@ namespace Lachain.CoreTest.IntegrationTests
             var assembly = Assembly.GetExecutingAssembly();
             var resourceTest = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.test.wasm");
             var keyPair = _wallet.EcdsaKeyPair;
-            GenerateBlocks(1);
+            GenerateBlock(1);
             
             // Deploy caller contract 
             if(resourceTest is null)
                 Assert.Fail("Failed to read bytecode from resources");
             var byteCode = new byte[resourceTest!.Length];
             resourceTest!.Read(byteCode, 0, (int)resourceTest!.Length);
-            Assert.That(VirtualMachine.VerifyContract(byteCode), "Unable to validate contract code");
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate contract code");
             var from = keyPair.PublicKey.GetAddress();
             var fromReverted = from.ToBytes().Reverse().ToArray().ToUInt160();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
@@ -96,7 +96,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = Signer.Sign(tx, keyPair);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlocks(1);
+            GenerateBlock(2);
             
             // check contract is deployed
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
@@ -119,20 +119,17 @@ namespace Lachain.CoreTest.IntegrationTests
                 "Invalid invocation return value");
         }
 
-        private void GenerateBlocks(int blockNum)
+        private void GenerateBlock(int blockNum)
         {
-            for (var i = 0; i < blockNum; i++)
-            {
-                var txs = GetCurrentPoolTxs();
-                var block = BuildNextBlock(txs);
-                var result = ExecuteBlock(block, txs);
-                Assert.AreEqual(OperatingError.Ok, result);
-            }
+            var txs = GetCurrentPoolTxs((ulong) blockNum);
+            var block = BuildNextBlock(txs);
+            var result = ExecuteBlock(block, txs);
+            Assert.AreEqual(OperatingError.Ok, result);
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxs()
+        private TransactionReceipt[] GetCurrentPoolTxs(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)

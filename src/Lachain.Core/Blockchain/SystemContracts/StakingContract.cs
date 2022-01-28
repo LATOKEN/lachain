@@ -9,9 +9,11 @@ using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Networking;
 using Lachain.Utility.Utils;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
@@ -22,11 +24,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
 {
     public class StakingContract : ISystemContract
     {
-        public static readonly BigInteger ExpectedValidatorsCount = 22;
-        public const ulong CycleDuration = 40; // in blocks
-        public const ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
-        public const ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
-        
+        public static BigInteger ExpectedValidatorsCount = 4;
+        public static ulong CycleDuration = 20; // in blocks
+        public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
+        public static ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
+        public static bool AlreadySet { get; private set; }
+
+
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private readonly InvocationContext _context;
         public static readonly BigInteger TokenUnitsInRoll = BigInteger.Pow(10, 21);
@@ -117,6 +121,29 @@ namespace Lachain.Core.Blockchain.SystemContracts
               contractContext.Snapshot.Storage,
               new BigInteger(12).ToUInt256()
             );
+        }
+
+        public static void Initialize(NetworkConfig networkConfig)
+        {
+            if(networkConfig is null)
+                throw new Exception("network config passed in staking contract is null");
+            
+            if(AlreadySet == true)
+                throw new Exception("Staking Contract can't be initialized more than once");
+            
+            AlreadySet = true;
+            
+            if(networkConfig.CycleDuration is null)
+                throw new Exception("Cycle Duration is not provided");
+            CycleDuration = (ulong) networkConfig.CycleDuration;
+
+            if(networkConfig.ValidatorsCount is null)
+                throw new Exception("Validator Count is not provided");
+            ExpectedValidatorsCount = new BigInteger((ulong) networkConfig.ValidatorsCount);
+            VrfSubmissionPhaseDuration = CycleDuration / 2; 
+            AttendanceDetectionDuration = CycleDuration / 10;
+
+            Logger.LogTrace($"Initializing staking contract done.");
         }
 
         public ContractStandard ContractStandard => ContractStandard.StakingContract;
@@ -635,6 +662,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodFinishVrfLottery)]
         public ExecutionStatus FinishVrfLottery(SystemContractExecutionFrame frame)
         {
+            Logger.LogTrace($"Executing finish vrf lottery");
             if (!MsgSender().IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
@@ -645,8 +673,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             var nextValidators = _nextValidators.Get();
 
-            if (nextValidators.Length == 0)
-                return ExecutionStatus.ExecutionHalted;
+            Logger.LogTrace($"Executing finish vrf lottery. current height: {_context.Snapshot.Blocks.GetTotalBlockHeight()}");
+
+            if(!HardforkHeights.IsHardfork_1Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                if (nextValidators.Length == 0)
+                    return ExecutionStatus.ExecutionHalted;
+            }
+            else 
+            {
+                if(nextValidators.Length <= CryptoUtils.PublicKeyLength)
+                {
+                    Logger.LogWarning($"Only {nextValidators.Length / CryptoUtils.PublicKeyLength} validator was chosen, so validator set is not going to change");
+                    nextValidators = _context.Snapshot.Validators.GetValidatorsPublicKeys()
+                    .Select(pk => pk.Buffer.ToByteArray()).Flatten().ToArray();
+                }
+            }
 
             _vrfSeed.Set(GetNextVrfSeed());
             _nextVrfSeed.Set(new byte[] { });

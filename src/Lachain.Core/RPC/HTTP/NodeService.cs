@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using AustinHarris.JsonRpc;
@@ -7,6 +7,10 @@ using Lachain.Core.Network;
 using Lachain.Networking;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Utils;
+using Lachain.Storage.State;
+using Lachain.Core.Blockchain.Interface;
+using Lachain.Proto;
+
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -15,16 +19,18 @@ namespace Lachain.Core.RPC.HTTP
         private readonly ulong _startTs;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockchainEventFilter _blockchainEventFilter;
+        private readonly IBlockManager _blockManager;
 
         public NodeService(
             IBlockSynchronizer blockSynchronizer,
             IBlockchainEventFilter blockchainEventFilter,
-            INetworkManager networkManager
+            INetworkManager networkManager,
+            IBlockManager blockManager
         )
         {
             _blockchainEventFilter = blockchainEventFilter;
             _blockSynchronizer = blockSynchronizer;
-            _blockchainEventFilter = blockchainEventFilter;
+            _blockManager = blockManager;
             _startTs = TimeUtils.CurrentTimeMillis();
         }
 
@@ -96,7 +102,26 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("eth_newFilter")]
         private string SetFilter(JObject opt)
         {
-            return Web3.Web3DataFormatUtils.Web3Number(_blockchainEventFilter.Create(BlockchainEvent.Block));
+            var fromBlock = opt["fromBlock"];
+            var toBlock = opt["toBlock"];
+            var address = opt["address"];
+            var topicsJson = opt["topics"];
+
+            ulong? start = _blockManager.GetHeight();
+            ulong? finish = _blockManager.GetHeight();
+
+            if(!(fromBlock is null)) start = GetBlockNumberByTag((string)fromBlock!);
+            if(!(toBlock is null)) finish = GetBlockNumberByTag((string)toBlock!);
+
+            var addresses = new List<UInt160>();
+            if(!(address is null)) addresses = BlockchainFilterUtils.GetAddresses((JArray)address);
+
+            var topics = new List<UInt256>();
+            if(!(topicsJson is null)) topics = BlockchainFilterUtils.GetTopics(topicsJson);
+
+            return Web3.Web3DataFormatUtils.Web3Number(
+                _blockchainEventFilter.Create(BlockchainEvent.Logs, start, finish, addresses , topics)
+            );
         }
 
         [JsonRpcMethod("eth_newBlockFilter")]
@@ -114,6 +139,7 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("eth_uninstallFilter")]
         private bool UnsetFilter(string filterId)
         {
+            _blockchainEventFilter.RemoveUnusedFilters();
             var id = filterId.HexToUlong();
             return _blockchainEventFilter.Remove(id);
         }
@@ -122,22 +148,30 @@ namespace Lachain.Core.RPC.HTTP
         private JArray GetFilterUpdates(string filterId)
         {
             var id = filterId.HexToUlong();
-            var updates = _blockchainEventFilter.Sync(id);
-            var result = new JArray();
-            foreach (var e in updates)
-                result.Add(e);
-            return result;
+            return _blockchainEventFilter.Sync(id,true);
         }
 
         [JsonRpcMethod("eth_getFilterLogs")]
         private JArray GetFilterLogs(string filterId)
         {
-            return new JArray();
+            var id = filterId.HexToUlong();
+            return _blockchainEventFilter.Sync(id,false);
         }
         [JsonRpcMethod("eth_hashrate")]
         private string GetHashrate()
         {
             return "0x38";
+        }
+
+        private ulong? GetBlockNumberByTag(string blockTag)
+        {
+            return blockTag switch
+            {
+                "latest" => _blockManager.GetHeight(),
+                "earliest" => 0,
+                "pending" => null,
+                _ => blockTag.HexToUlong()
+            };
         }
     }
 }

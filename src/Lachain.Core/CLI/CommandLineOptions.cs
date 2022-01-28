@@ -44,6 +44,12 @@ namespace Lachain.Core.CLI
         
         [Option('c', "chainid", Required = true, HelpText = "ChainID for this network")]
         public ulong chainid { get; set; }
+
+        [Option('d', "cycleDuration", Required = true, HelpText = "cycleDuration in blocks for this network")]
+        public ulong cycleDuration { get; set; }
+        
+        [Option('v', "validatorCount", Required = true, HelpText = "expected validatorsCount for this network")]
+        public ulong validatorsCount { get; set; }
         
         [Option('k', "network", Required = true, HelpText = "Name of the network")]
         public string networkName { get; set; }
@@ -56,6 +62,12 @@ namespace Lachain.Core.CLI
 
         [Option('b', "feedBalance", Required = false, HelpText = "Initial feed balance")]
         public string feedBalance { get; set; } = "10000000";
+
+
+        [Option('r', "hardfork", Required = true, Separator = ' ', HelpText = "hardfork heights")]
+        public IEnumerable<ulong> hardforks { get; set; } = Enumerable.Empty<ulong>();
+
+
     }
 
     [Verb("run", isDefault: true, HelpText = "Run the node")]

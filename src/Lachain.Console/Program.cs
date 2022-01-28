@@ -4,6 +4,7 @@ using System.Text;
 using CommandLine;
 using Lachain.Core.CLI;
 using Lachain.Crypto;
+using System.Linq;
 
 namespace Lachain.Console
 {
@@ -36,8 +37,9 @@ namespace Lachain.Console
 
         private static void RunKeygen(KeygenOptions options)
         {
-            TrustedKeygen.DoKeygen(options.N, options.F, options.IpAddresses, options.port, options.target, options.chainid,  options.networkName,
-                options.feedAddress, options.feedBalance, options.stakeAmount);
+            if(options.hardforks.ToList().Count != 3) throw new ArgumentException("number of hardfork heights should be 3");
+            TrustedKeygen.DoKeygen(options.N, options.F, options.IpAddresses, options.port, options.target, options.chainid,  options.cycleDuration, options.validatorsCount, options.networkName,
+                options.feedAddress, options.feedBalance, options.stakeAmount, options.hardforks);
         }
 
         private static void EncryptWallet(EncryptOptions options)

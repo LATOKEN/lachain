@@ -239,7 +239,7 @@ namespace Lachain.Core.Consensus
             }
 
             // message is also delivered to self
-            Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
+        //    Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
             if (_registry.TryGetValue(result.From, out var protocol))
                 protocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
         }

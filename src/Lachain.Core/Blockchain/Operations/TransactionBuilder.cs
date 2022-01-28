@@ -47,6 +47,43 @@ namespace Lachain.Core.Blockchain.Operations
             return tx;
         }
 
+        public Transaction TransferTransaction(UInt160 from, UInt160 to, Money value, ulong? gasLimit, ulong? gasPrice, ulong? nonce, byte[]? input)
+        {
+            if(nonce is null) nonce = _transactionPool.GetNextNonceForAddress(from);
+            if(gasPrice is null) gasPrice = (ulong) _stateManager.CurrentSnapshot.NetworkGasPrice;
+            if(gasLimit is null) gasLimit = GasMetering.DefaultBlockGasLimit;
+            var tx = new Transaction
+            {
+                To = to,
+                Value = value.ToUInt256(),
+                From = from,
+                GasPrice = (ulong)gasPrice,
+                GasLimit = (ulong)gasLimit,
+                Nonce = (ulong)nonce
+            };
+            if (input != null)
+                tx.Invocation = ByteString.CopyFrom(input);
+            return tx;
+        }
+
+        public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, ulong? gasLimit, ulong? gasPrice, ulong? nonce)
+        {
+            if(nonce is null) nonce = _transactionPool.GetNextNonceForAddress(from);
+            if(gasPrice is null) gasPrice = _CalcEstimatedBlockFee();
+            if(gasLimit is null) gasLimit = GasMetering.DefaultBlockGasLimit;
+            var tx = new Transaction
+            {
+                Invocation = ByteString.CopyFrom(byteCode.ToArray()),
+                From = from,
+                To = UInt160Utils.Empty, 
+                GasPrice = (ulong)gasPrice,
+                GasLimit = (ulong)gasLimit,
+                Nonce = (ulong)nonce,
+                Value = UInt256Utils.Zero,
+            };
+            return tx;
+        }
+
         public Transaction DeployTransaction(UInt160 from, IEnumerable<byte> byteCode, byte[]? input)
         {
             var nonce = _transactionPool.GetNextNonceForAddress(from);
