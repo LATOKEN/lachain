@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -31,8 +31,8 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private SortedDictionary<ulong, Block?> _heightCache
-            = new SortedDictionary<ulong, Block?>();
+        private IDictionary<ulong, Block?> _heightCache;
+        private Queue<ulong> _heightCacheQueue;
 
         private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
             "lachain_block_exec_count",
@@ -138,6 +138,9 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 _blockSizeLimit = cacheConfig.BlockHeight.SizeLimit.Value;
             }
+
+            _heightCache = new Dictionary<ulong, Block?>(_blockSizeLimit);
+            _heightCacheQueue = new Queue<ulong>(_blockSizeLimit);
         }
 
         private void TransactionManagerOnSystemContractInvoked(object sender, InvocationContext e)
@@ -170,11 +173,18 @@ namespace Lachain.Core.Blockchain.Operations
                 var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
 
                 /* if it reach cache size limit, remove the oldest one */
-                if (_heightCache.Count == _blockSizeLimit)
-                    _heightCache.Remove(_heightCache.First().Key);
+                if (_heightCacheQueue.Count == _blockSizeLimit)
+                {
+                    /* remove from queue */
+                    var oldestKey = _heightCacheQueue.Dequeue();
 
-                /* then add new key to cache */
+                    /* remove from cache dictionary */
+                    _heightCache.Remove(oldestKey);
+                }
+
+                /* then add new key to cache and queue */
                 _heightCache.Add(blockHeight, newBlock);
+                _heightCacheQueue.Enqueue(blockHeight);
 
                 return newBlock;
             }
