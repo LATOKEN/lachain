@@ -155,9 +155,9 @@ namespace Lachain.Console
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
 
-        //    int n = 40000000;
-        //    Write(n, dbContext);
-        //    Read(n, n/4, dbContext);
+            int n = 40000000;
+            Write(n, dbContext);
+            Read(n, n/4, dbContext);
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;

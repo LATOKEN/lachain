@@ -22,7 +22,8 @@ namespace Lachain.Storage
 
             var bbto = new BlockBasedTableOptions()
                 .SetFilterPolicy(BloomFilterPolicy.Create(10, false))
-                .SetWholeKeyFiltering(false)
+                .SetWholeKeyFiltering(true)
+                .SetBlockSize(1024)
                 ;
             var options = new DbOptions()
             .SetCreateIfMissing()
@@ -30,8 +31,9 @@ namespace Lachain.Storage
             var columnFamilies = new ColumnFamilies
             {
                 { "default", new ColumnFamilyOptions()
-                .OptimizeForPointLookup(256)
-                .SetBlockBasedTableFactory(bbto) 
+                .OptimizeForPointLookup(128)
+                .SetBlockBasedTableFactory(bbto)
+            //    .SetHashLinkListRep(128*1024)
                 }
             };
 

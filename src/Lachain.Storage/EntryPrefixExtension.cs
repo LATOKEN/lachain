@@ -21,14 +21,14 @@ namespace Lachain.Storage
             var number = (short) prefix;
             bytes[0] = (byte) (number >> 0 & 0xff);
             bytes[1] = (byte) (number >> 8 & 0xff);
-            bytes[2] = (byte) ((key >> 0) & 0xff);
-            bytes[3] = (byte) ((key >> 8) & 0xff);
-            bytes[4] = (byte) ((key >> 16) & 0xff);
-            bytes[5] = (byte) ((key >> 24) & 0xff);
-            bytes[6] = (byte) ((key >> 32) & 0xff);
-            bytes[7] = (byte) ((key >> 40) & 0xff);
-            bytes[8] = (byte) ((key >> 48) & 0xff);
-            bytes[9] = (byte) ((key >> 56) & 0xff);
+            bytes[2] = (byte) ((key >> 56) & 0xff);
+            bytes[3] = (byte) ((key >> 48) & 0xff);
+            bytes[4] = (byte) ((key >> 40) & 0xff);
+            bytes[5] = (byte) ((key >> 32) & 0xff);
+            bytes[6] = (byte) ((key >> 24) & 0xff);
+            bytes[7] = (byte) ((key >> 16) & 0xff);
+            bytes[8] = (byte) ((key >> 8) & 0xff);
+            bytes[9] = (byte) ((key >> 0) & 0xff);
             return bytes;
         }
 
