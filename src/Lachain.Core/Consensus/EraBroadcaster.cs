@@ -339,5 +339,10 @@ namespace Lachain.Core.Consensus
         {
             return EnsureProtocol(new RootProtocolId(_era))?.WaitFinish(timeout) ?? true;
         }
+
+        public IDictionary<IProtocolIdentifier, IConsensusProtocol> GetRegistry()
+        {
+            return _registry;
+        }
     }
 }

@@ -326,5 +326,10 @@ namespace Lachain.Core.Consensus
         {
             _terminated = true;
         }
+
+        public EraBroadcaster GetEras(long era)
+        {
+            return _eras[era];
+        }
     }
 }
