@@ -166,14 +166,14 @@ namespace Lachain.Core.Blockchain.Operations
         {
             try
             {
-                /* try to block from cache */
+                /* try to get block from cache */
                 if (_heightCache.TryGetValue(blockHeight, out var block))
                     return block;
 
                 var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
 
                 /* if it reach cache size limit, remove the oldest one */
-                if (_heightCacheQueue.Count == _blockSizeLimit)
+                if (_heightCacheQueue.Count == _blockSizeLimit && _heightCacheQueue.Count > 0)
                 {
                     /* remove from queue */
                     var oldestKey = _heightCacheQueue.Dequeue();
