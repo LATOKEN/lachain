@@ -164,6 +164,11 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHeight(ulong blockHeight)
         {
+            if (_blockSizeLimit == 0)
+            {
+                return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+            }
+
             try
             {
                 /* try to get block from cache */
@@ -173,7 +178,7 @@ namespace Lachain.Core.Blockchain.Operations
                 var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
 
                 /* if it reach cache size limit, remove the oldest one */
-                if (_heightCacheQueue.Count == _blockSizeLimit && _heightCacheQueue.Count > 0)
+                if (_heightCacheQueue.Count == _blockSizeLimit)
                 {
                     /* remove from queue */
                     var oldestKey = _heightCacheQueue.Dequeue();
@@ -192,7 +197,6 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 return null;
             }
-
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
