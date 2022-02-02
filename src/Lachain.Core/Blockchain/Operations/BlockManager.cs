@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -31,6 +31,8 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private IDictionary<ulong, Block?> _heightCache;
+        private Queue<ulong> _heightCacheQueue;
 
         private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
             "lachain_block_exec_count",
@@ -109,6 +111,9 @@ namespace Lachain.Core.Blockchain.Operations
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
+        /* default cache size limit is 100 items */
+        private int _blockSizeLimit = 100;
+
         public BlockManager(
             ITransactionManager transactionManager,
             IGenesisBuilder genesisBuilder,
@@ -127,6 +132,15 @@ namespace Lachain.Core.Blockchain.Operations
             _configManager = configManager;
             _localTransactionRepository = localTransactionRepository;
             _transactionManager.OnSystemContractInvoked += TransactionManagerOnSystemContractInvoked;
+
+            var cacheConfig = _configManager.GetConfig<CacheConfig>("cache");
+            if (cacheConfig != null && cacheConfig.BlockHeight != null && cacheConfig.BlockHeight.SizeLimit != null)
+            {
+                _blockSizeLimit = cacheConfig.BlockHeight.SizeLimit.Value;
+            }
+
+            _heightCache = new Dictionary<ulong, Block?>(_blockSizeLimit);
+            _heightCacheQueue = new Queue<ulong>(_blockSizeLimit);
         }
 
         private void TransactionManagerOnSystemContractInvoked(object sender, InvocationContext e)
@@ -150,7 +164,39 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHeight(ulong blockHeight)
         {
-            return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+            if (_blockSizeLimit == 0)
+            {
+                return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+            }
+
+            try
+            {
+                /* try to get block from cache */
+                if (_heightCache.TryGetValue(blockHeight, out var block))
+                    return block;
+
+                var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+
+                /* if it reach cache size limit, remove the oldest one */
+                if (_heightCacheQueue.Count == _blockSizeLimit)
+                {
+                    /* remove from queue */
+                    var oldestKey = _heightCacheQueue.Dequeue();
+
+                    /* remove from cache dictionary */
+                    _heightCache.Remove(oldestKey);
+                }
+
+                /* then add new key to cache and queue */
+                _heightCache.Add(blockHeight, newBlock);
+                _heightCacheQueue.Enqueue(blockHeight);
+
+                return newBlock;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
