@@ -12,30 +12,39 @@ using Lachain.Proto;
 using System.Collections.Generic;
 using Lachain.Crypto;
 using Lachain.Utility.Serialization;
+using Lachain.Core.Vault;
+using Lachain.Logger;
+using System.Security.Cryptography;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
     public class AccountServiceWeb3 : JsonRpcService
     {
+        private static readonly ILogger<AccountServiceWeb3> Logger =
+            LoggerFactory.GetLoggerForClass<AccountServiceWeb3>();
+
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly ISystemContractReader _systemContractReader;
         private readonly ITransactionPool _transactionPool;
+        private readonly IPrivateWallet _privateWallet;
 
-        
-
+        private readonly DefaultCrypto crypto = new DefaultCrypto();
 
         public AccountServiceWeb3(IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexer,
             IContractRegisterer contractRegisterer,
-            ISystemContractReader systemContractReader, ITransactionPool transactionPool)
+            ISystemContractReader systemContractReader, 
+            ITransactionPool transactionPool, 
+            IPrivateWallet privateWallet)
         {
             _stateManager = stateManager;
             _snapshotIndexer = snapshotIndexer;
             _contractRegisterer = contractRegisterer;
             _systemContractReader = systemContractReader;
             _transactionPool = transactionPool;
+            _privateWallet = privateWallet;
         }
 
         [JsonRpcMethod("eth_getBalance")]
@@ -170,10 +179,29 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_sign")]
         private string Sign(string address, string message)
         {
-            // TODO: implement message signing
-            //var addressUint160 = address.HexToUInt160();
-            return Web3DataFormatUtils.Web3Data("".HexToBytes());
-            //throw new ApplicationException("Not implemented yet");
+            if (address is null)
+            {
+                throw new ArgumentException("address should not be null");
+            }
+
+            var addressUInt160 = (address!).HexToUInt160();
+            byte[]? messageBytes = message.HexToBytes();
+
+            if (_privateWallet.IsLocked())
+            {
+                throw new Exception("wallet is locked");
+            }
+
+            var keyPair = _privateWallet.EcdsaKeyPair;
+
+            Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
+
+            byte[]? saltedMessageBytes = GenerateSaltedHash(messageBytes, "LACHAIN".HexToBytes());
+            var signed = crypto.SignHashed(saltedMessageBytes!, keyPair.PrivateKey.Encode());
+            //var messageHashBytes = messageBytes.KeccakBytes();
+            //var signed = crypto.SignHashed(messageHashBytes, keyPair.PrivateKey.Encode());
+
+            return Web3DataFormatUtils.Web3Data(signed);
         }
 
         [JsonRpcMethod("eth_getCompilers")]
@@ -228,6 +256,24 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     }
                 }
             }
+        }
+
+        private byte[]? GenerateSaltedHash(byte[]? message, byte[]? salt)
+        {
+            HashAlgorithm algorithm = new SHA256Managed();
+            byte[] messageWithSaltBytes = new byte[(message!).Length + (salt!).Length];
+
+            for (int i = 0; i < message.Length; i++)
+            {
+                messageWithSaltBytes[i] = message[i];
+            }
+
+            for (int i = 0; i < salt.Length; i++)
+            {
+                messageWithSaltBytes[message.Length + i] = salt[i];
+            }
+
+            return algorithm.ComputeHash(messageWithSaltBytes);
         }
     }
 }
