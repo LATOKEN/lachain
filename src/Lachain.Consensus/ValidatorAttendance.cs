@@ -30,6 +30,7 @@ namespace Lachain.Consensus
         private ValidatorAttendance(ulong previousCycleNum, IDictionary<string, ulong> validatorPreviousAttendance,
             IDictionary<string, ulong> nextValidatorAttendance)
         {
+            Logger.LogTrace($"ValidatorAttendance({previousCycleNum})");
             PreviousCycleNum = previousCycleNum;
             NextCycleNum = previousCycleNum + 1;
             _previousAttendance = validatorPreviousAttendance;
@@ -38,26 +39,33 @@ namespace Lachain.Consensus
 
         public ulong GetAttendanceForCycle(byte[] publicKey, ulong cycle)
         {
+            Logger.LogTrace($"GetAttendanceForCycle({publicKey.ToHex()}, {cycle})");
             if (cycle == PreviousCycleNum)
                 if (_previousAttendance.ContainsKey(publicKey.ToHex()))
                     return _previousAttendance[publicKey.ToHex()];
             if (cycle == NextCycleNum)
                 if (_nextAttendance.ContainsKey(publicKey.ToHex()))
                     return _nextAttendance[publicKey.ToHex()];
+            Logger.LogTrace($"Invalid cycle in params: cycle {cycle}, PreviousCycleNum {PreviousCycleNum}, NextCycleNum {NextCycleNum}");
             return 0;
         }
 
         public void IncrementAttendanceForCycle(byte[] publicKey, ulong cycle)
         {
+            Logger.LogTrace($"IncrementAttendanceForCycle({publicKey.ToHex()}, {cycle})");
             if (cycle == PreviousCycleNum)
                 _previousAttendance[publicKey.ToHex()] = GetAttendanceForCycle(publicKey, cycle) + 1;
-            if (cycle == NextCycleNum)
+            else if (cycle == NextCycleNum)
                 _nextAttendance[publicKey.ToHex()] = GetAttendanceForCycle(publicKey, cycle) + 1;
-            // Logger.LogDebug($"Attendance incremented: {GetAttendanceForCycle(publicKey, cycle)} cycle {cycle}");
+            else
+            {
+                Logger.LogTrace($"Invalid cycle in params: cycle {cycle}, PreviousCycleNum {PreviousCycleNum}, NextCycleNum {NextCycleNum}");
+            }
         }
 
         public byte[] ToBytes()
         {
+            Logger.LogTrace("ToBytes()");
             var a = new List<byte[]>
             {
                 _previousAttendance.Count.ToBytes().ToArray(),
@@ -80,9 +88,11 @@ namespace Lachain.Consensus
 
         public static ValidatorAttendance FromBytes(ReadOnlyMemory<byte> bytes, ulong currentCycle, bool currentAsNext)
         {
+            Logger.LogTrace($"FromBytes(..., {currentCycle}, {currentAsNext})");
             var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
             var previousAttendanceCount = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
             var previousCycle = decoded[1].RLPData.AsReadOnlySpan().ToUInt64();
+            Logger.LogTrace($"previousCycle in bytes is {previousCycle}");
 
             var previousAttendanceDict = Enumerable.Range(0, previousAttendanceCount)
                 .Select(i => (
@@ -110,7 +120,7 @@ namespace Lachain.Consensus
             if (previousCycle == currentCycle - 1 && currentAsNext)
                 return new ValidatorAttendance(currentCycle, nextAttendanceDict, new Dictionary<string, ulong>());
 
-            return new ValidatorAttendance(previousCycle, new Dictionary<string, ulong>(),
+            return new ValidatorAttendance(currentCycle, new Dictionary<string, ulong>(),
                 new Dictionary<string, ulong>());
         }
 

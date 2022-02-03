@@ -336,6 +336,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void SubmitAttendanceDetection()
         {
+            Logger.LogTrace($"SubmitAttendanceDetection from {_systemContractReader.NodeAddress().ToHex()}");
             var previousValidators = _systemContractReader.GetPreviousValidators();
 
             var publicKeys = new byte[previousValidators.Length][];
@@ -356,6 +357,7 @@ namespace Lachain.Core.ValidatorStatus
                 attendances[i] = new BigInteger(attendanceData.GetAttendanceForCycle(publicKey, previousCycle))
                     .ToUInt256();
                 publicKeys[i] = publicKey;
+                Logger.LogTrace($"Attendance for {publicKeys[i].ToHex()}: {attendances[i].ToBigInteger()}");
             }
 
             var tx = _transactionBuilder.InvokeTransaction(

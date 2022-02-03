@@ -139,6 +139,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             var totalReward = GetBlockReward().ToMoney() * (int) StakingContract.CycleDuration + txFeesAmount;
+            Logger.LogTrace($"Total cycle reward is {totalReward}");
             _context.Sender = ContractRegisterer.GovernanceContract;
             var staking = new StakingContract(_context);
             staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);

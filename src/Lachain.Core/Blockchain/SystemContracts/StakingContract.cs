@@ -463,43 +463,65 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus SubmitAttendanceDetection(byte[][] faultPersons, UInt256[] faultBlocksCounts,
             SystemContractExecutionFrame frame)
         {
+            Logger.LogTrace($"SubmitAttendanceDetection from {MsgSender().ToHex()}");
             frame.UseGas(GasMetering.StakingSubmitAttendanceDetectionCost);
 
             var blockNumber = _context.Receipt.Block;
             var blockInCycle = blockNumber % CycleDuration;
             if (blockInCycle >= AttendanceDetectionDuration)
+            {
+                Logger.LogWarning("AttendanceFail: Invalid height for attendance detection");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             if (faultPersons.Length != faultBlocksCounts.Length)
+            {
+                Logger.LogWarning("AttendanceFail: Invalid array lengths for attendance detection");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
 
             var senderPublicKey = _userToPubKey.GetValue(MsgSender().ToBytes());
             if (senderPublicKey.Length == 0)
+            {
+                Logger.LogWarning("AttendanceFail: Invalid sender for attendance detection");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             var isSenderPreviousValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
                 StakingInterface.MethodIsPreviousValidator, senderPublicKey);
 
             if (isSenderPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
+            {
+                Logger.LogWarning("AttendanceFail: Failed to get sender status");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             var isSenderPreviousValidator = !isSenderPreviousValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (!isSenderPreviousValidator)
+            {
+                Logger.LogWarning("AttendanceFail: Sender is not previous validator");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             var isCheckedInAttendanceDetectionExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
                 StakingInterface.MethodIsCheckedInAttendanceDetection, senderPublicKey);
 
             if (isCheckedInAttendanceDetectionExecutionResult.Status != ExecutionStatus.Ok)
+            {
+                Logger.LogWarning("AttendanceFail: Failed to get attendance checkin");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             var isCheckedInAttendanceDetection =
                 !isCheckedInAttendanceDetectionExecutionResult.ReturnValue!.ToUInt256().IsZero();
             if (isCheckedInAttendanceDetection)
+            {
+                Logger.LogWarning("AttendanceFail: Invalid attendance checkin");
                 return ExecutionStatus.ExecutionHalted;
+            }
 
             _attendanceDetectorCheckIns.Set(_attendanceDetectorCheckIns.Get().Concat(senderPublicKey).ToArray());
 
@@ -510,16 +532,25 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     StakingInterface.MethodIsPreviousValidator, faultPersons[i]);
 
                 if (isPreviousValidatorExecutionResult.Status != ExecutionStatus.Ok)
+                {
+                    Logger.LogWarning("AttendanceFail: Failed to get attended node status");
                     return ExecutionStatus.ExecutionHalted;
+                }
 
                 var isPreviousValidator = !isPreviousValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
                 if (!isPreviousValidator)
+                {
+                    Logger.LogWarning("AttendanceFail: Attended node is not previous validator");
                     return ExecutionStatus.ExecutionHalted;
+                }
 
                 var detectedBlocks = faultBlocksCounts[i].ToBigInteger();
 
                 if (detectedBlocks > CycleDuration)
+                {
+                    Logger.LogWarning($"AttendanceFail: Invalid detected block amount {detectedBlocks}");
                     return ExecutionStatus.ExecutionHalted;
+                }
 
                 VoteForAttendance(faultPersons[i], (int) detectedBlocks);
             }
@@ -691,7 +722,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if(!HardforkHeights.IsHardfork_1Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
                 if (nextValidators.Length == 0)
+                {
                     return ExecutionStatus.ExecutionHalted;
+                }
             }
             else 
             {
@@ -811,6 +844,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private void SetPreviousValidators(byte[][] publicKeys)
         {
+            Logger.LogTrace("SetPreviousValidators");
+            foreach (var key in publicKeys)
+                Logger.LogTrace(key.ToHex());
             _previousValidators.Set(publicKeys.Flatten().ToArray());
         }
 
