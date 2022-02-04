@@ -69,6 +69,11 @@ namespace Lachain.Storage
             _ThrowIfNotInitialized();
             _rocksDb.Remove(key, null, _writeOptions);
         }
+
+        public void CompactAll()
+        {
+            _rocksDb.CompactRange((byte[]?)null, (byte[]?)null);
+        }
         
         public void Dispose()
         {
