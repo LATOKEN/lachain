@@ -4,11 +4,14 @@ using System.IO;
 using System.Linq;
 using Lachain.Utility.Utils;
 using RocksDbSharp;
+using Lachain.Logger;
 
 namespace Lachain.Storage
 {
     public class RocksDbContext : IRocksDbContext
     {
+        private static readonly ILogger<RocksDbContext> Logger = LoggerFactory.GetLoggerForClass<RocksDbContext>();
+
         private readonly RocksDb _rocksDb;
         private readonly WriteOptions _writeOptions;
         private readonly string _dbpath;
@@ -68,6 +71,13 @@ namespace Lachain.Storage
         {
             _ThrowIfNotInitialized();
             _rocksDb.Remove(key, null, _writeOptions);
+        }
+
+        public void CompactAll()
+        {
+            Logger.LogInformation($"Starting Compaction.");
+            _rocksDb.CompactRange((byte[]?)null, (byte[]?)null);
+            Logger.LogInformation($"Ended Compaction");
         }
         
         public void Dispose()
