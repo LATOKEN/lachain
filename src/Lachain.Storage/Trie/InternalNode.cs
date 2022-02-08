@@ -50,12 +50,29 @@ namespace Lachain.Storage.Trie
             return Enumerable.Range(0, 32).Where(i => ((mask >> i) & 1) != 0).Select(i => (byte) i);
         }
 
-        private void UpdateHash(IEnumerable<byte[]> childrenHashes, IEnumerable<byte> childrenLabels)
+        
+
+        private void UpdateHash(IEnumerable<byte[]> childrenHashesList, IEnumerable<byte> childrenLabelsList)
         {
-            Hash = childrenHashes
+            var childrenHashes = childrenHashesList.ToArray();
+            var childrenLabels = childrenLabelsList.ToArray();
+            //need to change here
+            Hash = new byte[32];
+//            for(int i=0; i<32; i++) Hash[i] = (byte)0;
+            for(int i=0; i<childrenHashes.Count(); i++)
+            {
+                ModifyHash(childrenHashes[i], childrenLabels[i]);
+            }
+/*            Hash = childrenHashes
                 .Zip(childrenLabels, (bytes, i) => new[] {i}.Concat(bytes))
                 .SelectMany(bytes => bytes)
-                .KeccakBytes();
+                .KeccakBytes(); */
+        }
+
+        private void ModifyHash(byte[] childrenHash, byte childrenLabel)
+        {
+            var newHash = new [] {childrenLabel}.Concat(childrenHash).KeccakBytes();
+            for(int i=0; i<newHash.Count(); i++) Hash[i] ^= newHash[i];
         }
 
         public static InternalNode WithChildren(
@@ -81,7 +98,7 @@ namespace Lachain.Storage.Trie
         }
 
         public static IHashTrieNode? ModifyChildren(
-            InternalNode node, byte h, ulong value, IEnumerable<byte[]> childrenHashes, byte[]? valueHash
+            InternalNode node, byte h, ulong value, byte[]? valueHash, byte[] childHash
         )
         {
             if (node == null)
@@ -95,9 +112,13 @@ namespace Lachain.Storage.Trie
                 return node;
             }
 
-            List<byte[]> newHashes;
+//            List<byte[]> newHashes;
             var newNode = new InternalNode();
             var pos = (int) BitsUtils.PositionOf(node.ChildrenMask, h);
+            newNode.Hash = new byte[node.Hash.Length];
+            for(var i=0; i<node.Hash.Length; ++i)
+                newNode.Hash[i] = node.Hash[i];
+
             if (was == 0)
             {
                 if (valueHash is null) throw new ArgumentNullException(nameof(valueHash));
@@ -105,9 +126,10 @@ namespace Lachain.Storage.Trie
                 for (var i = 0; i <= node._children.Length; ++i)
                     newNode._children[i] = i < pos ? node._children[i] : (i == pos ? value : node._children[i - 1]);
                 newNode.ChildrenMask = node.ChildrenMask | (1u << h);
-                newHashes = childrenHashes.ToList();
-                newHashes.Insert(pos, valueHash);
-                newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
+                newNode.ModifyHash(valueHash, h);
+//                newHashes = childrenHashes.ToList();
+//                newHashes.Insert(pos, valueHash);
+//                newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
                 return newNode;
             }
 
@@ -118,18 +140,23 @@ namespace Lachain.Storage.Trie
                 for (var i = 0; i + 1 < node._children.Length; ++i)
                     newNode._children[i] = i < pos ? node._children[i] : node._children[i + 1];
                 newNode.ChildrenMask = node.ChildrenMask ^ (1u << h);
-                newHashes = childrenHashes.ToList();
-                newHashes.RemoveAt(pos);
-                newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
+                newNode.ModifyHash(childHash, h);
+            //    newHashes = childrenHashes.ToList();
+            //    newHashes.RemoveAt(pos);
+            //    newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
                 return newNode;
             }
+
+            
+            
 
             newNode._children = node._children.ToArray();
             newNode.ChildrenMask = node.ChildrenMask;
             newNode._children[pos] = value;
-            newHashes = childrenHashes.ToList();
-            newHashes[pos] = valueHash ?? throw new ArgumentNullException(nameof(valueHash));
-            newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
+//            newHashes = childrenHashes.ToList();
+            newNode.ModifyHash(valueHash, h);
+//            newHashes[pos] = valueHash ?? throw new ArgumentNullException(nameof(valueHash));
+//            newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
             return newNode;
         }
     }

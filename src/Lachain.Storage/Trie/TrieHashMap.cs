@@ -258,11 +258,19 @@ namespace Lachain.Storage.Trie
             }
 
             if(value != 0 && node.GetChildByHash(h) != 0 && node.Children.Count() == 1 && GetNodeById(value).Type == NodeType.Leaf) return value;
+            
+            byte[] childHash = new byte[node.Hash.Length];
+            if(node.GetChildByHash(h)!=0)
+            {
+                IHashTrieNode childNode = GetNodeById(node.GetChildByHash(h));
+                childHash = GetNodeById(node.GetChildByHash(h)).Hash;
+                for(int i=0; i<childHash.Length; i++) childHash[i] = childNode.Hash[i];
+            }
 
             var modified = InternalNode.ModifyChildren(
                 node, h, value,
-                node.Children.Select(id => GetNodeById(id)?.Hash ?? throw new InvalidOperationException()),
-                valueHash
+                valueHash,
+                childHash
             );
             if (modified == null) return 0u;
             var newId = _versionFactory.NewVersion();
