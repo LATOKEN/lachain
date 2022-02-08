@@ -225,13 +225,15 @@ namespace Lachain.Core.Blockchain.VM
             if (topic0 == null)
                 throw new InvalidContractException("Bad call to WRITELOG,  can't read topic0");
 
-            var eventObj = new Event
-            {
-                Contract = frame.CurrentAddress,
-                Data = ByteString.CopyFrom(data),
-                TransactionHash = frame.InvocationContext.Receipt.Hash,
-                SignatureHash =  topic0.ToUInt256()
-            };
+            var eventObj = new EventObject(
+                new Event
+                {
+                    Contract = frame.CurrentAddress,
+                    Data = ByteString.CopyFrom(data),
+                    TransactionHash = frame.InvocationContext.Receipt.Hash,
+                    SignatureHash =  topic0.ToUInt256()
+                }
+            );
             frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
         }
 
@@ -1022,14 +1024,16 @@ namespace Lachain.Core.Blockchain.VM
                             throw new InvalidOperationException();
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength) ??
                         throw new InvalidOperationException();
-            var ev = new Event
-            {
-                Contract = frame.CurrentAddress,
-                Data = ByteString.CopyFrom(value),
-                TransactionHash = frame.InvocationContext.TransactionHash,
-                Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
-                SignatureHash = signature.ToUInt256()
-            };
+            var ev = new EventObject(
+                new Event
+                {
+                    Contract = frame.CurrentAddress,
+                    Data = ByteString.CopyFrom(value),
+                    TransactionHash = frame.InvocationContext.TransactionHash,
+                    Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
+                    SignatureHash = signature.ToUInt256()
+                }
+            );
             frame.InvocationContext.Snapshot.Events.AddEvent(ev);
         }
         

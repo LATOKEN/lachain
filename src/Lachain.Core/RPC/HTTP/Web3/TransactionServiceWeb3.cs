@@ -26,6 +26,7 @@ using Transaction = Lachain.Proto.Transaction;
 using System.Threading.Tasks;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Config;
+using Lachain.Utility;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -113,11 +114,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (block is null) return null; // ???
             
             var eventCount = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(receipt.Hash);
-            var events = new List<Event>();
+            var events = new List<EventObject>();
             for (var i = (uint) 0; i < eventCount; i++)
             {
                 var eventLog = _stateManager.LastApprovedSnapshot.Events
                     .GetEventByTransactionHashAndIndex(receipt.Hash, i)!;
+                if(eventLog._event is null) continue;
                 events.Add(eventLog);
             }
             
