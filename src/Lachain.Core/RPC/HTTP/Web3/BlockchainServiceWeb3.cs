@@ -523,11 +523,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var jArray = new JArray();
             for (var i = 0; i < txEvents; i++)
             {
-                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
+                var evObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
                     (uint)i);
+                var ev = evObj._event;
                 if (ev is null)
                     continue;
-                jArray.Add(Web3DataFormatUtils.Web3Event(ev, receipt!.Block, block!.Hash));
+                jArray.Add(Web3DataFormatUtils.Web3Event(evObj, receipt!.Block, block!.Hash));
             }
 
             return jArray;
@@ -710,8 +711,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(tx);
                     for (var i = 0; i < txEvents; i++)
                     {
-                        var txEvent = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
+                        var txEventObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
                             (uint)i);
+                        var txEvent = txEventObj._event;
                         if (txEvent is null)
                             continue;
                         
@@ -731,7 +733,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                             txEvent.BlockHash = block.Hash;
                         }
            
-                        jArray.Add(Web3DataFormatUtils.Web3Event(txEvent, blockNumber,block.Hash));
+                        jArray.Add(Web3DataFormatUtils.Web3Event(txEventObj, blockNumber,block.Hash));
                     }
                 }
             }

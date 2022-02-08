@@ -40,6 +40,7 @@
         /* event */
         EventByTransactionHashAndIndex = 0x0a01,
         EventCountByTransactionHash = 0x0a02,
+        EventTopicsByTransactionHashAndIndex = 0x0a03,
 
         /* consensus */
         ConsensusState = 0x0b01,
