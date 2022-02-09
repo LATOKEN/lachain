@@ -327,9 +327,9 @@ namespace Lachain.Core.Consensus
             _terminated = true;
         }
 
-        public EraBroadcaster GetEras(long era)
+        public EraBroadcaster GetEraBroadcaster()
         {
-            return _eras[era];
+            return _eras[CurrentEra];
         }
     }
 }

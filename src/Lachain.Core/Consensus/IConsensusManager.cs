@@ -8,6 +8,6 @@ namespace Lachain.Core.Consensus
         void Dispatch(ConsensusMessage message, ECDSAPublicKey publicKey);
         void Start(ulong startingEra);
         void Terminate();
-        EraBroadcaster GetEras(long era);
+        EraBroadcaster GetEraBroadcaster();
     }
 }
