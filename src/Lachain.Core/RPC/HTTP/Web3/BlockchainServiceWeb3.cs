@@ -697,10 +697,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return protocols;
         }
         
-       
-
-
-
         private ulong? GetBlockNumberByTag(string blockTag)
         {
             return blockTag switch

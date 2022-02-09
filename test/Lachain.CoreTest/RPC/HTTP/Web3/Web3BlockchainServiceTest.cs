@@ -34,6 +34,7 @@ using System.Security.Cryptography;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Utility.Serialization;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
+using Lachain.Core.Consensus;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -58,6 +59,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IContractRegisterer _contractRegisterer = null!;
         private IPrivateWallet _privateWallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
+        private IConsensusManager _consensusManager = null!;
 
         private BlockchainServiceWeb3 _apiService = null!;
 
@@ -97,12 +99,13 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager = _container.Resolve<IBlockManager>();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             _configManager = _container.Resolve<IConfigManager>();
+            _consensusManager = _container.Resolve<IConsensusManager>();
 
 
 
             ServiceBinder.BindService<GenericParameterAttributes>();
             _apiService = new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool,
-                _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader);
+                _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader, _consensusManager);
             
 
 
