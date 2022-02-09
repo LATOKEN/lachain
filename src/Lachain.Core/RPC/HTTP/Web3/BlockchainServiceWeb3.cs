@@ -676,7 +676,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("la_consensusState")]
         private JArray GetConsensusState(long era)
         {
-            var broadcaster = _consensusManager.GetEras(era);
+            var broadcaster = _consensusManager.GetEraBroadcaster();
             var registry = broadcaster.GetRegistry();
             
             JArray protocols = new JArray { };
