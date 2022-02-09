@@ -674,26 +674,29 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
         
         [JsonRpcMethod("la_consensusState")]
-        private JArray GetConsensusState(long era)
+        private JArray GetConsensusState()
         {
             var broadcaster = _consensusManager.GetEraBroadcaster();
-            var registry = broadcaster.GetRegistry();
+            JArray protocols = new JArray();
             
-            JArray protocols = new JArray { };
-            foreach (var id in registry.Keys)
+            if (broadcaster != null)
             {
-                if(!registry[id].Terminated)
+                var registry = broadcaster.GetRegistry();
+            
+                foreach (var id in registry.Keys)
                 {
-                    var temp = new JObject
+                    if(!registry[id].Terminated)
                     {
-                        ["protocol"] = id.ToString(),
-                        ["era"] = id.Era
-                    };
+                        var temp = new JObject
+                        {
+                            ["protocol"] = id.ToString()
+                        };
                     
-                    protocols.Add(temp);
+                        protocols.Add(temp);
+                    }
                 }
             }
-           return protocols;
+            return protocols;
         }
 
         private ulong? GetBlockNumberByTag(string blockTag)
