@@ -227,7 +227,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingRequestStakeWithdrawalCost);
 
-            // check the address trying to withdraw is indeed the address which staked before
+            // check the address trying to withdraw is indeed the address which staked before or validator itself
             var staker = GetStaker(publicKey);
             if (staker == null) return ExecutionStatus.ExecutionHalted;
             if (IsPublicKeyOwner(publicKey, MsgSender()) == false && staker!.Equals(MsgSender()) == false)
