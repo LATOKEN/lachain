@@ -151,6 +151,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodBecomeStaker)]
         public ExecutionStatus BecomeStaker(byte[] publicKey, UInt256 amount, SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation($"Executing BecomeStaker for validator: {publicKey.ToHex()} and LA: {amount.ToHex()}");
+
             frame.UseGas(GasMetering.StakingBecomeStakerCost);
 
             // address should also be able to stake for other validator
