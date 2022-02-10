@@ -18,6 +18,7 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Storage.Trie;
 using Lachain.Utility;
 using Lachain.Core.BlockchainFilter;
+using Lachain.Core.Consensus;
 
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -37,6 +38,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly INetworkManager _networkManager;
         private readonly INodeRetrieval _nodeRetrieval;
         private readonly ISystemContractReader _systemContractReader;
+        private readonly IConsensusManager _consensusManager;
 
         public BlockchainServiceWeb3(
             ITransactionManager transactionManager,
@@ -46,7 +48,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             ISnapshotIndexRepository snapshotIndexer,
             INetworkManager networkManager,
             INodeRetrieval nodeRetrieval,
-            ISystemContractReader systemContractReader)
+            ISystemContractReader systemContractReader,
+            IConsensusManager consensusManager)
         {
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
@@ -56,6 +59,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _networkManager = networkManager;
             _nodeRetrieval = nodeRetrieval;
             _systemContractReader = systemContractReader;
+            _consensusManager = consensusManager;
         }
 
         [JsonRpcMethod("eth_getBlockByNumber")]
@@ -668,8 +672,32 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
             return validators;
         }
-
-
+        
+        [JsonRpcMethod("la_consensusState")]
+        private JArray GetConsensusState()
+        {
+            var broadcaster = _consensusManager.GetEraBroadcaster();
+            JArray protocols = new JArray();
+            
+            if (broadcaster != null)
+            {
+                var registry = broadcaster.GetRegistry();
+            
+                foreach (var id in registry.Keys)
+                {
+                    if(!registry[id].Terminated)
+                    {
+                        var temp = new JObject
+                        {
+                            ["protocol"] = id.ToString()
+                        };
+                    
+                        protocols.Add(temp);
+                    }
+                }
+            }
+            return protocols;
+        }
 
         private ulong? GetBlockNumberByTag(string blockTag)
         {
