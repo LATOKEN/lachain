@@ -35,8 +35,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         // opts["validatorPublicKey"] = validator public key in hex format
         // opts["stakeAmount"] = stake amount in LA in decimal format
 
-        [JsonRpcMethod("la_getStakeTransaction")]
-        public JObject GetStakeTransaction(JObject opts) 
+        [JsonRpcMethod("la_getBecomeStakerTransaction")]
+        public JObject GetBecomeStakerTransaction(JObject opts) 
         {
             var staker = opts["stakerAddress"]?.ToString().HexToBytes().ToUInt160() ?? 
                     throw new Exception($"\"stakerAddress\" {opts["stakerAddress"]} is not valid");
