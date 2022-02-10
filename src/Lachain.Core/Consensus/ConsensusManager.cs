@@ -329,13 +329,16 @@ namespace Lachain.Core.Consensus
 
         public EraBroadcaster? GetEraBroadcaster()
         {
-            if (_eras.ContainsKey(CurrentEra))
+            lock (_erasLock)
             {
-                return _eras[CurrentEra];
-            }
-            else
-            {
-                return null;
+                if (_eras.ContainsKey(CurrentEra))
+                {
+                    return _eras[CurrentEra];
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
     }
