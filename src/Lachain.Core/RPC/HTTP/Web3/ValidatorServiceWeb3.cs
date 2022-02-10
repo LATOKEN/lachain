@@ -1,8 +1,14 @@
 ﻿using AustinHarris.JsonRpc;
 using Lachain.Core.ValidatorStatus;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Vault;
 using Lachain.Logger;
 using Lachain.Utility;
+using System;
+using Lachain.Core.Blockchain.SystemContracts.ContractManager;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Utility.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -10,15 +16,47 @@ namespace Lachain.Core.RPC.HTTP.Web3
     {
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly IPrivateWallet _privateWallet;
+        private ITransactionBuilder _transactionBuilder;
 
         private static readonly ILogger<TransactionServiceWeb3> Logger =
             LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
 
         public ValidatorServiceWeb3(
-            IValidatorStatusManager validatorStatusManager, IPrivateWallet privateWallet)
+            IValidatorStatusManager validatorStatusManager, IPrivateWallet privateWallet,
+            ITransactionBuilder transactionBuilder)
         {
             _validatorStatusManager = validatorStatusManager;
             _privateWallet = privateWallet;
+            _transactionBuilder = transactionBuilder;
+        }
+
+
+        // opts["stakerAddress"] = staker address in hex format
+        // opts["validatorPublicKey"] = validator public key in hex format
+        // opts["stakeAmount"] = stake amount in LA in decimal format
+
+        [JsonRpcMethod("la_getStakeTransaction")]
+        public JObject GetStakeTransaction(JObject opts) 
+        {
+            var staker = opts["stakerAddress"]?.ToString().HexToBytes().ToUInt160() ?? 
+                    throw new Exception($"\"stakerAddress\" {opts["stakerAddress"]} is not valid");
+
+            var validatorPubKey = opts["validatorPublicKey"]?.ToString().HexToBytes() ??
+                    throw new Exception($"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
+
+            var stakeAmount = Money.Parse(opts["stakeAmount"]?.ToString() ??
+                                    throw new Exception($"\"stakeAmount\" {opts["stakeAmount"]} is not valid")
+            );
+            var tx = _transactionBuilder.InvokeTransaction(
+                staker,
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodBecomeStaker,
+                validatorPubKey,
+                (object) stakeAmount.ToUInt256()
+            );
+
+            return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
         }
 
         [JsonRpcMethod("validator_start")]

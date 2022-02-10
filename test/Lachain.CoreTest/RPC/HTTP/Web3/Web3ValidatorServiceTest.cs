@@ -14,6 +14,8 @@ using AustinHarris.JsonRpc;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Utility;
 using System.Threading;
+using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.Blockchain.Interface;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -22,6 +24,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IContainer? _container;
         private IPrivateWallet _privateWallet = null!;
         private IValidatorStatusManager _validatorStatusManager = null!;
+        private ITransactionBuilder _transactionBuilder = null!;
 
         private IConfigManager _configManager = null!;
 
@@ -51,9 +54,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             _configManager = _container.Resolve<IConfigManager>();
+            _transactionBuilder = _container.Resolve<ITransactionBuilder>();
 
             ServiceBinder.BindService<GenericParameterAttributes>();
-            _apiService = new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet);
+            _apiService = new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet, _transactionBuilder);
 
 
         }
