@@ -18,20 +18,26 @@ using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
+using Lachain.Logger;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
+using TransactionUtils = Lachain.Crypto.TransactionUtils;
 
 namespace Lachain.Benchmark
 {
     public class BlockchainBenchmark : IBootstrapper
     {
+        private static readonly ILogger<BlockchainBenchmark> Logger = LoggerFactory.GetLoggerForClass<BlockchainBenchmark>();
+        
         private readonly IContainer _container;
 
         private IBlockManager _blockManager = null!;
+        private IConfigManager _configManager = null!;
         private IStateManager _stateManager = null!;
         private ITransactionBuilder _transactionBuilder = null!;
         private ITransactionPool _transactionPool = null!;
@@ -61,11 +67,9 @@ namespace Lachain.Benchmark
 
         public void Start(RunOptions options)
         {
-            var configManager = _container.Resolve<IConfigManager>();
-            
-
             _blockManager = _container.Resolve<IBlockManager>();
-            _stateManager = _container.Resolve<IStateManager>();
+            _configManager = _container.Resolve<IConfigManager>();
+            _stateManager = _container.Resolve<IStateManager>();    
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _transactionPool = _container.Resolve<ITransactionPool>();
             _transactionSigner = _container.Resolve<ITransactionSigner>();
@@ -261,30 +265,132 @@ namespace Lachain.Benchmark
             ITransactionSigner transactionSigner,
             EcdsaKeyPair keyPair)
         {
-            var randomValue = new Random().Next(1, 100);
-            var amount = Money.Parse($"{randomValue}.0").ToUInt256();
+            const int txGenerate = 1000;
+            const int txPerBlock = 1000;
             
-            byte[] random = new byte[32];
-            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
-            rng.GetBytes(random);
+            Logger.LogInformation($"Setting chainId");
+            var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+            TransactionUtils.SetChainId((int)chainId!);
             
-            var _keyPair = new EcdsaKeyPair(random.ToPrivateKey());
-            var tx = new Transaction
+            Logger.LogInformation($"Setting initial balance for the 'From' address");
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(), Money.Parse("200000"));
+            
+            _Benchmark("Building TX Pool: ", i =>
             {
-                To = random.Slice(0, 20).ToUInt160(),
-                From = _keyPair.PublicKey.GetAddress(),
-                GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
-                GasLimit = 100000000,
-                Nonce = 0,
-                Value = amount
+                var randomValue = new Random().Next(1, 100);
+                var amount = Money.Parse($"{randomValue}.0").ToUInt256();
+            
+                byte[] random = new byte[32];
+                RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+                rng.GetBytes(random);
+            
+                var tx = new Transaction
+                {
+                    To = random.Slice(0, 20).ToUInt160(),
+                    From = keyPair.PublicKey.GetAddress(),
+                    GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
+                    GasLimit = 100000000,
+                    Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()),
+                    Value = amount
+                };
+                
+                var txReceipt = transactionSigner.Sign(tx, keyPair);
+                
+                var result = _transactionPool.Add(txReceipt);
+                if (result != OperatingError.Ok)
+                {
+                    Logger.LogError($"Error while adding tx to pool {result}");
+                    throw new Exception("Unable to add transaction to pool (" + result + ")");
+                }
+                return i;
+            }, txGenerate);
+            
+            var receipts = _transactionPool.Peek(1000, 1000).ToArray();
+            Logger.LogInformation($"Total Tx in pool {receipts.Length}");
+            
+            // var block = BuildBlock(receipts);
+            // ExecuteBlock(block, receipts);
+        }
+        
+        private Block BuildBlock(TransactionReceipt[]? receipts = null)
+        {
+            receipts ??= new TransactionReceipt[] { };
+
+            var merkleRoot = UInt256Utils.Zero;
+
+            if (receipts.Any())
+                merkleRoot = MerkleTree.ComputeRoot(receipts.Select(tx => tx.Hash).ToArray()) ??
+                             throw new InvalidOperationException();
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) =
+                BuildHeaderAndMultisig(merkleRoot, predecessor, _stateManager.LastApprovedSnapshot.StateHash);
+
+            return new Block
+            {
+                Header = header,
+                Hash = header.Keccak(),
+                Multisig = multisig,
+                TransactionHashes = {receipts.Select(tx => tx.Hash)},
+            };
+        }
+
+        private (BlockHeader, MultiSig) BuildHeaderAndMultisig(UInt256 merkleRoot, Block? predecessor,
+            UInt256 stateHash)
+        {
+            var blockIndex = predecessor!.Header.Index + 1;
+            var header = new BlockHeader
+            {
+                Index = blockIndex,
+                PrevBlockHash = predecessor!.Hash,
+                MerkleRoot = merkleRoot,
+                StateHash = stateHash,
+                Nonce = blockIndex
             };
 
-            var signer = new TransactionSigner();
-            var txReceipt = signer.Sign(tx, _keyPair);
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(txReceipt.Transaction.From, Money.Parse("1000"));
-            var result = _transactionPool.Add(txReceipt);
+            var keyPair = _wallet.EcdsaKeyPair;
 
-            Console.WriteLine($"Add To Pool: {result}");
+            var headerSignature = Crypto.SignHashed(
+                header.Keccak().ToBytes(),
+                keyPair.PrivateKey.Encode()
+            ).ToSignature();
+
+            var multisig = new MultiSig
+            {
+                Quorum = 1,
+                Validators = {_wallet.EcdsaKeyPair.PublicKey},
+                Signatures =
+                {
+                    new MultiSig.Types.SignatureByValidator
+                    {
+                        Key = _wallet.EcdsaKeyPair.PublicKey,
+                        Value = headerSignature,
+                    }
+                }
+            };
+            return (header, multisig);
+        }
+
+        private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)
+        {
+            receipts ??= new TransactionReceipt[] { };
+
+            var (_, _, stateHash, _) = _blockManager.Emulate(block, receipts);
+
+            var predecessor =
+                _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(_stateManager.LastApprovedSnapshot.Blocks
+                    .GetTotalBlockHeight());
+            var (header, multisig) = BuildHeaderAndMultisig(block.Header.MerkleRoot, predecessor, stateHash);
+
+            block.Header = header;
+            block.Multisig = multisig;
+            block.Hash = header.Keccak();
+
+            var status = _blockManager.Execute(block, receipts, true, true);
+            Console.WriteLine($"Executed block: {block.Header.Index}");
+            return status;
         }
     }
 }
