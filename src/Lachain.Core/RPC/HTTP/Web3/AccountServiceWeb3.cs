@@ -184,7 +184,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("address should not be null");
             }
 
-            var addressUInt160 = (address!).HexToUInt160();
             byte[]? messageBytes = message.HexToBytes();
 
             if (_privateWallet.IsLocked())
@@ -192,14 +191,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new Exception("wallet is locked");
             }
 
+            var addressUInt160 = (address!).HexToUInt160();
+            if (addressUInt160.Equals(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()))
+            {
+                throw new Exception("address is invalid");
+            }
+
             var keyPair = _privateWallet.EcdsaKeyPair;
 
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
 
-            byte[]? saltedMessageBytes = GenerateSaltedHash(messageBytes, "LACHAIN".HexToBytes());
-            var signed = crypto.SignHashed(saltedMessageBytes!, keyPair.PrivateKey.Encode());
-            //var messageHashBytes = messageBytes.KeccakBytes();
-            //var signed = crypto.SignHashed(messageHashBytes, keyPair.PrivateKey.Encode());
+            var messageHashBytes = messageBytes.KeccakBytes();
+            var signed = crypto.SignHashed(messageHashBytes, keyPair.PrivateKey.Encode());
 
             return Web3DataFormatUtils.Web3Data(signed);
         }
@@ -256,24 +259,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     }
                 }
             }
-        }
-
-        private byte[]? GenerateSaltedHash(byte[]? message, byte[]? salt)
-        {
-            HashAlgorithm algorithm = new SHA256Managed();
-            byte[] messageWithSaltBytes = new byte[(message!).Length + (salt!).Length];
-
-            for (int i = 0; i < message.Length; i++)
-            {
-                messageWithSaltBytes[i] = message[i];
-            }
-
-            for (int i = 0; i < salt.Length; i++)
-            {
-                messageWithSaltBytes[message.Length + i] = salt[i];
-            }
-
-            return algorithm.ComputeHash(messageWithSaltBytes);
         }
     }
 }
