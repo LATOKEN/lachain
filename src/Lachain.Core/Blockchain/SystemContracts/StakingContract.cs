@@ -151,6 +151,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(StakingInterface.MethodBecomeStaker)]
         public ExecutionStatus BecomeStaker(byte[] publicKey, UInt256 amount, SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation($"Executing BecomeStaker for validator: {publicKey.ToHex()} and LA: {amount.ToHex()}");
+
             frame.UseGas(GasMetering.StakingBecomeStakerCost);
 
             // address should also be able to stake for other validator
@@ -227,9 +229,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingRequestStakeWithdrawalCost);
 
-            // check the address trying to withdraw is indeed the address which staked before
+            // check the address trying to withdraw is indeed the address which staked before or validator itself
             var staker = GetStaker(publicKey);
-            if (staker == null || staker!.Equals(MsgSender()) == false) return ExecutionStatus.ExecutionHalted;
+            if (staker == null) return ExecutionStatus.ExecutionHalted;
+            if (IsPublicKeyOwner(publicKey, MsgSender()) == false && staker!.Equals(MsgSender()) == false)
+            {
+                return ExecutionStatus.ExecutionHalted;
+            }
 
             var isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,

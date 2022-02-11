@@ -31,7 +31,7 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private IDictionary<ulong, Block?> _heightCache;
+        private IDictionary<ulong, Block> _heightCache;
         private Queue<ulong> _heightCacheQueue;
 
         private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
@@ -164,39 +164,12 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHeight(ulong blockHeight)
         {
-            if (_blockSizeLimit == 0)
-            {
-                return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
-            }
-
-            try
-            {
-                /* try to get block from cache */
-                if (_heightCache.TryGetValue(blockHeight, out var block))
-                    return block;
-
-                var newBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
-
-                /* if it reach cache size limit, remove the oldest one */
-                if (_heightCacheQueue.Count == _blockSizeLimit)
-                {
-                    /* remove from queue */
-                    var oldestKey = _heightCacheQueue.Dequeue();
-
-                    /* remove from cache dictionary */
-                    _heightCache.Remove(oldestKey);
-                }
-
-                /* then add new key to cache and queue */
-                _heightCache.Add(blockHeight, newBlock);
-                _heightCacheQueue.Enqueue(blockHeight);
-
-                return newBlock;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            // query from cache first
+            if(_heightCache.TryGetValue(blockHeight, out var block))
+                return block;
+            
+            // if not found in cache, query from storage
+            return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -244,6 +217,22 @@ namespace Lachain.Core.Blockchain.Operations
         private void BlockPersisted(Block block)
         {
             _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
+            // a new block is committed to the storage
+
+            // add to the cache
+            if(_heightCache.TryAdd(block.Header.Index, block))
+                _heightCacheQueue.Enqueue(block.Header.Index);
+
+            // if cache size exceeds limit, remove the oldest one
+            if(_heightCacheQueue.Count > _blockSizeLimit)
+            {
+                // remove oldest height from queue
+                var oldestKey = _heightCacheQueue.Dequeue();
+
+                // remove from cache dictionary
+                _heightCache.Remove(oldestKey);
+            }
+            
             OnBlockPersisted?.Invoke(this, block);
         }
 

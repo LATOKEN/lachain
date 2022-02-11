@@ -213,6 +213,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
+        public static JObject Web3UnsignedTransaction(Transaction tx)
+        {
+            return new JObject
+            {
+                ["from"] = Web3Data(tx.From),
+                ["gas"] = Web3Number(tx.GasLimit),
+                ["gasPrice"] = Web3Number(tx.GasPrice),
+                ["data"] = Web3Data(tx.Invocation),
+                ["nonce"] = Web3Number(tx.Nonce),
+                ["to"] = tx.To.Buffer.IsEmpty ? null : Web3Data(tx.To),
+                ["value"] = Web3Number(tx.Value),
+                ["chainId"] = TransactionUtils.ChainId,
+            };
+        }
+
         public static JArray Web3BlockTransactionArray(
             IEnumerable<TransactionReceipt> txs,
             UInt256? blockHash = null,
