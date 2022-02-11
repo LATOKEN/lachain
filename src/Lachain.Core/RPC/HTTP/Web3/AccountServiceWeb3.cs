@@ -188,8 +188,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("address should not be null");
             }
 
-            byte[]? messageBytes = Encoding.ASCII.GetBytes(_messagePrefix + message.Length + message);
-
             if (_privateWallet.IsLocked())
             {
                 throw new Exception("wallet is locked");
@@ -205,8 +203,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
 
-            var messageHashBytes = messageBytes.KeccakBytes();
-            var signed = crypto.SignHashed(messageHashBytes, keyPair.PrivateKey.Encode());
+            byte[] prefixBytes = Encoding.ASCII.GetBytes(_messagePrefix + message.Length);
+            byte[] messageBytes = message.HexToBytes();
+
+            byte[] combinedBytes = new byte[prefixBytes.Length + messageBytes.Length];
+
+            Buffer.BlockCopy(prefixBytes, 0, combinedBytes, 0, prefixBytes.Length);
+            Buffer.BlockCopy(messageBytes, 0, combinedBytes, prefixBytes.Length, messageBytes.Length);
+
+            var signed = crypto.SignHashed(combinedBytes.KeccakBytes(), keyPair.PrivateKey.Encode());
 
             return Web3DataFormatUtils.Web3Data(signed);
         }
