@@ -97,7 +97,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 
-            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
+            _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool, _privateWallet);
 
             _transaction_apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet);
