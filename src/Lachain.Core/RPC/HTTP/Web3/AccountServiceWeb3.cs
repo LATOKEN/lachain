@@ -14,8 +14,6 @@ using Lachain.Crypto;
 using Lachain.Utility.Serialization;
 using Lachain.Core.Vault;
 using Lachain.Logger;
-using System.Security.Cryptography;
-using Lachain.Storage;
 using System.Text;
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -34,13 +32,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         private const string _messagePrefix = "LACHAIN";
 
-        private readonly DefaultCrypto crypto = new DefaultCrypto();
+        private static readonly ICrypto crypto = CryptoProvider.GetCrypto();
 
         public AccountServiceWeb3(IStateManager stateManager,
             ISnapshotIndexRepository snapshotIndexer,
             IContractRegisterer contractRegisterer,
-            ISystemContractReader systemContractReader, 
-            ITransactionPool transactionPool, 
+            ISystemContractReader systemContractReader,
+            ITransactionPool transactionPool,
             IPrivateWallet privateWallet)
         {
             _stateManager = stateManager;
@@ -62,8 +60,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var transactions = _transactionPool.Transactions;
 
                 List<TransactionReceipt> txReceipts = new List<TransactionReceipt>();
-                
-                foreach(var tx in transactions)
+
+                foreach (var tx in transactions)
                 {
                     var from = tx.Value.Transaction.From.ToHex();
 
@@ -94,13 +92,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         var gasl = new Money(tx.Transaction.GasLimit);
                         var txamnt = new Money(tx.Transaction.Value);
 
-                        if(availableBalance - txamnt - (gasl * gasp) >= Money.Parse("0"))
+                        if (availableBalance - txamnt - (gasl * gasp) >= Money.Parse("0"))
                         {
                             // If transaction can be executed
                             availableBalance = availableBalance - txamnt - (gasl * gasp);
                             currNonce += 1;
                         }
-                        else if(availableBalance - (gasl * gasp) >= Money.Parse("0"))
+                        else if (availableBalance - (gasl * gasp) >= Money.Parse("0"))
                         {
                             // If balance is not enough for transaction
                             availableBalance = availableBalance - (gasl * gasp);
@@ -123,7 +121,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string GetTransactionCount(string from, string blockId)
         {
             ulong nonce;
-            if(blockId.Equals("pending")) nonce = _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
+            if (blockId.Equals("pending")) nonce = _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
             else nonce = GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
             return Web3DataFormatUtils.Web3Number(nonce);
         }
@@ -133,12 +131,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
 
             var hash = contractAddr.HexToUInt160();
-            if(hash is null) return "";
+            if (hash is null) return "";
 
-            if(!blockId.Equals("pending"))
+            if (!blockId.Equals("pending"))
             {
                 var snapshot = GetSnapshotByTag(blockId);
-                if(snapshot is null) return "";
+                if (snapshot is null) return "";
                 var contractByHash = snapshot.Contracts.GetContractByHash(hash);
                 return contractByHash != null ? Web3DataFormatUtils.Web3Data(contractByHash!.ByteCode) : "";
             }
@@ -146,15 +144,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
             // getting Code for "pending" 
             // look for the code in latest snapshot first
             var contractFromLatest = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(hash);
-            if(contractFromLatest != null)
+            if (contractFromLatest != null)
                 return Web3DataFormatUtils.Web3Data(contractFromLatest!.ByteCode);
-            
+
             // look for the code in pool
             var txHashPool = _transactionPool.Transactions.Keys;
-            foreach(var txHash in txHashPool)
+            foreach (var txHash in txHashPool)
             {
                 var receipt = _transactionPool.GetByHash(txHash);
-                if(receipt is null) continue;
+                if (receipt is null) continue;
                 if (receipt.Transaction.To.Buffer.IsEmpty || receipt.Transaction.To.IsZero()) // this is deploy transaction
                 {
                     // find the contract address where this contract will be deployed
@@ -165,19 +163,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         .Concat(receipt.Transaction.Nonce.ToBytes())
                         .Ripemd();
                     }
-                    if(address.Equals(hash) && receipt!.Transaction != null)
+                    if (address.Equals(hash) && receipt!.Transaction != null)
                         return Web3DataFormatUtils.Web3Data(receipt!.Transaction!.Invocation.ToArray());
                 }
             }
-            
+
             // contract was not found anywhere
             return "";
         }
-        
+
         [JsonRpcMethod("eth_accounts")]
         public JArray GetAccounts()
         {
-            return new JArray {Web3DataFormatUtils.Web3Data(_systemContractReader.NodeAddress())};
+            return new JArray { Web3DataFormatUtils.Web3Data(_systemContractReader.NodeAddress()) };
         }
 
         [JsonRpcMethod("eth_sign")]
@@ -254,19 +252,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 case "pending":
                     return _stateManager.PendingSnapshot;
                 default:
-                {
-                    var blockNum = tag.HexToUlong();
-                    try
                     {
-                        return _snapshotIndexer.GetSnapshotForBlock(blockNum);
+                        var blockNum = tag.HexToUlong();
+                        try
+                        {
+                            return _snapshotIndexer.GetSnapshotForBlock(blockNum);
 
-                    }
-                    catch(Exception e)
-                    {
-                        throw new Exception("Block with " + tag + " doesn't exist.");
+                        }
+                        catch (Exception)
+                        {
+                            throw new Exception("Block with " + tag + " doesn't exist.");
 
+                        }
                     }
-                }
             }
         }
     }
