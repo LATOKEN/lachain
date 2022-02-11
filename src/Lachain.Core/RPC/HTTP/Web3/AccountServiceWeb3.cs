@@ -30,6 +30,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionPool _transactionPool;
         private readonly IPrivateWallet _privateWallet;
 
+        private const string _messagePrefix = "LACHAIN";
+
         private readonly DefaultCrypto crypto = new DefaultCrypto();
 
         public AccountServiceWeb3(IStateManager stateManager,
@@ -184,7 +186,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("address should not be null");
             }
 
-            byte[]? messageBytes = message.HexToBytes();
+            byte[]? messageBytes = (_messagePrefix + message.Length + message).HexToBytes();
 
             if (_privateWallet.IsLocked())
             {
