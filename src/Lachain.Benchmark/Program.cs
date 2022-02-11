@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Lachain.Core.CLI;
 using Lachain.Core.DI;
+using NLog;
 
 namespace Lachain.Benchmark
 {
@@ -21,6 +22,9 @@ namespace Lachain.Benchmark
             switch (bench)
             {
                 case "blockchain":
+                    LogManager.Configuration.Variables["consoleLogLevel"] = "Error";
+                    LogManager.ReconfigExistingLoggers();
+                    
                     app = new BlockchainBenchmark();
                     break;
                 case "storage":

@@ -26,6 +26,7 @@ using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Nethereum.Util;
+using NLog;
 using TransactionUtils = Lachain.Crypto.TransactionUtils;
 
 namespace Lachain.Benchmark
@@ -313,7 +314,7 @@ namespace Lachain.Benchmark
                 return i;
             }, txGenerate/txPerBlock);
             var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Logger.LogInformation($"Building Block {1000.0 * txGenerate / elapsedTime} TPS");
+            Console.WriteLine($"Building Block {1000.0 * txGenerate / elapsedTime} TPS");
             
             currentTime = TimeUtils.CurrentTimeMillis();
             _Benchmark("Processing Transactions ", i =>
@@ -323,11 +324,11 @@ namespace Lachain.Benchmark
             }, txGenerate/txPerBlock);
 
             elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Logger.LogInformation($"Transaction Processing {1000.0 * txGenerate / elapsedTime} TPS");
+            Console.WriteLine($"Transaction Processing {1000.0 * txGenerate / elapsedTime} TPS");
 
             var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block!.Header.Index);
-            Logger.LogInformation($"Executed Transactions: {executedBlock!.TransactionHashes.Count}");
-            Logger.LogInformation(
+            Console.WriteLine($"Executed Transactions: {executedBlock!.TransactionHashes.Count}");
+            Console.WriteLine(
                 $"Balance After Transaction {_stateManager.LastApprovedSnapshot.Balances.GetBalance(keyPair.PublicKey.GetAddress())}");
         }
 
@@ -408,7 +409,7 @@ namespace Lachain.Benchmark
             block.Hash = header.Keccak();
 
             var status = _blockManager.Execute(block, receipts, true, true);
-            Console.WriteLine($"Executed block: {block.Header.Index}");
+            Logger.LogInformation($"Executed block: {block.Header.Index}");
             return status;
         }
     }
