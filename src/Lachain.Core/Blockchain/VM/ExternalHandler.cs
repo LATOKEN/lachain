@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -15,6 +16,7 @@ using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using WebAssembly.Runtime;
+using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.Blockchain.VM
 {
@@ -225,16 +227,55 @@ namespace Lachain.Core.Blockchain.VM
             if (topic0 == null)
                 throw new InvalidContractException("Bad call to WRITELOG,  can't read topic0");
 
-            var eventObj = new EventObject(
-                new Event
-                {
-                    Contract = frame.CurrentAddress,
-                    Data = ByteString.CopyFrom(data),
-                    TransactionHash = frame.InvocationContext.Receipt.Hash,
-                    SignatureHash =  topic0.ToUInt256()
+            if (HardforkHeights.IsHardfork_4Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                List<UInt256> topics = new List<UInt256>();
+                if(topicsNum >= 2){
+                    var topic1 = SafeCopyFromMemory(frame.Memory, topic1Offset, 32);
+                    if(topic1 == null) 
+                        throw new InvalidContractException("Bad call to WRITELOG,  can't read topic1");
+                    topics.Add(topic1.ToUInt256());
                 }
-            );
-            frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
+
+                if(topicsNum >= 3){
+                    var topic2 = SafeCopyFromMemory(frame.Memory, topic2Offset, 32);
+                    if(topic2 == null) 
+                        throw new InvalidContractException("Bad call to WRITELOG,  can't read topic2");
+                    topics.Add(topic2.ToUInt256());
+                }
+
+                if(topicsNum >= 4){
+                    var topic3 = SafeCopyFromMemory(frame.Memory, topic3Offset, 32);
+                    if(topic3 == null) 
+                        throw new InvalidContractException("Bad call to WRITELOG,  can't read topic3");
+                    topics.Add(topic3.ToUInt256());
+                }
+
+                var eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = frame.CurrentAddress,
+                        Data = ByteString.CopyFrom(data),
+                        TransactionHash = frame.InvocationContext.Receipt.Hash,
+                        SignatureHash =  topic0.ToUInt256()
+                    },
+                    topics
+                );
+                frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
+            }
+            else
+            {
+                var eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = frame.CurrentAddress,
+                        Data = ByteString.CopyFrom(data),
+                        TransactionHash = frame.InvocationContext.Receipt.Hash,
+                        SignatureHash =  topic0.ToUInt256()
+                    }
+                );
+                frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
+            }
         }
 
         public static int Handler_Env_InvokeContract(
@@ -1024,17 +1065,34 @@ namespace Lachain.Core.Blockchain.VM
                             throw new InvalidOperationException();
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength) ??
                         throw new InvalidOperationException();
-            var ev = new EventObject(
-                new Event
-                {
-                    Contract = frame.CurrentAddress,
-                    Data = ByteString.CopyFrom(value),
-                    TransactionHash = frame.InvocationContext.TransactionHash,
-                    Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
-                    SignatureHash = signature.ToUInt256()
-                }
-            );
-            frame.InvocationContext.Snapshot.Events.AddEvent(ev);
+            if (HardforkHeights.IsHardfork_4Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                var ev = new EventObject(
+                    new Event
+                    {
+                        Contract = frame.CurrentAddress,
+                        Data = ByteString.CopyFrom(value),
+                        TransactionHash = frame.InvocationContext.TransactionHash,
+                        Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
+                        SignatureHash = signature.ToUInt256()
+                    },
+                    new List<UInt256>()
+                );
+                frame.InvocationContext.Snapshot.Events.AddEvent(ev);
+            }
+            else{
+                var ev = new EventObject(
+                    new Event
+                    {
+                        Contract = frame.CurrentAddress,
+                        Data = ByteString.CopyFrom(value),
+                        TransactionHash = frame.InvocationContext.TransactionHash,
+                        Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
+                        SignatureHash = signature.ToUInt256()
+                    }
+                );
+                frame.InvocationContext.Snapshot.Events.AddEvent(ev);
+            }
         }
         
         public static void Handler_Env_GetAddress(int resultOffset)
