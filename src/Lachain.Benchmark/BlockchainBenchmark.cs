@@ -32,8 +32,9 @@ namespace Lachain.Benchmark
 {
     public class BlockchainBenchmark : IBootstrapper
     {
-        private static readonly ILogger<BlockchainBenchmark> Logger = LoggerFactory.GetLoggerForClass<BlockchainBenchmark>();
-        
+        private static readonly ILogger<BlockchainBenchmark> Logger =
+            LoggerFactory.GetLoggerForClass<BlockchainBenchmark>();
+
         private readonly IContainer _container;
 
         private IBlockManager _blockManager = null!;
@@ -69,7 +70,7 @@ namespace Lachain.Benchmark
         {
             _blockManager = _container.Resolve<IBlockManager>();
             _configManager = _container.Resolve<IConfigManager>();
-            _stateManager = _container.Resolve<IStateManager>();    
+            _stateManager = _container.Resolve<IStateManager>();
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _transactionPool = _container.Resolve<ITransactionPool>();
             _transactionSigner = _container.Resolve<ITransactionSigner>();
@@ -266,52 +267,59 @@ namespace Lachain.Benchmark
             EcdsaKeyPair keyPair)
         {
             const int txGenerate = 1000;
-            const int txPerBlock = 1000;
-            
+
             Logger.LogInformation($"Setting chainId");
             var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
             TransactionUtils.SetChainId((int)chainId!);
-            
+
             Logger.LogInformation($"Setting initial balance for the 'From' address");
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(), Money.Parse("200000"));
-            
-            _Benchmark("Building TX Pool: ", i =>
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
+                Money.Parse("200000"));
+
+            var txReceipts = new List<TransactionReceipt>();
+            var currentTime = TimeUtils.CurrentTimeMillis();
+
+            _Benchmark("Building TXx: ", i =>
             {
                 var randomValue = new Random().Next(1, 100);
                 var amount = Money.Parse($"{randomValue}.0").ToUInt256();
-            
+
                 byte[] random = new byte[32];
                 RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
                 rng.GetBytes(random);
-            
+
                 var tx = new Transaction
                 {
                     To = random.Slice(0, 20).ToUInt160(),
                     From = keyPair.PublicKey.GetAddress(),
-                    GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
+                    GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
                     GasLimit = 100000000,
-                    Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()),
+                    Nonce = (ulong)i,
                     Value = amount
                 };
-                
-                var txReceipt = transactionSigner.Sign(tx, keyPair);
-                
-                var result = _transactionPool.Add(txReceipt);
-                if (result != OperatingError.Ok)
-                {
-                    Logger.LogError($"Error while adding tx to pool {result}");
-                    throw new Exception("Unable to add transaction to pool (" + result + ")");
-                }
+
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair));
                 return i;
             }, txGenerate);
-            
-            var receipts = _transactionPool.Peek(1000, 1000).ToArray();
-            Logger.LogInformation($"Total Tx in pool {receipts.Length}");
-            
-            // var block = BuildBlock(receipts);
-            // ExecuteBlock(block, receipts);
+
+            Block block = null!;
+
+            _Benchmark("Processing Transactions... ", i =>
+            {
+                block = BuildBlock(txReceipts.ToArray());
+                ExecuteBlock(block, txReceipts.ToArray());
+                return i;
+            }, 1);
+
+            var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+            Logger.LogInformation($"Transaction Processing {1000.0 * txGenerate / elapsedTime} TPS");
+
+            var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block!.Header.Index);
+            Logger.LogInformation($"Executed Transactions: {executedBlock!.TransactionHashes.Count}");
+            Logger.LogInformation(
+                $"Balance After Transaction {_stateManager.LastApprovedSnapshot.Balances.GetBalance(keyPair.PublicKey.GetAddress())}");
         }
-        
+
         private Block BuildBlock(TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
@@ -333,7 +341,7 @@ namespace Lachain.Benchmark
                 Header = header,
                 Hash = header.Keccak(),
                 Multisig = multisig,
-                TransactionHashes = {receipts.Select(tx => tx.Hash)},
+                TransactionHashes = { receipts.Select(tx => tx.Hash) },
             };
         }
 
@@ -360,7 +368,7 @@ namespace Lachain.Benchmark
             var multisig = new MultiSig
             {
                 Quorum = 1,
-                Validators = {_wallet.EcdsaKeyPair.PublicKey},
+                Validators = { _wallet.EcdsaKeyPair.PublicKey },
                 Signatures =
                 {
                     new MultiSig.Types.SignatureByValidator
