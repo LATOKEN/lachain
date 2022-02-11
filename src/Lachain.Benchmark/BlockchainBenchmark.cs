@@ -109,6 +109,8 @@ namespace Lachain.Benchmark
                               _stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
 
+            // _BenchTxProcessing(_transactionBuilder, _transactionSigner, keyPair);
+            // _BenchOneTxInBlock(_transactionBuilder, _transactionSigner, keyPair);
             _BenchExecuteTx(_transactionBuilder, _transactionSigner, keyPair);
         }
 
@@ -267,6 +269,7 @@ namespace Lachain.Benchmark
             EcdsaKeyPair keyPair)
         {
             const int txGenerate = 1000;
+            const int txPerBlock = 1000;
 
             Logger.LogInformation($"Setting chainId");
             var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
@@ -304,14 +307,22 @@ namespace Lachain.Benchmark
 
             Block block = null!;
 
-            _Benchmark("Processing Transactions... ", i =>
+            _Benchmark("Building Block ", i =>
             {
                 block = BuildBlock(txReceipts.ToArray());
+                return i;
+            }, txGenerate/txPerBlock);
+            var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+            Logger.LogInformation($"Building Block {1000.0 * txGenerate / elapsedTime} TPS");
+            
+            currentTime = TimeUtils.CurrentTimeMillis();
+            _Benchmark("Processing Transactions ", i =>
+            {
                 ExecuteBlock(block, txReceipts.ToArray());
                 return i;
-            }, 1);
+            }, txGenerate/txPerBlock);
 
-            var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
+            elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
             Logger.LogInformation($"Transaction Processing {1000.0 * txGenerate / elapsedTime} TPS");
 
             var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block!.Header.Index);
