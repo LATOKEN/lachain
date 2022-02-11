@@ -192,7 +192,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             var addressUInt160 = (address!).HexToUInt160();
-            if (addressUInt160.Equals(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()))
+            if (!addressUInt160.Equals(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()))
             {
                 throw new Exception("address is invalid");
             }
