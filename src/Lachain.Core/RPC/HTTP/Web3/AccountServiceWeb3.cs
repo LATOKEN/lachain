@@ -15,6 +15,8 @@ using Lachain.Utility.Serialization;
 using Lachain.Core.Vault;
 using Lachain.Logger;
 using System.Security.Cryptography;
+using Lachain.Storage;
+using System.Text;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -186,7 +188,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new ArgumentException("address should not be null");
             }
 
-            byte[]? messageBytes = (_messagePrefix + message.Length + message).HexToBytes();
+            byte[]? messageBytes = Encoding.ASCII.GetBytes(_messagePrefix + message.Length + message);
 
             if (_privateWallet.IsLocked())
             {
