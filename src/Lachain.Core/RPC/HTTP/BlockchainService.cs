@@ -92,11 +92,12 @@ namespace Lachain.Core.RPC.HTTP
             var jArray = new JArray();
             for (var i = 0; i < txEvents; i++)
             {
-                var ev = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
+                var evObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
                     (uint) i);
+                var ev = evObj._event;
                 if (ev is null)
                     continue;
-                jArray.Add(ev.ToJson());
+                jArray.Add(evObj.ToJson());
             }
 
             return jArray;

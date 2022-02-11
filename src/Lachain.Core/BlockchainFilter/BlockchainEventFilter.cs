@@ -179,8 +179,9 @@ namespace Lachain.Core.BlockchainFilter
                     var txEvents = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(tx);
                     for (var i = 0; i < txEvents; i++)
                     {
-                        var txEvent = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
+                        var txEventObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
                             (uint)i);
+                        var txEvent = txEventObj._event;
                         if (txEvent is null)
                             continue;
                         
@@ -200,7 +201,7 @@ namespace Lachain.Core.BlockchainFilter
                             txEvent.BlockHash = block.Hash;
                         }
            
-                        jArray.Add(Web3DataFormatUtils.Web3Event(txEvent, blockNumber,block.Hash));
+                        jArray.Add(Web3DataFormatUtils.Web3Event(txEventObj, blockNumber,block.Hash));
                     }
                 }
             }
