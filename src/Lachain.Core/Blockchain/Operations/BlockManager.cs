@@ -139,7 +139,7 @@ namespace Lachain.Core.Blockchain.Operations
                 _blockSizeLimit = cacheConfig.BlockHeight.SizeLimit.Value;
             }
 
-            _heightCache = new Dictionary<ulong, Block?>(_blockSizeLimit);
+            _heightCache = new Dictionary<ulong, Block>(_blockSizeLimit);
             _heightCacheQueue = new Queue<ulong>(_blockSizeLimit);
         }
 
