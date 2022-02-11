@@ -86,7 +86,7 @@ namespace Lachain.Core.Blockchain.Pool
                 
                 if (tx is null)
                     continue;
-                if(Add(tx) != OperatingError.Ok)
+                if(Add(tx, false) != OperatingError.Ok)
                     transactionsToRemove.Add(tx.Hash);
             }
             _poolRepository.RemoveTransactions(transactionsToRemove);
