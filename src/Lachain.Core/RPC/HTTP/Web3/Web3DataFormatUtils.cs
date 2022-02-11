@@ -236,6 +236,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             var topics = new JArray();
             topics.Add(Web3Data(e.SignatureHash));
+            var topicList = evObj._topics;
+            if(topicList != null){
+                foreach(var topic in topicList){
+                    topics.Add(Web3Data(topic));
+                }
+            }
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),
