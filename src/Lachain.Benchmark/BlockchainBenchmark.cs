@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
@@ -13,16 +17,28 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.Misc;
+using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Nethereum.Util;
 
 namespace Lachain.Benchmark
 {
     public class BlockchainBenchmark : IBootstrapper
     {
         private readonly IContainer _container;
+
+        private IBlockManager _blockManager = null!;
+        private IStateManager _stateManager = null!;
+        private ITransactionBuilder _transactionBuilder = null!;
+        private ITransactionPool _transactionPool = null!;
+        private ITransactionSigner _transactionSigner = null!;
+        private IPrivateWallet _wallet = null!;
+
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public BlockchainBenchmark()
         {
@@ -46,25 +62,27 @@ namespace Lachain.Benchmark
         public void Start(RunOptions options)
         {
             var configManager = _container.Resolve<IConfigManager>();
-            var crypto = _container.Resolve<ICrypto>();
-            var transactionBuilder = _container.Resolve<ITransactionBuilder>();
-            var transactionSigner = _container.Resolve<ITransactionSigner>();
-            var blockManager = _container.Resolve<IBlockManager>();
-            var stateManager = _container.Resolve<IStateManager>();
-            var wallet = _container.Resolve<IPrivateWallet>();
+            
 
-            var keyPair = wallet.EcdsaKeyPair;
+            _blockManager = _container.Resolve<IBlockManager>();
+            _stateManager = _container.Resolve<IStateManager>();
+            _transactionBuilder = _container.Resolve<ITransactionBuilder>();
+            _transactionPool = _container.Resolve<ITransactionPool>();
+            _transactionSigner = _container.Resolve<ITransactionSigner>();
+            _wallet = _container.Resolve<IPrivateWallet>();
+
+            var keyPair = _wallet.EcdsaKeyPair;
 
             Console.WriteLine("-------------------------------");
             Console.WriteLine("Private Key: " + keyPair.PrivateKey.Encode().ToHex());
             Console.WriteLine("Public Key: " + keyPair.PublicKey.EncodeCompressed().ToHex());
-            Console.WriteLine("Address: " + crypto.ComputeAddress(keyPair.PublicKey.EncodeCompressed()).ToHex());
+            Console.WriteLine("Address: " + Crypto.ComputeAddress(keyPair.PublicKey.EncodeCompressed()).ToHex());
             Console.WriteLine("-------------------------------");
 
-            if (blockManager.TryBuildGenesisBlock())
+            if (_blockManager.TryBuildGenesisBlock())
                 Console.WriteLine("Generated genesis block");
 
-            var genesisBlock = stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
+            var genesisBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0);
             Console.WriteLine("Genesis Block: " + genesisBlock!.Hash.ToHex());
             Console.WriteLine($" + prevBlockHash: {genesisBlock.Header.PrevBlockHash.ToHex()}");
             Console.WriteLine($" + merkleRoot: {genesisBlock.Header.MerkleRoot.ToHex()}");
@@ -80,11 +98,13 @@ namespace Lachain.Benchmark
             Console.WriteLine("-------------------------------");
             // Console.WriteLine("Current block header height: " + blockchainContext.CurrentBlockHeight);
             Console.WriteLine("-------------------------------");
-            Console.WriteLine("Balance of LA 0x3e: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address1));
-            Console.WriteLine("Balance of LA 0x6b: " + stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
+            Console.WriteLine("Balance of LA 0x3e: " +
+                              _stateManager.LastApprovedSnapshot.Balances.GetBalance(address1));
+            Console.WriteLine("Balance of LA 0x6b: " +
+                              _stateManager.LastApprovedSnapshot.Balances.GetBalance(address2));
             Console.WriteLine("-------------------------------");
 
-            _BenchTxProcessing(transactionBuilder, transactionSigner, keyPair);
+            _BenchExecuteTx(_transactionBuilder, _transactionSigner, keyPair);
         }
 
         private static void _Benchmark(string text, Func<int, int> action, uint tries)
@@ -138,7 +158,7 @@ namespace Lachain.Benchmark
             {
                 var tx = transactionBuilder.TokenTransferTransaction(contract, address1, address2,
                     Money.FromDecimal(1.2m));
-                tx.Nonce += (ulong) i + 1;
+                tx.Nonce += (ulong)i + 1;
                 var error = transactionPool.Add(transactionSigner.Sign(tx, keyPair));
                 if (error != OperatingError.Ok)
                     throw new Exception("Unable to add transcation to pool (" + error + ")");
@@ -181,7 +201,7 @@ namespace Lachain.Benchmark
                 var blockWithTxs = blocks[i];
                 // blockchainManager.PersistBlockManually(blockWithTxs.Block, blockWithTxs.Transactions);
                 return i;
-            }, (uint) blocks.Length);
+            }, (uint)blocks.Length);
 
             var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
             Console.WriteLine($"Transaction processing... {1000.0 * txGenerate / elapsedTime} TPS");
@@ -234,6 +254,37 @@ namespace Lachain.Benchmark
             var deltaTime = TimeUtils.CurrentTimeMillis() - lastTime;
             Console.CursorLeft = "Benchmarking... ".Length;
             Console.WriteLine($"{1000 * tries / deltaTime} RPS");
+        }
+
+        private void _BenchExecuteTx(
+            ITransactionBuilder transactionBuilder,
+            ITransactionSigner transactionSigner,
+            EcdsaKeyPair keyPair)
+        {
+            var randomValue = new Random().Next(1, 100);
+            var amount = Money.Parse($"{randomValue}.0").ToUInt256();
+            
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+            
+            var _keyPair = new EcdsaKeyPair(random.ToPrivateKey());
+            var tx = new Transaction
+            {
+                To = random.Slice(0, 20).ToUInt160(),
+                From = _keyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
+                GasLimit = 100000000,
+                Nonce = 0,
+                Value = amount
+            };
+
+            var signer = new TransactionSigner();
+            var txReceipt = signer.Sign(tx, _keyPair);
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(txReceipt.Transaction.From, Money.Parse("1000"));
+            var result = _transactionPool.Add(txReceipt);
+
+            Console.WriteLine($"Add To Pool: {result}");
         }
     }
 }
