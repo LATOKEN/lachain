@@ -39,7 +39,7 @@ namespace Lachain.Console
 
         private static void RunKeygen(KeygenOptions options)
         {
-            if(options.hardforks.ToList().Count != 3) throw new ArgumentException("number of hardfork heights should be 3");
+            if(options.hardforks.ToList().Count != 4) throw new ArgumentException("number of hardfork heights should be 3");
             TrustedKeygen.DoKeygen(options.N, options.F, options.IpAddresses, options.port, options.target, options.chainid,  options.cycleDuration, options.validatorsCount, options.networkName,
                 options.feedAddress, options.feedBalance, options.stakeAmount, options.hardforks);
         }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
@@ -16,6 +17,7 @@ using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -259,6 +261,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
+            List<UInt256>? topics = null;
+            if(HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                topics = new List<UInt256>();
+            }
             var eventObj = new EventObject(
                 new Event
                 {
@@ -266,10 +273,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Data = ByteString.CopyFrom(eventData),
                     TransactionHash = _context.Receipt.Hash,
                     SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
-                }
+                },
+                topics
             );
             _context.Snapshot.Events.AddEvent(eventObj);
-            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj._event.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
+            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj._event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
             Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
         }
     }

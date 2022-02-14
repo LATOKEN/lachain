@@ -513,33 +513,24 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
+            List<UInt256>? topics = null;
             if(HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
-                var eventObj = new EventObject(
-                    new Event
-                    {
-                        Contract = ContractRegisterer.GovernanceContract,
-                        Data = ByteString.CopyFrom(eventData),
-                        TransactionHash = _context.Receipt.Hash,
-                        SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
-                    },
-                    new List<UInt256>()
-                );
-                _context.Snapshot.Events.AddEvent(eventObj);
+                topics = new List<UInt256>();
             }
-            else
-            {
-                var eventObj = new EventObject(
-                    new Event
-                    {
-                        Contract = ContractRegisterer.GovernanceContract,
-                        Data = ByteString.CopyFrom(eventData),
-                        TransactionHash = _context.Receipt.Hash,
-                        SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
-                    }
-                );
-                _context.Snapshot.Events.AddEvent(eventObj);
-            }
+            
+            var eventObj = new EventObject(
+                new Event
+                {
+                    Contract = ContractRegisterer.GovernanceContract,
+                    Data = ByteString.CopyFrom(eventData),
+                    TransactionHash = _context.Receipt.Hash,
+                    SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                },
+                topics
+            );
+            _context.Snapshot.Events.AddEvent(eventObj);
+            
             Logger.LogTrace($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
         }
     }
