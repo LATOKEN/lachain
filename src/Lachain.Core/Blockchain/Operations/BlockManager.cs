@@ -320,7 +320,7 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 return OperatingError.TransactionLost;
             }
-
+            DateTime t1 = DateTime.Now;
             /* execute transactions */
             ulong indexInBlock = 0;
             foreach (var txHash in block.TransactionHashes)
@@ -447,6 +447,8 @@ namespace Lachain.Core.Blockchain.Operations
                     }
                 }
             }
+            DateTime t2 = DateTime.Now;
+            Logger.LogInformation($"executed in total {block.TransactionHashes.Count()} txs, spent time:{(t2-t1).TotalMilliseconds}");
 
             block.GasPrice = _CalcEstimatedBlockFee(currentTransactions.Values);
 
