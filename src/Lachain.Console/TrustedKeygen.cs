@@ -53,7 +53,7 @@ namespace Lachain.Console
 
         private static readonly ILogger<TrustedKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustedKeygen>();
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             if (ips.Any())
@@ -67,7 +67,7 @@ namespace Lachain.Console
         }
 
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -149,7 +149,7 @@ namespace Lachain.Console
                 Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
                 var publicKeyHex = publicKey.ToHex();
 
-                Logger.LogTrace($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
+                System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
 
                 var rpc = new RpcConfig
                 {
@@ -233,7 +233,7 @@ namespace Lachain.Console
         }
 
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             System.Console.WriteLine($"chainId : {chainId}");
@@ -318,7 +318,7 @@ namespace Lachain.Console
                 Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
                 var publicKeyHex = publicKey.ToHex();
 
-                Logger.LogTrace($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
+                System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
 
                 var rpc = new RpcConfig
                 {
