@@ -54,18 +54,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             var addressUint160 = address.HexToUInt160();
 
-            if (tag == "pending")
+            if(tag == "pending")
             {
                 // Get all transaction from pool
                 var transactions = _transactionPool.Transactions;
 
                 List<TransactionReceipt> txReceipts = new List<TransactionReceipt>();
 
-                foreach (var tx in transactions)
+                foreach(var tx in transactions)
                 {
                     var from = tx.Value.Transaction.From.ToHex();
 
-                    if (address == from)
+                    if(address == from)
                     {
                         txReceipts.Add(tx.Value);
                     }
@@ -81,24 +81,24 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 // Virtually execute the txs in nonce order
                 var availableBalance = GetSnapshotByTag("latest")!.Balances.GetBalance(addressUint160);
 
-                foreach (var tx in txReceipts)
+                foreach(var tx in txReceipts)
                 {
                     var from = tx.Transaction.From.ToHex();
 
-                    if (currNonce == tx.Transaction.Nonce)
+                    if(currNonce == tx.Transaction.Nonce)
                     {
                         // Executing the transaction
                         var gasp = new Money(tx.Transaction.GasPrice);
                         var gasl = new Money(tx.Transaction.GasLimit);
                         var txamnt = new Money(tx.Transaction.Value);
 
-                        if (availableBalance - txamnt - (gasl * gasp) >= Money.Parse("0"))
+                        if(availableBalance - txamnt - (gasl * gasp) >= Money.Parse("0"))
                         {
                             // If transaction can be executed
                             availableBalance = availableBalance - txamnt - (gasl * gasp);
                             currNonce += 1;
                         }
-                        else if (availableBalance - (gasl * gasp) >= Money.Parse("0"))
+                        else if(availableBalance - (gasl * gasp) >= Money.Parse("0"))
                         {
                             // If balance is not enough for transaction
                             availableBalance = availableBalance - (gasl * gasp);
@@ -121,7 +121,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string GetTransactionCount(string from, string blockId)
         {
             ulong nonce;
-            if (blockId.Equals("pending")) nonce = _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
+            if(blockId.Equals("pending")) nonce = _transactionPool.GetNextNonceForAddress(from.HexToUInt160());
             else nonce = GetSnapshotByTag(blockId)!.Transactions.GetTotalTransactionCount(from.HexToUInt160());
             return Web3DataFormatUtils.Web3Number(nonce);
         }
@@ -131,12 +131,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
 
             var hash = contractAddr.HexToUInt160();
-            if (hash is null) return "";
+            if(hash is null) return "";
 
-            if (!blockId.Equals("pending"))
+            if(!blockId.Equals("pending"))
             {
                 var snapshot = GetSnapshotByTag(blockId);
-                if (snapshot is null) return "";
+                if(snapshot is null) return "";
                 var contractByHash = snapshot.Contracts.GetContractByHash(hash);
                 return contractByHash != null ? Web3DataFormatUtils.Web3Data(contractByHash!.ByteCode) : "";
             }
@@ -144,26 +144,26 @@ namespace Lachain.Core.RPC.HTTP.Web3
             // getting Code for "pending" 
             // look for the code in latest snapshot first
             var contractFromLatest = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(hash);
-            if (contractFromLatest != null)
+            if(contractFromLatest != null)
                 return Web3DataFormatUtils.Web3Data(contractFromLatest!.ByteCode);
 
             // look for the code in pool
             var txHashPool = _transactionPool.Transactions.Keys;
-            foreach (var txHash in txHashPool)
+            foreach(var txHash in txHashPool)
             {
                 var receipt = _transactionPool.GetByHash(txHash);
-                if (receipt is null) continue;
-                if (receipt.Transaction.To.Buffer.IsEmpty || receipt.Transaction.To.IsZero()) // this is deploy transaction
+                if(receipt is null) continue;
+                if(receipt.Transaction.To.Buffer.IsEmpty || receipt.Transaction.To.IsZero()) // this is deploy transaction
                 {
                     // find the contract address where this contract will be deployed
                     var address = UInt160Utils.Zero.ToBytes().Ripemd();
-                    if (receipt.Transaction?.From != null)
+                    if(receipt.Transaction?.From != null)
                     {
                         address = receipt.Transaction.From.ToBytes()
                         .Concat(receipt.Transaction.Nonce.ToBytes())
                         .Ripemd();
                     }
-                    if (address.Equals(hash) && receipt!.Transaction != null)
+                    if(address.Equals(hash) && receipt!.Transaction != null)
                         return Web3DataFormatUtils.Web3Data(receipt!.Transaction!.Invocation.ToArray());
                 }
             }
@@ -181,18 +181,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_sign")]
         private string Sign(string address, string message)
         {
-            if (address is null)
+            if(address is null)
             {
                 throw new ArgumentException("address should not be null");
             }
 
-            if (_privateWallet.IsLocked())
+            if(_privateWallet.IsLocked())
             {
                 throw new Exception("wallet is locked");
             }
 
             var addressUInt160 = (address!).HexToUInt160();
-            if (!addressUInt160.Equals(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()))
+            if(!addressUInt160.Equals(_privateWallet.EcdsaKeyPair.PublicKey.GetAddress()))
             {
                 throw new Exception("address is invalid");
             }
