@@ -261,16 +261,31 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
+            
             List<UInt256>? topics = null;
+            var value = new byte[32];
             if(HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
                 topics = new List<UInt256>();
+                if(Lrc20Interface.EventTransfer == eventSignature)
+                {
+                    Logger.LogInformation($"event data of {eventData.Length}  bytes: {eventData}");
+                    byte[] from = new byte[32], to = new byte[32];
+                    Buffer.BlockCopy(eventData, 0, from, 0, 32);
+                    Buffer.BlockCopy(eventData, 32, to, 0, 32);
+                    Buffer.BlockCopy(eventData, 64, value, 0, 32);
+                    Logger.LogInformation($"from address of {from.Length}  bytes: {from}");
+                    Logger.LogInformation($"to address of {to.Length}  bytes: {to}");
+                    Logger.LogInformation($"value of {value.Length}  bytes: {value}");
+                    topics.Add(from.ToUInt256());
+                    topics.Add(to.ToUInt256());
+                }
             }
             var eventObj = new EventObject(
                 new Event
                 {
                     Contract = ContractRegisterer.LatokenContract,
-                    Data = ByteString.CopyFrom(eventData),
+                    Data = (Lrc20Interface.EventTransfer == eventSignature) ? ByteString.CopyFrom(value) : ByteString.CopyFrom(eventData),
                     TransactionHash = _context.Receipt.Hash,
                     SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
                 },
