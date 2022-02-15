@@ -39,7 +39,8 @@ namespace Lachain.Core.RPC.HTTP
         private readonly List<string> _privateMethods = new List<string>
         {
             "validator_start",
-            "validator_stop",
+            // TODO: remove this comment after the working auth
+            //"validator_stop",
             "fe_sendTransaction",
             "deleteTransactionPoolRepository",
             "clearInMemoryPool",
