@@ -116,11 +116,15 @@ namespace Lachain.Core.RPC.HTTP
             var addresses = new List<UInt160>();
             if(!(address is null)) addresses = BlockchainFilterUtils.GetAddresses((JArray)address);
 
-            var topics = new List<UInt256>();
-            if(!(topicsJson is null)) topics = BlockchainFilterUtils.GetTopics(topicsJson);
+            var allTopics = new List<List<UInt256>>();
+            if (!(topicsJson is null))
+            {
+                allTopics = BlockchainFilterUtils.GetTopics(topicsJson);
+            }
+            while(allTopics.Count < 4) allTopics.Add(new List<UInt256>());
 
             return Web3.Web3DataFormatUtils.Web3Number(
-                _blockchainEventFilter.Create(BlockchainEvent.Logs, start, finish, addresses , topics)
+                _blockchainEventFilter.Create(BlockchainEvent.Logs, start, finish, addresses , allTopics)
             );
         }
 

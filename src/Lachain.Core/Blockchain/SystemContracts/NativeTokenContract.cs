@@ -285,7 +285,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 new Event
                 {
                     Contract = ContractRegisterer.LatokenContract,
-                    Data = (Lrc20Interface.EventTransfer == eventSignature) ? ByteString.CopyFrom(value) : ByteString.CopyFrom(eventData),
+                    Data = (Lrc20Interface.EventTransfer == eventSignature && HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight())) ? 
+                        ByteString.CopyFrom(value) : ByteString.CopyFrom(eventData),
                     TransactionHash = _context.Receipt.Hash,
                     SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
                 },
