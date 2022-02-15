@@ -11,7 +11,6 @@ namespace Lachain.Core.BlockchainFilter{
 
         public static List<List<UInt256>> GetTopics(JToken topicsJson)
         {
-            // We handle only first topic for now. Change the implementation when other topics are supported
             var allTopics = new List<List<UInt256>>();
             try{
                 var topicArray = (JArray)topicsJson;
@@ -37,8 +36,6 @@ namespace Lachain.Core.BlockchainFilter{
                     
                     }
                     allTopics.Add(topics);
-                    //break; // Only first topic is supported now.
-                    // TODO: change implementation when other topics are supported
                 }
 
             }
