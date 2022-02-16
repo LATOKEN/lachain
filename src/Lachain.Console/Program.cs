@@ -5,6 +5,7 @@ using CommandLine;
 using Lachain.Core.CLI;
 using Lachain.Crypto;
 using System.Linq;
+using Lachain.Storage;
 
 namespace Lachain.Console
 {
@@ -13,11 +14,12 @@ namespace Lachain.Console
         internal static void Main(string[] args)
         {
             Parser.Default
-                .ParseArguments<RunOptions, DecryptOptions, EncryptOptions, KeygenOptions>(args)
+                .ParseArguments<RunOptions, DecryptOptions, EncryptOptions, KeygenOptions, DbOptions>(args)
                 .WithParsed<RunOptions>(RunNode)
                 .WithParsed<DecryptOptions>(DecryptWallet)
                 .WithParsed<EncryptOptions>(EncryptWallet)
                 .WithParsed<KeygenOptions>(RunKeygen)
+                .WithParsed<DbOptions>(UpdateDb)
                 .WithNotParsed(errors =>
                 {
                     foreach (var error in errors)
@@ -74,6 +76,23 @@ namespace Lachain.Console
         {
             using var app = new Application(options.ConfigPath, options);
             app.Start(options);
+        }
+        
+        private static void UpdateDb(DbOptions options)
+        {
+            if(options.type == "soft")
+            {
+                IRocksDbContext dbContext = new RocksDbContext();
+                dbContext.CompactAll();
+            }
+            else if(options.type == "hard")
+            {
+                // TO DO
+            }
+            else 
+            {
+                throw new Exception("compaction should be of either 'soft' or 'hard' type");
+            }
         }
     }
 }

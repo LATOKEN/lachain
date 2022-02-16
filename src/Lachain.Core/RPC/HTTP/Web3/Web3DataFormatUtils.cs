@@ -12,6 +12,7 @@ using Nethereum.Hex.HexConvertors.Extensions;
 using Newtonsoft.Json.Linq;
 using Lachain.Storage.Trie;
 using Google.Protobuf;
+using Lachain.Utility;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -213,6 +214,21 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
+        public static JObject Web3UnsignedTransaction(Transaction tx)
+        {
+            return new JObject
+            {
+                ["from"] = Web3Data(tx.From),
+                ["gas"] = Web3Number(tx.GasLimit),
+                ["gasPrice"] = Web3Number(tx.GasPrice),
+                ["data"] = Web3Data(tx.Invocation),
+                ["nonce"] = Web3Number(tx.Nonce),
+                ["to"] = tx.To.Buffer.IsEmpty ? null : Web3Data(tx.To),
+                ["value"] = Web3Number(tx.Value),
+                ["chainId"] = TransactionUtils.ChainId,
+            };
+        }
+
         public static JArray Web3BlockTransactionArray(
             IEnumerable<TransactionReceipt> txs,
             UInt256? blockHash = null,
@@ -225,9 +241,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return logs;
         }
 
-        public static JObject Web3Event(Event e, ulong? blockNumber = null, UInt256? blockHash = null)
+        public static JObject Web3Event(EventObject evObj, ulong? blockNumber = null, UInt256? blockHash = null)
         {
-            if (e.Contract is null || e.Data is null || e.TransactionHash is null || e.BlockHash is null)
+            var e = evObj._event;
+            if (e!.Contract is null || e.Data is null || e.TransactionHash is null || e.BlockHash is null)
             {
                 Logger.LogWarning($"event lacks one of important fields: {e}");
             }
@@ -248,11 +265,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
-        public static JArray Web3EventArray(IEnumerable<Event> events, ulong? blockNumber = null, UInt256? blockHash = null)
+        public static JArray Web3EventArray(IEnumerable<EventObject> events, ulong? blockNumber = null, UInt256? blockHash = null)
         {
             var logs = new JArray();
-            foreach(Event e in events)
-                logs.Add(Web3Event(e, blockNumber, blockHash));
+            foreach(var evObj in events)
+                logs.Add(Web3Event(evObj, blockNumber, blockHash));
             return logs;
         }
         

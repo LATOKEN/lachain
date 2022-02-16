@@ -326,5 +326,20 @@ namespace Lachain.Core.Consensus
         {
             _terminated = true;
         }
+
+        public EraBroadcaster? GetEraBroadcaster()
+        {
+            lock (_erasLock)
+            {
+                if (_eras.ContainsKey(CurrentEra))
+                {
+                    return _eras[CurrentEra];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
     }
 }

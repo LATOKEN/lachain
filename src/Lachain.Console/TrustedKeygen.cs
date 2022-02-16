@@ -26,7 +26,8 @@ namespace Lachain.Console
         internal class Config
         {
             public Config(NetworkConfig network, GenesisConfig genesis, RpcConfig rpc, VaultConfig vault,
-                StorageConfig storage, BlockchainConfig blockchain, HardforkConfig hardfork, VersionConfig version)
+                StorageConfig storage, BlockchainConfig blockchain, HardforkConfig hardfork, VersionConfig version,
+                CacheConfig cache)
             {
                 Network = network;
                 Genesis = genesis;
@@ -36,6 +37,7 @@ namespace Lachain.Console
                 Blockchain = blockchain;
                 Hardfork = hardfork;
                 ConfigVersion = version;
+                Cache = cache;
             }
 
             [JsonProperty("network")] public NetworkConfig Network { get; set; }
@@ -46,11 +48,12 @@ namespace Lachain.Console
             [JsonProperty("blockchain")] public BlockchainConfig Blockchain { get; set; }
             [JsonProperty("hardfork")] public HardforkConfig Hardfork { get; set; }
             [JsonProperty("version")] public VersionConfig ConfigVersion { get; set; }
+            [JsonProperty("cache")] public CacheConfig Cache { get; set; }
         }
 
         private static readonly ILogger<TrustedKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustedKeygen>();
 
-        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void DoKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             if (ips.Any())
@@ -64,7 +67,7 @@ namespace Lachain.Console
         }
 
 
-        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void CloudKeygen(int n, int f, IEnumerable<string> ips, ushort basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             if (n <= 3 * f) throw new Exception("N must be >= 3 * F + 1");
@@ -146,7 +149,7 @@ namespace Lachain.Console
                 Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
                 var publicKeyHex = publicKey.ToHex();
 
-                Logger.LogTrace($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
+                System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
 
                 var rpc = new RpcConfig
                 {
@@ -182,7 +185,18 @@ namespace Lachain.Console
                 {
                     Version = 2
                 };
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork, version);
+
+                var blockHeight = new CacheOptions
+                {
+                    SizeLimit = 100
+                };
+
+                var cache = new CacheConfig
+                {
+                    BlockHeight = blockHeight
+                };
+
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork, version, cache);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",
@@ -219,7 +233,7 @@ namespace Lachain.Console
         }
 
 
-        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName, 
+        public static void LocalKeygen(int n, int f, int basePort, ushort target, ulong chainId, ulong cycleDuration, ulong validatorsCount, string networkName,
             string feedAddress, string feedBalance, string stakeAmount, IEnumerable<ulong> hardforks)
         {
             System.Console.WriteLine($"chainId : {chainId}");
@@ -304,7 +318,7 @@ namespace Lachain.Console
                 Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
                 var publicKeyHex = publicKey.ToHex();
 
-                Logger.LogTrace($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
+                System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
 
                 var rpc = new RpcConfig
                 {
@@ -340,7 +354,18 @@ namespace Lachain.Console
                 {
                     Version = 2
                 };
-                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork, version);
+
+                var blockHeight = new CacheOptions
+                {
+                    SizeLimit = 100
+                };
+
+                var cache = new CacheConfig
+                {
+                    BlockHeight = blockHeight
+                };
+
+                var config = new Config(net, genesis, rpc, vault, storage, blockchain, hardfork, version, cache);
                 File.WriteAllText($"config{i + 1:D2}.json", JsonConvert.SerializeObject(config, Formatting.Indented));
                 GenWallet(
                     $"wallet{i + 1:D2}.json",

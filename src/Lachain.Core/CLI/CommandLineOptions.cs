@@ -100,4 +100,16 @@ namespace Lachain.Core.CLI
         [Option('s', "fastsync", Required = false, Separator = ' ', HelpText = "Performs fast-sync to a specific block on start")]
         public IEnumerable<string> SetStateTo { get; set; } = Enumerable.Empty<string>();
     }
+    
+    [Verb("db", HelpText = "cleanups in db")]
+    public class DbOptions
+    {
+        [Option('c', "compact", Required = false, HelpText = "Compact Database")]
+        public string? type { get; set; }
+        // type should either be "soft" or "hard" 
+        // "soft" -> only compact the db 
+        // "hard" -> keep only recent snapshots. Be cautious before this clean-up. 
+        //           Node will lose the ability to rollback and emulate in old snapshots and
+        //           might lose some other ability as well
+    }
 }

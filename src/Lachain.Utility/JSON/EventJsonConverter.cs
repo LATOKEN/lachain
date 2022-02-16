@@ -6,15 +6,16 @@ namespace Lachain.Utility.JSON
 {
     public static class EventJsonConverter
     {
-        public static JObject ToJson(this Event block)
+        public static JObject ToJson(this EventObject evObj)
         {
+            var ev = evObj._event;
             var json = new JObject
             {
-                ["contract"] = block.Contract.ToHex(),
-                ["data"] = block.Data.ToHex(),
-                ["transactionHash"] = block.TransactionHash.ToHex(),
-                ["index"] = block.Index,
-                ["signatureHash"] = block.SignatureHash.ToHex()
+                ["contract"] = ev!.Contract.ToHex(),
+                ["data"] = ev.Data.ToHex(),
+                ["transactionHash"] = ev.TransactionHash.ToHex(),
+                ["index"] = ev.Index,
+                ["signatureHash"] = ev.SignatureHash.ToHex()
             };
             return json;
         }

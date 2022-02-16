@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.15.0" />
     <PackageReference Include="RockDb.Native" Version="6.12.1" />
     <PackageReference Include="RocksDbSharp" Version="6.2.2" />
   </ItemGroup>

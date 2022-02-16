@@ -5,6 +5,7 @@ using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
+using Lachain.Utility;
 
 
 namespace Lachain.Storage.State
@@ -34,16 +35,17 @@ namespace Lachain.Storage.State
 
         public ulong Version => _state.CurrentVersion;
 
-        public void Commit()
+        public void Commit(RocksDbAtomicWrite batch)
         {
-            _state.Commit();
+            _state.Commit(batch);
         }
 
         public UInt256 Hash => _state.Hash;
 
-        public void AddEvent(Event @event)
+        public void AddEvent(EventObject @eventObj)
         {
-            var total = GetTotalTransactionEvents(@event.TransactionHash ?? UInt256Utils.Zero);
+            var @event = @eventObj._event;
+            var total = GetTotalTransactionEvents(@event!.TransactionHash ?? UInt256Utils.Zero);
             @event.Index = total;
             _state.AddOrUpdate(
                 EntryPrefix.EventCountByTransactionHash.BuildPrefix(@event.TransactionHash ?? UInt256Utils.Zero),
@@ -53,11 +55,11 @@ namespace Lachain.Storage.State
             _state.AddOrUpdate(prefix, @event.ToByteArray());
         }
 
-        public Event? GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex)
+        public EventObject GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex)
         {
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(transactionHash, eventIndex);
             var raw = _state.Get(prefix);
-            return raw is null ? null : Event.Parser.ParseFrom(raw);
+            return new EventObject( raw is null ? null : Event.Parser.ParseFrom(raw) );
         }
 
         public uint GetTotalTransactionEvents(UInt256 transactionHash)
@@ -69,6 +71,10 @@ namespace Lachain.Storage.State
         public void SetCurrentVersion(ulong root)
         {
             _state.SetCurrentVersion(root);
+        }
+        public void ClearCache()
+        {
+            _state.ClearCache();
         }
     }
 }
