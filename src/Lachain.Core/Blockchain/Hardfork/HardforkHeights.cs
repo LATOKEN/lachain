@@ -50,7 +50,7 @@ namespace Lachain.Core.Blockchain.Hardfork
             Hardfork_3 = (ulong) hardforkConfig.Hardfork_3;
 
             if(hardforkConfig.Hardfork_4 is null)
-                throw new Exception("hardfork_3 is null");
+                throw new Exception("hardfork_4 is null");
             Hardfork_4 = (ulong) hardforkConfig.Hardfork_4;
 
         }
