@@ -412,9 +412,7 @@ namespace Lachain.Benchmark
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
                 Money.Parse("200000"));
             
-            ITransactionPool transactionPool = _container.Resolve<ITransactionPool>();
-            
-            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var txReceipts = new List<TransactionReceipt>();
             for (int i = 0; i < txGenerate; i++)
             {
                 var randomValue = new Random().Next(1, 100);
@@ -433,8 +431,14 @@ namespace Lachain.Benchmark
                     Nonce = (ulong)i,
                     Value = amount
                 };
-
-                transactionPool.Add(transactionSigner.Sign(tx, keyPair), false);
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair));
+            }
+            
+            ITransactionPool transactionPool = _container.Resolve<ITransactionPool>();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            foreach (var txr in txReceipts)
+            {
+                transactionPool.Add(txr, false);
             }
             watch.Stop();
             Console.WriteLine($"Time to Add {transactionPool.Transactions.Count} Tx to pool: {watch.ElapsedMilliseconds} ms");
