@@ -284,7 +284,7 @@ namespace Lachain.Benchmark
             var txReceipts = new List<TransactionReceipt>();
             
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            _Benchmark("Building TXs: ", i =>
+            for (int i = 0; i < txGenerate; i++)
             {
                 var randomValue = new Random().Next(1, 100);
                 var amount = Money.Parse($"{randomValue}.0").ToUInt256();
@@ -303,19 +303,13 @@ namespace Lachain.Benchmark
                     Value = amount
                 };
 
-                txReceipts.Add(transactionSigner.Sign(tx, keyPair));
-                return i;
-            }, txGenerate);
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair));    
+            }
             watch.Stop();
             Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
 
             Block block = null!;
             watch.Restart();
-            // _Benchmark("Building Block ", i =>
-            // {
-            //     block = BuildBlock(txReceipts.ToArray());
-            //     return i;
-            // }, txGenerate / txPerBlock);
             for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
                 block = BuildBlock(txReceipts.ToArray());    
@@ -324,11 +318,6 @@ namespace Lachain.Benchmark
             Console.WriteLine($"Building Block Time: {watch.ElapsedMilliseconds} ms");
 
             watch.Restart();
-            // _Benchmark("Block Emulation ", i =>
-            // {
-            //     EmulateBlock(block, txReceipts.ToArray());
-            //     return i;
-            // }, txGenerate / txPerBlock);
             for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
                 EmulateBlock(block, txReceipts.ToArray());
@@ -352,7 +341,7 @@ namespace Lachain.Benchmark
             var txReceipts = new List<TransactionReceipt>();
             
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            _Benchmark("Building TXs: ", i =>
+            for (int i = 0; i < txGenerate; i++)
             {
                 var randomValue = new Random().Next(1, 100);
                 var amount = Money.Parse($"{randomValue}.0").ToUInt256();
@@ -371,20 +360,13 @@ namespace Lachain.Benchmark
                     Value = amount
                 };
 
-                txReceipts.Add(transactionSigner.Sign(tx, keyPair));
-                return i;
-            }, txGenerate);
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair));    
+            }
             watch.Stop();
             Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
             
             Block block = null!;
             watch.Restart();
-            // _Benchmark("Building Block ", i =>
-            // {
-            //     block = BuildBlock(txReceipts.ToArray());
-            //     return i;
-            // }, txGenerate / txPerBlock);
-
             for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
                 block = BuildBlock(txReceipts.ToArray());    
@@ -393,12 +375,6 @@ namespace Lachain.Benchmark
             Console.WriteLine($"Building Block Time: {watch.ElapsedMilliseconds} ms");
 
             watch.Restart();
-            // _Benchmark("Block Emulation + Execution ", i =>
-            // {
-            //     ExecuteBlock(block, txReceipts.ToArray());
-            //     return i;
-            // }, txGenerate / txPerBlock);
-            
             for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
                 ExecuteBlock(block, txReceipts.ToArray());
